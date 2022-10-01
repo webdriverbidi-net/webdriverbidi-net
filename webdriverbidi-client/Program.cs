@@ -1,0 +1,107 @@
+﻿using System.Diagnostics;
+using WebDriverBidi;
+using WebDriverBidi.BrowsingContext;
+using WebDriverBidi.Script;
+using WebDriverBidi.Session;
+
+// See https://aka.ms/new-console-template for more information
+
+int port = 38267;
+// string testProfilePath = Path.Join(Path.GetTempPath(), Path.GetTempFileName());
+
+// string testBrowserName = "Firefox";
+// string testBrowserCommandLine = @"/Applications/Firefox.app/Contents/MacOS/firefox-bin";
+// string testBrowserArguments = $"--remote-debugging-port {port} --no-remote --profile {testProfilePath}";
+// Process? testProcess = null;
+AutoResetEvent syncEvent = new AutoResetEvent(false);
+
+try
+{
+    //testProcess = StartServer(testProfilePath, testBrowserName, testBrowserCommandLine, testBrowserArguments);
+    await DriveBrowser();
+}
+finally
+{
+    //StopServer(testProfilePath, testBrowserName, testProcess);
+}
+
+async Task DriveBrowser()
+{
+    Driver driver = new Driver();
+    //driver.LogMessage += OnDriverLogMessage;
+    driver.BrowsingContext.NavigationStarted += delegate(object? sender, NavigationEventArgs e) {
+        Console.WriteLine($"Navigation to {e.Url} started");
+    };
+
+    driver.BrowsingContext.Load += delegate(object? sender, NavigationEventArgs e)
+    {
+        Console.WriteLine($"Load of {e.Url} complete!");
+    };
+
+    await driver.Start($"ws://localhost:{port}/session");
+
+    var status = await driver.Session.Status(new StatusCommandProperties());
+    Console.WriteLine($"Is ready? {status.IsReady}");
+
+    var subscribe = new SubscribeCommandProperties();
+    subscribe.Events.Add("browsingContext.load");
+    await driver.Session.Subscribe(subscribe);
+
+    var tree = await driver.BrowsingContext.GetTree(new GetTreeCommandProperties());
+    string contextId = tree.ContextTree[0].BrowsingContextId;
+    Console.WriteLine($"Active context: {contextId}");
+
+    var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandProperties(contextId, "https://google.com") { Wait = ReadinessState.Complete });
+    Console.WriteLine($"Performed navigation to {navigation.Url}");
+
+    string functionDefinition = "function(){ return document.querySelector('input'); }";
+    var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandProperties(functionDefinition, new ContextTarget(contextId), true));
+    var scriptSuccessResult = scriptResult as ScriptEvaluateResultSuccess;
+    var scriptExceptionResult = scriptResult as ScriptEvaluateResultException;
+    if (scriptSuccessResult is not null)
+    {
+        Console.WriteLine($"Script result: {scriptSuccessResult.Result.Value}");
+        NodeProperties? nodeProperties = scriptSuccessResult.Result.ValueAs<NodeProperties>();
+        if (nodeProperties is not null)
+        {
+            Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
+        }
+    }
+    else if (scriptExceptionResult is not null)
+    {
+        Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
+    }
+
+    await driver.Stop();
+}
+
+void OnDriverLogMessage(object? sender, LogMessageEventArgs e)
+{
+    Console.WriteLine(e.Message);
+    syncEvent.Set();
+}
+
+Process StartServer(string profilePath, string browserName, string browserCommandLine, string browserArguments)
+{
+    Console.WriteLine($"Creating temp folder for profile at {profilePath}");
+    DirectoryInfo profileDirectory = Directory.CreateDirectory(profilePath);
+
+    Console.WriteLine($"Starting {browserName}");
+    Process process = new Process();
+    process.StartInfo.FileName = browserCommandLine;
+    process.StartInfo.Arguments = browserArguments;
+    process.StartInfo.RedirectStandardError = true;
+    process.StartInfo.RedirectStandardOutput = true;
+    process.Start();
+    return process;
+}
+
+void StopServer(string profilePath, string browserName, Process? process)
+{
+    Console.WriteLine($"Closing {browserName}");
+    if (process is not null) {
+        process.Kill();
+    }
+    Console.WriteLine($"Deleting temp folder for profile {profilePath}");
+    Directory.Delete(profilePath, true);
+}
