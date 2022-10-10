@@ -1,6 +1,6 @@
 namespace WebDriverBidi;
 
-public abstract class CommandProperties
+public abstract class CommandSettings
 {
     public abstract string MethodName { get; }
 }

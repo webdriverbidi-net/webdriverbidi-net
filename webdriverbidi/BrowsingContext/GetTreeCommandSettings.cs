@@ -3,12 +3,12 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class GetTreeCommandProperties : CommandProperties
+public class GetTreeCommandSettings : CommandSettings
 {
     private int? maxDepth;
     private string? rootBrowsingContextId;
 
-    public GetTreeCommandProperties()
+    public GetTreeCommandSettings()
     {
     }
 

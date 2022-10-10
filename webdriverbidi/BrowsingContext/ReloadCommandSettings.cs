@@ -3,13 +3,13 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class ReloadCommandProperties : CommandProperties
+public class ReloadCommandSettings : CommandSettings
 {
     private string browsingContextId;
     private bool? ignoreCache;
     private ReadinessState? wait;
 
-    public ReloadCommandProperties(string browsingContextId)
+    public ReloadCommandSettings(string browsingContextId)
     {
         this.browsingContextId = browsingContextId;
     }

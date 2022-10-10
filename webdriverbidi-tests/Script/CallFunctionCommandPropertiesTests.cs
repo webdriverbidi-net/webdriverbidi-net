@@ -9,7 +9,7 @@ public class CallFunctionCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new CallFunctionCommandProperties("myFunction", new RealmTarget("myRealm"), true);
+        var properties = new CallFunctionCommandSettings("myFunction", new RealmTarget("myRealm"), true);
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(3));
@@ -24,7 +24,7 @@ public class CallFunctionCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalValues()
     {
-        var properties = new CallFunctionCommandProperties("myFunction", new RealmTarget("myRealm"), true);
+        var properties = new CallFunctionCommandSettings("myFunction", new RealmTarget("myRealm"), true);
         properties.Arguments.Add(LocalValue.String("myArgument"));
         properties.ThisObject = LocalValue.String("thisObject");
         properties.OwnershipModel = OwnershipModel.None;

@@ -9,7 +9,7 @@ public class CloseCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new CloseCommandProperties("myContextId");
+        var properties = new CloseCommandSettings("myContextId");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(1));

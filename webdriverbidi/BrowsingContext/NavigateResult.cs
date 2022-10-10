@@ -3,7 +3,7 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class NavigateResult
+public class NavigateResult : CommandResult
 {
     private string? id;
     private string url;

@@ -12,7 +12,7 @@ public class SessionModuleTests
         TestDriver driver = new TestDriver();
         SessionModule module = new SessionModule(driver);
 
-        var task = module.Status(new StatusCommandProperties());
+        var task = module.Status(new StatusCommandSettings());
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -31,7 +31,7 @@ public class SessionModuleTests
         TestDriver driver = new TestDriver();
         SessionModule module = new SessionModule(driver);
 
-        var subscribeParameters = new SubscribeCommandProperties();
+        var subscribeParameters = new SubscribeCommandSettings();
         subscribeParameters.Events.Add("log.entryAdded");
         var task = module.Subscribe(subscribeParameters);
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
@@ -50,7 +50,7 @@ public class SessionModuleTests
         TestDriver driver = new TestDriver();
         SessionModule module = new SessionModule(driver);
 
-        var unsubscribeParameters = new UnsubscribeCommandProperties();
+        var unsubscribeParameters = new UnsubscribeCommandSettings();
         unsubscribeParameters.Events.Add("log.entryAdded");
         var task = module.Unsubscribe(unsubscribeParameters);
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
@@ -69,7 +69,7 @@ public class SessionModuleTests
         TestDriver driver = new TestDriver();
         SessionModule module = new SessionModule(driver);
 
-        var newCommandParameters = new NewCommandProperties();
+        var newCommandParameters = new NewCommandSettings();
         var task = module.NewSession(newCommandParameters);
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 

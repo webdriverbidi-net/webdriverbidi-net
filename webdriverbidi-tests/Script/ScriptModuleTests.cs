@@ -11,7 +11,7 @@ public class ScriptModuleTests
         string responseJson = @"{ ""result"": { ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
-        var task = module.CallFunction(new CallFunctionCommandProperties("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -36,7 +36,7 @@ public class ScriptModuleTests
         string responseJson = @"{ ""result"": { ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
-        var task = module.CallFunction(new CallFunctionCommandProperties("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -64,7 +64,7 @@ public class ScriptModuleTests
         string responseJson = @"{ ""result"": { ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
-        var task = module.Evaluate(new EvaluateCommandProperties("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -89,7 +89,7 @@ public class ScriptModuleTests
         string responseJson = @"{ ""result"": { ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
-        var task = module.Evaluate(new EvaluateCommandProperties("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -117,7 +117,7 @@ public class ScriptModuleTests
         string responseJson = @"{ ""result"": { ""realms"": [ { ""realm"": ""myRealmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContextId"" } ] } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
-        var task = module.GetRealms(new GetRealmsCommandProperties());
+        var task = module.GetRealms(new GetRealmsCommandSettings());
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -140,7 +140,7 @@ public class ScriptModuleTests
         string responseJson = @"{ ""result"": {} }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
-        var task = module.Disown(new DisownCommandProperties(new ContextTarget("myContextId"), new string[] { "myValue" }));
+        var task = module.Disown(new DisownCommandSettings(new ContextTarget("myContextId"), new string[] { "myValue" }));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);

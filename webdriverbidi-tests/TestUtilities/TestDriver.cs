@@ -22,7 +22,7 @@ public class TestDriver : Driver
         this.commandSetEvent.WaitOne(waitTimeout);
     }
 
-    public override async Task<T> ExecuteCommand<T>(CommandProperties command)
+    public override async Task<T> ExecuteCommand<T>(CommandSettings command)
     {
         long commandId  = Interlocked.Increment(ref this.nextCommandId);
         this.lastCommand = new WebDriverBidiCommandData(commandId, command.MethodName, JToken.FromObject(command));

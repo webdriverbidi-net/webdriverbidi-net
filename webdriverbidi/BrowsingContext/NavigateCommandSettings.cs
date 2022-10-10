@@ -3,13 +3,13 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class NavigateCommandProperties : CommandProperties
+public class NavigateCommandSettings : CommandSettings
 {
     private string browsingContextId;
     private string url;
     private ReadinessState? wait;
 
-    public NavigateCommandProperties(string browsingContextId, string url)
+    public NavigateCommandSettings(string browsingContextId, string url)
     {
         this.browsingContextId = browsingContextId;
         this.url = url;

@@ -3,13 +3,13 @@ namespace WebDriverBidi.Session;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class SubscribeCommandProperties : CommandProperties
+public class SubscribeCommandSettings : CommandSettings
 {
     private List<string> eventList = new List<string>();
 
     private List<string> contextList = new List<string>();
 
-    public SubscribeCommandProperties()
+    public SubscribeCommandSettings()
     {
     }
 

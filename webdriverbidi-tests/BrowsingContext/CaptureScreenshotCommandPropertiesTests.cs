@@ -9,7 +9,7 @@ public class CaptureScreenshotCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new CaptureScreenshotCommandProperties("myContextId");
+        var properties = new CaptureScreenshotCommandSettings("myContextId");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(1));

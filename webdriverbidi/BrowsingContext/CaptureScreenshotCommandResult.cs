@@ -3,7 +3,7 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class CaptureScreenshotCommandResult
+public class CaptureScreenshotCommandResult : CommandResult
 {
     private string base64Screenshot;
 

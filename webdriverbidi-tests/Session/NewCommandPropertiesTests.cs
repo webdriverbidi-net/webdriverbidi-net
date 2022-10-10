@@ -9,7 +9,7 @@ public class NewCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new NewCommandProperties();
+        var properties = new NewCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(0));
@@ -17,7 +17,7 @@ public class NewCommandPropertiesTests
 
     public void TestCanSerializeWithAlwaysMatch()
     {
-        var properties = new NewCommandProperties();
+        var properties = new NewCommandSettings();
         properties.AlwaysMatch = new CapabilitiesRequest() { BrowserName = "greatBrowser" };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -32,7 +32,7 @@ public class NewCommandPropertiesTests
 
     public void TestCanSerializeWithFirstMatch()
     {
-        var properties = new NewCommandProperties();
+        var properties = new NewCommandSettings();
         properties.FirstMatch.Add(new CapabilitiesRequest() { BrowserName = "greatBrowser" });
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);

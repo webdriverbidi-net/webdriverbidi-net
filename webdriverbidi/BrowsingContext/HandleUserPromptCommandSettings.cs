@@ -3,13 +3,13 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class HandleUserPromptCommandProperties : CommandProperties
+public class HandleUserPromptCommandSettings : CommandSettings
 {
     private string browsingContextId;
     private bool? accept;
     private string? userText;
 
-    public HandleUserPromptCommandProperties(string browsingContextId)
+    public HandleUserPromptCommandSettings(string browsingContextId)
     {
         this.browsingContextId = browsingContextId;
     }

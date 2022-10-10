@@ -3,12 +3,12 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class DisownCommandProperties : CommandProperties
+public class DisownCommandSettings : CommandSettings
 {
     private List<string> handles = new List<string>();
     private ScriptTarget target;
 
-    public DisownCommandProperties(ScriptTarget target, params string[] handleValues)
+    public DisownCommandSettings(ScriptTarget target, params string[] handleValues)
     {
         this.target = target;
         this.handles.AddRange(handleValues);

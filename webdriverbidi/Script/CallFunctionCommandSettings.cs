@@ -3,7 +3,7 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class CallFunctionCommandProperties : CommandProperties
+public class CallFunctionCommandSettings : CommandSettings
 {   
     private string functionDeclaration;
     private ScriptTarget scriptTarget;
@@ -12,7 +12,7 @@ public class CallFunctionCommandProperties : CommandProperties
     private ArgumentValue? thisObject;
     private OwnershipModel? ownershipModel;
 
-    public CallFunctionCommandProperties(string functionDeclaration, ScriptTarget scriptTarget, bool awaitPromise)
+    public CallFunctionCommandSettings(string functionDeclaration, ScriptTarget scriptTarget, bool awaitPromise)
     {
         this.functionDeclaration = functionDeclaration;
         this.scriptTarget = scriptTarget;

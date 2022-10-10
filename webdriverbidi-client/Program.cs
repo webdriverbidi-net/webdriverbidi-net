@@ -40,22 +40,22 @@ async Task DriveBrowser()
 
     await driver.Start($"ws://localhost:{port}/session");
 
-    var status = await driver.Session.Status(new StatusCommandProperties());
+    var status = await driver.Session.Status(new StatusCommandSettings());
     Console.WriteLine($"Is ready? {status.IsReady}");
 
-    var subscribe = new SubscribeCommandProperties();
+    var subscribe = new SubscribeCommandSettings();
     subscribe.Events.Add("browsingContext.load");
     await driver.Session.Subscribe(subscribe);
 
-    var tree = await driver.BrowsingContext.GetTree(new GetTreeCommandProperties());
+    var tree = await driver.BrowsingContext.GetTree(new GetTreeCommandSettings());
     string contextId = tree.ContextTree[0].BrowsingContextId;
     Console.WriteLine($"Active context: {contextId}");
 
-    var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandProperties(contextId, "https://google.com") { Wait = ReadinessState.Complete });
+    var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandSettings(contextId, "https://google.com") { Wait = ReadinessState.Complete });
     Console.WriteLine($"Performed navigation to {navigation.Url}");
 
     string functionDefinition = "function(){ return document.querySelector('input'); }";
-    var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandProperties(functionDefinition, new ContextTarget(contextId), true));
+    var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandSettings(functionDefinition, new ContextTarget(contextId), true));
     var scriptSuccessResult = scriptResult as ScriptEvaluateResultSuccess;
     var scriptExceptionResult = scriptResult as ScriptEvaluateResultException;
     if (scriptSuccessResult is not null)

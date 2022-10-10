@@ -9,7 +9,7 @@ public class DisownCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new DisownCommandProperties(new RealmTarget("myRealm"));
+        var properties = new DisownCommandSettings(new RealmTarget("myRealm"));
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(2));
@@ -23,7 +23,7 @@ public class DisownCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithHandles()
     {
-        var properties = new DisownCommandProperties(new RealmTarget("myRealm"), "myHandle");
+        var properties = new DisownCommandSettings(new RealmTarget("myRealm"), "myHandle");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(2));
