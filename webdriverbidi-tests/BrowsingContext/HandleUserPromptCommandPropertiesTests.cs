@@ -9,7 +9,7 @@ public class HandleUserPromptCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new HandleUserPromptCommandProperties("myContextId");
+        var properties = new HandleUserPromptCommandSettings("myContextId");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(1));
@@ -21,7 +21,7 @@ public class HandleUserPromptCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithAcceptTrue()
     {
-        var properties = new HandleUserPromptCommandProperties("myContextId");
+        var properties = new HandleUserPromptCommandSettings("myContextId");
         properties.Accept = true;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -37,7 +37,7 @@ public class HandleUserPromptCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithAcceptFalse()
     {
-        var properties = new HandleUserPromptCommandProperties("myContextId");
+        var properties = new HandleUserPromptCommandSettings("myContextId");
         properties.Accept = false;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -53,7 +53,7 @@ public class HandleUserPromptCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithUserText()
     {
-        var properties = new HandleUserPromptCommandProperties("myContextId");
+        var properties = new HandleUserPromptCommandSettings("myContextId");
         properties.UserText = "myUserText";
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);

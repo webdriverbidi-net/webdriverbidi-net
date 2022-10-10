@@ -9,7 +9,7 @@ public class NavigateCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new NavigateCommandProperties("myContextId", "http://example.com");
+        var properties = new NavigateCommandSettings("myContextId", "http://example.com");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(2));
@@ -24,7 +24,7 @@ public class NavigateCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithAcceptWaitNone()
     {
-        var properties = new NavigateCommandProperties("myContextId", "http://example.com");
+        var properties = new NavigateCommandSettings("myContextId", "http://example.com");
         properties.Wait = ReadinessState.None;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -43,7 +43,7 @@ public class NavigateCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithAcceptWaitInteractive()
     {
-        var properties = new NavigateCommandProperties("myContextId", "http://example.com");
+        var properties = new NavigateCommandSettings("myContextId", "http://example.com");
         properties.Wait = ReadinessState.Interactive;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -62,7 +62,7 @@ public class NavigateCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithAcceptWaitComplete()
     {
-        var properties = new NavigateCommandProperties("myContextId", "http://example.com");
+        var properties = new NavigateCommandSettings("myContextId", "http://example.com");
         properties.Wait = ReadinessState.Complete;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);

@@ -9,7 +9,7 @@ public class UnsubscribeCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new UnsubscribeCommandProperties();
+        var properties = new UnsubscribeCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(1));
@@ -20,7 +20,7 @@ public class UnsubscribeCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithEvents()
     {
-        var properties = new UnsubscribeCommandProperties();
+        var properties = new UnsubscribeCommandSettings();
         properties.Events.Add("some.event");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -34,7 +34,7 @@ public class UnsubscribeCommandPropertiesTests
    [Test]
     public void TestCanSerializePropertiesWithContexts()
     {
-        var properties = new UnsubscribeCommandProperties();
+        var properties = new UnsubscribeCommandSettings();
         properties.Contexts.Add("myContext");
         properties.Events.Add("some.event");
         string json = JsonConvert.SerializeObject(properties);

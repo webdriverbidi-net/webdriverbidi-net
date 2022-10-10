@@ -9,7 +9,7 @@ public class SubscribeCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new SubscribeCommandProperties();
+        var properties = new SubscribeCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(1));
@@ -20,7 +20,7 @@ public class SubscribeCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithEvents()
     {
-        var properties = new SubscribeCommandProperties();
+        var properties = new SubscribeCommandSettings();
         properties.Events.Add("some.event");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -34,7 +34,7 @@ public class SubscribeCommandPropertiesTests
    [Test]
     public void TestCanSerializePropertiesWithData()
     {
-        var properties = new SubscribeCommandProperties();
+        var properties = new SubscribeCommandSettings();
         properties.Contexts.Add("myContext");
         properties.Events.Add("some.event");
         string json = JsonConvert.SerializeObject(properties);

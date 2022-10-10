@@ -3,7 +3,7 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class GetRealmsCommandResult
+public class GetRealmsCommandResult : CommandResult
 {
     private List<RealmInfo> realms = new List<RealmInfo>();
 

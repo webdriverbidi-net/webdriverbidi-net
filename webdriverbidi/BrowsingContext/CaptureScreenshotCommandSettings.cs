@@ -3,11 +3,11 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class CaptureScreenshotCommandProperties : CommandProperties
+public class CaptureScreenshotCommandSettings : CommandSettings
 {
     private string browsingContextId;
 
-    public CaptureScreenshotCommandProperties(string browsingContextId)
+    public CaptureScreenshotCommandSettings(string browsingContextId)
     {
         this.browsingContextId = browsingContextId;
     }

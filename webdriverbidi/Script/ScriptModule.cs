@@ -12,22 +12,22 @@ public sealed class ScriptModule : ProtocolModule
 
     public event EventHandler<RealmDestroyedEventArgs>? RealmDestroyed;
 
-    public async Task<EmptyResult> Disown(DisownCommandProperties commandProperties)
+    public async Task<EmptyResult> Disown(DisownCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
-    public async Task<GetRealmsCommandResult> GetRealms(GetRealmsCommandProperties commandProperties)
+    public async Task<GetRealmsCommandResult> GetRealms(GetRealmsCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<GetRealmsCommandResult>(commandProperties);
     }
 
-    public async Task<ScriptEvaluateResult> Evaluate(EvaluateCommandProperties commandProperties)
+    public async Task<ScriptEvaluateResult> Evaluate(EvaluateCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
     }
 
-    public async Task<ScriptEvaluateResult> CallFunction(CallFunctionCommandProperties commandProperties)
+    public async Task<ScriptEvaluateResult> CallFunction(CallFunctionCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
     }

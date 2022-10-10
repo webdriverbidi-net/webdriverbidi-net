@@ -9,7 +9,7 @@ public class GetTreeCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new GetTreeCommandProperties();
+        var properties = new GetTreeCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(0));
@@ -18,7 +18,7 @@ public class GetTreeCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithMaxDepth()
     {
-        var properties = new GetTreeCommandProperties();
+        var properties = new GetTreeCommandSettings();
         properties.MaxDepth = 2;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -32,7 +32,7 @@ public class GetTreeCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithRoot()
     {
-        var properties = new GetTreeCommandProperties();
+        var properties = new GetTreeCommandSettings();
         properties.RootBrowsingContextId = "rootBrowsingContext";
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);

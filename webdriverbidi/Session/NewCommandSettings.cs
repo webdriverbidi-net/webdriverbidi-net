@@ -3,7 +3,7 @@ namespace WebDriverBidi.Session;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class NewCommandProperties : CommandProperties
+public class NewCommandSettings : CommandSettings
 {
     private CapabilitiesRequest? alwaysMatch;
     private List<CapabilitiesRequest> firstMatch = new List<CapabilitiesRequest>();

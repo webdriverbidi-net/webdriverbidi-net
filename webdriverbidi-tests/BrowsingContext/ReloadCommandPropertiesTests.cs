@@ -9,7 +9,7 @@ public class ReloadCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new ReloadCommandProperties("myContextId");
+        var properties = new ReloadCommandSettings("myContextId");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(1));
@@ -21,7 +21,7 @@ public class ReloadCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithIgnoreCacheTrue()
     {
-        var properties = new ReloadCommandProperties("myContextId");
+        var properties = new ReloadCommandSettings("myContextId");
         properties.IgnoreCache = true;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -37,7 +37,7 @@ public class ReloadCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithIgnoreCacheFalse()
     {
-        var properties = new ReloadCommandProperties("myContextId");
+        var properties = new ReloadCommandSettings("myContextId");
         properties.IgnoreCache = false;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -53,7 +53,7 @@ public class ReloadCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithAcceptWaitNone()
     {
-        var properties = new ReloadCommandProperties("myContextId");
+        var properties = new ReloadCommandSettings("myContextId");
         properties.Wait = ReadinessState.None;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -69,7 +69,7 @@ public class ReloadCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithAcceptWaitInteractive()
     {
-        var properties = new ReloadCommandProperties("myContextId");
+        var properties = new ReloadCommandSettings("myContextId");
         properties.Wait = ReadinessState.Interactive;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -85,7 +85,7 @@ public class ReloadCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithAcceptWaitComplete()
     {
-        var properties = new ReloadCommandProperties("myContextId");
+        var properties = new ReloadCommandSettings("myContextId");
         properties.Wait = ReadinessState.Complete;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);

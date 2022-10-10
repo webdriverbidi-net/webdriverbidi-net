@@ -9,7 +9,7 @@ public class StatusCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new StatusCommandProperties();
+        var properties = new StatusCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(0));

@@ -9,7 +9,7 @@ public class EvaluateCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new EvaluateCommandProperties("myExpression", new RealmTarget("myRealm"), true);
+        var properties = new EvaluateCommandSettings("myExpression", new RealmTarget("myRealm"), true);
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(3));
@@ -24,7 +24,7 @@ public class EvaluateCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalValues()
     {
-        var properties = new EvaluateCommandProperties("myExpression", new RealmTarget("myRealm"), true);
+        var properties = new EvaluateCommandSettings("myExpression", new RealmTarget("myRealm"), true);
         properties.OwnershipModel = OwnershipModel.None;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);

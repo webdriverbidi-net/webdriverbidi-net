@@ -3,7 +3,7 @@ namespace WebDriverBidi.Session;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class NewCommandResult
+public class NewCommandResult : CommandResult
 {
     private string sessionId = string.Empty;
     

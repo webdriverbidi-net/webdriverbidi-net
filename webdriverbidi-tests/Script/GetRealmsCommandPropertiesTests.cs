@@ -9,7 +9,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializeProperties()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(0));
@@ -18,7 +18,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalWindowRealmTypeValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.Window;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -31,7 +31,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalWorkerRealmTypeValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.Worker;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -44,7 +44,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalDedicatedWorkerRealmTypeValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.DedicatedWorker;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -57,7 +57,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalServiceWorkerRealmTypeValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.ServiceWorker;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -70,7 +70,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalSharedWorkerRealmTypeValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.SharedWorker;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -83,7 +83,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalWorkletRealmTypeValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.Worklet;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -96,7 +96,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalPaintWorkletRealmTypeValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.PaintWorklet;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -109,7 +109,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalAudioWorkletRealmTypeValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.AudioWorklet;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -122,7 +122,7 @@ public class GetRealmsCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesWithOptionalBrowsingContextValue()
     {
-        var properties = new GetRealmsCommandProperties();
+        var properties = new GetRealmsCommandSettings();
         properties.BrowsingContextId = "contextId";
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);

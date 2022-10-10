@@ -3,14 +3,14 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class GetRealmsCommandProperties : CommandProperties
+public class GetRealmsCommandSettings : CommandSettings
 {
     private string? browsingContextId;
     private RealmType? realmType;
 
     public override string MethodName => "script.getRealms";
 
-    public GetRealmsCommandProperties()
+    public GetRealmsCommandSettings()
     {
     }
 

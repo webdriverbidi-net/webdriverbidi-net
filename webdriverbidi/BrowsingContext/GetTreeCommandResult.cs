@@ -3,7 +3,7 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class GetTreeCommandResult
+public class GetTreeCommandResult : CommandResult
 {
     [JsonConstructor]
     private GetTreeCommandResult()

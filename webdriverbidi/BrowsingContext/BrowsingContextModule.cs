@@ -30,37 +30,37 @@ public sealed class BrowsingContextModule : ProtocolModule
     public event EventHandler<UserPromptClosedEventArgs>? UserPromptClosed;
 
 
-    public async Task<CaptureScreenshotCommandResult> CaptureScreenshot(CaptureScreenshotCommandProperties commandProperties)
+    public async Task<CaptureScreenshotCommandResult> CaptureScreenshot(CaptureScreenshotCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<CaptureScreenshotCommandResult>(commandProperties);
     }
 
-    public async Task<EmptyResult> Close(CloseCommandProperties commandProperties)
+    public async Task<EmptyResult> Close(CloseCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
-    public async Task<CreateCommandResult> Create(CreateCommandProperties commandProperties)
+    public async Task<CreateCommandResult> Create(CreateCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<CreateCommandResult>(commandProperties);
     }
 
-    public async Task<GetTreeCommandResult> GetTree(GetTreeCommandProperties commandProperties)
+    public async Task<GetTreeCommandResult> GetTree(GetTreeCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<GetTreeCommandResult>(commandProperties);
     }
 
-    public async Task<EmptyResult> HandleUserPrompt(HandleUserPromptCommandProperties commandProperties)
+    public async Task<EmptyResult> HandleUserPrompt(HandleUserPromptCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
-    public async Task<NavigateResult> Navigate(NavigateCommandProperties commandProperties)
+    public async Task<NavigateResult> Navigate(NavigateCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<NavigateResult>(commandProperties);
     }
 
-    public async Task<NavigateResult> Reload(ReloadCommandProperties commandProperties)
+    public async Task<NavigateResult> Reload(ReloadCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<NavigateResult>(commandProperties);
     }

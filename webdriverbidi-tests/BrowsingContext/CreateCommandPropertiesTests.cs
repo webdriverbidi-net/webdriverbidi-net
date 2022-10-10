@@ -9,7 +9,7 @@ public class CreateCommandPropertiesTests
     [Test]
     public void TestCanSerializePropertiesForTab()
     {
-        var properties = new CreateCommandProperties(BrowsingContextCreateType.Tab);
+        var properties = new CreateCommandSettings(BrowsingContextCreateType.Tab);
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(1));
@@ -21,7 +21,7 @@ public class CreateCommandPropertiesTests
    [Test]
     public void TestCanSerializePropertiesForWindow()
     {
-        var properties = new CreateCommandProperties(BrowsingContextCreateType.Window);
+        var properties = new CreateCommandSettings(BrowsingContextCreateType.Window);
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(1));

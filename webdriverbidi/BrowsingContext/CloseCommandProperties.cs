@@ -3,11 +3,11 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class CloseCommandProperties : CommandProperties
+public class CloseCommandSettings : CommandSettings
 {
     private string browsingContextId;
 
-    public CloseCommandProperties(string browsingContextId)
+    public CloseCommandSettings(string browsingContextId)
     {
         this.browsingContextId = browsingContextId;
     }

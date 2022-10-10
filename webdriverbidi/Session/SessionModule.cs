@@ -6,22 +6,22 @@ public sealed class SessionModule : ProtocolModule
     {
     }
 
-    public async Task<StatusCommandResult> Status(StatusCommandProperties commandProperties)
+    public async Task<StatusCommandResult> Status(StatusCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<StatusCommandResult>(commandProperties);
     }
 
-    public async Task<NewCommandResult> NewSession(NewCommandProperties commandProperties)
+    public async Task<NewCommandResult> NewSession(NewCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<NewCommandResult>(commandProperties);
     }
 
-    public async Task<EmptyResult> Subscribe(SubscribeCommandProperties commandProperties)
+    public async Task<EmptyResult> Subscribe(SubscribeCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
-    public async Task<EmptyResult> Unsubscribe(UnsubscribeCommandProperties commandProperties)
+    public async Task<EmptyResult> Unsubscribe(UnsubscribeCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }

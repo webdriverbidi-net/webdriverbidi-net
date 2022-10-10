@@ -3,7 +3,7 @@ namespace WebDriverBidi.Session;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class StatusCommandResult
+public class StatusCommandResult : CommandResult
 {
     private bool ready;
     private string message;

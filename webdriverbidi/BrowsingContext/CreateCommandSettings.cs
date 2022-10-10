@@ -3,11 +3,11 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class CreateCommandProperties : CommandProperties
+public class CreateCommandSettings : CommandSettings
 {
     private BrowsingContextCreateType createType;
     
-    public CreateCommandProperties(BrowsingContextCreateType createType)
+    public CreateCommandSettings(BrowsingContextCreateType createType)
     {
         this.createType = createType;
     }

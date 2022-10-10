@@ -3,14 +3,14 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class EvaluateCommandProperties : CommandProperties
+public class EvaluateCommandSettings : CommandSettings
 {
     private string expression;
     private ScriptTarget scriptTarget;
     private bool awaitPromise;
     private OwnershipModel? ownershipModel;
 
-    public EvaluateCommandProperties(string expression, ScriptTarget scriptTarget, bool awaitPromise)
+    public EvaluateCommandSettings(string expression, ScriptTarget scriptTarget, bool awaitPromise)
     {
         this.expression = expression;
         this.scriptTarget = scriptTarget;

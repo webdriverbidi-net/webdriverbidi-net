@@ -54,7 +54,7 @@ public class Driver
         await transport.Disconnect();
     }
 
-    public virtual async Task<T> ExecuteCommand<T>(CommandProperties command)
+    public virtual async Task<T> ExecuteCommand<T>(CommandSettings command) where T : CommandResult
     {
         var result = await transport.SendCommandAndWait(command.MethodName, JToken.FromObject(command));
         if (result is null)

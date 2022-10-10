@@ -11,7 +11,7 @@ public class BrowsingContextModuleTests
         string responseJson = @"{ ""result"": { ""data"": ""encodedScreenshotData"" } }";
         TestDriver driver = new TestDriver();
         BrowsingContextModule module = new BrowsingContextModule(driver);
-        var task = module.CaptureScreenshot(new CaptureScreenshotCommandProperties("myContextId"));
+        var task = module.CaptureScreenshot(new CaptureScreenshotCommandSettings("myContextId"));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -28,7 +28,7 @@ public class BrowsingContextModuleTests
         string responseJson = @"{ ""result"": {} }";
         TestDriver driver = new TestDriver();
         BrowsingContextModule module = new BrowsingContextModule(driver);
-        var task = module.Close(new CloseCommandProperties("myContextId"));
+        var task = module.Close(new CloseCommandSettings("myContextId"));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -44,7 +44,7 @@ public class BrowsingContextModuleTests
         string responseJson = @"{ ""result"": { ""context"": ""myContext"" } }";
         TestDriver driver = new TestDriver();
         BrowsingContextModule module = new BrowsingContextModule(driver);
-        var task = module.Create(new CreateCommandProperties(BrowsingContextCreateType.Tab));
+        var task = module.Create(new CreateCommandSettings(BrowsingContextCreateType.Tab));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -61,7 +61,7 @@ public class BrowsingContextModuleTests
         string responseJson = @"{ ""result"": { ""contexts"": [ { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } ] } }";
         TestDriver driver = new TestDriver();
         BrowsingContextModule module = new BrowsingContextModule(driver);
-        var task = module.GetTree(new GetTreeCommandProperties());
+        var task = module.GetTree(new GetTreeCommandSettings());
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -81,7 +81,7 @@ public class BrowsingContextModuleTests
         string responseJson = @"{ ""result"": {} }";
         TestDriver driver = new TestDriver();
         BrowsingContextModule module = new BrowsingContextModule(driver);
-        var task = module.HandleUserPrompt(new HandleUserPromptCommandProperties("myContextId"));
+        var task = module.HandleUserPrompt(new HandleUserPromptCommandSettings("myContextId"));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -97,7 +97,7 @@ public class BrowsingContextModuleTests
         string responseJson = @"{ ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
         TestDriver driver = new TestDriver();
         BrowsingContextModule module = new BrowsingContextModule(driver);
-        var task = module.Navigate(new NavigateCommandProperties("myContext", "https://example.com") { Wait = ReadinessState.Complete });
+        var task = module.Navigate(new NavigateCommandSettings("myContext", "https://example.com") { Wait = ReadinessState.Complete });
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
@@ -115,7 +115,7 @@ public class BrowsingContextModuleTests
         string responseJson = @"{ ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
         TestDriver driver = new TestDriver();
         BrowsingContextModule module = new BrowsingContextModule(driver);
-        var task = module.Reload(new ReloadCommandProperties("myContext"));
+        var task = module.Reload(new ReloadCommandSettings("myContext"));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);

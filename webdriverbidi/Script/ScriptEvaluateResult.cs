@@ -5,7 +5,7 @@ using JsonConverters;
 
 [JsonObject(MemberSerialization.OptIn)]
 [JsonConverter(typeof(ScriptEvaluateResultJsonConverter))]
-public class ScriptEvaluateResult
+public class ScriptEvaluateResult : CommandResult
 {
     private string realmId;
 
