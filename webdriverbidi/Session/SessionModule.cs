@@ -16,13 +16,13 @@ public sealed class SessionModule : ProtocolModule
         return await this.Driver.ExecuteCommand<NewCommandResult>(commandProperties);
     }
 
-    public async Task Subscribe(SubscribeCommandProperties commandProperties)
+    public async Task<EmptyResult> Subscribe(SubscribeCommandProperties commandProperties)
     {
-        await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
-    public async Task Unsubscribe(UnsubscribeCommandProperties commandProperties)
+    public async Task<EmptyResult> Unsubscribe(UnsubscribeCommandProperties commandProperties)
     {
-        await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 }

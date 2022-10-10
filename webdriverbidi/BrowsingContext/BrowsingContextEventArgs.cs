@@ -4,7 +4,7 @@ public class BrowsingContextEventArgs : EventArgs
 {
     private BrowsingContextInfo info;
 
-    internal BrowsingContextEventArgs(BrowsingContextInfo info)
+    public BrowsingContextEventArgs(BrowsingContextInfo info)
     {
         this.info = info;
     }

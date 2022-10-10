@@ -8,7 +8,7 @@ public class EntryAddedEventArgs : EventArgs
 {
     private LogEntry entry;
 
-    internal EntryAddedEventArgs(LogEntry entry)
+    public EntryAddedEventArgs(LogEntry entry)
     {
         this.entry = entry;
     }
