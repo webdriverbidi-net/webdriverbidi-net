@@ -35,9 +35,9 @@ public sealed class BrowsingContextModule : ProtocolModule
         return await this.Driver.ExecuteCommand<CaptureScreenshotCommandResult>(commandProperties);
     }
 
-    public async Task Close(CloseCommandProperties commandProperties)
+    public async Task<EmptyResult> Close(CloseCommandProperties commandProperties)
     {
-        await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
     public async Task<CreateCommandResult> Create(CreateCommandProperties commandProperties)
@@ -50,9 +50,9 @@ public sealed class BrowsingContextModule : ProtocolModule
         return await this.Driver.ExecuteCommand<GetTreeCommandResult>(commandProperties);
     }
 
-    public async Task HandleUserPrompt(HandleUserPromptCommandProperties commandProperties)
+    public async Task<EmptyResult> HandleUserPrompt(HandleUserPromptCommandProperties commandProperties)
     {
-        await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
     public async Task<NavigateResult> Navigate(NavigateCommandProperties commandProperties)

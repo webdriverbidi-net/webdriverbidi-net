@@ -4,7 +4,7 @@ public class RealmCreatedEventArgs : EventArgs
 {
     private RealmInfo info;
 
-    internal RealmCreatedEventArgs(RealmInfo info)
+    public RealmCreatedEventArgs(RealmInfo info)
     {
         this.info = info;
     }

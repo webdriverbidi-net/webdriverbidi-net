@@ -8,7 +8,7 @@ public class RealmDestroyedEventArgs : EventArgs
     private string realmId;
 
     [JsonConstructor]
-    private RealmDestroyedEventArgs(string realmId)
+    public RealmDestroyedEventArgs(string realmId)
     {
         this.realmId = realmId;
     }

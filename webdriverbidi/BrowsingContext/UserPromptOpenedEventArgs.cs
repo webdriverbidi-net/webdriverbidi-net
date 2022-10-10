@@ -10,7 +10,7 @@ public class UserPromptOpenedEventArgs : EventArgs
     private string message;
 
     [JsonConstructor]
-    private UserPromptOpenedEventArgs(string browsingContextId, UserPromptType promptType, string message)
+    public UserPromptOpenedEventArgs(string browsingContextId, UserPromptType promptType, string message)
     {
         this.browsingContextId = browsingContextId;
         this.promptType = promptType;

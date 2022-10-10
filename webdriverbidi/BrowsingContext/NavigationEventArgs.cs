@@ -12,7 +12,7 @@ public class NavigationEventArgs : EventArgs
     private string url;
 
     [JsonConstructor]
-    private NavigationEventArgs(string browsingContextId, string url, string? navigationId)
+    public NavigationEventArgs(string browsingContextId, string url, string? navigationId)
     {
         this.browsingContextId = browsingContextId;
         this.url = url;

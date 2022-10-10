@@ -44,17 +44,17 @@ public class Driver
 
     public LogModule Log => this.logModule;
 
-    public async Task Start(string url)
+    public virtual async Task Start(string url)
     {
         await transport.Connect(url);
     }
 
-    public async Task Stop()
+    public virtual async Task Stop()
     {
         await transport.Disconnect();
     }
 
-    public async Task<T> ExecuteCommand<T>(CommandProperties command)
+    public virtual async Task<T> ExecuteCommand<T>(CommandProperties command)
     {
         var result = await transport.SendCommandAndWait(command.MethodName, JToken.FromObject(command));
         if (result is null)

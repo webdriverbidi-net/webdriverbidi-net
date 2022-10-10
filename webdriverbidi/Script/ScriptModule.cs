@@ -5,16 +5,16 @@ public sealed class ScriptModule : ProtocolModule
     public ScriptModule(Driver driver) : base(driver)
     {
         this.RegisterEventInvoker("script.realmCreated", typeof(RealmInfo), this.OnRealmCreated);
-        this.RegisterEventInvoker("script.realmDestroyed", typeof(RealmCreatedEventArgs), this.OnRealmDestroyed);
+        this.RegisterEventInvoker("script.realmDestroyed", typeof(RealmDestroyedEventArgs), this.OnRealmDestroyed);
     }
 
     public event EventHandler<RealmCreatedEventArgs>? RealmCreated;
 
     public event EventHandler<RealmDestroyedEventArgs>? RealmDestroyed;
 
-    public async Task Disown(DisownCommandProperties commandProperties)
+    public async Task<EmptyResult> Disown(DisownCommandProperties commandProperties)
     {
-        await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
     public async Task<GetRealmsCommandResult> GetRealms(GetRealmsCommandProperties commandProperties)

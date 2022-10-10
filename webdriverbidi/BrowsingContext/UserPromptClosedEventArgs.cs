@@ -10,7 +10,7 @@ public class UserPromptClosedEventArgs : EventArgs
     private string? userText;
 
     [JsonConstructor]
-    private UserPromptClosedEventArgs(string browsingContextId, bool isAccepted)
+    public UserPromptClosedEventArgs(string browsingContextId, bool isAccepted)
     {
         this.browsingContextId = browsingContextId;
         this.isAccepted = isAccepted;
