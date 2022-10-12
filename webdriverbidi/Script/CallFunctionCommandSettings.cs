@@ -1,5 +1,6 @@
 namespace WebDriverBidi.Script;
 
+using System;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -18,6 +19,10 @@ public class CallFunctionCommandSettings : CommandSettings
         this.scriptTarget = scriptTarget;
         this.awaitPromise = awaitPromise;
     }
+
+    public override string MethodName => "script.callFunction";
+
+    public override Type ResultType => typeof(ScriptEvaluateResult);
 
     [JsonProperty("functionDeclaration")]
     public string FunctionDeclaration { get => this.functionDeclaration; set => this.functionDeclaration = value; }
@@ -62,6 +67,4 @@ public class CallFunctionCommandSettings : CommandSettings
             return this.arguments.AsReadOnly();
         }
     }
-
-    public override string MethodName => "script.callFunction";
 }

@@ -1,5 +1,6 @@
 namespace WebDriverBidi.BrowsingContext;
 
+using System;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -13,6 +14,10 @@ public class ReloadCommandSettings : CommandSettings
     {
         this.browsingContextId = browsingContextId;
     }
+
+    public override string MethodName => "browsingContext.navigate";
+
+    public override Type ResultType => typeof(BrowsingContextNavigateResult);
 
     [JsonProperty("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
@@ -35,6 +40,4 @@ public class ReloadCommandSettings : CommandSettings
             return this.wait.Value.ToString().ToLowerInvariant();
         }
     }
-
-    public override string MethodName => "browsingContext.navigate";
 }

@@ -55,14 +55,14 @@ public sealed class BrowsingContextModule : ProtocolModule
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
-    public async Task<NavigateResult> Navigate(NavigateCommandSettings commandProperties)
+    public async Task<BrowsingContextNavigateResult> Navigate(NavigateCommandSettings commandProperties)
     {
-        return await this.Driver.ExecuteCommand<NavigateResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<BrowsingContextNavigateResult>(commandProperties);
     }
 
-    public async Task<NavigateResult> Reload(ReloadCommandSettings commandProperties)
+    public async Task<BrowsingContextNavigateResult> Reload(ReloadCommandSettings commandProperties)
     {
-        return await this.Driver.ExecuteCommand<NavigateResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<BrowsingContextNavigateResult>(commandProperties);
     }
     
     private void OnContextCreated(object eventData)

@@ -10,6 +10,7 @@ public class ProtocolTransport
     private ConcurrentDictionary<long, WebDriverBidiCommandData> pendingCommands = new ConcurrentDictionary<long, WebDriverBidiCommandData>();
     private Connection connection;
     private TimeSpan commandWaitTimeout;
+    private Dictionary<string, Type> eventTypes = new Dictionary<string, Type>();
 
     public ProtocolTransport() : this(Timeout.InfiniteTimeSpan)
     {
@@ -45,24 +46,24 @@ public class ProtocolTransport
         await this.connection.Stop();
     }
 
-    public async Task<WebDriverBidiCommandResultData> SendCommandAndWait(string commandName, JToken commandParameters)
+    public async Task<CommandResult> SendCommandAndWait(CommandSettings command)
     {
-        long commandId = await SendCommand(commandName, commandParameters);
+        long commandId = await SendCommand(command);
         this.WaitForCommandComplete(commandId, this.commandWaitTimeout);
         return this.GetCommandResponse(commandId);
     }
 
-    public async Task<long> SendCommand(string commandName, JToken commandParameters)
+    public async Task<long> SendCommand(CommandSettings command)
     {
         long commandId  = Interlocked.Increment(ref this.nextCommandId);
-        var command = new WebDriverBidiCommandData(commandId, commandName, commandParameters);
-        if (!this.pendingCommands.TryAdd(command.CommandId, command))
+        var executionData = new WebDriverBidiCommandData(commandId, command);
+        if (!this.pendingCommands.TryAdd(executionData.CommandId, executionData))
         {
-            throw new WebDriverBidiException($"Could not add command with id {command.CommandId}, as id already exists");
+            throw new WebDriverBidiException($"Could not add command with id {executionData.CommandId}, as id already exists");
         }
 
-        await this.connection.SendData(JsonConvert.SerializeObject(command));
-        return command.CommandId;
+        await this.connection.SendData(JsonConvert.SerializeObject(executionData));
+        return executionData.CommandId;
     }
 
     public void WaitForCommandComplete(long commandId, TimeSpan waitTimeout)
@@ -80,7 +81,7 @@ public class ProtocolTransport
         }
     }
 
-    public WebDriverBidiCommandResultData GetCommandResponse(long commandId)
+    public CommandResult GetCommandResponse(long commandId)
     {
         WebDriverBidiCommandData? command;
         if (this.pendingCommands.TryRemove(commandId, out command))
@@ -94,6 +95,11 @@ public class ProtocolTransport
         }
 
         throw new WebDriverBidiException($"Could not remove command with id {commandId}");
+    }
+
+    public void RegisterEvent(string eventName, Type eventArgsType)
+    {
+        this.eventTypes[eventName] = eventArgsType;
     }
 
     protected virtual void OnLogMessage(object? sender, LogMessageEventArgs e)
@@ -130,7 +136,7 @@ public class ProtocolTransport
 
     private void OnMessageReceived(object? sender, DataReceivedEventArgs e)
     {
-        // Ignore message that do not have either a "id" or a "message" property
+        bool isProcessed = false;
         JObject message = JObject.Parse(e.Data);
         if (message.ContainsKey("id"))
         {
@@ -145,11 +151,13 @@ public class ProtocolTransport
                     {
                         if (message.ContainsKey("result"))
                         {
-                            executedCommand.Result = new WebDriverBidiCommandResultData(message["result"]!, false);
+                            executedCommand.Result = message["result"]!.ToObject(executedCommand.ResultType) as CommandResult;
+                            isProcessed = true;
                         }
                         else if (message.ContainsKey("error"))
                         {
-                            executedCommand.Result = new WebDriverBidiCommandResultData(message, true);
+                            executedCommand.Result = message.ToObject<ErrorResponse>();
+                            isProcessed = true;
                         }
 
                         executedCommand.SynchronizationEvent.Set();
@@ -159,7 +167,9 @@ public class ProtocolTransport
             else if (message.ContainsKey("error"))
             {
                 // This is an error response, not connected to a command.
-                this.OnProtocolErrorEventReceived(this, new ProtocolErrorReceivedEventArgs(message));
+                var unexpectedError = message.ToObject<ErrorResponse>();
+                isProcessed = true;
+                this.OnProtocolErrorEventReceived(this, new ProtocolErrorReceivedEventArgs(unexpectedError));
             }
         }
         else if (message.ContainsKey("method") && message.ContainsKey("params"))
@@ -168,12 +178,18 @@ public class ProtocolTransport
             JToken? eventData = message["params"];
             if (eventName is not null && eventData is not null)
             {
-                this.OnProtocolEventReceived(this, new ProtocolEventReceivedEventArgs(eventName, eventData));
+                if (this.eventTypes.ContainsKey(eventName))
+                {
+                    var eventArgs = eventData.ToObject(this.eventTypes[eventName]);
+                    isProcessed = true;
+                    this.OnProtocolEventReceived(this, new ProtocolEventReceivedEventArgs(eventName, eventArgs));
+                }
             }
         }
-        else
+
+        if (!isProcessed)
         {
-            this.OnProtocolUnknownMessageReceived(this, new ProtocolUnknownMessageReceivedEventArgs(message));
+            this.OnProtocolUnknownMessageReceived(this, new ProtocolUnknownMessageReceivedEventArgs(e.Data));
         }
     }
 

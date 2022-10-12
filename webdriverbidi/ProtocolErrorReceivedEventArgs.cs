@@ -1,13 +1,11 @@
 namespace WebDriverBidi;
 
-using Newtonsoft.Json.Linq;
-
 public class ProtocolErrorReceivedEventArgs : EventArgs
 {
-    public ProtocolErrorReceivedEventArgs(JToken errorData)
+    public ProtocolErrorReceivedEventArgs(ErrorResponse? errorData)
     {
         this.ErrorData = errorData;
     }
 
-    public JToken ErrorData { get; }
+    public ErrorResponse? ErrorData { get; }
 }

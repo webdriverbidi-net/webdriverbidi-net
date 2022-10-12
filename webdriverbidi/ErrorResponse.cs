@@ -3,7 +3,7 @@ namespace WebDriverBidi;
 using Newtonsoft.Json;
 
 [JsonObject]
-public class ErrorResponse
+public class ErrorResponse : CommandResult
 {
     private string error = string.Empty;
     private string message = string.Empty;
@@ -18,6 +18,8 @@ public class ErrorResponse
 
     [JsonProperty("stacktrace", NullValueHandling = NullValueHandling.Ignore)]
     public string? StackTrace { get; internal set; }
+
+    public override bool IsError => true;
 
     public Dictionary<string, object?> AdditionalData => this.additionalErrorData;
 }

@@ -10,8 +10,6 @@ public class ProtocolTransportTests
     public async Task TestTransportCanSendCommand()
     {
         string commandName = "module.command";
-        JToken commandParameters = JToken.Parse(@"{ ""parameterName"": ""parameterValue"" }");
-
         Dictionary<string, object?> expectedCommandParameters = new Dictionary<string, object?>()
         {
             { "parameterName", "parameterValue" }
@@ -26,7 +24,9 @@ public class ProtocolTransportTests
         TestConnection connection = new TestConnection();
         ProtocolTransport transport = new ProtocolTransport(TimeSpan.Zero, connection);
         await transport.Connect("ws://localhost:5555");
-        long commandId = await transport.SendCommand(commandName, commandParameters);
+
+        TestCommand command = new TestCommand(commandName);
+        long commandId = await transport.SendCommand(command);
 
         var dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
         Assert.That(dataValue, Is.EquivalentTo(expected));
@@ -36,11 +36,12 @@ public class ProtocolTransportTests
     public async Task TestTransportCanWaitForCommandComplete()
     {
         string commandName = "module.command";
-        JToken commandParameters = JToken.Parse(@"{ ""parameterName"": ""parameterValue"" }");
         TestConnection connection = new TestConnection();
         ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(100), connection);
         await transport.Connect("ws://localhost:5555");
-        long commandId = await transport.SendCommand(commandName, commandParameters);
+
+        TestCommand command = new TestCommand(commandName);
+        long commandId = await transport.SendCommand(command);
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
@@ -53,11 +54,12 @@ public class ProtocolTransportTests
     public async Task TestTransportWaitForCommandCompleteWillTimeout()
     {
         string commandName = "module.command";
-        JToken commandParameters = JToken.Parse(@"{ ""parameterName"": ""parameterValue"" }");
         TestConnection connection = new TestConnection();
         ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(10), connection);
         await transport.Connect("ws://localhost:5555");
-        long commandId = await transport.SendCommand(commandName, commandParameters);
+
+        TestCommand command = new TestCommand(commandName);
+        long commandId = await transport.SendCommand(command);
         Assert.That(() => transport.WaitForCommandComplete(1, TimeSpan.FromMilliseconds(50)), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Timed out"));
     }
 
@@ -73,15 +75,12 @@ public class ProtocolTransportTests
     public async Task TestTransportCanGetResponse()
     {
         string commandName = "module.command";
-        JToken commandParameters = JToken.Parse(@"{ ""parameterName"": ""parameterValue"" }");
-        Dictionary<string, object?> expected = new Dictionary<string, object?>()
-        {
-            { "value", "response value" }
-        };
-        TestConnection connection = new TestConnection();
+       TestConnection connection = new TestConnection();
         ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(100), connection);
         await transport.Connect("ws://localhost:5555");
-        long commandId = await transport.SendCommand(commandName, commandParameters);
+
+        TestCommand command = new TestCommand(commandName);
+        long commandId = await transport.SendCommand(command);
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
@@ -89,25 +88,23 @@ public class ProtocolTransportTests
         });
         transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
         var actualResult = transport.GetCommandResponse(1);
+
         Assert.That(actualResult.IsError, Is.False);
-        Assert.That(actualResult.Result.ToParsedDictionary(), Is.EquivalentTo(expected));
+        Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
+        var convertedResult = actualResult as TestCommandResult;
+        Assert.That(convertedResult!.Value, Is.EqualTo("response value"));
     }
 
     [Test]
     public async Task TestTransportCanGetErrorResponse()
     {
         string commandName = "module.command";
-        JToken commandParameters = JToken.Parse(@"{ ""parameterName"": ""parameterValue"" }");
-        Dictionary<string, object?> expected = new Dictionary<string, object?>()
-        {
-            { "id", 1 },
-            { "error", "unknown command" },
-            { "message", "This is a test error message" }
-        };
         TestConnection connection = new TestConnection();
         ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(100), connection);
         await transport.Connect("ws://localhost:5555");
-        long commandId = await transport.SendCommand(commandName, commandParameters);
+
+        TestCommand command = new TestCommand(commandName);
+        long commandId = await transport.SendCommand(command);
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
@@ -115,8 +112,13 @@ public class ProtocolTransportTests
         });
         transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
         var actualResult = transport.GetCommandResponse(1);
+
         Assert.That(actualResult.IsError, Is.True);
-        Assert.That(actualResult.Result.ToParsedDictionary(), Is.EquivalentTo(expected));
+        Assert.That(actualResult, Is.InstanceOf<ErrorResponse>());
+        var convertedResponse = actualResult as ErrorResponse;
+        Assert.That(convertedResponse!.ErrorType, Is.EqualTo("unknown command"));
+        Assert.That(convertedResponse!.ErrorMessage, Is.EqualTo("This is a test error message"));
+        Assert.That(convertedResponse.StackTrace, Is.Null);
     }
 
     [Test]
@@ -131,15 +133,12 @@ public class ProtocolTransportTests
     public void TestTransportEventReceived()
     {
         string receivedName = string.Empty;
-        JToken? receivedData = null;
+        object? receivedData = null;
         ManualResetEvent syncEvent = new ManualResetEvent(false);
-        Dictionary<string, object?> expected = new Dictionary<string, object?>()
-        {
-            { "paramName", "paramValue" }
-        };
 
         TestConnection connection = new TestConnection();
         ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(100), connection);
+        transport.RegisterEvent("protocol.event", typeof(TestEventArgs));
         transport.EventReceived += (object? sender, ProtocolEventReceivedEventArgs e) => {
             receivedName = e.EventName;
             receivedData = e.EventData;
@@ -147,21 +146,18 @@ public class ProtocolTransportTests
         };
         connection.RaiseDataReceivedEvent(@"{ ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne();
+
         Assert.That(receivedName, Is.EqualTo("protocol.event"));
-        Assert.That(receivedData!.ToParsedDictionary(), Is.Not.Null.And.EquivalentTo(expected));
+        Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
+        var convertedData = receivedData as TestEventArgs;
+        Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
     }
 
     [Test]
     public void TestTransportErrorEventReceived()
     {
-        JToken? receivedData = null;
+        object? receivedData = null;
         ManualResetEvent syncEvent = new ManualResetEvent(false);
-        Dictionary<string, object?> expected = new Dictionary<string, object?>()
-        {
-            { "id", null },
-            { "error", "unknown error" },
-            { "message", "This is a test error message" }
-        };
 
         TestConnection connection = new TestConnection();
         ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(100), connection);
@@ -171,6 +167,10 @@ public class ProtocolTransportTests
         };
         connection.RaiseDataReceivedEvent(@"{ ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }");
         syncEvent.WaitOne();
-        Assert.That(receivedData!.ToParsedDictionary(), Is.Not.Null.And.EquivalentTo(expected));
+
+        Assert.That(receivedData, Is.TypeOf<ErrorResponse>());
+        var convertedData = receivedData as ErrorResponse;
+        Assert.That(convertedData!.ErrorType, Is.EqualTo("unknown error"));
+        Assert.That(convertedData.ErrorMessage, Is.EqualTo("This is a test error message"));
     }
 }

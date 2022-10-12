@@ -17,6 +17,10 @@ public class EvaluateCommandSettings : CommandSettings
         this.awaitPromise = awaitPromise;
     }
 
+    public override string MethodName => "script.evaluate";
+
+    public override Type ResultType => typeof(ScriptEvaluateResult);
+
     [JsonProperty("expression")]
     public string Expression { get => this.expression; set => this.expression = value; }
 
@@ -27,8 +31,6 @@ public class EvaluateCommandSettings : CommandSettings
     public bool AwaitPromise { get => this.awaitPromise; set => this.awaitPromise = value; }
 
     public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value;}
-
-    public override string MethodName => "script.evaluate";
 
     [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
     internal string? SerializableOwnershipModel

@@ -1,6 +1,5 @@
 namespace WebDriverBidi.TestUtilities;
 
-using System.Collections.Concurrent;
 using Newtonsoft.Json.Linq;
 
 public class TestDriver : Driver
@@ -12,6 +11,8 @@ public class TestDriver : Driver
 
     private AutoResetEvent commandSetEvent = new AutoResetEvent(false);
 
+    private Dictionary<string, Type> eventTypes = new Dictionary<string, Type>();
+
     public void EmitResponse(string jsonResponse)
     {
         this.ProcessMessage(jsonResponse);
@@ -22,10 +23,15 @@ public class TestDriver : Driver
         this.commandSetEvent.WaitOne(waitTimeout);
     }
 
+    public override void RegisterEvent(string eventName, Type eventArgsType)
+    {
+        this.eventTypes[eventName] = eventArgsType;
+    }
+
     public override async Task<T> ExecuteCommand<T>(CommandSettings command)
     {
         long commandId  = Interlocked.Increment(ref this.nextCommandId);
-        this.lastCommand = new WebDriverBidiCommandData(commandId, command.MethodName, JToken.FromObject(command));
+        this.lastCommand = new WebDriverBidiCommandData(commandId, command);
         this.commandSetEvent.Set();
         await this.WaitForCommandComplete();
         var result = this.lastCommand.Result;
@@ -37,7 +43,7 @@ public class TestDriver : Driver
 
         if (result.IsError)
         {
-            ErrorResponse? errorResponse = result.Result.ToObject<ErrorResponse>();
+            ErrorResponse? errorResponse = result as ErrorResponse;
             if (errorResponse is null)
             {
                 throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
@@ -46,7 +52,7 @@ public class TestDriver : Driver
             throw new WebDriverBidiException($"Received '{errorResponse.ErrorType}' error executing command {command.MethodName}: {errorResponse.ErrorMessage}");
         }
 
-        T? convertedResult = result.Result.ToObject<T>();
+        T? convertedResult = result as T;
         if (convertedResult is null)
         {
             throw new WebDriverBidiException("Received null converting response from transport for SendCommandAndWait");
@@ -73,21 +79,22 @@ public class TestDriver : Driver
             // This is an event
             string? eventName = message["method"]!.Value<string>();
             JToken? eventData = message["params"];
-            if (eventName is not null && eventData is not null)
+            if (eventName is not null && eventData is not null && this.eventTypes.ContainsKey(eventName))
             {
-                this.OnEventReceived(new ProtocolEventReceivedEventArgs(eventName, eventData));
+                Type eventType = eventTypes[eventName];
+                this.OnEventReceived(new ProtocolEventReceivedEventArgs(eventName, eventData.ToObject(eventType)));
             }
         }
         else if (this.lastCommand is not null)
         {
             if (message.ContainsKey("result"))
             {
-                var result = new WebDriverBidiCommandResultData(message["result"]!, false);
+                var result = message["result"]!.ToObject(lastCommand.ResultType) as CommandResult;
                 this.lastCommand.Result = result;
             }
             else if (message.ContainsKey("error"))
             {
-                this.lastCommand.Result = new WebDriverBidiCommandResultData(message, true);
+                this.lastCommand.Result = message.ToObject<ErrorResponse>();
             }
 
             this.lastCommand.SynchronizationEvent.Set();
@@ -95,7 +102,7 @@ public class TestDriver : Driver
         else
         {
             // This is an error response, not connected to a command.
-            this.OnUnexpectedError(new ProtocolErrorReceivedEventArgs(message));
+            this.OnUnexpectedError(new ProtocolErrorReceivedEventArgs(message.ToObject<ErrorResponse>()));
         }
     }
 

@@ -1,5 +1,6 @@
 namespace WebDriverBidi.Session;
 
+using System;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -14,6 +15,8 @@ public class UnsubscribeCommandSettings : CommandSettings
     }
 
     public override string MethodName => "session.unsubscribe";
+
+    public override Type ResultType => typeof(EmptyResult);
 
     [JsonProperty("events")]
     public List<string> Events => this.eventList;

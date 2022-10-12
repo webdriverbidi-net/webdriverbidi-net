@@ -12,9 +12,11 @@ public class CreateCommandSettings : CommandSettings
         this.createType = createType;
     }
 
-    public BrowsingContextCreateType CreateType { get => this.createType; set => this.createType = value; }
-
     public override string MethodName => "browsingContext.create";
+
+    public override Type ResultType => typeof(CreateCommandResult);
+
+    public BrowsingContextCreateType CreateType { get => this.createType; set => this.createType = value; }
 
     [JsonProperty("type")]
     internal string SerializableCreateType

@@ -1,13 +1,11 @@
 namespace WebDriverBidi;
 
-using Newtonsoft.Json.Linq;
-
 public class ProtocolUnknownMessageReceivedEventArgs : EventArgs
 {
-    public ProtocolUnknownMessageReceivedEventArgs(JToken message)
+    public ProtocolUnknownMessageReceivedEventArgs(string message)
     {
         this.Message = message;
     }
 
-    public JToken Message { get; }
+    public string Message { get; }
 }

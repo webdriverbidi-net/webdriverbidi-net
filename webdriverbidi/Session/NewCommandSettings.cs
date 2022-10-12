@@ -1,5 +1,6 @@
 namespace WebDriverBidi.Session;
 
+using System;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -9,6 +10,8 @@ public class NewCommandSettings : CommandSettings
     private List<CapabilitiesRequest> firstMatch = new List<CapabilitiesRequest>();
 
     public override string MethodName => "session.new";
+
+    public override Type ResultType => typeof(NewCommandResult);
 
     [JsonProperty("alwaysMatch", NullValueHandling = NullValueHandling.Ignore)]
     public CapabilitiesRequest? AlwaysMatch { get => this.alwaysMatch; set => this.alwaysMatch = value; }

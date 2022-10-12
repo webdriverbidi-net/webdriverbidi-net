@@ -10,6 +10,8 @@ public class GetRealmsCommandSettings : CommandSettings
 
     public override string MethodName => "script.getRealms";
 
+    public override Type ResultType => typeof(GetRealmsCommandResult);
+
     public GetRealmsCommandSettings()
     {
     }

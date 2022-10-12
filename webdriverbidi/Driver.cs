@@ -56,7 +56,7 @@ public class Driver
 
     public virtual async Task<T> ExecuteCommand<T>(CommandSettings command) where T : CommandResult
     {
-        var result = await transport.SendCommandAndWait(command.MethodName, JToken.FromObject(command));
+        var result = await transport.SendCommandAndWait(command);
         if (result is null)
         {
             throw new WebDriverBidiException("Received null response from transport for SendCommandAndWait");
@@ -64,7 +64,7 @@ public class Driver
 
         if (result.IsError)
         {
-            ErrorResponse? errorResponse = result.Result.ToObject<ErrorResponse>();
+            ErrorResponse? errorResponse = result as ErrorResponse;
             if (errorResponse is null)
             {
                 throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
@@ -73,13 +73,18 @@ public class Driver
             throw new WebDriverBidiException($"Received '{errorResponse.ErrorType}' error executing command {command.MethodName}: {errorResponse.ErrorMessage}");
         }
 
-        T? convertedResult = result.Result.ToObject<T>();
+        T? convertedResult = result as T;
         if (convertedResult is null)
         {
             throw new WebDriverBidiException("Received null converting response from transport for SendCommandAndWait");
         }
 
         return convertedResult;
+    }
+
+    public void RegisterEvent(string eventName, Type eventArgsType)
+    {
+        this.transport.RegisterEvent(eventName, eventArgsType);
     }
 
     protected virtual void OnUnexpectedError(ProtocolErrorReceivedEventArgs e)

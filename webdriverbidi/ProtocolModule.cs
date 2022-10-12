@@ -16,6 +16,7 @@ public class ProtocolModule
     protected void RegisterEventInvoker(string eventName, Type eventArgsType, Action<object> eventInvoker)
     {
         this.eventInvokers[eventName] = new WebDriverBidiEventData(eventArgsType, eventInvoker);
+        this.driver.RegisterEvent(eventName, eventArgsType);
     }
 
     private void OnDriverEventReceived(object? sender, ProtocolEventReceivedEventArgs e)
@@ -23,8 +24,8 @@ public class ProtocolModule
         if (this.eventInvokers.ContainsKey(e.EventName))
         {
             var eventData = eventInvokers[e.EventName];
-            var eventArgs = e.EventData.ToObject(eventData.EventArgsType);
-            if (eventArgs is null)
+            var eventArgs = e.EventData;
+            if (eventArgs is null || !eventArgs.GetType().IsAssignableTo(eventData.EventArgsType))
             {
                 throw new WebDriverBidiException($"Unable to cast received event data to {eventData.EventArgsType.Name}");
             }

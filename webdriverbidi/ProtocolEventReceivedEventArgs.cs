@@ -1,10 +1,8 @@
 namespace WebDriverBidi;
 
-using Newtonsoft.Json.Linq;
-
 public class ProtocolEventReceivedEventArgs : EventArgs
 {
-    public ProtocolEventReceivedEventArgs(string methodName, JToken eventData)
+    public ProtocolEventReceivedEventArgs(string methodName, object? eventData)
     {
         this.EventName = methodName;
         this.EventData = eventData;
@@ -12,5 +10,5 @@ public class ProtocolEventReceivedEventArgs : EventArgs
 
     public string EventName { get; }
 
-    public JToken EventData { get; }
+    public object? EventData { get; }
 }
