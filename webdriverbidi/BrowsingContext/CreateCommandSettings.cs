@@ -6,6 +6,8 @@ using Newtonsoft.Json;
 public class CreateCommandSettings : CommandSettings
 {
     private BrowsingContextCreateType createType;
+
+    private string? referenceContextId;
     
     public CreateCommandSettings(BrowsingContextCreateType createType)
     {
@@ -17,6 +19,9 @@ public class CreateCommandSettings : CommandSettings
     public override Type ResultType => typeof(CreateCommandResult);
 
     public BrowsingContextCreateType CreateType { get => this.createType; set => this.createType = value; }
+
+    [JsonProperty("referenceContext", NullValueHandling = NullValueHandling.Ignore)]
+    public string? ReferenceContextId { get => this.referenceContextId; set => this.referenceContextId = value; }
 
     [JsonProperty("type")]
     internal string SerializableCreateType
