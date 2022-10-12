@@ -23,6 +23,7 @@ public class Driver
         this.transport = transport;
         this.transport.EventReceived += OnTransportEventReceived;
         this.transport.ErrorEventReceived += OnTransportErrorEventReceived;
+        this.transport.UnknownMessageReceived += OnTransportUnknownMessageReceived;
         this.transport.LogMessage += OnTransportLogMessage;
         this.browsingContextModule = new BrowsingContextModule(this);
         this.sessionModule = new SessionModule(this);
@@ -33,6 +34,8 @@ public class Driver
     public event EventHandler<ProtocolEventReceivedEventArgs>? EventReceived;
 
     public event EventHandler<ProtocolErrorReceivedEventArgs>? UnexpectedErrorReceived;
+
+    public event EventHandler<ProtocolUnknownMessageReceivedEventArgs>? UnknownMessageReceived;
 
     public event EventHandler<LogMessageEventArgs>? LogMessage;
 
@@ -82,7 +85,7 @@ public class Driver
         return convertedResult;
     }
 
-    public void RegisterEvent(string eventName, Type eventArgsType)
+    public virtual void RegisterEvent(string eventName, Type eventArgsType)
     {
         this.transport.RegisterEvent(eventName, eventArgsType);
     }
@@ -103,6 +106,14 @@ public class Driver
         }
     }
 
+    protected virtual void OnUnknownMessageReceived(ProtocolUnknownMessageReceivedEventArgs e)
+    {
+        if (this.UnknownMessageReceived is not null)
+        {
+            this.UnknownMessageReceived(this, e);
+        }
+    }
+
     protected virtual void OnLogMessage(LogMessageEventArgs e)
     {
         if (this.LogMessage is not null)
@@ -119,6 +130,11 @@ public class Driver
     private void OnTransportErrorEventReceived(object? sender, ProtocolErrorReceivedEventArgs e)
     {
         this.OnUnexpectedError(e);
+    }
+
+    private void OnTransportUnknownMessageReceived(object? sender, ProtocolUnknownMessageReceivedEventArgs e)
+    {
+        this.OnUnknownMessageReceived(e);
     }
 
     private void OnTransportLogMessage(object? sender, LogMessageEventArgs e)
