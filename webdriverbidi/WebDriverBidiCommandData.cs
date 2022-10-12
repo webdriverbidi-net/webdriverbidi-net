@@ -1,16 +1,16 @@
 namespace WebDriverBidi;
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 [JsonObject(MemberSerialization.OptIn)]
 public class WebDriverBidiCommandData
 {
-    public WebDriverBidiCommandData(long commandId, string commandName, JToken commandParameters)
+    private CommandSettings commandSettings;
+
+    public WebDriverBidiCommandData(long commandId, CommandSettings commandSettings)
     {
         this.CommandId = commandId;
-        this.CommandName = commandName;
-        this.CommandParameters = commandParameters;
+        this.commandSettings = commandSettings;
         this.SynchronizationEvent = new ManualResetEvent(false);
     }
 
@@ -18,12 +18,14 @@ public class WebDriverBidiCommandData
     public long CommandId { get; }
 
     [JsonProperty("method")]
-    public string CommandName { get; }
+    public string CommandName => this.commandSettings.MethodName;
 
     [JsonProperty("params")]
-    public JToken CommandParameters { get; }
+    public CommandSettings CommandParameters => this.commandSettings;
+
+    public Type ResultType => this.commandSettings.ResultType;
 
     public ManualResetEvent SynchronizationEvent { get; }
 
-    public WebDriverBidiCommandResultData? Result { get; set; }
+    public CommandResult? Result { get; set; }
 }

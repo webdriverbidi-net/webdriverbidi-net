@@ -1,5 +1,6 @@
 namespace WebDriverBidi.BrowsingContext;
 
+using System;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -14,6 +15,10 @@ public class HandleUserPromptCommandSettings : CommandSettings
         this.browsingContextId = browsingContextId;
     }
 
+    public override string MethodName => "browsingContext.handleUserPrompt";
+
+    public override Type ResultType => typeof(EmptyResult);
+
     [JsonProperty("context")]
     [JsonRequired]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
@@ -23,6 +28,4 @@ public class HandleUserPromptCommandSettings : CommandSettings
 
     [JsonProperty("userText", NullValueHandling = NullValueHandling.Ignore)]
     public string? UserText { get => this.userText; set => this.userText = value; }
-
-    public override string MethodName => "browsingContext.handleUserPrompt";
 }
