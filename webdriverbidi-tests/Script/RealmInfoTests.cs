@@ -43,6 +43,22 @@ public class RealmInfoJsonConverterTests
         Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
         Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
         Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
+        Assert.That(realmInfo.Sandbox, Is.Null);
+    }
+
+    [Test]
+    public void TestCanDeserializeWindowRealmInfoWithSandbox()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContext"" , ""sandbox"": ""mySandbox"" }";
+        RealmInfo? info = JsonConvert.DeserializeObject<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
+        WindowRealmInfo realmInfo = (WindowRealmInfo)info!;
+        Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+        Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+        Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
+        Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
+        Assert.That(realmInfo.Sandbox, Is.EqualTo("mySandbox"));
     }
 
     [Test]
