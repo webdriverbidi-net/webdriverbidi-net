@@ -6,20 +6,6 @@ using Newtonsoft.Json;
 public class LogEntryTests
 {
     [Test]
-    public void TestCanDeserialize()
-    {
-        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": 123 }";
-        LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
-        Assert.That(entry, Is.Not.Null);
-        Assert.That(entry, Is.InstanceOf<LogEntry>());
-        Assert.That(entry!.Level, Is.EqualTo(LogLevel.Debug));
-        Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
-        Assert.That(entry.Text, Is.Not.Null);
-        Assert.That(entry.Text, Is.EqualTo("my log message"));
-        Assert.That(entry.Timestamp, Is.EqualTo(123));
-    }
-
-    [Test]
     public void TestCanDeserializeWithNullText()
     {
         string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": null, ""timestamp"": 123 }";
@@ -68,6 +54,62 @@ public class LogEntryTests
         Assert.That(consoleEntry.Args[0].Type, Is.EqualTo("string"));
         Assert.That(consoleEntry.Args[0].ValueAs<string>(), Is.EqualTo("argValue"));
    }
+
+    [Test]
+    public void TestCanDeserializeWithDebugLogLevel()
+    {
+        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": 123 }";
+        LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
+        Assert.That(entry, Is.Not.Null);
+        Assert.That(entry, Is.InstanceOf<LogEntry>());
+        Assert.That(entry!.Level, Is.EqualTo(LogLevel.Debug));
+        Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
+        Assert.That(entry.Text, Is.Not.Null);
+        Assert.That(entry.Text, Is.EqualTo("my log message"));
+        Assert.That(entry.Timestamp, Is.EqualTo(123));
+    }
+
+    [Test]
+    public void TestCanDeserializeWithInfoLogLevel()
+    {
+        string json = @"{ ""type"": ""generic"", ""level"": ""info"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": 123 }";
+        LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
+        Assert.That(entry, Is.Not.Null);
+        Assert.That(entry, Is.InstanceOf<LogEntry>());
+        Assert.That(entry!.Level, Is.EqualTo(LogLevel.Info));
+        Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
+        Assert.That(entry.Text, Is.Not.Null);
+        Assert.That(entry.Text, Is.EqualTo("my log message"));
+        Assert.That(entry.Timestamp, Is.EqualTo(123));
+    }
+
+    [Test]
+    public void TestCanDeserializeWithWarnLogLevel()
+    {
+        string json = @"{ ""type"": ""generic"", ""level"": ""warn"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": 123 }";
+        LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
+        Assert.That(entry, Is.Not.Null);
+        Assert.That(entry, Is.InstanceOf<LogEntry>());
+        Assert.That(entry!.Level, Is.EqualTo(LogLevel.Warn));
+        Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
+        Assert.That(entry.Text, Is.Not.Null);
+        Assert.That(entry.Text, Is.EqualTo("my log message"));
+        Assert.That(entry.Timestamp, Is.EqualTo(123));
+    }
+
+    [Test]
+    public void TestCanDeserializeWithErrorLogLevel()
+    {
+        string json = @"{ ""type"": ""generic"", ""level"": ""error"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": 123 }";
+        LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
+        Assert.That(entry, Is.Not.Null);
+        Assert.That(entry, Is.InstanceOf<LogEntry>());
+        Assert.That(entry!.Level, Is.EqualTo(LogLevel.Error));
+        Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
+        Assert.That(entry.Text, Is.Not.Null);
+        Assert.That(entry.Text, Is.EqualTo("my log message"));
+        Assert.That(entry.Timestamp, Is.EqualTo(123));
+    }
 
     [Test]
     public void TestDeserializingWithInvalidLevelValueThrows()
