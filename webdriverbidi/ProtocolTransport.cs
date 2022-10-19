@@ -88,7 +88,12 @@ public class ProtocolTransport
         {
             if (command.Result is null)
             {
-                throw new WebDriverBidiException($"Result for command with id {commandId} is null");
+                if (command.ThrownException is null)
+                {
+                    throw new WebDriverBidiException($"Result and thrown exception for command with id {commandId} are both null");
+                }
+
+                throw command.ThrownException;
             }
 
             return command.Result;
@@ -149,19 +154,28 @@ public class ProtocolTransport
                     WebDriverBidiCommandData? executedCommand;
                     if (this.pendingCommands.TryGetValue(responseId.Value, out executedCommand))
                     {
-                        if (message.ContainsKey("result"))
+                        try
                         {
-                            executedCommand.Result = message["result"]!.ToObject(executedCommand.ResultType) as CommandResult;
-                            isProcessed = true;
+                            if (message.ContainsKey("result"))
+                            {
+                                executedCommand.Result = message["result"]!.ToObject(executedCommand.ResultType) as CommandResult;
+                                isProcessed = true;
+                            }
+                            else if (message.ContainsKey("error"))
+                            {
+                                executedCommand.Result = message.ToObject<ErrorResponse>();
+                                isProcessed = true;
+                            }
                         }
-                        else if (message.ContainsKey("error"))
+                        catch (Exception ex)
                         {
-                            executedCommand.Result = message.ToObject<ErrorResponse>();
-                            isProcessed = true;
+                            executedCommand.ThrownException = ex;
                         }
-
-                        executedCommand.SynchronizationEvent.Set();
-                    }
+                        finally
+                        {
+                            executedCommand.SynchronizationEvent.Set();
+                        }
+                   }
                 }
             }
             else if (message.ContainsKey("error"))
