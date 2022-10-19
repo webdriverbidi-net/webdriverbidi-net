@@ -28,4 +28,6 @@ public class WebDriverBidiCommandData
     public ManualResetEvent SynchronizationEvent { get; }
 
     public CommandResult? Result { get; set; }
+
+    public Exception? ThrownException { get; set; }
 }
