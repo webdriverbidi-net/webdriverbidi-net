@@ -32,6 +32,16 @@ public sealed class ScriptModule : ProtocolModule
         return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
     }
 
+    public async Task<AddLoadScriptCommandResult> AddLoadScript(AddLoadScriptCommandSettings commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<AddLoadScriptCommandResult>(commandProperties);
+    }
+
+    public async Task<EmptyResult> RemoveLoadScript(RemoveLoadScriptCommandSettings commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
     private void OnRealmCreated(object eventData)
     {
         // Special case here. The specification indicates that the parameters
