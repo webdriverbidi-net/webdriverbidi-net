@@ -12,14 +12,19 @@ public sealed class ScriptModule : ProtocolModule
 
     public event EventHandler<RealmDestroyedEventArgs>? RealmDestroyed;
 
+    public async Task<AddPreloadScriptCommandResult> AddPreloadScript(AddPreloadScriptCommandSettings commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<AddPreloadScriptCommandResult>(commandProperties);
+    }
+
+    public async Task<ScriptEvaluateResult> CallFunction(CallFunctionCommandSettings commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
+    }
+
     public async Task<EmptyResult> Disown(DisownCommandSettings commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
-    }
-
-    public async Task<GetRealmsCommandResult> GetRealms(GetRealmsCommandSettings commandProperties)
-    {
-        return await this.Driver.ExecuteCommand<GetRealmsCommandResult>(commandProperties);
     }
 
     public async Task<ScriptEvaluateResult> Evaluate(EvaluateCommandSettings commandProperties)
@@ -27,9 +32,14 @@ public sealed class ScriptModule : ProtocolModule
         return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
     }
 
-    public async Task<ScriptEvaluateResult> CallFunction(CallFunctionCommandSettings commandProperties)
+    public async Task<GetRealmsCommandResult> GetRealms(GetRealmsCommandSettings commandProperties)
     {
-        return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<GetRealmsCommandResult>(commandProperties);
+    }
+
+    public async Task<EmptyResult> RemovePreloadScript(RemovePreloadScriptCommandSettings commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
     private void OnRealmCreated(object eventData)

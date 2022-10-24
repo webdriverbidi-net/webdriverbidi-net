@@ -191,4 +191,40 @@ public class ScriptModuleTests
         driver.EmitResponse(eventJson);
         Assert.That(eventRaised, Is.True);
     }
+
+    [Test]
+    public void TestCanAddPreoadScript()
+    {
+        string responseJson = @"{ ""result"": { ""script"": ""loadScriptId"" } }";
+        TestDriver driver = new TestDriver();
+        ScriptModule module = new ScriptModule(driver);
+        var task = module.AddPreloadScript(new AddPreloadScriptCommandSettings("window.foo = false;"));
+        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+
+        driver.EmitResponse(responseJson);
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.TypeOf<AddPreloadScriptCommandResult>());
+        var addResult = (AddPreloadScriptCommandResult)result;
+        Assert.That(addResult.LoadScriptId, Is.EqualTo("loadScriptId"));
+    }
+
+    [Test]
+    public void TestCanRemovePreoadScript()
+    {
+        string responseJson = @"{ ""result"": { } }";
+        TestDriver driver = new TestDriver();
+        ScriptModule module = new ScriptModule(driver);
+        var task = module.RemovePreloadScript(new RemovePreloadScriptCommandSettings("loadScriptId"));
+        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+
+        driver.EmitResponse(responseJson);
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.TypeOf<EmptyResult>());
+    }
 }
