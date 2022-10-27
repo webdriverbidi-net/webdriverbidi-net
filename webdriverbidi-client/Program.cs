@@ -7,29 +7,36 @@ using WebDriverBidi.Session;
 // See https://aka.ms/new-console-template for more information
 
 int port = 38267;
-// string testProfilePath = Path.Join(Path.GetTempPath(), Path.GetTempFileName());
+string testProfilePath = Path.Join(Path.GetTempPath(), Path.GetTempFileName());
 
-// string testBrowserName = "Firefox";
-// string testBrowserCommandLine = @"/Applications/Firefox.app/Contents/MacOS/firefox-bin";
-// string testBrowserArguments = $"--remote-debugging-port {port} --no-remote --profile {testProfilePath}";
-// Process? testProcess = null;
+BrowserType testBrowserName = BrowserType.Firefox;
+string testBrowserCommandLine = @"/Applications/Firefox.app/Contents/MacOS/firefox-bin";
+string testBrowserArguments = $"--remote-debugging-port {port} --no-remote --profile {testProfilePath}";
+Process? testProcess = null;
 AutoResetEvent syncEvent = new AutoResetEvent(false);
 
 try
 {
-    //testProcess = StartServer(testProfilePath, testBrowserName, testBrowserCommandLine, testBrowserArguments);
+    if (testBrowserName == BrowserType.Firefox)
+    {
+        testProcess = StartServer(testProfilePath, testBrowserName, testBrowserCommandLine, testBrowserArguments);
+    }
     await DriveBrowser();
 }
 finally
 {
-    //StopServer(testProfilePath, testBrowserName, testProcess);
+    if (testBrowserName == BrowserType.Firefox)
+    {
+        StopServer(testProfilePath, testBrowserName, testProcess);
+    }
 }
 
 async Task DriveBrowser()
 {
     Driver driver = new Driver();
-    //driver.LogMessage += OnDriverLogMessage;
-    driver.BrowsingContext.NavigationStarted += delegate(object? sender, NavigationEventArgs e) {
+    driver.LogMessage += OnDriverLogMessage;
+    driver.BrowsingContext.NavigationStarted += delegate(object? sender, NavigationEventArgs e)
+    {
         Console.WriteLine($"Navigation to {e.Url} started");
     };
 
@@ -42,6 +49,12 @@ async Task DriveBrowser()
 
     var status = await driver.Session.Status(new StatusCommandSettings());
     Console.WriteLine($"Is ready? {status.IsReady}");
+
+    if (testBrowserName == BrowserType.Firefox)
+    {
+        var session = await driver.Session.NewSession(new NewCommandSettings());
+        Console.WriteLine($"Started session {session.SessionId}");
+    }
 
     var subscribe = new SubscribeCommandSettings();
     subscribe.Events.Add("browsingContext.load");
@@ -81,7 +94,7 @@ void OnDriverLogMessage(object? sender, LogMessageEventArgs e)
     syncEvent.Set();
 }
 
-Process StartServer(string profilePath, string browserName, string browserCommandLine, string browserArguments)
+Process StartServer(string profilePath, BrowserType browserName, string browserCommandLine, string browserArguments)
 {
     Console.WriteLine($"Creating temp folder for profile at {profilePath}");
     DirectoryInfo profileDirectory = Directory.CreateDirectory(profilePath);
@@ -96,12 +109,14 @@ Process StartServer(string profilePath, string browserName, string browserComman
     return process;
 }
 
-void StopServer(string profilePath, string browserName, Process? process)
+void StopServer(string profilePath, BrowserType browserName, Process? process)
 {
     Console.WriteLine($"Closing {browserName}");
-    if (process is not null) {
+    if (process is not null)
+    {
         process.Kill();
     }
+    
     Console.WriteLine($"Deleting temp folder for profile {profilePath}");
     Directory.Delete(profilePath, true);
 }
