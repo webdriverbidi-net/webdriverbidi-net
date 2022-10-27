@@ -364,21 +364,25 @@ public class LocalValueTests
         Assert.That(parsed.ContainsKey("type"));
         Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
         Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
+        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
-        JObject? valueObject = parsed["value"] as JObject;
-        Assert.That(valueObject!.Count, Is.EqualTo(4));
-        Assert.That(valueObject.ContainsKey("string"));
-        Assert.That(valueObject["string"]!.Type, Is.EqualTo(JTokenType.Object));
-        Assert.That(valueObject.ContainsKey("number"));
-        Assert.That(valueObject["number"]!.Type, Is.EqualTo(JTokenType.Object));
-        Assert.That(valueObject.ContainsKey("null"));
-        Assert.That(valueObject["null"]!.Type, Is.EqualTo(JTokenType.Object));
-        Assert.That(valueObject.ContainsKey("boolean"));
-        Assert.That(valueObject["boolean"]!.Type, Is.EqualTo(JTokenType.Object));
+        JArray? valueArray = parsed["value"] as JArray;
+        Assert.That(valueArray!.Count, Is.EqualTo(dictionary.Count));
+        var foundStrings = new List<string>();
+        for (int i = 0; i < dictionary.Count; i++)
+        {
+            Assert.That(valueArray[i].Type, Is.EqualTo(JTokenType.Array));
+            JArray? itemArray = valueArray[i] as JArray;
+            Assert.That(itemArray!.Count, Is.EqualTo(2));
+            Assert.That(itemArray[0].Type, Is.EqualTo(JTokenType.String));
+            foundStrings.Add(itemArray[0].Value<string>() ?? "");
+            Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+        }
+
+        Assert.That(foundStrings, Is.EquivalentTo(dictionary.Keys));
     }
 
     [Test]
@@ -399,21 +403,25 @@ public class LocalValueTests
         Assert.That(parsed.ContainsKey("type"));
         Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
         Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
+        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
-        JObject? valueObject = parsed["value"] as JObject;
-        Assert.That(valueObject!.Count, Is.EqualTo(4));
-        Assert.That(valueObject.ContainsKey("string"));
-        Assert.That(valueObject["string"]!.Type, Is.EqualTo(JTokenType.Object));
-        Assert.That(valueObject.ContainsKey("number"));
-        Assert.That(valueObject["number"]!.Type, Is.EqualTo(JTokenType.Object));
-        Assert.That(valueObject.ContainsKey("null"));
-        Assert.That(valueObject["null"]!.Type, Is.EqualTo(JTokenType.Object));
-        Assert.That(valueObject.ContainsKey("boolean"));
-        Assert.That(valueObject["boolean"]!.Type, Is.EqualTo(JTokenType.Object));
+        JArray? valueArray = parsed["value"] as JArray;
+        Assert.That(valueArray!.Count, Is.EqualTo(dictionary.Count));
+        var foundStrings = new List<string>();
+        for (int i = 0; i < dictionary.Count; i++)
+        {
+            Assert.That(valueArray[i].Type, Is.EqualTo(JTokenType.Array));
+            JArray? itemArray = valueArray[i] as JArray;
+            Assert.That(itemArray!.Count, Is.EqualTo(2));
+            Assert.That(itemArray[0].Type, Is.EqualTo(JTokenType.String));
+            foundStrings.Add(itemArray[0].Value<string>() ?? "");
+            Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+        }
+
+        Assert.That(foundStrings, Is.EquivalentTo(dictionary.Keys));
     }
 
     [Test]
@@ -428,8 +436,29 @@ public class LocalValueTests
             { LocalValue.Number(1), LocalValue.Null },
             { LocalValue.NaN, LocalValue.Boolean(true) }
         };
+
         LocalValue value = LocalValue.Map(dictionary);
         string json = JsonConvert.SerializeObject(value);
+        var parsed = JObject.Parse(json);
+        Assert.That(parsed.Count, Is.EqualTo(2)); 
+        Assert.That(parsed.ContainsKey("type"));
+        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
+        Assert.That(parsed.ContainsKey("value"));
+        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+
+        // N.B., We are not validating the content of each object in the map
+        // values; it should be sufficient that the serialization of individual
+        // values works.
+        JArray? valueArray = parsed["value"] as JArray;
+        Assert.That(valueArray!.Count, Is.EqualTo(dictionary.Count));
+        for (int i = 0; i < dictionary.Count; i++)
+        {
+            Assert.That(valueArray[i].Type, Is.EqualTo(JTokenType.Array));
+            JArray? itemArray = valueArray[i] as JArray;
+            Assert.That(itemArray!.Count, Is.EqualTo(2));
+            Assert.That(itemArray[0].Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+        }
     }
 
     [Test]
@@ -444,7 +473,28 @@ public class LocalValueTests
             { LocalValue.Number(1), LocalValue.Null },
             { LocalValue.NaN, LocalValue.Boolean(true) }
         };
+
         LocalValue value = LocalValue.Object(dictionary);
         string json = JsonConvert.SerializeObject(value);
+        var parsed = JObject.Parse(json);
+        Assert.That(parsed.Count, Is.EqualTo(2)); 
+        Assert.That(parsed.ContainsKey("type"));
+        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
+        Assert.That(parsed.ContainsKey("value"));
+        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+
+        // N.B., We are not validating the content of each object in the map
+        // values; it should be sufficient that the serialization of individual
+        // values works.
+        JArray? valueArray = parsed["value"] as JArray;
+        Assert.That(valueArray!.Count, Is.EqualTo(dictionary.Count));
+        for (int i = 0; i < dictionary.Count; i++)
+        {
+            Assert.That(valueArray[i].Type, Is.EqualTo(JTokenType.Array));
+            JArray? itemArray = valueArray[i] as JArray;
+            Assert.That(itemArray!.Count, Is.EqualTo(2));
+            Assert.That(itemArray[0].Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+        }
     }
 }
