@@ -50,17 +50,30 @@ public class LocalValue : ArgumentValue
 
             if (this.argType == "map" || this.argType == "object")
             {
+                // One of the two cases (key is string, or key is LocalValue)
+                // must be true.
+                List<object> serializeablePairList = new List<object>();
                 Dictionary<LocalValue, LocalValue>? dictionaryValue = this.argValue as Dictionary<LocalValue, LocalValue>;
+                Dictionary<string, LocalValue>? stringDictionaryValue = this.argValue as Dictionary<string, LocalValue>;
                 if (dictionaryValue is not null)
                 {
-                    Dictionary<string, LocalValue> serializableDictionary = new Dictionary<string, LocalValue>();
                     foreach (var pair in dictionaryValue)
                     {
-                        serializableDictionary[JsonConvert.SerializeObject(pair.Key)] = pair.Value;
+                        List<object> itemList = new List<object>() { pair.Key, pair.Value };
+                        serializeablePairList.Add(itemList);
                     }
-
-                    return serializableDictionary;
                 }
+
+                if (stringDictionaryValue is not null)
+                {
+                    foreach (var pair in stringDictionaryValue)
+                    {
+                        List<object> itemList = new List<object>() { pair.Key, pair.Value };
+                        serializeablePairList.Add(itemList);
+                    }
+                }
+
+                return serializeablePairList;
             }
 
             return this.argValue;
