@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class DisownCommandPropertiesTests
+public class DisownCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializeProperties()
+    public void TestCanSerializeSettings()
     {
         var properties = new DisownCommandSettings(new RealmTarget("myRealm"));
         string json = JsonConvert.SerializeObject(properties);
@@ -21,7 +21,7 @@ public class DisownCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithHandles()
+    public void TestCanSerializeSettingsWithHandles()
     {
         var properties = new DisownCommandSettings(new RealmTarget("myRealm"), "myHandle");
         string json = JsonConvert.SerializeObject(properties);

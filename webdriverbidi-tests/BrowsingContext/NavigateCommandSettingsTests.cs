@@ -4,95 +4,75 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class ReloadCommandPropertiesTests
+public class NavigateCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializeProperties()
+    public void TestCanSerializeSettings()
     {
-        var properties = new ReloadCommandSettings("myContextId");
-        string json = JsonConvert.SerializeObject(properties);
-        JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("context"));
-        Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-    }
-
-    [Test]
-    public void TestCanSerializePropertiesWithIgnoreCacheTrue()
-    {
-        var properties = new ReloadCommandSettings("myContextId");
-        properties.IgnoreCache = true;
+        var properties = new NavigateCommandSettings("myContextId", "http://example.com");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized.Count, Is.EqualTo(2));
         Assert.That(serialized.ContainsKey("context"));
         Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
         Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        Assert.That(serialized.ContainsKey("ignoreCache"));
-        Assert.That(serialized["ignoreCache"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(serialized["ignoreCache"]!.Value<bool>(), Is.EqualTo(true));
+        Assert.That(serialized.ContainsKey("url"));
+        Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
+        Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithIgnoreCacheFalse()
+    public void TestCanSerializeSettingsWithAcceptWaitNone()
     {
-        var properties = new ReloadCommandSettings("myContextId");
-        properties.IgnoreCache = false;
-        string json = JsonConvert.SerializeObject(properties);
-        JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
-        Assert.That(serialized.ContainsKey("context"));
-        Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        Assert.That(serialized.ContainsKey("ignoreCache"));
-        Assert.That(serialized["ignoreCache"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(serialized["ignoreCache"]!.Value<bool>(), Is.EqualTo(false));
-    }
-
-    [Test]
-    public void TestCanSerializePropertiesWithAcceptWaitNone()
-    {
-        var properties = new ReloadCommandSettings("myContextId");
+        var properties = new NavigateCommandSettings("myContextId", "http://example.com");
         properties.Wait = ReadinessState.None;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
+        Assert.That(serialized.Count, Is.EqualTo(3));
         Assert.That(serialized.ContainsKey("context"));
         Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
         Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+        Assert.That(serialized.ContainsKey("url"));
+        Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
+        Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
         Assert.That(serialized.ContainsKey("wait"));
         Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
         Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("none"));
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithAcceptWaitInteractive()
+    public void TestCanSerializeSettingsWithAcceptWaitInteractive()
     {
-        var properties = new ReloadCommandSettings("myContextId");
+        var properties = new NavigateCommandSettings("myContextId", "http://example.com");
         properties.Wait = ReadinessState.Interactive;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
+        Assert.That(serialized.Count, Is.EqualTo(3));
         Assert.That(serialized.ContainsKey("context"));
         Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
         Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+        Assert.That(serialized.ContainsKey("url"));
+        Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
+        Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
         Assert.That(serialized.ContainsKey("wait"));
         Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
         Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("interactive"));
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithAcceptWaitComplete()
+    public void TestCanSerializeSettingsWithAcceptWaitComplete()
     {
-        var properties = new ReloadCommandSettings("myContextId");
+        var properties = new NavigateCommandSettings("myContextId", "http://example.com");
         properties.Wait = ReadinessState.Complete;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
+        Assert.That(serialized.Count, Is.EqualTo(3));
         Assert.That(serialized.ContainsKey("context"));
         Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
         Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+        Assert.That(serialized.ContainsKey("url"));
+        Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
+        Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
         Assert.That(serialized.ContainsKey("wait"));
         Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
         Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("complete"));

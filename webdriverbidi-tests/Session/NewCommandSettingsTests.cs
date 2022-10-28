@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class NewCommandPropertiesTests
+public class NewCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializeProperties()
+    public void TestCanSerializeSettings()
     {
         var properties = new NewCommandSettings();
         string json = JsonConvert.SerializeObject(properties);

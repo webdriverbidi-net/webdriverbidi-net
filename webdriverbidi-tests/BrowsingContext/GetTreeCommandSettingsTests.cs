@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class GetTreeCommandPropertiesTests
+public class GetTreeCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializeProperties()
+    public void TestCanSerializeSettings()
     {
         var properties = new GetTreeCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
@@ -16,7 +16,7 @@ public class GetTreeCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithMaxDepth()
+    public void TestCanSerializeSettingsWithMaxDepth()
     {
         var properties = new GetTreeCommandSettings();
         properties.MaxDepth = 2;
@@ -30,7 +30,7 @@ public class GetTreeCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithRoot()
+    public void TestCanSerializeSettingsWithRoot()
     {
         var properties = new GetTreeCommandSettings();
         properties.RootBrowsingContextId = "rootBrowsingContext";

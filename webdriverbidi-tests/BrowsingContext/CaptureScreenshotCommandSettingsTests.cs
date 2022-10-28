@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class CaptureScreenshotCommandPropertiesTests
+public class CaptureScreenshotCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializeProperties()
+    public void TestCanSerializeSettings()
     {
         var properties = new CaptureScreenshotCommandSettings("myContextId");
         string json = JsonConvert.SerializeObject(properties);

@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class CreateCommandPropertiesTests
+public class CreateCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializePropertiesForTab()
+    public void TestCanSerializeSettingsForTab()
     {
         var properties = new CreateCommandSettings(BrowsingContextCreateType.Tab);
         string json = JsonConvert.SerializeObject(properties);
@@ -19,7 +19,7 @@ public class CreateCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesForWindow()
+    public void TestCanSerializeSettingsForWindow()
     {
         var properties = new CreateCommandSettings(BrowsingContextCreateType.Window);
         string json = JsonConvert.SerializeObject(properties);
@@ -31,7 +31,7 @@ public class CreateCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithReferenceContext()
+    public void TestCanSerializeSettingsWithReferenceContext()
     {
         var properties = new CreateCommandSettings(BrowsingContextCreateType.Tab);
         properties.ReferenceContextId = "myReferenceContext";
