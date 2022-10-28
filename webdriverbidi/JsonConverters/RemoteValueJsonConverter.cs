@@ -266,7 +266,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 remoteValueList.Add(this.ProcessObject(arrayItemObject, serializer));
             }
 
-            result.Value = remoteValueList;
+            result.Value = new RemoteValueList(remoteValueList);
         }
 
         if (valueType == "map" || valueType == "object")
