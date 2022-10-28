@@ -271,25 +271,74 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
         if (valueType == "map" || valueType == "object")
         {
-            JObject? mapObject = token as JObject;
-            if (mapObject is null)
+            JArray? mapArray = token as JArray;
+            if (mapArray is null)
             {
-                throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
+                throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an array");
             }
 
-            Dictionary<string, RemoteValue> remoteValueDictionary = new Dictionary<string, RemoteValue>();
-            foreach (var mapEntry in mapObject)
+            Dictionary<object, RemoteValue> remoteValueDictionary = new Dictionary<object, RemoteValue>();
+            foreach(var mapElementToken in mapArray)
             {
-                var mapEntryValueObject = mapEntry.Value as JObject;
-                if (mapEntryValueObject is null)
+                JArray? mapKeyValuePairArray = mapElementToken as JArray;
+                if (mapKeyValuePairArray is null)
                 {
-                    throw new JsonSerializationException($"RemoteValue each property value for {valueType} must be an object");
+                    throw new JsonSerializationException($"RemoteValue array element for {valueType} must an array");
                 }
 
-                remoteValueDictionary[mapEntry.Key] = this.ProcessObject(mapEntryValueObject, serializer);
+                if (mapKeyValuePairArray.Count != 2)
+                {
+                    throw new JsonSerializationException($"RemoteValue array element for {valueType} must a array with two elements");
+                }
+
+                var keyToken = mapKeyValuePairArray[0];
+                object pairKey;
+                if (keyToken.Type == JTokenType.String)
+                {
+                    // Note: Use the null coalescing operator here to suppress
+                    // the compiler warning, but the value should never be
+                    // null.
+                    pairKey = mapKeyValuePairArray[0].Value<string>() ?? "";
+                }
+                else
+                {
+                    var keyObject = keyToken as JObject;
+                    if (keyObject is null)
+                    {
+                       throw new JsonSerializationException($"RemoteValue array element for {valueType} must have a first element (key) that is either a string or an object");
+                    }
+
+                    var keyRemoteValue = this.ProcessObject(keyObject, serializer);
+                    if ((keyRemoteValue.IsPrimitive || keyRemoteValue.Type == "date" || keyRemoteValue.Type == "regexp") && keyRemoteValue.Value is not null)
+                    {
+                        pairKey = keyRemoteValue.Value;
+                    }
+                    else if (keyRemoteValue.Handle is not null)
+                    {
+                        pairKey = keyRemoteValue.Handle;
+                    }
+                    else if (keyRemoteValue.InternalId is not null)
+                    {
+                        pairKey = keyRemoteValue.InternalId;
+                    }
+                    else
+                    {
+                        pairKey = keyRemoteValue;
+                    }
+                }
+
+                var valueToken = mapKeyValuePairArray[1];
+                var valueObject = valueToken as JObject;
+                if (valueObject is null)
+                {
+                    throw new JsonSerializationException($"RemoteValue array element for {valueType} must have a second element (value) that is an object");
+                }
+
+                var pairValue = this.ProcessObject(valueObject, serializer);
+                remoteValueDictionary[pairKey] = pairValue;
             }
 
-            result.Value = remoteValueDictionary;
-         }
+            result.Value = new RemoteValueDictionary(remoteValueDictionary);
+        }
     }
 }

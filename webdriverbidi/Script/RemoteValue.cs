@@ -31,6 +31,8 @@ public class RemoteValue
     
     public bool HasValue => this.valueObject is not null;
 
+    public bool IsPrimitive => this.valueType == "string" || this.valueType == "number" || this.valueType == "boolean" || this.valueType == "bigint" || this.valueType == "null" || this.valueType == "undefined";
+
     public T? ValueAs<T>()
     {
         var result = default(T);
