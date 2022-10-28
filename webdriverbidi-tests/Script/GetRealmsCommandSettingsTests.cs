@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class GetRealmsCommandPropertiesTests
+public class GetRealmsCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializeProperties()
+    public void TestCanSerializeSettings()
     {
         var properties = new GetRealmsCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
@@ -16,7 +16,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalWindowRealmTypeValue()
+    public void TestCanSerializeSettingsWithOptionalWindowRealmTypeValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.Window;
@@ -29,7 +29,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalWorkerRealmTypeValue()
+    public void TestCanSerializeSettingsWithOptionalWorkerRealmTypeValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.Worker;
@@ -42,7 +42,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalDedicatedWorkerRealmTypeValue()
+    public void TestCanSerializeSettingsWithOptionalDedicatedWorkerRealmTypeValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.DedicatedWorker;
@@ -55,7 +55,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalServiceWorkerRealmTypeValue()
+    public void TestCanSerializeSettingsWithOptionalServiceWorkerRealmTypeValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.ServiceWorker;
@@ -68,7 +68,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalSharedWorkerRealmTypeValue()
+    public void TestCanSerializeSettingsWithOptionalSharedWorkerRealmTypeValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.SharedWorker;
@@ -81,7 +81,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalWorkletRealmTypeValue()
+    public void TestCanSerializeSettingsWithOptionalWorkletRealmTypeValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.Worklet;
@@ -94,7 +94,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalPaintWorkletRealmTypeValue()
+    public void TestCanSerializeSettingsWithOptionalPaintWorkletRealmTypeValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.PaintWorklet;
@@ -107,7 +107,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalAudioWorkletRealmTypeValue()
+    public void TestCanSerializeSettingsWithOptionalAudioWorkletRealmTypeValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.RealmType = RealmType.AudioWorklet;
@@ -120,7 +120,7 @@ public class GetRealmsCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithOptionalBrowsingContextValue()
+    public void TestCanSerializeSettingsWithOptionalBrowsingContextValue()
     {
         var properties = new GetRealmsCommandSettings();
         properties.BrowsingContextId = "contextId";

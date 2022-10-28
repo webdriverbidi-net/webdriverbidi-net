@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class SubscribeCommandPropertiesTests
+public class SubscribeCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializeProperties()
+    public void TestCanSerializeSettings()
     {
         var properties = new SubscribeCommandSettings();
         string json = JsonConvert.SerializeObject(properties);
@@ -18,7 +18,7 @@ public class SubscribeCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithEvents()
+    public void TestCanSerializeSettingsWithEvents()
     {
         var properties = new SubscribeCommandSettings();
         properties.Events.Add("some.event");
@@ -32,7 +32,7 @@ public class SubscribeCommandPropertiesTests
     }
 
    [Test]
-    public void TestCanSerializePropertiesWithData()
+    public void TestCanSerializeSettingsWithData()
     {
         var properties = new SubscribeCommandSettings();
         properties.Contexts.Add("myContext");

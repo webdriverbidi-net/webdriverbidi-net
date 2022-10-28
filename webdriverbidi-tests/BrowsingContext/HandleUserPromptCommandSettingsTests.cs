@@ -4,10 +4,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class HandleUserPromptCommandPropertiesTests
+public class HandleUserPromptCommandSettingsTests
 {
     [Test]
-    public void TestCanSerializeProperties()
+    public void TestCanSerializeSettings()
     {
         var properties = new HandleUserPromptCommandSettings("myContextId");
         string json = JsonConvert.SerializeObject(properties);
@@ -19,7 +19,7 @@ public class HandleUserPromptCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithAcceptTrue()
+    public void TestCanSerializeSettingsWithAcceptTrue()
     {
         var properties = new HandleUserPromptCommandSettings("myContextId");
         properties.Accept = true;
@@ -35,7 +35,7 @@ public class HandleUserPromptCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithAcceptFalse()
+    public void TestCanSerializeSettingsWithAcceptFalse()
     {
         var properties = new HandleUserPromptCommandSettings("myContextId");
         properties.Accept = false;
@@ -51,7 +51,7 @@ public class HandleUserPromptCommandPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializePropertiesWithUserText()
+    public void TestCanSerializeSettingsWithUserText()
     {
         var properties = new HandleUserPromptCommandSettings("myContextId");
         properties.UserText = "myUserText";
