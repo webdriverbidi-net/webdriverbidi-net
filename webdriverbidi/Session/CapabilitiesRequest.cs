@@ -14,7 +14,7 @@ public class CapabilitiesRequest
     private Proxy? proxy;
     private Dictionary<string, object?> additionalCapabilities = new Dictionary<string, object?>();
 
-    [JsonProperty("acceptInsecureCertificates", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("acceptInsecureCerts", NullValueHandling = NullValueHandling.Ignore)]
     public bool? AcceptInsecureCertificates { get => this.acceptInsecureCertificates; set => this.acceptInsecureCertificates = value; }
 
     [JsonProperty("browserName", NullValueHandling = NullValueHandling.Ignore)]

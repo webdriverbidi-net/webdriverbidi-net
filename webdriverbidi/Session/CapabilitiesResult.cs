@@ -16,7 +16,7 @@ public class CapabilitiesResult
     private Proxy proxy = WebDriverBidi.Session.Proxy.EmptyProxy;
     private AdditionalCapabilities additionalCapabilities = AdditionalCapabilities.EmptyAdditionalCapabilities;
 
-    [JsonProperty("acceptInsecureCertificates")]
+    [JsonProperty("acceptInsecureCerts")]
     [JsonRequired]
     public bool AcceptInsecureCertificates { get => this.acceptInsecureCertificates; internal set => this.acceptInsecureCertificates = value; }
 
