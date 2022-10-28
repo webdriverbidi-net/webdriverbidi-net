@@ -62,9 +62,9 @@ public class ExceptionDetailsTests
         string json = JsonConvert.SerializeObject(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result.Count, Is.EqualTo(1));
-        Assert.That(result.ContainsKey("acceptInsecureCertificates"));
-        Assert.That(result["acceptInsecureCertificates"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(result["acceptInsecureCertificates"]!.Value<bool>(), Is.True);
+        Assert.That(result.ContainsKey("acceptInsecureCerts"));
+        Assert.That(result["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
+        Assert.That(result["acceptInsecureCerts"]!.Value<bool>(), Is.True);
     }
 
     [Test]
@@ -75,9 +75,9 @@ public class ExceptionDetailsTests
         string json = JsonConvert.SerializeObject(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result.Count, Is.EqualTo(1));
-        Assert.That(result.ContainsKey("acceptInsecureCertificates"));
-        Assert.That(result["acceptInsecureCertificates"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(result["acceptInsecureCertificates"]!.Value<bool>(), Is.False);
+        Assert.That(result.ContainsKey("acceptInsecureCerts"));
+        Assert.That(result["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
+        Assert.That(result["acceptInsecureCerts"]!.Value<bool>(), Is.False);
     }
 
     [Test]

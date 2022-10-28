@@ -8,7 +8,7 @@ public class CapabilitiesResultJsonConverter : JsonConverter<CapabilitiesResult>
 {
     private static readonly List<string> KnownCapabilityNames = new List<string>()
     {
-        "acceptInsecureCertificates",
+        "acceptInsecureCerts",
         "browserName",
         "browserVersion",
         "platformName",

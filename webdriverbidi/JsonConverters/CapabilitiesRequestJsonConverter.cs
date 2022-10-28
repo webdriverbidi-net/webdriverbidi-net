@@ -66,7 +66,7 @@ public class CapabilitiesRequestJsonConverter : JsonConverter<CapabilitiesReques
 
         if (value.AcceptInsecureCertificates is not null)
         {
-            writer.WritePropertyName("acceptInsecureCertificates");
+            writer.WritePropertyName("acceptInsecureCerts");
             writer.WriteValue(value.AcceptInsecureCertificates);
         }
 
