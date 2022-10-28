@@ -271,8 +271,8 @@ public class RemoteValueTests
         Assert.That(remoteValue.HasValue);
         Assert.That(remoteValue.Handle, Is.Null);
         Assert.That(remoteValue.InternalId, Is.Null);
-        Assert.That(remoteValue.Value, Is.InstanceOf<List<RemoteValue>>());
-        var arrayValue = remoteValue.ValueAs<List<RemoteValue>>();
+        Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
+        var arrayValue = remoteValue.ValueAs<RemoteValueList>();
         Assert.That(arrayValue, Is.Not.Null);
         Assert.That(arrayValue!.Count, Is.EqualTo(3));
         Assert.That(arrayValue![0].ValueAs<string>, Is.EqualTo("stringValue"));
@@ -304,8 +304,8 @@ public class RemoteValueTests
         Assert.That(remoteValue.HasValue);
         Assert.That(remoteValue.Handle, Is.Null);
         Assert.That(remoteValue.InternalId, Is.Null);
-        Assert.That(remoteValue.Value, Is.InstanceOf<List<RemoteValue>>());
-        var arrayValue = remoteValue.ValueAs<List<RemoteValue>>();
+        Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
+        var arrayValue = remoteValue.ValueAs<RemoteValueList>();
         Assert.That(arrayValue, Is.Not.Null);
         Assert.That(arrayValue!.Count, Is.EqualTo(3));
         Assert.That(arrayValue![0].ValueAs<string>, Is.EqualTo("stringValue"));
