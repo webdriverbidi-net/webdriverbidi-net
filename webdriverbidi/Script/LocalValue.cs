@@ -115,5 +115,4 @@ public class LocalValue : ArgumentValue
     public static LocalValue Object(Dictionary<string, LocalValue> mapValue) => new LocalValue("object") { argValue = mapValue };
     public static LocalValue Object(Dictionary<LocalValue, LocalValue> mapValue) => new LocalValue("object") { argValue = mapValue };
     public static LocalValue RegExp(string pattern, string? flags = null) => new LocalValue("regexp") { argValue = new RegularExpressionProperties(pattern, flags) };
-    public static LocalValue FromRemoteReference(RemoteReference remote) => new LocalValue("remote") { argValue = remote };
 }
