@@ -13,11 +13,4 @@ public class RealmTarget : ScriptTarget
 
     [JsonProperty("realm")]
     public string RealmId { get => this.realmId; internal set => this.realmId = value; }
-
-    public override Dictionary<string, object?> ToDictionary()
-    {
-        var result = new Dictionary<string, object?>();
-        result["realm"] = this.realmId;
-        return result;
-    }
 }

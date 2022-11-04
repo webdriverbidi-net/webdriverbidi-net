@@ -22,7 +22,7 @@ public class UserPromptClosedEventArgs : EventArgs
 
     [JsonProperty("accepted")]
     [JsonRequired]
-    public bool IsAccepted { get => this.isAccepted; set => isAccepted = value; }
+    public bool IsAccepted { get => this.isAccepted; internal set => isAccepted = value; }
 
     [JsonProperty("userText", NullValueHandling = NullValueHandling.Ignore)]
     public string? UserText { get => this.userText; internal set => this.userText = value; }
