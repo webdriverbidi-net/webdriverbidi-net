@@ -12,5 +12,5 @@ public class ScriptEvaluateResultException: ScriptEvaluateResult
     }
 
     [JsonProperty("exceptionDetails")]
-    public ExceptionDetails ExceptionDetails{ get => this.result; set => this.result = value; }
+    public ExceptionDetails ExceptionDetails{ get => this.result; internal set => this.result = value; }
 }

@@ -7,12 +7,12 @@ public class StackTrace
 {
     private List<StackFrame> callFrames = new List<StackFrame>();
 
-    public IList<StackFrame> CallFrames => this.callFrames.AsReadOnly();
-
     [JsonConstructor]
     internal StackTrace()
     {
     }
+
+    public IList<StackFrame> CallFrames => this.callFrames.AsReadOnly();
 
     [JsonProperty("callFrames")]
     [JsonRequired]

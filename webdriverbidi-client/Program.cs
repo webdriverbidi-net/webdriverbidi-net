@@ -9,7 +9,7 @@ using WebDriverBidi.Session;
 int port = 38267;
 string testProfilePath = Path.Join(Path.GetTempPath(), Path.GetTempFileName());
 
-BrowserType testBrowserName = BrowserType.Firefox;
+BrowserType testBrowserName = BrowserType.Chrome;
 string testBrowserCommandLine = @"/Applications/Firefox.app/Contents/MacOS/firefox-bin";
 string testBrowserArguments = $"--remote-debugging-port {port} --no-remote --profile {testProfilePath}";
 Process? testProcess = null;

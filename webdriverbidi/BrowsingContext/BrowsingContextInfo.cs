@@ -32,5 +32,5 @@ public class BrowsingContextInfo
 
     [JsonProperty("children")]
     [JsonRequired]
-    public List<BrowsingContextInfo> SerializableChildren { get => this.children; set => this.children = value; }
+    internal List<BrowsingContextInfo> SerializableChildren { get => this.children; set => this.children = value; }
 }

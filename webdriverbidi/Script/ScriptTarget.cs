@@ -7,5 +7,4 @@ using JsonConverters;
 [JsonConverter(typeof(ScriptTargetJsonConverter))]
 public abstract class ScriptTarget
 {
-    public abstract Dictionary<string, object?> ToDictionary();
 }
