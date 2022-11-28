@@ -6,8 +6,8 @@ using Newtonsoft.Json;
 public class NodeProperties
 {
     private uint nodeType;
-    private string nodeValue;
     private uint childNodeCount;
+    private string? nodeValue;
     private string? localName;
     private string? namespaceUri;
     private List<RemoteValue>? children;
@@ -16,21 +16,20 @@ public class NodeProperties
     private RemoteValue? shadowRoot;
 
     [JsonConstructor]
-    internal NodeProperties(uint nodeType, string nodeValue, uint childCount)
+    internal NodeProperties(uint nodeType, uint childCount)
     {
         this.nodeType = nodeType;
-        this.nodeValue = nodeValue;
         this.childNodeCount = childCount;
     }
 
     [JsonProperty("nodeType", Required = Required.Always)]
     public uint NodeType { get => this.nodeType; internal set => this.nodeType = value; }
 
-    [JsonProperty("nodeValue", Required = Required.Always)]
-    public string NodeValue { get => this.nodeValue; internal set => this.nodeValue = value; }
-
     [JsonProperty("childNodeCount", Required = Required.Always)]
     public uint ChildNodeCount { get => this.childNodeCount; internal set => this.childNodeCount = value; }
+
+    [JsonProperty("nodeValue", NullValueHandling = NullValueHandling.Ignore)]
+    public string? NodeValue { get => this.nodeValue; internal set => this.nodeValue = value; }
 
     [JsonProperty("localName", NullValueHandling = NullValueHandling.Ignore)]
     public string? LocalName { get => this.localName; internal set => this.localName = value; }
