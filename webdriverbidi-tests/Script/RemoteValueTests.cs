@@ -291,7 +291,7 @@ public class RemoteValueTests
     public void TestDeserializingInvalidArrayElementValueRemoteValueThrows()
     {
         string json = @"{ ""type"": ""array"", ""value"": [ ""stringValue"", 123, true ] }";
-        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("each element for array must be an object"));
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("each element for list must be an object"));
     }
 
     [Test]
@@ -324,7 +324,71 @@ public class RemoteValueTests
     public void TestDeserializingInvalidSetElementValueRemoteValueThrows()
     {
         string json = @"{ ""type"": ""set"", ""value"": [ ""stringValue"", 123, true ] }";
-        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("each element for set must be an object"));
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("each element for list must be an object"));
+    }
+
+    [Test]
+    public void TestDeserializingNodeListRemoteValue()
+    {
+        string json = @"{ ""type"": ""nodelist"", ""value"": [ { ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 } } ] }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue!.Type, Is.EqualTo("nodelist"));
+        Assert.That(remoteValue.HasValue);
+        Assert.That(remoteValue.Handle, Is.Null);
+        Assert.That(remoteValue.InternalId, Is.Null);
+        Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
+        var arrayValue = remoteValue.ValueAs<RemoteValueList>();
+        Assert.That(arrayValue, Is.Not.Null);
+        Assert.That(arrayValue!.Count, Is.EqualTo(1));
+        Assert.That(arrayValue![0].Type, Is.EqualTo("node"));
+        Assert.That(arrayValue![0].ValueAs<NodeProperties>()!.NodeType, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TestDeserializingInvalidNodeListValueRemoteValueThrows()
+    {
+        string json = @"{ ""type"": ""nodelist"", ""value"": ""some value"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("nodelist must have a non-null 'value' property whose value is an array"));
+    }
+
+    [Test]
+    public void TestDeserializingInvalidNodeListElementValueRemoteValueThrows()
+    {
+        string json = @"{ ""type"": ""nodelist"", ""value"": [ ""stringValue"", 123, true ] }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("each element for list must be an object"));
+    }
+
+    [Test]
+    public void TestDeserializingHtmlCollectionRemoteValue()
+    {
+        string json = @"{ ""type"": ""htmlcollection"", ""value"": [ { ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 } } ] }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue!.Type, Is.EqualTo("htmlcollection"));
+        Assert.That(remoteValue.HasValue);
+        Assert.That(remoteValue.Handle, Is.Null);
+        Assert.That(remoteValue.InternalId, Is.Null);
+        Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
+        var arrayValue = remoteValue.ValueAs<RemoteValueList>();
+        Assert.That(arrayValue, Is.Not.Null);
+        Assert.That(arrayValue!.Count, Is.EqualTo(1));
+        Assert.That(arrayValue![0].Type, Is.EqualTo("node"));
+        Assert.That(arrayValue![0].ValueAs<NodeProperties>()!.NodeType, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TestDeserializingInvalidHtmlCollectionValueRemoteValueThrows()
+    {
+        string json = @"{ ""type"": ""htmlcollection"", ""value"": ""some value"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("htmlcollection must have a non-null 'value' property whose value is an array"));
+    }
+
+    [Test]
+    public void TestDeserializingInvalidHtmlCollectionElementValueRemoteValueThrows()
+    {
+        string json = @"{ ""type"": ""htmlcollection"", ""value"": [ ""stringValue"", 123, true ] }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("each element for list must be an object"));
     }
 
     [Test]
