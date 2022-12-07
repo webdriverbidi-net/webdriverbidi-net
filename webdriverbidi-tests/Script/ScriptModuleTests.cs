@@ -23,6 +23,7 @@ public class ScriptModuleTests
         var successResult = result as ScriptEvaluateResultSuccess;
         Assert.That(successResult, Is.Not.Null);
         Assert.That(successResult!.RealmId, Is.EqualTo("myRealmId"));
+        Assert.That(successResult.ResultType, Is.EqualTo(ScriptEvaluateResultType.Success));
         Assert.That(successResult.Result, Is.Not.Null);
         Assert.That(successResult.Result.Type, Is.EqualTo("string"));
         Assert.That(successResult.Result.HasValue);
@@ -48,6 +49,7 @@ public class ScriptModuleTests
         var exceptionResult = result as ScriptEvaluateResultException;
         Assert.That(exceptionResult, Is.Not.Null);
         Assert.That(exceptionResult!.RealmId, Is.EqualTo("myRealmId"));
+        Assert.That(exceptionResult.ResultType, Is.EqualTo(ScriptEvaluateResultType.Exception));
         Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("error received from script"));
         Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(2));
         Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
@@ -76,6 +78,7 @@ public class ScriptModuleTests
         var successResult = result as ScriptEvaluateResultSuccess;
         Assert.That(successResult, Is.Not.Null);
         Assert.That(successResult!.RealmId, Is.EqualTo("myRealmId"));
+        Assert.That(successResult.ResultType, Is.EqualTo(ScriptEvaluateResultType.Success));
         Assert.That(successResult.Result, Is.Not.Null);
         Assert.That(successResult.Result.Type, Is.EqualTo("string"));
         Assert.That(successResult.Result.HasValue);
@@ -101,6 +104,7 @@ public class ScriptModuleTests
         var exceptionResult = result as ScriptEvaluateResultException;
         Assert.That(exceptionResult, Is.Not.Null);
         Assert.That(exceptionResult!.RealmId, Is.EqualTo("myRealmId"));
+        Assert.That(exceptionResult.ResultType, Is.EqualTo(ScriptEvaluateResultType.Exception));
         Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("error received from script"));
         Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(2));
         Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
