@@ -6,12 +6,11 @@ using Newtonsoft.Json;
 public class BrowsingContextNavigateResult : CommandResult
 {
     private string? id;
-    private string url;
+    private string url = string.Empty;
 
-    public BrowsingContextNavigateResult(string? id, string url)
+    [JsonConstructor]
+    private BrowsingContextNavigateResult()
     {
-        this.id = id;
-        this.url = url;
     }
 
     [JsonProperty("navigation")]

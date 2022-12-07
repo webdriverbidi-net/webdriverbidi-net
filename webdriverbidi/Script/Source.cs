@@ -5,13 +5,12 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class Source
 {
-    private string realmId;
+    private string realmId = string.Empty;
     private string? browsingContextId;
 
     [JsonConstructor]
-    internal Source(string realmId)
+    internal Source()
     {
-        this.realmId = realmId;
     }
 
     [JsonProperty("realm")]

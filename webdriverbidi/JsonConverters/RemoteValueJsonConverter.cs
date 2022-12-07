@@ -206,7 +206,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            NodeProperties nodeProperties = new NodeProperties(0, 0);
+            NodeProperties nodeProperties = new NodeProperties();
             serializer.Populate(nodeObject.CreateReader(), nodeProperties);
             result.Value = nodeProperties;
         }

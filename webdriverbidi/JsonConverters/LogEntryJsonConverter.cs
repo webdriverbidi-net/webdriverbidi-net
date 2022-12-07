@@ -40,12 +40,12 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
 
         if (jsonObject.ContainsKey("type") && jsonObject["type"] is not null && jsonObject["type"]!.Type == JTokenType.String && jsonObject["type"]!.Value<string>() == "console")
         {
-            var consoleLogEntry = new ConsoleLogEntry("", LogLevel.Info, "", new Script.Source("realmId"), 0L, "");
+            var consoleLogEntry = new ConsoleLogEntry();
             serializer.Populate(jsonObject.CreateReader(), consoleLogEntry); 
             return consoleLogEntry;
         }
 
-        var logEntry = new LogEntry("", LogLevel.Info, "", new Script.Source("realmId"), 0L);
+        var logEntry = new LogEntry();
         serializer.Populate(jsonObject.CreateReader(), logEntry); 
         return logEntry;
     }

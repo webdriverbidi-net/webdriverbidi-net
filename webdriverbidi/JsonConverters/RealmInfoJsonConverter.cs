@@ -34,12 +34,12 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
         var jsonObject = JObject.Load(reader);
         if (jsonObject.ContainsKey("type") && jsonObject["type"] is not null && jsonObject["type"]!.Type == JTokenType.String && jsonObject["type"]!.Value<string>() == "window")
         {
-            var windowInfo = new WindowRealmInfo("", "", RealmType.Window, "");
+            var windowInfo = new WindowRealmInfo();
             serializer.Populate(jsonObject.CreateReader(), windowInfo); 
             return windowInfo;
         }
 
-        var realmInfo = new RealmInfo("", "", RealmType.Window);
+        var realmInfo = new RealmInfo();
         serializer.Populate(jsonObject.CreateReader(), realmInfo); 
         return realmInfo;
     }

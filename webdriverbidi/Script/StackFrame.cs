@@ -5,18 +5,14 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class StackFrame
 {
-    private int lineNumber;
-    private int columnNumber;
-    private string functionName;
-    private string url;
+    private int lineNumber = -1;
+    private int columnNumber = -1;
+    private string functionName = string.Empty;
+    private string url = string.Empty;
 
     [JsonConstructor]
-    private StackFrame(string functionName, int lineNumber, int columnNumber, string url)
+    private StackFrame()
     {
-        this.functionName = functionName;
-        this.lineNumber = lineNumber;
-        this.columnNumber = columnNumber;
-        this.url = url;
     }
 
     [JsonProperty("functionName")]

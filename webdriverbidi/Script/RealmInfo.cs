@@ -7,15 +7,12 @@ using JsonConverters;
 [JsonConverter(typeof(RealmInfoJsonConverter))]
 public class RealmInfo
 {
-    private string realmId;
-    private string origin;
-    private RealmType realmType;
+    private string realmId = string.Empty;
+    private string origin = string.Empty;
+    private RealmType realmType = RealmType.Window;
 
-    internal RealmInfo(string realmId, string origin, RealmType realmType)
+    internal RealmInfo()
     {
-        this.realmId = realmId;
-        this.origin = origin;
-        this.realmType = realmType;
     }
 
     [JsonProperty("realm")]

@@ -10,7 +10,7 @@ public class LocalValue : ArgumentValue
     private string argType;
     private object? argValue;
 
-    internal LocalValue(string argType)
+    private LocalValue(string argType)
     {
         this.argType = argType;
     }

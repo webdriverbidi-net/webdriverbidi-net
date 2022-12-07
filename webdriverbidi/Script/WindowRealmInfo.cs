@@ -4,13 +4,11 @@ using Newtonsoft.Json;
 
 public class WindowRealmInfo : RealmInfo
 {
-    private string browsingContextId;
+    private string browsingContextId = string.Empty;
     private string? sandbox;
 
-    internal WindowRealmInfo(string realmId, string origin, RealmType realmType, string browsingContextId)
-        : base (realmId, origin, realmType)
+    internal WindowRealmInfo() : base ()
     {
-        this.browsingContextId = browsingContextId;
     }
 
     [JsonProperty("context")]

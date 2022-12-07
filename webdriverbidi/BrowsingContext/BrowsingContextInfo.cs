@@ -5,16 +5,14 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class BrowsingContextInfo
 {
-    private string id;
-    private string url;
+    private string id = string.Empty;
+    private string url = string.Empty;
     private List<BrowsingContextInfo> children = new List<BrowsingContextInfo>();
     private string? parentId;
 
     [JsonConstructor]
-    private BrowsingContextInfo(string id, string url)
+    private BrowsingContextInfo()
     {
-        this.id = id;
-        this.url = url;
     }
 
     [JsonProperty("context")]

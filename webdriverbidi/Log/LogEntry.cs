@@ -8,20 +8,15 @@ using Script;
 [JsonConverter(typeof(LogEntryJsonConverter))]
 public class LogEntry
 {
-    private string type;
-    private LogLevel level;
-    private Source source;
+    private string type = string.Empty;
+    private LogLevel level = LogLevel.Error;
+    private Source source = new Source();
     private string? text;
-    private long timestamp;
+    private long timestamp = -1;
     private StackTrace? stacktrace;
 
-    internal LogEntry(string type, LogLevel level, string? text, Source source, long timestamp)
+    internal LogEntry()
     {
-        this.type = type;
-        this.level = level;
-        this.source = source;
-        this.text = text;
-        this.timestamp = timestamp;
     }
 
     [JsonProperty("type")]

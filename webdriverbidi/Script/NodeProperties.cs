@@ -5,8 +5,8 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class NodeProperties
 {
-    private uint nodeType;
-    private uint childNodeCount;
+    private uint nodeType = 0;
+    private uint childNodeCount = 0;
     private string? nodeValue;
     private string? localName;
     private string? namespaceUri;
@@ -16,10 +16,8 @@ public class NodeProperties
     private RemoteValue? shadowRoot;
 
     [JsonConstructor]
-    internal NodeProperties(uint nodeType, uint childCount)
+    internal NodeProperties()
     {
-        this.nodeType = nodeType;
-        this.childNodeCount = childCount;
     }
 
     [JsonProperty("nodeType", Required = Required.Always)]

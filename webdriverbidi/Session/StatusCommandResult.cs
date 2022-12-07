@@ -6,13 +6,11 @@ using Newtonsoft.Json;
 public class StatusCommandResult : CommandResult
 {
     private bool ready;
-    private string message;
+    private string message = string.Empty;
 
     [JsonConstructor]
-    internal StatusCommandResult(bool ready, string message)
+    internal StatusCommandResult()
     {
-        this.ready = ready;
-        this.message = message;
     }
 
     [JsonProperty("ready")]

@@ -4,10 +4,10 @@ public class ProxyResult
 {
     private Proxy proxy;
 
-    public ProxyResult(Proxy proxy)
+    internal ProxyResult(Proxy proxy)
     {
         this.proxy = proxy;
-   }
+    }
 
     public ProxyType? Type => this.proxy.Type;
 

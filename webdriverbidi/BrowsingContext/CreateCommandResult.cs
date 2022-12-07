@@ -5,12 +5,11 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class CreateCommandResult : CommandResult
 {
-    private string contextId;
+    private string contextId = string.Empty;
 
     [JsonConstructor]
-    private CreateCommandResult(string contextId)
+    private CreateCommandResult()
     {
-        this.contextId = contextId;
     }
 
     [JsonProperty("context")]

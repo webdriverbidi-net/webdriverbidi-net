@@ -5,12 +5,11 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class CaptureScreenshotCommandResult : CommandResult
 {
-    private string base64Screenshot;
+    private string base64Screenshot = string.Empty;
 
     [JsonConstructor]
-    private CaptureScreenshotCommandResult(string base64Screenshot)
+    private CaptureScreenshotCommandResult()
     {
-        this.base64Screenshot = base64Screenshot;
     }
 
     [JsonProperty("data")]

@@ -5,13 +5,11 @@ using Script;
 
 public class ConsoleLogEntry : LogEntry
 {
-    private string method;
+    private string method = string.Empty;
     private List<RemoteValue> args = new List<RemoteValue>();
 
-    internal ConsoleLogEntry(string type, LogLevel level, string? text, Source source, long timestamp, string method)
-        : base(type, level, text, source, timestamp)
+    internal ConsoleLogEntry() : base()
     {
-        this.method = method;
     }
 
     [JsonProperty("method")]
