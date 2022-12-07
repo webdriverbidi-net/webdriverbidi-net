@@ -4,11 +4,11 @@ using Newtonsoft.Json;
 
 public class ScriptEvaluateResultException: ScriptEvaluateResult
 {
-    private ExceptionDetails result;
+    private ExceptionDetails result = new ExceptionDetails();
 
-    internal ScriptEvaluateResultException(string realmId, ExceptionDetails result) : base(realmId)
+    [JsonConstructor]
+    internal ScriptEvaluateResultException() : base()
     {
-        this.result = result;
     }
 
     [JsonProperty("exceptionDetails")]

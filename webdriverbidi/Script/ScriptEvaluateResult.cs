@@ -7,13 +7,18 @@ using JsonConverters;
 [JsonConverter(typeof(ScriptEvaluateResultJsonConverter))]
 public class ScriptEvaluateResult : CommandResult
 {
-    private string realmId;
+    private string realmId = "";
+    private string type = "";
 
-    protected ScriptEvaluateResult(string realmId)
+    protected ScriptEvaluateResult()
     {
-        this.realmId = realmId;
     }
 
+    [JsonProperty("type")]
+    [JsonRequired]
+    public string Type { get => this.type; internal set => this.type = value; }
+
     [JsonProperty("realm")]
+    [JsonRequired]
     public string RealmId { get => this.realmId; internal set => this.realmId = value; }
 }

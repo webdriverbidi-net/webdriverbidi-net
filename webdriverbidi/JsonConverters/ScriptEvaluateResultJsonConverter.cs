@@ -43,21 +43,31 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<ScriptEvaluateRes
     public override ScriptEvaluateResult ReadJson(JsonReader reader, Type objectType, ScriptEvaluateResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         var jsonObject = JObject.Load(reader);
-        if (jsonObject.ContainsKey("result"))
+        if (jsonObject.ContainsKey("type"))
         {
-            var successResult = new ScriptEvaluateResultSuccess("", new RemoteValue("null"));
-            serializer.Populate(jsonObject.CreateReader(), successResult); 
-            return successResult;
+            var typeToken = jsonObject["type"];
+            if (typeToken is not null && typeToken.Type == JTokenType.String)
+            {
+                string resultType = typeToken.Value<string>() ?? string.Empty;
+                if (resultType == "success")
+                {
+                    var successResult = new ScriptEvaluateResultSuccess();
+                    serializer.Populate(jsonObject.CreateReader(), successResult);
+                    return successResult;
+                }
+                else if (resultType == "exception")
+                {
+                    var exceptionResult = new ScriptEvaluateResultException();
+                    serializer.Populate(jsonObject.CreateReader(), exceptionResult);
+                    return exceptionResult;
+                }
+                else
+                {
+                    throw new WebDriverBidiException($"Malformed response: unknown type '{resultType}' for script result");
+                }
+            }
         }
 
-        if (jsonObject.ContainsKey("exceptionDetails"))
-        {
-            var exceptionResult = new ScriptEvaluateResultException("", new ExceptionDetails("", 0, 0, new StackTrace(), new RemoteValue("null")));
-            serializer.Populate(jsonObject.CreateReader(), exceptionResult); 
-            return exceptionResult;
-        }
-
-        throw new WebDriverBidiException("Malformed response: ScriptTarget must contain either a 'result' or a 'exceptionDetails' property");
+        throw new WebDriverBidiException("Malformed response: Script response must contain a 'type' property that contains a non-null string value");
     }
-
 }

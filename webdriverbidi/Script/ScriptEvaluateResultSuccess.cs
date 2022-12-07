@@ -4,11 +4,11 @@ using Newtonsoft.Json;
 
 public class ScriptEvaluateResultSuccess: ScriptEvaluateResult
 {
-    private RemoteValue result;
+    private RemoteValue result = new RemoteValue("null");
 
-    internal ScriptEvaluateResultSuccess(string realmId, RemoteValue result) : base(realmId)
+    [JsonConstructor]
+    internal ScriptEvaluateResultSuccess() : base()
     {
-        this.result = result;
     }
 
     [JsonProperty("result")]

@@ -8,7 +8,7 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteCallFunctionCommand()
     {
-        string responseJson = @"{ ""result"": { ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
+        string responseJson = @"{ ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
         var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -33,7 +33,7 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteCallFunctionCommandReturningError()
     {
-        string responseJson = @"{ ""result"": { ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
+        string responseJson = @"{ ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
         var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -59,9 +59,9 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestExecuteEvaluatenCommand()
+    public void TestExecuteEvaluateCommand()
     {
-        string responseJson = @"{ ""result"": { ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
+        string responseJson = @"{ ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
         var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -86,7 +86,7 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteEvaluateCommandReturningError()
     {
-        string responseJson = @"{ ""result"": { ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
+        string responseJson = @"{ ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
         TestDriver driver = new TestDriver();
         ScriptModule module = new ScriptModule(driver);
         var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));

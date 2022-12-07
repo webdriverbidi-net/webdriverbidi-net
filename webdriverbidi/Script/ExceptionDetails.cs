@@ -5,20 +5,15 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class ExceptionDetails
 {
-    private int columnNumber;
-    private int lineNumber;
-    private string text;
-    private StackTrace stackTrace;
-    private RemoteValue exception;
+    private int columnNumber = -1;
+    private int lineNumber = -1;
+    private string text = "";
+    private StackTrace stackTrace = new StackTrace();
+    private RemoteValue exception = new RemoteValue("null");
 
     [JsonConstructor]
-    internal ExceptionDetails(string text, int lineNumber, int columnNumber, StackTrace stackTrace, RemoteValue exception)
+    internal ExceptionDetails()
     {
-        this.text = text;
-        this.columnNumber = columnNumber;
-        this.lineNumber = lineNumber;
-        this.stackTrace = stackTrace;
-        this.exception = exception;
     }
 
     [JsonProperty("text")]
