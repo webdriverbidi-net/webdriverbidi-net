@@ -247,30 +247,27 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
         else
         {
             var keyObject = keyToken as JObject;
-            if (keyObject is not null)
+            if (keyObject is null)
             {
-                var keyRemoteValue = this.ProcessObject(keyObject, serializer);
-                if ((keyRemoteValue.IsPrimitive || keyRemoteValue.Type == "date" || keyRemoteValue.Type == "regexp") && keyRemoteValue.Value is not null)
-                {
-                    pairKey = keyRemoteValue.Value;
-                }
-                else if (keyRemoteValue.Handle is not null)
-                {
-                    pairKey = keyRemoteValue.Handle;
-                }
-                else if (keyRemoteValue.InternalId is not null)
-                {
-                    pairKey = keyRemoteValue.InternalId;
-                }
-                else
-                {
-                    pairKey = keyRemoteValue;
-                }
+                throw new JsonSerializationException($"RemoteValue array key token indicated string or object, but could not be cast to either");
+            }
+
+            var keyRemoteValue = this.ProcessObject(keyObject, serializer);
+            if ((keyRemoteValue.IsPrimitive || keyRemoteValue.Type == "date" || keyRemoteValue.Type == "regexp") && keyRemoteValue.Value is not null)
+            {
+                pairKey = keyRemoteValue.Value;
+            }
+            else if (keyRemoteValue.Handle is not null)
+            {
+                pairKey = keyRemoteValue.Handle;
+            }
+            else if (keyRemoteValue.InternalId is not null)
+            {
+                pairKey = keyRemoteValue.InternalId;
             }
             else
             {
-                // This should never be reached, but is here as a last ditch effort.
-                throw new JsonSerializationException($"RemoteValue array key token indicated string or object, but could not be cast to either");
+                pairKey = keyRemoteValue;
             }
         }
 
@@ -308,16 +305,14 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             }
 
             var valueObject = valueToken as JObject;
-            if (valueObject is not null)
+            if (valueObject is null)
             {
-                var pairValue = this.ProcessObject(valueObject, serializer);
-                remoteValueDictionary[pairKey] = pairValue;
-            }
-            else
-            {
-                // This should never be reached, but is here as a last ditch effort.
+                // This should never be reached, but is here for the sake of completeness.
                 throw new JsonSerializationException("RemoteValue array value token indicated object, but could not be cast to object");
             }
+
+            var pairValue = this.ProcessObject(valueObject, serializer);
+            remoteValueDictionary[pairKey] = pairValue;
         }
 
         return new RemoteValueDictionary(remoteValueDictionary);
