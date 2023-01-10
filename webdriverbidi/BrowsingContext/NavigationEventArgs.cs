@@ -11,11 +11,16 @@ public class NavigationEventArgs : EventArgs
 
     private string url;
 
+    private long epochTimestamp;
+
+    private DateTime timestamp;
+
     [JsonConstructor]
-    public NavigationEventArgs(string browsingContextId, string url, string? navigationId)
+    public NavigationEventArgs(string browsingContextId, string url, long timestamp, string? navigationId)
     {
         this.browsingContextId = browsingContextId;
         this.url = url;
+        this.EpochTimestamp = timestamp;
         this.id = navigationId;
     }
 
@@ -29,4 +34,18 @@ public class NavigationEventArgs : EventArgs
     [JsonProperty("url")]
     [JsonRequired]
     public string Url { get => this.url; internal set => this.url = value; }
+
+    [JsonProperty("timestamp")]
+    [JsonRequired]
+    public long EpochTimestamp
+    {
+        get { return this.epochTimestamp; }
+        private set
+        {
+            this.epochTimestamp = value;
+            this.timestamp = DateTime.UnixEpoch.AddMilliseconds(value);
+        }
+    }
+
+    public DateTime Timestamp => this.timestamp;
 }
