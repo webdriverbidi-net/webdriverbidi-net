@@ -51,13 +51,13 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<ScriptEvaluateRes
                 string resultType = typeToken.Value<string>() ?? string.Empty;
                 if (resultType == "success")
                 {
-                    var successResult = new ScriptEvaluateResultSuccess();
+                    ScriptEvaluateResultSuccess successResult = new();
                     serializer.Populate(jsonObject.CreateReader(), successResult);
                     return successResult;
                 }
                 else if (resultType == "exception")
                 {
-                    var exceptionResult = new ScriptEvaluateResultException();
+                    ScriptEvaluateResultException exceptionResult = new();
                     serializer.Populate(jsonObject.CreateReader(), exceptionResult);
                     return exceptionResult;
                 }

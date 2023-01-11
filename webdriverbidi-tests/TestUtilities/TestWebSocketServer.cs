@@ -31,8 +31,8 @@ public enum OpcodeType
 
 public class WebSocketFrameData
 {
-    private OpcodeType opcode;
-    private byte[] data;
+    private readonly OpcodeType opcode;
+    private readonly byte[] data;
     public WebSocketFrameData(OpcodeType opcode, byte[] data)
     {
         this.opcode = opcode;
@@ -49,13 +49,11 @@ public class TestWebSocketServer
     private static readonly string WebSocketGuid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     private static readonly byte ParityBit = 0x80;
 
-    private Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+    private readonly Socket socket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
     private Socket? clientSocket;
     private int port = 0;
-    private CancellationTokenSource listenerCancelationTokenSource = new CancellationTokenSource();
-    private List<string> serverLog = new List<string>();
-
-    private Task? foo;
+    private readonly CancellationTokenSource listenerCancelationTokenSource = new();
+    private readonly List<string> serverLog = new();
 
     public TestWebSocketServer()
     {
@@ -67,7 +65,7 @@ public class TestWebSocketServer
 
     public void Start()
     {
-        IPEndPoint serverEndpoint = new IPEndPoint(IPAddress.Loopback, this.port);
+        IPEndPoint serverEndpoint = new(IPAddress.Loopback, this.port);
         this.socket.Bind(serverEndpoint);
         IPEndPoint? localEndpoint = this.socket.LocalEndPoint as IPEndPoint;
         if (localEndpoint is not null)
@@ -75,7 +73,7 @@ public class TestWebSocketServer
             this.port = localEndpoint.Port;
         }
         
-        foo = Task.Run(() => this.ReceiveData().ConfigureAwait(false));
+        Task.Run(() => this.ReceiveData().ConfigureAwait(false));
     }
 
     public void Stop()
@@ -93,7 +91,7 @@ public class TestWebSocketServer
 
         WebSocketFrameData frame = EncodeData(data);
         int bytesSent = await this.clientSocket.SendAsync(frame.Data, SocketFlags.None);
-        this.serverLog.Append($"SEND {bytesSent} bytes");
+        this.serverLog.Add($"SEND {bytesSent} bytes");
     }
 
     protected virtual void OnDataReceived(DataReceivedEventArgs e)
@@ -108,12 +106,12 @@ public class TestWebSocketServer
     {
         this.socket.Listen();
         this.clientSocket = await this.socket.AcceptAsync(this.listenerCancelationTokenSource.Token);
-        this.serverLog.Append("Socket connected");
+        this.serverLog.Add("Socket connected");
         while (!this.listenerCancelationTokenSource.Token.IsCancellationRequested)
         {
             var buffer = new byte[1024];
             var receivedLength = await clientSocket.ReceiveAsync(buffer, SocketFlags.None, this.listenerCancelationTokenSource.Token);
-            this.serverLog.Append($"RECV {receivedLength} bytes");
+            this.serverLog.Add($"RECV {receivedLength} bytes");
             var data = Encoding.UTF8.GetString(buffer, 0, receivedLength);
             if (Regex.IsMatch(data, "^GET", RegexOptions.IgnoreCase)) {
                 await this.PerformHandshake(data);
@@ -142,7 +140,7 @@ public class TestWebSocketServer
         if (this.socket.Connected)
         {
             this.socket.Shutdown(SocketShutdown.Both);
-            this.serverLog.Append("Socket disconnected");
+            this.serverLog.Add("Socket disconnected");
         }
         this.socket.Close();
         this.socket.Dispose();
@@ -154,7 +152,7 @@ public class TestWebSocketServer
         {
             try
             {
-               this.serverLog.Append("Closing client socket");
+                this.serverLog.Add("Closing client socket");
                 WebSocketFrameData closeFrame = EncodeData("Acknowledge close", OpcodeType.ClosedConnection);
                 await this.clientSocket.SendAsync(closeFrame.Data, SocketFlags.None);
                 this.clientSocket.Shutdown(SocketShutdown.Both);
@@ -174,7 +172,8 @@ public class TestWebSocketServer
         {
             throw new Exception("No client connection");
         }
-        this.serverLog.Append($"=====Handshaking from client=====\n{data}");
+        
+        this.serverLog.Add($"=====Handshaking from client=====\n{data}");
 
         // 1. Obtain the value of the "Sec-WebSocket-Key" request header without any leading or trailing whitespace
         // 2. Concatenate it with "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" (a special GUID specified by RFC 6455)
@@ -198,10 +197,8 @@ public class TestWebSocketServer
         int keyOffset = 0;
         const byte opcodeMask = 0x0F;
         const byte messageLengthMask = 0x7F;
-        bool fin = (buffer[0] & ParityBit) != 0;
-        bool mask = (buffer[1] & ParityBit) != 0;
         OpcodeType opcode = (OpcodeType)(buffer[0] & opcodeMask);
-        this.serverLog.Append($"Decoding data with opcode {opcode}");
+        this.serverLog.Add($"Decoding data with opcode {opcode}");
 
         ulong messageLength = Convert.ToUInt64(buffer[1] & messageLengthMask);
 
@@ -223,7 +220,7 @@ public class TestWebSocketServer
         }
 
         byte[] decoded = new byte[messageLength];
-        ArraySegment<byte> key = new ArraySegment<byte>(buffer, keyOffset, 4);
+        ArraySegment<byte> key = new(buffer, keyOffset, 4);
         ulong offset = Convert.ToUInt64(keyOffset + key.Count);
         for (ulong index = 0; index < messageLength; index++)
         {
@@ -235,7 +232,7 @@ public class TestWebSocketServer
 
     public WebSocketFrameData EncodeData(string data, OpcodeType opcode = OpcodeType.Text)
     {
-       this.serverLog.Append($"Encoding data with opcode {opcode}");
+        this.serverLog.Add($"Encoding data with opcode {opcode}");
         long dataOffset = -1;
         byte[] dataBytes = Encoding.UTF8.GetBytes(data);
 

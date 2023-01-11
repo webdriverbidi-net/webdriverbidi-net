@@ -8,5 +8,5 @@ public class AdditionalCapabilities : ReadOnlyDictionary<string, object?>
     {
     }
 
-    public static AdditionalCapabilities EmptyAdditionalCapabilities => new AdditionalCapabilities(new Dictionary<string, object?>());
+    public static AdditionalCapabilities EmptyAdditionalCapabilities => new(new Dictionary<string, object?>());
 }

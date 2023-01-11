@@ -1,19 +1,18 @@
 namespace WebDriverBidi.JsonConverters;
-
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Session;
 
 public class CapabilitiesResultJsonConverter : JsonConverter<CapabilitiesResult>
 {
-    private static readonly List<string> KnownCapabilityNames = new List<string>()
+    private static readonly List<string> KnownCapabilityNames = new ()
     {
         "acceptInsecureCerts",
         "browserName",
         "browserVersion",
         "platformName",
         "proxy",
-        "setWindowRect"
+        "setWindowRect",
     };
 
     /// <summary>
@@ -42,9 +41,9 @@ public class CapabilitiesResultJsonConverter : JsonConverter<CapabilitiesResult>
     public override CapabilitiesResult ReadJson(JsonReader reader, Type objectType, CapabilitiesResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         var jsonObject = JObject.Load(reader);
-        CapabilitiesResult result = new CapabilitiesResult();
+        CapabilitiesResult result = new();
         serializer.Populate(jsonObject.CreateReader(), result);
-        Dictionary<string, object?> additionalCapabilities = new Dictionary<string, object?>();
+        Dictionary<string, object?> additionalCapabilities = new();
         foreach (var token in jsonObject)
         {
             if (!KnownCapabilityNames.Contains(token.Key))

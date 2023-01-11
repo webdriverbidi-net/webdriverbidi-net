@@ -7,7 +7,7 @@ public class BrowsingContextInfo
 {
     private string id = string.Empty;
     private string url = string.Empty;
-    private List<BrowsingContextInfo> children = new List<BrowsingContextInfo>();
+    private List<BrowsingContextInfo> children = new();
     private string? parentId;
 
     [JsonConstructor]

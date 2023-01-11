@@ -2,8 +2,8 @@ namespace WebDriverBidi;
 
 public class LogMessageEventArgs : EventArgs
 {
-    private string message;
-    private WebDriverBidiLogLevel level;
+    private readonly string message;
+    private readonly WebDriverBidiLogLevel level;
 
     public LogMessageEventArgs(string message) : this(message, WebDriverBidiLogLevel.Info)
     {

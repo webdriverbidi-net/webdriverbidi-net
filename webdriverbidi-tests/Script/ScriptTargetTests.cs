@@ -25,8 +25,11 @@ public class ScriptTargetJsonConverterTests
         Assert.That(target, Is.Not.Null);
         Assert.That(target, Is.InstanceOf<ContextTarget>());
         ContextTarget contextTarget = (ContextTarget)target!;
-        Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
-        Assert.That(contextTarget.Sandbox, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
+            Assert.That(contextTarget.Sandbox, Is.Null);
+        });
     }
 
     [Test]
@@ -37,8 +40,11 @@ public class ScriptTargetJsonConverterTests
         Assert.That(target, Is.Not.Null);
         Assert.That(target, Is.InstanceOf<ContextTarget>());
         ContextTarget contextTarget = (ContextTarget)target!;
-        Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
-        Assert.That(contextTarget.Sandbox, Is.EqualTo("mySandbox"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
+            Assert.That(contextTarget.Sandbox, Is.EqualTo("mySandbox"));
+        });
     }
 
     [Test]
@@ -54,11 +60,14 @@ public class ScriptTargetJsonConverterTests
         ScriptTarget target = new RealmTarget("myRealm");
         string json = JsonConvert.SerializeObject(target);
         JObject deserialized = JObject.Parse(json);
-        Assert.That(deserialized.Count, Is.EqualTo(1));
+        Assert.That(deserialized, Has.Count.EqualTo(1));
         Assert.That(deserialized.ContainsKey("realm"));
         JToken realmValue = deserialized.GetValue("realm")!;
-        Assert.That(realmValue.Type, Is.EqualTo(JTokenType.String));
-        Assert.That((string?)realmValue, Is.EqualTo("myRealm"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmValue.Type, Is.EqualTo(JTokenType.String));
+            Assert.That((string?)realmValue, Is.EqualTo("myRealm"));
+        });
     }
 
     [Test]
@@ -67,10 +76,13 @@ public class ScriptTargetJsonConverterTests
         ScriptTarget target = new ContextTarget("myContext");
         string json = JsonConvert.SerializeObject(target);
         JObject deserialized = JObject.Parse(json);
-        Assert.That(deserialized.Count, Is.EqualTo(1));
+        Assert.That(deserialized, Has.Count.EqualTo(1));
         Assert.That(deserialized.ContainsKey("context"));
         JToken contextValue = deserialized.GetValue("context")!;
-        Assert.That(contextValue.Type, Is.EqualTo(JTokenType.String));
-        Assert.That((string?)contextValue, Is.EqualTo("myContext"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(contextValue.Type, Is.EqualTo(JTokenType.String));
+            Assert.That((string?)contextValue, Is.EqualTo("myContext"));
+        });
     }
 }

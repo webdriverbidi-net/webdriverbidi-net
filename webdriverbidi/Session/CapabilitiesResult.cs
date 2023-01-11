@@ -42,10 +42,7 @@ public class CapabilitiesResult
     {
         get 
         {
-            if (this.proxyResult is null)
-            {
-                this.proxyResult = new ProxyResult(this.proxy);
-            }
+            this.proxyResult ??= new ProxyResult(this.proxy);
 
             return this.proxyResult;
         }

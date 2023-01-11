@@ -11,8 +11,11 @@ public class SourceTests
         string json = @"{ ""realm"": ""realmId"" }";
         Source? source = JsonConvert.DeserializeObject<Source>(json);
         Assert.That(source, Is.Not.Null);
-        Assert.That(source!.RealmId, Is.EqualTo("realmId"));
-        Assert.That(source.Context, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(source!.RealmId, Is.EqualTo("realmId"));
+            Assert.That(source.Context, Is.Null);
+        });
     }
 
     [Test]
@@ -35,9 +38,12 @@ public class SourceTests
         string json = @"{ ""realm"": ""realmId"", ""context"": ""contextId"" }";
         Source? source = JsonConvert.DeserializeObject<Source>(json);
         Assert.That(source, Is.Not.Null);
-        Assert.That(source!.RealmId, Is.EqualTo("realmId"));
-        Assert.That(source.Context, Is.Not.Null);
-        Assert.That(source.Context, Is.EqualTo("contextId"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(source!.RealmId, Is.EqualTo("realmId"));
+            Assert.That(source.Context, Is.Not.Null);
+            Assert.That(source.Context, Is.EqualTo("contextId"));
+        });
     }
 
     [Test]

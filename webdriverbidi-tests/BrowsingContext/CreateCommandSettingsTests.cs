@@ -9,40 +9,51 @@ public class CreateCommandSettingsTests
     [Test]
     public void TestCanSerializeSettingsForTab()
     {
-        var properties = new CreateCommandSettings(BrowsingContextCreateType.Tab);
+        CreateCommandSettings properties = new(BrowsingContextCreateType.Tab);
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("tab"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("tab"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsForWindow()
     {
-        var properties = new CreateCommandSettings(BrowsingContextCreateType.Window);
+        CreateCommandSettings properties = new(BrowsingContextCreateType.Window);
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithReferenceContext()
     {
-        var properties = new CreateCommandSettings(BrowsingContextCreateType.Tab);
-        properties.ReferenceContextId = "myReferenceContext";
+        CreateCommandSettings properties = new(BrowsingContextCreateType.Tab)
+        {
+            ReferenceContextId = "myReferenceContext"
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("tab"));
-        Assert.That(serialized.ContainsKey("referenceContext"));
-        Assert.That(serialized["referenceContext"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["referenceContext"]!.Value<string>(), Is.EqualTo("myReferenceContext"));
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("tab"));
+            Assert.That(serialized.ContainsKey("referenceContext"));
+            Assert.That(serialized["referenceContext"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["referenceContext"]!.Value<string>(), Is.EqualTo("myReferenceContext"));
+        });
     }
 }

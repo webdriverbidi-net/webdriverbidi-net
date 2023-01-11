@@ -9,28 +9,34 @@ public class DisownCommandSettingsTests
     [Test]
     public void TestCanSerializeSettings()
     {
-        var properties = new DisownCommandSettings(new RealmTarget("myRealm"));
+        DisownCommandSettings properties = new(new RealmTarget("myRealm"));
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
-        Assert.That(serialized.ContainsKey("target"));
-        Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-        Assert.That(serialized.ContainsKey("handles"));
-        Assert.That(serialized["handles"]!.Type, Is.EqualTo(JTokenType.Array));
-        Assert.That(serialized["handles"]!.Count, Is.EqualTo(0));
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("target"));
+            Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(serialized.ContainsKey("handles"));
+            Assert.That(serialized["handles"]!.Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(serialized["handles"]!.Count, Is.EqualTo(0));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithHandles()
     {
-        var properties = new DisownCommandSettings(new RealmTarget("myRealm"), "myHandle");
+        DisownCommandSettings properties = new(new RealmTarget("myRealm"), "myHandle");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
-        Assert.That(serialized.ContainsKey("target"));
-        Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-        Assert.That(serialized.ContainsKey("handles"));
-        Assert.That(serialized["handles"]!.Type, Is.EqualTo(JTokenType.Array));
-        Assert.That(serialized["handles"]!.Count, Is.EqualTo(1));
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("target"));
+            Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(serialized.ContainsKey("handles"));
+            Assert.That(serialized["handles"]!.Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(serialized["handles"]!.Count, Is.EqualTo(1));
+        });
     }
 }

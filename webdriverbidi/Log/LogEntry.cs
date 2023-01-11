@@ -10,7 +10,7 @@ public class LogEntry
 {
     private string type = string.Empty;
     private LogLevel level = LogLevel.Error;
-    private Source source = new Source();
+    private Source source = new();
     private string? text;
     private long timestamp = -1;
     private StackTrace? stacktrace;
@@ -46,8 +46,7 @@ public class LogEntry
         get => this.level.ToString().ToLowerInvariant();
         set
         {
-            LogLevel logLevelValue;
-            if (!Enum.TryParse<LogLevel>(value, true, out logLevelValue))
+            if (!Enum.TryParse<LogLevel>(value, true, out LogLevel logLevelValue))
             {
                 throw new WebDriverBidiException($"Invalid value for log level {value}");
             }

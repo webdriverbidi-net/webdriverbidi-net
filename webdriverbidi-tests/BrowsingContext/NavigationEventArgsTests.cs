@@ -12,11 +12,14 @@ public class NavigationEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""timestamp"": " + epochTimestamp +  @" }";
         NavigationEventArgs? eventArgs = JsonConvert.DeserializeObject<NavigationEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.Url, Is.EqualTo("http://example.com"));
-        Assert.That(eventArgs!.EpochTimestamp, Is.EqualTo(epochTimestamp));
-        Assert.That(eventArgs!.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-        Assert.That(eventArgs.NavigationId, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.Url, Is.EqualTo("http://example.com"));
+            Assert.That(eventArgs!.EpochTimestamp, Is.EqualTo(epochTimestamp));
+            Assert.That(eventArgs!.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
+            Assert.That(eventArgs.NavigationId, Is.Null);
+        });
     }
 
     [Test]
@@ -26,9 +29,12 @@ public class NavigationEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" }";
         NavigationEventArgs? eventArgs = JsonConvert.DeserializeObject<NavigationEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.Url, Is.EqualTo("http://example.com"));
-        Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.Url, Is.EqualTo("http://example.com"));
+            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
+        });
     }
 
     [Test]

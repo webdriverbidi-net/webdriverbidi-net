@@ -11,10 +11,13 @@ public class StackFrameTests
         string json = @"{ ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" }";
         StackFrame? stackFrame = JsonConvert.DeserializeObject<StackFrame>(json);
         Assert.That(stackFrame, Is.Not.Null);
-        Assert.That(stackFrame!.FunctionName, Is.EqualTo("myFunction"));
-        Assert.That(stackFrame.LineNumber, Is.EqualTo(1));
-        Assert.That(stackFrame.ColumnNumber, Is.EqualTo(5));
-        Assert.That(stackFrame.Url, Is.EqualTo("http://some.url/file.js"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(stackFrame!.FunctionName, Is.EqualTo("myFunction"));
+            Assert.That(stackFrame.LineNumber, Is.EqualTo(1));
+            Assert.That(stackFrame.ColumnNumber, Is.EqualTo(5));
+            Assert.That(stackFrame.Url, Is.EqualTo("http://some.url/file.js"));
+        });
     }
 
     [Test]

@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class DisownCommandSettings : CommandSettings
 {
-    private List<string> handles = new List<string>();
+    private List<string> handles = new();
     private ScriptTarget target;
 
     public DisownCommandSettings(ScriptTarget target, params string[] handleValues)

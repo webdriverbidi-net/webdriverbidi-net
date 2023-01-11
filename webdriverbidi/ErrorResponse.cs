@@ -8,7 +8,7 @@ public class ErrorResponse : CommandResult
     private string error = string.Empty;
     private string message = string.Empty;
 
-    private Dictionary<string, object?> additionalErrorData = new Dictionary<string, object?>();
+    private readonly Dictionary<string, object?> additionalErrorData = new();
 
     [JsonProperty("error")]
     public string ErrorType { get => this.error; internal set => this.error = value; }

@@ -49,13 +49,12 @@ public sealed class ScriptModule : ProtocolModule
         // the properties to directly deserialize the RealmCreatedEventArgs
         // instance, the protocol transport will deserialize to a RealmInfo,
         // then use that here to create the appropriate EventArgs instance.
-        var eventArgs = eventData as RealmInfo;
-        if (eventArgs is null)
+        if (eventData is not RealmInfo eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to RealmInfo");
         }
 
-        RealmCreatedEventArgs e = new RealmCreatedEventArgs(eventArgs);
+        RealmCreatedEventArgs e = new(eventArgs);
         if (this.RealmCreated is not null)
         {
             this.RealmCreated(this, e);
@@ -64,8 +63,7 @@ public sealed class ScriptModule : ProtocolModule
 
     private void OnRealmDestroyed(object eventData)
     {
-        var eventArgs = eventData as RealmDestroyedEventArgs;
-        if (eventArgs is null)
+        if (eventData is not RealmDestroyedEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to RealmDestroyedEventArgs");
         }

@@ -9,7 +9,7 @@ public class CallFunctionCommandSettings : CommandSettings
     private string functionDeclaration;
     private ScriptTarget scriptTarget;
     private bool awaitPromise;
-    private List<ArgumentValue> arguments = new List<ArgumentValue>();
+    private readonly List<ArgumentValue> arguments = new();
     private ArgumentValue? thisObject;
     private OwnershipModel? ownershipModel;
 

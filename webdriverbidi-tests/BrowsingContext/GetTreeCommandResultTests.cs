@@ -11,7 +11,7 @@ public class GetTreeCommandResultTests
         string json = @"{ ""contexts"": [{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""children"": [] }] }";
         GetTreeCommandResult? result = JsonConvert.DeserializeObject<GetTreeCommandResult>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.ContextTree.Count, Is.EqualTo(1));
+        Assert.That(result!.ContextTree, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -20,7 +20,7 @@ public class GetTreeCommandResultTests
         string json = @"{ ""contexts"": [] }";
         GetTreeCommandResult? result = JsonConvert.DeserializeObject<GetTreeCommandResult>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.ContextTree.Count, Is.EqualTo(0));
+        Assert.That(result!.ContextTree, Is.Empty);
     }
 
     [Test]

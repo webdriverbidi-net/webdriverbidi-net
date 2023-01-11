@@ -31,8 +31,7 @@ public class ScriptEvaluateResult : CommandResult
 
         set
         {
-            ScriptEvaluateResultType type;
-            if (!Enum.TryParse<ScriptEvaluateResultType>(value, true, out type))
+            if (!Enum.TryParse<ScriptEvaluateResultType>(value, true, out ScriptEvaluateResultType type))
             {
                 throw new WebDriverBidiException($"Malformed response: Invalid value {value} for RealmInfo 'type' property");
             }

@@ -2,7 +2,7 @@ namespace WebDriverBidi;
 
 public class DataReceivedEventArgs : EventArgs
 {
-    private string data;
+    private readonly string data;
 
     public DataReceivedEventArgs(string data)
     {

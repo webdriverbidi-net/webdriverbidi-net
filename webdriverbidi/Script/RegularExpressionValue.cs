@@ -38,8 +38,7 @@ public class RegularExpressionValue
             return false;
         }
 
-        RegularExpressionValue? other = obj as RegularExpressionValue;
-        if (other is null)
+        if (obj is not RegularExpressionValue other)
         {
             return false;
         }

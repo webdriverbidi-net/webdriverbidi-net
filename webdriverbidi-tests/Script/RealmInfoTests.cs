@@ -13,9 +13,12 @@ public class RealmInfoJsonConverterTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
         RealmInfo realmInfo = (RealmInfo)info!;
-        Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-        Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-        Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worker));
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worker));
+        });
     }
 
     [Test]
@@ -26,9 +29,12 @@ public class RealmInfoJsonConverterTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
         RealmInfo realmInfo = (RealmInfo)info!;
-        Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-        Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-        Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worklet));
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worklet));
+        });
     }
 
     [Test]
@@ -39,11 +45,14 @@ public class RealmInfoJsonConverterTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
         WindowRealmInfo realmInfo = (WindowRealmInfo)info!;
-        Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-        Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-        Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
-        Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
-        Assert.That(realmInfo.Sandbox, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
+            Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
+            Assert.That(realmInfo.Sandbox, Is.Null);
+        });
     }
 
     [Test]
@@ -54,11 +63,14 @@ public class RealmInfoJsonConverterTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
         WindowRealmInfo realmInfo = (WindowRealmInfo)info!;
-        Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-        Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-        Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
-        Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
-        Assert.That(realmInfo.Sandbox, Is.EqualTo("mySandbox"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
+            Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
+            Assert.That(realmInfo.Sandbox, Is.EqualTo("mySandbox"));
+        });
     }
 
     [Test]
@@ -69,9 +81,12 @@ public class RealmInfoJsonConverterTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
         RealmInfo realmInfo = (RealmInfo)info!;
-        Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-        Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-        Assert.That(realmInfo.Type, Is.EqualTo(RealmType.ServiceWorker));
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.ServiceWorker));
+        });
     }
 
     [Test]
@@ -82,9 +97,12 @@ public class RealmInfoJsonConverterTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
         RealmInfo realmInfo = (RealmInfo)info!;
-        Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
-        Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
-        Assert.That(realmInfo.Type, Is.EqualTo(RealmType.PaintWorklet));
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.PaintWorklet));
+        });
     }
 
     [Test]

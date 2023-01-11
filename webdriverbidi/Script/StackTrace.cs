@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class StackTrace
 {
-    private List<StackFrame> callFrames = new List<StackFrame>();
+    private List<StackFrame> callFrames = new();
 
     [JsonConstructor]
     internal StackTrace()

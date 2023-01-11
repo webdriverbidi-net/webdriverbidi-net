@@ -7,11 +7,11 @@ public class Connection
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
     private bool isActive = false;
-    private int bufferSize = 4096;
-    private ClientWebSocket client = new ClientWebSocket();
-    private CancellationTokenSource clientTokenSource = new CancellationTokenSource();
-    private TimeSpan startupTimeout;
-    private TimeSpan shutdownTimeout;
+    private readonly int bufferSize = 4096;
+    private ClientWebSocket client = new();
+    private readonly CancellationTokenSource clientTokenSource = new();
+    private readonly TimeSpan startupTimeout;
+    private readonly TimeSpan shutdownTimeout;
 
     public Connection() : this(DefaultTimeout)
     {
@@ -74,7 +74,7 @@ public class Connection
         }
 
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-        var timeout = new CancellationTokenSource(this.shutdownTimeout);
+        CancellationTokenSource timeout = new(this.shutdownTimeout);
         try
         {
             // After this, the socket state which change to CloseSent
@@ -101,7 +101,7 @@ public class Connection
 
     public virtual async Task SendData(string data)
     {
-        var messageBuffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(data));
+        ArraySegment<byte> messageBuffer = new(Encoding.UTF8.GetBytes(data));
         this.Log($"SEND >>> {data}");
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
     }
@@ -127,7 +127,7 @@ public class Connection
         var cancellationToken = this.clientTokenSource.Token;
         try
         {
-            StringBuilder messageBuilder = new StringBuilder();
+            StringBuilder messageBuilder = new();
             var buffer = WebSocket.CreateClientBuffer(this.bufferSize, this.bufferSize);
             while (this.client.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
             {
@@ -145,7 +145,7 @@ public class Connection
                     // display text or binary data
                     if (this.client.State == WebSocketState.Open && receiveResult.MessageType != WebSocketMessageType.Close)
                     {
-                        messageBuilder.Append(Encoding.UTF8.GetString(buffer.Array ?? new byte[0], 0, receiveResult.Count));
+                        messageBuilder.Append(Encoding.UTF8.GetString(buffer.Array ?? Array.Empty<byte>(), 0, receiveResult.Count));
                         if (receiveResult.EndOfMessage)
                         {
                             string message = messageBuilder.ToString();

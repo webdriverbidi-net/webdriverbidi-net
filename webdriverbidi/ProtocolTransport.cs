@@ -7,10 +7,10 @@ using Newtonsoft.Json.Linq;
 public class ProtocolTransport
 {
     private long nextCommandId = 0;
-    private ConcurrentDictionary<long, WebDriverBidiCommandData> pendingCommands = new ConcurrentDictionary<long, WebDriverBidiCommandData>();
-    private Connection connection;
-    private TimeSpan commandWaitTimeout;
-    private Dictionary<string, Type> eventTypes = new Dictionary<string, Type>();
+    private readonly ConcurrentDictionary<long, WebDriverBidiCommandData> pendingCommands = new();
+    private readonly Connection connection;
+    private readonly TimeSpan commandWaitTimeout;
+    private readonly Dictionary<string, Type> eventTypes = new();
 
     public ProtocolTransport() : this(Timeout.InfiniteTimeSpan)
     {
@@ -56,7 +56,7 @@ public class ProtocolTransport
     public async Task<long> SendCommand(CommandSettings command)
     {
         long commandId  = Interlocked.Increment(ref this.nextCommandId);
-        var executionData = new WebDriverBidiCommandData(commandId, command);
+        WebDriverBidiCommandData executionData = new(commandId, command);
         if (!this.pendingCommands.TryAdd(executionData.CommandId, executionData))
         {
             throw new WebDriverBidiException($"Could not add command with id {executionData.CommandId}, as id already exists");
@@ -83,8 +83,7 @@ public class ProtocolTransport
 
     public CommandResult GetCommandResponse(long commandId)
     {
-        WebDriverBidiCommandData? command;
-        if (this.pendingCommands.TryRemove(commandId, out command))
+        if (this.pendingCommands.TryRemove(commandId, out WebDriverBidiCommandData? command))
         {
             if (command.Result is null)
             {
@@ -151,8 +150,7 @@ public class ProtocolTransport
                 long? responseId = message["id"]!.Value<long>();
                 if (this.pendingCommands.ContainsKey(responseId.Value))
                 {
-                    WebDriverBidiCommandData? executedCommand;
-                    if (this.pendingCommands.TryGetValue(responseId.Value, out executedCommand))
+                    if (this.pendingCommands.TryGetValue(responseId.Value, out WebDriverBidiCommandData? executedCommand))
                     {
                         try
                         {
@@ -175,7 +173,7 @@ public class ProtocolTransport
                         {
                             executedCommand.SynchronizationEvent.Set();
                         }
-                   }
+                    }
                 }
             }
             else if (message.ContainsKey("error"))

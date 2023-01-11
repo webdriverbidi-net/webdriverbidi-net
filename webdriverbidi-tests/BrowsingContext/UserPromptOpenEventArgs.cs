@@ -11,9 +11,12 @@ public class UserPromptOpenedEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""type"": ""alert"", ""message"": ""some prompt message"" }";
         UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Alert));
-        Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Alert));
+            Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+        });
     }
 
     [Test]
@@ -22,9 +25,12 @@ public class UserPromptOpenedEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""type"": ""confirm"", ""message"": ""some prompt message"" }";
         UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Confirm));
-        Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Confirm));
+            Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+        });
     }
 
     [Test]
@@ -33,9 +39,12 @@ public class UserPromptOpenedEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""type"": ""prompt"", ""message"": ""some prompt message"" }";
         UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Prompt));
-        Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Prompt));
+            Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+        });
     }
 
     [Test]
@@ -44,9 +53,12 @@ public class UserPromptOpenedEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""type"": ""beforeunload"", ""message"": ""some prompt message"" }";
         UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.BeforeUnload));
-        Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.BeforeUnload));
+            Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+        });
     }
 
     [Test]

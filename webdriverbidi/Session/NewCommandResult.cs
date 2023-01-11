@@ -7,7 +7,7 @@ public class NewCommandResult : CommandResult
 {
     private string sessionId = string.Empty;
     
-    private CapabilitiesResult capabilitiesResult = new CapabilitiesResult();
+    private CapabilitiesResult capabilitiesResult = new();
 
     [JsonConstructor]
     private NewCommandResult()

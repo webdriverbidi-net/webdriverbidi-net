@@ -6,7 +6,7 @@ using Script;
 public class ConsoleLogEntry : LogEntry
 {
     private string method = string.Empty;
-    private List<RemoteValue> args = new List<RemoteValue>();
+    private List<RemoteValue> args = new();
 
     internal ConsoleLogEntry() : base()
     {

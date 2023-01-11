@@ -2,7 +2,7 @@ namespace WebDriverBidi.Script;
 
 public class RealmCreatedEventArgs : EventArgs
 {
-    private RealmInfo info;
+    private readonly RealmInfo info;
 
     public RealmCreatedEventArgs(RealmInfo info)
     {
@@ -17,8 +17,7 @@ public class RealmCreatedEventArgs : EventArgs
     {
         get
         {
-            WindowRealmInfo? windowRealm = this.info as WindowRealmInfo;
-            if (windowRealm is null)
+            if (this.info is not WindowRealmInfo windowRealm)
             {
                 return null;
             }

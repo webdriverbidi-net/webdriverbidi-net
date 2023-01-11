@@ -12,9 +12,12 @@ public class LocalValueTests
         LocalValue value = LocalValue.Undefined;
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(1)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("undefined"));
+        Assert.That(parsed, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("undefined"));
+        });
     }
 
     [Test]
@@ -23,9 +26,12 @@ public class LocalValueTests
         LocalValue value = LocalValue.Null;
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(1)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("null"));
+        Assert.That(parsed, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("null"));
+        });
     }
 
     [Test]
@@ -34,12 +40,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.String("hello");
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("string"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("hello"));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("string"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("hello"));
+        });
     }
 
     [Test]
@@ -48,12 +57,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.Number(123);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-        Assert.That(parsed["value"]!.Value<long>(), Is.EqualTo(123));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
+            Assert.That(parsed["value"]!.Value<long>(), Is.EqualTo(123));
+        });
     }
 
     [Test]
@@ -62,12 +74,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.Number(123L);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-        Assert.That(parsed["value"]!.Value<long>(), Is.EqualTo(123));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
+            Assert.That(parsed["value"]!.Value<long>(), Is.EqualTo(123));
+        });
     }
 
     [Test]
@@ -76,12 +91,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.Number(3.14);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
-        Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(3.14));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
+            Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(3.14));
+        });
     }
 
     [Test]
@@ -90,12 +108,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.NaN;
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("NaN"));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("NaN"));
+        });
     }
 
     [Test]
@@ -104,12 +125,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.Infinity;
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("Infinity"));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("Infinity"));
+        });
     }
 
     [Test]
@@ -118,12 +142,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.NegativeInfinity;
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("-Infinity"));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("-Infinity"));
+        });
     }
 
     [Test]
@@ -132,12 +159,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.NegativeZero;
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("-0"));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("-0"));
+        });
     }
 
     [Test]
@@ -146,12 +176,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.Number(0.0);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
-        Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(0.0));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
+            Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(0.0));
+        });
     }
 
     [Test]
@@ -160,12 +193,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.Boolean(true);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("boolean"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(parsed["value"]!.Value<bool>(), Is.EqualTo(true));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("boolean"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
+            Assert.That(parsed["value"]!.Value<bool>(), Is.EqualTo(true));
+        });
     }
 
     [Test]
@@ -174,12 +210,15 @@ public class LocalValueTests
         LocalValue value = LocalValue.BigInt(123);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("bigint"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("123"));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("bigint"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("123"));
+        });
     }
 
     [Test]
@@ -190,11 +229,14 @@ public class LocalValueTests
         LocalValue value = LocalValue.Date(actualValue);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("date"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo(expectedValue));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("date"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo(expectedValue));
+        });
     }
 
     [Test]
@@ -203,16 +245,22 @@ public class LocalValueTests
         LocalValue value = LocalValue.RegExp("pattern.*");
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("regexp"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("regexp"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
+        });
         JObject? valueObject = parsed["value"] as JObject;
-        Assert.That(valueObject!.Count, Is.EqualTo(1));
-        Assert.That(valueObject.ContainsKey("pattern"));
-        Assert.That(valueObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(valueObject["pattern"]!.Value<string>(), Is.EqualTo("pattern.*"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(valueObject!, Has.Count.EqualTo(1));
+            Assert.That(valueObject!.ContainsKey("pattern"));
+            Assert.That(valueObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(valueObject["pattern"]!.Value<string>(), Is.EqualTo("pattern.*"));
+        });
     }
 
     [Test]
@@ -221,25 +269,31 @@ public class LocalValueTests
         LocalValue value = LocalValue.RegExp("pattern.*", "gi");
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("regexp"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("regexp"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
+        });
         JObject? valueObject = parsed["value"] as JObject;
-        Assert.That(valueObject!.Count, Is.EqualTo(2));
-        Assert.That(valueObject.ContainsKey("pattern"));
-        Assert.That(valueObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(valueObject["pattern"]!.Value<string>(), Is.EqualTo("pattern.*"));
-        Assert.That(valueObject.ContainsKey("flags"));
-        Assert.That(valueObject["flags"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(valueObject["flags"]!.Value<string>(), Is.EqualTo("gi"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(valueObject!, Has.Count.EqualTo(2));
+            Assert.That(valueObject!.ContainsKey("pattern"));
+            Assert.That(valueObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(valueObject["pattern"]!.Value<string>(), Is.EqualTo("pattern.*"));
+            Assert.That(valueObject.ContainsKey("flags"));
+            Assert.That(valueObject["flags"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(valueObject["flags"]!.Value<string>(), Is.EqualTo("gi"));
+        });
     }
 
     [Test]
     public void TestCanSerializeArray()
     {
-        List<LocalValue> arrayList = new List<LocalValue>()
+        List<LocalValue> arrayList = new()
         {
             LocalValue.String("hello"),
             LocalValue.Number(123),
@@ -249,52 +303,74 @@ public class LocalValueTests
         LocalValue value = LocalValue.Array(arrayList);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("array"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("array"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        });
         JArray? valueObject = parsed["value"] as JArray;
-        Assert.That(valueObject!.Count, Is.EqualTo(4));
+        Assert.That(valueObject, Is.Not.Null);
+        Assert.That(valueObject, Has.Count.EqualTo(4));
+        Assert.Multiple(() =>
+        {
+            Assert.That(valueObject![0].Type, Is.EqualTo(JTokenType.Object));
+        });
+        JObject? itemObject = valueObject![0] as JObject;
+        Assert.That(itemObject, Is.Not.Null);
+        Assert.That(itemObject, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(itemObject!.ContainsKey("type"));
+            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("string"));
+            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(itemObject["value"]!.Value<string>(), Is.EqualTo("hello"));
 
-        Assert.That(valueObject[0].Type, Is.EqualTo(JTokenType.Object));
-        JObject? itemObject = valueObject[0] as JObject;
-        Assert.That(itemObject!.Count, Is.EqualTo(2));
-        Assert.That(itemObject.ContainsKey("type"));
-        Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("string"));
-        Assert.That(itemObject.ContainsKey("value"));
-        Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(itemObject["value"]!.Value<string>(), Is.EqualTo("hello"));
-
-        Assert.That(valueObject[1].Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(valueObject[1].Type, Is.EqualTo(JTokenType.Object));
+        });
         itemObject = valueObject[1] as JObject;
-        Assert.That(itemObject!.Count, Is.EqualTo(2));
-        Assert.That(itemObject.ContainsKey("type"));
-        Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(itemObject.ContainsKey("value"));
-        Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-        Assert.That(itemObject["value"]!.Value<long>(), Is.EqualTo(123));
+        Assert.That(itemObject, Is.Not.Null);
+        Assert.That(itemObject, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(itemObject!.ContainsKey("type"));
+            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Integer));
+            Assert.That(itemObject["value"]!.Value<long>(), Is.EqualTo(123));
 
-        Assert.That(valueObject[2].Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(valueObject[2].Type, Is.EqualTo(JTokenType.Object));
+        });
         itemObject = valueObject[2] as JObject;
-        Assert.That(itemObject!.Count, Is.EqualTo(1));
-        Assert.That(itemObject.ContainsKey("type"));
-        Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("null"));
+        Assert.That(itemObject, Is.Not.Null);
+        Assert.That(itemObject, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(itemObject!.ContainsKey("type"));
+            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("null"));
 
-        Assert.That(valueObject[3].Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(valueObject[3].Type, Is.EqualTo(JTokenType.Object));
+        });
         itemObject = valueObject[3] as JObject;
-        Assert.That(itemObject!.Count, Is.EqualTo(2));
-        Assert.That(itemObject.ContainsKey("type"));
-        Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("boolean"));
-        Assert.That(itemObject.ContainsKey("value"));
-        Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(itemObject["value"]!.Value<bool>(), Is.EqualTo(true));
+        Assert.That(itemObject, Is.Not.Null);
+        Assert.That(itemObject, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(itemObject!.ContainsKey("type"));
+            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("boolean"));
+            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
+            Assert.That(itemObject["value"]!.Value<bool>(), Is.EqualTo(true));
+        });
     }
 
     [Test]
     public void TestCanSerializeSet()
     {
-        List<LocalValue> arrayList = new List<LocalValue>()
+        List<LocalValue> arrayList = new()
         {
             LocalValue.String("hello"),
             LocalValue.Number(123),
@@ -304,52 +380,72 @@ public class LocalValueTests
         LocalValue value = LocalValue.Set(arrayList);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("set"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("set"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        });
         JArray? valueObject = parsed["value"] as JArray;
-        Assert.That(valueObject!.Count, Is.EqualTo(4));
+        Assert.That(valueObject, Is.Not.Null);
+        Assert.That(valueObject, Has.Count.EqualTo(4));
 
-        Assert.That(valueObject[0].Type, Is.EqualTo(JTokenType.Object));
+        Assert.That(valueObject![0].Type, Is.EqualTo(JTokenType.Object));
         JObject? itemObject = valueObject[0] as JObject;
-        Assert.That(itemObject!.Count, Is.EqualTo(2));
-        Assert.That(itemObject.ContainsKey("type"));
-        Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("string"));
-        Assert.That(itemObject.ContainsKey("value"));
-        Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(itemObject["value"]!.Value<string>(), Is.EqualTo("hello"));
+        Assert.That(itemObject, Is.Not.Null);
+        Assert.That(itemObject, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(itemObject!.ContainsKey("type"));
+            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("string"));
+            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(itemObject["value"]!.Value<string>(), Is.EqualTo("hello"));
+        });
 
         Assert.That(valueObject[1].Type, Is.EqualTo(JTokenType.Object));
         itemObject = valueObject[1] as JObject;
-        Assert.That(itemObject!.Count, Is.EqualTo(2));
-        Assert.That(itemObject.ContainsKey("type"));
-        Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("number"));
-        Assert.That(itemObject.ContainsKey("value"));
-        Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Integer));
-        Assert.That(itemObject["value"]!.Value<long>(), Is.EqualTo(123));
+        Assert.That(itemObject, Is.Not.Null);
+        Assert.That(itemObject, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(itemObject!.ContainsKey("type"));
+            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Integer));
+            Assert.That(itemObject["value"]!.Value<long>(), Is.EqualTo(123));
+        });
 
         Assert.That(valueObject[2].Type, Is.EqualTo(JTokenType.Object));
         itemObject = valueObject[2] as JObject;
-        Assert.That(itemObject!.Count, Is.EqualTo(1));
-        Assert.That(itemObject.ContainsKey("type"));
-        Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("null"));
+        Assert.That(itemObject, Is.Not.Null);
+        Assert.That(itemObject, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(itemObject!.ContainsKey("type"));
+            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("null"));
+       });
 
         Assert.That(valueObject[3].Type, Is.EqualTo(JTokenType.Object));
         itemObject = valueObject[3] as JObject;
-        Assert.That(itemObject!.Count, Is.EqualTo(2));
-        Assert.That(itemObject.ContainsKey("type"));
-        Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("boolean"));
-        Assert.That(itemObject.ContainsKey("value"));
-        Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(itemObject["value"]!.Value<bool>(), Is.EqualTo(true));
+        Assert.That(itemObject, Is.Not.Null);
+        Assert.That(itemObject, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(itemObject!.ContainsKey("type"));
+            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("boolean"));
+            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
+            Assert.That(itemObject["value"]!.Value<bool>(), Is.EqualTo(true));
+        });
     }
 
     [Test]
     public void TestCanSerializeMap()
     {
-        Dictionary<string, LocalValue> dictionary = new Dictionary<string, LocalValue>()
+        Dictionary<string, LocalValue> dictionary = new()
         {
             { "string", LocalValue.String("hello") },
             { "number", LocalValue.Number(123) },
@@ -360,25 +456,33 @@ public class LocalValueTests
         LocalValue value = LocalValue.Map(dictionary);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        });
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray!.Count, Is.EqualTo(dictionary.Count));
-        var foundStrings = new List<string>();
+        Assert.That(valueArray, Is.Not.Null);
+        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        List<string> foundStrings = new();
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray[i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray!.Count, Is.EqualTo(2));
-            Assert.That(itemArray[0].Type, Is.EqualTo(JTokenType.String));
-            foundStrings.Add(itemArray[0].Value<string>() ?? "");
+            Assert.That(itemArray, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(itemArray, Has.Count.EqualTo(2));
+                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.String));
+            });
+            foundStrings.Add(itemArray![0].Value<string>() ?? "");
             Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
         }
 
@@ -388,7 +492,7 @@ public class LocalValueTests
     [Test]
     public void TestCanSerializeObject()
     {
-        Dictionary<string, LocalValue> dictionary = new Dictionary<string, LocalValue>()
+        Dictionary<string, LocalValue> dictionary = new()
         {
             { "string", LocalValue.String("hello") },
             { "number", LocalValue.Number(123) },
@@ -399,25 +503,33 @@ public class LocalValueTests
         LocalValue value = LocalValue.Object(dictionary);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        });
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray!.Count, Is.EqualTo(dictionary.Count));
+        Assert.That(valueArray, Is.Not.Null);
+        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
         var foundStrings = new List<string>();
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray[i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray!.Count, Is.EqualTo(2));
-            Assert.That(itemArray[0].Type, Is.EqualTo(JTokenType.String));
-            foundStrings.Add(itemArray[0].Value<string>() ?? "");
+            Assert.That(itemArray, Is.Not.Null);
+            Assert.Multiple(() =>
+            {
+                Assert.That(itemArray!, Has.Count.EqualTo(2));
+                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.String));
+            });
+            foundStrings.Add(itemArray![0].Value<string>() ?? "");
             Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
         }
 
@@ -429,7 +541,7 @@ public class LocalValueTests
     {
         // N.B., this is an edge case, and we are doing no further validation
         // than that the JSON serializer will properly serialize the object.
-        Dictionary<LocalValue, LocalValue> dictionary = new Dictionary<LocalValue, LocalValue>()
+        Dictionary<LocalValue, LocalValue> dictionary = new()
         {
             { LocalValue.String("string"), LocalValue.String("hello") },
             { LocalValue.String("number"), LocalValue.Number(123) },
@@ -440,24 +552,32 @@ public class LocalValueTests
         LocalValue value = LocalValue.Map(dictionary);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        });
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray!.Count, Is.EqualTo(dictionary.Count));
+        Assert.That(valueArray, Is.Not.Null);
+        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray[i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray!.Count, Is.EqualTo(2));
-            Assert.That(itemArray[0].Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(itemArray, Is.Not.Null);
+            Assert.That(itemArray, Has.Count.EqualTo(2));
+            Assert.Multiple(() =>
+            {
+                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.Object));
+                Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+            });
         }
     }
 
@@ -466,7 +586,7 @@ public class LocalValueTests
     {
         // N.B., this is an edge case, and we are doing no further validation
         // than that the JSON serializer will properly serialize the object.
-        Dictionary<LocalValue, LocalValue> dictionary = new Dictionary<LocalValue, LocalValue>()
+        Dictionary<LocalValue, LocalValue> dictionary = new()
         {
             { LocalValue.String("string"), LocalValue.String("hello") },
             { LocalValue.String("number"), LocalValue.Number(123) },
@@ -477,24 +597,32 @@ public class LocalValueTests
         LocalValue value = LocalValue.Object(dictionary);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed.Count, Is.EqualTo(2)); 
-        Assert.That(parsed.ContainsKey("type"));
-        Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
-        Assert.That(parsed.ContainsKey("value"));
-        Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
+            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        });
 
         // N.B., We are not validating the content of each object in the map
         // values; it should be sufficient that the serialization of individual
         // values works.
         JArray? valueArray = parsed["value"] as JArray;
-        Assert.That(valueArray!.Count, Is.EqualTo(dictionary.Count));
+        Assert.That(valueArray, Is.Not.Null);
+        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
         for (int i = 0; i < dictionary.Count; i++)
         {
-            Assert.That(valueArray[i].Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
             JArray? itemArray = valueArray[i] as JArray;
-            Assert.That(itemArray!.Count, Is.EqualTo(2));
-            Assert.That(itemArray[0].Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(itemArray, Is.Not.Null);
+            Assert.That(itemArray, Has.Count.EqualTo(2));
+            Assert.Multiple(() =>
+            {
+                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.Object));
+                Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+            });
         }
     }
 }

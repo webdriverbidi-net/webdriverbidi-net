@@ -34,8 +34,7 @@ public class UserPromptOpenedEventArgs : EventArgs
         get { return this.promptType.ToString().ToLowerInvariant(); }
         set
         {
-            UserPromptType type;
-            if (!Enum.TryParse<UserPromptType>(value, true, out type))
+            if (!Enum.TryParse<UserPromptType>(value, true, out UserPromptType type))
             {
                 throw new WebDriverBidiException($"Invalid value for user prompt type: '{value}'");
             }

@@ -12,7 +12,7 @@ public class CapabilitiesRequest
     private string? browserVersion;
     private string? platformName;
     private Proxy? proxy;
-    private Dictionary<string, object?> additionalCapabilities = new Dictionary<string, object?>();
+    private readonly Dictionary<string, object?> additionalCapabilities = new();
 
     [JsonProperty("acceptInsecureCerts", NullValueHandling = NullValueHandling.Ignore)]
     public bool? AcceptInsecureCertificates { get => this.acceptInsecureCertificates; set => this.acceptInsecureCertificates = value; }

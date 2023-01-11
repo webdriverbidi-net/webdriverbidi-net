@@ -8,7 +8,7 @@ public class ConnectionTests
 {
     private TestWebSocketServer? server;
     private string lastReceivedData = string.Empty;
-    private AutoResetEvent syncEvent = new AutoResetEvent(false);
+    private readonly AutoResetEvent syncEvent = new(false);
 
     [SetUp]
     public void InitializeServer()
@@ -41,7 +41,7 @@ public class ConnectionTests
 
         int port = server.Port;
         DisposeServer();
-        Connection connection = new Connection(TimeSpan.FromMilliseconds(250));
+        Connection connection = new(TimeSpan.FromMilliseconds(250));
         Assert.That(async () => await connection.Start($"ws://localhost:{port}"), Throws.InstanceOf<TimeoutException>().With.Message.Contains(".25 seconds"));
     }
 
@@ -53,7 +53,7 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-        Connection connection = new Connection();
+        Connection connection = new();
         connection.DataReceived += OnConnectionDataReceived;
         await connection.Start($"ws://localhost:{server.Port}");
 
@@ -72,7 +72,7 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-        Connection connection = new Connection();
+        Connection connection = new();
         connection.DataReceived += OnConnectionDataReceived;
         await connection.Start($"ws://localhost:{server.Port}");
 
@@ -92,12 +92,12 @@ public class ConnectionTests
         }
 
 
-        Connection connection = new Connection();
+        Connection connection = new();
         connection.DataReceived += OnConnectionDataReceived;
         await connection.Start($"ws://localhost:{server.Port}");
 
         // Create a message on an exact boundary of the buffer
-        string data = new string('a', 2 * connection.BufferSize);
+        string data = new('a', 2 * connection.BufferSize);
         await server.SendData(data);
         syncEvent.WaitOne(TimeSpan.FromSeconds(3));
 
@@ -113,8 +113,8 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-        List<string> logValues = new List<string>();
-        Connection connection = new Connection();
+        List<string> logValues = new();
+        Connection connection = new();
         connection.DataReceived += OnConnectionDataReceived;
         connection.LogMessage += (object? sender, LogMessageEventArgs e) => 
         {

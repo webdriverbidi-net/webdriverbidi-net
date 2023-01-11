@@ -11,9 +11,12 @@ public class UserPromptClosedEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""accepted"": true }";
         UserPromptClosedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.IsAccepted, Is.EqualTo(true));
-        Assert.That(eventArgs.UserText, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.IsAccepted, Is.EqualTo(true));
+            Assert.That(eventArgs.UserText, Is.Null);
+        });
     }
 
     [Test]
@@ -22,9 +25,12 @@ public class UserPromptClosedEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""accepted"": false }";
         UserPromptClosedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.IsAccepted, Is.EqualTo(false));
-        Assert.That(eventArgs.UserText, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.IsAccepted, Is.EqualTo(false));
+            Assert.That(eventArgs.UserText, Is.Null);
+        });
     }
 
     [Test]
@@ -33,9 +39,12 @@ public class UserPromptClosedEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""accepted"": true, ""userText"": ""some text"" }";
         UserPromptClosedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(eventArgs!.IsAccepted, Is.EqualTo(true));
-        Assert.That(eventArgs.UserText, Is.EqualTo("some text"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.IsAccepted, Is.EqualTo(true));
+            Assert.That(eventArgs.UserText, Is.EqualTo("some text"));
+        });
     }
 
     [Test]

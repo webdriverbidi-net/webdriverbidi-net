@@ -8,11 +8,11 @@ using Session;
 
 public class Driver
 {
-    private ProtocolTransport transport;
-    private BrowsingContextModule browsingContextModule;
-    private SessionModule sessionModule;
-    private ScriptModule scriptModule;
-    private LogModule logModule;
+    private readonly ProtocolTransport transport;
+    private readonly BrowsingContextModule browsingContextModule;
+    private readonly SessionModule sessionModule;
+    private readonly ScriptModule scriptModule;
+    private readonly LogModule logModule;
 
     public Driver() : this(new ProtocolTransport())
     {
@@ -67,8 +67,7 @@ public class Driver
 
         if (result.IsError)
         {
-            ErrorResponse? errorResponse = result as ErrorResponse;
-            if (errorResponse is null)
+            if (result is not ErrorResponse errorResponse)
             {
                 throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
             }
@@ -76,8 +75,7 @@ public class Driver
             throw new WebDriverBidiException($"Received '{errorResponse.ErrorType}' error executing command {command.MethodName}: {errorResponse.ErrorMessage}");
         }
 
-        T? convertedResult = result as T;
-        if (convertedResult is null)
+        if (result is not T convertedResult)
         {
             throw new WebDriverBidiException("Received null converting response from transport for SendCommandAndWait");
         }

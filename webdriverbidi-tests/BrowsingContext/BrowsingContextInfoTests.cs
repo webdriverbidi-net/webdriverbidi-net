@@ -12,11 +12,14 @@ public class BrowsingContextInfoTests
         BrowsingContextInfo? info = JsonConvert.DeserializeObject<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
-        Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(info.Url, Is.EqualTo("http://example.com"));
-        Assert.That(info.Children, Is.Not.Null);
-        Assert.That(info.Children.Count, Is.EqualTo(0));
-        Assert.That(info.Parent, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.Url, Is.EqualTo("http://example.com"));
+            Assert.That(info.Children, Is.Not.Null);
+            Assert.That(info.Children, Is.Empty);
+            Assert.That(info.Parent, Is.Null);
+        });
     }
 
     [Test]
@@ -26,11 +29,14 @@ public class BrowsingContextInfoTests
         BrowsingContextInfo? info = JsonConvert.DeserializeObject<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
-        Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(info.Url, Is.EqualTo("http://example.com"));
-        Assert.That(info.Children, Is.Not.Null);
-        Assert.That(info.Children.Count, Is.EqualTo(1));
-        Assert.That(info.Parent, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.Url, Is.EqualTo("http://example.com"));
+            Assert.That(info.Children, Is.Not.Null);
+            Assert.That(info.Children, Has.Count.EqualTo(1));
+            Assert.That(info.Parent, Is.Null);
+        });
     }
 
     [Test]
@@ -40,12 +46,15 @@ public class BrowsingContextInfoTests
         BrowsingContextInfo? info = JsonConvert.DeserializeObject<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
-        Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(info.Url, Is.EqualTo("http://example.com"));
-        Assert.That(info.Children, Is.Not.Null);
-        Assert.That(info.Children.Count, Is.EqualTo(0));
-        Assert.That(info.Parent, Is.Not.Null);
-        Assert.That(info.Parent, Is.EqualTo("parentContextId"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.Url, Is.EqualTo("http://example.com"));
+            Assert.That(info.Children, Is.Not.Null);
+            Assert.That(info.Children, Has.Count.EqualTo(0));
+            Assert.That(info.Parent, Is.Not.Null);
+            Assert.That(info.Parent, Is.EqualTo("parentContextId"));
+        });
     }
 
     [Test]

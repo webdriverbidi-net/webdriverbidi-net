@@ -52,14 +52,14 @@ public class LocalValue : ArgumentValue
             {
                 // One of the two cases (key is string, or key is LocalValue)
                 // must be true.
-                List<object> serializeablePairList = new List<object>();
+                List<object> serializeablePairList = new();
                 Dictionary<LocalValue, LocalValue>? dictionaryValue = this.argValue as Dictionary<LocalValue, LocalValue>;
                 Dictionary<string, LocalValue>? stringDictionaryValue = this.argValue as Dictionary<string, LocalValue>;
                 if (dictionaryValue is not null)
                 {
                     foreach (var pair in dictionaryValue)
                     {
-                        List<object> itemList = new List<object>() { pair.Key, pair.Value };
+                        List<object> itemList = new() { pair.Key, pair.Value };
                         serializeablePairList.Add(itemList);
                     }
                 }
@@ -68,7 +68,7 @@ public class LocalValue : ArgumentValue
                 {
                     foreach (var pair in stringDictionaryValue)
                     {
-                        List<object> itemList = new List<object>() { pair.Key, pair.Value };
+                        List<object> itemList = new() { pair.Key, pair.Value };
                         serializeablePairList.Add(itemList);
                     }
                 }
@@ -108,24 +108,24 @@ public class LocalValue : ArgumentValue
         return this.argValue;
     }
     
-    public static LocalValue Undefined => new LocalValue("undefined");
-    public static LocalValue Null => new LocalValue("null");
-    public static LocalValue NaN =>  new LocalValue("number") { argValue = double.NaN };
-    public static LocalValue NegativeZero => new LocalValue("number") { argValue = decimal.Negate(decimal.Zero) };
-    public static LocalValue Infinity => new LocalValue("number") { argValue = double.PositiveInfinity };
-    public static LocalValue NegativeInfinity => new LocalValue("number") { argValue = double.NegativeInfinity };
-    public static LocalValue String(string stringValue) => new LocalValue("string") { argValue = stringValue };
-    public static LocalValue Number(int numericValue) => new LocalValue("number") { argValue = numericValue };
-    public static LocalValue Number(long numericValue) => new LocalValue("number") { argValue = numericValue };
-    public static LocalValue Number(double numericValue) => new LocalValue("number") { argValue = numericValue };
-    public static LocalValue Boolean(bool boolValue) => new LocalValue("boolean") { argValue = boolValue };
-    public static LocalValue BigInt(BigInteger bigIntValue) => new LocalValue("bigint") { argValue = bigIntValue };
-    public static LocalValue Date(DateTime dateTimeValue) => new LocalValue("date") { argValue = dateTimeValue };
-    public static LocalValue Array(List<LocalValue> arrayValue) => new LocalValue("array") { argValue = arrayValue };
-    public static LocalValue Set(List<LocalValue> arrayValue) => new LocalValue("set") { argValue = arrayValue };
-    public static LocalValue Map(Dictionary<string, LocalValue> mapValue) => new LocalValue("map") { argValue = mapValue };
-    public static LocalValue Map(Dictionary<LocalValue, LocalValue> mapValue) => new LocalValue("map") { argValue = mapValue };
-    public static LocalValue Object(Dictionary<string, LocalValue> mapValue) => new LocalValue("object") { argValue = mapValue };
-    public static LocalValue Object(Dictionary<LocalValue, LocalValue> mapValue) => new LocalValue("object") { argValue = mapValue };
-    public static LocalValue RegExp(string pattern, string? flags = null) => new LocalValue("regexp") { argValue = new RegularExpressionValue(pattern, flags) };
+    public static LocalValue Undefined => new("undefined");
+    public static LocalValue Null => new("null");
+    public static LocalValue NaN =>  new("number") { argValue = double.NaN };
+    public static LocalValue NegativeZero => new("number") { argValue = decimal.Negate(decimal.Zero) };
+    public static LocalValue Infinity => new("number") { argValue = double.PositiveInfinity };
+    public static LocalValue NegativeInfinity => new("number") { argValue = double.NegativeInfinity };
+    public static LocalValue String(string stringValue) => new("string") { argValue = stringValue };
+    public static LocalValue Number(int numericValue) => new("number") { argValue = numericValue };
+    public static LocalValue Number(long numericValue) => new("number") { argValue = numericValue };
+    public static LocalValue Number(double numericValue) => new("number") { argValue = numericValue };
+    public static LocalValue Boolean(bool boolValue) => new("boolean") { argValue = boolValue };
+    public static LocalValue BigInt(BigInteger bigIntValue) => new("bigint") { argValue = bigIntValue };
+    public static LocalValue Date(DateTime dateTimeValue) => new("date") { argValue = dateTimeValue };
+    public static LocalValue Array(List<LocalValue> arrayValue) => new("array") { argValue = arrayValue };
+    public static LocalValue Set(List<LocalValue> arrayValue) => new("set") { argValue = arrayValue };
+    public static LocalValue Map(Dictionary<string, LocalValue> mapValue) => new("map") { argValue = mapValue };
+    public static LocalValue Map(Dictionary<LocalValue, LocalValue> mapValue) => new("map") { argValue = mapValue };
+    public static LocalValue Object(Dictionary<string, LocalValue> mapValue) => new("object") { argValue = mapValue };
+    public static LocalValue Object(Dictionary<LocalValue, LocalValue> mapValue) => new("object") { argValue = mapValue };
+    public static LocalValue RegExp(string pattern, string? flags = null) => new("regexp") { argValue = new RegularExpressionValue(pattern, flags) };
 }

@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 public class NewCommandSettings : CommandSettings
 {
     private CapabilitiesRequest? alwaysMatch;
-    private List<CapabilitiesRequest> firstMatch = new List<CapabilitiesRequest>();
+    private readonly List<CapabilitiesRequest> firstMatch = new();
 
     public override string MethodName => "session.new";
 

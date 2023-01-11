@@ -2,7 +2,7 @@ namespace WebDriverBidi.Session;
 
 public class ProxyResult
 {
-    private Proxy proxy;
+    private readonly Proxy proxy;
 
     internal ProxyResult(Proxy proxy)
     {

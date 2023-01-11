@@ -47,8 +47,7 @@ public class RealmInfo
         set
         {
             string sanitizedType = value.Replace("-", "");
-            RealmType type;
-            if (!Enum.TryParse<RealmType>(sanitizedType, true, out type))
+            if (!Enum.TryParse<RealmType>(sanitizedType, true, out RealmType type))
             {
                 throw new WebDriverBidiException($"Malformed response: Invalid value {type} for RealmInfo 'type' property");
             }

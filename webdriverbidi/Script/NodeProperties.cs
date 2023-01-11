@@ -57,10 +57,7 @@ public class NodeProperties
                 return null;
             }
 
-            if (this.attributes is null)
-            {
-                this.attributes = new NodeAttributes(this.attributesDictionary);
-            }
+            this.attributes ??= new NodeAttributes(this.attributesDictionary);
 
             return this.attributes;
         }

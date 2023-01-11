@@ -11,17 +11,24 @@ public class NavigateResultTests
         string json = @"{ ""url"": ""http://example.com"" }";
         BrowsingContextNavigateResult? result = JsonConvert.DeserializeObject<BrowsingContextNavigateResult>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Url, Is.EqualTo("http://example.com"));
-        Assert.That(result.NavigationId, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result!.Url, Is.EqualTo("http://example.com"));
+            Assert.That(result.NavigationId, Is.Null);
+        });
     }
 
+    [Test]
     public void TestCanDeserializeWithNavigationId()
     {
         string json = @"{ ""url"": ""http://example.com"", ""navigation"": ""myNavigationId"" }";
         BrowsingContextNavigateResult? result = JsonConvert.DeserializeObject<BrowsingContextNavigateResult>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Url, Is.EqualTo("http://example.com"));
-        Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result!.Url, Is.EqualTo("http://example.com"));
+            Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
+        });
     }
 
     [Test]

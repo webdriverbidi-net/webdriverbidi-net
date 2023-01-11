@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using WebDriverBidi;
+using WebDriverBidi.Client;
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Script;
 using WebDriverBidi.Session;
@@ -13,7 +14,7 @@ BrowserType testBrowserName = BrowserType.Chrome;
 string testBrowserCommandLine = @"/Applications/Firefox.app/Contents/MacOS/firefox-bin";
 string testBrowserArguments = $"--remote-debugging-port {port} --no-remote --profile {testProfilePath}";
 Process? testProcess = null;
-AutoResetEvent syncEvent = new AutoResetEvent(false);
+AutoResetEvent syncEvent = new(false);
 
 try
 {
@@ -33,7 +34,7 @@ finally
 
 async Task DriveBrowser()
 {
-    Driver driver = new Driver();
+    Driver driver = new();
     driver.LogMessage += OnDriverLogMessage;
     driver.BrowsingContext.NavigationStarted += delegate(object? sender, NavigationEventArgs e)
     {
@@ -100,7 +101,7 @@ Process StartServer(string profilePath, BrowserType browserName, string browserC
     DirectoryInfo profileDirectory = Directory.CreateDirectory(profilePath);
 
     Console.WriteLine($"Starting {browserName}");
-    Process process = new Process();
+    Process process = new();
     process.StartInfo.FileName = browserCommandLine;
     process.StartInfo.Arguments = browserArguments;
     process.StartInfo.RedirectStandardError = true;
@@ -112,10 +113,7 @@ Process StartServer(string profilePath, BrowserType browserName, string browserC
 void StopServer(string profilePath, BrowserType browserName, Process? process)
 {
     Console.WriteLine($"Closing {browserName}");
-    if (process is not null)
-    {
-        process.Kill();
-    }
+    process?.Kill();
     
     Console.WriteLine($"Deleting temp folder for profile {profilePath}");
     Directory.Delete(profilePath, true);

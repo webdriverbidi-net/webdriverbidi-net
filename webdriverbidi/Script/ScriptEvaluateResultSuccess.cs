@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 public class ScriptEvaluateResultSuccess: ScriptEvaluateResult
 {
-    private RemoteValue result = new RemoteValue("null");
+    private RemoteValue result = new("null");
 
     [JsonConstructor]
     internal ScriptEvaluateResultSuccess() : base()

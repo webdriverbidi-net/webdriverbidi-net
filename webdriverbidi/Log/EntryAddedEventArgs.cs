@@ -6,7 +6,7 @@ using Script;
 [JsonObject(MemberSerialization.OptIn)]
 public class EntryAddedEventArgs : EventArgs
 {
-    private LogEntry entry;
+    private readonly LogEntry entry;
 
     public EntryAddedEventArgs(LogEntry entry)
     {
@@ -27,8 +27,7 @@ public class EntryAddedEventArgs : EventArgs
     {
         get
         {
-            var consoleLogEntry = this.entry as ConsoleLogEntry;
-            if (consoleLogEntry is null)
+            if (this.entry is not ConsoleLogEntry consoleLogEntry)
             {
                 return null;
             }
@@ -41,8 +40,7 @@ public class EntryAddedEventArgs : EventArgs
     {
         get
         {
-            var consoleLogEntry = this.entry as ConsoleLogEntry;
-            if (consoleLogEntry is null)
+            if (this.entry is not ConsoleLogEntry consoleLogEntry)
             {
                 return null;
             }

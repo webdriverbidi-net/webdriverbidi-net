@@ -7,11 +7,11 @@ public class TestDriver : Driver
     private long nextCommandId = 0;
     private WebDriverBidiCommandData? lastCommand;
 
-    private TimeSpan commandTimeout = TimeSpan.FromSeconds(5);
+    private readonly TimeSpan commandTimeout = TimeSpan.FromSeconds(5);
 
-    private AutoResetEvent commandSetEvent = new AutoResetEvent(false);
+    private readonly AutoResetEvent commandSetEvent = new(false);
 
-    private Dictionary<string, Type> eventTypes = new Dictionary<string, Type>();
+    private readonly Dictionary<string, Type> eventTypes = new();
 
     public void EmitResponse(string jsonResponse)
     {
@@ -43,8 +43,7 @@ public class TestDriver : Driver
 
         if (result.IsError)
         {
-            ErrorResponse? errorResponse = result as ErrorResponse;
-            if (errorResponse is null)
+            if (result is not ErrorResponse errorResponse)
             {
                 throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
             }
@@ -52,8 +51,7 @@ public class TestDriver : Driver
             throw new WebDriverBidiException($"Received '{errorResponse.ErrorType}' error executing command {command.MethodName}: {errorResponse.ErrorMessage}");
         }
 
-        T? convertedResult = result as T;
-        if (convertedResult is null)
+        if (result is not T convertedResult)
         {
             throw new WebDriverBidiException("Received null converting response from transport for SendCommandAndWait");
         }

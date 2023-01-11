@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class GetRealmsCommandResult : CommandResult
 {
-    private List<RealmInfo> realms = new List<RealmInfo>();
+    private List<RealmInfo> realms = new();
 
     public IList<RealmInfo> Realms => this.realms.AsReadOnly();
 

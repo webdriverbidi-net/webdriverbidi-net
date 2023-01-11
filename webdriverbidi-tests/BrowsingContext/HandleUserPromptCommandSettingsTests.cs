@@ -9,60 +9,78 @@ public class HandleUserPromptCommandSettingsTests
     [Test]
     public void TestCanSerializeSettings()
     {
-        var properties = new HandleUserPromptCommandSettings("myContextId");
+        HandleUserPromptCommandSettings properties = new("myContextId");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("context"));
-        Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithAcceptTrue()
     {
-        var properties = new HandleUserPromptCommandSettings("myContextId");
-        properties.Accept = true;
+        HandleUserPromptCommandSettings properties = new("myContextId")
+        {
+            Accept = true
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
-        Assert.That(serialized.ContainsKey("context"));
-        Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        Assert.That(serialized.ContainsKey("accept"));
-        Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(serialized["accept"]!.Value<bool>(), Is.EqualTo(true));
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized.ContainsKey("accept"));
+            Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
+            Assert.That(serialized["accept"]!.Value<bool>(), Is.EqualTo(true));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithAcceptFalse()
     {
-        var properties = new HandleUserPromptCommandSettings("myContextId");
-        properties.Accept = false;
+        HandleUserPromptCommandSettings properties = new("myContextId")
+        {
+            Accept = false
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
-        Assert.That(serialized.ContainsKey("context"));
-        Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        Assert.That(serialized.ContainsKey("accept"));
-        Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        Assert.That(serialized["accept"]!.Value<bool>(), Is.EqualTo(false));
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized.ContainsKey("accept"));
+            Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
+            Assert.That(serialized["accept"]!.Value<bool>(), Is.EqualTo(false));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithUserText()
     {
-        var properties = new HandleUserPromptCommandSettings("myContextId");
-        properties.UserText = "myUserText";
+        HandleUserPromptCommandSettings properties = new("myContextId")
+        {
+            UserText = "myUserText"
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(2));
-        Assert.That(serialized.ContainsKey("context"));
-        Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        Assert.That(serialized.ContainsKey("userText"));
-        Assert.That(serialized["userText"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["userText"]!.Value<string>(), Is.EqualTo("myUserText"));
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized.ContainsKey("userText"));
+            Assert.That(serialized["userText"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["userText"]!.Value<string>(), Is.EqualTo("myUserText"));
+        });
     }
 }

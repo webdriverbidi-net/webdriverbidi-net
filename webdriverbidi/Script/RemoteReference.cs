@@ -8,7 +8,7 @@ using JsonConverters;
 public class RemoteReference : ArgumentValue
 {
     private string handle;
-    private Dictionary<string, object?> additionalData = new Dictionary<string, object?>();
+    private readonly Dictionary<string, object?> additionalData = new();
 
     public RemoteReference(string handle)
     {

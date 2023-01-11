@@ -9,9 +9,9 @@ public class StatusCommandSettingsTests
     [Test]
     public void TestCanSerializeSettings()
     {
-        var properties = new StatusCommandSettings();
+        StatusCommandSettings properties = new();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(0));
+        Assert.That(serialized, Is.Empty);
     }
 }

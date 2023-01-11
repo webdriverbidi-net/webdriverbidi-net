@@ -4,6 +4,8 @@ using Newtonsoft.Json;
 
 public class TestEventArgs: EventArgs
 {
+    private readonly string parameterName = "paramValue";
+
     [JsonProperty("paramName")]
-    public string ParamName => "paramValue";
+    public string ParamName => parameterName;
 }

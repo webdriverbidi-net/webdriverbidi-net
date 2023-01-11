@@ -2,8 +2,8 @@ namespace WebDriverBidi;
 
 public class ProtocolModule
 {
-    private Driver driver;
-    private Dictionary<string, WebDriverBidiEventData> eventInvokers = new Dictionary<string, WebDriverBidiEventData>();
+    private readonly Driver driver;
+    private readonly Dictionary<string, WebDriverBidiEventData> eventInvokers = new();
 
     protected ProtocolModule(Driver driver)
     {

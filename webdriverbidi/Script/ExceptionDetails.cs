@@ -8,8 +8,8 @@ public class ExceptionDetails
     private int columnNumber = -1;
     private int lineNumber = -1;
     private string text = "";
-    private StackTrace stackTrace = new StackTrace();
-    private RemoteValue exception = new RemoteValue("null");
+    private StackTrace stackTrace = new();
+    private RemoteValue exception = new("null");
 
     [JsonConstructor]
     internal ExceptionDetails()

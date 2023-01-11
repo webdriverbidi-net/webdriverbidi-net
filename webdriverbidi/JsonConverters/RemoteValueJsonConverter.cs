@@ -72,7 +72,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             throw new JsonSerializationException("RemoteValue must have a non-null 'type' property that is a string");
         }
 
-        RemoteValue result = new RemoteValue(valueTypeString);
+        RemoteValue result = new(valueTypeString);
         if (jsonObject.ContainsKey("value"))
         {
             var valueToken = jsonObject["value"];
@@ -159,8 +159,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             }
 
             string? bigintString = token.Value<string>();
-            BigInteger bigintValue;
-            if (!BigInteger.TryParse(bigintString, out bigintValue))
+            if (!BigInteger.TryParse(bigintString, out BigInteger bigintValue))
             {
                 throw new JsonSerializationException($"RemoteValue cannot parse invalid value '{bigintString}' for {valueType}");
             }
@@ -176,8 +175,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             }
 
             string? dateString = token.Value<string>();
-            DateTime dateTimeValue;
-            if (!DateTime.TryParse(dateString, out dateTimeValue))
+            if (!DateTime.TryParse(dateString, out DateTime dateTimeValue))
             {
                 throw new JsonSerializationException($"RemoteValue cannot parse invalid value '{dateString}' for {valueType}");
             }
@@ -187,34 +185,31 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
         if (valueType == "regexp")
         {
-            JObject? regexObject = token as JObject;
-            if (regexObject is null)
+            if (token is not JObject regexObject)
             {
                 throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            RegularExpressionValue regexProperties = new RegularExpressionValue("");
+            RegularExpressionValue regexProperties = new("");
             serializer.Populate(regexObject.CreateReader(), regexProperties);
             result.Value = regexProperties;
         }
 
         if (valueType == "node")
         {
-            JObject? nodeObject = token as JObject;
-            if (nodeObject is null)
+            if (token is not JObject nodeObject)
             {
                 throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            NodeProperties nodeProperties = new NodeProperties();
+            NodeProperties nodeProperties = new();
             serializer.Populate(nodeObject.CreateReader(), nodeProperties);
             result.Value = nodeProperties;
         }
 
         if (valueType == "array" || valueType == "set" || valueType == "nodelist" || valueType == "htmlcollection")
         {
-            JArray? arrayObject = token as JArray;
-            if (arrayObject is null)
+            if (token is not JArray arrayObject)
             {
                 throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an array");
             }
@@ -224,8 +219,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
         if (valueType == "map" || valueType == "object")
         {
-            JArray? mapArray = token as JArray;
-            if (mapArray is null)
+            if (token is not JArray mapArray)
             {
                 throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an array");
             }
@@ -246,8 +240,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
         }
         else
         {
-            var keyObject = keyToken as JObject;
-            if (keyObject is null)
+            if (keyToken is not JObject keyObject)
             {
                 throw new JsonSerializationException($"RemoteValue array key token indicated string or object, but could not be cast to either");
             }
@@ -276,11 +269,10 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
     private RemoteValueDictionary ProcessMap(JArray mapArray, JsonSerializer serializer)
     {
-        Dictionary<object, RemoteValue> remoteValueDictionary = new Dictionary<object, RemoteValue>();
+        Dictionary<object, RemoteValue> remoteValueDictionary = new();
         foreach(var mapElementToken in mapArray)
         {
-            JArray? mapKeyValuePairArray = mapElementToken as JArray;
-            if (mapKeyValuePairArray is null)
+            if (mapElementToken is not JArray mapKeyValuePairArray)
             {
                 throw new JsonSerializationException($"RemoteValue array element for dictionary must be an array");
             }
@@ -304,8 +296,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue array element for dictionary must have a second element (value) that is an object");
             }
 
-            var valueObject = valueToken as JObject;
-            if (valueObject is null)
+            if (valueToken is not JObject valueObject)
             {
                 // This should never be reached, but is here for the sake of completeness.
                 throw new JsonSerializationException("RemoteValue array value token indicated object, but could not be cast to object");
@@ -320,11 +311,10 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
     private RemoteValueList ProcessList(JArray arrayObject, JsonSerializer serializer)
     {
-        List<RemoteValue> remoteValueList = new List<RemoteValue>();
+        List<RemoteValue> remoteValueList = new();
         foreach (var arrayItem in arrayObject)
         {
-            JObject? arrayItemObject = arrayItem as JObject;
-            if (arrayItemObject is null)
+            if (arrayItem is not JObject arrayItemObject)
             {
                 throw new JsonSerializationException($"RemoteValue each element for list must be an object");
             }

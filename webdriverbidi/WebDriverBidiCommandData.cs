@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class WebDriverBidiCommandData
 {
-    private CommandSettings commandSettings;
+    private readonly CommandSettings commandSettings;
 
     public WebDriverBidiCommandData(long commandId, CommandSettings commandSettings)
     {

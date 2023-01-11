@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 public class ScriptEvaluateResultException: ScriptEvaluateResult
 {
-    private ExceptionDetails result = new ExceptionDetails();
+    private ExceptionDetails result = new();
 
     [JsonConstructor]
     internal ScriptEvaluateResultException() : base()

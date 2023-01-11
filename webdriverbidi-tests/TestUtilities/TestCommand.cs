@@ -4,7 +4,8 @@ using Newtonsoft.Json;
 
 public class TestCommand : CommandSettings
 {
-    private string commandName;
+    private readonly string parameterName = "parameterValue";
+    private readonly string commandName;
 
     public TestCommand(string commandName)
     {
@@ -16,5 +17,5 @@ public class TestCommand : CommandSettings
     public override Type ResultType => typeof(TestCommandResult);
 
     [JsonProperty("parameterName")]
-    public string ParameterName => "parameterValue";
+    public string ParameterName => this.parameterName;
 }

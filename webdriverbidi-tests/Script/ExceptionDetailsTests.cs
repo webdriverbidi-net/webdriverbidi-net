@@ -11,11 +11,14 @@ public class ExceptionDetailsTests
         string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": { ""callFrames"": [] } }";
         ExceptionDetails? exceptionDetails = JsonConvert.DeserializeObject<ExceptionDetails>(json);
         Assert.That(exceptionDetails, Is.Not.Null);
-        Assert.That(exceptionDetails!.Text, Is.EqualTo("exception message"));
-        Assert.That(exceptionDetails.LineNumber, Is.EqualTo(1));
-        Assert.That(exceptionDetails.ColumnNumber, Is.EqualTo(5));
-        Assert.That(exceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("myException"));
-        Assert.That(exceptionDetails.StackTrace.CallFrames.Count, Is.EqualTo(0));
+        Assert.Multiple(() =>
+        {
+            Assert.That(exceptionDetails!.Text, Is.EqualTo("exception message"));
+            Assert.That(exceptionDetails.LineNumber, Is.EqualTo(1));
+            Assert.That(exceptionDetails.ColumnNumber, Is.EqualTo(5));
+            Assert.That(exceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("myException"));
+            Assert.That(exceptionDetails.StackTrace.CallFrames, Is.Empty);
+        });
     }
 
     [Test]

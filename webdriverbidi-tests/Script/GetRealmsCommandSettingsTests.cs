@@ -9,126 +9,171 @@ public class GetRealmsCommandSettingsTests
     [Test]
     public void TestCanSerializeSettings()
     {
-        var properties = new GetRealmsCommandSettings();
+        GetRealmsCommandSettings properties = new();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(0));
+        Assert.That(serialized, Is.Empty);
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalWindowRealmTypeValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.RealmType = RealmType.Window;
+        GetRealmsCommandSettings properties = new()
+        {
+            RealmType = RealmType.Window
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalWorkerRealmTypeValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.RealmType = RealmType.Worker;
+        GetRealmsCommandSettings properties = new()
+        {
+            RealmType = RealmType.Worker
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("worker"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("worker"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalDedicatedWorkerRealmTypeValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.RealmType = RealmType.DedicatedWorker;
+        GetRealmsCommandSettings properties = new()
+        {
+            RealmType = RealmType.DedicatedWorker
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("dedicated-worker"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("dedicated-worker"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalServiceWorkerRealmTypeValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.RealmType = RealmType.ServiceWorker;
+        GetRealmsCommandSettings properties = new()
+        {
+            RealmType = RealmType.ServiceWorker
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("service-worker"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("service-worker"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalSharedWorkerRealmTypeValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.RealmType = RealmType.SharedWorker;
+        GetRealmsCommandSettings properties = new()
+        {
+            RealmType = RealmType.SharedWorker
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("shared-worker"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("shared-worker"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalWorkletRealmTypeValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.RealmType = RealmType.Worklet;
+        GetRealmsCommandSettings properties = new()
+        {
+            RealmType = RealmType.Worklet
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("worklet"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("worklet"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalPaintWorkletRealmTypeValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.RealmType = RealmType.PaintWorklet;
+        GetRealmsCommandSettings properties = new()
+        {
+            RealmType = RealmType.PaintWorklet
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("paint-worklet"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("paint-worklet"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalAudioWorkletRealmTypeValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.RealmType = RealmType.AudioWorklet;
+        GetRealmsCommandSettings properties = new()
+        {
+            RealmType = RealmType.AudioWorklet
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("type"));
-        Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("audio-worklet"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("audio-worklet"));
+        });
     }
 
     [Test]
     public void TestCanSerializeSettingsWithOptionalBrowsingContextValue()
     {
-        var properties = new GetRealmsCommandSettings();
-        properties.BrowsingContextId = "contextId";
+        GetRealmsCommandSettings properties = new()
+        {
+            BrowsingContextId = "contextId"
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized.Count, Is.EqualTo(1));
-        Assert.That(serialized.ContainsKey("context"));
-        Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-        Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("contextId"));
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("contextId"));
+        });
     }
 }

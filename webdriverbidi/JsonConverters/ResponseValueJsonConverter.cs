@@ -38,10 +38,7 @@ internal class ResponseValueJsonConverter : JsonConverter
     /// <param name="serializer">JSON Serializer </param>
     public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
     {
-        if (serializer != null)
-        {
-            serializer.Serialize(writer, value);
-        }
+        serializer?.Serialize(writer, value);
     }
 
     private object? ProcessToken(JsonReader reader)
@@ -53,7 +50,7 @@ internal class ResponseValueJsonConverter : JsonConverter
             reader.DateParseHandling = DateParseHandling.None;
             if (reader.TokenType == JsonToken.StartObject)
             {
-                Dictionary<string, object?> dictionaryValue = new Dictionary<string, object?>();
+                Dictionary<string, object?> dictionaryValue = new();
                 while (reader.Read() && reader.TokenType != JsonToken.EndObject)
                 {
                     string elementKey = reader.Value?.ToString() ?? "";
@@ -65,7 +62,7 @@ internal class ResponseValueJsonConverter : JsonConverter
             }
             else if (reader.TokenType == JsonToken.StartArray)
             {
-                List<object?> arrayValue = new List<object?>();
+                List<object?> arrayValue = new();
                 while (reader.Read() && reader.TokenType != JsonToken.EndArray)
                 {
                     arrayValue.Add(this.ProcessToken(reader));

@@ -14,7 +14,7 @@ public class Proxy
     private string? socksProxy;
     private int? socksVersion;
 
-    public static Proxy EmptyProxy => new Proxy();
+    public static Proxy EmptyProxy => new();
 
     public ProxyType? Type { get => this.type; set => this.type = value; }
 
@@ -77,8 +77,7 @@ public class Proxy
                 throw new WebDriverBidiException($"Invalid value for proxy type: '{value}'");
             }
 
-            ProxyType deserializedType;
-            if (!Enum.TryParse<ProxyType>(value, true, out deserializedType))
+            if (!Enum.TryParse<ProxyType>(value, true, out ProxyType deserializedType))
             {
                 throw new WebDriverBidiException($"Invalid value for proxy type: '{value}'");
             }

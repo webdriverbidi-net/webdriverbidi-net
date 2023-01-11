@@ -73,8 +73,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         // BrowsingContextEventArgs instance, the protocol transport will
         // deserialize to a BrowingContextInfo, then use that here to create
         // the appropriate EventArgs instance.
-        var info = eventData as BrowsingContextInfo;
-        if (info is null)
+        if (eventData is not BrowsingContextInfo info)
         {
             throw new WebDriverBidiException("Unable to cast event data to BrowsingContextEventArgs");
         }
@@ -93,8 +92,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         // BrowsingContextEventArgs instance, the protocol transport will
         // deserialize to a BrowingContextInfo, then use that here to create
         // the appropriate EventArgs instance.
-        var info = eventData as BrowsingContextInfo;
-        if (info is null)
+        if (eventData is not BrowsingContextInfo info)
         {
             throw new WebDriverBidiException("Unable to cast event data to BrowsingContextEventArgs");
         }
@@ -107,8 +105,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnNavigationStarted(object eventData)
     {
-        var eventArgs = eventData as NavigationEventArgs;
-        if (eventArgs is null)
+        if (eventData is not NavigationEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
         }
@@ -121,8 +118,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnFragmentNavigated(object eventData)
     {
-        var eventArgs = eventData as NavigationEventArgs;
-        if (eventArgs is null)
+        if (eventData is not NavigationEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
         }
@@ -135,8 +131,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnDomContentLoaded(object eventData)
     {
-        var eventArgs = eventData as NavigationEventArgs;
-        if (eventArgs is null)
+        if (eventData is not NavigationEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
         }
@@ -149,8 +144,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnLoad(object eventData)
     {
-        var eventArgs = eventData as NavigationEventArgs;
-        if (eventArgs is null)
+        if (eventData is not NavigationEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
         }
@@ -163,8 +157,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnDownloadWillBegin(object eventData)
     {
-        var eventArgs = eventData as NavigationEventArgs;
-        if (eventArgs is null)
+        if (eventData is not NavigationEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
         }
@@ -177,8 +170,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnNavigationAborted(object eventData)
     {
-        var eventArgs = eventData as NavigationEventArgs;
-        if (eventArgs is null)
+        if (eventData is not NavigationEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
         }
@@ -191,8 +183,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnNavigationFailed(object eventData)
     {
-        var eventArgs = eventData as NavigationEventArgs;
-        if (eventArgs is null)
+        if (eventData is not NavigationEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
         }
@@ -205,8 +196,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnUserPromptClosed(object eventData)
     {
-        var eventArgs = eventData as UserPromptClosedEventArgs;
-        if (eventArgs is null)
+        if (eventData is not UserPromptClosedEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to UserPromptClosedEventArgs");
         }
@@ -219,8 +209,7 @@ public sealed class BrowsingContextModule : ProtocolModule
 
     private void OnUserPromptOpened(object eventData)
     {
-        var eventArgs = eventData as UserPromptOpenedEventArgs;
-        if (eventArgs is null)
+        if (eventData is not UserPromptOpenedEventArgs eventArgs)
         {
             throw new WebDriverBidiException("Unable to cast event data to UserPromptOpenedEventArgs");
         }

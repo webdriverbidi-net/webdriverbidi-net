@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class GetTreeCommandResult : CommandResult
 {
-    private List<BrowsingContextInfo> contextTree = new List<BrowsingContextInfo>();
+    private List<BrowsingContextInfo> contextTree = new();
 
     [JsonConstructor]
     private GetTreeCommandResult()

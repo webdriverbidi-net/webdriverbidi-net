@@ -2,7 +2,7 @@ namespace WebDriverBidi.BrowsingContext;
 
 public class BrowsingContextEventArgs : EventArgs
 {
-    private BrowsingContextInfo info;
+    private readonly BrowsingContextInfo info;
 
     public BrowsingContextEventArgs(BrowsingContextInfo info)
     {

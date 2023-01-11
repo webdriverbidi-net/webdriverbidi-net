@@ -8,19 +8,19 @@ public class DriverTests
     [Test]
     public async Task CanExecuteCommand()
     {
-        ManualResetEvent syncEvent = new ManualResetEvent(false);
-        TestConnection connection = new TestConnection();
+        ManualResetEvent syncEvent = new(false);
+        TestConnection connection = new();
         connection.DataSendComplete += delegate(object? sender, EventArgs e)
         {
             syncEvent.Set();
         };
 
-        ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection);
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
-        Driver driver = new Driver(transport);
+        Driver driver = new(transport);
 
         string commandName = "module.command";
-        TestCommand command = new TestCommand(commandName);
+        TestCommand command = new(commandName);
         var task = Task.Run(() => driver.ExecuteCommand<TestCommandResult>(command));
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
 
@@ -32,19 +32,19 @@ public class DriverTests
     [Test]
     public async Task CanExecuteCommandWithError()
     {
-        ManualResetEvent syncEvent = new ManualResetEvent(false);
-        TestConnection connection = new TestConnection();
+        ManualResetEvent syncEvent = new(false);
+        TestConnection connection = new();
         connection.DataSendComplete += delegate(object? sender, EventArgs e)
         {
             syncEvent.Set();
         };
 
-        ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection);
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
-        Driver driver = new Driver(transport);
+        Driver driver = new(transport);
 
         string commandName = "module.command";
-        TestCommand command = new TestCommand(commandName);
+        TestCommand command = new(commandName);
         Assert.That(() => {
             var task = Task.Run(() => driver.ExecuteCommand<TestCommandResult>(command));
             syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
@@ -57,11 +57,11 @@ public class DriverTests
     public async Task CanExecuteReceiveErrorWithoutCommand()
     {
         ErrorResponse? response = null;
-        ManualResetEvent syncEvent = new ManualResetEvent(false);
-        TestConnection connection = new TestConnection();
-        ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection);
+        ManualResetEvent syncEvent = new(false);
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
-        Driver driver = new Driver(transport);
+        Driver driver = new(transport);
         driver.UnexpectedErrorReceived += delegate(object? sender, ProtocolErrorReceivedEventArgs e)
         {
             response = e.ErrorData;
@@ -72,8 +72,11 @@ public class DriverTests
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
 
         Assert.That(response, Is.Not.Null);
-        Assert.That(response!.ErrorType, Is.EqualTo("unknown command"));
-        Assert.That(response.ErrorMessage, Is.EqualTo("This is a test error message"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(response!.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(response.ErrorMessage, Is.EqualTo("This is a test error message"));
+        });
     }
 
     [Test]
@@ -81,13 +84,13 @@ public class DriverTests
     {
         string receivedEvent = string.Empty;
         object? receivedData = null;
-        ManualResetEvent syncEvent = new ManualResetEvent(false);
+        ManualResetEvent syncEvent = new(false);
 
         string eventName = "module.event";
-        TestConnection connection = new TestConnection();
-        ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection);
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
-        Driver driver = new Driver(transport);
+        Driver driver = new(transport);
         driver.RegisterEvent(eventName, typeof(TestEventArgs));
         driver.EventReceived += delegate(object? sender, ProtocolEventReceivedEventArgs e)
         {
@@ -98,9 +101,12 @@ public class DriverTests
 
         connection.RaiseDataReceivedEvent(@"{ ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
-        Assert.That(receivedEvent, Is.EqualTo(eventName));
-        Assert.That(receivedData, Is.Not.Null);
-        Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
+        Assert.Multiple(() =>
+        {
+            Assert.That(receivedEvent, Is.EqualTo(eventName));
+            Assert.That(receivedData, Is.Not.Null);
+            Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
+        });
         TestEventArgs? convertedData = receivedData as TestEventArgs;
         Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
     }
@@ -109,12 +115,12 @@ public class DriverTests
     public async Task TestUnregisteredEventRaisesUnknownMessageEvent()
     {
         string receivedMessage = string.Empty;
-        ManualResetEvent syncEvent = new ManualResetEvent(false);
+        ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new TestConnection();
-        ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection);
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
-        Driver driver = new Driver(transport);
+        Driver driver = new(transport);
         driver.UnknownMessageReceived += delegate(object? sender, ProtocolUnknownMessageReceivedEventArgs e)
         {
             receivedMessage = e.Message;
@@ -131,12 +137,12 @@ public class DriverTests
     public async Task TestUnconformingDataRaisesUnknownMessageEvent()
     {
         string receivedMessage = string.Empty;
-        ManualResetEvent syncEvent = new ManualResetEvent(false);
+        ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new TestConnection();
-        ProtocolTransport transport = new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection);
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
-        Driver driver = new Driver(transport);
+        Driver driver = new(transport);
         driver.UnknownMessageReceived += delegate(object? sender, ProtocolUnknownMessageReceivedEventArgs e)
         {
             receivedMessage = e.Message;

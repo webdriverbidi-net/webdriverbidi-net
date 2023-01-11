@@ -11,8 +11,11 @@ public class StatusCommandResultPropertiesTests
         string json = @"{ ""ready"": true, ""message"": ""myMessage"" }";
         StatusCommandResult? result = JsonConvert.DeserializeObject<StatusCommandResult>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.IsReady, Is.EqualTo(true));
-        Assert.That(result.Message, Is.EqualTo("myMessage"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result!.IsReady, Is.EqualTo(true));
+            Assert.That(result.Message, Is.EqualTo("myMessage"));
+        });
     }
 
     [Test]

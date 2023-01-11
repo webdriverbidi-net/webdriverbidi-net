@@ -11,8 +11,11 @@ public class RegularExpressionValueTests
         string json = @"{ ""pattern"": ""myPattern"" }";
         RegularExpressionValue? regexProperties = JsonConvert.DeserializeObject<RegularExpressionValue>(json);
         Assert.That(regexProperties, Is.Not.Null);
-        Assert.That(regexProperties!.Pattern, Is.EqualTo("myPattern"));
-        Assert.That(regexProperties.Flags, Is.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(regexProperties!.Pattern, Is.EqualTo("myPattern"));
+            Assert.That(regexProperties.Flags, Is.Null);
+        });
     }
 
     [Test]
@@ -35,9 +38,12 @@ public class RegularExpressionValueTests
         string json = @"{ ""pattern"": ""myPattern"", ""flags"": ""gi"" }";
         RegularExpressionValue? regexProperties = JsonConvert.DeserializeObject<RegularExpressionValue>(json);
         Assert.That(regexProperties, Is.Not.Null);
-        Assert.That(regexProperties!.Pattern, Is.EqualTo("myPattern"));
-        Assert.That(regexProperties.Flags, Is.Not.Null);
-        Assert.That(regexProperties.Flags, Is.EqualTo("gi"));
+        Assert.Multiple(() =>
+        {
+            Assert.That(regexProperties!.Pattern, Is.EqualTo("myPattern"));
+            Assert.That(regexProperties.Flags, Is.Not.Null);
+            Assert.That(regexProperties.Flags, Is.EqualTo("gi"));
+        });
     }
 
     [Test]

@@ -6,9 +6,9 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class SubscribeCommandSettings : CommandSettings
 {
-    private List<string> eventList = new List<string>();
+    private readonly List<string> eventList = new();
 
-    private List<string> contextList = new List<string>();
+    private readonly List<string> contextList = new();
 
     public SubscribeCommandSettings()
     {
