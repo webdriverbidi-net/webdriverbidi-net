@@ -3,7 +3,7 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [TestFixture]
-public class RegularExpressionPropertiesTests
+public class RegularExpressionValueTests
 {
     [Test]
     public void TestCanDeserialize()
