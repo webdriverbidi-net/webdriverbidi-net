@@ -193,7 +193,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            RegularExpressionProperties regexProperties = new RegularExpressionProperties("");
+            RegularExpressionValue regexProperties = new RegularExpressionValue("");
             serializer.Populate(regexObject.CreateReader(), regexProperties);
             result.Value = regexProperties;
         }

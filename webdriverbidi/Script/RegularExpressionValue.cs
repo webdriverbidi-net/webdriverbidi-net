@@ -3,17 +3,17 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class RegularExpressionProperties
+public class RegularExpressionValue
 {
     private string pattern;
     private string? flags;
 
     [JsonConstructor]
-    public RegularExpressionProperties(string pattern) : this(pattern, null)
+    public RegularExpressionValue(string pattern) : this(pattern, null)
     {
     }
 
-    public RegularExpressionProperties(string pattern, string? flags)
+    public RegularExpressionValue(string pattern, string? flags)
     {
         this.pattern = pattern;
         this.flags = flags;
@@ -38,7 +38,7 @@ public class RegularExpressionProperties
             return false;
         }
 
-        RegularExpressionProperties? other = obj as RegularExpressionProperties;
+        RegularExpressionValue? other = obj as RegularExpressionValue;
         if (other is null)
         {
             return false;

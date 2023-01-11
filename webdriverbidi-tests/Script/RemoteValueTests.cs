@@ -212,8 +212,8 @@ public class RemoteValueTests
         Assert.That(remoteValue.HasValue);
         Assert.That(remoteValue.Handle, Is.Null);
         Assert.That(remoteValue.InternalId, Is.Null);
-        Assert.That(remoteValue.Value, Is.InstanceOf<RegularExpressionProperties>());
-        Assert.That(remoteValue.ValueAs<RegularExpressionProperties>(), Is.EqualTo(new RegularExpressionProperties("myPattern", "gi")));
+        Assert.That(remoteValue.Value, Is.InstanceOf<RegularExpressionValue>());
+        Assert.That(remoteValue.ValueAs<RegularExpressionValue>(), Is.EqualTo(new RegularExpressionValue("myPattern", "gi")));
     }
 
     [Test]
@@ -226,8 +226,8 @@ public class RemoteValueTests
         Assert.That(remoteValue.HasValue);
         Assert.That(remoteValue.Handle, Is.Null);
         Assert.That(remoteValue.InternalId, Is.Null);
-        Assert.That(remoteValue.Value, Is.InstanceOf<RegularExpressionProperties>());
-        Assert.That(remoteValue.ValueAs<RegularExpressionProperties>(), Is.EqualTo(new RegularExpressionProperties("myPattern")));
+        Assert.That(remoteValue.Value, Is.InstanceOf<RegularExpressionValue>());
+        Assert.That(remoteValue.ValueAs<RegularExpressionValue>(), Is.EqualTo(new RegularExpressionValue("myPattern")));
     }
 
     [Test]
