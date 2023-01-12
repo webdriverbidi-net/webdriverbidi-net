@@ -228,7 +228,7 @@ public class ScriptModuleTests
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.TypeOf<AddPreloadScriptCommandResult>());
-        Assert.That(result.LoadScriptId, Is.EqualTo("loadScriptId"));
+        Assert.That(result.PreloadScriptId, Is.EqualTo("loadScriptId"));
     }
 
     [Test]
