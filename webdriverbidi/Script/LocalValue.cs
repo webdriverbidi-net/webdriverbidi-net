@@ -1,9 +1,17 @@
+// <copyright file="LocalValue.cs" company="WebDriverBidi.NET Committers">
+// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 namespace WebDriverBidi.Script;
 
 using System.Globalization;
 using System.Numerics;
 using Newtonsoft.Json;
 
+/// <summary>
+/// Object representing a local value for use as an argument in script execution.
+/// </summary>
 [JsonObject(MemberSerialization.OptIn)]
 public class LocalValue : ArgumentValue
 {
@@ -15,11 +23,50 @@ public class LocalValue : ArgumentValue
         this.argType = argType;
     }
 
+    /// <summary>
+    /// Gets a LocalValue for "undefined".
+    /// </summary>
+    public static LocalValue Undefined => new("undefined");
+
+    /// <summary>
+    /// Gets a LocalValue for a null value.
+    /// </summary>
+    public static LocalValue Null => new("null");
+
+    /// <summary>
+    /// Gets a LocalValue for "NaN".
+    /// </summary>
+    public static LocalValue NaN => new("number") { argValue = double.NaN };
+
+    /// <summary>
+    /// Gets a LocalValue for negative zero (-0).
+    /// </summary>
+    public static LocalValue NegativeZero => new("number") { argValue = decimal.Negate(decimal.Zero) };
+
+    /// <summary>
+    /// Gets a LocalValue for positive infinity.
+    /// </summary>
+    public static LocalValue Infinity => new("number") { argValue = double.PositiveInfinity };
+
+    /// <summary>
+    /// Gets a LocalValue for negative infinity.
+    /// </summary>
+    public static LocalValue NegativeInfinity => new("number") { argValue = double.NegativeInfinity };
+
+    /// <summary>
+    /// Gets the type of this LocalValue.
+    /// </summary>
     [JsonProperty("type")]
     public string Type { get => this.argType; internal set => this.argType = value; }
 
+    /// <summary>
+    /// Gets the object containing the value of this LocalValue.
+    /// </summary>
     public object? Value { get => this.argValue; internal set => this.argValue = value; }
 
+    /// <summary>
+    /// Gets the object containing the value of this LocalValue for serialization purposes.
+    /// </summary>
     [JsonProperty("value", NullValueHandling = NullValueHandling.Ignore)]
     internal object? SerializableValue
     {
@@ -80,6 +127,105 @@ public class LocalValue : ArgumentValue
         }
     }
 
+    /// <summary>
+    /// Creates a LocalValue for a string.
+    /// </summary>
+    /// <param name="stringValue">The string to wrap as a LocalValue.</param>
+    /// <returns>A LocalValue for a string.</returns>
+    public static LocalValue String(string stringValue) => new("string") { argValue = stringValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a number.
+    /// </summary>
+    /// <param name="numericValue">The integer to wrap as a LocalValue.</param>
+    /// <returns>A LocalValue for a number.</returns>
+    public static LocalValue Number(int numericValue) => new("number") { argValue = numericValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a number.
+    /// </summary>
+    /// <param name="numericValue">The long to wrap as a LocalValue.</param>
+    /// <returns>A LocalValue for a number.</returns>
+    public static LocalValue Number(long numericValue) => new("number") { argValue = numericValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a number.
+    /// </summary>
+    /// <param name="numericValue">The double to wrap as a LocalValue.</param>
+    /// <returns>A LocalValue for a number.</returns>
+    public static LocalValue Number(double numericValue) => new("number") { argValue = numericValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a boolean value.
+    /// </summary>
+    /// <param name="boolValue">The boolean to wrap as a LocalValue.</param>
+    /// <returns>A LocalValue for a boolean value.</returns>
+    public static LocalValue Boolean(bool boolValue) => new("boolean") { argValue = boolValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a BigInteger.
+    /// </summary>
+    /// <param name="bigIntValue">The BigInteger to wrap as a LocalValue.</param>
+    /// <returns>A LocalValue for a BigInteger.</returns>
+    public static LocalValue BigInt(BigInteger bigIntValue) => new("bigint") { argValue = bigIntValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a DateTime value.
+    /// </summary>
+    /// <param name="dateTimeValue">The DateTime value to wrap as a LocalValue.</param>
+    /// <returns>A LocalValue for a DateTime value.</returns>
+    public static LocalValue Date(DateTime dateTimeValue) => new("date") { argValue = dateTimeValue };
+
+    /// <summary>
+    /// Creates a LocalValue for an array.
+    /// </summary>
+    /// <param name="arrayValue">The list of LocalValues to wrap as an array LocalValue.</param>
+    /// <returns>A LocalValue for an array.</returns>
+    public static LocalValue Array(List<LocalValue> arrayValue) => new("array") { argValue = arrayValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a set.
+    /// </summary>
+    /// <param name="arrayValue">The list of LocalValues to wrap as a set LocalValue.</param>
+    /// <returns>A LocalValue for a set.</returns>
+    public static LocalValue Set(List<LocalValue> arrayValue) => new("set") { argValue = arrayValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a map with string keys.
+    /// </summary>
+    /// <param name="mapValue">The dictionary with strings for keys and LocalValues for values to wrap as a map LocalValue.</param>
+    /// <returns>A LocalValue for a map.</returns>
+    public static LocalValue Map(Dictionary<string, LocalValue> mapValue) => new("map") { argValue = mapValue };
+
+    /// <summary>
+    /// Creates a LocalValue for a map with LocalValue keys.
+    /// </summary>
+    /// <param name="mapValue">The dictionary with LocalValues for keys and LocalValues for values to wrap as a map LocalValue.</param>
+    /// <returns>A LocalValue for a map.</returns>
+    public static LocalValue Map(Dictionary<LocalValue, LocalValue> mapValue) => new("map") { argValue = mapValue };
+
+    /// <summary>
+    /// Creates a LocalValue for an object with string keys.
+    /// </summary>
+    /// <param name="mapValue">The dictionary with strings for keys and LocalValues for values to wrap as an object LocalValue.</param>
+    /// <returns>A LocalValue for an object.</returns>
+    public static LocalValue Object(Dictionary<string, LocalValue> mapValue) => new("object") { argValue = mapValue };
+
+    /// <summary>
+    /// Creates a LocalValue for an object with LocalValue keys.
+    /// </summary>
+    /// <param name="mapValue">The dictionary with LocalValues for keys and LocalValues for values to wrap as an object LocalValue.</param>
+    /// <returns>A LocalValue for an object.</returns>
+    public static LocalValue Object(Dictionary<LocalValue, LocalValue> mapValue) => new("object") { argValue = mapValue };
+
+    /// <summary>
+    /// Creates a LocalValue for regular expression.
+    /// </summary>
+    /// <param name="pattern">The pattern for the regular expression.</param>
+    /// <param name="flags">The flags of the regular expression.</param>
+    /// <returns>A LocalValue for regular expression.</returns>
+    public static LocalValue RegExp(string pattern, string? flags = null) => new("regexp") { argValue = new RegularExpressionValue(pattern, flags) };
+
     private object? GetSerializedNumericValue()
     {
         double? doubleValue = this.argValue as double?;
@@ -107,25 +253,4 @@ public class LocalValue : ArgumentValue
 
         return this.argValue;
     }
-    
-    public static LocalValue Undefined => new("undefined");
-    public static LocalValue Null => new("null");
-    public static LocalValue NaN =>  new("number") { argValue = double.NaN };
-    public static LocalValue NegativeZero => new("number") { argValue = decimal.Negate(decimal.Zero) };
-    public static LocalValue Infinity => new("number") { argValue = double.PositiveInfinity };
-    public static LocalValue NegativeInfinity => new("number") { argValue = double.NegativeInfinity };
-    public static LocalValue String(string stringValue) => new("string") { argValue = stringValue };
-    public static LocalValue Number(int numericValue) => new("number") { argValue = numericValue };
-    public static LocalValue Number(long numericValue) => new("number") { argValue = numericValue };
-    public static LocalValue Number(double numericValue) => new("number") { argValue = numericValue };
-    public static LocalValue Boolean(bool boolValue) => new("boolean") { argValue = boolValue };
-    public static LocalValue BigInt(BigInteger bigIntValue) => new("bigint") { argValue = bigIntValue };
-    public static LocalValue Date(DateTime dateTimeValue) => new("date") { argValue = dateTimeValue };
-    public static LocalValue Array(List<LocalValue> arrayValue) => new("array") { argValue = arrayValue };
-    public static LocalValue Set(List<LocalValue> arrayValue) => new("set") { argValue = arrayValue };
-    public static LocalValue Map(Dictionary<string, LocalValue> mapValue) => new("map") { argValue = mapValue };
-    public static LocalValue Map(Dictionary<LocalValue, LocalValue> mapValue) => new("map") { argValue = mapValue };
-    public static LocalValue Object(Dictionary<string, LocalValue> mapValue) => new("object") { argValue = mapValue };
-    public static LocalValue Object(Dictionary<LocalValue, LocalValue> mapValue) => new("object") { argValue = mapValue };
-    public static LocalValue RegExp(string pattern, string? flags = null) => new("regexp") { argValue = new RegularExpressionValue(pattern, flags) };
 }

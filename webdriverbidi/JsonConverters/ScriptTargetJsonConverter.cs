@@ -1,9 +1,17 @@
+// <copyright file="ScriptTargetJsonConverter.cs" company="WebDriverBidi.NET Committers">
+// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 namespace WebDriverBidi.JsonConverters;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Script;
+using WebDriverBidi.Script;
 
+/// <summary>
+/// The JSON converter for the ScriptTarget object.
+/// </summary>
 public class ScriptTargetJsonConverter : JsonConverter<ScriptTarget>
 {
     /// <summary>
@@ -21,29 +29,29 @@ public class ScriptTargetJsonConverter : JsonConverter<ScriptTarget>
     public override bool CanWrite => false;
 
     /// <summary>
-    /// Process the reader to return an object from JSON
+    /// Reads a JSON string and deserializes it to an object.
     /// </summary>
-    /// <param name="reader">A JSON reader</param>
-    /// <param name="objectType">Type of the object</param>
-    /// <param name="existingValue">The existing value of the object</param>
-    /// <param name="hasExistingValue">A value indicating whether the existing value is null</param>
-    /// <param name="serializer">JSON Serializer</param>
-    /// <returns>Object created from JSON</returns>
+    /// <param name="reader">The JSON reader to use during deserialization.</param>
+    /// <param name="objectType">The type of object to which to deserialize.</param>
+    /// <param name="existingValue">The existing value of the object.</param>
+    /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
+    /// <param name="serializer">The JSON serializer to use in deserialization.</param>
+    /// <returns>The deserialized object created from JSON.</returns>
     public override ScriptTarget ReadJson(JsonReader reader, Type objectType, ScriptTarget? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         var jsonObject = JObject.Load(reader);
         ScriptTarget target;
         if (jsonObject.ContainsKey("realm"))
         {
-            target = new RealmTarget("");
-            serializer.Populate(jsonObject.CreateReader(), target); 
+            target = new RealmTarget(string.Empty);
+            serializer.Populate(jsonObject.CreateReader(), target);
             return target;
         }
 
         if (jsonObject.ContainsKey("context"))
         {
-            target = new ContextTarget("");
-            serializer.Populate(jsonObject.CreateReader(), target); 
+            target = new ContextTarget(string.Empty);
+            serializer.Populate(jsonObject.CreateReader(), target);
             return target;
         }
 
@@ -51,11 +59,11 @@ public class ScriptTargetJsonConverter : JsonConverter<ScriptTarget>
     }
 
     /// <summary>
-    /// Writes objects to JSON. Not implemented.
+    /// Serializes an object and writes it to a JSON string.
     /// </summary>
-    /// <param name="writer">JSON Writer Object</param>
-    /// <param name="value">Value to be written</param>
-    /// <param name="serializer">JSON Serializer </param>
+    /// <param name="writer">The JSON writer to use during serialization.</param>
+    /// <param name="value">The object to serialize.</param>
+    /// <param name="serializer">The JSON serializer to use in serialization.</param>
     public override void WriteJson(JsonWriter writer, ScriptTarget? value, JsonSerializer serializer)
     {
         throw new NotImplementedException();

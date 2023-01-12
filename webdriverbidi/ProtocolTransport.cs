@@ -1,25 +1,47 @@
+// <copyright file="ProtocolTransport.cs" company="WebDriverBidi.NET Committers">
+// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 namespace WebDriverBidi;
 
 using System.Collections.Concurrent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
+/// <summary>
+/// The transport object used for serializing and deserializing JSON data used in the WebDriver Bidi protocol.
+/// </summary>
 public class ProtocolTransport
 {
-    private long nextCommandId = 0;
     private readonly ConcurrentDictionary<long, WebDriverBidiCommandData> pendingCommands = new();
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
     private readonly Dictionary<string, Type> eventTypes = new();
+    private long nextCommandId = 0;
 
-    public ProtocolTransport() : this(Timeout.InfiniteTimeSpan)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProtocolTransport"/> class.
+    /// </summary>
+    public ProtocolTransport()
+        : this(Timeout.InfiniteTimeSpan)
     {
     }
 
-    public ProtocolTransport(TimeSpan commandWaitTimeout) : this(commandWaitTimeout, new Connection())
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProtocolTransport"/> class with a given command timeout.
+    /// </summary>
+    /// <param name="commandWaitTimeout">The timeout used to wait for execution of commands.</param>
+    public ProtocolTransport(TimeSpan commandWaitTimeout)
+        : this(commandWaitTimeout, new Connection())
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProtocolTransport"/> class with a given command timeout and connection.
+    /// </summary>
+    /// <param name="commandWaitTimeout">The timeout used to wait for execution of commands.</param>
+    /// <param name="connection">The connection used to communicate with the protocol remote end.</param>
     public ProtocolTransport(TimeSpan commandWaitTimeout, Connection connection)
     {
         this.commandWaitTimeout = commandWaitTimeout;
@@ -28,34 +50,66 @@ public class ProtocolTransport
         connection.LogMessage += this.OnConnectionLogMessage;
     }
 
+    /// <summary>
+    /// Occurs when a message is logged.
+    /// </summary>
     public event EventHandler<LogMessageEventArgs>? LogMessage;
 
+    /// <summary>
+    /// Occurs when an event is received from the protocol.
+    /// </summary>
     public event EventHandler<ProtocolEventReceivedEventArgs>? EventReceived;
 
+    /// <summary>
+    /// Occurs when an error is received from the protocol.
+    /// </summary>
     public event EventHandler<ProtocolErrorReceivedEventArgs>? ErrorEventReceived;
 
+    /// <summary>
+    /// Occurs when an unknown message is received from the protocol.
+    /// </summary>
     public event EventHandler<ProtocolUnknownMessageReceivedEventArgs>? UnknownMessageReceived;
 
+    /// <summary>
+    /// Asynchronously connects to the remote end web socket.
+    /// </summary>
+    /// <param name="websocketUri">The URI used to connect to the web socket.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task Connect(string websocketUri)
     {
         await this.connection.Start(websocketUri);
     }
 
+    /// <summary>
+    /// Asyncronously disconnects from the remote end web socket.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task Disconnect()
     {
         await this.connection.Stop();
     }
 
+    /// <summary>
+    /// Asynchronously send a command to the remote end and waits for a response.
+    /// </summary>
+    /// <param name="command">The command settings object containing all data required to execute the command.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task<CommandResult> SendCommandAndWait(CommandSettings command)
     {
-        long commandId = await SendCommand(command);
+        long commandId = await this.SendCommand(command);
         this.WaitForCommandComplete(commandId, this.commandWaitTimeout);
         return this.GetCommandResponse(commandId);
     }
 
+    /// <summary>
+    /// Asynchonously sends a command to the remote end.
+    /// </summary>
+    /// <param name="command">The command settings object containing all data required to execute the command.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBidiException">Thrown if the command ID is already in use.</exception>
     public async Task<long> SendCommand(CommandSettings command)
     {
-        long commandId  = Interlocked.Increment(ref this.nextCommandId);
+        long commandId = Interlocked.Increment(ref this.nextCommandId);
         WebDriverBidiCommandData executionData = new(commandId, command);
         if (!this.pendingCommands.TryAdd(executionData.CommandId, executionData))
         {
@@ -66,6 +120,12 @@ public class ProtocolTransport
         return executionData.CommandId;
     }
 
+    /// <summary>
+    /// Waits for a command with the given ID to complete.
+    /// </summary>
+    /// <param name="commandId">The ID of the command for which to wait for completion.</param>
+    /// <param name="waitTimeout">The timeout describing how long to wait for the command to complete.</param>
+    /// <exception cref="WebDriverBidiException">Thrown if the command ID is invalid or if the command times out.</exception>
     public void WaitForCommandComplete(long commandId, TimeSpan waitTimeout)
     {
         if (!this.pendingCommands.ContainsKey(commandId))
@@ -81,6 +141,12 @@ public class ProtocolTransport
         }
     }
 
+    /// <summary>
+    /// Gets the result of the command.
+    /// </summary>
+    /// <param name="commandId">The ID of the command for which to get the response.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBidiException">Thrown if the command result could not be retreived, or if the command result is not valid.</exception>
     public CommandResult GetCommandResponse(long commandId)
     {
         if (this.pendingCommands.TryRemove(commandId, out WebDriverBidiCommandData? command))
@@ -101,11 +167,21 @@ public class ProtocolTransport
         throw new WebDriverBidiException($"Could not remove command with id {commandId}");
     }
 
+    /// <summary>
+    /// Registers an event to be raised.
+    /// </summary>
+    /// <param name="eventName">The name of the event to be registered.</param>
+    /// <param name="eventArgsType">The type of EventArgs to be used when raising the event.</param>
     public void RegisterEvent(string eventName, Type eventArgsType)
     {
         this.eventTypes[eventName] = eventArgsType;
     }
 
+    /// <summary>
+    /// Raises the LogMessage event.
+    /// </summary>
+    /// <param name="sender">The object raising the event.</param>
+    /// <param name="e">The EventArgs containing information about the event.</param>
     protected virtual void OnLogMessage(object? sender, LogMessageEventArgs e)
     {
         if (this.LogMessage is not null)
@@ -114,6 +190,11 @@ public class ProtocolTransport
         }
     }
 
+    /// <summary>
+    /// Raises the EventRecived event.
+    /// </summary>
+    /// <param name="sender">The object raising the event.</param>
+    /// <param name="e">The EventArgs containing information about the event.</param>
     protected virtual void OnProtocolEventReceived(object? sender, ProtocolEventReceivedEventArgs e)
     {
         if (this.EventReceived is not null)
@@ -122,6 +203,11 @@ public class ProtocolTransport
         }
     }
 
+    /// <summary>
+    /// Raises the ErrorEventRecieved event.
+    /// </summary>
+    /// <param name="sender">The object raising the event.</param>
+    /// <param name="e">The EventArgs containing information about the event.</param>
     protected virtual void OnProtocolErrorEventReceived(object? sender, ProtocolErrorReceivedEventArgs e)
     {
         if (this.ErrorEventReceived is not null)
@@ -130,6 +216,11 @@ public class ProtocolTransport
         }
     }
 
+    /// <summary>
+    /// Raises the UnknownMessageReceived event.
+    /// </summary>
+    /// <param name="sender">The object raising the event.</param>
+    /// <param name="e">The EventArgs containing information about the event.</param>
     protected virtual void OnProtocolUnknownMessageReceived(object? sender, ProtocolUnknownMessageReceivedEventArgs e)
     {
         if (this.UnknownMessageReceived is not null)

@@ -1,41 +1,47 @@
+// <copyright file="ResponseValueJsonConverter.cs" company="WebDriverBidi.NET Committers">
+// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 namespace WebDriverBidi.JsonConverters;
 
+using System.Diagnostics.CodeAnalysis;
 using Newtonsoft.Json;
 
 /// <summary>
-/// Converts the response to JSON
+/// Converts the response to JSON.
 /// </summary>
 internal class ResponseValueJsonConverter : JsonConverter
 {
     /// <summary>
-    /// Checks if the object can be converted
+    /// Checks if the object can be converted.
     /// </summary>
-    /// <param name="objectType">The object to be converted</param>
-    /// <returns>True if it can be converted or false if can't be</returns>
+    /// <param name="objectType">The object to be converted.</param>
+    /// <returns>True if it can be converted; otherwise, false.</returns>
     public override bool CanConvert(Type objectType)
     {
         return true;
     }
 
     /// <summary>
-    /// Process the reader to return an object from JSON
+    /// Reads a JSON string and deserializes it to an object.
     /// </summary>
-    /// <param name="reader">A JSON reader</param>
-    /// <param name="objectType">Type of the object</param>
-    /// <param name="existingValue">The existing value of the object</param>
-    /// <param name="serializer">JSON Serializer</param>
-    /// <returns>Object created from JSON</returns>
+    /// <param name="reader">The JSON reader to use during deserialization.</param>
+    /// <param name="objectType">The type of object to which to deserialize.</param>
+    /// <param name="existingValue">The existing value of the object.</param>
+    /// <param name="serializer">The JSON serializer to use in deserialization.</param>
+    /// <returns>The deserialized object created from JSON.</returns>
     public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
     {
         return this.ProcessToken(reader);
     }
 
     /// <summary>
-    /// Writes objects to JSON. Currently not implemented
+    /// Serializes an object and writes it to a JSON string.
     /// </summary>
-    /// <param name="writer">JSON Writer Object</param>
-    /// <param name="value">Value to be written</param>
-    /// <param name="serializer">JSON Serializer </param>
+    /// <param name="writer">The JSON writer to use during serialization.</param>
+    /// <param name="value">The object to serialize.</param>
+    /// <param name="serializer">The JSON serializer to use in serialization.</param>
     public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
     {
         serializer?.Serialize(writer, value);
@@ -53,7 +59,7 @@ internal class ResponseValueJsonConverter : JsonConverter
                 Dictionary<string, object?> dictionaryValue = new();
                 while (reader.Read() && reader.TokenType != JsonToken.EndObject)
                 {
-                    string elementKey = reader.Value?.ToString() ?? "";
+                    string elementKey = reader.Value?.ToString() ?? string.Empty;
                     reader.Read();
                     dictionaryValue.Add(elementKey, this.ProcessToken(reader));
                 }

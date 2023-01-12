@@ -1,26 +1,52 @@
+// <copyright file="GetRealmsCommandSettings.cs" company="WebDriverBidi.NET Committers">
+// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 namespace WebDriverBidi.Script;
 
 using Newtonsoft.Json;
 
+/// <summary>
+/// Provides parameters for the script.getRealms command.
+/// </summary>
 [JsonObject(MemberSerialization.OptIn)]
 public class GetRealmsCommandSettings : CommandSettings
 {
     private string? browsingContextId;
     private RealmType? realmType;
 
-    public override string MethodName => "script.getRealms";
-
-    public override Type ResultType => typeof(GetRealmsCommandResult);
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetRealmsCommandSettings"/> class.
+    /// </summary>
     public GetRealmsCommandSettings()
     {
     }
 
+    /// <summary>
+    /// Gets the method name of the command.
+    /// </summary>
+    public override string MethodName => "script.getRealms";
+
+    /// <summary>
+    /// Gets the type of the result of the command.
+    /// </summary>
+    public override Type ResultType => typeof(GetRealmsCommandResult);
+
+    /// <summary>
+    /// Gets or sets the ID of the browsing context of the realms to get.
+    /// </summary>
     [JsonProperty("context", NullValueHandling = NullValueHandling.Ignore)]
     public string? BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
+    /// <summary>
+    /// Gets or sets the type of realms to get.
+    /// </summary>
     public RealmType? RealmType { get => this.realmType; set => this.realmType = value; }
 
+    /// <summary>
+    /// Gets the type of the reamls to get for serialization purposes.
+    /// </summary>
     [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
     internal string? SerializableRealmType
     {

@@ -1,39 +1,80 @@
-﻿namespace WebDriverBidi;
+﻿// <copyright file="Connection.cs" company="WebDriverBidi.NET Committers">
+// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+namespace WebDriverBidi;
 
 using System.Net.WebSockets;
 using System.Text;
 
+/// <summary>
+/// Represents a connection to a WebDriver Bidi remote end.
+/// </summary>
 public class Connection
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
-    private bool isActive = false;
-    private readonly int bufferSize = 4096;
-    private ClientWebSocket client = new();
     private readonly CancellationTokenSource clientTokenSource = new();
     private readonly TimeSpan startupTimeout;
     private readonly TimeSpan shutdownTimeout;
+    private readonly int bufferSize = 4096;
+    private bool isActive = false;
+    private ClientWebSocket client = new();
 
-    public Connection() : this(DefaultTimeout)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Connection" /> class.
+    /// </summary>
+    public Connection()
+        : this(DefaultTimeout)
     {
     }
 
-    public Connection(TimeSpan startupTimeout) : this(startupTimeout, DefaultTimeout)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Connection" /> class with a given startup timeout.
+    /// </summary>
+    /// <param name="startupTimeout">The timeout before throwing an error when starting up the connection.</param>
+    public Connection(TimeSpan startupTimeout)
+        : this(startupTimeout, DefaultTimeout)
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Connection" /> class with a given startup and shutdown timeout.
+    /// </summary>
+    /// <param name="startupTimeout">The timeout before throwing an error when starting up the connection.</param>
+    /// <param name="shutdownTimeout">The timeout before throwing an error when shutting down the connection.</param>
     public Connection(TimeSpan startupTimeout, TimeSpan shutdownTimeout)
     {
         this.startupTimeout = startupTimeout;
         this.shutdownTimeout = shutdownTimeout;
     }
 
+    /// <summary>
+    /// Occurs when data is received from this connection.
+    /// </summary>
     public event EventHandler<DataReceivedEventArgs>? DataReceived;
+
+    /// <summary>
+    /// Occurs when a log message is emitted from this connection.
+    /// </summary>
     public event EventHandler<LogMessageEventArgs>? LogMessage;
 
+    /// <summary>
+    /// Gets a value indicating whether this connection is active.
+    /// </summary>
     public bool IsActive => this.isActive;
 
+    /// <summary>
+    /// Gets the buffer size for communication used by this connection.
+    /// </summary>
     public int BufferSize => this.bufferSize;
 
+    /// <summary>
+    /// Asynchronously starts communication with the remote end of this connection.
+    /// </summary>
+    /// <param name="url">The URL used to connect to the remote end.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="TimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
     public virtual async Task Start(string url)
     {
         this.Log($"Opening connection to URL {url}", WebDriverBidiLogLevel.Info);
@@ -43,7 +84,7 @@ public class Connection
         {
             try
             {
-                await this.client.ConnectAsync(new Uri(url), clientTokenSource.Token);
+                await this.client.ConnectAsync(new Uri(url), this.clientTokenSource.Token);
                 connected = true;
             }
             catch (WebSocketException)
@@ -54,6 +95,7 @@ public class Connection
                 this.client = new ClientWebSocket();
             }
         }
+
         if (!connected)
         {
             throw new TimeoutException($"Could not connect to browser within {this.startupTimeout.TotalSeconds} seconds");
@@ -64,6 +106,10 @@ public class Connection
         this.Log($"Connection opened", WebDriverBidiLogLevel.Info);
     }
 
+    /// <summary>
+    /// Asynchronously stops communication with the remote end of this connection.
+    /// </summary>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task Stop()
     {
         this.Log($"Closing connection", WebDriverBidiLogLevel.Info);
@@ -99,6 +145,11 @@ public class Connection
         this.clientTokenSource.Cancel();
     }
 
+    /// <summary>
+    /// Asynchronously sends data to the remote end of this connection.
+    /// </summary>
+    /// <param name="data">The data to be sent to the remote end of this connection.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task SendData(string data)
     {
         ArraySegment<byte> messageBuffer = new(Encoding.UTF8.GetBytes(data));
@@ -106,6 +157,10 @@ public class Connection
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
     }
 
+    /// <summary>
+    /// Raises the DataReceived event.
+    /// </summary>
+    /// <param name="e">The event args used when raising the event.</param>
     protected virtual void OnDataReceived(DataReceivedEventArgs e)
     {
         if (this.DataReceived is not null)
@@ -114,6 +169,10 @@ public class Connection
         }
     }
 
+    /// <summary>
+    /// Raises the LogMessage event.
+    /// </summary>
+    /// <param name="e">The event args used when raising the event.</param>
     protected virtual void OnLogMessage(LogMessageEventArgs e)
     {
         if (this.LogMessage is not null)
@@ -131,18 +190,19 @@ public class Connection
             var buffer = WebSocket.CreateClientBuffer(this.bufferSize, this.bufferSize);
             while (this.client.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
             {
-                var receiveResult = await client.ReceiveAsync(buffer, cancellationToken);
-                // if the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
+                var receiveResult = await this.client.ReceiveAsync(buffer, cancellationToken);
+
+                // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    // the server is notifying us that the connection will close; send acknowledgement
+                    // The server is notifying us that the connection will close; send acknowledgement
                     if (this.client.State == WebSocketState.CloseReceived && receiveResult.MessageType == WebSocketMessageType.Close)
                     {
                         this.Log($"Acknowledging Close frame received from server", WebDriverBidiLogLevel.Info);
-                        await client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None);
+                        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None);
                     }
 
-                    // display text or binary data
+                    // Display text or binary data
                     if (this.client.State == WebSocketState.Open && receiveResult.MessageType != WebSocketMessageType.Close)
                     {
                         messageBuilder.Append(Encoding.UTF8.GetString(buffer.Array ?? Array.Empty<byte>(), 0, receiveResult.Count));
@@ -160,7 +220,7 @@ public class Connection
                 }
             }
 
-            this.Log($"Ending processing loop in state {client.State}", WebDriverBidiLogLevel.Info);
+            this.Log($"Ending processing loop in state {this.client.State}", WebDriverBidiLogLevel.Info);
         }
         catch (OperationCanceledException)
         {

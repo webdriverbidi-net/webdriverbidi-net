@@ -1,10 +1,18 @@
+// <copyright file="RemoteValueJsonConverter.cs" company="WebDriverBidi.NET Committers">
+// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
 namespace WebDriverBidi.JsonConverters;
 
 using System.Numerics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Script;
+using WebDriverBidi.Script;
 
+/// <summary>
+/// The JSON converter for the RemoteValue object.
+/// </summary>
 public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 {
     /// <summary>
@@ -22,30 +30,70 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
     public override bool CanWrite => false;
 
     /// <summary>
-    /// Writes objects to JSON. Not implemented.
+    /// Serializes an object and writes it to a JSON string.
     /// </summary>
-    /// <param name="writer">JSON Writer Object</param>
-    /// <param name="value">Value to be written</param>
-    /// <param name="serializer">JSON Serializer </param>
+    /// <param name="writer">The JSON writer to use during serialization.</param>
+    /// <param name="value">The object to serialize.</param>
+    /// <param name="serializer">The JSON serializer to use in serialization.</param>
     public override void WriteJson(JsonWriter writer, RemoteValue? value, JsonSerializer serializer)
     {
         throw new NotImplementedException();
     }
 
     /// <summary>
-    /// Process the reader to return an object from JSON
+    /// Reads a JSON string and deserializes it to an object.
     /// </summary>
-    /// <param name="reader">A JSON reader</param>
-    /// <param name="objectType">Type of the object</param>
-    /// <param name="existingValue">The existing value of the object</param>
-    /// <param name="hasExistingValue">A value indicating whether the existing value is null</param>
-    /// <param name="serializer">JSON Serializer</param>
-    /// <returns>Object created from JSON</returns>
+    /// <param name="reader">The JSON reader to use during deserialization.</param>
+    /// <param name="objectType">The type of object to which to deserialize.</param>
+    /// <param name="existingValue">The existing value of the object.</param>
+    /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
+    /// <param name="serializer">The JSON serializer to use in deserialization.</param>
+    /// <returns>The deserialized object created from JSON.</returns>
     public override RemoteValue ReadJson(JsonReader reader, Type objectType, RemoteValue? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         var jsonObject = JObject.Load(reader);
 
-        return ProcessObject(jsonObject, serializer);
+        return this.ProcessObject(jsonObject, serializer);
+    }
+
+    private static object ProcessNumber(JToken token)
+    {
+        if (token.Type == JTokenType.String)
+        {
+            string specialValue = token.Value<string>()!;
+            if (specialValue == "Infinity")
+            {
+                return double.PositiveInfinity;
+            }
+            else if (specialValue == "-Infinity")
+            {
+                return double.NegativeInfinity;
+            }
+            else if (specialValue == "NaN")
+            {
+                return double.NaN;
+            }
+            else if (specialValue == "-0")
+            {
+                return decimal.Negate(decimal.Zero);
+            }
+            else
+            {
+                throw new JsonSerializationException($"RemoteValue invalid value '{specialValue}' for 'value' property of number");
+            }
+        }
+        else if (token.Type == JTokenType.Integer)
+        {
+            return token.Value<long>();
+        }
+        else if (token.Type == JTokenType.Float)
+        {
+            return token.Value<double>();
+        }
+        else
+        {
+            throw new JsonSerializationException($"RemoteValue invalid type {token.Type} for 'value' property of number");
+        }
     }
 
     private RemoteValue ProcessObject(JObject jsonObject, JsonSerializer serializer)
@@ -190,7 +238,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            RegularExpressionValue regexProperties = new("");
+            RegularExpressionValue regexProperties = new(string.Empty);
             serializer.Populate(regexObject.CreateReader(), regexProperties);
             result.Value = regexProperties;
         }
@@ -236,7 +284,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             // Note: Use the null coalescing operator here to suppress
             // the compiler warning, but the value should never be
             // null.
-            pairKey = keyToken.Value<string>() ?? "";
+            pairKey = keyToken.Value<string>() ?? string.Empty;
         }
         else
         {
@@ -270,7 +318,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
     private RemoteValueDictionary ProcessMap(JArray mapArray, JsonSerializer serializer)
     {
         Dictionary<object, RemoteValue> remoteValueDictionary = new();
-        foreach(var mapElementToken in mapArray)
+        foreach (var mapElementToken in mapArray)
         {
             if (mapElementToken is not JArray mapKeyValuePairArray)
             {
@@ -323,45 +371,5 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
         }
 
         return new RemoteValueList(remoteValueList);
-    }
-
-    private static object ProcessNumber(JToken token)
-    {
-        if (token.Type == JTokenType.String)
-        {
-            string specialValue = token.Value<string>()!;
-            if (specialValue == "Infinity")
-            {
-                return double.PositiveInfinity;
-            }
-            else if (specialValue == "-Infinity")
-            {
-                return double.NegativeInfinity;
-            }
-            else if (specialValue == "NaN")
-            {
-                return double.NaN;
-            }
-            else if (specialValue == "-0")
-            {
-                return decimal.Negate(decimal.Zero);
-            }
-            else
-            {
-                throw new JsonSerializationException($"RemoteValue invalid value '{specialValue}' for 'value' property of number");
-            }
-        }
-        else if (token.Type == JTokenType.Integer)
-        {
-            return token.Value<long>();
-        }
-        else if (token.Type == JTokenType.Float)
-        {
-            return token.Value<double>();
-        }
-        else
-        {
-            throw new JsonSerializationException($"RemoteValue invalid type {token.Type} for 'value' property of number");
-        }
     }
 }
