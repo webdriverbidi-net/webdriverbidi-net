@@ -204,7 +204,7 @@ public class RemoteValueTests
     [Test]
     public void TestCanDeserializeDateRemoteValue()
     {
-        string json = @"{ ""type"": ""date"", ""value"": ""2020-07-19T23:47:26.056-4:00"" }";
+        string json = @"{ ""type"": ""date"", ""value"": ""2020-07-19T23:47:26.056Z"" }";
         RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>

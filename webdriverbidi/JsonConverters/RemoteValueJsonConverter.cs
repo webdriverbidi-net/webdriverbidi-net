@@ -5,6 +5,7 @@
 
 namespace WebDriverBidi.JsonConverters;
 
+using System.Globalization;
 using System.Numerics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -51,6 +52,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
     /// <returns>The deserialized object created from JSON.</returns>
     public override RemoteValue ReadJson(JsonReader reader, Type objectType, RemoteValue? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
+        reader.DateParseHandling = DateParseHandling.None;
         var jsonObject = JObject.Load(reader);
 
         return this.ProcessObject(jsonObject, serializer);
@@ -223,7 +225,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             }
 
             string? dateString = token.Value<string>();
-            if (!DateTime.TryParse(dateString, out DateTime dateTimeValue))
+            if (!DateTime.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal, out DateTime dateTimeValue))
             {
                 throw new JsonSerializationException($"RemoteValue cannot parse invalid value '{dateString}' for {valueType}");
             }
