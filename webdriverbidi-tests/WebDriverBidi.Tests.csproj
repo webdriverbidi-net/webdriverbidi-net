@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\webdriverbidi\webdriverbidi.csproj" />
+    <ProjectReference Include="..\webdriverbidi\WebDriverBidi.csproj" />
   </ItemGroup>
 
 </Project>
