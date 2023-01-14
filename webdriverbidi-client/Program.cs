@@ -16,8 +16,6 @@ string testBrowserArguments = $"--remote-debugging-port {port} --no-remote --pro
 Process? testProcess = null;
 AutoResetEvent syncEvent = new(false);
 
-object? val = Nullable.GetUnderlyingType(typeof(List<int>));
-return;
 try
 {
     if (testBrowserName == BrowserType.Firefox)
