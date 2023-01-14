@@ -30,7 +30,7 @@ public class ReloadCommandSettings : CommandSettings
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
-    public override string MethodName => "browsingContext.navigate";
+    public override string MethodName => "browsingContext.reload";
 
     /// <summary>
     /// Gets the type of the result of the command.

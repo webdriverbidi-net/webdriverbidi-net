@@ -87,13 +87,12 @@ public class LogEntry
     }
 
     /// <summary>
-    /// Gets or sets the string value of the log level of the log entr for serialization purposes.
+    /// Sets the string value of the log level of the log entr for deserialization purposes.
     /// </summary>
     [JsonProperty("level")]
     [JsonRequired]
     internal string SerializableLevel
     {
-        get => this.level.ToString().ToLowerInvariant();
         set
         {
             if (!Enum.TryParse<LogLevel>(value, true, out LogLevel logLevelValue))

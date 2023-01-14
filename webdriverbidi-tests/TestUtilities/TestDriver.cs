@@ -1,5 +1,6 @@
 namespace WebDriverBidi.TestUtilities;
 
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 public class TestDriver : Driver
@@ -12,6 +13,23 @@ public class TestDriver : Driver
     private readonly AutoResetEvent commandSetEvent = new(false);
 
     private readonly Dictionary<string, Type> eventTypes = new();
+
+    private readonly TestProtocolModule testModule;
+
+    private bool emitNullEventArgs = false;
+
+    public TestDriver()
+    {
+        this.testModule = new(this);
+    }
+
+    public event EventHandler<TestCommandSetEventArgs>? CommandSet;
+
+    public TestProtocolModule Test => this.testModule;
+
+    public bool EmitNullEventArgs { get => this.emitNullEventArgs; set => this.emitNullEventArgs = value; }
+
+    public WebDriverBidiCommandData? LastCommand => this.lastCommand;
 
     public void EmitResponse(string jsonResponse)
     {
@@ -33,6 +51,7 @@ public class TestDriver : Driver
         long commandId  = Interlocked.Increment(ref this.nextCommandId);
         this.lastCommand = new WebDriverBidiCommandData(commandId, command);
         this.commandSetEvent.Set();
+        this.OnCommandSet(new TestCommandSetEventArgs(command.MethodName, command.ResultType));
         await this.WaitForCommandComplete();
         var result = this.lastCommand.Result;
         this.lastCommand = null;
@@ -69,6 +88,14 @@ public class TestDriver : Driver
         base.OnUnexpectedError(e);
     }
 
+    protected virtual void OnCommandSet(TestCommandSetEventArgs e)
+    {
+        if (this.CommandSet is not null)
+        {
+            this.CommandSet(this, e);
+        }
+    }
+
     private void ProcessMessage(string messageData)
     {
         JObject message = JObject.Parse(messageData);
@@ -80,7 +107,20 @@ public class TestDriver : Driver
             if (eventName is not null && eventData is not null && this.eventTypes.ContainsKey(eventName))
             {
                 Type eventType = eventTypes[eventName];
-                this.OnEventReceived(new ProtocolEventReceivedEventArgs(eventName, eventData.ToObject(eventType)));
+                object? eventDataObject = null;
+                try
+                {
+                    eventDataObject = eventData.ToObject(eventType);
+                }
+                catch (JsonSerializationException)
+                {
+                    if (!this.emitNullEventArgs)
+                    {
+                        eventDataObject = "This is an invalid, non-null event data object";
+                    }
+                }
+                
+                this.OnEventReceived(new ProtocolEventReceivedEventArgs(eventName, eventDataObject));
             }
         }
         else if (this.lastCommand is not null)

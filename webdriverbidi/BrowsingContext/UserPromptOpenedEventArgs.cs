@@ -51,17 +51,12 @@ public class UserPromptOpenedEventArgs : EventArgs
     public string Message { get => this.message; internal set => this.message = value; }
 
     /// <summary>
-    /// Gets or sets the text value of the user prompt type for deserialization purposes.
+    /// Sets the text value of the user prompt type for deserialization purposes.
     /// </summary>
     [JsonProperty("type")]
     [JsonRequired]
     internal string SerializablePromptType
     {
-        get
-        {
-            return this.promptType.ToString().ToLowerInvariant();
-        }
-
         set
         {
             if (!Enum.TryParse<UserPromptType>(value, true, out UserPromptType type))

@@ -79,20 +79,16 @@ public class LocalValue : ArgumentValue
 
             if (this.argType == "bigint")
             {
-                BigInteger? bigintValue = this.argValue as BigInteger?;
-                if (bigintValue is not null && bigintValue.HasValue)
-                {
-                    return bigintValue.Value.ToString(CultureInfo.InvariantCulture);
-                }
+                // Note that static methods creating BigInteger values should
+                // not allow a null value in the argValue member.
+                return ((BigInteger)this.argValue!).ToString(CultureInfo.InvariantCulture);
             }
 
             if (this.argType == "date")
             {
-                DateTime? dateValue = this.argValue as DateTime?;
-                if (dateValue is not null && dateValue.HasValue)
-                {
-                    return dateValue.Value.ToString("YYYY-MM-ddTHH:mm:ss.fffzzz");
-                }
+                // Note that static methods creating DateTime values should
+                // not allow a null value in the argValue member.
+                return ((DateTime)this.argValue!).ToString("YYYY-MM-ddTHH:mm:ss.fffZ");
             }
 
             if (this.argType == "map" || this.argType == "object")

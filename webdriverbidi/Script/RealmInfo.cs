@@ -46,28 +46,12 @@ public class RealmInfo
     public RealmType Type { get => this.realmType; }
 
     /// <summary>
-    /// Gets or sets the type of the realm for serialization purposes.
+    /// Sets the type of the realm for deserialization purposes.
     /// </summary>
     [JsonProperty("type")]
     [JsonRequired]
     internal string SerializableType
     {
-        get
-        {
-            string typeString = this.realmType.ToString().ToLowerInvariant();
-            if (typeString.IndexOf("worker") > 0)
-            {
-                return typeString.Insert(typeString.IndexOf("worker"), "-");
-            }
-
-            if (typeString.IndexOf("worklet") > 0)
-            {
-                return typeString.Insert(typeString.IndexOf("worklet"), "-");
-            }
-
-            return typeString;
-        }
-
         set
         {
             string sanitizedType = value.Replace("-", string.Empty);

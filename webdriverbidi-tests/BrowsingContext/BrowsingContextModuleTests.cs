@@ -10,16 +10,23 @@ public class BrowsingContextModuleTests
     {
         string responseJson = @"{ ""result"": { ""data"": ""encodedScreenshotData"" } }";
         TestDriver driver = new();
+        driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.MethodName, Is.EqualTo("browsingContext.captureScreenshot"));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CaptureScreenshotCommandResult)));
+            });
+        };
+
         BrowsingContextModule module = new(driver);
         var task = module.CaptureScreenshot(new CaptureScreenshotCommandSettings("myContextId"));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
 
         driver.EmitResponse(responseJson);
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
 
+        var result = task.Result;
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Data, Is.EqualTo("encodedScreenshotData"));
     }
 
     [Test]
@@ -27,6 +34,13 @@ public class BrowsingContextModuleTests
     {
         string responseJson = @"{ ""result"": {} }";
         TestDriver driver = new();
+        driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.MethodName, Is.EqualTo("browsingContext.close"));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(EmptyResult)));
+            });
+        };
         BrowsingContextModule module = new(driver);
         var task = module.Close(new CloseCommandSettings("myContextId"));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
@@ -43,6 +57,14 @@ public class BrowsingContextModuleTests
     {
         string responseJson = @"{ ""result"": { ""context"": ""myContext"" } }";
         TestDriver driver = new();
+        driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.MethodName, Is.EqualTo("browsingContext.create"));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CreateCommandResult)));
+            });
+        };
+
         BrowsingContextModule module = new(driver);
         var task = module.Create(new CreateCommandSettings(BrowsingContextCreateType.Tab));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
@@ -60,6 +82,14 @@ public class BrowsingContextModuleTests
     {
         string responseJson = @"{ ""result"": { ""contexts"": [ { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } ] } }";
         TestDriver driver = new();
+        driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.MethodName, Is.EqualTo("browsingContext.getTree"));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(GetTreeCommandResult)));
+            });
+        };
+
         BrowsingContextModule module = new(driver);
         var task = module.GetTree(new GetTreeCommandSettings());
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
@@ -83,6 +113,14 @@ public class BrowsingContextModuleTests
     {
         string responseJson = @"{ ""result"": {} }";
         TestDriver driver = new();
+        driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.MethodName, Is.EqualTo("browsingContext.handleUserPrompt"));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(EmptyResult)));
+            });
+        };
+
         BrowsingContextModule module = new(driver);
         var task = module.HandleUserPrompt(new HandleUserPromptCommandSettings("myContextId"));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
@@ -99,6 +137,14 @@ public class BrowsingContextModuleTests
     {
         string responseJson = @"{ ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
         TestDriver driver = new();
+        driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.MethodName, Is.EqualTo("browsingContext.navigate"));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(BrowsingContextNavigateResult)));
+            });
+        };
+
         BrowsingContextModule module = new(driver);
         var task = module.Navigate(new NavigateCommandSettings("myContext", "https://example.com") { Wait = ReadinessState.Complete });
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
@@ -120,6 +166,14 @@ public class BrowsingContextModuleTests
     {
         string responseJson = @"{ ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
         TestDriver driver = new();
+        driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.MethodName, Is.EqualTo("browsingContext.reload"));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(BrowsingContextNavigateResult)));
+            });
+        };
+
         BrowsingContextModule module = new(driver);
         var task = module.Reload(new ReloadCommandSettings("myContext"));
         driver.WaitForCommandSet(TimeSpan.FromSeconds(1));

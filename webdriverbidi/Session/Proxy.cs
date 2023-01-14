@@ -97,19 +97,16 @@ public class Proxy
 
         set
         {
-            if (value is null)
-            {
-                this.type = null;
-                return;
-            }
-
             if (value == "pac")
             {
                 this.type = ProxyType.ProxyAutoConfig;
                 return;
             }
 
-            if (value.ToLowerInvariant() == "proxyautoconfig")
+            // Because of the NullValueHandling property of the attribute,
+            // using the null coercing operator is fine here, as there should
+            // never be a null value.
+            if (value!.ToLowerInvariant() == "proxyautoconfig")
             {
                 // The value 'proxyautoconfig' is expressly invalid in the spec
                 throw new WebDriverBidiException($"Invalid value for proxy type: '{value}'");

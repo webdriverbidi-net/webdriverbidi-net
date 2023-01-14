@@ -27,7 +27,7 @@ public class LogEntryTests
     public void TestCanDeserializeConsoleLogEntry()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [] }";
+        string json = @"{ ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } }";
         LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<ConsoleLogEntry>());
@@ -42,6 +42,8 @@ public class LogEntryTests
             Assert.That(consoleEntry.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             Assert.That(consoleEntry.Method, Is.EqualTo("myMethod"));
             Assert.That(consoleEntry.Args, Is.Empty);
+            Assert.That(consoleEntry.StackTrace, Is.Not.Null);
+            Assert.That(consoleEntry.StackTrace!.CallFrames, Is.Empty);
         });
     }
 

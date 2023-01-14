@@ -57,7 +57,7 @@ public class RegularExpressionValue
     /// <returns>A hash code for the this RegularExpressionValue.</returns>
     public override int GetHashCode()
     {
-        return base.GetHashCode();
+        return HashCode.Combine(this.pattern, this.flags);
     }
 
     /// <summary>

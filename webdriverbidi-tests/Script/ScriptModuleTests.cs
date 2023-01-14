@@ -128,7 +128,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestExecuteGetRealmsCommandReturningError()
+    public void TestExecuteGetRealmsCommand()
     {
         string responseJson = @"{ ""result"": { ""realms"": [ { ""realm"": ""myRealmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContextId"" } ] } }";
         TestDriver driver = new();
@@ -158,7 +158,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestExecuteDisownCommandReturningError()
+    public void TestExecuteDisownCommand()
     {
         string responseJson = @"{ ""result"": {} }";
         TestDriver driver = new();
@@ -197,6 +197,28 @@ public class ScriptModuleTests
     }
 
     [Test]
+    public void TestCanReceiveRealmCreatedEventForNonWindowRealm()
+    {
+        string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": ""myOrigin"" } }";
+        bool eventRaised = false;
+        TestDriver driver = new();
+        ScriptModule module = new(driver);
+        module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
+            eventRaised = true;
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.RealmId, Is.EqualTo("myRealm"));
+                Assert.That(e.Origin, Is.EqualTo("myOrigin"));
+                Assert.That(e.Type, Is.EqualTo(RealmType.Worker));
+                Assert.That(e.BrowsingContext, Is.Null);
+            });
+        };
+
+        driver.EmitResponse(eventJson);
+        Assert.That(eventRaised, Is.True);
+    }
+
+    [Test]
     public void TestCanReceiveRealmDestroyedEvent()
     {
         string eventJson = @"{ ""method"": ""script.realmDestroyed"", ""params"": { ""realm"": ""myRealm"" } }";
@@ -214,7 +236,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestCanAddPreoadScript()
+    public void TestCanAddPreloadScript()
     {
         string responseJson = @"{ ""result"": { ""script"": ""loadScriptId"" } }";
         TestDriver driver = new();
@@ -232,7 +254,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestCanRemovePreoadScript()
+    public void TestCanRemovePreloadScript()
     {
         string responseJson = @"{ ""result"": { } }";
         TestDriver driver = new();

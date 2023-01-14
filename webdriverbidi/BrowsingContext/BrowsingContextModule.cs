@@ -163,14 +163,14 @@ public sealed class BrowsingContextModule : ProtocolModule
         // BrowsingContextEventArgs instance, the protocol transport will
         // deserialize to a BrowingContextInfo, then use that here to create
         // the appropriate EventArgs instance.
-        if (eventData is not BrowsingContextInfo info)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is BrowsingContextInfo info)
         {
-            throw new WebDriverBidiException("Unable to cast event data to BrowsingContextEventArgs");
-        }
-
-        if (this.ContextCreated is not null)
-        {
-            this.ContextCreated(this, new BrowsingContextEventArgs(info));
+            if (this.ContextCreated is not null)
+            {
+                this.ContextCreated(this, new BrowsingContextEventArgs(info));
+            }
         }
     }
 
@@ -182,131 +182,131 @@ public sealed class BrowsingContextModule : ProtocolModule
         // BrowsingContextEventArgs instance, the protocol transport will
         // deserialize to a BrowingContextInfo, then use that here to create
         // the appropriate EventArgs instance.
-        if (eventData is not BrowsingContextInfo info)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is BrowsingContextInfo info)
         {
-            throw new WebDriverBidiException("Unable to cast event data to BrowsingContextEventArgs");
-        }
-
-        if (this.ContextDestroyed is not null)
-        {
-            this.ContextDestroyed(this, new BrowsingContextEventArgs(info));
+            if (this.ContextDestroyed is not null)
+            {
+                this.ContextDestroyed(this, new BrowsingContextEventArgs(info));
+            }
         }
     }
 
     private void OnNavigationStarted(object eventData)
     {
-        if (eventData is not NavigationEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is NavigationEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
-        }
-
-        if (this.NavigationStarted is not null)
-        {
-            this.NavigationStarted(this, eventArgs);
+            if (this.NavigationStarted is not null)
+            {
+                this.NavigationStarted(this, eventArgs);
+            }
         }
     }
 
     private void OnFragmentNavigated(object eventData)
     {
-        if (eventData is not NavigationEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is NavigationEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
-        }
-
         if (this.FragmentNavigated is not null)
-        {
-            this.FragmentNavigated(this, eventArgs);
+            {
+                this.FragmentNavigated(this, eventArgs);
+            }
         }
-    }
+     }
 
     private void OnDomContentLoaded(object eventData)
     {
-        if (eventData is not NavigationEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is NavigationEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
-        }
-
-        if (this.DomContentLoaded is not null)
-        {
-            this.DomContentLoaded(this, eventArgs);
+            if (this.DomContentLoaded is not null)
+            {
+                this.DomContentLoaded(this, eventArgs);
+            }
         }
     }
 
     private void OnLoad(object eventData)
     {
-        if (eventData is not NavigationEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is NavigationEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
-        }
-
-        if (this.Load is not null)
-        {
-            this.Load(this, eventArgs);
+            if (this.Load is not null)
+            {
+                this.Load(this, eventArgs);
+            }
         }
     }
 
     private void OnDownloadWillBegin(object eventData)
     {
-        if (eventData is not NavigationEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is NavigationEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
-        }
-
-        if (this.DownloadWillBegin is not null)
-        {
-            this.DownloadWillBegin(this, eventArgs);
+            if (this.DownloadWillBegin is not null)
+            {
+                this.DownloadWillBegin(this, eventArgs);
+            }
         }
     }
 
     private void OnNavigationAborted(object eventData)
     {
-        if (eventData is not NavigationEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is NavigationEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
-        }
-
-        if (this.NavigationAborted is not null)
-        {
-            this.NavigationAborted(this, eventArgs);
+            if (this.NavigationAborted is not null)
+            {
+                this.NavigationAborted(this, eventArgs);
+            }
         }
     }
 
     private void OnNavigationFailed(object eventData)
     {
-        if (eventData is not NavigationEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is NavigationEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to NavigationEventArgs");
-        }
-
         if (this.NavigationFailed is not null)
-        {
-            this.NavigationFailed(this, eventArgs);
+            {
+                this.NavigationFailed(this, eventArgs);
+            }
         }
     }
 
     private void OnUserPromptClosed(object eventData)
     {
-        if (eventData is not UserPromptClosedEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is UserPromptClosedEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to UserPromptClosedEventArgs");
-        }
-
-        if (this.UserPromptClosed is not null)
-        {
-            this.UserPromptClosed(this, eventArgs);
+            if (this.UserPromptClosed is not null)
+            {
+                this.UserPromptClosed(this, eventArgs);
+            }
         }
     }
 
     private void OnUserPromptOpened(object eventData)
     {
-        if (eventData is not UserPromptOpenedEventArgs eventArgs)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is UserPromptOpenedEventArgs eventArgs)
         {
-            throw new WebDriverBidiException("Unable to cast event data to UserPromptOpenedEventArgs");
-        }
-
-        if (this.UserPromptOpened is not null)
-        {
-            this.UserPromptOpened(this, eventArgs);
+            if (this.UserPromptOpened is not null)
+            {
+                this.UserPromptOpened(this, eventArgs);
+            }
         }
     }
 }

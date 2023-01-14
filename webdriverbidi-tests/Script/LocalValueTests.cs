@@ -10,11 +10,12 @@ public class LocalValueTests
     public void TestCanSerializeUndefined()
     {
         LocalValue value = LocalValue.Undefined;
+        Assert.That(value.Value, Is.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
-        Assert.That(parsed, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
+            Assert.That(parsed, Has.Count.EqualTo(1));
             Assert.That(parsed.ContainsKey("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("undefined"));
         });
@@ -24,6 +25,7 @@ public class LocalValueTests
     public void TestCanSerializeNull()
     {
         LocalValue value = LocalValue.Null;
+        Assert.That(value.Value, Is.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(1));
@@ -38,6 +40,7 @@ public class LocalValueTests
     public void TestCanSerializeString()
     {
         LocalValue value = LocalValue.String("hello");
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -55,6 +58,7 @@ public class LocalValueTests
     public void TestCanSerializeInteger()
     {
         LocalValue value = LocalValue.Number(123);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -72,6 +76,7 @@ public class LocalValueTests
     public void TestCanSerializeLong()
     {
         LocalValue value = LocalValue.Number(123L);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -89,6 +94,7 @@ public class LocalValueTests
     public void TestCanSerializeDouble()
     {
         LocalValue value = LocalValue.Number(3.14);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -106,6 +112,7 @@ public class LocalValueTests
     public void TestCanSerializeNaN()
     {
         LocalValue value = LocalValue.NaN;
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -123,6 +130,7 @@ public class LocalValueTests
     public void TestCanSerializeInfinity()
     {
         LocalValue value = LocalValue.Infinity;
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -140,6 +148,7 @@ public class LocalValueTests
     public void TestCanSerializeNegativeInfinity()
     {
         LocalValue value = LocalValue.NegativeInfinity;
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -157,6 +166,7 @@ public class LocalValueTests
     public void TestCanSerializeNegativeZero()
     {
         LocalValue value = LocalValue.NegativeZero;
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -174,6 +184,7 @@ public class LocalValueTests
     public void TestCanSerializeZero()
     {
         LocalValue value = LocalValue.Number(0.0);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -191,6 +202,7 @@ public class LocalValueTests
     public void TestCanSerializeBoolean()
     {
         LocalValue value = LocalValue.Boolean(true);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -208,6 +220,7 @@ public class LocalValueTests
     public void TestCanSerializeBigInt()
     {
         LocalValue value = LocalValue.BigInt(123);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -225,8 +238,9 @@ public class LocalValueTests
     public void TestCanSerializeDate()
     {
         DateTime actualValue = DateTime.Now;
-        string expectedValue = actualValue.ToString("YYYY-MM-ddTHH:mm:ss.fffzzz");
+        string expectedValue = actualValue.ToString("YYYY-MM-ddTHH:mm:ss.fffZ");
         LocalValue value = LocalValue.Date(actualValue);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -243,6 +257,7 @@ public class LocalValueTests
     public void TestCanSerializeRegularExpression()
     {
         LocalValue value = LocalValue.RegExp("pattern.*");
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -267,6 +282,7 @@ public class LocalValueTests
     public void TestCanSerializeRegularExpressionWithFlags()
     {
         LocalValue value = LocalValue.RegExp("pattern.*", "gi");
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -301,6 +317,7 @@ public class LocalValueTests
             LocalValue.Boolean(true)
         };
         LocalValue value = LocalValue.Array(arrayList);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -378,6 +395,7 @@ public class LocalValueTests
             LocalValue.Boolean(true)
         };
         LocalValue value = LocalValue.Set(arrayList);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -454,6 +472,7 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Map(dictionary);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -501,6 +520,7 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Object(dictionary);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -550,6 +570,7 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Map(dictionary);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
@@ -595,6 +616,7 @@ public class LocalValueTests
         };
 
         LocalValue value = LocalValue.Object(dictionary);
+        Assert.That(value.Value, Is.Not.Null);
         string json = JsonConvert.SerializeObject(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));

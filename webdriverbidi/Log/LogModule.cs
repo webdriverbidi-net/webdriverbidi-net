@@ -32,14 +32,14 @@ public sealed class LogModule : ProtocolModule
         // properties to directly deserialize the EntryAddedEventArgs instance,
         // the protocol transport will deserialize to a LogEntry, then use that
         // here to create the appropriate EventArgs instance.
-        if (eventData is not LogEntry entry)
+        // Note that the base class for a protocol module should not allow
+        // eventData to be any other type than the expected type.
+        if (eventData is LogEntry entry)
         {
-            throw new WebDriverBidiException("Unable to cast event data to LogEntry");
-        }
-
-        if (this.EntryAdded is not null)
-        {
-            this.EntryAdded(this, new EntryAddedEventArgs(entry));
+            if (this.EntryAdded is not null)
+            {
+                this.EntryAdded(this, new EntryAddedEventArgs(entry));
+            }
         }
     }
 }

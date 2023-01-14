@@ -38,25 +38,21 @@ public class ScriptEvaluateResult : CommandResult
     public string RealmId { get => this.realmId; internal set => this.realmId = value; }
 
     /// <summary>
-    /// Gets or sets the type of the result of the script execution for serialization purposes.
+    /// Sets the type of the result of the script execution for deserialization purposes.
     /// </summary>
     [JsonProperty("type")]
     [JsonRequired]
     internal string SerializableResultType
     {
-        get
-        {
-            return this.resultType.ToString().ToLowerInvariant();
-        }
-
         set
         {
-            if (!Enum.TryParse<ScriptEvaluateResultType>(value, true, out ScriptEvaluateResultType type))
+            // Note that the custom JSON serializer should not allow an invalid value for
+            // this enum. If new values are added to the enum, the serializer will need to
+            // be updated.
+            if (Enum.TryParse<ScriptEvaluateResultType>(value, true, out ScriptEvaluateResultType type))
             {
-                throw new WebDriverBidiException($"Malformed response: Invalid value {value} for RealmInfo 'type' property");
+                this.resultType = type;
             }
-
-            this.resultType = type;
         }
     }
 }

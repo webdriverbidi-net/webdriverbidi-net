@@ -61,7 +61,7 @@ public class RemoteValue
     /// <summary>
     /// Gets a value indicating whether this RemoteValue contains a primitive value.
     /// </summary>
-    public bool IsPrimitive => this.valueType == "string" || this.valueType == "number" || this.valueType == "boolean" || this.valueType == "bigint" || this.valueType == "null" || this.valueType == "undefined";
+    internal bool IsPrimitive => this.valueType == "string" || this.valueType == "number" || this.valueType == "boolean" || this.valueType == "bigint" || this.valueType == "null" || this.valueType == "undefined";
 
     /// <summary>
     /// Gets the value of this RemoteValue cast to the desired type.
@@ -75,7 +75,7 @@ public class RemoteValue
         Type type = typeof(T);
         if (this.valueObject == null)
         {
-            if (type.IsValueType && (Nullable.GetUnderlyingType(type) == null))
+            if (type.IsValueType)
             {
                 throw new WebDriverBidiException("RemoteValue has null value, but desired type is a value type");
             }
