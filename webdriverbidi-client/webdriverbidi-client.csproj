@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\webdriverbidi\webdriverbidi.csproj" />
+    <ProjectReference Include="..\webdriverbidi\WebDriverBidi.csproj" />
   </ItemGroup>
 
   <ItemGroup>
