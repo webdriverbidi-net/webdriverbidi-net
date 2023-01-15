@@ -1,6 +1,10 @@
 namespace WebDriverBidi;
 
 using TestUtilities;
+using WebDriverBidi.BrowsingContext;
+using WebDriverBidi.Log;
+using WebDriverBidi.Script;
+using WebDriverBidi.Session;
 
 [TestFixture]
 public class DriverTests
@@ -155,4 +159,47 @@ public class DriverTests
         Assert.That(receivedMessage, Is.EqualTo(serialized));
     }
 
+    [Test]
+    public async Task TestModuleAvailability()
+    {
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        // await transport.Connect("ws://localhost:5555");
+        Driver driver = new(transport);
+        await driver.Start("ws://localhost:5555");
+        try
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(driver.BrowsingContext, Is.InstanceOf<BrowsingContextModule>());
+                Assert.That(driver.Script, Is.InstanceOf<ScriptModule>());
+                Assert.That(driver.Log, Is.InstanceOf<LogModule>());
+                Assert.That(driver.Session, Is.InstanceOf<SessionModule>());
+            });
+        }
+        finally
+        {
+            await driver.Stop();
+        }
+    }
+
+    [Test]
+    public void TestDriverCanEmitLogMessagesFromProtocol()
+    {
+        List<LogMessageEventArgs> logs = new();
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        TestDriver driver = new(transport);
+        driver.LogMessage += (sender, e) =>
+        {
+            logs.Add(e);
+        };
+        connection.EmitLogMessage("test log message", WebDriverBidiLogLevel.Warn);
+        Assert.That(logs, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(logs[0].Message, Is.EqualTo("test log message"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Warn));
+        });
+    }
 }

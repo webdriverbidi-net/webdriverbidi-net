@@ -75,7 +75,7 @@ public class ProtocolTransportTests
     public async Task TestTransportCanGetResponse()
     {
         string commandName = "module.command";
-       TestConnection connection = new();
+        TestConnection connection = new();
         ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
         await transport.Connect("ws://localhost:5555");
 
@@ -137,6 +137,38 @@ public class ProtocolTransportTests
     }
 
     [Test]
+    public async Task TestTransportGetResponseWithThrownException()
+    {
+        string commandName = "module.command";
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        await transport.Connect("ws://localhost:5555");
+
+        TestCommand command = new(commandName);
+        long commandId = await transport.SendCommand(command);
+        _ = Task.Run(() => 
+        {
+            Task.Delay(TimeSpan.FromMilliseconds(50));
+            connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" }");
+        });
+        transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
+        Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Response contained neither result nor error"));
+   }
+
+    [Test]
+    public async Task TestTransportGetResponseWithNullResultAndThrownException()
+    {
+        string commandName = "module.command";
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        await transport.Connect("ws://localhost:5555");
+
+        TestCommand command = new(commandName);
+        long commandId = await transport.SendCommand(command);
+        Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Result and thrown exception for command with id 1 are both null"));
+   }
+
+    [Test]
     public void TestTransportEventReceived()
     {
         string receivedName = string.Empty;
@@ -183,6 +215,44 @@ public class ProtocolTransportTests
         {
             Assert.That(convertedData!.ErrorType, Is.EqualTo("unknown error"));
             Assert.That(convertedData.ErrorMessage, Is.EqualTo("This is a test error message"));
+        });
+    }
+
+    [Test]
+    public void TestTransportErrorEventReceivedWithNullValues()
+    {
+        object? receivedData = null;
+        ManualResetEvent syncEvent = new(false);
+
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (object? sender, ProtocolUnknownMessageReceivedEventArgs e) =>
+        {
+            receivedData = e.Message;
+            syncEvent.Set();
+        };
+        transport.ErrorEventReceived += (object? sender, ProtocolErrorReceivedEventArgs e) => {
+        };
+        connection.RaiseDataReceivedEvent(@"{ ""method"": null }");
+        syncEvent.WaitOne();
+    }
+
+    [Test]
+    public void TestTransportLogsCommands()
+    {
+        List<LogMessageEventArgs> logs = new();
+        TestConnection connection = new();
+        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.LogMessage += (sender, e) =>
+        {
+            logs.Add(e);
+        };
+        connection.EmitLogMessage("test log message", WebDriverBidiLogLevel.Warn);
+        Assert.That(logs, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(logs[0].Message, Is.EqualTo("test log message"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Warn));
         });
     }
 }

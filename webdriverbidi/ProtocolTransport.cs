@@ -235,8 +235,11 @@ public class ProtocolTransport
         JObject message = JObject.Parse(e.Data);
         if (message.ContainsKey("id"))
         {
+            // Note: We have already determined there is a property named "id",
+            // so the token cannot be null. Use the null-forgiving operator to
+            // suppress the compiler warning.
             JToken? idToken = message["id"];
-            if (idToken is not null && idToken.Type != JTokenType.Null)
+            if (idToken!.Type != JTokenType.Null)
             {
                 long? responseId = message["id"]!.Value<long>();
                 if (this.pendingCommands.ContainsKey(responseId.Value))
@@ -254,6 +257,10 @@ public class ProtocolTransport
                             {
                                 executedCommand.Result = message.ToObject<ErrorResponse>();
                                 isProcessed = true;
+                            }
+                            else
+                            {
+                                throw new WebDriverBidiException("Response contained neither result nor error");
                             }
                         }
                         catch (Exception ex)
@@ -277,13 +284,19 @@ public class ProtocolTransport
         }
         else if (message.ContainsKey("method") && message.ContainsKey("params"))
         {
+            // There must be a property named "method", so eventName cannot
+            // be null. Use the null forgiving operator to suppress the
+            // compiler warning.
             string? eventName = message["method"]!.Value<string>();
             JToken? eventData = message["params"];
-            if (eventName is not null && eventData is not null)
+            if (eventName is not null)
             {
                 if (this.eventTypes.ContainsKey(eventName))
                 {
-                    var eventArgs = eventData.ToObject(this.eventTypes[eventName]);
+                    // There must be a property named "params", so the eventData token
+                    // cannot be null. Use the null forgiving operator to suppress the
+                    // compiler warning.
+                    var eventArgs = eventData!.ToObject(this.eventTypes[eventName]);
                     isProcessed = true;
                     this.OnProtocolEventReceived(this, new ProtocolEventReceivedEventArgs(eventName, eventArgs));
                 }

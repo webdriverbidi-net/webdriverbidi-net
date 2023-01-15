@@ -14,15 +14,6 @@ public class LogMessageEventArgs : EventArgs
     private readonly WebDriverBidiLogLevel level;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="LogMessageEventArgs" /> class with a log message.
-    /// </summary>
-    /// <param name="message">The message sent to the log.</param>
-    public LogMessageEventArgs(string message)
-        : this(message, WebDriverBidiLogLevel.Info)
-    {
-    }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="LogMessageEventArgs" /> class with a log message and log level.
     /// </summary>
     /// <param name="message">The message sent to the log.</param>

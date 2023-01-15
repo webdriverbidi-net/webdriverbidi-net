@@ -113,22 +113,101 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-        List<string> logValues = new();
+        List<LogMessageEventArgs> logValues = new();
         Connection connection = new();
         connection.DataReceived += OnConnectionDataReceived;
         connection.LogMessage += (object? sender, LogMessageEventArgs e) => 
         {
-            logValues.Add(e.Message);
+            if (e.Level >= WebDriverBidiLogLevel.Info)
+            {
+                logValues.Add(e);
+            }
         };
         await connection.Start($"ws://localhost:{server.Port}");
         await connection.SendData("Hello world");
-        syncEvent.WaitOne(TimeSpan.FromSeconds(3));
+        syncEvent.WaitOne(TimeSpan.FromSeconds(4));
 
         this.lastReceivedData = string.Empty;
         await server.SendData("Hello back");
         syncEvent.WaitOne();
         await connection.Stop();
-        Assert.That(logValues, Has.Count.EqualTo(6));
+        Assert.That(logValues, Has.Count.EqualTo(4));
+        foreach(var args in logValues)
+        {
+            Assert.Multiple(() =>
+            {
+                Assert.That(args.Level, Is.EqualTo(WebDriverBidiLogLevel.Info));
+                Assert.That(args.Message, Is.Not.Null);
+            });
+        }
+    }
+
+    [Test]
+    public async Task TestIsActiveProperty()
+    {
+        if (server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        Connection connection = new();
+        Assert.That(connection.IsActive, Is.False);
+        connection.DataReceived += OnConnectionDataReceived;
+        await connection.Start($"ws://localhost:{server.Port}");
+        Assert.That(connection.IsActive, Is.True);
+        await connection.Stop();
+        Assert.That(connection.IsActive, Is.False);
+    }
+
+    [Test]
+    public async Task TestConnectionStopCanBeCalledMultipleTimes()
+    {
+        if (server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        Connection connection = new();
+        connection.DataReceived += OnConnectionDataReceived;
+        await connection.Start($"ws://localhost:{server.Port}");
+        await connection.Stop();
+        await connection.Stop();
+    }
+
+    [Test]
+    public async Task TestConnectionHandlesRemoteEndStop()
+    {
+        if (server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        connection.DataReceived += OnConnectionDataReceived;
+        await connection.Start($"ws://localhost:{server.Port}");
+        server.Stop();
+        await connection.Stop();
+    }
+
+    [Test]
+    public async Task TestConnectionHandlesHungRemoteEnd()
+    {
+        if (server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        List<string> connectionLog = new();
+        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        connection.LogMessage += (sender, e) =>
+        {
+            connectionLog.Add(e.Message);
+        };
+
+        List<string> serverLog = server.Log;
+        await connection.Start($"ws://localhost:{server.Port}");
+        await server.CloseClientSocket();
+        await connection.Stop();
     }
 
     private void OnSocketDataReceived(object? sender, DataReceivedEventArgs e)

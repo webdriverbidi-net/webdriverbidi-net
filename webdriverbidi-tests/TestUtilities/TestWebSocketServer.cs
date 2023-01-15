@@ -63,6 +63,8 @@ public class TestWebSocketServer
 
     public event EventHandler<DataReceivedEventArgs>? DataReceived;
 
+    public List<string> Log => this.serverLog;
+
     public void Start()
     {
         IPEndPoint serverEndpoint = new(IPAddress.Loopback, this.port);
@@ -146,7 +148,7 @@ public class TestWebSocketServer
         this.socket.Dispose();
     }
 
-    private async Task CloseClientSocket()
+    public async Task CloseClientSocket()
     {
         if (this.clientSocket is not null)
         {

@@ -33,6 +33,11 @@ public class TestConnection : Connection
         return Task.CompletedTask;
     }
 
+    public void EmitLogMessage(string message, WebDriverBidiLogLevel level)
+    {
+        this.OnLogMessage(new LogMessageEventArgs(message, level));
+    }
+
     protected virtual void OnDataSendComplete()
     {
         if (this.DataSendComplete is not null)

@@ -23,6 +23,12 @@ public class TestDriver : Driver
         this.testModule = new(this);
     }
 
+    public TestDriver(ProtocolTransport transport)
+        : base(transport)
+    {
+        this.testModule = new(this);
+    }
+
     public event EventHandler<TestCommandSetEventArgs>? CommandSet;
 
     public TestProtocolModule Test => this.testModule;

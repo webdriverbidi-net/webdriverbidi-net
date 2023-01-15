@@ -13,8 +13,6 @@ using Newtonsoft.Json;
 [JsonObject]
 public class ErrorResponse : CommandResult
 {
-    private readonly Dictionary<string, object?> additionalErrorData = new();
-
     private string error = string.Empty;
     private string message = string.Empty;
 
@@ -40,9 +38,4 @@ public class ErrorResponse : CommandResult
     /// Gets a value indicating whether this response is an error response.
     /// </summary>
     public override bool IsError => true;
-
-    /// <summary>
-    /// Gets additional data sent with the error response.
-    /// </summary>
-    public Dictionary<string, object?> AdditionalData => this.additionalErrorData;
 }
