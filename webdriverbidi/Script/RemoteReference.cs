@@ -12,7 +12,6 @@ using WebDriverBidi.JsonConverters;
 /// Object containing a remote reference.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-[JsonConverter(typeof(RemoteReferenceJsonConverter))]
 public class RemoteReference : ArgumentValue
 {
     private readonly Dictionary<string, object?> additionalData = new();
@@ -36,5 +35,7 @@ public class RemoteReference : ArgumentValue
     /// <summary>
     /// Gets the dictionary of additional data about the remote reference.
     /// </summary>
+    [JsonExtensionData]
+    [JsonConverter(typeof(ResponseValueJsonConverter))]
     public Dictionary<string, object?> AdditionalData => this.additionalData;
 }

@@ -5,7 +5,6 @@
 
 namespace WebDriverBidi.JsonConverters;
 
-using System.Diagnostics.CodeAnalysis;
 using Newtonsoft.Json;
 
 /// <summary>
@@ -49,7 +48,7 @@ internal class ResponseValueJsonConverter : JsonConverter
 
     private object? ProcessToken(JsonReader reader)
     {
-        // Recursively processes a token. This is required for elements that next other elements.
+        // Recursively processes a token. This is required for elements that nest other elements.
         object? processedObject = null;
         if (reader != null)
         {

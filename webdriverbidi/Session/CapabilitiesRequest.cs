@@ -12,7 +12,6 @@ using WebDriverBidi.JsonConverters;
 /// Object containing capabilities requested when starting a new session.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-[JsonConverter(typeof(CapabilitiesRequestJsonConverter))]
 public class CapabilitiesRequest
 {
     private readonly Dictionary<string, object?> additionalCapabilities = new();
@@ -55,5 +54,7 @@ public class CapabilitiesRequest
     /// <summary>
     /// Gets the dictionary containing additional capabilities to use with this session.
     /// </summary>
+    [JsonExtensionData]
+    [JsonConverter(typeof(ResponseValueJsonConverter))]
     public Dictionary<string, object?> AdditionalCapabilities => this.additionalCapabilities;
 }

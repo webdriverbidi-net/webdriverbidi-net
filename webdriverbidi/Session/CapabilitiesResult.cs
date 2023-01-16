@@ -12,9 +12,9 @@ using WebDriverBidi.JsonConverters;
 /// Object containing the capabilities returned by a new session.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-[JsonConverter(typeof(CapabilitiesResultJsonConverter))]
 public class CapabilitiesResult
 {
+    private readonly Dictionary<string, object?> writableCapabilities = new();
     private bool acceptInsecureCertificates = false;
     private string browserName = string.Empty;
     private string browserVersion = string.Empty;
@@ -22,7 +22,7 @@ public class CapabilitiesResult
     private bool setWindowRect = false;
     private ProxyResult? proxyResult;
     private Proxy proxy = WebDriverBidi.Session.Proxy.EmptyProxy;
-    private AdditionalCapabilities additionalCapabilities = AdditionalCapabilities.EmptyAdditionalCapabilities;
+    private ResultAdditionalData additionalCapabilities = ResultAdditionalData.EmptyAdditionalData;
 
     /// <summary>
     /// Gets a value indicating whether the browser should accept insecure (self-signed) SSL certificates.
@@ -62,7 +62,18 @@ public class CapabilitiesResult
     /// <summary>
     /// Gets a read-only dictionary of additional capabilities specified by this session.
     /// </summary>
-    public AdditionalCapabilities AdditionalCapabilities { get => this.additionalCapabilities; internal set => this.additionalCapabilities = value; }
+    public ResultAdditionalData AdditionalCapabilities
+    {
+        get
+        {
+            if (this.writableCapabilities.Count > 0 && this.additionalCapabilities.Count == 0)
+            {
+                this.additionalCapabilities = new ResultAdditionalData(this.writableCapabilities);
+            }
+
+            return this.additionalCapabilities;
+        }
+    }
 
     /// <summary>
     /// Gets the proxy used by this session.
@@ -82,4 +93,11 @@ public class CapabilitiesResult
     [JsonProperty("proxy")]
     [JsonRequired]
     internal Proxy SerializableProxy { get => this.proxy; set => this.proxy = value; }
+
+    /// <summary>
+    /// Gets the dictionary containing additional, unenumerated capabilities for deserialization purposes.
+    /// </summary>
+    [JsonExtensionData]
+    [JsonConverter(typeof(ResponseValueJsonConverter))]
+    internal Dictionary<string, object?> SerializableAdditionalCapabilities => this.writableCapabilities;
 }

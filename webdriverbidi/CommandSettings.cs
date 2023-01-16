@@ -6,6 +6,7 @@
 namespace WebDriverBidi;
 
 using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
 
 /// <summary>
 /// Abstract base class for a set of settings for a command.
@@ -13,6 +14,8 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public abstract class CommandSettings
 {
+    private readonly Dictionary<string, object?> additionalData = new();
+
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
@@ -22,4 +25,11 @@ public abstract class CommandSettings
     /// Gets the expected type of the result of the command.
     /// </summary>
     public abstract Type ResultType { get; }
+
+    /// <summary>
+    /// Gets additional properties to be serialized with this command.
+    /// </summary>
+    [JsonExtensionData]
+    [JsonConverter(typeof(ResponseValueJsonConverter))]
+    public Dictionary<string, object?> AdditionalData => this.additionalData;
 }
