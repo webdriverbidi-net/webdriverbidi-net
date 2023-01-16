@@ -20,7 +20,6 @@ public class RegularExpressionValue
     /// Initializes a new instance of the <see cref="RegularExpressionValue"/> class with a given pattern.
     /// </summary>
     /// <param name="pattern">The pattern for the regular expression.</param>
-    /// <param name="flags">The flags used in the regular expression.</param>
     [JsonConstructor]
     public RegularExpressionValue(string pattern)
         : this(pattern, null)
