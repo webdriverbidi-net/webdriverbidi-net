@@ -11,6 +11,11 @@ namespace WebDriverBidi.BrowsingContext;
 public sealed class BrowsingContextModule : ProtocolModule
 {
     /// <summary>
+    /// The name of the browsingContext module.
+    /// </summary>
+    public const string BrowsingContextModuleName = "browsingContext";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BrowsingContextModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
@@ -84,6 +89,11 @@ public sealed class BrowsingContextModule : ProtocolModule
     /// Occurs when a user prompt is closed.
     /// </summary>
     public event EventHandler<UserPromptClosedEventArgs>? UserPromptClosed;
+
+    /// <summary>
+    /// Gets the module name.
+    /// </summary>
+    public override string ModuleName => BrowsingContextModuleName;
 
     /// <summary>
     /// Captures a screenshot of the current page in the browsing context.

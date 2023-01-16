@@ -8,7 +8,7 @@ namespace WebDriverBidi;
 /// <summary>
 /// Base class representing a module in the WebDriver Bidi protocol.
 /// </summary>
-public class ProtocolModule
+public abstract class ProtocolModule
 {
     private readonly Driver driver;
     private readonly Dictionary<string, WebDriverBidiEventData> eventInvokers = new();
@@ -22,6 +22,11 @@ public class ProtocolModule
         this.driver = driver;
         this.driver.EventReceived += this.OnDriverEventReceived;
     }
+
+    /// <summary>
+    /// Gets the module name.
+    /// </summary>
+    public abstract string ModuleName { get; }
 
     /// <summary>
     /// Gets the driver used for communication by the module.

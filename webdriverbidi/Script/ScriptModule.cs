@@ -11,6 +11,11 @@ namespace WebDriverBidi.Script;
 public sealed class ScriptModule : ProtocolModule
 {
     /// <summary>
+    /// The name of the script module.
+    /// </summary>
+    public const string ScriptModuleName = "script";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ScriptModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
@@ -30,6 +35,11 @@ public sealed class ScriptModule : ProtocolModule
     /// Occurs with a script realm is destroyed.
     /// </summary>
     public event EventHandler<RealmDestroyedEventArgs>? RealmDestroyed;
+
+    /// <summary>
+    /// Gets the module name.
+    /// </summary>
+    public override string ModuleName => ScriptModuleName;
 
     /// <summary>
     /// Adds a preload script to each page before execution of other JavaScript included in the page source.

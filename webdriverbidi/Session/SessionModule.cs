@@ -11,6 +11,11 @@ namespace WebDriverBidi.Session;
 public sealed class SessionModule : ProtocolModule
 {
     /// <summary>
+    /// The name of the session module.
+    /// </summary>
+    public const string SessionModuleName = "session";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="SessionModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
@@ -18,6 +23,11 @@ public sealed class SessionModule : ProtocolModule
         : base(driver)
     {
     }
+
+    /// <summary>
+    /// Gets the module name.
+    /// </summary>
+    public override string ModuleName => SessionModuleName;
 
     /// <summary>
     /// Gets the status of the current connection.

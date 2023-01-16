@@ -16,10 +16,7 @@ using WebDriverBidi.Session;
 public class Driver
 {
     private readonly ProtocolTransport transport;
-    private readonly BrowsingContextModule browsingContextModule;
-    private readonly SessionModule sessionModule;
-    private readonly ScriptModule scriptModule;
-    private readonly LogModule logModule;
+    private readonly Dictionary<string, ProtocolModule> modules = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Driver" /> class.
@@ -30,7 +27,7 @@ public class Driver
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Driver" /> class.
+    /// Initializes a new instance of the <see cref="Driver" /> class with the specified <see cref="ProtocolTransport" />.
     /// </summary>
     /// <param name="transport">The protocol transport object used to communicate with the browser.</param>
     public Driver(ProtocolTransport transport)
@@ -40,10 +37,10 @@ public class Driver
         this.transport.ErrorEventReceived += this.OnTransportErrorEventReceived;
         this.transport.UnknownMessageReceived += this.OnTransportUnknownMessageReceived;
         this.transport.LogMessage += this.OnTransportLogMessage;
-        this.browsingContextModule = new BrowsingContextModule(this);
-        this.sessionModule = new SessionModule(this);
-        this.scriptModule = new ScriptModule(this);
-        this.logModule = new LogModule(this);
+        this.RegisterModule(new BrowsingContextModule(this));
+        this.RegisterModule(new SessionModule(this));
+        this.RegisterModule(new ScriptModule(this));
+        this.RegisterModule(new LogModule(this));
     }
 
     /// <summary>
@@ -69,22 +66,22 @@ public class Driver
     /// <summary>
     /// Gets the browsingContext module as described in the WebDriver Bidi protocol.
     /// </summary>
-    public BrowsingContextModule BrowsingContext => this.browsingContextModule;
+    public BrowsingContextModule BrowsingContext => this.GetModule<BrowsingContextModule>(BrowsingContextModule.BrowsingContextModuleName);
 
     /// <summary>
     /// Gets the sessiom module as described in the WebDriver Bidi protocol.
     /// </summary>
-    public SessionModule Session => this.sessionModule;
+    public SessionModule Session => this.GetModule<SessionModule>(SessionModule.SessionModuleName);
 
     /// <summary>
     /// Gets the script module as described in the WebDriver Bidi protocol.
     /// </summary>
-    public ScriptModule Script => this.scriptModule;
+    public ScriptModule Script => this.GetModule<ScriptModule>(ScriptModule.ScriptModuleName);
 
     /// <summary>
     /// Gets the log module as described in the WebDriver Bidi protocol.
     /// </summary>
-    public LogModule Log => this.logModule;
+    public LogModule Log => this.GetModule<LogModule>(LogModule.LogModuleName);
 
     /// <summary>
     /// Asynchronously starts the communication with the remote end of the WebDriver Bidi protocol.
@@ -140,13 +137,45 @@ public class Driver
     }
 
     /// <summary>
+    /// Registers a module for use with this driver.
+    /// </summary>
+    /// <param name="module">The module object.</param>
+    public void RegisterModule(ProtocolModule module)
+    {
+        this.modules[module.ModuleName] = module;
+    }
+
+    /// <summary>
+    /// Gets a module from the set of registered modules for this driver.
+    /// </summary>
+    /// <typeparam name="T">A module object which is a subclass of <see cref="ProtocolModule"/>.</typeparam>
+    /// <param name="moduleName">The name of the module to return.</param>
+    /// <returns>The protocol module object.</returns>
+    public T GetModule<T>(string moduleName)
+        where T : ProtocolModule
+    {
+        if (!this.modules.ContainsKey(moduleName))
+        {
+            throw new WebDriverBidiException($"Module '{moduleName}' is not registered with this driver");
+        }
+
+        ProtocolModule module = this.modules[moduleName];
+        if (module is not T)
+        {
+            throw new WebDriverBidiException($"Module '{moduleName}' is registered with this driver, but the module object is not of type {typeof(T)}");
+        }
+
+        return (T)module;
+    }
+
+    /// <summary>
     /// Registers an event to be raised by the remote end of the WebDriver Bidi protocol.
     /// </summary>
     /// <param name="eventName">The name of the event to raise.</param>
     /// <param name="eventArgsType">The type of EventArgs to use when raising the event.</param>
     public virtual void RegisterEvent(string eventName, Type eventArgsType)
     {
-        this.transport.RegisterEvent(eventName, eventArgsType);
+        this.transport.RegisterEventArgsType(eventName, eventArgsType);
     }
 
     /// <summary>

@@ -11,6 +11,11 @@ namespace WebDriverBidi.Log;
 public sealed class LogModule : ProtocolModule
 {
     /// <summary>
+    /// The name of the log module.
+    /// </summary>
+    public const string LogModuleName = "log";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="LogModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
@@ -24,6 +29,11 @@ public sealed class LogModule : ProtocolModule
     /// Occurs when an entry is added to the log.
     /// </summary>
     public event EventHandler<EntryAddedEventArgs>? EntryAdded;
+
+    /// <summary>
+    /// Gets the module name.
+    /// </summary>
+    public override string ModuleName => LogModuleName;
 
     private void OnEntryAdded(object eventData)
     {

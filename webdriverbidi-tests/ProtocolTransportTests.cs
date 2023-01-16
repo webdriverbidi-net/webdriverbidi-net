@@ -177,7 +177,7 @@ public class ProtocolTransportTests
 
         TestConnection connection = new();
         ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        transport.RegisterEvent("protocol.event", typeof(TestEventArgs));
+        transport.RegisterEventArgsType("protocol.event", typeof(TestEventArgs));
         transport.EventReceived += (object? sender, ProtocolEventReceivedEventArgs e) => {
             receivedName = e.EventName;
             receivedData = e.EventData;

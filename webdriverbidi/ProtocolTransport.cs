@@ -172,7 +172,7 @@ public class ProtocolTransport
     /// </summary>
     /// <param name="eventName">The name of the event to be registered.</param>
     /// <param name="eventArgsType">The type of EventArgs to be used when raising the event.</param>
-    public void RegisterEvent(string eventName, Type eventArgsType)
+    public void RegisterEventArgsType(string eventName, Type eventArgsType)
     {
         this.eventTypes[eventName] = eventArgsType;
     }
