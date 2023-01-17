@@ -14,6 +14,8 @@ using Newtonsoft.Json;
 public class WebDriverBidiCommandData
 {
     private readonly CommandSettings commandSettings;
+    private readonly long commandId;
+    private readonly ManualResetEvent synchronizationEvent = new(false);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBidiCommandData" /> class.
@@ -22,16 +24,15 @@ public class WebDriverBidiCommandData
     /// <param name="commandSettings">The settings for the command, including parameters.</param>
     public WebDriverBidiCommandData(long commandId, CommandSettings commandSettings)
     {
-        this.CommandId = commandId;
+        this.commandId = commandId;
         this.commandSettings = commandSettings;
-        this.SynchronizationEvent = new ManualResetEvent(false);
     }
 
     /// <summary>
     /// Gets the ID of the command.
     /// </summary>
     [JsonProperty("id")]
-    public long CommandId { get; }
+    public long CommandId => this.commandId;
 
     /// <summary>
     /// Gets the method name of the command.
@@ -53,7 +54,7 @@ public class WebDriverBidiCommandData
     /// <summary>
     /// Gets a synchronization object used to wait for completion of the command.
     /// </summary>
-    public ManualResetEvent SynchronizationEvent { get; }
+    public ManualResetEvent SynchronizationEvent => this.synchronizationEvent;
 
     /// <summary>
     /// Gets or sets the result of the command.
