@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the browsingContext.navigate command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class NavigateCommandSettings : CommandSettings
+public class NavigateCommandSettings : CommandData<BrowsingContextNavigateResult>
 {
     private string browsingContextId;
     private string url;
@@ -33,11 +33,6 @@ public class NavigateCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "browsingContext.navigate";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(BrowsingContextNavigateResult);
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to navigate.

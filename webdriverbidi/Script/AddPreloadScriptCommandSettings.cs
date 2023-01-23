@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the script.addPreloadScript command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class AddPreloadScriptCommandSettings : CommandSettings
+public class AddPreloadScriptCommandSettings : CommandData<AddPreloadScriptCommandResult>
 {
     private string expression;
     private string? sandbox;
@@ -29,11 +29,6 @@ public class AddPreloadScriptCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "script.addPreloadScript";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(AddPreloadScriptCommandResult);
 
     /// <summary>
     /// Gets or sets the expression defining the preload script.

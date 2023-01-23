@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Object containing event data for the event raised when a script realm is destroyed.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class RealmDestroyedEventArgs : EventArgs
+public class RealmDestroyedEventArgs : WebDriverBidiEventArgs
 {
     private string realmId;
 

@@ -1,6 +1,6 @@
 namespace WebDriverBidi.TestUtilities;
 
-public class TestCommandSetEventArgs: EventArgs
+public class TestCommandSetEventArgs: WebDriverBidiEventArgs
 {
     private readonly string commandName;
     private readonly Type resultType;

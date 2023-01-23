@@ -109,8 +109,8 @@ public class Driver
     /// <param name="command">The object containing settings for the command, including parameters.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if an error occurs during the execution of the command.</exception>
-    public virtual async Task<T> ExecuteCommand<T>(CommandSettings command)
-        where T : CommandResult
+    public virtual async Task<T> ExecuteCommand<T>(CommandData command)
+        where T : ResponseData
     {
         var result = await this.transport.SendCommandAndWait(command);
         if (result is null)
@@ -120,7 +120,7 @@ public class Driver
 
         if (result.IsError)
         {
-            if (result is not ErrorResponse errorResponse)
+            if (result is not ErrorResponseData errorResponse)
             {
                 throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
             }

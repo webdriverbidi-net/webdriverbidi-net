@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the browsingContext.create command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class CreateCommandSettings : CommandSettings
+public class CreateCommandSettings : CommandData<CreateCommandResult>
 {
     private BrowsingContextCreateType createType;
 
@@ -30,11 +30,6 @@ public class CreateCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "browsingContext.create";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(CreateCommandResult);
 
     /// <summary>
     /// Gets or sets the type of browsing context (tab or window) to create.

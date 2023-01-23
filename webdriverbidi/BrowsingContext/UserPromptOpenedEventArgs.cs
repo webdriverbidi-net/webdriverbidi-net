@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Object containing event data for the event raised when a user prompt opens.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class UserPromptOpenedEventArgs : EventArgs
+public class UserPromptOpenedEventArgs : WebDriverBidiEventArgs
 {
     private string browsingContextId;
     private UserPromptType promptType;

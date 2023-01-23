@@ -117,9 +117,9 @@ public class ProtocolTransportTests
         Assert.Multiple(() =>
         {
             Assert.That(actualResult.IsError, Is.True);
-            Assert.That(actualResult, Is.InstanceOf<ErrorResponse>());
+            Assert.That(actualResult, Is.InstanceOf<ErrorResponseData>());
         });
-        var convertedResponse = actualResult as ErrorResponse;
+        var convertedResponse = actualResult as ErrorResponseData;
         Assert.Multiple(() =>
         {
             Assert.That(convertedResponse!.ErrorType, Is.EqualTo("unknown command"));
@@ -209,8 +209,8 @@ public class ProtocolTransportTests
         connection.RaiseDataReceivedEvent(@"{ ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }");
         syncEvent.WaitOne();
 
-        Assert.That(receivedData, Is.TypeOf<ErrorResponse>());
-        var convertedData = receivedData as ErrorResponse;
+        Assert.That(receivedData, Is.TypeOf<ErrorResponseData>());
+        var convertedData = receivedData as ErrorResponseData;
         Assert.Multiple(() =>
         {
             Assert.That(convertedData!.ErrorType, Is.EqualTo("unknown error"));

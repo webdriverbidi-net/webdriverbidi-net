@@ -11,6 +11,6 @@ using Newtonsoft.Json;
 /// Represents an empty result from a command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class EmptyResult : CommandResult
+public class EmptyResult : ResponseData
 {
 }

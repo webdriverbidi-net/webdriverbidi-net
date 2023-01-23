@@ -1,4 +1,4 @@
-// <copyright file="WebDriverBidiCommandData.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="WebDriverBidiCommand.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -6,26 +6,27 @@
 namespace WebDriverBidi;
 
 using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
 
 /// <summary>
 /// Object containing data about a WebDriver Bidi command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class WebDriverBidiCommandData
+public class WebDriverBidiCommand
 {
-    private readonly CommandSettings commandSettings;
+    private readonly CommandData commandData;
     private readonly long commandId;
     private readonly ManualResetEvent synchronizationEvent = new(false);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WebDriverBidiCommandData" /> class.
+    /// Initializes a new instance of the <see cref="WebDriverBidiCommand" /> class.
     /// </summary>
     /// <param name="commandId">The ID of the command.</param>
-    /// <param name="commandSettings">The settings for the command, including parameters.</param>
-    public WebDriverBidiCommandData(long commandId, CommandSettings commandSettings)
+    /// <param name="commandData">The settings for the command, including parameters.</param>
+    public WebDriverBidiCommand(long commandId, CommandData commandData)
     {
         this.commandId = commandId;
-        this.commandSettings = commandSettings;
+        this.commandData = commandData;
     }
 
     /// <summary>
@@ -38,18 +39,25 @@ public class WebDriverBidiCommandData
     /// Gets the method name of the command.
     /// </summary>
     [JsonProperty("method")]
-    public string CommandName => this.commandSettings.MethodName;
+    public string CommandName => this.commandData.MethodName;
 
     /// <summary>
     /// Gets the parameters of the command.
     /// </summary>
     [JsonProperty("params")]
-    public CommandSettings CommandParameters => this.commandSettings;
+    public CommandData CommandParameters => this.commandData;
 
     /// <summary>
-    /// Gets the type for the expected result of the command.
+    /// Gets additional properties to be serialized with this command.
     /// </summary>
-    public Type ResultType => this.commandSettings.ResultType;
+    [JsonExtensionData]
+    [JsonConverter(typeof(ResponseValueJsonConverter))]
+    public Dictionary<string, object?> AdditionalData => this.commandData.AdditionalData;
+
+    /// <summary>
+    /// Gets the type of the response for this command.
+    /// </summary>
+    public Type ResponseType => this.commandData.ResponseType;
 
     /// <summary>
     /// Gets a synchronization object used to wait for completion of the command.
@@ -59,7 +67,7 @@ public class WebDriverBidiCommandData
     /// <summary>
     /// Gets or sets the result of the command.
     /// </summary>
-    public CommandResult? Result { get; set; }
+    public ResponseData? Result { get; set; }
 
     /// <summary>
     /// Gets or sets the exception thrown during execution of the command, if any.

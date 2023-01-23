@@ -8,7 +8,7 @@ namespace WebDriverBidi.BrowsingContext;
 /// <summary>
 /// Object containing event data for events raised by a browsing context being created or destroyed.
 /// </summary>
-public class BrowsingContextEventArgs : EventArgs
+public class BrowsingContextEventArgs : WebDriverBidiEventArgs
 {
     private readonly BrowsingContextInfo info;
 

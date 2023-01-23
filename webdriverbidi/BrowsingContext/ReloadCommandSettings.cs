@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the browsingContext.reload command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class ReloadCommandSettings : CommandSettings
+public class ReloadCommandSettings : CommandData<BrowsingContextNavigateResult>
 {
     private string browsingContextId;
     private bool? ignoreCache;
@@ -31,11 +31,6 @@ public class ReloadCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "browsingContext.reload";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(BrowsingContextNavigateResult);
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to reload.

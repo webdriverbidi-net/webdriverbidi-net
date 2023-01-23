@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the script.removePreloadScript command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class RemovePreloadScriptCommandSettings : CommandSettings
+public class RemovePreloadScriptCommandSettings : CommandData<EmptyResult>
 {
     private string preloadScriptId;
 
@@ -28,11 +28,6 @@ public class RemovePreloadScriptCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "script.removePreloadScript";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(EmptyResult);
 
     /// <summary>
     /// Gets or sets the ID of the preload script to remove.

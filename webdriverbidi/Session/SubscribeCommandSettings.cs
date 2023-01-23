@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the session.subscribe command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class SubscribeCommandSettings : CommandSettings
+public class SubscribeCommandSettings : CommandData<EmptyResult>
 {
     private readonly List<string> eventList = new();
 
@@ -28,11 +28,6 @@ public class SubscribeCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "session.subscribe";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(EmptyResult);
 
     /// <summary>
     /// Gets the list of events to which to subscribe or unsubscribe.

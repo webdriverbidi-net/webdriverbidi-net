@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Result for adding a preload script using the script.addPreloadScript command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class AddPreloadScriptCommandResult : CommandResult
+public class AddPreloadScriptCommandResult : ResponseData
 {
     private string preloadScriptId = string.Empty;
 

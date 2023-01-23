@@ -14,7 +14,7 @@ public class ProtocolErrorReceivedEventArgs : EventArgs
     /// Initializes a new instance of the <see cref="ProtocolErrorReceivedEventArgs" /> class.
     /// </summary>
     /// <param name="errorData">The data about the error received from the connection.</param>
-    public ProtocolErrorReceivedEventArgs(ErrorResponse? errorData)
+    public ProtocolErrorReceivedEventArgs(ErrorResponseData? errorData)
     {
         this.ErrorData = errorData;
     }
@@ -22,5 +22,5 @@ public class ProtocolErrorReceivedEventArgs : EventArgs
     /// <summary>
     /// Gets the error response data.
     /// </summary>
-    public ErrorResponse? ErrorData { get; }
+    public ErrorResponseData? ErrorData { get; }
 }

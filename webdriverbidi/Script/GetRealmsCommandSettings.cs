@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the script.getRealms command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class GetRealmsCommandSettings : CommandSettings
+public class GetRealmsCommandSettings : CommandData<GetRealmsCommandResult>
 {
     private string? browsingContextId;
     private RealmType? realmType;
@@ -27,11 +27,6 @@ public class GetRealmsCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "script.getRealms";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(GetRealmsCommandResult);
 
     /// <summary>
     /// Gets or sets the ID of the browsing context of the realms to get.

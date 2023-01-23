@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Contains the result of a navigation.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class BrowsingContextNavigateResult : CommandResult
+public class BrowsingContextNavigateResult : ResponseData
 {
     private string? id;
     private string url = string.Empty;

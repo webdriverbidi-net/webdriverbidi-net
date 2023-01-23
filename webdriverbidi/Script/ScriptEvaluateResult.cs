@@ -13,7 +13,7 @@ using WebDriverBidi.JsonConverters;
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
 [JsonConverter(typeof(ScriptEvaluateResultJsonConverter))]
-public class ScriptEvaluateResult : CommandResult
+public class ScriptEvaluateResult : ResponseData
 {
     private string realmId = string.Empty;
     private ScriptEvaluateResultType resultType = ScriptEvaluateResultType.Success;

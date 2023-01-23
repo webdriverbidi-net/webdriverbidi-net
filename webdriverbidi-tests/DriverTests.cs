@@ -61,7 +61,7 @@ public class DriverTests
     [Test]
     public async Task CanExecuteReceiveErrorWithoutCommand()
     {
-        ErrorResponse? response = null;
+        ErrorResponseData? response = null;
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
         ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);

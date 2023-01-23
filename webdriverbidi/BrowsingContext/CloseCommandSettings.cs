@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the browsingContext.close command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class CloseCommandSettings : CommandSettings
+public class CloseCommandSettings : CommandData<EmptyResult>
 {
     private string browsingContextId;
 
@@ -29,11 +29,6 @@ public class CloseCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "browsingContext.close";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(EmptyResult);
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to close.

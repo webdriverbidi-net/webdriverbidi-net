@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the browsingContext.create command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class GetTreeCommandSettings : CommandSettings
+public class GetTreeCommandSettings : CommandData<GetTreeCommandResult>
 {
     private int? maxDepth;
     private string? rootBrowsingContextId;
@@ -28,11 +28,6 @@ public class GetTreeCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "browsingContext.getTree";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(GetTreeCommandResult);
 
     /// <summary>
     /// Gets or sets the maximum depth to traverse the tree.

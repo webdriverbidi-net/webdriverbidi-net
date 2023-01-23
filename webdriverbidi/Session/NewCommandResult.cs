@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Result for creating a new sesstion using the session.new command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class NewCommandResult : CommandResult
+public class NewCommandResult : ResponseData
 {
     private string sessionId = string.Empty;
 
