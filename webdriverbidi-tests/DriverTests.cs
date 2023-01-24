@@ -14,7 +14,7 @@ public class DriverTests
     {
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
-        connection.DataSendComplete += delegate (object? sender, EventArgs e)
+        connection.DataSendComplete += delegate (object? sender, TestConnectionDataSentEventArgs e)
         {
             syncEvent.Set();
         };
@@ -38,7 +38,7 @@ public class DriverTests
     {
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
-        connection.DataSendComplete += delegate (object? sender, EventArgs e)
+        connection.DataSendComplete += delegate (object? sender, TestConnectionDataSentEventArgs e)
         {
             syncEvent.Set();
         };
@@ -189,12 +189,12 @@ public class DriverTests
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
         ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        TestDriver driver = new(transport);
+        Driver driver = new(transport);
         driver.LogMessage += (sender, e) =>
         {
             logs.Add(e);
         };
-        connection.EmitLogMessage("test log message", WebDriverBidiLogLevel.Warn);
+        connection.RaiseLogMessageEvent("test log message", WebDriverBidiLogLevel.Warn);
         Assert.That(logs, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {

@@ -1,10 +1,12 @@
+using Newtonsoft.Json.Linq;
+
 namespace WebDriverBidi.TestUtilities;
 
 public class TestConnection : Connection
 {
     public string? DataSent { get; set; }
 
-    public event EventHandler<EventArgs>? DataSendComplete;
+    public event EventHandler<TestConnectionDataSentEventArgs>? DataSendComplete;
 
     public void RaiseDataReceivedEvent(string data)
     {
@@ -33,16 +35,11 @@ public class TestConnection : Connection
         return Task.CompletedTask;
     }
 
-    public void EmitLogMessage(string message, WebDriverBidiLogLevel level)
-    {
-        this.OnLogMessage(new LogMessageEventArgs(message, level));
-    }
-
     protected virtual void OnDataSendComplete()
     {
         if (this.DataSendComplete is not null)
         {
-            this.DataSendComplete(this, new EventArgs());
+            this.DataSendComplete(this, new TestConnectionDataSentEventArgs(this.DataSent));
         }
     }
 }

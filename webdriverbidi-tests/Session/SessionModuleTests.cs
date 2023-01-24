@@ -8,14 +8,16 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteStatusCommand()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { ""ready"": true, ""message"": ""ready for connection"" } }";
-        TestDriver driver = new();
-        SessionModule module = new(driver);
+        
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""ready"": true, ""message"": ""ready for connection"" } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
 
-        var task = module.Status(new StatusCommandSettings());
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
-
-        driver.EmitResponse(responseJson);
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        var task = driver.Session.Status(new StatusCommandSettings());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -30,16 +32,19 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteSubscribeCommand()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": {} }";
-        TestDriver driver = new();
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
         var subscribeParameters = new SubscribeCommandSettings();
         subscribeParameters.Events.Add("log.entryAdded");
         var task = module.Subscribe(subscribeParameters);
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
-
-        driver.EmitResponse(responseJson);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -49,16 +54,19 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteUnsubscribeCommand()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": {} }";
-        TestDriver driver = new();
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
         var unsubscribeParameters = new UnsubscribeCommandSettings();
         unsubscribeParameters.Events.Add("log.entryAdded");
         var task = module.Unsubscribe(unsubscribeParameters);
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
-
-        driver.EmitResponse(responseJson);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -68,15 +76,18 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteNewCommand()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""additionalCapName"": ""additionalCapValue"" } } }";
-        TestDriver driver = new();
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""additionalCapName"": ""additionalCapValue"" } } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
         var newCommandParameters = new NewCommandSettings();
         var task = module.NewSession(newCommandParameters);
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
-
-        driver.EmitResponse(responseJson);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         

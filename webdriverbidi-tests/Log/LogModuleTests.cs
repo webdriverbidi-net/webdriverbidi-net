@@ -8,11 +8,11 @@ public class LogModuleTests
     [Test]
     public void TestCanReceiveEntryAddedEvent()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        string eventJson = @"{ ""method"": ""log.entryAdded"", ""params"": { ""type"": ""javascript"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""stackTrace"": { ""callFrames"": [] } } }";
-        bool eventRaised = false;
-        TestDriver driver = new();
+        TestConnection connection = new();
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         LogModule module = new(driver);
+
+        bool eventRaised = false;
         module.EntryAdded += (object? obj, EntryAddedEventArgs e) => {
             eventRaised = true;
             Assert.Multiple(() =>
@@ -26,18 +26,21 @@ public class LogModuleTests
             });
         };
 
-        driver.EmitResponse(eventJson);
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = @"{ ""method"": ""log.entryAdded"", ""params"": { ""type"": ""javascript"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""stackTrace"": { ""callFrames"": [] } } }";
+        connection.RaiseDataReceivedEvent(eventJson);
         Assert.That(eventRaised, Is.True);
     }
 
     [Test]
     public void TestCanReceiveEntryAddedEventForConsoleLogType()
     {
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        string eventJson = @"{ ""method"": ""log.entryAdded"", ""params"": { ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } } }";
-        bool eventRaised = false;
-        TestDriver driver = new();
+        TestConnection connection = new();
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         LogModule module = new(driver);
+
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        bool eventRaised = false;
         module.EntryAdded += (object? obj, EntryAddedEventArgs e) => {
             eventRaised = true;
             Assert.Multiple(() =>
@@ -53,7 +56,8 @@ public class LogModuleTests
             });
         };
 
-        driver.EmitResponse(eventJson);
+        string eventJson = @"{ ""method"": ""log.entryAdded"", ""params"": { ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } } }";
+        connection.RaiseDataReceivedEvent(eventJson);
         Assert.That(eventRaised, Is.True);
     }
 }

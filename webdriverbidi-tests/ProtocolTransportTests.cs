@@ -248,7 +248,7 @@ public class ProtocolTransportTests
         {
             logs.Add(e);
         };
-        connection.EmitLogMessage("test log message", WebDriverBidiLogLevel.Warn);
+        connection.RaiseLogMessageEvent("test log message", WebDriverBidiLogLevel.Warn);
         Assert.That(logs, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {

@@ -8,13 +8,17 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteCallFunctionCommand()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
-        TestDriver driver = new();
-        ScriptModule module = new(driver);
-        var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
 
-        driver.EmitResponse(responseJson);
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        ScriptModule module = new(driver);
+
+        var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -37,13 +41,17 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteCallFunctionCommandReturningError()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
-        TestDriver driver = new();
-        ScriptModule module = new(driver);
-        var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
 
-        driver.EmitResponse(responseJson);
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        ScriptModule module = new(driver);
+
+        var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -69,13 +77,17 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteEvaluateCommand()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
-        TestDriver driver = new();
-        ScriptModule module = new(driver);
-        var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
 
-        driver.EmitResponse(responseJson);
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        ScriptModule module = new(driver);
+        
+        var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -98,13 +110,17 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteEvaluateCommandReturningError()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
-        TestDriver driver = new();
-        ScriptModule module = new(driver);
-        var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
 
-        driver.EmitResponse(responseJson);
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        ScriptModule module = new(driver);
+
+        var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -130,13 +146,17 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteGetRealmsCommand()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { ""realms"": [ { ""realm"": ""myRealmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContextId"" } ] } }";
-        TestDriver driver = new();
-        ScriptModule module = new(driver);
-        var task = module.GetRealms(new GetRealmsCommandSettings());
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""realms"": [ { ""realm"": ""myRealmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContextId"" } ] } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
 
-        driver.EmitResponse(responseJson);
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        ScriptModule module = new(driver);
+
+        var task = module.GetRealms(new GetRealmsCommandSettings());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -160,13 +180,17 @@ public class ScriptModuleTests
     [Test]
     public void TestExecuteDisownCommand()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": {} }";
-        TestDriver driver = new();
-        ScriptModule module = new(driver);
-        var task = module.Disown(new DisownCommandSettings(new ContextTarget("myContextId"), new string[] { "myValue" }));
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
 
-        driver.EmitResponse(responseJson);
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        ScriptModule module = new(driver);
+
+        var task = module.Disown(new DisownCommandSettings(new ContextTarget("myContextId"), new string[] { "myValue" }));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -177,10 +201,11 @@ public class ScriptModuleTests
     [Test]
     public void TestCanReceiveRealmCreatedEvent()
     {
-        string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""window"", ""context"": ""myContext"", ""origin"": ""myOrigin"" } }";
-        bool eventRaised = false;
-        TestDriver driver = new();
+        TestConnection connection = new();
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
+
+        bool eventRaised = false;
         module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
             eventRaised = true;
             Assert.Multiple(() =>
@@ -192,17 +217,19 @@ public class ScriptModuleTests
             });
         };
 
-        driver.EmitResponse(eventJson);
+        string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""window"", ""context"": ""myContext"", ""origin"": ""myOrigin"" } }";
+        connection.RaiseDataReceivedEvent(eventJson);
         Assert.That(eventRaised, Is.True);
     }
 
     [Test]
     public void TestCanReceiveRealmCreatedEventForNonWindowRealm()
     {
-        string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": ""myOrigin"" } }";
-        bool eventRaised = false;
-        TestDriver driver = new();
+        TestConnection connection = new();
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
+
+        bool eventRaised = false;
         module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
             eventRaised = true;
             Assert.Multiple(() =>
@@ -214,37 +241,43 @@ public class ScriptModuleTests
             });
         };
 
-        driver.EmitResponse(eventJson);
+        string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": ""myOrigin"" } }";
+        connection.RaiseDataReceivedEvent(eventJson);
         Assert.That(eventRaised, Is.True);
     }
 
     [Test]
     public void TestCanReceiveRealmDestroyedEvent()
     {
-        string eventJson = @"{ ""method"": ""script.realmDestroyed"", ""params"": { ""realm"": ""myRealm"" } }";
-        bool eventRaised = false;
-        TestDriver driver = new();
+        TestConnection connection = new();
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
+
+        bool eventRaised = false;
         module.RealmDestroyed += (object? obj, RealmDestroyedEventArgs e) =>
         {
             eventRaised = true;
             Assert.That(e.RealmId, Is.EqualTo("myRealm"));
         };
 
-        driver.EmitResponse(eventJson);
+        string eventJson = @"{ ""method"": ""script.realmDestroyed"", ""params"": { ""realm"": ""myRealm"" } }";
+        connection.RaiseDataReceivedEvent(eventJson);
         Assert.That(eventRaised, Is.True);
     }
 
     [Test]
     public void TestCanAddPreloadScript()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { ""script"": ""loadScriptId"" } }";
-        TestDriver driver = new();
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""script"": ""loadScriptId"" } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
         var task = module.AddPreloadScript(new AddPreloadScriptCommandSettings("window.foo = false;"));
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
-
-        driver.EmitResponse(responseJson);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -256,13 +289,17 @@ public class ScriptModuleTests
     [Test]
     public void TestCanRemovePreloadScript()
     {
-        string responseJson = @"{ ""id"": 1, ""result"": { } }";
-        TestDriver driver = new();
-        ScriptModule module = new(driver);
-        var task = module.RemovePreloadScript(new RemovePreloadScriptCommandSettings("loadScriptId"));
-        driver.WaitForCommandSet(TimeSpan.FromSeconds(1));
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
 
-        driver.EmitResponse(responseJson);
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        ScriptModule module = new(driver);
+        
+        var task = module.RemovePreloadScript(new RemovePreloadScriptCommandSettings("loadScriptId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 

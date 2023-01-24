@@ -9,13 +9,15 @@ public class ProtocolModuleTests
     [Test]
     public void TestContextCreatedEventWithInvalidEventArgsThrows()
     {
-        string eventJson = @"{ ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
-        TestDriver driver = new();
+        TestConnection connection = new();
+        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
         TestProtocolModule module = new(driver);
+
         module.EventInvoked += (object? obj, TestEventArgs e) =>
         {
         };
 
-        Assert.That(() => driver.EmitResponse(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        string eventJson = @"{ ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
+        Assert.That(() => connection.RaiseDataReceivedEvent(eventJson), Throws.InstanceOf<JsonSerializationException>());
     }
 }
