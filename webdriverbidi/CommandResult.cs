@@ -10,7 +10,7 @@ namespace WebDriverBidi;
 /// </summary>
 public class CommandResult
 {
-    private Dictionary<string, object?> additionalData = new();
+    private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
     /// Gets a value indicating whether the response data is an error.
@@ -20,5 +20,5 @@ public class CommandResult
     /// <summary>
     /// Gets additional data received in the response.
     /// </summary>
-    public Dictionary<string, object?> AdditionalData { get => this.additionalData; internal set => this.additionalData = value; }
+    public ReceivedDataDictionary AdditionalData { get => this.additionalData; internal set => this.additionalData = value; }
 }

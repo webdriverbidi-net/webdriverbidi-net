@@ -14,7 +14,9 @@ using WebDriverBidi.JsonConverters;
 [JsonObject(MemberSerialization.OptIn)]
 public class Message
 {
-    private Dictionary<string, object?> additionalData = new();
+    private Dictionary<string, object?> writableAdditionalData = new();
+
+    private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
     /// Gets a value indicating whether the message received is an error.
@@ -27,9 +29,25 @@ public class Message
     public virtual bool IsEvent => false;
 
     /// <summary>
-    /// Gets additional properties to be serialized with this command.
+    /// Gets read-only dictionary of additional properties deserialized with this message.
+    /// </summary>
+    public ReceivedDataDictionary AdditionalData
+    {
+        get
+        {
+            if (this.writableAdditionalData.Count > 0 && this.additionalData.Count == 0)
+            {
+                this.additionalData = new ReceivedDataDictionary(this.writableAdditionalData);
+            }
+
+            return this.additionalData;
+        }
+    }
+
+    /// <summary>
+    /// Gets additional properties deserialized with this message.
     /// </summary>
     [JsonExtensionData]
     [JsonConverter(typeof(ReceivedDataJsonConverter))]
-    public Dictionary<string, object?> AdditionalData { get => this.additionalData; private set => this.additionalData = value; }
+    internal Dictionary<string, object?> SerializableAdditionalData { get => this.writableAdditionalData; private set => this.writableAdditionalData = value; }
 }

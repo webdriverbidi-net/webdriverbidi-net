@@ -30,7 +30,7 @@ public class EventInvoker<T> : EventInvoker
     /// <exception cref="WebDriverBidiException">
     /// Thrown when the type of the event data is not the type associated with this event data class.
     /// </exception>
-    public override void InvokeEvent(object eventData, Dictionary<string, object?> additionalData)
+    public override void InvokeEvent(object eventData, ReceivedDataDictionary additionalData)
     {
         if (eventData is not T typedEventData)
         {

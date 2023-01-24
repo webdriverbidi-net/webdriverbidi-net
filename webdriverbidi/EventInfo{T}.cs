@@ -16,7 +16,7 @@ public class EventInfo<T>
     /// </summary>
     /// <param name="eventData">The data for the event invocation.</param>
     /// <param name="additionalData">Additional data returned for the event.</param>
-    public EventInfo(T eventData, Dictionary<string, object?> additionalData)
+    public EventInfo(T eventData, ReceivedDataDictionary additionalData)
     {
         this.EventData = eventData;
         this.AdditionalData = additionalData;
@@ -30,5 +30,5 @@ public class EventInfo<T>
     /// <summary>
     /// Gets additional data returned for the event.
     /// </summary>
-    public Dictionary<string, object?> AdditionalData { get; }
+    public ReceivedDataDictionary AdditionalData { get; }
 }

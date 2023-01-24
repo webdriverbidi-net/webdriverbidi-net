@@ -34,5 +34,5 @@ public class EventReceivedEventArgs : EventArgs
     /// <summary>
     /// Gets additional properties deserialized by this event.
     /// </summary>
-    public Dictionary<string, object?> AdditionalData { get; }
+    public ReceivedDataDictionary AdditionalData { get; }
 }

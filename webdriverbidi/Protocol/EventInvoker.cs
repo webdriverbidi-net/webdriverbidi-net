@@ -15,5 +15,5 @@ public abstract class EventInvoker
     /// </summary>
     /// <param name="eventData">The data used to pass to the event for invocation.</param>
     /// <param name="additionalData">Additional data passed to the event for invocation.</param>
-    public abstract void InvokeEvent(object eventData, Dictionary<string, object?> additionalData);
+    public abstract void InvokeEvent(object eventData, ReceivedDataDictionary additionalData);
 }
