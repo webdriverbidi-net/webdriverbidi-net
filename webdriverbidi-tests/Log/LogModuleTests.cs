@@ -1,6 +1,7 @@
 namespace WebDriverBidi.Log;
 
 using TestUtilities;
+using WebDriverBidi.Protocol;
 
 [TestFixture]
 public class LogModuleTests
@@ -9,7 +10,7 @@ public class LogModuleTests
     public void TestCanReceiveEntryAddedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         LogModule module = new(driver);
 
         bool eventRaised = false;
@@ -36,7 +37,7 @@ public class LogModuleTests
     public void TestCanReceiveEntryAddedEventForConsoleLogType()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         LogModule module = new(driver);
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);

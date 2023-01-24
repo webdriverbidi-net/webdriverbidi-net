@@ -22,7 +22,7 @@ public class CapabilitiesResult
     private bool setWindowRect = false;
     private ProxyResult? proxyResult;
     private Proxy proxy = WebDriverBidi.Session.Proxy.EmptyProxy;
-    private ResultAdditionalData additionalCapabilities = ResultAdditionalData.EmptyAdditionalData;
+    private ReceivedDataDictionary additionalCapabilities = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
     /// Gets a value indicating whether the browser should accept insecure (self-signed) SSL certificates.
@@ -62,13 +62,13 @@ public class CapabilitiesResult
     /// <summary>
     /// Gets a read-only dictionary of additional capabilities specified by this session.
     /// </summary>
-    public ResultAdditionalData AdditionalCapabilities
+    public ReceivedDataDictionary AdditionalCapabilities
     {
         get
         {
             if (this.writableCapabilities.Count > 0 && this.additionalCapabilities.Count == 0)
             {
-                this.additionalCapabilities = new ResultAdditionalData(this.writableCapabilities);
+                this.additionalCapabilities = new ReceivedDataDictionary(this.writableCapabilities);
             }
 
             return this.additionalCapabilities;
@@ -98,6 +98,6 @@ public class CapabilitiesResult
     /// Gets the dictionary containing additional, unenumerated capabilities for deserialization purposes.
     /// </summary>
     [JsonExtensionData]
-    [JsonConverter(typeof(ResponseValueJsonConverter))]
+    [JsonConverter(typeof(ReceivedDataJsonConverter))]
     internal Dictionary<string, object?> SerializableAdditionalCapabilities => this.writableCapabilities;
 }

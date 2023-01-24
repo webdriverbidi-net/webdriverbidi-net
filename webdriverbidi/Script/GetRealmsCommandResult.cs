@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Result for getting realms using the script.getRealms command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class GetRealmsCommandResult : ResponseData
+public class GetRealmsCommandResult : CommandResult
 {
     private List<RealmInfo> realms = new();
 

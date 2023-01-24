@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Result for getting the tree of browsing contexts using the browserContext.getTree command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class GetTreeCommandResult : ResponseData
+public class GetTreeCommandResult : CommandResult
 {
     private List<BrowsingContextInfo> contextTree = new();
 

@@ -1,6 +1,6 @@
-using Newtonsoft.Json.Linq;
-
 namespace WebDriverBidi.TestUtilities;
+
+using WebDriverBidi.Protocol;
 
 public class TestConnection : Connection
 {
@@ -10,7 +10,7 @@ public class TestConnection : Connection
 
     public void RaiseDataReceivedEvent(string data)
     {
-        this.OnDataReceived(new DataReceivedEventArgs(data));
+        this.OnDataReceived(new ConnectionDataReceivedEventArgs(data));
     }
 
     public void RaiseLogMessageEvent(string message, WebDriverBidiLogLevel level)

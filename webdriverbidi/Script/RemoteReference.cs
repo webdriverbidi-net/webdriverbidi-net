@@ -36,6 +36,6 @@ public class RemoteReference : ArgumentValue
     /// Gets the dictionary of additional data about the remote reference.
     /// </summary>
     [JsonExtensionData]
-    [JsonConverter(typeof(ResponseValueJsonConverter))]
+    [JsonConverter(typeof(ReceivedDataJsonConverter))]
     public Dictionary<string, object?> AdditionalData => this.additionalData;
 }

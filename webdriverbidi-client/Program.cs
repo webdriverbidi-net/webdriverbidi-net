@@ -48,28 +48,28 @@ async Task DriveBrowser()
 
     await driver.Start($"ws://localhost:{port}/session");
 
-    var status = await driver.Session.Status(new StatusCommandSettings());
+    var status = await driver.Session.Status(new StatusCommandParameters());
     Console.WriteLine($"Is ready? {status.IsReady}");
 
     if (testBrowserName == BrowserType.Firefox)
     {
-        var session = await driver.Session.NewSession(new NewCommandSettings());
+        var session = await driver.Session.NewSession(new NewCommandParameters());
         Console.WriteLine($"Started session {session.SessionId}");
     }
 
-    var subscribe = new SubscribeCommandSettings();
+    var subscribe = new SubscribeCommandParameters();
     subscribe.Events.Add("browsingContext.load");
     await driver.Session.Subscribe(subscribe);
 
-    var tree = await driver.BrowsingContext.GetTree(new GetTreeCommandSettings());
+    var tree = await driver.BrowsingContext.GetTree(new GetTreeCommandParameters());
     string contextId = tree.ContextTree[0].BrowsingContextId;
     Console.WriteLine($"Active context: {contextId}");
 
-    var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandSettings(contextId, "https://google.com") { Wait = ReadinessState.Complete });
+    var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandParameters(contextId, "https://google.com") { Wait = ReadinessState.Complete });
     Console.WriteLine($"Performed navigation to {navigation.Url}");
 
     string functionDefinition = "function(){ return document.querySelector('input'); }";
-    var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandSettings(functionDefinition, new ContextTarget(contextId), true));
+    var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
     var scriptSuccessResult = scriptResult as ScriptEvaluateResultSuccess;
     var scriptExceptionResult = scriptResult as ScriptEvaluateResultException;
     if (scriptSuccessResult is not null)

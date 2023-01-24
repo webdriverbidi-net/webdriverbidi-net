@@ -8,7 +8,7 @@ namespace WebDriverBidi.Script;
 /// <summary>
 /// The Script module.
 /// </summary>
-public sealed class ScriptModule : ProtocolModule
+public sealed class ScriptModule : Module
 {
     /// <summary>
     /// The name of the script module.
@@ -46,7 +46,7 @@ public sealed class ScriptModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing the ID of the created preload script.</returns>
-    public async Task<AddPreloadScriptCommandResult> AddPreloadScript(AddPreloadScriptCommandSettings commandProperties)
+    public async Task<AddPreloadScriptCommandResult> AddPreloadScript(AddPreloadScriptCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<AddPreloadScriptCommandResult>(commandProperties);
     }
@@ -56,7 +56,7 @@ public sealed class ScriptModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing the result of the function execution.</returns>
-    public async Task<ScriptEvaluateResult> CallFunction(CallFunctionCommandSettings commandProperties)
+    public async Task<ScriptEvaluateResult> CallFunction(CallFunctionCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
     }
@@ -66,7 +66,7 @@ public sealed class ScriptModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> Disown(DisownCommandSettings commandProperties)
+    public async Task<EmptyResult> Disown(DisownCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
@@ -76,7 +76,7 @@ public sealed class ScriptModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing the result of the script evaluation.</returns>
-    public async Task<ScriptEvaluateResult> Evaluate(EvaluateCommandSettings commandProperties)
+    public async Task<ScriptEvaluateResult> Evaluate(EvaluateCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
     }
@@ -86,7 +86,7 @@ public sealed class ScriptModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing IDs of the realms.</returns>
-    public async Task<GetRealmsCommandResult> GetRealms(GetRealmsCommandSettings commandProperties)
+    public async Task<GetRealmsCommandResult> GetRealms(GetRealmsCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<GetRealmsCommandResult>(commandProperties);
     }
@@ -96,12 +96,12 @@ public sealed class ScriptModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> RemovePreloadScript(RemovePreloadScriptCommandSettings commandProperties)
+    public async Task<EmptyResult> RemovePreloadScript(RemovePreloadScriptCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
-    private void OnRealmCreated(EventInvocationData<RealmInfo> eventData)
+    private void OnRealmCreated(EventInfo<RealmInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a RealmInfo object, so rather than duplicate
@@ -120,7 +120,7 @@ public sealed class ScriptModule : ProtocolModule
         }
     }
 
-    private void OnRealmDestroyed(EventInvocationData<RealmDestroyedEventArgs> eventData)
+    private void OnRealmDestroyed(EventInfo<RealmDestroyedEventArgs> eventData)
     {
         if (this.RealmDestroyed is not null)
         {

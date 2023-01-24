@@ -1,6 +1,7 @@
 namespace WebDriverBidi.BrowsingContext;
 
 using TestUtilities;
+using WebDriverBidi.Protocol;
 
 [TestFixture]
 public class BrowsingContextModuleTests
@@ -15,10 +16,10 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.CaptureScreenshot(new CaptureScreenshotCommandSettings("myContextId"));
+        var task = module.CaptureScreenshot(new CaptureScreenshotCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -35,10 +36,10 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Close(new CloseCommandSettings("myContextId"));
+        var task = module.Close(new CloseCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -55,10 +56,10 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Create(new CreateCommandSettings(BrowsingContextCreateType.Tab));
+        var task = module.Create(new CreateCommandParameters(BrowsingContextCreateType.Tab));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -76,10 +77,10 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.GetTree(new GetTreeCommandSettings());
+        var task = module.GetTree(new GetTreeCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -103,10 +104,10 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.HandleUserPrompt(new HandleUserPromptCommandSettings("myContextId"));
+        var task = module.HandleUserPrompt(new HandleUserPromptCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -123,10 +124,10 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Navigate(new NavigateCommandSettings("myContext", "https://example.com") { Wait = ReadinessState.Complete });
+        var task = module.Navigate(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -148,10 +149,10 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Reload(new ReloadCommandSettings("myContext"));
+        var task = module.Reload(new ReloadCommandParameters("myContext"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -167,7 +168,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveContextCreatedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         bool eventRaised = false;
@@ -191,7 +192,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveContextDestroyedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         bool eventRaised = false;
@@ -215,7 +216,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveDomContentLoadedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -241,7 +242,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveDownloadWillBeginEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -267,7 +268,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveFragmentNavigatedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -293,7 +294,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveLoadEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -319,7 +320,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationAbortedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -345,7 +346,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationFailedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -371,7 +372,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationStartedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -397,7 +398,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveUserPromptClosedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         bool eventRaised = false;
@@ -420,7 +421,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveUserPromptOpenedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         bool eventRaised = false;

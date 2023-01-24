@@ -3,6 +3,7 @@ namespace WebDriverBidi;
 using TestUtilities;
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Log;
+using WebDriverBidi.Protocol;
 using WebDriverBidi.Script;
 using WebDriverBidi.Session;
 
@@ -19,7 +20,7 @@ public class DriverTests
             syncEvent.Set();
         };
 
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
 
@@ -43,7 +44,7 @@ public class DriverTests
             syncEvent.Set();
         };
 
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
 
@@ -61,13 +62,13 @@ public class DriverTests
     [Test]
     public async Task CanExecuteReceiveErrorWithoutCommand()
     {
-        ErrorResponseData? response = null;
+        ErrorResult? response = null;
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
-        driver.UnexpectedErrorReceived += delegate (object? sender, ProtocolErrorReceivedEventArgs e)
+        driver.UnexpectedErrorReceived += delegate (object? sender, ErrorReceivedEventArgs e)
         {
             response = e.ErrorData;
             syncEvent.Set();
@@ -93,11 +94,11 @@ public class DriverTests
 
         string eventName = "module.event";
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
-        driver.EventReceived += delegate (object? sender, ProtocolEventReceivedEventArgs e)
+        driver.EventReceived += delegate (object? sender, EventReceivedEventArgs e)
         {
             receivedEvent = e.EventName;
             receivedData = e.EventData;
@@ -123,10 +124,10 @@ public class DriverTests
         ManualResetEvent syncEvent = new(false);
 
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
-        driver.UnknownMessageReceived += delegate (object? sender, ProtocolUnknownMessageReceivedEventArgs e)
+        driver.UnknownMessageReceived += delegate (object? sender, UnknownMessageReceivedEventArgs e)
         {
             receivedMessage = e.Message;
             syncEvent.Set();
@@ -145,10 +146,10 @@ public class DriverTests
         ManualResetEvent syncEvent = new(false);
 
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
-        driver.UnknownMessageReceived += delegate (object? sender, ProtocolUnknownMessageReceivedEventArgs e)
+        driver.UnknownMessageReceived += delegate (object? sender, UnknownMessageReceivedEventArgs e)
         {
             receivedMessage = e.Message;
             syncEvent.Set();
@@ -164,7 +165,7 @@ public class DriverTests
     public async Task TestModuleAvailability()
     {
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         Driver driver = new(transport);
         await driver.Start("ws://localhost:5555");
         try
@@ -188,7 +189,7 @@ public class DriverTests
     {
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
         Driver driver = new(transport);
         driver.LogMessage += (sender, e) =>
         {
@@ -207,7 +208,7 @@ public class DriverTests
     public void TestCanRegisterModule()
     {
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         Driver driver = new(transport);
         driver.RegisterModule(new TestProtocolModule(driver));
         Assert.That(driver.GetModule<TestProtocolModule>("protocol"), Is.InstanceOf<TestProtocolModule>());
@@ -217,7 +218,7 @@ public class DriverTests
     public void TestGettingInvalidModuleNameThrows()
     {
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         Driver driver = new(transport);
         Assert.That(() => driver.GetModule<TestProtocolModule>("protocol"), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Module 'protocol' is not registered with this driver"));
     }
@@ -226,7 +227,7 @@ public class DriverTests
     public void TestGettingInvalidModuleTypeThrows()
     {
         TestConnection connection = new();
-        ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         Driver driver = new(transport);
         driver.RegisterModule(new TestProtocolModule(driver));
         Assert.That(() => driver.GetModule<SessionModule>("protocol"), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Module 'protocol' is registered with this driver, but the module object is not of type WebDriverBidi.Session.SessionModule"));

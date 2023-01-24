@@ -2,6 +2,7 @@ namespace WebDriverBidi;
 
 using System.Threading;
 using TestUtilities;
+using WebDriverBidi.Protocol;
 
 [TestFixture]
 public class ConnectionTests
@@ -210,13 +211,13 @@ public class ConnectionTests
         await connection.Stop();
     }
 
-    private void OnSocketDataReceived(object? sender, DataReceivedEventArgs e)
+    private void OnSocketDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
         this.lastReceivedData = e.Data;
         this.syncEvent.Set();
     }
 
-    private void OnConnectionDataReceived(object? sender, DataReceivedEventArgs e)
+    private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
         this.lastReceivedData = e.Data;
         this.syncEvent.Set();

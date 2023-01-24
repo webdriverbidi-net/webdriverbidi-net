@@ -7,6 +7,7 @@ namespace WebDriverBidi;
 
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Log;
+using WebDriverBidi.Protocol;
 using WebDriverBidi.Script;
 using WebDriverBidi.Session;
 
@@ -15,22 +16,22 @@ using WebDriverBidi.Session;
 /// </summary>
 public class Driver
 {
-    private readonly ProtocolTransport transport;
-    private readonly Dictionary<string, ProtocolModule> modules = new();
+    private readonly Transport transport;
+    private readonly Dictionary<string, Module> modules = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Driver" /> class.
     /// </summary>
     public Driver()
-        : this(new ProtocolTransport())
+        : this(new Transport())
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Driver" /> class with the specified <see cref="ProtocolTransport" />.
+    /// Initializes a new instance of the <see cref="Driver" /> class with the specified <see cref="Transport" />.
     /// </summary>
     /// <param name="transport">The protocol transport object used to communicate with the browser.</param>
-    public Driver(ProtocolTransport transport)
+    public Driver(Transport transport)
     {
         this.transport = transport;
         this.transport.EventReceived += this.OnTransportEventReceived;
@@ -46,17 +47,17 @@ public class Driver
     /// <summary>
     /// Raised when a protocol event is received from protocol transport.
     /// </summary>
-    public event EventHandler<ProtocolEventReceivedEventArgs>? EventReceived;
+    public event EventHandler<EventReceivedEventArgs>? EventReceived;
 
     /// <summary>
     /// Raised when a protocol error is received from protocol transport.
     /// </summary>
-    public event EventHandler<ProtocolErrorReceivedEventArgs>? UnexpectedErrorReceived;
+    public event EventHandler<ErrorReceivedEventArgs>? UnexpectedErrorReceived;
 
     /// <summary>
     /// Raised when an unknown message is received from protocol transport.
     /// </summary>
-    public event EventHandler<ProtocolUnknownMessageReceivedEventArgs>? UnknownMessageReceived;
+    public event EventHandler<UnknownMessageReceivedEventArgs>? UnknownMessageReceived;
 
     /// <summary>
     /// Raised when a log message is emitted by this driver.
@@ -109,8 +110,8 @@ public class Driver
     /// <param name="command">The object containing settings for the command, including parameters.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if an error occurs during the execution of the command.</exception>
-    public virtual async Task<T> ExecuteCommand<T>(CommandData command)
-        where T : ResponseData
+    public virtual async Task<T> ExecuteCommand<T>(CommandParameters command)
+        where T : CommandResult
     {
         var result = await this.transport.SendCommandAndWait(command);
         if (result is null)
@@ -120,7 +121,7 @@ public class Driver
 
         if (result.IsError)
         {
-            if (result is not ErrorResponseData errorResponse)
+            if (result is not ErrorResult errorResponse)
             {
                 throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
             }
@@ -140,7 +141,7 @@ public class Driver
     /// Registers a module for use with this driver.
     /// </summary>
     /// <param name="module">The module object.</param>
-    public void RegisterModule(ProtocolModule module)
+    public void RegisterModule(Module module)
     {
         this.modules[module.ModuleName] = module;
     }
@@ -148,18 +149,18 @@ public class Driver
     /// <summary>
     /// Gets a module from the set of registered modules for this driver.
     /// </summary>
-    /// <typeparam name="T">A module object which is a subclass of <see cref="ProtocolModule"/>.</typeparam>
+    /// <typeparam name="T">A module object which is a subclass of <see cref="Module"/>.</typeparam>
     /// <param name="moduleName">The name of the module to return.</param>
     /// <returns>The protocol module object.</returns>
     public T GetModule<T>(string moduleName)
-        where T : ProtocolModule
+        where T : Module
     {
         if (!this.modules.ContainsKey(moduleName))
         {
             throw new WebDriverBidiException($"Module '{moduleName}' is not registered with this driver");
         }
 
-        ProtocolModule module = this.modules[moduleName];
+        Module module = this.modules[moduleName];
         if (module is not T)
         {
             throw new WebDriverBidiException($"Module '{moduleName}' is registered with this driver, but the module object is not of type {typeof(T)}");
@@ -182,7 +183,7 @@ public class Driver
     /// Raises the UnexpectedErrorReceived event.
     /// </summary>
     /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnUnexpectedError(ProtocolErrorReceivedEventArgs e)
+    protected virtual void OnUnexpectedError(ErrorReceivedEventArgs e)
     {
         if (this.UnexpectedErrorReceived is not null)
         {
@@ -194,7 +195,7 @@ public class Driver
     /// Raises the EventReceived event.
     /// </summary>
     /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnEventReceived(ProtocolEventReceivedEventArgs e)
+    protected virtual void OnEventReceived(EventReceivedEventArgs e)
     {
         if (this.EventReceived is not null)
         {
@@ -206,7 +207,7 @@ public class Driver
     /// Raises the UnknownMessageReceived event.
     /// </summary>
     /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnUnknownMessageReceived(ProtocolUnknownMessageReceivedEventArgs e)
+    protected virtual void OnUnknownMessageReceived(UnknownMessageReceivedEventArgs e)
     {
         if (this.UnknownMessageReceived is not null)
         {
@@ -226,17 +227,17 @@ public class Driver
         }
     }
 
-    private void OnTransportEventReceived(object? sender, ProtocolEventReceivedEventArgs e)
+    private void OnTransportEventReceived(object? sender, EventReceivedEventArgs e)
     {
         this.OnEventReceived(e);
     }
 
-    private void OnTransportErrorEventReceived(object? sender, ProtocolErrorReceivedEventArgs e)
+    private void OnTransportErrorEventReceived(object? sender, ErrorReceivedEventArgs e)
     {
         this.OnUnexpectedError(e);
     }
 
-    private void OnTransportUnknownMessageReceived(object? sender, ProtocolUnknownMessageReceivedEventArgs e)
+    private void OnTransportUnknownMessageReceived(object? sender, UnknownMessageReceivedEventArgs e)
     {
         this.OnUnknownMessageReceived(e);
     }

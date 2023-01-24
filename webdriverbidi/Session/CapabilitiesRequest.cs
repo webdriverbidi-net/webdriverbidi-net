@@ -55,6 +55,6 @@ public class CapabilitiesRequest
     /// Gets the dictionary containing additional capabilities to use with this session.
     /// </summary>
     [JsonExtensionData]
-    [JsonConverter(typeof(ResponseValueJsonConverter))]
+    [JsonConverter(typeof(ReceivedDataJsonConverter))]
     public Dictionary<string, object?> AdditionalCapabilities => this.additionalCapabilities;
 }

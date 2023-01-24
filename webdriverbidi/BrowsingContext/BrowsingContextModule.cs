@@ -8,7 +8,7 @@ namespace WebDriverBidi.BrowsingContext;
 /// <summary>
 /// The BrowsingContext module.
 /// </summary>
-public sealed class BrowsingContextModule : ProtocolModule
+public sealed class BrowsingContextModule : Module
 {
     /// <summary>
     /// The name of the browsingContext module.
@@ -100,7 +100,7 @@ public sealed class BrowsingContextModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
-    public async Task<CaptureScreenshotCommandResult> CaptureScreenshot(CaptureScreenshotCommandSettings commandProperties)
+    public async Task<CaptureScreenshotCommandResult> CaptureScreenshot(CaptureScreenshotCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<CaptureScreenshotCommandResult>(commandProperties);
     }
@@ -110,7 +110,7 @@ public sealed class BrowsingContextModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> Close(CloseCommandSettings commandProperties)
+    public async Task<EmptyResult> Close(CloseCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
@@ -120,7 +120,7 @@ public sealed class BrowsingContextModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command including the ID of the new context.</returns>
-    public async Task<CreateCommandResult> Create(CreateCommandSettings commandProperties)
+    public async Task<CreateCommandResult> Create(CreateCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<CreateCommandResult>(commandProperties);
     }
@@ -130,7 +130,7 @@ public sealed class BrowsingContextModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The tree associated browsing contexts.</returns>
-    public async Task<GetTreeCommandResult> GetTree(GetTreeCommandSettings commandProperties)
+    public async Task<GetTreeCommandResult> GetTree(GetTreeCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<GetTreeCommandResult>(commandProperties);
     }
@@ -140,7 +140,7 @@ public sealed class BrowsingContextModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> HandleUserPrompt(HandleUserPromptCommandSettings commandProperties)
+    public async Task<EmptyResult> HandleUserPrompt(HandleUserPromptCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
@@ -150,7 +150,7 @@ public sealed class BrowsingContextModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<BrowsingContextNavigateResult> Navigate(NavigateCommandSettings commandProperties)
+    public async Task<BrowsingContextNavigateResult> Navigate(NavigateCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<BrowsingContextNavigateResult>(commandProperties);
     }
@@ -160,12 +160,12 @@ public sealed class BrowsingContextModule : ProtocolModule
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<BrowsingContextNavigateResult> Reload(ReloadCommandSettings commandProperties)
+    public async Task<BrowsingContextNavigateResult> Reload(ReloadCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommand<BrowsingContextNavigateResult>(commandProperties);
     }
 
-    private void OnContextCreated(EventInvocationData<BrowsingContextInfo> eventData)
+    private void OnContextCreated(EventInfo<BrowsingContextInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a BrowingContextInfo object, so rather than
@@ -185,7 +185,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnContextDestroyed(EventInvocationData<BrowsingContextInfo> eventData)
+    private void OnContextDestroyed(EventInfo<BrowsingContextInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a BrowingContextInfo object, so rather than
@@ -205,7 +205,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnNavigationStarted(EventInvocationData<NavigationEventArgs> eventData)
+    private void OnNavigationStarted(EventInfo<NavigationEventArgs> eventData)
     {
         if (this.NavigationStarted is not null)
         {
@@ -215,7 +215,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnFragmentNavigated(EventInvocationData<NavigationEventArgs> eventData)
+    private void OnFragmentNavigated(EventInfo<NavigationEventArgs> eventData)
     {
         if (this.FragmentNavigated is not null)
         {
@@ -225,7 +225,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
      }
 
-    private void OnDomContentLoaded(EventInvocationData<NavigationEventArgs> eventData)
+    private void OnDomContentLoaded(EventInfo<NavigationEventArgs> eventData)
     {
         if (this.DomContentLoaded is not null)
         {
@@ -235,7 +235,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnLoad(EventInvocationData<NavigationEventArgs> eventData)
+    private void OnLoad(EventInfo<NavigationEventArgs> eventData)
     {
         if (this.Load is not null)
         {
@@ -245,7 +245,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnDownloadWillBegin(EventInvocationData<NavigationEventArgs> eventData)
+    private void OnDownloadWillBegin(EventInfo<NavigationEventArgs> eventData)
     {
         if (this.DownloadWillBegin is not null)
         {
@@ -255,7 +255,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnNavigationAborted(EventInvocationData<NavigationEventArgs> eventData)
+    private void OnNavigationAborted(EventInfo<NavigationEventArgs> eventData)
     {
         if (this.NavigationAborted is not null)
         {
@@ -265,7 +265,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnNavigationFailed(EventInvocationData<NavigationEventArgs> eventData)
+    private void OnNavigationFailed(EventInfo<NavigationEventArgs> eventData)
     {
         if (this.NavigationFailed is not null)
         {
@@ -275,7 +275,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnUserPromptClosed(EventInvocationData<UserPromptClosedEventArgs> eventData)
+    private void OnUserPromptClosed(EventInfo<UserPromptClosedEventArgs> eventData)
     {
         if (this.UserPromptClosed is not null)
         {
@@ -285,7 +285,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         }
     }
 
-    private void OnUserPromptOpened(EventInvocationData<UserPromptOpenedEventArgs> eventData)
+    private void OnUserPromptOpened(EventInfo<UserPromptOpenedEventArgs> eventData)
     {
         if (this.UserPromptOpened is not null)
         {

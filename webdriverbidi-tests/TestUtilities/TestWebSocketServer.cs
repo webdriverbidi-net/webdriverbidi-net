@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using WebDriverBidi.Protocol;
 
 /// <summary>
 /// Enum for opcode types
@@ -61,7 +62,7 @@ public class TestWebSocketServer
 
     public int Port => this.port;
 
-    public event EventHandler<DataReceivedEventArgs>? DataReceived;
+    public event EventHandler<ConnectionDataReceivedEventArgs>? DataReceived;
 
     public List<string> Log => this.serverLog;
 
@@ -96,7 +97,7 @@ public class TestWebSocketServer
         this.serverLog.Add($"SEND {bytesSent} bytes");
     }
 
-    protected virtual void OnDataReceived(DataReceivedEventArgs e)
+    protected virtual void OnDataReceived(ConnectionDataReceivedEventArgs e)
     {
         if (this.DataReceived is not null)
         {
@@ -124,7 +125,7 @@ public class TestWebSocketServer
                 if (frame.Opcode == OpcodeType.Text)
                 {
                     string text = Encoding.UTF8.GetString(frame.Data);
-                    this.OnDataReceived(new DataReceivedEventArgs(text));
+                    this.OnDataReceived(new ConnectionDataReceivedEventArgs(text));
                 }
 
                 if (frame.Opcode == OpcodeType.ClosedConnection)

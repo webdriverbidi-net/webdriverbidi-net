@@ -8,7 +8,7 @@ namespace WebDriverBidi.Log;
 /// <summary>
 /// The Log module.
 /// </summary>
-public sealed class LogModule : ProtocolModule
+public sealed class LogModule : Module
 {
     /// <summary>
     /// The name of the log module.
@@ -35,7 +35,7 @@ public sealed class LogModule : ProtocolModule
     /// </summary>
     public override string ModuleName => LogModuleName;
 
-    private void OnEntryAdded(EventInvocationData<LogEntry> eventData)
+    private void OnEntryAdded(EventInfo<LogEntry> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a LogEntry object, so rather than duplicate the

@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Result for getting the status of a remote end using the session.status command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class StatusCommandResult : ResponseData
+public class StatusCommandResult : CommandResult
 {
     private bool ready;
     private string message = string.Empty;

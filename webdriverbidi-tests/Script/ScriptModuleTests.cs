@@ -1,6 +1,7 @@
 namespace WebDriverBidi.Script;
 
 using TestUtilities;
+using WebDriverBidi.Protocol;
 
 [TestFixture]
 public class ScriptModuleTests
@@ -15,10 +16,10 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.CallFunction(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -48,10 +49,10 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.CallFunction(new CallFunctionCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.CallFunction(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -84,10 +85,10 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
         
-        var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.Evaluate(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -117,10 +118,10 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.Evaluate(new EvaluateCommandSettings("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.Evaluate(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -153,10 +154,10 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.GetRealms(new GetRealmsCommandSettings());
+        var task = module.GetRealms(new GetRealmsCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -187,10 +188,10 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.Disown(new DisownCommandSettings(new ContextTarget("myContextId"), new string[] { "myValue" }));
+        var task = module.Disown(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -202,7 +203,7 @@ public class ScriptModuleTests
     public void TestCanReceiveRealmCreatedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
         bool eventRaised = false;
@@ -226,7 +227,7 @@ public class ScriptModuleTests
     public void TestCanReceiveRealmCreatedEventForNonWindowRealm()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
         bool eventRaised = false;
@@ -250,7 +251,7 @@ public class ScriptModuleTests
     public void TestCanReceiveRealmDestroyedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
         bool eventRaised = false;
@@ -275,9 +276,9 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
-        var task = module.AddPreloadScript(new AddPreloadScriptCommandSettings("window.foo = false;"));
+        var task = module.AddPreloadScript(new AddPreloadScriptCommandParameters("window.foo = false;"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -296,10 +297,10 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
         
-        var task = module.RemovePreloadScript(new RemovePreloadScriptCommandSettings("loadScriptId"));
+        var task = module.RemovePreloadScript(new RemovePreloadScriptCommandParameters("loadScriptId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 

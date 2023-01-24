@@ -1,6 +1,7 @@
 namespace WebDriverBidi.Session;
 
 using TestUtilities;
+using WebDriverBidi.Protocol;
 
 [TestFixture]
 public class SessionModuleTests
@@ -16,8 +17,8 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
-        var task = driver.Session.Status(new StatusCommandSettings());
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        var task = driver.Session.Status(new StatusCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -39,10 +40,10 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
-        var subscribeParameters = new SubscribeCommandSettings();
+        var subscribeParameters = new SubscribeCommandParameters();
         subscribeParameters.Events.Add("log.entryAdded");
         var task = module.Subscribe(subscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
@@ -61,10 +62,10 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
-        var unsubscribeParameters = new UnsubscribeCommandSettings();
+        var unsubscribeParameters = new UnsubscribeCommandParameters();
         unsubscribeParameters.Events.Add("log.entryAdded");
         var task = module.Unsubscribe(unsubscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
@@ -83,10 +84,10 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new ProtocolTransport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
-        var newCommandParameters = new NewCommandSettings();
+        var newCommandParameters = new NewCommandParameters();
         var task = module.NewSession(newCommandParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;

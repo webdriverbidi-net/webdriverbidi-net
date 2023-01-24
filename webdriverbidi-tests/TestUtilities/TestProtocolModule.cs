@@ -1,6 +1,6 @@
 namespace WebDriverBidi.TestUtilities;
 
-public sealed class TestProtocolModule : ProtocolModule
+public sealed class TestProtocolModule : Module
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TestProtocolModule"/> class.
@@ -16,7 +16,7 @@ public sealed class TestProtocolModule : ProtocolModule
 
     public override string ModuleName => "protocol";
 
-    private void OnEventInvoked(EventInvocationData<TestEventArgs> eventData)
+    private void OnEventInvoked(EventInfo<TestEventArgs> eventData)
     {
         if (this.EventInvoked is not null)
         {

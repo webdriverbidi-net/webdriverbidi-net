@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Result for creating a new browsing context using the browserContext.create command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class CreateCommandResult : ResponseData
+public class CreateCommandResult : CommandResult
 {
     private string contextId = string.Empty;
 
