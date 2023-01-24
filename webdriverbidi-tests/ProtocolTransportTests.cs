@@ -177,7 +177,7 @@ public class ProtocolTransportTests
 
         TestConnection connection = new();
         ProtocolTransport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        transport.RegisterEventArgsType("protocol.event", typeof(TestEventArgs));
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.EventReceived += (object? sender, ProtocolEventReceivedEventArgs e) => {
             receivedName = e.EventName;
             receivedData = e.EventData;
@@ -231,7 +231,8 @@ public class ProtocolTransportTests
             receivedData = e.Message;
             syncEvent.Set();
         };
-        transport.ErrorEventReceived += (object? sender, ProtocolErrorReceivedEventArgs e) => {
+        transport.ErrorEventReceived += (object? sender, ProtocolErrorReceivedEventArgs e) =>
+        {
         };
         connection.RaiseDataReceivedEvent(@"{ ""method"": null }");
         syncEvent.WaitOne();

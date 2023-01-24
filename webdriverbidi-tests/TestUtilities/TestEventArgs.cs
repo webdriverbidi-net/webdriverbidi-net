@@ -3,7 +3,7 @@ namespace WebDriverBidi.TestUtilities;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
-public class TestEventArgs: EventArgs
+public class TestEventArgs: WebDriverBidiEventArgs
 {
     private readonly string parameterName = "paramValue";
 

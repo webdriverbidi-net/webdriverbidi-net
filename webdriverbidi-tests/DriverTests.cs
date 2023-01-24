@@ -96,7 +96,7 @@ public class DriverTests
         ProtocolTransport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
-        driver.RegisterEvent(eventName, typeof(TestEventArgs));
+        driver.RegisterEvent<TestEventArgs>(eventName);
         driver.EventReceived += delegate (object? sender, ProtocolEventReceivedEventArgs e)
         {
             receivedEvent = e.EventName;

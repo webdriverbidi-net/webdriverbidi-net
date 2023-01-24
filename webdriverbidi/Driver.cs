@@ -171,11 +171,11 @@ public class Driver
     /// <summary>
     /// Registers an event to be raised by the remote end of the WebDriver Bidi protocol.
     /// </summary>
+    /// <typeparam name="T">The type of data that will be raised by the event.</typeparam>
     /// <param name="eventName">The name of the event to raise.</param>
-    /// <param name="eventArgsType">The type of EventArgs to use when raising the event.</param>
-    public virtual void RegisterEvent(string eventName, Type eventArgsType)
+    public virtual void RegisterEvent<T>(string eventName)
     {
-        this.transport.RegisterEventArgsType(eventName, eventArgsType);
+        this.transport.RegisterEventMessage<T>(eventName);
     }
 
     /// <summary>

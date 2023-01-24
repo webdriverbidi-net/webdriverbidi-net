@@ -9,23 +9,21 @@ public sealed class TestProtocolModule : ProtocolModule
     public TestProtocolModule(Driver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker("protocol.event", typeof(TestEventArgs), this.OnEventInvoked);
+        this.RegisterEventInvoker<TestEventArgs>("protocol.event", this.OnEventInvoked);
     }
 
     public event EventHandler<TestEventArgs>? EventInvoked;
 
     public override string ModuleName => "protocol";
 
-    private void OnEventInvoked(object eventData)
+    private void OnEventInvoked(EventInvocationData<TestEventArgs> eventData)
     {
-        if (eventData is TestEventArgs entry)
+        if (this.EventInvoked is not null)
         {
-            if (this.EventInvoked is not null)
-            {
-                this.EventInvoked(this, new TestEventArgs());
-            }
+            TestEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.EventInvoked(this, eventArgs);
         }
-
     }
 }
 

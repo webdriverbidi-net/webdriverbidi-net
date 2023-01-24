@@ -13,7 +13,7 @@ public class WebDriverBidiEventArgs : EventArgs
     private Dictionary<string, object?> additionalData = new();
 
     /// <summary>
-    /// Gets additional extended data sent with the event.
+    /// Gets or sets additional extended data sent with the event.
     /// </summary>
-    public Dictionary<string, object?> AdditionalData { get => this.additionalData; internal set => this.additionalData = value; }
+    public Dictionary<string, object?> AdditionalData { get => this.additionalData; set => this.additionalData = value; }
 }

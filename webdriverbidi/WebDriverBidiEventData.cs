@@ -8,26 +8,16 @@ namespace WebDriverBidi;
 /// <summary>
 /// Object containing data about a WebDriver Bidi event.
 /// </summary>
-public class WebDriverBidiEventData
+public abstract class WebDriverBidiEventData
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WebDriverBidiEventData" /> class.
-    /// </summary>
-    /// <param name="eventArgsType">The type of EventArgs created by the event.</param>
-    /// <param name="eventInvoker">The Action to be executed when the event is raised.</param>
-    public WebDriverBidiEventData(Type eventArgsType, Action<object> eventInvoker)
-    {
-        this.EventArgsType = eventArgsType;
-        this.EventInvoker = eventInvoker;
-    }
-
     /// <summary>
     /// Gets the type of EventArgs created by the event.
     /// </summary>
-    public Type EventArgsType { get; }
+    public abstract Type EventArgsType { get; }
 
     /// <summary>
-    /// Gets the Action to be executed when the event is raised.
+    /// Invokes the event.
     /// </summary>
-    public Action<object> EventInvoker { get; }
+    /// <param name="eventData">The data used to pass to the event for invocation.</param>
+    public abstract void InvokeEvent(object eventData, Dictionary<string, object?> additionalData);
 }

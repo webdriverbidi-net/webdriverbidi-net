@@ -22,8 +22,8 @@ public sealed class ScriptModule : ProtocolModule
     public ScriptModule(Driver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker("script.realmCreated", typeof(RealmInfo), this.OnRealmCreated);
-        this.RegisterEventInvoker("script.realmDestroyed", typeof(RealmDestroyedEventArgs), this.OnRealmDestroyed);
+        this.RegisterEventInvoker<RealmInfo>("script.realmCreated", this.OnRealmCreated);
+        this.RegisterEventInvoker<RealmDestroyedEventArgs>("script.realmDestroyed", this.OnRealmDestroyed);
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public sealed class ScriptModule : ProtocolModule
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
 
-    private void OnRealmCreated(object eventData)
+    private void OnRealmCreated(EventInvocationData<RealmInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a RealmInfo object, so rather than duplicate
@@ -110,26 +110,23 @@ public sealed class ScriptModule : ProtocolModule
         // then use that here to create the appropriate EventArgs instance.
         // Note that the base class for a protocol module should not allow
         // eventData to be any other type than the expected type.
-        if (eventData is RealmInfo eventArgs)
+        if (this.RealmCreated is not null)
         {
-            RealmCreatedEventArgs e = new(eventArgs);
-            if (this.RealmCreated is not null)
+            RealmCreatedEventArgs eventArgs = new(eventData.EventData)
             {
-                this.RealmCreated(this, e);
-            }
+                AdditionalData = eventData.AdditionalData,
+            };
+            this.RealmCreated(this, eventArgs);
         }
     }
 
-    private void OnRealmDestroyed(object eventData)
+    private void OnRealmDestroyed(EventInvocationData<RealmDestroyedEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is RealmDestroyedEventArgs eventArgs)
+        if (this.RealmDestroyed is not null)
         {
-            if (this.RealmDestroyed is not null)
-            {
-                this.RealmDestroyed(this, eventArgs);
-            }
+            RealmDestroyedEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.RealmDestroyed(this, eventArgs);
         }
     }
 }

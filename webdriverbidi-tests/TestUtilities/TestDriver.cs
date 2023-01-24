@@ -47,9 +47,9 @@ public class TestDriver : Driver
         this.commandSetEvent.WaitOne(waitTimeout);
     }
 
-    public override void RegisterEvent(string eventName, Type eventArgsType)
+    public override void RegisterEvent<T>(string eventName)
     {
-        this.eventTypes[eventName] = eventArgsType;
+        this.eventTypes[eventName] = typeof(EventMessage<T>);
     }
 
     public override async Task<T> ExecuteCommand<T>(CommandData command)
@@ -109,24 +109,11 @@ public class TestDriver : Driver
         {
             // This is an event
             string? eventName = message["method"]!.Value<string>();
-            JToken? eventData = message["params"];
-            if (eventName is not null && eventData is not null && this.eventTypes.ContainsKey(eventName))
+            if (eventName is not null && this.eventTypes.ContainsKey(eventName))
             {
                 Type eventType = eventTypes[eventName];
-                object? eventDataObject = null;
-                try
-                {
-                    eventDataObject = eventData.ToObject(eventType);
-                }
-                catch (JsonSerializationException)
-                {
-                    if (!this.emitNullEventArgs)
-                    {
-                        eventDataObject = "This is an invalid, non-null event data object";
-                    }
-                }
-                
-                this.OnEventReceived(new ProtocolEventReceivedEventArgs(eventName, eventDataObject));
+                EventMessage? eventDataObject = message.ToObject(eventType) as EventMessage;                
+                this.OnEventReceived(new ProtocolEventReceivedEventArgs(eventDataObject!));
             }
         }
         else if (this.lastCommand is not null)

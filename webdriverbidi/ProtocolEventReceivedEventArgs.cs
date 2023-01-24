@@ -11,14 +11,14 @@ namespace WebDriverBidi;
 public class ProtocolEventReceivedEventArgs : EventArgs
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProtocolEventReceivedEventArgs" /> class.
+    /// Initializes a new instance of the <see cref="ProtocolEventReceivedEventArgs"/> class.
     /// </summary>
-    /// <param name="methodName">The name of the method for which the event is being received.</param>
-    /// <param name="eventData">The data about the event being received.</param>
-    public ProtocolEventReceivedEventArgs(string methodName, object? eventData)
+    /// <param name="message">The event message containing information about the event.</param>
+    public ProtocolEventReceivedEventArgs(EventMessage message)
     {
-        this.EventName = methodName;
-        this.EventData = eventData;
+        this.EventName = message.EventName;
+        this.EventData = message.EventData;
+        this.AdditionalData = message.AdditionalData;
     }
 
     /// <summary>
@@ -30,4 +30,9 @@ public class ProtocolEventReceivedEventArgs : EventArgs
     /// Gets the data associated with the event.
     /// </summary>
     public object? EventData { get; }
+
+    /// <summary>
+    /// Gets additional properties deserialized by this event.
+    /// </summary>
+    public Dictionary<string, object?> AdditionalData { get; }
 }

@@ -17,7 +17,7 @@ public class ProtocolTransport
     private readonly ConcurrentDictionary<long, WebDriverBidiCommand> pendingCommands = new();
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
-    private readonly Dictionary<string, Type> eventTypes = new();
+    private readonly Dictionary<string, Type> eventMessageTypes = new();
     private long nextCommandId = 0;
 
     /// <summary>
@@ -168,13 +168,13 @@ public class ProtocolTransport
     }
 
     /// <summary>
-    /// Registers an event to be raised.
+    /// Registers an event message to be recognized when received from the connection.
     /// </summary>
-    /// <param name="eventName">The name of the event to be registered.</param>
-    /// <param name="eventArgsType">The type of EventArgs to be used when raising the event.</param>
-    public void RegisterEventArgsType(string eventName, Type eventArgsType)
+    /// <typeparam name="T">The type of data to be returned in the event.</typeparam>
+    /// <param name="eventName">The name of the event.</param>
+    public void RegisterEventMessage<T>(string eventName)
     {
-        this.eventTypes[eventName] = eventArgsType;
+        this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
     }
 
     /// <summary>
@@ -291,17 +291,13 @@ public class ProtocolTransport
             // be null. Use the null forgiving operator to suppress the
             // compiler warning.
             string? eventName = message["method"]!.Value<string>();
-            JToken? eventData = message["params"];
             if (eventName is not null)
             {
-                if (this.eventTypes.ContainsKey(eventName))
+                if (this.eventMessageTypes.ContainsKey(eventName))
                 {
-                    // There must be a property named "params", so the eventData token
-                    // cannot be null. Use the null forgiving operator to suppress the
-                    // compiler warning.
-                    var eventArgs = eventData!.ToObject(this.eventTypes[eventName]);
+                    EventMessage? eventMessageData = message.ToObject(this.eventMessageTypes[eventName]) as EventMessage;
                     isProcessed = true;
-                    this.OnProtocolEventReceived(this, new ProtocolEventReceivedEventArgs(eventName, eventArgs));
+                    this.OnProtocolEventReceived(this, new ProtocolEventReceivedEventArgs(eventMessageData!));
                 }
             }
         }
