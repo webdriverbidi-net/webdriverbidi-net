@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Object containing event data for the event raised when a user prompt is closed.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class UserPromptClosedEventArgs : EventArgs
+public class UserPromptClosedEventArgs : WebDriverBidiEventArgs
 {
     private string browsingContextId;
     private bool isAccepted;

@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the session.new command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class StatusCommandSettings : CommandSettings
+public class StatusCommandSettings : CommandData<StatusCommandResult>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="StatusCommandSettings"/> class.
@@ -25,9 +25,4 @@ public class StatusCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "session.status";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(StatusCommandResult);
 }

@@ -8,13 +8,13 @@ public class BrowsingContextModuleTests
     [Test]
     public void TestExecuteCaptureScreenshotCommand()
     {
-        string responseJson = @"{ ""result"": { ""data"": ""encodedScreenshotData"" } }";
+        string responseJson = @"{ ""id"": 1, ""result"": { ""data"": ""encodedScreenshotData"" } }";
         TestDriver driver = new();
         driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.MethodName, Is.EqualTo("browsingContext.captureScreenshot"));
-                Assert.That(e.ResultType, Is.EqualTo(typeof(CaptureScreenshotCommandResult)));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CommandResponse<CaptureScreenshotCommandResult>)));
             });
         };
 
@@ -32,13 +32,13 @@ public class BrowsingContextModuleTests
     [Test]
     public void TestExecuteCloseCommand()
     {
-        string responseJson = @"{ ""result"": {} }";
+        string responseJson = @"{ ""id"": 1, ""result"": {} }";
         TestDriver driver = new();
         driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.MethodName, Is.EqualTo("browsingContext.close"));
-                Assert.That(e.ResultType, Is.EqualTo(typeof(EmptyResult)));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CommandResponse<EmptyResult>)));
             });
         };
         BrowsingContextModule module = new(driver);
@@ -55,13 +55,13 @@ public class BrowsingContextModuleTests
     [Test]
     public void TestExecuteCreateCommand()
     {
-        string responseJson = @"{ ""result"": { ""context"": ""myContext"" } }";
+        string responseJson = @"{ ""id"": 1, ""result"": { ""context"": ""myContext"" } }";
         TestDriver driver = new();
         driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.MethodName, Is.EqualTo("browsingContext.create"));
-                Assert.That(e.ResultType, Is.EqualTo(typeof(CreateCommandResult)));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CommandResponse<CreateCommandResult>)));
             });
         };
 
@@ -80,13 +80,13 @@ public class BrowsingContextModuleTests
     [Test]
     public void TestExecuteGetTreeCommand()
     {
-        string responseJson = @"{ ""result"": { ""contexts"": [ { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } ] } }";
+        string responseJson = @"{ ""id"": 1, ""result"": { ""contexts"": [ { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } ] } }";
         TestDriver driver = new();
         driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.MethodName, Is.EqualTo("browsingContext.getTree"));
-                Assert.That(e.ResultType, Is.EqualTo(typeof(GetTreeCommandResult)));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CommandResponse<GetTreeCommandResult>)));
             });
         };
 
@@ -111,13 +111,13 @@ public class BrowsingContextModuleTests
     [Test]
     public void TestExecuteHandleUserPromptCommand()
     {
-        string responseJson = @"{ ""result"": {} }";
+        string responseJson = @"{ ""id"": 1, ""result"": {} }";
         TestDriver driver = new();
         driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.MethodName, Is.EqualTo("browsingContext.handleUserPrompt"));
-                Assert.That(e.ResultType, Is.EqualTo(typeof(EmptyResult)));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CommandResponse<EmptyResult>)));
             });
         };
 
@@ -135,13 +135,13 @@ public class BrowsingContextModuleTests
     [Test]
     public void TestExecuteNavigateCommand()
     {
-        string responseJson = @"{ ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
+        string responseJson = @"{ ""id"": 1, ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
         TestDriver driver = new();
         driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.MethodName, Is.EqualTo("browsingContext.navigate"));
-                Assert.That(e.ResultType, Is.EqualTo(typeof(BrowsingContextNavigateResult)));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CommandResponse<BrowsingContextNavigateResult>)));
             });
         };
 
@@ -164,13 +164,13 @@ public class BrowsingContextModuleTests
     [Test]
     public void TestExecuteReloadCommand()
     {
-        string responseJson = @"{ ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
+        string responseJson = @"{ ""id"": 1, ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
         TestDriver driver = new();
         driver.CommandSet += (object? sender, TestCommandSetEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.MethodName, Is.EqualTo("browsingContext.reload"));
-                Assert.That(e.ResultType, Is.EqualTo(typeof(BrowsingContextNavigateResult)));
+                Assert.That(e.ResultType, Is.EqualTo(typeof(CommandResponse<BrowsingContextNavigateResult>)));
             });
         };
 

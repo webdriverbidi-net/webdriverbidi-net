@@ -22,17 +22,17 @@ public sealed class BrowsingContextModule : ProtocolModule
     public BrowsingContextModule(Driver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker("browsingContext.contextCreated", typeof(BrowsingContextInfo), this.OnContextCreated);
-        this.RegisterEventInvoker("browsingContext.contextDestroyed", typeof(BrowsingContextInfo), this.OnContextDestroyed);
-        this.RegisterEventInvoker("browsingContext.navigationStarted", typeof(NavigationEventArgs), this.OnNavigationStarted);
-        this.RegisterEventInvoker("browsingContext.fragmentNavigated", typeof(NavigationEventArgs), this.OnFragmentNavigated);
-        this.RegisterEventInvoker("browsingContext.domContentLoaded", typeof(NavigationEventArgs), this.OnDomContentLoaded);
-        this.RegisterEventInvoker("browsingContext.load", typeof(NavigationEventArgs), this.OnLoad);
-        this.RegisterEventInvoker("browsingContext.downloadWillBegin", typeof(NavigationEventArgs), this.OnDownloadWillBegin);
-        this.RegisterEventInvoker("browsingContext.navigationAborted", typeof(NavigationEventArgs), this.OnNavigationAborted);
-        this.RegisterEventInvoker("browsingContext.navigationFailed", typeof(NavigationEventArgs), this.OnNavigationFailed);
-        this.RegisterEventInvoker("browsingContext.userPromptClosed", typeof(UserPromptClosedEventArgs), this.OnUserPromptClosed);
-        this.RegisterEventInvoker("browsingContext.userPromptOpened", typeof(UserPromptOpenedEventArgs), this.OnUserPromptOpened);
+        this.RegisterEventInvoker<BrowsingContextInfo>("browsingContext.contextCreated", this.OnContextCreated);
+        this.RegisterEventInvoker<BrowsingContextInfo>("browsingContext.contextDestroyed", this.OnContextDestroyed);
+        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.navigationStarted", this.OnNavigationStarted);
+        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.fragmentNavigated", this.OnFragmentNavigated);
+        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.domContentLoaded", this.OnDomContentLoaded);
+        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.load", this.OnLoad);
+        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.downloadWillBegin", this.OnDownloadWillBegin);
+        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.navigationAborted", this.OnNavigationAborted);
+        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.navigationFailed", this.OnNavigationFailed);
+        this.RegisterEventInvoker<UserPromptClosedEventArgs>("browsingContext.userPromptClosed", this.OnUserPromptClosed);
+        this.RegisterEventInvoker<UserPromptOpenedEventArgs>("browsingContext.userPromptOpened", this.OnUserPromptOpened);
     }
 
     /// <summary>
@@ -165,7 +165,7 @@ public sealed class BrowsingContextModule : ProtocolModule
         return await this.Driver.ExecuteCommand<BrowsingContextNavigateResult>(commandProperties);
     }
 
-    private void OnContextCreated(object eventData)
+    private void OnContextCreated(EventInvocationData<BrowsingContextInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a BrowingContextInfo object, so rather than
@@ -175,16 +175,17 @@ public sealed class BrowsingContextModule : ProtocolModule
         // the appropriate EventArgs instance.
         // Note that the base class for a protocol module should not allow
         // eventData to be any other type than the expected type.
-        if (eventData is BrowsingContextInfo info)
+        if (this.ContextCreated is not null)
         {
-            if (this.ContextCreated is not null)
+            BrowsingContextEventArgs eventArgs = new(eventData.EventData)
             {
-                this.ContextCreated(this, new BrowsingContextEventArgs(info));
-            }
+                AdditionalData = eventData.AdditionalData,
+            };
+            this.ContextCreated(this, eventArgs);
         }
     }
 
-    private void OnContextDestroyed(object eventData)
+    private void OnContextDestroyed(EventInvocationData<BrowsingContextInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a BrowingContextInfo object, so rather than
@@ -194,129 +195,103 @@ public sealed class BrowsingContextModule : ProtocolModule
         // the appropriate EventArgs instance.
         // Note that the base class for a protocol module should not allow
         // eventData to be any other type than the expected type.
-        if (eventData is BrowsingContextInfo info)
+        if (this.ContextDestroyed is not null)
         {
-            if (this.ContextDestroyed is not null)
+            BrowsingContextEventArgs eventArgs = new(eventData.EventData)
             {
-                this.ContextDestroyed(this, new BrowsingContextEventArgs(info));
-            }
+                AdditionalData = eventData.AdditionalData,
+            };
+            this.ContextDestroyed(this, eventArgs);
         }
     }
 
-    private void OnNavigationStarted(object eventData)
+    private void OnNavigationStarted(EventInvocationData<NavigationEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is NavigationEventArgs eventArgs)
+        if (this.NavigationStarted is not null)
         {
-            if (this.NavigationStarted is not null)
-            {
-                this.NavigationStarted(this, eventArgs);
-            }
+            NavigationEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.NavigationStarted(this, eventArgs);
         }
     }
 
-    private void OnFragmentNavigated(object eventData)
+    private void OnFragmentNavigated(EventInvocationData<NavigationEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is NavigationEventArgs eventArgs)
-        {
         if (this.FragmentNavigated is not null)
-            {
-                this.FragmentNavigated(this, eventArgs);
-            }
+        {
+            NavigationEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.FragmentNavigated(this, eventArgs);
         }
      }
 
-    private void OnDomContentLoaded(object eventData)
+    private void OnDomContentLoaded(EventInvocationData<NavigationEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is NavigationEventArgs eventArgs)
+        if (this.DomContentLoaded is not null)
         {
-            if (this.DomContentLoaded is not null)
-            {
-                this.DomContentLoaded(this, eventArgs);
-            }
+            NavigationEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.DomContentLoaded(this, eventArgs);
         }
     }
 
-    private void OnLoad(object eventData)
+    private void OnLoad(EventInvocationData<NavigationEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is NavigationEventArgs eventArgs)
+        if (this.Load is not null)
         {
-            if (this.Load is not null)
-            {
-                this.Load(this, eventArgs);
-            }
+            NavigationEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.Load(this, eventArgs);
         }
     }
 
-    private void OnDownloadWillBegin(object eventData)
+    private void OnDownloadWillBegin(EventInvocationData<NavigationEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is NavigationEventArgs eventArgs)
+        if (this.DownloadWillBegin is not null)
         {
-            if (this.DownloadWillBegin is not null)
-            {
-                this.DownloadWillBegin(this, eventArgs);
-            }
+            NavigationEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.DownloadWillBegin(this, eventArgs);
         }
     }
 
-    private void OnNavigationAborted(object eventData)
+    private void OnNavigationAborted(EventInvocationData<NavigationEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is NavigationEventArgs eventArgs)
+        if (this.NavigationAborted is not null)
         {
-            if (this.NavigationAborted is not null)
-            {
-                this.NavigationAborted(this, eventArgs);
-            }
+            NavigationEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.NavigationAborted(this, eventArgs);
         }
     }
 
-    private void OnNavigationFailed(object eventData)
+    private void OnNavigationFailed(EventInvocationData<NavigationEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is NavigationEventArgs eventArgs)
-        {
         if (this.NavigationFailed is not null)
-            {
-                this.NavigationFailed(this, eventArgs);
-            }
+        {
+            NavigationEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.NavigationFailed(this, eventArgs);
         }
     }
 
-    private void OnUserPromptClosed(object eventData)
+    private void OnUserPromptClosed(EventInvocationData<UserPromptClosedEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is UserPromptClosedEventArgs eventArgs)
+        if (this.UserPromptClosed is not null)
         {
-            if (this.UserPromptClosed is not null)
-            {
-                this.UserPromptClosed(this, eventArgs);
-            }
+            UserPromptClosedEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.UserPromptClosed(this, eventArgs);
         }
     }
 
-    private void OnUserPromptOpened(object eventData)
+    private void OnUserPromptOpened(EventInvocationData<UserPromptOpenedEventArgs> eventData)
     {
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        if (eventData is UserPromptOpenedEventArgs eventArgs)
+        if (this.UserPromptOpened is not null)
         {
-            if (this.UserPromptOpened is not null)
-            {
-                this.UserPromptOpened(this, eventArgs);
-            }
+            UserPromptOpenedEventArgs eventArgs = eventData.EventData;
+            eventArgs.AdditionalData = eventData.AdditionalData;
+            this.UserPromptOpened(this, eventArgs);
         }
     }
 }

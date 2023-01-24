@@ -8,7 +8,7 @@ namespace WebDriverBidi;
 /// <summary>
 /// Object containing event data for events raised when data is received from a WebDriver Bidi connection.
 /// </summary>
-public class DataReceivedEventArgs : EventArgs
+public class DataReceivedEventArgs : WebDriverBidiEventArgs
 {
     private readonly string data;
 

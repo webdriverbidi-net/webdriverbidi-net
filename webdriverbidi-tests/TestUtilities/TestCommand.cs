@@ -2,7 +2,7 @@ namespace WebDriverBidi.TestUtilities;
 
 using Newtonsoft.Json;
 
-public class TestCommand : CommandSettings
+public class TestCommand : CommandData<TestCommandResult>
 {
     private readonly string parameterName = "parameterValue";
     private readonly string commandName;
@@ -14,7 +14,7 @@ public class TestCommand : CommandSettings
 
     public override string MethodName => this.commandName;
 
-    public override Type ResultType => typeof(TestCommandResult);
+    public override Type ResponseType => typeof(CommandResponse<TestCommandResult>);
 
     [JsonProperty("parameterName")]
     public string ParameterName => this.parameterName;

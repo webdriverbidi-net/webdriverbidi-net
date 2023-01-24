@@ -8,7 +8,7 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteStatusCommand()
     {
-        string responseJson = @"{ ""result"": { ""ready"": true, ""message"": ""ready for connection"" } }";
+        string responseJson = @"{ ""id"": 1, ""result"": { ""ready"": true, ""message"": ""ready for connection"" } }";
         TestDriver driver = new();
         SessionModule module = new(driver);
 
@@ -30,7 +30,7 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteSubscribeCommand()
     {
-        string responseJson = @"{ ""result"": {} }";
+        string responseJson = @"{ ""id"": 1, ""result"": {} }";
         TestDriver driver = new();
         SessionModule module = new(driver);
 
@@ -49,7 +49,7 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteUnsubscribeCommand()
     {
-        string responseJson = @"{ ""result"": {} }";
+        string responseJson = @"{ ""id"": 1, ""result"": {} }";
         TestDriver driver = new();
         SessionModule module = new(driver);
 
@@ -68,7 +68,7 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteNewCommand()
     {
-        string responseJson = @"{ ""result"": { ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""additionalCapName"": ""additionalCapValue"" } } }";
+        string responseJson = @"{ ""id"": 1, ""result"": { ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""additionalCapName"": ""additionalCapValue"" } } }";
         TestDriver driver = new();
         SessionModule module = new(driver);
 

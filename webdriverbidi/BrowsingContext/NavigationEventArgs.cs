@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Object containing event data for events raised during navigation.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class NavigationEventArgs : EventArgs
+public class NavigationEventArgs : WebDriverBidiEventArgs
 {
     private string? id;
 

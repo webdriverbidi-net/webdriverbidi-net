@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 public class TestDriver : Driver
 {
     private long nextCommandId = 0;
-    private WebDriverBidiCommandData? lastCommand;
+    private WebDriverBidiCommand? lastCommand;
 
     private readonly TimeSpan commandTimeout = TimeSpan.FromSeconds(5);
 
@@ -35,7 +35,7 @@ public class TestDriver : Driver
 
     public bool EmitNullEventArgs { get => this.emitNullEventArgs; set => this.emitNullEventArgs = value; }
 
-    public WebDriverBidiCommandData? LastCommand => this.lastCommand;
+    public WebDriverBidiCommand? LastCommand => this.lastCommand;
 
     public void EmitResponse(string jsonResponse)
     {
@@ -47,17 +47,17 @@ public class TestDriver : Driver
         this.commandSetEvent.WaitOne(waitTimeout);
     }
 
-    public override void RegisterEvent(string eventName, Type eventArgsType)
+    public override void RegisterEvent<T>(string eventName)
     {
-        this.eventTypes[eventName] = eventArgsType;
+        this.eventTypes[eventName] = typeof(EventMessage<T>);
     }
 
-    public override async Task<T> ExecuteCommand<T>(CommandSettings command)
+    public override async Task<T> ExecuteCommand<T>(CommandData command)
     {
         long commandId  = Interlocked.Increment(ref this.nextCommandId);
-        this.lastCommand = new WebDriverBidiCommandData(commandId, command);
+        this.lastCommand = new WebDriverBidiCommand(commandId, command);
         this.commandSetEvent.Set();
-        this.OnCommandSet(new TestCommandSetEventArgs(command.MethodName, command.ResultType));
+        this.OnCommandSet(new TestCommandSetEventArgs(command.MethodName, command.ResponseType));
         await this.WaitForCommandComplete();
         var result = this.lastCommand.Result;
         this.lastCommand = null;
@@ -68,7 +68,7 @@ public class TestDriver : Driver
 
         if (result.IsError)
         {
-            if (result is not ErrorResponse errorResponse)
+            if (result is not ErrorResponseData errorResponse)
             {
                 throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
             }
@@ -109,36 +109,23 @@ public class TestDriver : Driver
         {
             // This is an event
             string? eventName = message["method"]!.Value<string>();
-            JToken? eventData = message["params"];
-            if (eventName is not null && eventData is not null && this.eventTypes.ContainsKey(eventName))
+            if (eventName is not null && this.eventTypes.ContainsKey(eventName))
             {
                 Type eventType = eventTypes[eventName];
-                object? eventDataObject = null;
-                try
-                {
-                    eventDataObject = eventData.ToObject(eventType);
-                }
-                catch (JsonSerializationException)
-                {
-                    if (!this.emitNullEventArgs)
-                    {
-                        eventDataObject = "This is an invalid, non-null event data object";
-                    }
-                }
-                
-                this.OnEventReceived(new ProtocolEventReceivedEventArgs(eventName, eventDataObject));
+                EventMessage? eventDataObject = message.ToObject(eventType) as EventMessage;                
+                this.OnEventReceived(new ProtocolEventReceivedEventArgs(eventDataObject!));
             }
         }
         else if (this.lastCommand is not null)
         {
             if (message.ContainsKey("result"))
             {
-                var result = message["result"]!.ToObject(lastCommand.ResultType) as CommandResult;
-                this.lastCommand.Result = result;
+                var response = message.ToObject(lastCommand.ResponseType) as CommandResponse;
+                this.lastCommand.Result = response!.Result;
             }
             else if (message.ContainsKey("error"))
             {
-                this.lastCommand.Result = message.ToObject<ErrorResponse>();
+                this.lastCommand.Result = message.ToObject<ErrorResponseData>();
             }
 
             this.lastCommand.SynchronizationEvent.Set();
@@ -146,7 +133,7 @@ public class TestDriver : Driver
         else
         {
             // This is an error response, not connected to a command.
-            this.OnUnexpectedError(new ProtocolErrorReceivedEventArgs(message.ToObject<ErrorResponse>()));
+            this.OnUnexpectedError(new ProtocolErrorReceivedEventArgs(message.ToObject<ErrorResponseData>()));
         }
     }
 

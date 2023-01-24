@@ -12,7 +12,7 @@ using WebDriverBidi.Script;
 /// Object containing event data for the event raised when a log entry is added.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class EntryAddedEventArgs : EventArgs
+public class EntryAddedEventArgs : WebDriverBidiEventArgs
 {
     private readonly LogEntry entry;
 

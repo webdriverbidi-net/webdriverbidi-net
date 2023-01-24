@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the script.disown command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class DisownCommandSettings : CommandSettings
+public class DisownCommandSettings : CommandData<EmptyResult>
 {
     private List<string> handles = new();
     private ScriptTarget target;
@@ -32,11 +32,6 @@ public class DisownCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "script.disown";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(EmptyResult);
 
     /// <summary>
     /// Gets or sets the target for which to disown handles.

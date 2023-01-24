@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the session.new command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class NewCommandSettings : CommandSettings
+public class NewCommandSettings : CommandData<NewCommandResult>
 {
     private readonly List<CapabilitiesRequest> firstMatch = new();
     private CapabilitiesRequest? alwaysMatch;
@@ -20,11 +20,6 @@ public class NewCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "session.new";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(NewCommandResult);
 
     /// <summary>
     /// Gets or sets the set of capabilities that must be matched to create a new session.

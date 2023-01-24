@@ -1,5 +1,6 @@
 namespace WebDriverBidi;
 
+using Newtonsoft.Json;
 using TestUtilities;
 
 [TestFixture]
@@ -15,8 +16,6 @@ public class ProtocolModuleTests
         {
         };
 
-        Assert.That(() => driver.EmitResponse(eventJson), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Unable to cast received event data to TestEventArgs"));
-        driver.EmitNullEventArgs = true;
-        Assert.That(() => driver.EmitResponse(eventJson), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Unable to cast received event data to TestEventArgs"));
+        Assert.That(() => driver.EmitResponse(eventJson), Throws.InstanceOf<JsonSerializationException>());
     }
 }

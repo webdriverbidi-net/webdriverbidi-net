@@ -109,8 +109,8 @@ public class Driver
     /// <param name="command">The object containing settings for the command, including parameters.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if an error occurs during the execution of the command.</exception>
-    public virtual async Task<T> ExecuteCommand<T>(CommandSettings command)
-        where T : CommandResult
+    public virtual async Task<T> ExecuteCommand<T>(CommandData command)
+        where T : ResponseData
     {
         var result = await this.transport.SendCommandAndWait(command);
         if (result is null)
@@ -120,7 +120,7 @@ public class Driver
 
         if (result.IsError)
         {
-            if (result is not ErrorResponse errorResponse)
+            if (result is not ErrorResponseData errorResponse)
             {
                 throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
             }
@@ -171,11 +171,11 @@ public class Driver
     /// <summary>
     /// Registers an event to be raised by the remote end of the WebDriver Bidi protocol.
     /// </summary>
+    /// <typeparam name="T">The type of data that will be raised by the event.</typeparam>
     /// <param name="eventName">The name of the event to raise.</param>
-    /// <param name="eventArgsType">The type of EventArgs to use when raising the event.</param>
-    public virtual void RegisterEvent(string eventName, Type eventArgsType)
+    public virtual void RegisterEvent<T>(string eventName)
     {
-        this.transport.RegisterEventArgsType(eventName, eventArgsType);
+        this.transport.RegisterEventMessage<T>(eventName);
     }
 
     /// <summary>

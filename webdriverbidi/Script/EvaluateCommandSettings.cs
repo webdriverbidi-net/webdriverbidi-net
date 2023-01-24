@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the script.evaluate command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class EvaluateCommandSettings : CommandSettings
+public class EvaluateCommandSettings : CommandData<ScriptEvaluateResult>
 {
     private string expression;
     private ScriptTarget scriptTarget;
@@ -35,11 +35,6 @@ public class EvaluateCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "script.evaluate";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(ScriptEvaluateResult);
 
     /// <summary>
     /// Gets or sets the expression to evaluate.

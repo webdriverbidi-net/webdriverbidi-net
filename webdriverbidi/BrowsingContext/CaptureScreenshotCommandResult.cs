@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Result for capturing a screenshot using the browserContext.captureScreenshot command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class CaptureScreenshotCommandResult : CommandResult
+public class CaptureScreenshotCommandResult : ResponseData
 {
     private string base64Screenshot = string.Empty;
 

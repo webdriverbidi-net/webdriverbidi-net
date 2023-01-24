@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the script.callFunction command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class CallFunctionCommandSettings : CommandSettings
+public class CallFunctionCommandSettings : CommandData<ScriptEvaluateResult>
 {
     private readonly List<ArgumentValue> arguments = new();
     private string functionDeclaration;
@@ -37,11 +37,6 @@ public class CallFunctionCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "script.callFunction";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(ScriptEvaluateResult);
 
     /// <summary>
     /// Gets or sets the function declaration.

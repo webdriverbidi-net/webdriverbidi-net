@@ -8,13 +8,18 @@ namespace WebDriverBidi;
 using Newtonsoft.Json;
 
 /// <summary>
-/// Object containing an error response to a command.
+/// Response class that contains the result of a command when an error is encountered.
 /// </summary>
-[JsonObject]
-public class ErrorResponse : CommandResult
+public class ErrorResponse : WebDriverBidiMessage
 {
     private string error = string.Empty;
     private string message = string.Empty;
+
+    /// <summary>
+    /// Gets the ID for the command causing this error during execution, if any.
+    /// </summary>
+    [JsonProperty("id")]
+    public long? CommandId { get; internal set; }
 
     /// <summary>
     /// Gets the type of error encountered.
@@ -35,7 +40,11 @@ public class ErrorResponse : CommandResult
     public string? StackTrace { get; internal set; }
 
     /// <summary>
-    /// Gets a value indicating whether this response is an error response.
+    /// Gets the data associated with the error without the command information.
     /// </summary>
-    public override bool IsError => true;
+    /// <returns>An ErrorResponseData object containing the data about the error.</returns>
+    public ErrorResponseData GetErrorResponseData()
+    {
+        return new ErrorResponseData(this);
+    }
 }

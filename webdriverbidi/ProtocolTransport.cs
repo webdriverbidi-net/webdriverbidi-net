@@ -14,10 +14,10 @@ using Newtonsoft.Json.Linq;
 /// </summary>
 public class ProtocolTransport
 {
-    private readonly ConcurrentDictionary<long, WebDriverBidiCommandData> pendingCommands = new();
+    private readonly ConcurrentDictionary<long, WebDriverBidiCommand> pendingCommands = new();
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
-    private readonly Dictionary<string, Type> eventTypes = new();
+    private readonly Dictionary<string, Type> eventMessageTypes = new();
     private long nextCommandId = 0;
 
     /// <summary>
@@ -94,7 +94,7 @@ public class ProtocolTransport
     /// </summary>
     /// <param name="command">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task<CommandResult> SendCommandAndWait(CommandSettings command)
+    public async Task<ResponseData> SendCommandAndWait(CommandData command)
     {
         long commandId = await this.SendCommand(command);
         this.WaitForCommandComplete(commandId, this.commandWaitTimeout);
@@ -107,10 +107,10 @@ public class ProtocolTransport
     /// <param name="command">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if the command ID is already in use.</exception>
-    public async Task<long> SendCommand(CommandSettings command)
+    public async Task<long> SendCommand(CommandData command)
     {
         long commandId = Interlocked.Increment(ref this.nextCommandId);
-        WebDriverBidiCommandData executionData = new(commandId, command);
+        WebDriverBidiCommand executionData = new(commandId, command);
         if (!this.pendingCommands.TryAdd(executionData.CommandId, executionData))
         {
             throw new WebDriverBidiException($"Could not add command with id {executionData.CommandId}, as id already exists");
@@ -147,9 +147,9 @@ public class ProtocolTransport
     /// <param name="commandId">The ID of the command for which to get the response.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if the command result could not be retreived, or if the command result is not valid.</exception>
-    public CommandResult GetCommandResponse(long commandId)
+    public ResponseData GetCommandResponse(long commandId)
     {
-        if (this.pendingCommands.TryRemove(commandId, out WebDriverBidiCommandData? command))
+        if (this.pendingCommands.TryRemove(commandId, out WebDriverBidiCommand? command))
         {
             if (command.Result is null)
             {
@@ -168,13 +168,13 @@ public class ProtocolTransport
     }
 
     /// <summary>
-    /// Registers an event to be raised.
+    /// Registers an event message to be recognized when received from the connection.
     /// </summary>
-    /// <param name="eventName">The name of the event to be registered.</param>
-    /// <param name="eventArgsType">The type of EventArgs to be used when raising the event.</param>
-    public void RegisterEventArgsType(string eventName, Type eventArgsType)
+    /// <typeparam name="T">The type of data to be returned in the event.</typeparam>
+    /// <param name="eventName">The name of the event.</param>
+    public void RegisterEventMessage<T>(string eventName)
     {
-        this.eventTypes[eventName] = eventArgsType;
+        this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
     }
 
     /// <summary>
@@ -244,18 +244,21 @@ public class ProtocolTransport
                 long? responseId = message["id"]!.Value<long>();
                 if (this.pendingCommands.ContainsKey(responseId.Value))
                 {
-                    if (this.pendingCommands.TryGetValue(responseId.Value, out WebDriverBidiCommandData? executedCommand))
+                    if (this.pendingCommands.TryGetValue(responseId.Value, out WebDriverBidiCommand? executedCommand))
                     {
                         try
                         {
                             if (message.ContainsKey("result"))
                             {
-                                executedCommand.Result = message["result"]!.ToObject(executedCommand.ResultType) as CommandResult;
+                                CommandResponse? response = message.ToObject(executedCommand.ResponseType) as CommandResponse;
+                                executedCommand.Result = response!.Result;
+                                executedCommand.Result.AdditionalData = response.AdditionalData;
                                 isProcessed = true;
                             }
                             else if (message.ContainsKey("error"))
                             {
-                                executedCommand.Result = message.ToObject<ErrorResponse>();
+                                ErrorResponse? response = message.ToObject<ErrorResponse>();
+                                executedCommand.Result = response!.GetErrorResponseData();
                                 isProcessed = true;
                             }
                             else
@@ -279,7 +282,7 @@ public class ProtocolTransport
                 // This is an error response, not connected to a command.
                 var unexpectedError = message.ToObject<ErrorResponse>();
                 isProcessed = true;
-                this.OnProtocolErrorEventReceived(this, new ProtocolErrorReceivedEventArgs(unexpectedError));
+                this.OnProtocolErrorEventReceived(this, new ProtocolErrorReceivedEventArgs(unexpectedError!.GetErrorResponseData()));
             }
         }
         else if (message.ContainsKey("method") && message.ContainsKey("params"))
@@ -288,17 +291,13 @@ public class ProtocolTransport
             // be null. Use the null forgiving operator to suppress the
             // compiler warning.
             string? eventName = message["method"]!.Value<string>();
-            JToken? eventData = message["params"];
             if (eventName is not null)
             {
-                if (this.eventTypes.ContainsKey(eventName))
+                if (this.eventMessageTypes.ContainsKey(eventName))
                 {
-                    // There must be a property named "params", so the eventData token
-                    // cannot be null. Use the null forgiving operator to suppress the
-                    // compiler warning.
-                    var eventArgs = eventData!.ToObject(this.eventTypes[eventName]);
+                    EventMessage? eventMessageData = message.ToObject(this.eventMessageTypes[eventName]) as EventMessage;
                     isProcessed = true;
-                    this.OnProtocolEventReceived(this, new ProtocolEventReceivedEventArgs(eventName, eventArgs));
+                    this.OnProtocolEventReceived(this, new ProtocolEventReceivedEventArgs(eventMessageData!));
                 }
             }
         }

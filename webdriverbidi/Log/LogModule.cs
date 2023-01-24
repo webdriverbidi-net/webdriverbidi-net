@@ -22,7 +22,7 @@ public sealed class LogModule : ProtocolModule
     public LogModule(Driver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker("log.entryAdded", typeof(LogEntry), this.OnEntryAdded);
+        this.RegisterEventInvoker<LogEntry>("log.entryAdded", this.OnEntryAdded);
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ public sealed class LogModule : ProtocolModule
     /// </summary>
     public override string ModuleName => LogModuleName;
 
-    private void OnEntryAdded(object eventData)
+    private void OnEntryAdded(EventInvocationData<LogEntry> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a LogEntry object, so rather than duplicate the
@@ -44,12 +44,13 @@ public sealed class LogModule : ProtocolModule
         // here to create the appropriate EventArgs instance.
         // Note that the base class for a protocol module should not allow
         // eventData to be any other type than the expected type.
-        if (eventData is LogEntry entry)
+        if (this.EntryAdded is not null)
         {
-            if (this.EntryAdded is not null)
+            EntryAddedEventArgs eventArgs = new(eventData.EventData)
             {
-                this.EntryAdded(this, new EntryAddedEventArgs(entry));
-            }
+                AdditionalData = eventData.AdditionalData,
+            };
+            this.EntryAdded(this, eventArgs);
         }
     }
 }

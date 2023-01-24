@@ -34,29 +34,23 @@ public abstract class ProtocolModule
     protected Driver Driver => this.driver;
 
     /// <summary>
-    /// Registers an invoker for an event sent by the protocol.
+    /// Registers an invoker for a given event.
     /// </summary>
-    /// <param name="eventName">The name of the event for which to register the invoker.</param>
-    /// <param name="eventArgsType">The type of EventArgs used when the event is raised.</param>
-    /// <param name="eventInvoker">The Action used to raise the event.</param>
-    protected void RegisterEventInvoker(string eventName, Type eventArgsType, Action<object> eventInvoker)
+    /// <typeparam name="T">The type of data used in the event.</typeparam>
+    /// <param name="eventName">The name of the event.</param>
+    /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
+    protected virtual void RegisterEventInvoker<T>(string eventName, Action<EventInvocationData<T>> eventInvoker)
     {
-        this.eventInvokers[eventName] = new WebDriverBidiEventData(eventArgsType, eventInvoker);
-        this.driver.RegisterEvent(eventName, eventArgsType);
+        this.eventInvokers[eventName] = new WebDriverBidiEventData<T>(eventInvoker);
+        this.driver.RegisterEvent<T>(eventName);
     }
 
     private void OnDriverEventReceived(object? sender, ProtocolEventReceivedEventArgs e)
     {
         if (this.eventInvokers.ContainsKey(e.EventName))
         {
-            var eventData = this.eventInvokers[e.EventName];
-            var eventArgs = e.EventData;
-            if (eventArgs is null || !eventArgs.GetType().IsAssignableTo(eventData.EventArgsType))
-            {
-                throw new WebDriverBidiException($"Unable to cast received event data to {eventData.EventArgsType.Name}");
-            }
-
-            eventData.EventInvoker(eventArgs);
+            WebDriverBidiEventData eventData = this.eventInvokers[e.EventName];
+            eventData.InvokeEvent(e.EventData!, e.AdditionalData);
         }
     }
 }

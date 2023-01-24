@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the browsingContext.handleUserPrompt command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class HandleUserPromptCommandSettings : CommandSettings
+public class HandleUserPromptCommandSettings : CommandData<EmptyResult>
 {
     private string browsingContextId;
     private bool? accept;
@@ -31,11 +31,6 @@ public class HandleUserPromptCommandSettings : CommandSettings
     /// Gets the method name of the command.
     /// </summary>
     public override string MethodName => "browsingContext.handleUserPrompt";
-
-    /// <summary>
-    /// Gets the type of the result of the command.
-    /// </summary>
-    public override Type ResultType => typeof(EmptyResult);
 
     /// <summary>
     /// Gets or sets the ID of the browsing context for which to handle the user prompt.
