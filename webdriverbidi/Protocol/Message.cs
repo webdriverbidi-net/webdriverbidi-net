@@ -19,16 +19,6 @@ public class Message
     private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
-    /// Gets a value indicating whether the message received is an error.
-    /// </summary>
-    public virtual bool IsError => false;
-
-    /// <summary>
-    /// Gets a value indicating whether the message received is an event.
-    /// </summary>
-    public virtual bool IsEvent => false;
-
-    /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.
     /// </summary>
     public ReceivedDataDictionary AdditionalData

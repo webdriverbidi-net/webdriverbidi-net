@@ -16,11 +16,6 @@ public abstract class EventMessage : Message
     private string eventName = string.Empty;
 
     /// <summary>
-    /// Gets a value indicating whether the message received is an event.
-    /// </summary>
-    public override bool IsEvent => true;
-
-    /// <summary>
     /// Gets the name of the event.
     /// </summary>
     [JsonProperty("method")]
