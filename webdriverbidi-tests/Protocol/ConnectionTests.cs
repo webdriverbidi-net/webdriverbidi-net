@@ -1,8 +1,7 @@
-namespace WebDriverBidi;
+namespace WebDriverBidi.Protocol;
 
 using System.Threading;
 using TestUtilities;
-using WebDriverBidi.Protocol;
 
 [TestFixture]
 public class ConnectionTests

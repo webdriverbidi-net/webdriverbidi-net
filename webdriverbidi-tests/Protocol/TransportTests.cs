@@ -1,8 +1,7 @@
-namespace WebDriverBidi;
+namespace WebDriverBidi.Protocol;
 
 using Newtonsoft.Json.Linq;
 using TestUtilities;
-using WebDriverBidi.Protocol;
 
 [TestFixture]
 public class TransportTests
