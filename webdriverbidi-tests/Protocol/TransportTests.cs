@@ -287,4 +287,19 @@ public class TransportTests
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Warn));
         });
     }
+
+    [Test]
+    public async Task TestTransportCanUseDefaultConnection()
+    {
+        EventHandler<ConnectionDataReceivedEventArgs> handler = (sender, e) => { };
+        TestWebSocketServer server = new();
+        server.DataReceived += handler;
+        server.Start();
+
+        Transport transport = new();
+        await transport.Connect($"ws://localhost:{server.Port}");
+
+        server.Stop();
+        server.DataReceived -= handler;
+    }
 }
