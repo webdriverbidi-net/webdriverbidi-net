@@ -123,7 +123,7 @@ public class Driver
         {
             if (result is not ErrorResult errorResponse)
             {
-                throw new WebDriverBidiException("Received null converting error response from transport for SendCommandAndWait");
+                throw new WebDriverBidiException("Could not convert error response from transport for SendCommandAndWait to ErrorResult");
             }
 
             throw new WebDriverBidiException($"Received '{errorResponse.ErrorType}' error executing command {command.MethodName}: {errorResponse.ErrorMessage}");
@@ -131,7 +131,7 @@ public class Driver
 
         if (result is not T convertedResult)
         {
-            throw new WebDriverBidiException("Received null converting response from transport for SendCommandAndWait");
+            throw new WebDriverBidiException($"Could not convert response from transport for SendCommandAndWait to {typeof(T)}");
         }
 
         return convertedResult;

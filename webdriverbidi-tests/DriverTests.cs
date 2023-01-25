@@ -232,4 +232,58 @@ public class DriverTests
         driver.RegisterModule(new TestProtocolModule(driver));
         Assert.That(() => driver.GetModule<SessionModule>("protocol"), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Module 'protocol' is registered with this driver, but the module object is not of type WebDriverBidi.Session.SessionModule"));
     }
+
+    [Test]
+    public void TestReceivingNullValueFromSendingCommandThrows()
+    {
+        TestTransport transport = new(TimeSpan.FromMilliseconds(250), new TestConnection())
+        {
+            ReturnCustomValue = true
+        };
+        Driver driver = new(transport);
+        Assert.That(async () => await driver.ExecuteCommand<TestCommandResult>(new TestCommand("test.command")), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Received null response from transport for SendCommandAndWait"));
+    }
+
+    [Test]
+    public void TestReceivingInvalidErrorValueFromSendingCommandThrows()
+    {
+        TestCommandResult result = new();
+        result.SetIsErrorValue(true);
+        TestTransport transport = new(TimeSpan.FromMilliseconds(250), new TestConnection())
+        {
+            ReturnCustomValue = true,
+            CustomReturnValue = result
+        };
+        Driver driver = new(transport);
+        Assert.That(async () => await driver.ExecuteCommand<TestCommandResult>(new TestCommand("test.command")), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Could not convert error response from transport for SendCommandAndWait to ErrorResult"));
+    }
+
+    [Test]
+    public void TestReceivingInvalidResultTypeFromSendingCommandThrows()
+    {
+        TestCommandResultInvalid result = new();
+        TestTransport transport = new(TimeSpan.FromMilliseconds(250), new TestConnection())
+        {
+            ReturnCustomValue = true,
+            CustomReturnValue = result
+        };
+        Driver driver = new(transport);
+        Assert.That(async () => await driver.ExecuteCommand<TestCommandResult>(new TestCommand("test.command")), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Could not convert response from transport for SendCommandAndWait to WebDriverBidi.TestUtilities.TestCommandResult"));
+    }
+
+    [Test]
+    public async Task TestDriverCanUseDefaultTransport()
+    {
+        static void handler(object? sender, ConnectionDataReceivedEventArgs e) { }
+        TestWebSocketServer server = new();
+        server.DataReceived += handler;
+        server.Start();
+
+        Driver driver = new();
+        await driver.Start($"ws://localhost:{server.Port}");
+        await driver.Stop();
+
+        server.Stop();
+        server.DataReceived -= handler;
+   }
 }

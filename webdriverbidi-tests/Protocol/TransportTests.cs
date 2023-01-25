@@ -291,7 +291,7 @@ public class TransportTests
     [Test]
     public async Task TestTransportCanUseDefaultConnection()
     {
-        EventHandler<ConnectionDataReceivedEventArgs> handler = (sender, e) => { };
+        static void handler(object? sender, ConnectionDataReceivedEventArgs e) { }
         TestWebSocketServer server = new();
         server.DataReceived += handler;
         server.Start();
@@ -301,5 +301,15 @@ public class TransportTests
 
         server.Stop();
         server.DataReceived -= handler;
+    }
+
+    [Test]
+    public void TestCanDetectExsitingCommandId()
+    {
+        CommandParameters command = new TestCommand("test.commmand");
+        TestTransport transport = new(TimeSpan.FromMilliseconds(100), new TestConnection());
+        long commandId = transport.LastTestCommandId + 1;
+        transport.AddTestCommand(new Command(commandId, command));
+        Assert.That(async () => await transport.SendCommand(command), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("id already exists"));
     }
 }

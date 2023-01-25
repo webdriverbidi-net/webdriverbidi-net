@@ -71,6 +71,11 @@ public class Transport
     public event EventHandler<UnknownMessageReceivedEventArgs>? UnknownMessageReceived;
 
     /// <summary>
+    /// Gets the ID of the last command to be added.
+    /// </summary>
+    protected long LastCommandId => this.nextCommandId;
+
+    /// <summary>
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
@@ -94,7 +99,7 @@ public class Transport
     /// </summary>
     /// <param name="command">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task<CommandResult> SendCommandAndWait(CommandParameters command)
+    public virtual async Task<CommandResult> SendCommandAndWait(CommandParameters command)
     {
         long commandId = await this.SendCommand(command);
         this.WaitForCommandComplete(commandId, this.commandWaitTimeout);
@@ -107,11 +112,11 @@ public class Transport
     /// <param name="command">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if the command ID is already in use.</exception>
-    public async Task<long> SendCommand(CommandParameters command)
+    public virtual async Task<long> SendCommand(CommandParameters command)
     {
         long commandId = Interlocked.Increment(ref this.nextCommandId);
         Command executionData = new(commandId, command);
-        if (!this.pendingCommands.TryAdd(executionData.CommandId, executionData))
+        if (!this.AddPendingCommand(executionData))
         {
             throw new WebDriverBidiException($"Could not add command with id {executionData.CommandId}, as id already exists");
         }
@@ -126,7 +131,7 @@ public class Transport
     /// <param name="commandId">The ID of the command for which to wait for completion.</param>
     /// <param name="waitTimeout">The timeout describing how long to wait for the command to complete.</param>
     /// <exception cref="WebDriverBidiException">Thrown if the command ID is invalid or if the command times out.</exception>
-    public void WaitForCommandComplete(long commandId, TimeSpan waitTimeout)
+    public virtual void WaitForCommandComplete(long commandId, TimeSpan waitTimeout)
     {
         if (!this.pendingCommands.ContainsKey(commandId))
         {
@@ -147,7 +152,7 @@ public class Transport
     /// <param name="commandId">The ID of the command for which to get the response.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if the command result could not be retreived, or if the command result is not valid.</exception>
-    public CommandResult GetCommandResponse(long commandId)
+    public virtual CommandResult GetCommandResponse(long commandId)
     {
         if (this.pendingCommands.TryRemove(commandId, out Command? command))
         {
@@ -175,6 +180,16 @@ public class Transport
     public void RegisterEventMessage<T>(string eventName)
     {
         this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
+    }
+
+    /// <summary>
+    /// Adds a command to the set of pending commands.
+    /// </summary>
+    /// <param name="executionData">The execution data describing the command to be added.</param>
+    /// <returns><see langword="true"/> if the command was successfully added; otherwise <see langword="false"/>.</returns>
+    protected bool AddPendingCommand(Command executionData)
+    {
+        return this.pendingCommands.TryAdd(executionData.CommandId, executionData);
     }
 
     /// <summary>
