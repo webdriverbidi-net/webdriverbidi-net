@@ -98,6 +98,37 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestTransportCanGetResponseWithAdditionalData()
+    {
+        string commandName = "module.command";
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        await transport.Connect("ws://localhost:5555");
+
+        TestCommand command = new(commandName);
+        long commandId = await transport.SendCommand(command);
+        _ = Task.Run(() => 
+        {
+            Task.Delay(TimeSpan.FromMilliseconds(50));
+            connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""result"": { ""value"": ""response value"" }, ""extraDataName"": ""extraDataValue"" }");
+        });
+        transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
+        var actualResult = transport.GetCommandResponse(1);
+        Assert.Multiple(() =>
+        {
+            Assert.That(actualResult.IsError, Is.False);
+            Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
+        });
+        var convertedResult = actualResult as TestCommandResult;
+        Assert.Multiple(() =>
+        {
+            Assert.That(convertedResult!.Value, Is.EqualTo("response value"));
+            Assert.That(convertedResult.AdditionalData, Has.Count.EqualTo(1));
+            Assert.That(convertedResult.AdditionalData["extraDataName"], Is.EqualTo("extraDataValue"));
+        });
+    }
+
+    [Test]
     public async Task TestTransportCanGetErrorResponse()
     {
         string commandName = "module.command";
