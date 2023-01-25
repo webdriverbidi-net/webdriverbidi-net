@@ -24,13 +24,6 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
     public override bool CanRead => true;
 
     /// <summary>
-    /// Gets a value indicating whether this converter can write JSON values.
-    /// Returns false for this converter (converter not used for
-    /// serialization).
-    /// </summary>
-    public override bool CanWrite => false;
-
-    /// <summary>
     /// Serializes an object and writes it to a JSON string.
     /// </summary>
     /// <param name="writer">The JSON writer to use during serialization.</param>
@@ -100,15 +93,9 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
     private RemoteValue ProcessObject(JObject jsonObject, JsonSerializer serializer)
     {
-        if (!jsonObject.ContainsKey("type"))
+        if (!jsonObject.TryGetValue("type", out JToken? typeToken))
         {
             throw new JsonSerializationException("RemoteValue must contain a 'type' property");
-        }
-
-        var typeToken = jsonObject["type"];
-        if (typeToken is null)
-        {
-            throw new JsonSerializationException("RemoteValue 'type' property must not be null");
         }
 
         if (typeToken.Type != JTokenType.String)
@@ -116,32 +103,22 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             throw new JsonSerializationException("RemoteValue type property must be a string");
         }
 
-        string? valueTypeString = jsonObject["type"]!.Value<string>();
-        if (valueTypeString is null)
+        // We have previously determined that the token is a string, and must
+        // contain a value, so therefore cannot be null.
+        string valueTypeString = jsonObject["type"]!.Value<string>()!;
+        if (string.IsNullOrEmpty(valueTypeString))
         {
-            throw new JsonSerializationException("RemoteValue must have a non-null 'type' property that is a string");
+            throw new JsonSerializationException("RemoteValue must have a non-empty 'type' property that is a string");
         }
 
         RemoteValue result = new(valueTypeString);
-        if (jsonObject.ContainsKey("value"))
+        if (jsonObject.TryGetValue("value", out JToken? valueToken))
         {
-            var valueToken = jsonObject["value"];
-            if (valueToken is null)
-            {
-                throw new JsonSerializationException($"RemoteValue 'value' property must be non-null");
-            }
-
             this.ProcessValue(result, valueTypeString, valueToken, serializer);
         }
 
-        if (jsonObject.ContainsKey("handle"))
+        if (jsonObject.TryGetValue("handle", out JToken? handleToken))
         {
-            var handleToken = jsonObject["handle"];
-            if (handleToken is null)
-            {
-                throw new JsonSerializationException($"RemoteValue 'handle' propert, when present,y must be non-null");
-            }
-
             if (handleToken.Type != JTokenType.String)
             {
                 throw new JsonSerializationException($"RemoteValue 'handle' property, when present, must be a string");
@@ -151,20 +128,14 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             result.Handle = handle;
         }
 
-        if (jsonObject.ContainsKey("internalId"))
+        if (jsonObject.TryGetValue("internalId", out JToken? internalIdToken))
         {
-            var internalIdToken = jsonObject["internalId"];
-            if (internalIdToken is null)
-            {
-                throw new JsonSerializationException($"RemoteValue 'internalId' property, when present, must be non-null");
-            }
-
             if (internalIdToken.Type != JTokenType.Integer)
             {
                 throw new JsonSerializationException($"RemoteValue 'internalId' property, when present, must be an unsigned integer");
             }
 
-            uint internalId = internalIdToken.Value<uint>();
+            ulong internalId = internalIdToken.Value<ulong>();
 
             result.InternalId = internalId;
         }
@@ -283,19 +254,19 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
         object pairKey;
         if (keyToken.Type == JTokenType.String)
         {
-            // Note: Use the null coalescing operator here to suppress
+            // Note: Use the null forgiving operator here to suppress
             // the compiler warning, but the value should never be
             // null.
-            pairKey = keyToken.Value<string>() ?? string.Empty;
+            pairKey = keyToken.Value<string>()!;
         }
         else
         {
-            if (keyToken is not JObject keyObject)
-            {
-                throw new JsonSerializationException($"RemoteValue array key token indicated string or object, but could not be cast to either");
-            }
-
-            var keyRemoteValue = this.ProcessObject(keyObject, serializer);
+            // Previous caller has already determined the value must be either
+            // a string or object. We will use the null forgiving operator since
+            // the token must be an object, and therefore the cast cannot return
+            // null.
+            JObject? keyObject = keyToken as JObject;
+            var keyRemoteValue = this.ProcessObject(keyObject!, serializer);
             if ((keyRemoteValue.IsPrimitive || keyRemoteValue.Type == "date" || keyRemoteValue.Type == "regexp") && keyRemoteValue.Value is not null)
             {
                 pairKey = keyRemoteValue.Value;
@@ -346,13 +317,11 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue array element for dictionary must have a second element (value) that is an object");
             }
 
-            if (valueToken is not JObject valueObject)
-            {
-                // This should never be reached, but is here for the sake of completeness.
-                throw new JsonSerializationException("RemoteValue array value token indicated object, but could not be cast to object");
-            }
-
-            var pairValue = this.ProcessObject(valueObject, serializer);
+            // Since valueToken is of type object, it must be castable to
+            // JObject. Use the null forgiveness operator to suppress the
+            // compiler warning.
+            JObject? valueObject = valueToken as JObject;
+            var pairValue = this.ProcessObject(valueObject!, serializer);
             remoteValueDictionary[pairKey] = pairValue;
         }
 

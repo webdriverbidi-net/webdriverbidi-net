@@ -185,6 +185,15 @@ public class LogEntryTests
     }
 
     [Test]
+    public void TestDeserializingWithNullTypeThrows()
+    {
+        DateTime timestamp = DateTime.Now;
+        long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = @"{ ""type"": null, ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @" }";
+        Assert.That(() => JsonConvert.DeserializeObject<LogEntry>(json), Throws.InstanceOf<JsonSerializationException>());
+    }
+
+    [Test]
     public void TestDeserializingWithInvalidTypeThrows()
     {
         DateTime timestamp = DateTime.Now;
@@ -290,5 +299,16 @@ public class LogEntryTests
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [ ""invalidArgs"" ] }";
         Assert.That(() => JsonConvert.DeserializeObject<LogEntry>(json), Throws.InstanceOf<JsonReaderException>());
+    }
+
+    [Test]
+    public void TestCannotSerialize()
+    {
+        // NOTE: LogEntry does not provide a way to instantiate one directly
+        // using a constructor, so we will deserialize one from JSON.
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": null, ""timestamp"": " + epochTimestamp + @" }";
+        LogEntry entry = JsonConvert.DeserializeObject<LogEntry>(json)!;
+        Assert.That(() => JsonConvert.SerializeObject(entry), Throws.InstanceOf<NotImplementedException>());
     }
 }

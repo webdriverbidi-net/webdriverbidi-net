@@ -3,7 +3,7 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [TestFixture]
-public class ScriptEvaluateResultJsonConverterTests
+public class ScriptEvaluateResultTests
 {
     [Test]
     public void TestCanDeserializeScriptEvaluateResultSuccess()
@@ -74,5 +74,15 @@ public class ScriptEvaluateResultJsonConverterTests
     {
         string json = @"{ ""type"": ""success"", ""realm"": { ""noWoman"": ""noCry"" }, ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
         Assert.That(() => JsonConvert.DeserializeObject<ScriptEvaluateResult>(json), Throws.InstanceOf<JsonReaderException>());
+    }
+
+    [Test]
+    public void TestCannotSerialize()
+    {
+        // NOTE: ScriptEvaluateResult and subclasses do not provide a way to instantiate
+        // one directly using a constructor, so we will deserialize one from JSON.
+        string json = @"{ ""type"": ""success"", ""realm"": ""myRealm"", ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
+        ScriptEvaluateResult? result = JsonConvert.DeserializeObject<ScriptEvaluateResult>(json);
+        Assert.That(() => JsonConvert.SerializeObject(result), Throws.InstanceOf<NotImplementedException>());
     }
 }

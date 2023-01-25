@@ -3,7 +3,7 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [TestFixture]
-public class RealmInfoJsonConverterTests
+public class RealmInfoTests
 {
     [Test]
     public void TestCanDeserializeWorkerRealmInfo()
@@ -140,4 +140,13 @@ public class RealmInfoJsonConverterTests
         Assert.That(() => JsonConvert.DeserializeObject<RealmInfo>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'context'"));
     }
 
+    [Test]
+    public void TestCannotSerialize()
+    {
+        // NOTE: RealmInfo does not provide a way to instantiate one directly
+        // using a constructor, so we will deserialize one from JSON.
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""worker"" }";
+        RealmInfo? info = JsonConvert.DeserializeObject<RealmInfo>(json);
+        Assert.That(() => JsonConvert.SerializeObject(info), Throws.InstanceOf<NotImplementedException>());
+    }
 }

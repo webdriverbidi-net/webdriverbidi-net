@@ -1,5 +1,8 @@
 namespace WebDriverBidi;
 
+using Newtonsoft.Json;
+using JsonConverters;
+
 [TestFixture]
 public class ReceivedDataDictionaryTests
 {
@@ -98,5 +101,28 @@ public class ReceivedDataDictionaryTests
     public void TestEmptyDictionary()
     {
         Assert.That(ReceivedDataDictionary.EmptyDictionary, Is.Empty);
+    }
+
+    [Test]
+    public void TestCanCreateFromDeserializedData()
+    {
+        string json = @"{ ""stringProperty"": ""stringValue"", ""intValue"": 123, ""floatValue"": 456.78, ""boolValue"": true, ""nullValue"": null, ""listValue"": [ ""listString"", 901, true, null ], ""objectValue"": { ""objectProperty"": ""objectValue"" } }";
+        Dictionary<string, object?>? deserializedValue = JsonConvert.DeserializeObject<Dictionary<string, object?>>(json, new ReceivedDataJsonConverter());
+        ReceivedDataDictionary receivedData = new(deserializedValue!);
+        Assert.That(receivedData, Has.Count.EqualTo(7));
+    }
+
+    [Test]
+    public void TestDeserializingFromInvalidDataThrows()
+    {
+        string json = @"{ """": ""stringValue"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json, new ReceivedDataJsonConverter()), Throws.InstanceOf<JsonSerializationException>().With.Message.EqualTo("JSON object key cannot be null or the empty string"));
+    }
+
+    [Test]
+    public void TestCannotSerialize()
+    {
+        ReceivedDataDictionary dictionary = ReceivedDataDictionary.EmptyDictionary;
+        Assert.That(() => JsonConvert.SerializeObject(dictionary.ToWritableCopy(), new ReceivedDataJsonConverter()), Throws.InstanceOf<NotImplementedException>());
     }
 }

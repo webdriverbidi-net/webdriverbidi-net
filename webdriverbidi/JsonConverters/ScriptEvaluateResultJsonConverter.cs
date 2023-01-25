@@ -22,13 +22,6 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<ScriptEvaluateRes
     public override bool CanRead => true;
 
     /// <summary>
-    /// Gets a value indicating whether this converter can write JSON values.
-    /// Returns false for this converter (converter not used for
-    /// serialization).
-    /// </summary>
-    public override bool CanWrite => false;
-
-    /// <summary>
     /// Serializes an object and writes it to a JSON string.
     /// </summary>
     /// <param name="writer">The JSON writer to use during serialization.</param>
@@ -51,12 +44,11 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<ScriptEvaluateRes
     public override ScriptEvaluateResult ReadJson(JsonReader reader, Type objectType, ScriptEvaluateResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         var jsonObject = JObject.Load(reader);
-        if (jsonObject.ContainsKey("type"))
+        if (jsonObject.TryGetValue("type", out JToken? typeToken))
         {
-            var typeToken = jsonObject["type"];
-            if (typeToken is not null && typeToken.Type == JTokenType.String)
+            if (typeToken.Type == JTokenType.String)
             {
-                string resultType = typeToken.Value<string>() ?? string.Empty;
+                string resultType = typeToken.Value<string>()!;
                 if (resultType == "success")
                 {
                     ScriptEvaluateResultSuccess successResult = new();

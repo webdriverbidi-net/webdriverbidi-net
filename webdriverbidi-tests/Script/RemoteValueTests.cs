@@ -675,6 +675,60 @@ public class RemoteValueTests
     }
 
     [Test]
+    public void TestDeserializingMapRemoteValueWitComplexRemoteValueKeyContainingHandle()
+    {
+        string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""sybmol"", ""handle"": ""myHandle"" }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.HasValue);
+            Assert.That(remoteValue.Handle, Is.Null);
+            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
+        });
+        var dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        Assert.That(dictionaryValue, Is.Not.Null);
+        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        Assert.Multiple(() =>
+        {
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<string>());
+            Assert.That((string)dictionaryItem.Key, Is.EqualTo("myHandle"));
+            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
+            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+        });
+    }
+
+    [Test]
+    public void TestDeserializingMapRemoteValueWitComplexRemoteValueKeyContainingInternalId()
+    {
+        string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""sybmol"", ""internalId"": 123 }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.HasValue);
+            Assert.That(remoteValue.Handle, Is.Null);
+            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
+        });
+        var dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        Assert.That(dictionaryValue, Is.Not.Null);
+        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        Assert.Multiple(() =>
+        {
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<ulong>());
+            Assert.That((ulong)dictionaryItem.Key, Is.EqualTo(123));
+            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
+            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+        });
+    }
+
+    [Test]
     public void TestDeserializingInvalidMapValueRemoteValueThrows()
     {
         string json = @"{ ""type"": ""map"", ""value"": ""some value"" }";
@@ -686,6 +740,36 @@ public class RemoteValueTests
     {
         string json = @"{ ""type"": ""map"", ""value"": { ""stringProperty"": ""stringValue"", ""numberProperty"": 123, ""booleanProperty"": true } }";
         Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("map must have a non-null 'value' property whose value is an array"));
+    }
+
+    [Test]
+    public void TestDeserializingMapRemoteValueWithoutArrayElementsThrows()
+    {
+        string json = @"{ ""type"": ""map"", ""value"": [ { ""stringProperty"": ""stringValue"" } ] }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
+    }
+
+    [Test]
+    public void TestDeserializingMapRemoteValueWithInvalidArrayElementSizeThrows()
+    {
+        string json = @"{ ""type"": ""map"", ""value"": [ [ ""stringProperty"", ""stringValue"", ""someOtherValue"" ] ] }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
+        json = @"{ ""type"": ""map"", ""value"": [ [ ""stringProperty"" ] ] }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
+    }
+
+    [Test]
+    public void TestDeserializingMapRemoteValueWithInvalidKeyTypeThrows()
+    {
+        string json = @"{ ""type"": ""map"", ""value"": [ [ 123, ""stringValue"" ] ] }";
+         Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("must have a first element (key) that is either a string or an object"));
+    }
+
+    [Test]
+    public void TestDeserializingMapRemoteValueWithInvalidValueTypeThrows()
+    {
+        string json = @"{ ""type"": ""map"", ""value"": [ [ ""stringValue"", ""stringValue"" ] ] }";
+         Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("must have a second element (value) that is an object"));
     }
 
     [Test]
@@ -911,6 +995,37 @@ public class RemoteValueTests
     }
 
     [Test]
+    public void TestDeserializingWindowRemoteValueWithHandleAndInternalId()
+    {
+        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": 123 }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue!.Type, Is.EqualTo("window"));
+            Assert.That(remoteValue.HasValue, Is.False);
+            Assert.That(remoteValue.Handle, Is.Not.Null);
+            Assert.That(remoteValue.Handle, Is.EqualTo("myHandle"));
+            Assert.That(remoteValue.InternalId, Is.Not.Null);
+            Assert.That(remoteValue.InternalId, Is.EqualTo(123));
+        });
+    }
+
+    [Test]
+    public void TestDeserializingRemoteValueWithInvalidHandleTypeThrows()
+    {
+        string json = @"{ ""type"": ""window"", ""handle"": {}, ""internalId"": 123 }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>());
+    }
+
+    [Test]
+    public void TestDeserializingRemoteValueWithInvalidInternalIdTypeThrows()
+    {
+        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": 123.45 }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>());
+    }
+
+    [Test]
     public void TestDeserializingRemoteValueWithMissingTypeThrows()
     {
         string json = @"{ ""value"": ""myValue"" }";
@@ -922,6 +1037,13 @@ public class RemoteValueTests
     {
         string json = @"{ ""type"": 3, ""value"": ""myValue"" }";
         Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("type property must be a string"));
+    }
+
+    [Test]
+    public void TestDeserializingRemoteValueWithEmptyStringTypeThrows()
+    {
+        string json = @"{ ""type"": """", ""value"": ""myValue"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("non-empty 'type' property that is a string"));
     }
 
     [Test]
@@ -958,5 +1080,13 @@ public class RemoteValueTests
             Assert.That(remoteValue, Is.Not.Null);
             Assert.That(remoteValue!.ValueAs<string>(), Is.Null);
         });
+    }
+
+    [Test]
+    public void TestCannotSerialize()
+    {
+        string json = @"{ ""type"": ""string"", ""value"": ""myValue"" }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(() => JsonConvert.SerializeObject(remoteValue!), Throws.InstanceOf<NotImplementedException>());
     }
 }

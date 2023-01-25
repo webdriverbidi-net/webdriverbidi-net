@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 /// <summary>
 /// Converts the response to JSON.
 /// </summary>
-internal class ReceivedDataJsonConverter : JsonConverter
+public class ReceivedDataJsonConverter : JsonConverter
 {
     /// <summary>
     /// Checks if the object can be converted.
@@ -43,7 +43,7 @@ internal class ReceivedDataJsonConverter : JsonConverter
     /// <param name="serializer">The JSON serializer to use in serialization.</param>
     public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
     {
-        serializer?.Serialize(writer, value);
+        throw new NotImplementedException();
     }
 
     private object? ProcessToken(JsonReader reader)
@@ -58,7 +58,12 @@ internal class ReceivedDataJsonConverter : JsonConverter
                 Dictionary<string, object?> dictionaryValue = new();
                 while (reader.Read() && reader.TokenType != JsonToken.EndObject)
                 {
-                    string elementKey = reader.Value?.ToString() ?? string.Empty;
+                    string? elementKey = reader.Value!.ToString();
+                    if (string.IsNullOrEmpty(elementKey))
+                    {
+                        throw new JsonSerializationException("JSON object key cannot be null or the empty string");
+                    }
+
                     reader.Read();
                     dictionaryValue.Add(elementKey, this.ProcessToken(reader));
                 }

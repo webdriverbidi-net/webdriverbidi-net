@@ -22,13 +22,6 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
     public override bool CanRead => true;
 
     /// <summary>
-    /// Gets a value indicating whether this converter can write JSON values.
-    /// Returns false for this converter (converter not used for
-    /// serialization).
-    /// </summary>
-    public override bool CanWrite => false;
-
-    /// <summary>
     /// Reads a JSON string and deserializes it to an object.
     /// </summary>
     /// <param name="reader">The JSON reader to use during deserialization.</param>

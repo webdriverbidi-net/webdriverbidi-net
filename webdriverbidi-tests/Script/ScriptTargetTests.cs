@@ -2,9 +2,10 @@ namespace WebDriverBidi.Script;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using WebDriverBidi.JsonConverters;
 
 [TestFixture]
-public class ScriptTargetJsonConverterTests
+public class ScriptTargetTests
 {
     [Test]
     public void TestCanDeserializeRealmTarget()
@@ -84,5 +85,13 @@ public class ScriptTargetJsonConverterTests
             Assert.That(contextValue.Type, Is.EqualTo(JTokenType.String));
             Assert.That((string?)contextValue, Is.EqualTo("myContext"));
         });
+    }
+
+    [Test]
+    public void TestCannotCallJsonDeserializerDirectly()
+    {
+        ScriptTarget target = new RealmTarget("myRealm");
+        ScriptTargetJsonConverter converter = new();
+        Assert.That(() => converter.WriteJson(new JsonTextWriter(new StringWriter()), target, new JsonSerializer()), Throws.InstanceOf<NotImplementedException>());
     }
 }
