@@ -2,6 +2,7 @@ namespace WebDriverBidi.TestUtilities;
 
 using System.Net;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using WebDriverBidi.Protocol;
@@ -55,6 +56,8 @@ public class TestWebSocketServer
     private int port = 0;
     private readonly CancellationTokenSource listenerCancelationTokenSource = new();
     private readonly List<string> serverLog = new();
+    private WebSocketState state = WebSocketState.None;
+    private bool ignoreCloseRequest = false;
 
     public TestWebSocketServer()
     {
@@ -65,6 +68,8 @@ public class TestWebSocketServer
     public event EventHandler<ConnectionDataReceivedEventArgs>? DataReceived;
 
     public List<string> Log => this.serverLog;
+
+    public bool IgnoreCloseRequest { get => this.ignoreCloseRequest; set => this.ignoreCloseRequest = value; }
 
     public void Start()
     {
@@ -82,7 +87,13 @@ public class TestWebSocketServer
     public void Stop()
     {
         this.listenerCancelationTokenSource.Cancel();
-        this.CloseSocket();
+        if (this.socket.Connected)
+        {
+            this.socket.Shutdown(SocketShutdown.Both);
+            this.serverLog.Add("Socket disconnected");
+        }
+        this.socket.Close();
+        this.socket.Dispose();
     }
 
     public async Task SendData(string data)
@@ -110,14 +121,16 @@ public class TestWebSocketServer
         this.socket.Listen();
         this.clientSocket = await this.socket.AcceptAsync(this.listenerCancelationTokenSource.Token);
         this.serverLog.Add("Socket connected");
-        while (!this.listenerCancelationTokenSource.Token.IsCancellationRequested)
+        while (!this.listenerCancelationTokenSource.Token.IsCancellationRequested && this.state != WebSocketState.Closed)
         {
             var buffer = new byte[1024];
             var receivedLength = await clientSocket.ReceiveAsync(buffer, SocketFlags.None, this.listenerCancelationTokenSource.Token);
             this.serverLog.Add($"RECV {receivedLength} bytes");
             var data = Encoding.UTF8.GetString(buffer, 0, receivedLength);
             if (Regex.IsMatch(data, "^GET", RegexOptions.IgnoreCase)) {
+                this.state = WebSocketState.Connecting;
                 await this.PerformHandshake(data);
+                this.state = WebSocketState.Open;
             } 
             else 
             {
@@ -130,41 +143,38 @@ public class TestWebSocketServer
 
                 if (frame.Opcode == OpcodeType.ClosedConnection)
                 {
-                    this.listenerCancelationTokenSource.Cancel();
+                    if (this.state == WebSocketState.Open && !this.ignoreCloseRequest)
+                    {
+                        this.state = WebSocketState.CloseReceived;
+                        await this.SendCloseFrame("Acknowledge close");
+                    }
+
+                    this.state = WebSocketState.Closed;
                 }
             }
         }
 
-        await this.CloseClientSocket();
+        this.clientSocket.Close();
     }
 
-    private void CloseSocket()
-    {
-        if (this.socket.Connected)
-        {
-            this.socket.Shutdown(SocketShutdown.Both);
-            this.serverLog.Add("Socket disconnected");
-        }
-        this.socket.Close();
-        this.socket.Dispose();
-    }
-
-    public async Task CloseClientSocket()
+    private async Task SendCloseFrame(string message)
     {
         if (this.clientSocket is not null)
         {
-            try
+            this.serverLog.Add("Sending close frame");
+            WebSocketFrameData closeFrame = EncodeData(message, OpcodeType.ClosedConnection);
+            await this.clientSocket.SendAsync(closeFrame.Data, SocketFlags.None);
+        }
+    }
+
+    public async Task Disconnect()
+    {
+        if (this.clientSocket is not null)
+        {
+            if (this.state == WebSocketState.Open)
             {
-                this.serverLog.Add("Closing client socket");
-                WebSocketFrameData closeFrame = EncodeData("Acknowledge close", OpcodeType.ClosedConnection);
-                await this.clientSocket.SendAsync(closeFrame.Data, SocketFlags.None);
-                this.clientSocket.Shutdown(SocketShutdown.Both);
-            }
-            finally
-            {
-                this.clientSocket.Close();
-                this.clientSocket.Dispose();
-                this.clientSocket = null;
+                await SendCloseFrame("Initiating close");
+                this.state = WebSocketState.CloseSent;
             }
         }
     }
@@ -236,6 +246,12 @@ public class TestWebSocketServer
     public WebSocketFrameData EncodeData(string data, OpcodeType opcode = OpcodeType.Text)
     {
         this.serverLog.Add($"Encoding data with opcode {opcode}");
+        if (opcode == OpcodeType.ClosedConnection)
+        {
+            // NOTE: Hard code the close frame data.
+            return new WebSocketFrameData(opcode, new byte[] {0x88, 0x00});
+        }
+
         long dataOffset = -1;
         byte[] dataBytes = Encoding.UTF8.GetBytes(data);
 

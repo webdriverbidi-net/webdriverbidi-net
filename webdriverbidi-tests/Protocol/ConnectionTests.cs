@@ -131,7 +131,7 @@ public class ConnectionTests
         await server.SendData("Hello back");
         syncEvent.WaitOne();
         await connection.Stop();
-        Assert.That(logValues, Has.Count.EqualTo(4));
+        Assert.That(logValues, Has.Count.EqualTo(5));
         foreach(var args in logValues)
         {
             Assert.Multiple(() =>
@@ -190,7 +190,7 @@ public class ConnectionTests
     }
 
     [Test]
-    public async Task TestConnectionHandlesHungRemoteEnd()
+    public async Task TestConnectionHandlesDisconnectInitiatedByRemoteEnd()
     {
         if (server is null)
         {
@@ -206,7 +206,53 @@ public class ConnectionTests
 
         List<string> serverLog = server.Log;
         await connection.Start($"ws://localhost:{server.Port}");
-        await server.CloseClientSocket();
+    
+        // Server initiated disconnection requires waiting for the
+        // close websocket message to be received by the client.
+        await server.Disconnect();
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        await connection.Stop();
+    }
+
+    [Test]
+    public async Task TestConnectionHandlesHungRemoteEnd()
+    {
+        if (server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        server.IgnoreCloseRequest = true;
+        List<string> connectionLog = new();
+        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        connection.LogMessage += (sender, e) =>
+        {
+            connectionLog.Add(e.Message);
+        };
+
+        List<string> serverLog = server.Log;
+        await connection.Start($"ws://localhost:{server.Port}");
+        await connection.Stop();
+    }
+
+    [Test]
+    public async Task TestCanShutdownWhenCleanShutdownExceedsTimeout()
+    {
+        if (server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        server.IgnoreCloseRequest = true;
+        List<string> connectionLog = new();
+        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.Zero);
+        connection.LogMessage += (sender, e) =>
+        {
+            connectionLog.Add(e.Message);
+        };
+
+        List<string> serverLog = server.Log;
+        await connection.Start($"ws://localhost:{server.Port}");
         await connection.Stop();
     }
 
