@@ -63,7 +63,7 @@ public class CapabilitiesResultTests
     public void TestCanDeserializeWithInvalidProxyTypeThrows()
     {
         string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""proxyautoconfig"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<CapabilitiesResult>(json), Throws.InstanceOf<JsonSerializationException>().With.InnerException.Message.EqualTo("Invalid value for proxy type: 'proxyautoconfig'"));
+        Assert.That(() => JsonConvert.DeserializeObject<CapabilitiesResult>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("value 'proxyautoconfig' is not valid for enum type"));
     }
 
     [Test]

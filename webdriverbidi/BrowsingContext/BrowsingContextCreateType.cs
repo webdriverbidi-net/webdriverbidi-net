@@ -5,9 +5,13 @@
 
 namespace WebDriverBidi.BrowsingContext;
 
+using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
+
 /// <summary>
 /// Values used for the creation of new browsing contexts.
 /// </summary>
+[JsonConverter(typeof(EnumValueJsonConverter<BrowsingContextCreateType>))]
 public enum BrowsingContextCreateType
 {
     /// <summary>

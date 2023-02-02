@@ -43,24 +43,7 @@ public class RealmInfo
     /// <summary>
     /// Gets the type of the realm.
     /// </summary>
-    public RealmType Type { get => this.realmType; }
-
-    /// <summary>
-    /// Sets the type of the realm for deserialization purposes.
-    /// </summary>
     [JsonProperty("type")]
     [JsonRequired]
-    internal string SerializableType
-    {
-        set
-        {
-            string sanitizedType = value.Replace("-", string.Empty);
-            if (!Enum.TryParse<RealmType>(sanitizedType, true, out RealmType type))
-            {
-                throw new WebDriverBidiException($"Malformed response: Invalid value {type} for RealmInfo 'type' property");
-            }
-
-            this.realmType = type;
-        }
-    }
+    public RealmType Type { get => this.realmType; internal set => this.realmType = value; }
 }

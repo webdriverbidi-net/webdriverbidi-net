@@ -5,9 +5,13 @@
 
 namespace WebDriverBidi.Script;
 
+using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
+
 /// <summary>
 /// The result type of a script evaluation.
 /// </summary>
+[JsonConverter(typeof(EnumValueJsonConverter<ScriptEvaluateResultType>))]
 public enum ScriptEvaluateResultType
 {
     /// <summary>

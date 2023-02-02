@@ -5,9 +5,13 @@
 
 namespace WebDriverBidi.BrowsingContext;
 
+using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
+
 /// <summary>
 /// The readiness state of the browsing context.
 /// </summary>
+[JsonConverter(typeof(EnumValueJsonConverter<ReadinessState>))]
 public enum ReadinessState
 {
     /// <summary>

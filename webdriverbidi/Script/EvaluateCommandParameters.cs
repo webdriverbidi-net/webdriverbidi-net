@@ -6,6 +6,7 @@
 namespace WebDriverBidi.Script;
 
 using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
 
 /// <summary>
 /// Provides parameters for the script.evaluate command.
@@ -57,22 +58,6 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// <summary>
     /// Gets or sets the value of the model of ownership of the handles of the values in the script.
     /// </summary>
-    public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value; }
-
-    /// <summary>
-    /// Gets the value of the ownership model for serialization purposes.
-    /// </summary>
     [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
-    internal string? SerializableOwnershipModel
-    {
-        get
-        {
-            if (this.ownershipModel is null)
-            {
-                return null;
-            }
-
-            return this.ownershipModel.Value.ToString().ToLowerInvariant();
-        }
-    }
+    public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value; }
 }

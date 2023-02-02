@@ -47,22 +47,6 @@ public class ReloadCommandParameters : CommandParameters<BrowsingContextNavigate
     /// <summary>
     /// Gets or sets the <see cref="ReadinessState" /> value for which to wait during the reload.
     /// </summary>
-    public ReadinessState? Wait { get => this.wait; set => this.wait = value; }
-
-    /// <summary>
-    /// Gets the string value of the readiness state for serialization purposes.
-    /// </summary>
     [JsonProperty("wait", NullValueHandling = NullValueHandling.Ignore)]
-    internal string? SerializableWait
-    {
-        get
-        {
-            if (this.wait is null)
-            {
-                return null;
-            }
-
-            return this.wait.Value.ToString().ToLowerInvariant();
-        }
-    }
+    public ReadinessState? Wait { get => this.wait; set => this.wait = value; }
 }

@@ -34,6 +34,7 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     /// <summary>
     /// Gets or sets the type of browsing context (tab or window) to create.
     /// </summary>
+    [JsonProperty("type")]
     public BrowsingContextCreateType CreateType { get => this.createType; set => this.createType = value; }
 
     /// <summary>
@@ -41,13 +42,4 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     /// </summary>
     [JsonProperty("referenceContext", NullValueHandling = NullValueHandling.Ignore)]
     public string? ReferenceContextId { get => this.referenceContextId; set => this.referenceContextId = value; }
-
-    /// <summary>
-    /// Gets the string value of the type of browsing context to be created for serialization purposes.
-    /// </summary>
-    [JsonProperty("type")]
-    internal string SerializableCreateType
-    {
-        get => this.createType.ToString().ToLowerInvariant();
-    }
 }

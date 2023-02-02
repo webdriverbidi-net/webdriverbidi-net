@@ -7,6 +7,7 @@ namespace WebDriverBidi.BrowsingContext;
 
 using System;
 using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
 
 /// <summary>
 /// Provides parameters for the browsingContext.navigate command.
@@ -51,22 +52,6 @@ public class NavigateCommandParameters : CommandParameters<BrowsingContextNaviga
     /// <summary>
     /// Gets or sets the <see cref="ReadinessState" /> value for which to wait during the navigation.
     /// </summary>
-    public ReadinessState? Wait { get => this.wait; set => this.wait = value; }
-
-    /// <summary>
-    /// Gets the string value of the readiness state for serialization purposes.
-    /// </summary>
     [JsonProperty("wait", NullValueHandling = NullValueHandling.Ignore)]
-    internal string? SerializableWait
-    {
-        get
-        {
-            if (this.wait is null)
-            {
-                return null;
-            }
-
-            return this.wait.Value.ToString().ToLowerInvariant();
-        }
-    }
+    public ReadinessState? Wait { get => this.wait; set => this.wait = value; }
 }

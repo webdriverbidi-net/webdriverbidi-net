@@ -375,6 +375,13 @@ public class ProxyTests
     public void TestDeserializeWithInvalidProxyTypeThrows()
     {
         string json = @"{ ""proxyType"": ""invalid"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<Proxy>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonConvert.DeserializeObject<Proxy>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+    }
+
+    [Test]
+    public void TestDeserializeWithNonStringProxyTypeThrows()
+    {
+        string json = @"{ ""proxyType"": {} }";
+        Assert.That(() => JsonConvert.DeserializeObject<Proxy>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Deserialization error reading enumerated string value"));
     }
 }

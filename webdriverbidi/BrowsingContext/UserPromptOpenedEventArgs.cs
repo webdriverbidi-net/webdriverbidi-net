@@ -41,6 +41,8 @@ public class UserPromptOpenedEventArgs : WebDriverBidiEventArgs
     /// <summary>
     /// Gets the type of user prompt opened.
     /// </summary>
+    [JsonProperty("type")]
+    [JsonRequired]
     public UserPromptType PromptType { get => this.promptType; internal set => this.promptType = value; }
 
     /// <summary>
@@ -49,22 +51,4 @@ public class UserPromptOpenedEventArgs : WebDriverBidiEventArgs
     [JsonProperty("message")]
     [JsonRequired]
     public string Message { get => this.message; internal set => this.message = value; }
-
-    /// <summary>
-    /// Sets the text value of the user prompt type for deserialization purposes.
-    /// </summary>
-    [JsonProperty("type")]
-    [JsonRequired]
-    internal string SerializablePromptType
-    {
-        set
-        {
-            if (!Enum.TryParse<UserPromptType>(value, true, out UserPromptType type))
-            {
-                throw new WebDriverBidiException($"Invalid value for user prompt type: '{value}'");
-            }
-
-            this.promptType = type;
-        }
-    }
 }

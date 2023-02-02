@@ -28,7 +28,9 @@ public class EvaluateResult : CommandResult
     /// <summary>
     /// Gets the type of the result of the script execution.
     /// </summary>
-    public ScriptEvaluateResultType ResultType => this.resultType;
+    [JsonProperty("type")]
+    [JsonRequired]
+    public ScriptEvaluateResultType ResultType { get => this.resultType; internal set => this.resultType = value; }
 
     /// <summary>
     /// Gets the ID of the realm in which the script was executed.
@@ -36,23 +38,4 @@ public class EvaluateResult : CommandResult
     [JsonProperty("realm")]
     [JsonRequired]
     public string RealmId { get => this.realmId; internal set => this.realmId = value; }
-
-    /// <summary>
-    /// Sets the type of the result of the script execution for deserialization purposes.
-    /// </summary>
-    [JsonProperty("type")]
-    [JsonRequired]
-    internal string SerializableResultType
-    {
-        set
-        {
-            // Note that the custom JSON serializer should not allow an invalid value for
-            // this enum. If new values are added to the enum, the serializer will need to
-            // be updated.
-            if (Enum.TryParse<ScriptEvaluateResultType>(value, true, out ScriptEvaluateResultType type))
-            {
-                this.resultType = type;
-            }
-        }
-    }
 }

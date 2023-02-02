@@ -5,9 +5,13 @@
 
 namespace WebDriverBidi.Session;
 
+using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
+
 /// <summary>
 /// The type of proxy.
 /// </summary>
+[JsonConverter(typeof(EnumValueJsonConverter<ProxyType>))]
 public enum ProxyType
 {
     /// <summary>
@@ -33,5 +37,6 @@ public enum ProxyType
     /// <summary>
     /// Use a proxy autoconfig (PAC) file.
     /// </summary>
+    [JsonEnumValue("pac")]
     ProxyAutoConfig,
 }

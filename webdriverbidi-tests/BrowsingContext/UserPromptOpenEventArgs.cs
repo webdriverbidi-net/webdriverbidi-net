@@ -86,7 +86,7 @@ public class UserPromptOpenedEventArgsTests
     public void TestDeserializeWithInvalidTypeValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""invalid"", ""message"": ""some prompt message"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<WebDriverBidiException>());
     }
 
     [Test]

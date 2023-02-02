@@ -154,7 +154,7 @@ public class LogEntryTests
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""type"": ""generic"", ""level"": ""invalid"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @" }";
-        Assert.That(() => JsonConvert.DeserializeObject<LogEntry>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonConvert.DeserializeObject<LogEntry>(json), Throws.InstanceOf<WebDriverBidiException>());
     }
 
     [Test]
@@ -172,7 +172,7 @@ public class LogEntryTests
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""type"": ""generic"", ""level"": {}, ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @" }";
-        Assert.That(() => JsonConvert.DeserializeObject<LogEntry>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonConvert.DeserializeObject<LogEntry>(json), Throws.InstanceOf<WebDriverBidiException>());
     }
 
     [Test]

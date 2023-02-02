@@ -70,24 +70,8 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// <summary>
     /// Gets or sets the ownership model to use for objects in the function call.
     /// </summary>
-    public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value; }
-
-    /// <summary>
-    /// Gets the ownership model for serialization purposes.
-    /// </summary>
     [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
-    internal string? SerializableOwnershipModel
-    {
-        get
-        {
-            if (this.ownershipModel is null)
-            {
-                return null;
-            }
-
-            return this.ownershipModel.Value.ToString().ToLowerInvariant();
-        }
-    }
+    public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value; }
 
     /// <summary>
     /// Gets the list of arguments for serialization purposes.

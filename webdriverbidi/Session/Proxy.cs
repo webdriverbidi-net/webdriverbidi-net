@@ -30,6 +30,7 @@ public class Proxy
     /// <summary>
     /// Gets or sets the type of proxy.
     /// </summary>
+    [JsonProperty("proxyType", NullValueHandling = NullValueHandling.Ignore)]
     public ProxyType? Type { get => this.type; set => this.type = value; }
 
     /// <summary>
@@ -73,51 +74,4 @@ public class Proxy
     /// </summary>
     [JsonProperty("noProxy", NullValueHandling = NullValueHandling.Ignore)]
     public List<string>? NoProxyAddresses { get => this.noProxyAddresses; set => this.noProxyAddresses = value; }
-
-    /// <summary>
-    /// Gets or sets the type of proxy for serialization purposes.
-    /// </summary>
-    [JsonProperty("proxyType", NullValueHandling = NullValueHandling.Ignore)]
-    internal string? SerializableProxyType
-    {
-        get
-        {
-            if (this.type is null)
-            {
-                return null;
-            }
-
-            if (this.type.Value == ProxyType.ProxyAutoConfig)
-            {
-                return "pac";
-            }
-
-            return this.type.Value.ToString().ToLowerInvariant();
-        }
-
-        set
-        {
-            if (value == "pac")
-            {
-                this.type = ProxyType.ProxyAutoConfig;
-                return;
-            }
-
-            // Because of the NullValueHandling property of the attribute,
-            // using the null coercing operator is fine here, as there should
-            // never be a null value.
-            if (value!.ToLowerInvariant() == "proxyautoconfig")
-            {
-                // The value 'proxyautoconfig' is expressly invalid in the spec
-                throw new WebDriverBidiException($"Invalid value for proxy type: '{value}'");
-            }
-
-            if (!Enum.TryParse<ProxyType>(value, true, out ProxyType deserializedType))
-            {
-                throw new WebDriverBidiException($"Invalid value for proxy type: '{value}'");
-            }
-
-            this.type = deserializedType;
-        }
-    }
 }

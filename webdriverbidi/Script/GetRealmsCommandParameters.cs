@@ -37,33 +37,6 @@ public class GetRealmsCommandParameters : CommandParameters<GetRealmsCommandResu
     /// <summary>
     /// Gets or sets the type of realms to get.
     /// </summary>
-    public RealmType? RealmType { get => this.realmType; set => this.realmType = value; }
-
-    /// <summary>
-    /// Gets the type of the reamls to get for serialization purposes.
-    /// </summary>
     [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
-    internal string? SerializableRealmType
-    {
-        get
-        {
-            if (this.realmType is null)
-            {
-                return null;
-            }
-
-            string typeValue = this.realmType.Value.ToString().ToLowerInvariant();
-            if (typeValue.IndexOf("worker") > 0)
-            {
-                typeValue = typeValue.Insert(typeValue.IndexOf("worker"), "-");
-            }
-
-            if (typeValue.IndexOf("worklet") > 0)
-            {
-                typeValue = typeValue.Insert(typeValue.IndexOf("worklet"), "-");
-            }
-
-            return typeValue;
-        }
-    }
+    public RealmType? RealmType { get => this.realmType; set => this.realmType = value; }
 }

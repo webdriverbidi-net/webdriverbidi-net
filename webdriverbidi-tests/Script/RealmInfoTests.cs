@@ -130,7 +130,7 @@ public class RealmInfoTests
     public void TestDeserializingRealmInfoWithInvalidTypeThrows()
     {
         string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""invalid"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<RealmInfo>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Error setting value"));
+        Assert.That(() => JsonConvert.DeserializeObject<RealmInfo>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("'invalid' is not valid for enum type"));
     }
 
     [Test]

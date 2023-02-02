@@ -5,9 +5,13 @@
 
 namespace WebDriverBidi.Script;
 
+using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
+
 /// <summary>
 /// Value of the ownership model of values returned from script execution.
 /// </summary>
+[JsonConverter(typeof(EnumValueJsonConverter<OwnershipModel>))]
 public enum OwnershipModel
 {
     /// <summary>

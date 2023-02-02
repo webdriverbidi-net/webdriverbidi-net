@@ -41,7 +41,9 @@ public class LogEntry
     /// <summary>
     /// Gets the log level of the log entry.
     /// </summary>
-    public LogLevel Level => this.level;
+    [JsonProperty("level")]
+    [JsonRequired]
+    public LogLevel Level { get => this.level; internal set => this.level = value; }
 
     /// <summary>
     /// Gets the source of the log entry.
@@ -83,24 +85,6 @@ public class LogEntry
         {
             this.epochTimestamp = value;
             this.timestamp = DateTime.UnixEpoch.AddMilliseconds(value);
-        }
-    }
-
-    /// <summary>
-    /// Sets the string value of the log level of the log entr for deserialization purposes.
-    /// </summary>
-    [JsonProperty("level")]
-    [JsonRequired]
-    internal string SerializableLevel
-    {
-        set
-        {
-            if (!Enum.TryParse<LogLevel>(value, true, out LogLevel logLevelValue))
-            {
-                throw new WebDriverBidiException($"Invalid value for log level {value}");
-            }
-
-            this.level = logLevelValue;
         }
     }
 }

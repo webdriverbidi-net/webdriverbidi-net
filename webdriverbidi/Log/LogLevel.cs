@@ -5,9 +5,13 @@
 
 namespace WebDriverBidi.Log;
 
+using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
+
 /// <summary>
 /// The valid log levels for logging in the browser.
 /// </summary>
+[JsonConverter(typeof(EnumValueJsonConverter<LogLevel>))]
 public enum LogLevel
 {
     /// <summary>

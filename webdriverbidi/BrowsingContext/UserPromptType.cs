@@ -5,9 +5,13 @@
 
 namespace WebDriverBidi.BrowsingContext;
 
+using Newtonsoft.Json;
+using WebDriverBidi.JsonConverters;
+
 /// <summary>
 /// The types of user prompts.
 /// </summary>
+[JsonConverter(typeof(EnumValueJsonConverter<UserPromptType>))]
 public enum UserPromptType
 {
     /// <summary>
