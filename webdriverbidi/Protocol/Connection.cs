@@ -183,20 +183,21 @@ public class Connection
 
     private async Task ReceiveData()
     {
-        var cancellationToken = this.clientTokenSource.Token;
+        CancellationToken cancellationToken = this.clientTokenSource.Token;
         try
         {
             StringBuilder messageBuilder = new();
-            var buffer = WebSocket.CreateClientBuffer(this.bufferSize, this.bufferSize);
+            ArraySegment<byte> buffer = WebSocket.CreateClientBuffer(this.bufferSize, this.bufferSize);
             while (this.client.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
             {
-                var receiveResult = await this.client.ReceiveAsync(buffer, cancellationToken);
+                WebSocketReceiveResult receiveResult = await this.client.ReceiveAsync(buffer, cancellationToken);
 
                 // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
                 if (!cancellationToken.IsCancellationRequested)
                 {
                     // The server is notifying us that the connection will close; send acknowledgement
-                    if (this.client.State == WebSocketState.CloseReceived && receiveResult.MessageType == WebSocketMessageType.Close)
+                    //if (this.client.State == WebSocketState.CloseReceived && receiveResult.MessageType == WebSocketMessageType.Close)
+                    if (this.client.State == WebSocketState.CloseReceived)
                     {
                         this.Log($"Acknowledging Close frame received from server", WebDriverBidiLogLevel.Info);
                         await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None);
