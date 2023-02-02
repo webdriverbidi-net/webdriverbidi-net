@@ -1,4 +1,4 @@
-// <copyright file="ScriptEvaluateResult.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="EvaluateResult.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -13,15 +13,15 @@ using WebDriverBidi.JsonConverters;
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
 [JsonConverter(typeof(ScriptEvaluateResultJsonConverter))]
-public class ScriptEvaluateResult : CommandResult
+public class EvaluateResult : CommandResult
 {
     private string realmId = string.Empty;
     private ScriptEvaluateResultType resultType = ScriptEvaluateResultType.Success;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ScriptEvaluateResult"/> class.
+    /// Initializes a new instance of the <see cref="EvaluateResult"/> class.
     /// </summary>
-    protected ScriptEvaluateResult()
+    protected EvaluateResult()
     {
     }
 

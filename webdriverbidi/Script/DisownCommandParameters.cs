@@ -15,14 +15,14 @@ using Newtonsoft.Json;
 public class DisownCommandParameters : CommandParameters<EmptyResult>
 {
     private List<string> handles = new();
-    private ScriptTarget target;
+    private Target target;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DisownCommandParameters"/> class.
     /// </summary>
     /// <param name="target">The script target containing handles to disown.</param>
     /// <param name="handleValues">The handles to disown.</param>
-    public DisownCommandParameters(ScriptTarget target, params string[] handleValues)
+    public DisownCommandParameters(Target target, params string[] handleValues)
     {
         this.target = target;
         this.handles.AddRange(handleValues);
@@ -37,7 +37,7 @@ public class DisownCommandParameters : CommandParameters<EmptyResult>
     /// Gets or sets the target for which to disown handles.
     /// </summary>
     [JsonProperty("target")]
-    public ScriptTarget Target { get => this.target; set => this.target = value; }
+    public Target Target { get => this.target; set => this.target = value; }
 
     /// <summary>
     /// Gets or sets the list of handles to disown.

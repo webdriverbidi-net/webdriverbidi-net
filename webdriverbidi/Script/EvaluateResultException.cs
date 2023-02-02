@@ -1,4 +1,4 @@
-// <copyright file="ScriptEvaluateResultException.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="EvaluateResultException.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -10,15 +10,15 @@ using Newtonsoft.Json;
 /// <summary>
 /// Object representing the evaluation of a script that throws an exception.
 /// </summary>
-public class ScriptEvaluateResultException : ScriptEvaluateResult
+public class EvaluateResultException : EvaluateResult
 {
     private ExceptionDetails result = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ScriptEvaluateResultException"/> class.
+    /// Initializes a new instance of the <see cref="EvaluateResultException"/> class.
     /// </summary>
     [JsonConstructor]
-    internal ScriptEvaluateResultException()
+    internal EvaluateResultException()
         : base()
     {
     }

@@ -12,7 +12,7 @@ using WebDriverBidi.Script;
 /// <summary>
 /// The JSON converter for the ScriptTarget object.
 /// </summary>
-public class ScriptTargetJsonConverter : JsonConverter<ScriptTarget>
+public class ScriptTargetJsonConverter : JsonConverter<Target>
 {
     /// <summary>
     /// Gets a value indicating whether this converter can read JSON values.
@@ -37,10 +37,10 @@ public class ScriptTargetJsonConverter : JsonConverter<ScriptTarget>
     /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
     /// <param name="serializer">The JSON serializer to use in deserialization.</param>
     /// <returns>The deserialized object created from JSON.</returns>
-    public override ScriptTarget ReadJson(JsonReader reader, Type objectType, ScriptTarget? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override Target ReadJson(JsonReader reader, Type objectType, Target? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         var jsonObject = JObject.Load(reader);
-        ScriptTarget target;
+        Target target;
         if (jsonObject.ContainsKey("realm"))
         {
             target = new RealmTarget(string.Empty);
@@ -64,7 +64,7 @@ public class ScriptTargetJsonConverter : JsonConverter<ScriptTarget>
     /// <param name="writer">The JSON writer to use during serialization.</param>
     /// <param name="value">The object to serialize.</param>
     /// <param name="serializer">The JSON serializer to use in serialization.</param>
-    public override void WriteJson(JsonWriter writer, ScriptTarget? value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, Target? value, JsonSerializer serializer)
     {
         throw new NotImplementedException();
     }

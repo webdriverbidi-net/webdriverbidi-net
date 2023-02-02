@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 /// <summary>
 /// A script target for a realm.
 /// </summary>
-public class RealmTarget : ScriptTarget
+public class RealmTarget : Target
 {
     private string realmId;
 

@@ -1,4 +1,4 @@
-// <copyright file="ScriptEvaluateResultSuccess.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="EvaluateResultSuccess.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -10,15 +10,15 @@ using Newtonsoft.Json;
 /// <summary>
 /// Object representing the successful evaluation of a script.
 /// </summary>
-public class ScriptEvaluateResultSuccess : ScriptEvaluateResult
+public class EvaluateResultSuccess : EvaluateResult
 {
     private RemoteValue result = new("null");
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ScriptEvaluateResultSuccess"/> class.
+    /// Initializes a new instance of the <see cref="EvaluateResultSuccess"/> class.
     /// </summary>
     [JsonConstructor]
-    internal ScriptEvaluateResultSuccess()
+    internal EvaluateResultSuccess()
         : base()
     {
     }

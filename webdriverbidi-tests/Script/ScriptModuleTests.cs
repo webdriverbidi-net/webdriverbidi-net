@@ -24,8 +24,8 @@ public class ScriptModuleTests
         var result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<ScriptEvaluateResultSuccess>());
-        var successResult = result as ScriptEvaluateResultSuccess;
+        Assert.That(result, Is.TypeOf<EvaluateResultSuccess>());
+        var successResult = result as EvaluateResultSuccess;
         Assert.That(successResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -57,8 +57,8 @@ public class ScriptModuleTests
         var result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<ScriptEvaluateResultException>());
-        var exceptionResult = result as ScriptEvaluateResultException;
+        Assert.That(result, Is.TypeOf<EvaluateResultException>());
+        var exceptionResult = result as EvaluateResultException;
         Assert.That(exceptionResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -93,8 +93,8 @@ public class ScriptModuleTests
         var result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<ScriptEvaluateResultSuccess>());
-        var successResult = result as ScriptEvaluateResultSuccess;
+        Assert.That(result, Is.TypeOf<EvaluateResultSuccess>());
+        var successResult = result as EvaluateResultSuccess;
         Assert.That(successResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -126,8 +126,8 @@ public class ScriptModuleTests
         var result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<ScriptEvaluateResultException>());
-        var exceptionResult = result as ScriptEvaluateResultException;
+        Assert.That(result, Is.TypeOf<EvaluateResultException>());
+        var exceptionResult = result as EvaluateResultException;
         Assert.That(exceptionResult, Is.Not.Null);
         Assert.Multiple(() =>
         {

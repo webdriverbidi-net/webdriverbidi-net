@@ -11,10 +11,10 @@ using Newtonsoft.Json;
 /// Provides parameters for the script.evaluate command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class EvaluateCommandParameters : CommandParameters<ScriptEvaluateResult>
+public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
 {
     private string expression;
-    private ScriptTarget scriptTarget;
+    private Target scriptTarget;
     private bool awaitPromise;
     private OwnershipModel? ownershipModel;
 
@@ -24,7 +24,7 @@ public class EvaluateCommandParameters : CommandParameters<ScriptEvaluateResult>
     /// <param name="expression">The expression to evaluate.</param>
     /// <param name="scriptTarget">The target of the script to evaluate against.</param>
     /// <param name="awaitPromise"><see langword="true" /> to await the script evaluation as a Promise; otherwise, <see langword="false" />.</param>
-    public EvaluateCommandParameters(string expression, ScriptTarget scriptTarget, bool awaitPromise)
+    public EvaluateCommandParameters(string expression, Target scriptTarget, bool awaitPromise)
     {
         this.expression = expression;
         this.scriptTarget = scriptTarget;
@@ -46,7 +46,7 @@ public class EvaluateCommandParameters : CommandParameters<ScriptEvaluateResult>
     /// Gets or sets the target against which to evaluate the script.
     /// </summary>
     [JsonProperty("target")]
-    public ScriptTarget ScriptTarget { get => this.scriptTarget; set => this.scriptTarget = value; }
+    public Target ScriptTarget { get => this.scriptTarget; set => this.scriptTarget = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to await the completion of the evaluation of the script.

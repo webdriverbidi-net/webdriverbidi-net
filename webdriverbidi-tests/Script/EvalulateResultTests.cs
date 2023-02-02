@@ -3,16 +3,16 @@ namespace WebDriverBidi.Script;
 using Newtonsoft.Json;
 
 [TestFixture]
-public class ScriptEvaluateResultTests
+public class EvaluateResultTests
 {
     [Test]
     public void TestCanDeserializeScriptEvaluateResultSuccess()
     {
         string json = @"{ ""type"": ""success"", ""realm"": ""myRealm"", ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
-        ScriptEvaluateResult? result = JsonConvert.DeserializeObject<ScriptEvaluateResult>(json);
+        EvaluateResult? result = JsonConvert.DeserializeObject<EvaluateResult>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.InstanceOf<ScriptEvaluateResultSuccess>());
-        ScriptEvaluateResultSuccess successResult = (ScriptEvaluateResultSuccess)result!;
+        Assert.That(result, Is.InstanceOf<EvaluateResultSuccess>());
+        EvaluateResultSuccess successResult = (EvaluateResultSuccess)result!;
         Assert.Multiple(() =>
         {
             Assert.That(successResult.RealmId, Is.EqualTo("myRealm"));
@@ -26,10 +26,10 @@ public class ScriptEvaluateResultTests
     public void TestCanDeserializeScriptEvaluateResultException()
     {
         string json = @"{ ""type"": ""exception"", ""realm"": ""myRealm"", ""exceptionDetails"": { ""text"": ""exception thrown"", ""lineNumber"": 1, ""columnNumber"": 5, ""stacktrace"": { ""callFrames"": [] }, ""exception"": { ""type"": ""string"", ""value"": ""exception value"" } } }";
-        ScriptEvaluateResult? result = JsonConvert.DeserializeObject<ScriptEvaluateResult>(json);
+        EvaluateResult? result = JsonConvert.DeserializeObject<EvaluateResult>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.InstanceOf<ScriptEvaluateResultException>());
-        ScriptEvaluateResultException successResult = (ScriptEvaluateResultException)result!;
+        Assert.That(result, Is.InstanceOf<EvaluateResultException>());
+        EvaluateResultException successResult = (EvaluateResultException)result!;
         Assert.Multiple(() =>
         {
             Assert.That(successResult.RealmId, Is.EqualTo("myRealm"));
@@ -45,35 +45,35 @@ public class ScriptEvaluateResultTests
     public void TestDeserializeScriptEvaluateResultWithInvalidTypePropertyValueThrows()
     {
         string json = @"{ ""type"": ""invalid"", ""realm"": ""myRealm"", ""noWoman"": ""noCry"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<ScriptEvaluateResult>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("unknown type 'invalid' for script result"));
+        Assert.That(() => JsonConvert.DeserializeObject<EvaluateResult>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("unknown type 'invalid' for script result"));
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithMissingTypePropertyThrows()
     {
         string json = @"{ ""realm"": ""myRealm"", ""noWoman"": ""noCry"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<ScriptEvaluateResult>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Script response must contain a 'type' property that contains a non-null string value"));
+        Assert.That(() => JsonConvert.DeserializeObject<EvaluateResult>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Script response must contain a 'type' property that contains a non-null string value"));
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithInvalidTypePropertyObjectThrows()
     {
         string json = @"{ ""type"": { ""noWoman"": ""noCry"" }, ""realm"": ""myRealm"", ""noWoman"": ""noCry"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<ScriptEvaluateResult>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Script response must contain a 'type' property that contains a non-null string value"));
+        Assert.That(() => JsonConvert.DeserializeObject<EvaluateResult>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Script response must contain a 'type' property that contains a non-null string value"));
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithMissingRealmValueThrows()
     {
         string json = @"{ ""type"": ""success"", ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ScriptEvaluateResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonConvert.DeserializeObject<EvaluateResult>(json), Throws.InstanceOf<JsonSerializationException>());
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithInvalidRealmValueTypeThrows()
     {
         string json = @"{ ""type"": ""success"", ""realm"": { ""noWoman"": ""noCry"" }, ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ScriptEvaluateResult>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonConvert.DeserializeObject<EvaluateResult>(json), Throws.InstanceOf<JsonReaderException>());
     }
 
     [Test]
@@ -82,7 +82,7 @@ public class ScriptEvaluateResultTests
         // NOTE: ScriptEvaluateResult and subclasses do not provide a way to instantiate
         // one directly using a constructor, so we will deserialize one from JSON.
         string json = @"{ ""type"": ""success"", ""realm"": ""myRealm"", ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
-        ScriptEvaluateResult? result = JsonConvert.DeserializeObject<ScriptEvaluateResult>(json);
+        EvaluateResult? result = JsonConvert.DeserializeObject<EvaluateResult>(json);
         Assert.That(() => JsonConvert.SerializeObject(result), Throws.InstanceOf<NotImplementedException>());
     }
 }

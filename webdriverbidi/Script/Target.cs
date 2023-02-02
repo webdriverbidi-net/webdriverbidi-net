@@ -1,4 +1,4 @@
-// <copyright file="ScriptTarget.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="Target.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -13,6 +13,6 @@ using WebDriverBidi.JsonConverters;
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
 [JsonConverter(typeof(ScriptTargetJsonConverter))]
-public abstract class ScriptTarget
+public abstract class Target
 {
 }

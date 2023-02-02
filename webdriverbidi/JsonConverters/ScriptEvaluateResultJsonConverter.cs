@@ -12,7 +12,7 @@ using WebDriverBidi.Script;
 /// <summary>
 /// The JSON converter for the ScriptEvaluateResult object.
 /// </summary>
-public class ScriptEvaluateResultJsonConverter : JsonConverter<ScriptEvaluateResult>
+public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
 {
     /// <summary>
     /// Gets a value indicating whether this converter can read JSON values.
@@ -27,7 +27,7 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<ScriptEvaluateRes
     /// <param name="writer">The JSON writer to use during serialization.</param>
     /// <param name="value">The object to serialize.</param>
     /// <param name="serializer">The JSON serializer to use in serialization.</param>
-    public override void WriteJson(JsonWriter writer, ScriptEvaluateResult? value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, EvaluateResult? value, JsonSerializer serializer)
     {
         throw new NotImplementedException();
     }
@@ -41,7 +41,7 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<ScriptEvaluateRes
     /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
     /// <param name="serializer">The JSON serializer to use in deserialization.</param>
     /// <returns>The deserialized object created from JSON.</returns>
-    public override ScriptEvaluateResult ReadJson(JsonReader reader, Type objectType, ScriptEvaluateResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override EvaluateResult ReadJson(JsonReader reader, Type objectType, EvaluateResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         var jsonObject = JObject.Load(reader);
         if (jsonObject.TryGetValue("type", out JToken? typeToken))
@@ -51,13 +51,13 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<ScriptEvaluateRes
                 string resultType = typeToken.Value<string>()!;
                 if (resultType == "success")
                 {
-                    ScriptEvaluateResultSuccess successResult = new();
+                    EvaluateResultSuccess successResult = new();
                     serializer.Populate(jsonObject.CreateReader(), successResult);
                     return successResult;
                 }
                 else if (resultType == "exception")
                 {
-                    ScriptEvaluateResultException exceptionResult = new();
+                    EvaluateResultException exceptionResult = new();
                     serializer.Populate(jsonObject.CreateReader(), exceptionResult);
                     return exceptionResult;
                 }

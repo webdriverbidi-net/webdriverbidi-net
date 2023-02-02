@@ -11,11 +11,11 @@ using Newtonsoft.Json;
 /// Provides parameters for the script.callFunction command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class CallFunctionCommandParameters : CommandParameters<ScriptEvaluateResult>
+public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
 {
     private readonly List<ArgumentValue> arguments = new();
     private string functionDeclaration;
-    private ScriptTarget scriptTarget;
+    private Target scriptTarget;
     private bool awaitPromise;
     private ArgumentValue? thisObject;
     private OwnershipModel? ownershipModel;
@@ -26,7 +26,7 @@ public class CallFunctionCommandParameters : CommandParameters<ScriptEvaluateRes
     /// <param name="functionDeclaration">The function declaration.</param>
     /// <param name="scriptTarget">The script target in which to call the function.</param>
     /// <param name="awaitPromise"><see langword="true" /> to await the script evaluation as a Promise; otherwise, <see langword="false" />.</param>
-    public CallFunctionCommandParameters(string functionDeclaration, ScriptTarget scriptTarget, bool awaitPromise)
+    public CallFunctionCommandParameters(string functionDeclaration, Target scriptTarget, bool awaitPromise)
     {
         this.functionDeclaration = functionDeclaration;
         this.scriptTarget = scriptTarget;
@@ -48,7 +48,7 @@ public class CallFunctionCommandParameters : CommandParameters<ScriptEvaluateRes
     /// Gets or sets the script target against which to call the function.
     /// </summary>
     [JsonProperty("target")]
-    public ScriptTarget ScriptTarget { get => this.scriptTarget; set => this.scriptTarget = value; }
+    public Target ScriptTarget { get => this.scriptTarget; set => this.scriptTarget = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to wait for the function execution to complete.

@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 /// <summary>
 /// Object representing a script target that is a browsing context.
 /// </summary>
-public class ContextTarget : ScriptTarget
+public class ContextTarget : Target
 {
     private string browsingContextId;
     private string? sandbox;

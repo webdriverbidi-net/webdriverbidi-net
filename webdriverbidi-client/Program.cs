@@ -70,8 +70,8 @@ async Task DriveBrowser()
 
     string functionDefinition = "function(){ return document.querySelector('input'); }";
     var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
-    var scriptSuccessResult = scriptResult as ScriptEvaluateResultSuccess;
-    var scriptExceptionResult = scriptResult as ScriptEvaluateResultException;
+    var scriptSuccessResult = scriptResult as EvaluateResultSuccess;
+    var scriptExceptionResult = scriptResult as EvaluateResultException;
     if (scriptSuccessResult is not null)
     {
         Console.WriteLine($"Script result: {scriptSuccessResult.Result.Value}");

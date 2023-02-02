@@ -56,9 +56,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing the result of the function execution.</returns>
-    public async Task<ScriptEvaluateResult> CallFunction(CallFunctionCommandParameters commandProperties)
+    public async Task<EvaluateResult> CallFunction(CallFunctionCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<EvaluateResult>(commandProperties);
     }
 
     /// <summary>
@@ -76,9 +76,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing the result of the script evaluation.</returns>
-    public async Task<ScriptEvaluateResult> Evaluate(EvaluateCommandParameters commandProperties)
+    public async Task<EvaluateResult> Evaluate(EvaluateCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommand<ScriptEvaluateResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<EvaluateResult>(commandProperties);
     }
 
     /// <summary>
