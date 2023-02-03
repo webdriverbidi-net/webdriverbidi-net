@@ -205,7 +205,10 @@ public class Connection
                     // Display text or binary data
                     if (this.client.State == WebSocketState.Open && receiveResult.MessageType != WebSocketMessageType.Close)
                     {
-                        messageBuilder.Append(Encoding.UTF8.GetString(buffer.Array ?? Array.Empty<byte>(), 0, receiveResult.Count));
+                        // WebSocket.CreateClientBuffer() should never create an ArraySegment with a
+                        // null backing array, so we can use the null-forgiving operator here to silence
+                        // the compiler warning.
+                        messageBuilder.Append(Encoding.UTF8.GetString(buffer.Array!, 0, receiveResult.Count));
                         if (receiveResult.EndOfMessage)
                         {
                             string message = messageBuilder.ToString();
