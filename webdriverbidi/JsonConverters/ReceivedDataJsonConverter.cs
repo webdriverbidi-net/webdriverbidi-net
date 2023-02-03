@@ -55,30 +55,21 @@ public class ReceivedDataJsonConverter : JsonConverter
             reader.DateParseHandling = DateParseHandling.None;
             if (reader.TokenType == JsonToken.StartObject)
             {
-                Dictionary<string, object?> dictionaryValue = new();
-                while (reader.Read() && reader.TokenType != JsonToken.EndObject)
+                if (!this.TryProcessObject(reader, out Dictionary<string, object?> dictionaryObject))
                 {
-                    string? elementKey = reader.Value!.ToString();
-                    if (string.IsNullOrEmpty(elementKey))
-                    {
-                        throw new JsonSerializationException("JSON object key cannot be null or the empty string");
-                    }
-
-                    reader.Read();
-                    dictionaryValue.Add(elementKey, this.ProcessToken(reader));
+                    throw new JsonSerializationException("Incomplete object in JSON");
                 }
 
-                processedObject = dictionaryValue;
+                processedObject = dictionaryObject;
             }
             else if (reader.TokenType == JsonToken.StartArray)
             {
-                List<object?> arrayValue = new();
-                while (reader.Read() && reader.TokenType != JsonToken.EndArray)
+                if (!this.TryProcessArray(reader, out List<object?> arrayObject))
                 {
-                    arrayValue.Add(this.ProcessToken(reader));
+                    throw new JsonSerializationException("Incomplete array in JSON");
                 }
 
-                processedObject = arrayValue;
+                processedObject = arrayObject;
             }
             else
             {
@@ -87,5 +78,46 @@ public class ReceivedDataJsonConverter : JsonConverter
         }
 
         return processedObject;
+    }
+
+    private bool TryProcessArray(JsonReader reader, out List<object?> arrayValue)
+    {
+        arrayValue = new();
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonToken.EndArray)
+            {
+                return true;
+            }
+
+            arrayValue.Add(this.ProcessToken(reader));
+        }
+
+        return false;
+    }
+
+    private bool TryProcessObject(JsonReader reader, out Dictionary<string, object?> dictionaryValue)
+    {
+        dictionaryValue = new();
+        while (reader.Read())
+        {
+            if (reader.TokenType == JsonToken.EndObject)
+            {
+                return true;
+            }
+
+            string? elementKey = reader.Value!.ToString();
+            if (string.IsNullOrEmpty(elementKey))
+            {
+                throw new JsonSerializationException("JSON object key cannot be null or the empty string");
+            }
+
+            // CAUTION: Blind read here. We are relying on the serializer to handle
+            // invalidly formed JSON.
+            reader.Read();
+            dictionaryValue.Add(elementKey, this.ProcessToken(reader));
+        }
+
+        return false;
     }
 }

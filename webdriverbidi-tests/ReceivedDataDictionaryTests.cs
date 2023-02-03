@@ -120,6 +120,27 @@ public class ReceivedDataDictionaryTests
     }
 
     [Test]
+    public void TestDeserializingFromInvalidArrayThrows()
+    {
+        string json = @"[ ""value"" ";
+        Assert.That(() => JsonConvert.DeserializeObject<List<object?>>(json, new ReceivedDataJsonConverter()), Throws.InstanceOf<JsonSerializationException>().With.Message.EqualTo("Incomplete array in JSON"));
+    }
+
+    [Test]
+    public void TestDeserializingFromIncompleteObjectThrows()
+    {
+        string json = @"{ ""invalidValue"": {";
+        Assert.That(() => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json, new ReceivedDataJsonConverter()), Throws.InstanceOf<JsonSerializationException>().With.Message.EqualTo("Incomplete object in JSON"));
+    }
+
+    [Test]
+    public void TestDeserializingFromInvalidObjectThrows()
+    {
+        string json = @"{ ""invalidValue"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json, new ReceivedDataJsonConverter()), Throws.InstanceOf<JsonReaderException>());
+    }
+
+    [Test]
     public void TestCannotSerialize()
     {
         ReceivedDataDictionary dictionary = ReceivedDataDictionary.EmptyDictionary;
