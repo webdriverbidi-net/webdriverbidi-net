@@ -19,7 +19,15 @@ scenarios like:
 * Adding JavaScript to each page before any other JavaScript is loaded, and have that so-called "preload"
 script available to the page being automated.
 * Other scenarios to be added as features become documented in the specification and implemented by browser
-vendors 
+vendors
+
+WebDriver Bidi uses JSON payloads across a websocket connection to communicate with the browser to execute
+commands and receive responses and events. This library manages the communication across the websocket and
+serializing and deserializing the JSON payloads. Consumers of this library should note that a general
+principle about the .NET API contained herein that objects received from the remote end (browser) of the
+connection are immutable; the data contained within cannot be modified. Objects being sent from the local
+end to the remote end are intended to have settable properties to shape the proper values sent across the
+connection.
 
 It is important to note some of the things this library is explicitly _not_ intended for.
 * This library is not itself a replacement for [Selenium](https://selenium.dev), [Puppeteer](https://pptr.dev)
