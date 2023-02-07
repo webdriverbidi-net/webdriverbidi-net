@@ -15,22 +15,19 @@ using WebDriverBidi.JsonConverters;
 public class RemoteReference : ArgumentValue
 {
     private readonly Dictionary<string, object?> additionalData = new();
-    private string handle;
+    private string? handle;
+    private string? sharedId;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteReference"/> class.
     /// </summary>
     /// <param name="handle">The handle of the remote object.</param>
-    public RemoteReference(string handle)
+    /// <param name="sharedId">The shared ID of the remote object.</param>
+    protected RemoteReference(string? handle, string? sharedId)
     {
         this.handle = handle;
+        this.sharedId = sharedId;
     }
-
-    /// <summary>
-    /// Gets the handle of the remote object.
-    /// </summary>
-    [JsonProperty("handle")]
-    public string Handle { get => this.handle; internal set => this.handle = value; }
 
     /// <summary>
     /// Gets the dictionary of additional data about the remote reference.
@@ -38,4 +35,16 @@ public class RemoteReference : ArgumentValue
     [JsonExtensionData]
     [JsonConverter(typeof(ReceivedDataJsonConverter))]
     public Dictionary<string, object?> AdditionalData => this.additionalData;
+
+    /// <summary>
+    /// Gets or sets the internally accessible handle of the remote reference.
+    /// </summary>
+    [JsonProperty("handle", NullValueHandling = NullValueHandling.Ignore)]
+    protected string? InternalHandle { get => this.handle; set => this.handle = value; }
+
+    /// <summary>
+    /// Gets or sets the internally accessible shared ID of the remote reference.
+    /// </summary>
+    [JsonProperty("sharedId", NullValueHandling = NullValueHandling.Ignore)]
+    protected string? InternalSharedId { get => this.sharedId; set => this.sharedId = value; }
 }

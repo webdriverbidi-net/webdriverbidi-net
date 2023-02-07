@@ -111,6 +111,11 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             throw new JsonSerializationException("RemoteValue must have a non-empty 'type' property that is a string");
         }
 
+        if (!RemoteValue.IsValidRemoteValueType(valueTypeString))
+        {
+            throw new JsonSerializationException($"RemoteValue 'type' property value '{valueTypeString}' is not a valid RemoteValue type");
+        }
+
         RemoteValue result = new(valueTypeString);
         if (jsonObject.TryGetValue("value", out JToken? valueToken))
         {
@@ -136,8 +141,19 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             }
 
             ulong internalId = internalIdToken.Value<ulong>();
-
             result.InternalId = internalId;
+        }
+
+        // The sharedId property is only valid for RemoteValue objects with type "node"
+        if (result.Type == "node" && jsonObject.TryGetValue("sharedId", out JToken? sharedIdToken))
+        {
+            if (sharedIdToken.Type != JTokenType.String)
+            {
+                throw new JsonSerializationException($"RemoteValue 'sharedId' property, when present, must be a string");
+            }
+
+            string? sharedId = sharedIdToken.Value<string>();
+            result.SharedId = sharedId;
         }
 
         return result;

@@ -15,10 +15,42 @@ using WebDriverBidi.JsonConverters;
 [JsonConverter(typeof(RemoteValueJsonConverter))]
 public class RemoteValue
 {
+    private static readonly List<string> KnownRemoteValueTypes = new()
+    {
+        "undefined",
+        "null",
+        "string",
+        "number",
+        "boolean",
+        "bigint",
+        "symbol",
+        "array",
+        "object",
+        "function",
+        "regexp",
+        "date",
+        "map",
+        "set",
+        "weakmap",
+        "weakset",
+        "iterator",
+        "generator",
+        "error",
+        "proxy",
+        "promise",
+        "typedarray",
+        "arraybuffer",
+        "nodelist",
+        "htmlcollection",
+        "node",
+        "window",
+    };
+
     private string valueType;
     private string? handle;
     private ulong? internalId;
     private object? valueObject;
+    private string? sharedId;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteValue"/> class.
@@ -48,6 +80,12 @@ public class RemoteValue
     public ulong? InternalId { get => this.internalId; internal set => this.internalId = value; }
 
     /// <summary>
+    /// Gets the shared ID of this RemoteValue.
+    /// </summary>
+    [JsonProperty("sharedId")]
+    public string? SharedId { get => this.sharedId; internal set => this.sharedId = value; }
+
+    /// <summary>
     /// Gets the object that contains the value of this RemoteValue.
     /// </summary>
     [JsonProperty("value")]
@@ -62,6 +100,16 @@ public class RemoteValue
     /// Gets a value indicating whether this RemoteValue contains a primitive value.
     /// </summary>
     internal bool IsPrimitive => this.valueType == "string" || this.valueType == "number" || this.valueType == "boolean" || this.valueType == "bigint" || this.valueType == "null" || this.valueType == "undefined";
+
+    /// <summary>
+    /// Gets a value indicating whether the specified type is valid for creating a RemoteValue.
+    /// </summary>
+    /// <param name="type">The type to check for validity.</param>
+    /// <returns><see langword="true" /> if the value is valid for creating a RemoteValue; otherwise, <see langword="false" />.</returns>
+    public static bool IsValidRemoteValueType(string type)
+    {
+        return KnownRemoteValueTypes.Contains(type);
+    }
 
     /// <summary>
     /// Gets the value of this RemoteValue cast to the desired type.
@@ -90,5 +138,54 @@ public class RemoteValue
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Converts this RemoteValue into a RemoteReference.
+    /// </summary>
+    /// <returns>The RemoteReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBidiException">
+    /// Thrown when the RemoteValue meets one of the following conditions:
+    /// <list type="bulleted">
+    ///   <item>
+    ///     <description>
+    ///       The RemoteValue is a primitive value (string, number, boolean, bigint, null, or undefined)
+    ///     </description>
+    ///   </item>
+    ///   <item>
+    ///     <description>
+    ///       The RemoteValue has a type of "node", but there is no shared ID set
+    ///     </description>
+    ///   </item>
+    ///   <item>
+    ///     <description>
+    ///       The RemoteValue does not have a handle set
+    ///     </description>
+    ///   </item>
+    /// </list>
+    /// </exception>
+    public RemoteReference ToRemoteReference()
+    {
+        if (this.IsPrimitive)
+        {
+            throw new WebDriverBidiException("Primitive values cannot be used as remote references");
+        }
+
+        if (this.valueType == "node")
+        {
+            if (this.sharedId is null)
+            {
+                throw new WebDriverBidiException("Node remote values must have a valid shared ID to be used as remote references");
+            }
+
+            return new SharedReference(this.sharedId) { Handle = this.handle };
+        }
+
+        if (this.handle is null)
+        {
+            throw new WebDriverBidiException("Remote values must have a valid handle to be used as remote references");
+        }
+
+        return new RemoteObjectReference(this.handle) { SharedId = this.sharedId };
     }
 }

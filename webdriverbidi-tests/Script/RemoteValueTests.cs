@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 [TestFixture]
 public class RemoteValueTests
 {
-    [Test]
+   [Test]
     public void TestCanDeserializeStringRemoteValue()
     {
         string json = @"{ ""type"": ""string"", ""value"": ""myValue"" }";
@@ -293,6 +293,62 @@ public class RemoteValueTests
             Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties!.NodeValue, Is.EqualTo(string.Empty));
             Assert.That(nodeProperties!.ChildNodeCount, Is.EqualTo(0));
+        });
+    }
+
+    [Test]
+    public void TestDeserializingNodeRemoteValueWithSharedId()
+    {
+        string json = @"{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue!.Type, Is.EqualTo("node"));
+            Assert.That(remoteValue.HasValue);
+            Assert.That(remoteValue.Handle, Is.Null);
+            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.SharedId, Is.EqualTo("mySharedId"));
+            Assert.That(remoteValue.Value, Is.InstanceOf<NodeProperties>());
+        });
+        var nodeProperties = remoteValue!.ValueAs<NodeProperties>();
+        Assert.Multiple(() =>
+        {
+            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties!.NodeValue, Is.EqualTo(string.Empty));
+            Assert.That(nodeProperties!.ChildNodeCount, Is.EqualTo(0));
+        });
+    }
+
+    [Test]
+    public void TestDeserializingNodeRemoteValueWithInvalidSharedIdThrows()
+    {
+        string json = @"{ ""type"": ""node"", ""sharedId"": {}, ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("RemoteValue 'sharedId' property, when present, must be a string"));
+    }
+
+    [Test]
+    public void TestDeserializingSharedIdIsIgnoredForNotNodeRemoteValue()
+    {
+        string json = @"{ ""type"": ""array"", ""sharedId"": ""mySharedId"", ""value"": [ { ""type"": ""string"", ""value"": ""stringValue"" }, { ""type"": ""number"", ""value"": 123 }, { ""type"": ""boolean"", ""value"": true } ] }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue!.Type, Is.EqualTo("array"));
+            Assert.That(remoteValue.HasValue);
+            Assert.That(remoteValue.Handle, Is.Null);
+            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
+        });
+        var arrayValue = remoteValue!.ValueAs<RemoteValueList>();
+        Assert.That(arrayValue, Is.Not.Null);
+        Assert.That(arrayValue, Has.Count.EqualTo(3));
+        Assert.Multiple(() =>
+        {
+            Assert.That(arrayValue![0].ValueAs<string>, Is.EqualTo("stringValue"));
+            Assert.That(arrayValue![1].ValueAs<long>, Is.EqualTo(123));
+            Assert.That(arrayValue![2].ValueAs<bool>, Is.EqualTo(true));
         });
     }
 
@@ -677,7 +733,7 @@ public class RemoteValueTests
     [Test]
     public void TestDeserializingMapRemoteValueWitComplexRemoteValueKeyContainingHandle()
     {
-        string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""sybmol"", ""handle"": ""myHandle"" }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
+        string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""symbol"", ""handle"": ""myHandle"" }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
         RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
@@ -704,7 +760,7 @@ public class RemoteValueTests
     [Test]
     public void TestDeserializingMapRemoteValueWitComplexRemoteValueKeyContainingInternalId()
     {
-        string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""sybmol"", ""internalId"": 123 }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
+        string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""symbol"", ""internalId"": 123 }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
         RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
@@ -1040,6 +1096,13 @@ public class RemoteValueTests
     }
 
     [Test]
+    public void TestDeserializingRemoteValueWithInvalidTypeValueThrows()
+    {
+        string json = @"{ ""type"": ""invalid"", ""value"": ""myValue"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("'type' property value 'invalid' is not a valid RemoteValue type"));
+    }
+
+    [Test]
     public void TestDeserializingRemoteValueWithEmptyStringTypeThrows()
     {
         string json = @"{ ""type"": """", ""value"": ""myValue"" }";
@@ -1088,5 +1151,61 @@ public class RemoteValueTests
         string json = @"{ ""type"": ""string"", ""value"": ""myValue"" }";
         RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
         Assert.That(() => JsonConvert.SerializeObject(remoteValue!), Throws.InstanceOf<NotImplementedException>());
+    }
+
+    [Test]
+    public void TestConvertToRemoteReference()
+    {
+        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": 123 }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        RemoteReference reference = remoteValue!.ToRemoteReference();
+        Assert.That(reference, Is.InstanceOf<RemoteObjectReference>());
+    }
+
+    [Test]
+    public void TestConvertToRemoteReferenceWithoutHandleThrows()
+    {
+        string json = @"{ ""type"": ""window"", ""internalId"": 123 }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue, Is.Not.Null);
+            Assert.That(() => remoteValue!.ToRemoteReference(), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("must have a valid handle"));
+        });
+    }
+
+    [Test]
+    public void TestConvertNodeRemoteValueToRemoteReference()
+    {
+        string json = @"{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        RemoteReference reference = remoteValue!.ToRemoteReference();
+        Assert.That(reference, Is.InstanceOf<SharedReference>());
+    }
+
+    [Test]
+    public void TestConvertNodeRemoteValueWithoutSharedIdToRemoteReferenceThrows()
+    {
+        string json = @"{ ""type"": ""node"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue, Is.Not.Null);
+            Assert.That(() => remoteValue!.ToRemoteReference(), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("must have a valid shared ID"));
+        });
+    }
+
+    [Test]
+    public void TestConvertPrimitiveRemoteValueToRemoteReferenceThrows()
+    {
+        string json = @"{ ""type"": ""string"", ""value"": ""myValue"" }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue, Is.Not.Null);
+            Assert.That(() => remoteValue!.ToRemoteReference(), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Primitive values cannot be used as remote references"));
+        });
     }
 }
