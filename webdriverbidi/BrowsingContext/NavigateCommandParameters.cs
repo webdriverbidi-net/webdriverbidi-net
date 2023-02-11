@@ -13,7 +13,7 @@ using WebDriverBidi.JsonConverters;
 /// Provides parameters for the browsingContext.navigate command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class NavigateCommandParameters : CommandParameters<BrowsingContextNavigateResult>
+public class NavigateCommandParameters : CommandParameters<NavigationResult>
 {
     private string browsingContextId;
     private string url;

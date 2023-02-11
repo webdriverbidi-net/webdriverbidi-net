@@ -3,13 +3,13 @@ namespace WebDriverBidi.BrowsingContext;
 using Newtonsoft.Json;
 
 [TestFixture]
-public class NavigateResultTests
+public class NavigationResultTests
 {
     [Test]
     public void TestCanDeserialize()
     {
         string json = @"{ ""url"": ""http://example.com"" }";
-        BrowsingContextNavigateResult? result = JsonConvert.DeserializeObject<BrowsingContextNavigateResult>(json);
+        NavigationResult? result = JsonConvert.DeserializeObject<NavigationResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -22,7 +22,7 @@ public class NavigateResultTests
     public void TestCanDeserializeWithNavigationId()
     {
         string json = @"{ ""url"": ""http://example.com"", ""navigation"": ""myNavigationId"" }";
-        BrowsingContextNavigateResult? result = JsonConvert.DeserializeObject<BrowsingContextNavigateResult>(json);
+        NavigationResult? result = JsonConvert.DeserializeObject<NavigationResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -35,20 +35,20 @@ public class NavigateResultTests
     public void TestDeserializingWithMissingUrlThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextNavigateResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonConvert.DeserializeObject<NavigationResult>(json), Throws.InstanceOf<JsonSerializationException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidUrlTypeThrows()
     {
         string json = @"{ ""url"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextNavigateResult>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonConvert.DeserializeObject<NavigationResult>(json), Throws.InstanceOf<JsonReaderException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidNavigationIdTypeThrows()
     {
         string json = @"{ ""url"": ""http://example.com"", ""navigation"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextNavigateResult>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonConvert.DeserializeObject<NavigationResult>(json), Throws.InstanceOf<JsonReaderException>());
     }
 }

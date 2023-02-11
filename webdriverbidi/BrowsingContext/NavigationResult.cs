@@ -1,4 +1,4 @@
-// <copyright file="BrowsingContextNavigateResult.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="NavigationResult.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -11,13 +11,13 @@ using Newtonsoft.Json;
 /// Contains the result of a navigation.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class BrowsingContextNavigateResult : CommandResult
+public class NavigationResult : CommandResult
 {
     private string? id;
     private string url = string.Empty;
 
     [JsonConstructor]
-    private BrowsingContextNavigateResult()
+    private NavigationResult()
     {
     }
 

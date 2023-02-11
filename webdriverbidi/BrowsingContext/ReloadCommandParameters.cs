@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 /// Provides parameters for the browsingContext.reload command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class ReloadCommandParameters : CommandParameters<BrowsingContextNavigateResult>
+public class ReloadCommandParameters : CommandParameters<NavigationResult>
 {
     private string browsingContextId;
     private bool? ignoreCache;

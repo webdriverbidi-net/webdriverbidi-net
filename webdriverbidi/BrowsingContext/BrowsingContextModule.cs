@@ -150,9 +150,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<BrowsingContextNavigateResult> Navigate(NavigateCommandParameters commandProperties)
+    public async Task<NavigationResult> Navigate(NavigateCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommand<BrowsingContextNavigateResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<NavigationResult>(commandProperties);
     }
 
     /// <summary>
@@ -160,9 +160,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<BrowsingContextNavigateResult> Reload(ReloadCommandParameters commandProperties)
+    public async Task<NavigationResult> Reload(ReloadCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommand<BrowsingContextNavigateResult>(commandProperties);
+        return await this.Driver.ExecuteCommand<NavigationResult>(commandProperties);
     }
 
     private void OnContextCreated(EventInfo<BrowsingContextInfo> eventData)
