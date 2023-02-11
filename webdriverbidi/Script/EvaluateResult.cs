@@ -16,7 +16,7 @@ using WebDriverBidi.JsonConverters;
 public class EvaluateResult : CommandResult
 {
     private string realmId = string.Empty;
-    private ScriptEvaluateResultType resultType = ScriptEvaluateResultType.Success;
+    private EvaluateResultType resultType = EvaluateResultType.Success;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EvaluateResult"/> class.
@@ -30,7 +30,7 @@ public class EvaluateResult : CommandResult
     /// </summary>
     [JsonProperty("type")]
     [JsonRequired]
-    public ScriptEvaluateResultType ResultType { get => this.resultType; internal set => this.resultType = value; }
+    public EvaluateResultType ResultType { get => this.resultType; internal set => this.resultType = value; }
 
     /// <summary>
     /// Gets the ID of the realm in which the script was executed.
