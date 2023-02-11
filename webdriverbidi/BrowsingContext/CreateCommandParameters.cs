@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class CreateCommandParameters : CommandParameters<CreateCommandResult>
 {
-    private BrowsingContextCreateType createType;
+    private CreateType createType;
 
     private string? referenceContextId;
 
@@ -21,7 +21,7 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     /// Initializes a new instance of the <see cref="CreateCommandParameters" /> class.
     /// </summary>
     /// <param name="createType">The type of browsing context to create.</param>
-    public CreateCommandParameters(BrowsingContextCreateType createType)
+    public CreateCommandParameters(CreateType createType)
     {
         this.createType = createType;
     }
@@ -35,7 +35,7 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     /// Gets or sets the type of browsing context (tab or window) to create.
     /// </summary>
     [JsonProperty("type")]
-    public BrowsingContextCreateType CreateType { get => this.createType; set => this.createType = value; }
+    public CreateType CreateType { get => this.createType; set => this.createType = value; }
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to reference within the newly created context.

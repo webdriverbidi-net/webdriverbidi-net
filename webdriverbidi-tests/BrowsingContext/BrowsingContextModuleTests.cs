@@ -59,7 +59,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Create(new CreateCommandParameters(BrowsingContextCreateType.Tab));
+        var task = module.Create(new CreateCommandParameters(CreateType.Tab));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 

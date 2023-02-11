@@ -1,4 +1,4 @@
-// <copyright file="BrowsingContextCreateType.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="CreateType.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -11,8 +11,8 @@ using WebDriverBidi.JsonConverters;
 /// <summary>
 /// Values used for the creation of new browsing contexts.
 /// </summary>
-[JsonConverter(typeof(EnumValueJsonConverter<BrowsingContextCreateType>))]
-public enum BrowsingContextCreateType
+[JsonConverter(typeof(EnumValueJsonConverter<CreateType>))]
+public enum CreateType
 {
     /// <summary>
     /// Create the browsing context in a new tab.
