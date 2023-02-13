@@ -51,11 +51,11 @@ public class TestWebSocketServer
     private static readonly string WebSocketGuid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     private static readonly byte ParityBit = 0x80;
 
-    private readonly Socket socket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-    private Socket? clientSocket;
-    private int port = 0;
+    private readonly TcpListener listener = new(new IPEndPoint(IPAddress.Loopback, 0));
     private readonly CancellationTokenSource listenerCancelationTokenSource = new();
     private readonly List<string> serverLog = new();
+    private Socket? clientSocket;
+    private int port = 0;
     private WebSocketState state = WebSocketState.None;
     private bool ignoreCloseRequest = false;
 
@@ -73,9 +73,8 @@ public class TestWebSocketServer
 
     public void Start()
     {
-        IPEndPoint serverEndpoint = new(IPAddress.Loopback, this.port);
-        this.socket.Bind(serverEndpoint);
-        IPEndPoint? localEndpoint = this.socket.LocalEndPoint as IPEndPoint;
+        this.listener.Start();
+        IPEndPoint? localEndpoint = this.listener.LocalEndpoint as IPEndPoint;
         if (localEndpoint is not null)
         {
             this.port = localEndpoint.Port;
@@ -87,13 +86,7 @@ public class TestWebSocketServer
     public void Stop()
     {
         this.listenerCancelationTokenSource.Cancel();
-        if (this.socket.Connected)
-        {
-            this.socket.Shutdown(SocketShutdown.Both);
-            this.serverLog.Add("Socket disconnected");
-        }
-        this.socket.Close();
-        this.socket.Dispose();
+        this.listener.Stop();
     }
 
     public async Task SendData(string data)
@@ -118,8 +111,7 @@ public class TestWebSocketServer
 
     private async Task ReceiveData()
     {
-        this.socket.Listen();
-        this.clientSocket = await this.socket.AcceptAsync(this.listenerCancelationTokenSource.Token);
+        this.clientSocket = await this.listener!.AcceptSocketAsync(this.listenerCancelationTokenSource.Token);
         this.serverLog.Add("Socket connected");
         while (!this.listenerCancelationTokenSource.Token.IsCancellationRequested && this.state != WebSocketState.Closed)
         {
