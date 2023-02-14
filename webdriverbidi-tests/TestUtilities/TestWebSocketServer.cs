@@ -51,7 +51,7 @@ public class TestWebSocketServer
     private static readonly string WebSocketGuid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     private static readonly byte ParityBit = 0x80;
 
-    private readonly TcpListener listener = new(new IPEndPoint(IPAddress.Loopback, 0));
+    private readonly TcpListener listener;
     private readonly CancellationTokenSource listenerCancelationTokenSource = new();
     private readonly List<string> serverLog = new();
     private Socket? clientSocket;
@@ -60,7 +60,14 @@ public class TestWebSocketServer
     private bool ignoreCloseRequest = false;
 
     public TestWebSocketServer()
+        : this(0)
     {
+    }
+
+    public  TestWebSocketServer(int port)
+    {
+        this.port = port;
+        this.listener = new(new IPEndPoint(IPAddress.Loopback, this.port));
     }
 
     public int Port => this.port;
@@ -111,7 +118,7 @@ public class TestWebSocketServer
 
     private async Task ReceiveData()
     {
-        this.clientSocket = await this.listener!.AcceptSocketAsync(this.listenerCancelationTokenSource.Token);
+        this.clientSocket = await this.listener.AcceptSocketAsync(this.listenerCancelationTokenSource.Token);
         this.serverLog.Add("Socket connected");
         while (!this.listenerCancelationTokenSource.Token.IsCancellationRequested && this.state != WebSocketState.Closed)
         {
