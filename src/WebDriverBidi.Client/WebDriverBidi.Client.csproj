@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\webdriverbidi\WebDriverBidi.csproj" />
+    <ProjectReference Include="..\WebDriverBidi\WebDriverBidi.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -11,7 +11,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>webdriverbidi_client</RootNamespace>
+    <RootNamespace>WebDriverBidiClient</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
