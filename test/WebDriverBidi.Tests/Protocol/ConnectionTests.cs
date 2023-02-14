@@ -131,7 +131,14 @@ public class ConnectionTests
         await server.SendData("Hello back");
         syncEvent.WaitOne();
         await connection.Stop();
-        Assert.That(logValues, Has.Count.EqualTo(5));
+
+        List<string> messages = new();
+        foreach (var logValue in logValues)
+        {
+            messages.Add(logValue.Message);
+        }
+
+        Assert.That(logValues, Has.Count.EqualTo(5), $"Actual values: {string.Join("\n", messages.ToArray())}");
         foreach(var args in logValues)
         {
             Assert.Multiple(() =>
