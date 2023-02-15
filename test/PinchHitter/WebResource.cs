@@ -5,6 +5,7 @@
 
 namespace PinchHitter;
 
+using System.Net;
 using System.Text;
 
 /// <summary>
@@ -50,11 +51,6 @@ public class WebResource
     public bool RequiresAuthentication => this.authenticators.Count > 0;
 
     /// <summary>
-    /// Gets a read-only list of the registered authenticators for this resource.
-    /// </summary>
-    public IList<WebAuthenticator> Authenticators => this.authenticators.AsReadOnly();
-
-    /// <summary>
     /// Creates a WebResource representing an HTML page.
     /// </summary>
     /// <param name="bodyContent">The content of the body tag, not including the tag itself.</param>
@@ -72,5 +68,45 @@ public class WebResource
     public void AddAuthenticator(WebAuthenticator authenticator)
     {
         this.authenticators.Add(authenticator);
+    }
+
+    /// <summary>
+    /// Attempts to authenticate this resource.
+    /// </summary>
+    /// <param name="authorizationHeader">The value of the Authorization header in the HTTP request that requests this resource.</param>
+    /// <returns><see langword="true" /> if the resource is authenticated; otherwise, <see langword="false" />.</returns>
+    public bool TryAuthenticate(string authorizationHeader)
+    {
+        if (!this.RequiresAuthentication)
+        {
+            return true;
+        }
+
+        foreach (WebAuthenticator authenticator in this.authenticators)
+        {
+            if (authenticator.IsAuthenticated(authorizationHeader))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Creates an HttpResponse object from this resource.
+    /// </summary>
+    /// <param name="statusCode">The HTTP status code of the response.</param>
+    /// <returns>The HTTP response to be transmitted.</returns>
+    public HttpResponse CreateHttpResponse(HttpStatusCode statusCode)
+    {
+        HttpResponse response = new()
+        {
+            StatusCode = statusCode,
+        };
+        response.Headers["Content-Type"] = new List<string>() { this.mimeType };
+        response.Headers["Content-Length"] = new List<string>() { this.data.Length.ToString() };
+        response.BodyContent = this.data;
+        return response;
     }
 }

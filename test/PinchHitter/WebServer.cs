@@ -152,14 +152,11 @@ public class WebServer
     {
         string rawRequest = Encoding.UTF8.GetString(requestBuffer, 0, requestLength);
         HttpRequest request = HttpRequest.Parse(rawRequest);
-        HttpResponse responseData = new();
+        HttpResponse responseData;
         if (!this.knownResources.ContainsKey(request.Url))
         {
-            byte[] notFoundresponse = Encoding.UTF8.GetBytes("<html><body><h1>404 Not Found</h1><div>The requested resource was not found</div></body></html>");
-            responseData.StatusCode = HttpStatusCode.NotFound;
-            responseData.Headers["Content-Type"] = new List<string>() { "text/html" };
-            responseData.Headers["Content-Length"] = new List<string>() { notFoundresponse.Length.ToString() };
-            responseData.BodyContent = notFoundresponse;
+            WebResource notFoundResource = WebResource.CreateHtmlResource("<h1>404 Not Found</h1><div>The requested resource was not found</div>");
+            responseData = notFoundResource.CreateHttpResponse(HttpStatusCode.NotFound);
         }
         else
         {
@@ -168,44 +165,27 @@ public class WebServer
             {
                 if (!request.Headers.ContainsKey("Authorization"))
                 {
-                    responseData.StatusCode = HttpStatusCode.Unauthorized;
+                    WebResource unauthorizedResource = WebResource.CreateHtmlResource(string.Empty);
+                    responseData = unauthorizedResource.CreateHttpResponse(HttpStatusCode.Unauthorized);
                     responseData.Headers["Www-Authenticate"] = new List<string>() { "Basic" };
-                    responseData.Headers["Content-Type"] = new List<string>() { "text/html" };
-                    responseData.Headers["Content-Length"] = new List<string>() { "0" };
                 }
                 else
                 {
-                    bool isAuthenticated = false;
                     string authorizationHeader = request.Headers["Authorization"][0];
-                    foreach (WebAuthenticator authenticator in resource.Authenticators)
+                    if (!resource.TryAuthenticate(authorizationHeader))
                     {
-                        if (authenticator.IsAuthenticated(authorizationHeader))
-                        {
-                            responseData.StatusCode = HttpStatusCode.OK;
-                            responseData.Headers["Content-Type"] = new List<string>() { resource.MimeType };
-                            responseData.Headers["Content-Length"] = new List<string>() { resource.Data.Length.ToString() };
-                            responseData.BodyContent = resource.Data;
-                            isAuthenticated = true;
-                            break;
-                        }
+                        WebResource forbiddenResource = WebResource.CreateHtmlResource("<h1>403 Forbidden</h1><div>You do not have the permissions to view this resource</div>");
+                        responseData = forbiddenResource.CreateHttpResponse(HttpStatusCode.Forbidden);
                     }
-
-                    if (!isAuthenticated)
+                    else
                     {
-                        byte[] forbiddenResponse = Encoding.UTF8.GetBytes("<html><body><h1>403 Forbidden</h1><div>You do not have the permissions to view this resource</div></body></html>");
-                        responseData.StatusCode = HttpStatusCode.Forbidden;
-                        responseData.Headers["Content-Type"] = new List<string>() { "text/html" };
-                        responseData.Headers["Content-Length"] = new List<string>() { forbiddenResponse.Length.ToString() };
-                        responseData.BodyContent = forbiddenResponse;
+                        responseData = resource.CreateHttpResponse(HttpStatusCode.OK);
                     }
                 }
             }
             else
             {
-                responseData.StatusCode = HttpStatusCode.OK;
-                responseData.Headers["Content-Type"] = new List<string>() { resource.MimeType };
-                responseData.Headers["Content-Length"] = new List<string>() { resource.Data.Length.ToString() };
-                responseData.BodyContent = resource.Data;
+                responseData = resource.CreateHttpResponse(HttpStatusCode.OK);
             }
         }
 
