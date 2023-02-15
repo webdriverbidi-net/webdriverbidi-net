@@ -6,7 +6,7 @@
 namespace WebDriverBidi.Script;
 
 /// <summary>
-/// The Script module.
+/// The Script module contains commands and events relating to script realms and execution.
 /// </summary>
 public sealed class ScriptModule : Module
 {

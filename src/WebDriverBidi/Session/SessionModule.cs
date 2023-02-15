@@ -6,7 +6,7 @@
 namespace WebDriverBidi.Session;
 
 /// <summary>
-/// The Session module.
+/// The Session module contains commands and events for monitoring the status of the remote end.
 /// </summary>
 public sealed class SessionModule : Module
 {

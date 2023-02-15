@@ -6,7 +6,7 @@
 namespace WebDriverBidi.BrowsingContext;
 
 /// <summary>
-/// The BrowsingContext module.
+/// The BrowsingContext module contains commands and events relating to browsing contexts.
 /// </summary>
 public sealed class BrowsingContextModule : Module
 {
