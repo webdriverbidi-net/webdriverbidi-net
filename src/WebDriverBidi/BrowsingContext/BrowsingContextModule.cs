@@ -177,10 +177,7 @@ public sealed class BrowsingContextModule : Module
         // eventData to be any other type than the expected type.
         if (this.ContextCreated is not null)
         {
-            BrowsingContextEventArgs eventArgs = new(eventData.EventData)
-            {
-                AdditionalData = eventData.AdditionalData,
-            };
+            BrowsingContextEventArgs eventArgs = eventData.ToEventArgs<BrowsingContextEventArgs>();
             this.ContextCreated(this, eventArgs);
         }
     }
@@ -193,14 +190,9 @@ public sealed class BrowsingContextModule : Module
         // BrowsingContextEventArgs instance, the protocol transport will
         // deserialize to a BrowingContextInfo, then use that here to create
         // the appropriate EventArgs instance.
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
         if (this.ContextDestroyed is not null)
         {
-            BrowsingContextEventArgs eventArgs = new(eventData.EventData)
-            {
-                AdditionalData = eventData.AdditionalData,
-            };
+            BrowsingContextEventArgs eventArgs = eventData.ToEventArgs<BrowsingContextEventArgs>();
             this.ContextDestroyed(this, eventArgs);
         }
     }
@@ -209,8 +201,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.NavigationStarted is not null)
         {
-            NavigationEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
             this.NavigationStarted(this, eventArgs);
         }
     }
@@ -219,8 +210,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.FragmentNavigated is not null)
         {
-            NavigationEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
             this.FragmentNavigated(this, eventArgs);
         }
      }
@@ -229,8 +219,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.DomContentLoaded is not null)
         {
-            NavigationEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
             this.DomContentLoaded(this, eventArgs);
         }
     }
@@ -239,8 +228,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.Load is not null)
         {
-            NavigationEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
             this.Load(this, eventArgs);
         }
     }
@@ -249,8 +237,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.DownloadWillBegin is not null)
         {
-            NavigationEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
             this.DownloadWillBegin(this, eventArgs);
         }
     }
@@ -259,8 +246,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.NavigationAborted is not null)
         {
-            NavigationEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
             this.NavigationAborted(this, eventArgs);
         }
     }
@@ -269,8 +255,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.NavigationFailed is not null)
         {
-            NavigationEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
             this.NavigationFailed(this, eventArgs);
         }
     }
@@ -279,8 +264,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.UserPromptClosed is not null)
         {
-            UserPromptClosedEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            UserPromptClosedEventArgs eventArgs = eventData.ToEventArgs<UserPromptClosedEventArgs>();
             this.UserPromptClosed(this, eventArgs);
         }
     }
@@ -289,8 +273,7 @@ public sealed class BrowsingContextModule : Module
     {
         if (this.UserPromptOpened is not null)
         {
-            UserPromptOpenedEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            UserPromptOpenedEventArgs eventArgs = eventData.ToEventArgs<UserPromptOpenedEventArgs>();
             this.UserPromptOpened(this, eventArgs);
         }
     }

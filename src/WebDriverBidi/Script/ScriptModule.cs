@@ -108,14 +108,9 @@ public sealed class ScriptModule : Module
         // the properties to directly deserialize the RealmCreatedEventArgs
         // instance, the protocol transport will deserialize to a RealmInfo,
         // then use that here to create the appropriate EventArgs instance.
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
         if (this.RealmCreated is not null)
         {
-            RealmCreatedEventArgs eventArgs = new(eventData.EventData)
-            {
-                AdditionalData = eventData.AdditionalData,
-            };
+            RealmCreatedEventArgs eventArgs = eventData.ToEventArgs<RealmCreatedEventArgs>();
             this.RealmCreated(this, eventArgs);
         }
     }
@@ -124,8 +119,7 @@ public sealed class ScriptModule : Module
     {
         if (this.RealmDestroyed is not null)
         {
-            RealmDestroyedEventArgs eventArgs = eventData.EventData;
-            eventArgs.AdditionalData = eventData.AdditionalData;
+            RealmDestroyedEventArgs eventArgs = eventData.ToEventArgs<RealmDestroyedEventArgs>();
             this.RealmDestroyed(this, eventArgs);
         }
     }

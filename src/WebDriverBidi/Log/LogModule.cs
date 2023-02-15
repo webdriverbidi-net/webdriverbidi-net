@@ -42,14 +42,9 @@ public sealed class LogModule : Module
         // properties to directly deserialize the EntryAddedEventArgs instance,
         // the protocol transport will deserialize to a LogEntry, then use that
         // here to create the appropriate EventArgs instance.
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
         if (this.EntryAdded is not null)
         {
-            EntryAddedEventArgs eventArgs = new(eventData.EventData)
-            {
-                AdditionalData = eventData.AdditionalData,
-            };
+            EntryAddedEventArgs eventArgs = eventData.ToEventArgs<EntryAddedEventArgs>();
             this.EntryAdded(this, eventArgs);
         }
     }

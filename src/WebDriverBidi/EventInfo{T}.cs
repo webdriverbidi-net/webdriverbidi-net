@@ -31,4 +31,57 @@ public class EventInfo<T>
     /// Gets additional data returned for the event.
     /// </summary>
     public ReceivedDataDictionary AdditionalData { get; }
+
+    /// <summary>
+    /// Creates an object derived from WebDriverBidiEventArgs which contains information about an event.
+    /// </summary>
+    /// <typeparam name="TEventArgs">
+    /// A type derived from WebDriverBidiEventArgs. The type must be the same as type T of this class,
+    /// or must have a public constructor that takes an argument of type T.
+    /// </typeparam>
+    /// <returns>The object containing the information about the event.</returns>
+    /// <exception cref="WebDriverBidiException">
+    /// Thrown when either:
+    /// <list type="bulleted">
+    ///   <item>
+    ///     <description>
+    ///       The type of TEventArgs is not the same type as T
+    ///     </description>
+    ///   </item>
+    ///   <item>
+    ///     <description>
+    ///       The type TEventArgs does not have a public constructor that takes an argument of type T
+    ///     </description>
+    ///   </item>
+    /// </list>
+    /// </exception>
+    public TEventArgs ToEventArgs<TEventArgs>()
+        where TEventArgs : WebDriverBidiEventArgs
+    {
+        TEventArgs? result = null;
+        if (typeof(T) == typeof(TEventArgs))
+        {
+            result = this.EventData as TEventArgs;
+        }
+        else
+        {
+            try
+            {
+                // We are trying to create a new instance of TEventArgs here using a
+                // constructor that takes an argument of type T
+                result = Activator.CreateInstance(typeof(TEventArgs), this.EventData) as TEventArgs;
+            }
+            catch (MissingMethodException)
+            {
+            }
+        }
+
+        if (result is null)
+        {
+            throw new WebDriverBidiException($"Could not produce an EventArgs of type {typeof(TEventArgs)} from event info having type {typeof(T)}");
+        }
+
+        result.AdditionalData = this.AdditionalData;
+        return result!;
+    }
 }
