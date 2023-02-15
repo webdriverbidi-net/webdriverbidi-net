@@ -2,6 +2,7 @@ namespace WebDriverBidi.Protocol;
 
 using Newtonsoft.Json.Linq;
 using TestUtilities;
+using PinchHitter;
 
 [TestFixture]
 public class TransportTests
@@ -291,8 +292,8 @@ public class TransportTests
     [Test]
     public async Task TestTransportCanUseDefaultConnection()
     {
-        static void handler(object? sender, ConnectionDataReceivedEventArgs e) { }
-        TestWebSocketServer server = new();
+        static void handler(object? sender, WebServerDataReceivedEventArgs e) { }
+        WebSocketServer server = new();
         server.DataReceived += handler;
         server.Start();
 

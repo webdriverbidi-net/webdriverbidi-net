@@ -52,12 +52,18 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are three projects in this repository:
-* webdriverbidi/WebDriverBidi.csproj - The main library source code
-* webdriverbidi-tests/WebDriverBidi.Tests.csproj - The unit tests for the main library
-* webdriverbidi-client/webdriverbidi-client.csproj - A console application used as a "playground"
+There are four projects in this repository:
+* src/WebDriverBidi/WebDriverBidi.csproj - The main library source code
+* src/WebDriverBidi.Client/WebDriverBidi.Client.csproj - A console application used as a "playground"
 for practice using the library. Changes to this project are not canonical at this time, and this
 project should not be viewed as having desirable coding practices.
+* test/WebDriverBidi.Tests/WebDriverBidi.Tests.csproj - The unit tests for the main library
+* test/PinchHitter/PinchHitter.csproj - A class library implementing an in-memory simple web server
+capable of serving HTTP content as well as acting as a server for WebSocket traffic. The project
+uses a`System.Net.Sockets.TcpListener` to avoid the necessity of registering URL prefixes on Windows,
+which using `System.Net.Sockets.HttpListener` requires, and which needs administrative access. This
+code is separated into a separate project, so as to facilitate the possibility of its extraction to
+a separate repository in the future.
 
 [Visual Studio Code](https://code.visualstudio.com/) is the preferred IDE for development of this library.
 It can be used across multiple operating systems, and there should be nothing platform-specific in the

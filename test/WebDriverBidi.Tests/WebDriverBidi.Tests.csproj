@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\WebDriverBidi\WebDriverBidi.csproj" />
+    <ProjectReference Include="..\PinchHitter\PinchHitter.csproj" />
   </ItemGroup>
 
 </Project>

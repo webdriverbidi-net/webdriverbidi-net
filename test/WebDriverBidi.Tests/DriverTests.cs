@@ -1,6 +1,7 @@
 namespace WebDriverBidi;
 
 using TestUtilities;
+using PinchHitter;
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Log;
 using WebDriverBidi.Protocol;
@@ -274,8 +275,8 @@ public class DriverTests
     [Test]
     public async Task TestDriverCanUseDefaultTransport()
     {
-        static void handler(object? sender, ConnectionDataReceivedEventArgs e) { }
-        TestWebSocketServer server = new();
+        static void handler(object? sender, WebServerDataReceivedEventArgs e) { }
+        WebSocketServer server = new();
         server.DataReceived += handler;
         server.Start();
 

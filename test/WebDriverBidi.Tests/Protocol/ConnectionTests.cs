@@ -1,12 +1,12 @@
 namespace WebDriverBidi.Protocol;
 
 using System.Threading;
-using TestUtilities;
+using PinchHitter;
 
 [TestFixture]
 public class ConnectionTests
 {
-    private TestWebSocketServer? server;
+    private WebSocketServer? server;
     private string lastReceivedData = string.Empty;
     private readonly AutoResetEvent syncEvent = new(false);
 
@@ -15,7 +15,7 @@ public class ConnectionTests
     {
         lastReceivedData = string.Empty;
         syncEvent.Reset();
-        server = new TestWebSocketServer();
+        server = new WebSocketServer();
         server.DataReceived += OnSocketDataReceived;
         server.Start();
     }
@@ -211,7 +211,7 @@ public class ConnectionTests
             connectionLog.Add(e.Message);
         };
 
-        List<string> serverLog = server.Log;
+        IList<string> serverLog = server.Log;
         await connection.Start($"ws://localhost:{server.Port}");
     
         // Server initiated disconnection requires waiting for the
@@ -237,7 +237,7 @@ public class ConnectionTests
             connectionLog.Add(e.Message);
         };
 
-        List<string> serverLog = server.Log;
+        IList<string> serverLog = server.Log;
         await connection.Start($"ws://localhost:{server.Port}");
         await connection.Stop();
     }
@@ -258,12 +258,12 @@ public class ConnectionTests
             connectionLog.Add(e.Message);
         };
 
-        List<string> serverLog = server.Log;
+        IList<string> serverLog = server.Log;
         await connection.Start($"ws://localhost:{server.Port}");
         await connection.Stop();
     }
 
-    private void OnSocketDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
+    private void OnSocketDataReceived(object? sender, WebServerDataReceivedEventArgs e)
     {
         this.lastReceivedData = e.Data;
         this.syncEvent.Set();
