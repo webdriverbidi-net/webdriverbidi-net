@@ -5,6 +5,7 @@
 
 namespace PinchHitter;
 
+using System.Globalization;
 using System.Net;
 using System.Text;
 
@@ -15,7 +16,7 @@ public class WebResource
 {
     private readonly List<WebAuthenticator> authenticators = new();
     private readonly byte[] data;
-    private string mimeType = "text/html";
+    private string mimeType = "text/html;charset=utf-8";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebResource"/> class with a string.
@@ -104,6 +105,9 @@ public class WebResource
         {
             StatusCode = statusCode,
         };
+        response.Headers["Connection"] = new List<string>() { "keep-alive" };
+        response.Headers["Server"] = new List<string>() { "PinchHitter/0.1 .NET/6.0" };
+        response.Headers["Date"] = new List<string>() { DateTime.UtcNow.ToString("ddd, dd MMM yyy HH:mm:ss GMT") };
         response.Headers["Content-Type"] = new List<string>() { this.mimeType };
         response.Headers["Content-Length"] = new List<string>() { this.data.Length.ToString() };
         response.BodyContent = this.data;

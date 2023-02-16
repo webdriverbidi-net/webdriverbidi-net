@@ -13,12 +13,21 @@ using System.Text;
 /// </summary>
 public class HttpResponse
 {
+    /// <summary>
+    /// Represents an invalid response.
+    /// </summary>
+    public static readonly HttpResponse InvalidResponse = new()
+    {
+        StatusCode = HttpStatusCode.InternalServerError,
+    };
+
     private static readonly Dictionary<HttpStatusCode, string> ReasonPhrases = new()
     {
         { HttpStatusCode.SwitchingProtocols, "Switching Protocols" },
         { HttpStatusCode.OK, "OK" },
         { HttpStatusCode.NotFound, "Not Found" },
         { HttpStatusCode.Unauthorized, "Unauthorized" },
+        { HttpStatusCode.InternalServerError, "Internal Server Error" },
     };
 
     private readonly Dictionary<string, List<string>> headers = new();

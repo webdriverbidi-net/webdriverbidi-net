@@ -16,10 +16,11 @@ using System.Threading.Tasks;
 /// HttpListener so as to avoid the restriction of having to register non-localhost
 /// prefixes as an admin on Windows.
 /// </summary>
-public class WebSocketServer : WebServer
+public class WebSocketServer : Server
 {
     private static readonly string WebSocketGuid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     private static readonly byte ParityBit = 0x80;
+    private readonly HttpRequestProcessor httpProcessor = new();
     private WebSocketState state = WebSocketState.None;
     private bool ignoreCloseRequest = false;
 
@@ -78,30 +79,6 @@ public class WebSocketServer : WebServer
     }
 
     /// <summary>
-    /// Asynchronously handles an HTTP request, including requests to upgrade the protocol to use a WebSocket.
-    /// </summary>
-    /// <param name="requestBuffer">A byte array buffer containing the data of the HTTP request.</param>
-    /// <param name="requestLength">The length of the data in the HTTP request.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    protected override async Task HandleHttpRequest(byte[] requestBuffer, int requestLength)
-    {
-        string rawRequest = Encoding.UTF8.GetString(requestBuffer, 0, requestLength);
-        HttpRequest request = HttpRequest.Parse(rawRequest);
-        if (request.Headers.ContainsKey("Connection") && request.Headers["Connection"].Contains("Upgrade") &&
-            request.Headers.ContainsKey("Upgrade") && request.Headers["Upgrade"].Contains("websocket") &&
-            request.Headers.ContainsKey("Sec-WebSocket-Key"))
-        {
-            this.LogMessage($"=====Handshaking from client=====\n{rawRequest}");
-            this.state = WebSocketState.Connecting;
-            await this.PerformHandshake(request.Headers["Sec-WebSocket-Key"][0]);
-            this.state = WebSocketState.Open;
-            return;
-        }
-
-        await base.HandleHttpRequest(requestBuffer, requestLength);
-    }
-
-    /// <summary>
     /// Asynchronously processes incoming data from the client.
     /// </summary>
     /// <param name="buffer">A byte array buffer containing the data.</param>
@@ -112,7 +89,11 @@ public class WebSocketServer : WebServer
         this.LogMessage($"RECV {receivedLength} bytes");
         if (this.state == WebSocketState.None)
         {
-            await this.HandleHttpRequest(buffer, receivedLength);
+            // A WebSocket connection has not yet been established. Treat the
+            // incoming data as a standard HTTP request. If the HTTP request
+            // is a request to upgrade the connection, we will handle sending
+            // the expected response in ProcessHttpRequest.
+            await this.ProcessHttpRequest(buffer, receivedLength);
         }
         else
         {
@@ -136,25 +117,49 @@ public class WebSocketServer : WebServer
         }
     }
 
-    private async Task PerformHandshake(string websocketSecureKey)
+    private static bool TryCreateWebSocketHandshakeResponse(HttpRequest request, out HttpResponse response)
     {
-        // 1. Obtain the value of the "Sec-WebSocket-Key" request header without any leading or trailing whitespace
-        // 2. Concatenate it with "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" (a special GUID specified by RFC 6455)
-        // 3. Compute SHA-1 and Base64 hash of the new value
-        // 4. Write the hash back as the value of "Sec-WebSocket-Accept" response header in an HTTP response
-        string websocketSecureResponse = websocketSecureKey + WebSocketGuid;
-        byte[] websocketResponseHash = System.Security.Cryptography.SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(websocketSecureResponse));
-        string websocketHashBase64 = Convert.ToBase64String(websocketResponseHash);
-
-        HttpResponse responseData = new()
+        if (request.Headers.ContainsKey("Connection") && request.Headers["Connection"].Contains("Upgrade") &&
+            request.Headers.ContainsKey("Upgrade") && request.Headers["Upgrade"].Contains("websocket") &&
+            request.Headers.ContainsKey("Sec-WebSocket-Key"))
         {
-            StatusCode = HttpStatusCode.SwitchingProtocols,
-        };
-        responseData.Headers["Connection"] = new List<string>() { "Upgrade" };
-        responseData.Headers["Upgrade"] = new List<string>() { "websocket" };
-        responseData.Headers["Sec-WebSocket-Accept"] = new List<string>() { websocketHashBase64 };
-        byte[] response = responseData.ToByteArray();
-        await this.SendData(response);
+            // 1. Obtain the value of the "Sec-WebSocket-Key" request header without any leading or trailing whitespace
+            // 2. Concatenate it with "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" (a special GUID specified by RFC 6455)
+            // 3. Compute SHA-1 and Base64 hash of the new value
+            // 4. Write the hash back as the value of "Sec-WebSocket-Accept" response header in an HTTP response
+            string websocketSecureKey = request.Headers["Sec-WebSocket-Key"][0];
+            string websocketSecureResponse = websocketSecureKey + WebSocketGuid;
+            byte[] websocketResponseHash = System.Security.Cryptography.SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(websocketSecureResponse));
+            string websocketHashBase64 = Convert.ToBase64String(websocketResponseHash);
+
+            WebResource resource = new(string.Empty);
+            response = resource.CreateHttpResponse(HttpStatusCode.SwitchingProtocols);
+            response.Headers["Connection"] = new List<string>() { "Upgrade" };
+            response.Headers["Upgrade"] = new List<string>() { "websocket" };
+            response.Headers["Sec-WebSocket-Accept"] = new List<string>() { websocketHashBase64 };
+            return true;
+        }
+
+        response = HttpResponse.InvalidResponse;
+        return false;
+    }
+
+    private async Task ProcessHttpRequest(byte[] buffer, int receivedLength)
+    {
+        string rawRequest = Encoding.UTF8.GetString(buffer, 0, receivedLength);
+        HttpRequest request = HttpRequest.Parse(rawRequest);
+        if (!TryCreateWebSocketHandshakeResponse(request, out HttpResponse response))
+        {
+            // The request was not a request to upgrade to a WebSocket
+            // connection. Treat it like a normal HTTP request.
+            response = this.httpProcessor.ProcessRequest(request);
+            await this.SendData(response.ToByteArray());
+            return;
+        }
+
+        this.state = WebSocketState.Connecting;
+        await this.SendData(response.ToByteArray());
+        this.state = WebSocketState.Open;
     }
 
     private async Task SendCloseFrame(string message)
@@ -195,7 +200,7 @@ public class WebSocketServer : WebServer
         ulong offset = Convert.ToUInt64(keyOffset + key.Count);
         for (ulong index = 0; index < messageLength; index++)
         {
-            decoded[index] = (byte)(buffer[offset + index] ^ key[Convert.ToInt32(index % 4)]);
+            decoded[index] = Convert.ToByte(buffer[offset + index] ^ key[Convert.ToInt32(index % 4)]);
         }
 
         return new WebSocketFrameData(opcode, decoded);
