@@ -24,6 +24,7 @@ public class BrowsingContextModuleTests
         var result = task.Result;
 
         Assert.That(result, Is.Not.Null);
+        Assert.That(result.Data, Is.EqualTo("encodedScreenshotData"));
     }
 
     [Test]
@@ -137,6 +138,27 @@ public class BrowsingContextModuleTests
             Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
             Assert.That(result.Url, Is.EqualTo("https://example.com"));
         });
+    }
+
+    [Test]
+    public void TestExecutePrintCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""data"": ""encodedPdf"" } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        BrowsingContextModule module = new(driver);
+
+        var task = module.Print(new PrintCommandParameters("myContextId"));
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Data, Is.EqualTo("encodedPdf"));
     }
 
     [Test]
