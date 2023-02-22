@@ -90,7 +90,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether or shrink the content to fit on a single page. Defaults to false.
+    /// Gets or sets a value indicating whether or shrink the content to fit on a single page. If omitted, defaults to true.
     /// </summary>
     [JsonProperty("shrinkToFit", NullValueHandling = NullValueHandling.Ignore)]
     public bool? ShrinkToFit { get => this.shrinkToFit; set => this.shrinkToFit = value; }

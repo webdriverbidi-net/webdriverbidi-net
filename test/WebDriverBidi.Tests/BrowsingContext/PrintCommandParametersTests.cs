@@ -352,7 +352,7 @@ public class PrintCommandParametersTests
     {
         PrintCommandParameters properties = new("myContextId")
         {
-            ShrinkToFit = true
+            ShrinkToFit = false
         };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
@@ -364,7 +364,7 @@ public class PrintCommandParametersTests
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
             Assert.That(serialized.ContainsKey("shrinkToFit"));
             Assert.That(serialized["shrinkToFit"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["shrinkToFit"]!.Value<bool>(), Is.True);
+            Assert.That(serialized["shrinkToFit"]!.Value<bool>(), Is.False);
         });
     }
 
