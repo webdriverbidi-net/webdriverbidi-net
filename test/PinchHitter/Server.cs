@@ -42,7 +42,7 @@ public abstract class Server
     /// <summary>
     /// Event raised when data is received by the server.
     /// </summary>
-    public event EventHandler<WebServerDataReceivedEventArgs>? DataReceived;
+    public event EventHandler<ServerDataReceivedEventArgs>? DataReceived;
 
     /// <summary>
     /// Gets the port on which the server is listening for connections.
@@ -138,7 +138,7 @@ public abstract class Server
     /// Raises the DataReceived event.
     /// </summary>
     /// <param name="e">The WebServerDataReceivedEventArgs object containing information about the DataReceived event.</param>
-    protected virtual void OnDataReceived(WebServerDataReceivedEventArgs e)
+    protected virtual void OnDataReceived(ServerDataReceivedEventArgs e)
     {
         if (this.DataReceived is not null)
         {

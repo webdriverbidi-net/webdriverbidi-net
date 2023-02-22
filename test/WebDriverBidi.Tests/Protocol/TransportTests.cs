@@ -292,7 +292,7 @@ public class TransportTests
     [Test]
     public async Task TestTransportCanUseDefaultConnection()
     {
-        static void handler(object? sender, WebServerDataReceivedEventArgs e) { }
+        static void handler(object? sender, ServerDataReceivedEventArgs e) { }
         WebSocketServer server = new();
         server.DataReceived += handler;
         server.Start();

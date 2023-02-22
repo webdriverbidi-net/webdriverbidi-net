@@ -263,7 +263,7 @@ public class ConnectionTests
         await connection.Stop();
     }
 
-    private void OnSocketDataReceived(object? sender, WebServerDataReceivedEventArgs e)
+    private void OnSocketDataReceived(object? sender, ServerDataReceivedEventArgs e)
     {
         this.lastReceivedData = e.Data;
         this.syncEvent.Set();

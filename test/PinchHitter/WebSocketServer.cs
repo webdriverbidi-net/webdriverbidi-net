@@ -101,7 +101,7 @@ public class WebSocketServer : Server
             if (frame.Opcode == WebSocketOpcodeType.Text)
             {
                 string text = Encoding.UTF8.GetString(frame.Data);
-                this.OnDataReceived(new WebServerDataReceivedEventArgs(text));
+                this.OnDataReceived(new ServerDataReceivedEventArgs(text));
             }
 
             if (frame.Opcode == WebSocketOpcodeType.ClosedConnection)

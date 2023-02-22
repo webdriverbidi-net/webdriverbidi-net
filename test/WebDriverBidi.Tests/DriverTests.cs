@@ -275,7 +275,7 @@ public class DriverTests
     [Test]
     public async Task TestDriverCanUseDefaultTransport()
     {
-        static void handler(object? sender, WebServerDataReceivedEventArgs e) { }
+        static void handler(object? sender, ServerDataReceivedEventArgs e) { }
         WebSocketServer server = new();
         server.DataReceived += handler;
         server.Start();
