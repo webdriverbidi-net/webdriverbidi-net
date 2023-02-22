@@ -53,6 +53,7 @@ public class WebServer : Server
     {
         this.LogMessage($"RECV {receivedLength} bytes");
         string rawRequest = Encoding.UTF8.GetString(buffer, 0, receivedLength);
+        this.OnDataReceived(new ServerDataReceivedEventArgs(rawRequest));
         HttpRequest request = HttpRequest.Parse(rawRequest);
         HttpResponse responseData = this.httpProcessor.ProcessRequest(request);
         await this.SendData(responseData.ToByteArray());
