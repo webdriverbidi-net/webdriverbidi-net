@@ -113,7 +113,7 @@ public class Driver
     public virtual async Task<T> ExecuteCommand<T>(CommandParameters command)
         where T : CommandResult
     {
-        var result = await this.transport.SendCommandAndWait(command);
+        CommandResult result = await this.transport.SendCommandAndWait(command);
         if (result is null)
         {
             throw new WebDriverBidiException("Received null response from transport for SendCommandAndWait");

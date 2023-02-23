@@ -538,7 +538,7 @@ public class LocalValueTests
         JArray? valueArray = parsed["value"] as JArray;
         Assert.That(valueArray, Is.Not.Null);
         Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
-        var foundStrings = new List<string>();
+        List<string> foundStrings = new();
         for (int i = 0; i < dictionary.Count; i++)
         {
             Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));

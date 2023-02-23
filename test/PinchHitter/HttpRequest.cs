@@ -63,7 +63,7 @@ public class HttpRequest
         Regex navigationRegex = new(@"(.*)\s+(.*)\s+(.*)");
         if (navigationRegex.IsMatch(navigationLine))
         {
-            var match = navigationRegex.Match(navigationLine);
+            Match match = navigationRegex.Match(navigationLine);
             result.verb = match.Groups[1].Value;
             result.url = match.Groups[2].Value;
             result.httpVersion = match.Groups[3].Value;

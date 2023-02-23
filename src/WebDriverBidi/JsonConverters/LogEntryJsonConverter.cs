@@ -32,7 +32,7 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
     /// <returns>The deserialized object created from JSON.</returns>
     public override LogEntry ReadJson(JsonReader reader, Type objectType, LogEntry? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        var jsonObject = JObject.Load(reader);
+        JObject jsonObject = JObject.Load(reader);
         if (!jsonObject.ContainsKey("text"))
         {
             throw new JsonSerializationException("LogEntry must have a 'text' property");

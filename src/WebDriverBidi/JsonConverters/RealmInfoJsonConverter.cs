@@ -32,7 +32,7 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
     /// <returns>The deserialized object created from JSON.</returns>
     public override RealmInfo ReadJson(JsonReader reader, Type objectType, RealmInfo? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        var jsonObject = JObject.Load(reader);
+        JObject jsonObject = JObject.Load(reader);
         if (jsonObject.ContainsKey("type") && jsonObject["type"] is not null && jsonObject["type"]!.Type == JTokenType.String && jsonObject["type"]!.Value<string>() == "window")
         {
             WindowRealmInfo windowInfo = new();

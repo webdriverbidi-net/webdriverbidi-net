@@ -40,7 +40,7 @@ public class SubscribeCommandParametersTests
     [Test]
     public void TestCanSerializeParametersWithData()
     {
-        var properties = new SubscribeCommandParameters();
+        SubscribeCommandParameters properties = new();
         properties.Contexts.Add("myContext");
         properties.Events.Add("some.event");
         string json = JsonConvert.SerializeObject(properties);

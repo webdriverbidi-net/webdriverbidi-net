@@ -46,7 +46,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
     public override RemoteValue ReadJson(JsonReader reader, Type objectType, RemoteValue? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         reader.DateParseHandling = DateParseHandling.None;
-        var jsonObject = JObject.Load(reader);
+        JObject jsonObject = JObject.Load(reader);
 
         return this.ProcessObject(jsonObject, serializer);
     }
@@ -168,7 +168,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue 'value' property for {valueType} must be a non-null string");
             }
 
-            var stringValue = token.Value<string>();
+            string? stringValue = token.Value<string>();
             result.Value = stringValue;
         }
 
@@ -179,7 +179,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue 'value' property for {valueType} must be a boolean value");
             }
 
-            var boolValue = token.Value<bool>();
+            bool? boolValue = token.Value<bool>();
             result.Value = boolValue;
         }
 
@@ -282,7 +282,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             // the token must be an object, and therefore the cast cannot return
             // null.
             JObject? keyObject = keyToken as JObject;
-            var keyRemoteValue = this.ProcessObject(keyObject!, serializer);
+            RemoteValue keyRemoteValue = this.ProcessObject(keyObject!, serializer);
             if ((keyRemoteValue.IsPrimitive || keyRemoteValue.Type == "date" || keyRemoteValue.Type == "regexp") && keyRemoteValue.Value is not null)
             {
                 pairKey = keyRemoteValue.Value;
@@ -307,7 +307,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
     private RemoteValueDictionary ProcessMap(JArray mapArray, JsonSerializer serializer)
     {
         Dictionary<object, RemoteValue> remoteValueDictionary = new();
-        foreach (var mapElementToken in mapArray)
+        foreach (JToken mapElementToken in mapArray)
         {
             if (mapElementToken is not JArray mapKeyValuePairArray)
             {
@@ -319,7 +319,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue array element for dictionary must be an array with two elements");
             }
 
-            var keyToken = mapKeyValuePairArray[0];
+            JToken keyToken = mapKeyValuePairArray[0];
             if (keyToken.Type != JTokenType.String && keyToken.Type != JTokenType.Object)
             {
                 throw new JsonSerializationException($"RemoteValue array element for dictionary must have a first element (key) that is either a string or an object");
@@ -327,7 +327,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
             object pairKey = this.ProcessMapKey(keyToken, serializer);
 
-            var valueToken = mapKeyValuePairArray[1];
+            JToken valueToken = mapKeyValuePairArray[1];
             if (valueToken.Type != JTokenType.Object)
             {
                 throw new JsonSerializationException($"RemoteValue array element for dictionary must have a second element (value) that is an object");
@@ -337,7 +337,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             // JObject. Use the null forgiveness operator to suppress the
             // compiler warning.
             JObject? valueObject = valueToken as JObject;
-            var pairValue = this.ProcessObject(valueObject!, serializer);
+            RemoteValue pairValue = this.ProcessObject(valueObject!, serializer);
             remoteValueDictionary[pairKey] = pairValue;
         }
 
@@ -347,7 +347,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
     private RemoteValueList ProcessList(JArray arrayObject, JsonSerializer serializer)
     {
         List<RemoteValue> remoteValueList = new();
-        foreach (var arrayItem in arrayObject)
+        foreach (JToken arrayItem in arrayObject)
         {
             if (arrayItem is not JObject arrayItemObject)
             {

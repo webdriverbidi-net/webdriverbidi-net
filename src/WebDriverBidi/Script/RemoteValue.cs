@@ -119,7 +119,7 @@ public class RemoteValue
     /// <exception cref="WebDriverBidiException">Thrown if this RemoteValue cannot be cast to the desired type.</exception>
     public T? ValueAs<T>()
     {
-        var result = default(T);
+        T? result = default;
         Type type = typeof(T);
         if (this.valueObject == null)
         {

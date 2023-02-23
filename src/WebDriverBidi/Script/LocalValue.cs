@@ -100,7 +100,7 @@ public class LocalValue : ArgumentValue
                 Dictionary<string, LocalValue>? stringDictionaryValue = this.argValue as Dictionary<string, LocalValue>;
                 if (dictionaryValue is not null)
                 {
-                    foreach (var pair in dictionaryValue)
+                    foreach (KeyValuePair<LocalValue, LocalValue> pair in dictionaryValue)
                     {
                         List<object> itemList = new() { pair.Key, pair.Value };
                         serializeablePairList.Add(itemList);
@@ -109,7 +109,7 @@ public class LocalValue : ArgumentValue
 
                 if (stringDictionaryValue is not null)
                 {
-                    foreach (var pair in stringDictionaryValue)
+                    foreach (KeyValuePair<string, LocalValue> pair in stringDictionaryValue)
                     {
                         List<object> itemList = new() { pair.Key, pair.Value };
                         serializeablePairList.Add(itemList);

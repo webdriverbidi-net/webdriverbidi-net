@@ -39,7 +39,7 @@ public class ScriptTargetJsonConverter : JsonConverter<Target>
     /// <returns>The deserialized object created from JSON.</returns>
     public override Target ReadJson(JsonReader reader, Type objectType, Target? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        var jsonObject = JObject.Load(reader);
+        JObject jsonObject = JObject.Load(reader);
         Target target;
         if (jsonObject.ContainsKey("realm"))
         {

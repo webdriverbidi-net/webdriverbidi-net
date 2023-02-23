@@ -155,13 +155,13 @@ public class ConnectionTests
         await connection.Stop();
 
         List<string> messages = new();
-        foreach (var logValue in logValues)
+        foreach (LogMessageEventArgs logValue in logValues)
         {
             messages.Add(logValue.Message);
         }
 
         Assert.That(logValues, Has.Count.EqualTo(5), $"Actual values: {string.Join("\n", messages.ToArray())}");
-        foreach(var args in logValues)
+        foreach(LogMessageEventArgs args in logValues)
         {
             Assert.Multiple(() =>
             {

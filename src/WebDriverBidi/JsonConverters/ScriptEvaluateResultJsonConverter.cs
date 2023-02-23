@@ -43,7 +43,7 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
     /// <returns>The deserialized object created from JSON.</returns>
     public override EvaluateResult ReadJson(JsonReader reader, Type objectType, EvaluateResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
-        var jsonObject = JObject.Load(reader);
+        JObject jsonObject = JObject.Load(reader);
         if (jsonObject.TryGetValue("type", out JToken? typeToken))
         {
             if (typeToken.Type == JTokenType.String)

@@ -295,7 +295,7 @@ public class Transport
             else if (message.ContainsKey("error"))
             {
                 // This is an error response, not connected to a command.
-                var unexpectedError = message.ToObject<ErrorResponseMessage>();
+                ErrorResponseMessage? unexpectedError = message.ToObject<ErrorResponseMessage>();
                 isProcessed = true;
                 this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(unexpectedError!.GetErrorResponseData()));
             }
