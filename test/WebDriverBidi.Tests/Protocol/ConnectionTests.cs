@@ -106,6 +106,28 @@ public class ConnectionTests
     }
 
     [Test]
+    public async Task TestConnectionReceivesDataOnVeryLongMessage()
+    {
+        if (server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+
+        Connection connection = new();
+        connection.DataReceived += OnConnectionDataReceived;
+        await connection.Start($"ws://localhost:{server.Port}");
+
+        // Create a message on an exact boundary of the buffer
+        string data = new('a', 70000);
+        await server.SendData(data);
+        syncEvent.WaitOne(TimeSpan.FromSeconds(3));
+
+        Assert.That(this.lastReceivedData, Is.EqualTo(data));
+        await connection.Stop();
+    }
+
+    [Test]
     public async Task TestConnectionLog()
     {
         if (server is null)

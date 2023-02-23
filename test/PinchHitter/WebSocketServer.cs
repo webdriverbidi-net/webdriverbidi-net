@@ -5,6 +5,7 @@
 
 namespace PinchHitter;
 
+using System.Buffers.Binary;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
@@ -97,7 +98,12 @@ public class WebSocketServer : Server
         }
         else
         {
-            var frame = this.DecodeData(buffer);
+            // Note: We do not handle continuation frames (WebSocketOpcodeType.Fragment)
+            // in this implementation. Consider it a feature for a future iteration.
+            // Likewise, we do not handle non-text frames (WebSocketOpcodeType.Binary)
+            // in this implementation.
+            // Finally, we do not handle ping and pong frames.
+            WebSocketFrameData frame = this.DecodeData(buffer);
             if (frame.Opcode == WebSocketOpcodeType.Text)
             {
                 string text = Encoding.UTF8.GetString(frame.Data);
@@ -185,13 +191,15 @@ public class WebSocketServer : Server
 
         if (messageLength == 126)
         {
-            messageLength = BitConverter.ToUInt64(new byte[] { buffer[3], buffer[2] }, 0);
+            ReadOnlySpan<byte> messageLengthSpan = new(buffer, 2, sizeof(short));
+            messageLength = Convert.ToUInt64(BinaryPrimitives.ReadInt16BigEndian(messageLengthSpan));
             keyOffset = 4;
         }
 
         if (messageLength == 127)
         {
-            messageLength = BitConverter.ToUInt64(new byte[] { buffer[9], buffer[8], buffer[7], buffer[6], buffer[5], buffer[4], buffer[3], buffer[2] }, 0);
+            ReadOnlySpan<byte> messageLengthSpan = new(buffer, 2, sizeof(long));
+            messageLength = Convert.ToUInt64(BinaryPrimitives.ReadInt64BigEndian(messageLengthSpan));
             keyOffset = 10;
         }
 
@@ -209,49 +217,44 @@ public class WebSocketServer : Server
     private WebSocketFrameData EncodeData(string data, WebSocketOpcodeType opcode = WebSocketOpcodeType.Text)
     {
         this.LogMessage($"Encoding data with opcode {opcode}");
+        byte opcodeByte = Convert.ToByte(Convert.ToByte(opcode) | ParityBit);
         if (opcode == WebSocketOpcodeType.ClosedConnection)
         {
             // NOTE: Hard code the close frame data.
-            return new WebSocketFrameData(opcode, new byte[] { 0x88, 0x00 });
+            return new WebSocketFrameData(opcode, new byte[] { opcodeByte, 0x00 });
         }
 
         long dataOffset = -1;
         byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-
-        byte[] frame = new byte[10];
-        frame[0] = Convert.ToByte(Convert.ToByte(opcode) | ParityBit);
         long length = dataBytes.LongLength;
+
+        byte[] frameHeader = new byte[10];
+        frameHeader[0] = opcodeByte;
 
         if (length <= 125)
         {
-            frame[1] = Convert.ToByte(length);
+            frameHeader[1] = Convert.ToByte(length);
             dataOffset = 2;
         }
 
         if (length >= 126 && length <= 65535)
         {
-            frame[1] = 126;
-            frame[2] = Convert.ToByte((length >> 8) & 255);
-            frame[3] = Convert.ToByte(length & 255);
+            frameHeader[1] = 126;
+            Span<byte> messageLengthSpan = new(frameHeader, 2, sizeof(short));
+            BinaryPrimitives.WriteInt16BigEndian(messageLengthSpan, Convert.ToInt16(length));
             dataOffset = 4;
         }
 
         if (length >= 65536)
         {
-            frame[1] = 127;
-            frame[2] = Convert.ToByte((length >> 56) & 255);
-            frame[3] = Convert.ToByte((length >> 48) & 255);
-            frame[4] = Convert.ToByte((length >> 40) & 255);
-            frame[5] = Convert.ToByte((length >> 32) & 255);
-            frame[6] = Convert.ToByte((length >> 24) & 255);
-            frame[7] = Convert.ToByte((length >> 16) & 255);
-            frame[8] = Convert.ToByte((length >> 8) & 255);
-            frame[9] = Convert.ToByte(length & 255);
+            frameHeader[1] = 127;
+            Span<byte> messageLengthSpan = new(frameHeader, 2, sizeof(long));
+            BinaryPrimitives.WriteInt64BigEndian(messageLengthSpan, length);
             dataOffset = 10;
         }
 
         byte[] buffer = new byte[dataOffset + length];
-        frame.CopyTo(buffer, 0);
+        frameHeader.CopyTo(buffer, 0);
         dataBytes.CopyTo(buffer, dataOffset);
         return new WebSocketFrameData(opcode, buffer);
     }
