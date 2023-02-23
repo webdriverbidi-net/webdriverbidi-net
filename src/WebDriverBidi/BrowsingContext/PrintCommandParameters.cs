@@ -51,7 +51,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// <summary>
     /// Gets or sets a value containing the margins for the printed page.
     /// </summary>
-    [JsonProperty("margins", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("margin", NullValueHandling = NullValueHandling.Ignore)]
     public PrintMarginParameters? Margins { get => this.margins; set => this.margins = value; }
 
     /// <summary>
