@@ -182,7 +182,7 @@ public class WebSocketServer : Server
         WebSocketOpcodeType opcode = (WebSocketOpcodeType)(buffer[0] & opcodeMask);
         this.LogMessage($"Decoding data with opcode {opcode}");
 
-        ulong messageLength = Convert.ToUInt64(buffer[1] & messageLengthMask);
+        long messageLength = Convert.ToInt64(buffer[1] & messageLengthMask);
 
         if (messageLength <= 125)
         {
@@ -192,21 +192,21 @@ public class WebSocketServer : Server
         if (messageLength == 126)
         {
             ReadOnlySpan<byte> messageLengthSpan = new(buffer, 2, sizeof(short));
-            messageLength = Convert.ToUInt64(BinaryPrimitives.ReadInt16BigEndian(messageLengthSpan));
+            messageLength = BinaryPrimitives.ReadInt16BigEndian(messageLengthSpan);
             keyOffset = 4;
         }
 
         if (messageLength == 127)
         {
             ReadOnlySpan<byte> messageLengthSpan = new(buffer, 2, sizeof(long));
-            messageLength = Convert.ToUInt64(BinaryPrimitives.ReadInt64BigEndian(messageLengthSpan));
+            messageLength = BinaryPrimitives.ReadInt64BigEndian(messageLengthSpan);
             keyOffset = 10;
         }
 
         byte[] decoded = new byte[messageLength];
         ArraySegment<byte> key = new(buffer, keyOffset, 4);
-        ulong offset = Convert.ToUInt64(keyOffset + key.Count);
-        for (ulong index = 0; index < messageLength; index++)
+        long offset = Convert.ToInt64(keyOffset + key.Count);
+        for (long index = 0; index < messageLength; index++)
         {
             decoded[index] = Convert.ToByte(buffer[offset + index] ^ key[Convert.ToInt32(index % 4)]);
         }
