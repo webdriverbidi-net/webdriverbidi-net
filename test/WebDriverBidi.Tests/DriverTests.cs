@@ -16,7 +16,7 @@ public class DriverTests
     {
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
-        connection.DataSendComplete += delegate (object? sender, TestConnectionDataSentEventArgs e)
+        connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
         {
             syncEvent.Set();
         };
@@ -40,7 +40,7 @@ public class DriverTests
     {
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
-        connection.DataSendComplete += delegate (object? sender, TestConnectionDataSentEventArgs e)
+        connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
         {
             syncEvent.Set();
         };
@@ -69,7 +69,7 @@ public class DriverTests
         Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
-        driver.UnexpectedErrorReceived += delegate (object? sender, ErrorReceivedEventArgs e)
+        driver.UnexpectedErrorReceived += (object? sender, ErrorReceivedEventArgs e) =>
         {
             response = e.ErrorData;
             syncEvent.Set();
@@ -99,7 +99,7 @@ public class DriverTests
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
-        driver.EventReceived += delegate (object? sender, EventReceivedEventArgs e)
+        driver.EventReceived += (sender, e) =>
         {
             receivedEvent = e.EventName;
             receivedData = e.EventData;
@@ -128,7 +128,7 @@ public class DriverTests
         Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
-        driver.UnknownMessageReceived += delegate (object? sender, UnknownMessageReceivedEventArgs e)
+        driver.UnknownMessageReceived += (sender, e) =>
         {
             receivedMessage = e.Message;
             syncEvent.Set();
@@ -150,7 +150,7 @@ public class DriverTests
         Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
-        driver.UnknownMessageReceived += delegate (object? sender, UnknownMessageReceivedEventArgs e)
+        driver.UnknownMessageReceived += (sender, e) =>
         {
             receivedMessage = e.Message;
             syncEvent.Set();
@@ -286,5 +286,149 @@ public class DriverTests
 
         server.Stop();
         server.DataReceived -= handler;
-   }
+    }
+
+    [Test]
+    public async Task TestMalformedEventResponseLogsError()
+    {
+        WebSocketServer server = new();
+        server.Start();
+        Driver driver = new();
+
+        try
+        {
+            await driver.Start($"ws://localhost:{server.Port}");
+            ManualResetEvent syncEvent = new(false);
+            driver.BrowsingContext.Load += (sender, e) =>
+            {
+            };
+
+            List<string> driverLog = new();
+            driver.LogMessage += (sender, e) =>
+            {
+                if (e.Level >= WebDriverBidiLogLevel.Error)
+                {
+                    driverLog.Add(e.Message);
+                }
+            };
+
+            string unknownMessage = string.Empty;
+            driver.UnknownMessageReceived += (sender, e) =>
+            {
+                unknownMessage = e.Message;
+                syncEvent.Set();
+            };
+
+            // This payload omits the required "timestamp" field, which should cause an exception
+            // in parsing.
+            await server.SendData(@"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
+            syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(driverLog, Has.Count.EqualTo(1));
+                Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing event JSON"));
+                Assert.That(unknownMessage, Is.Not.Empty);
+            });
+        }
+        finally
+        {
+            await driver.Stop();
+            server.Stop();
+        }
+    }
+
+    [Test]
+    public async Task TestMalformedNonCommandErrorResponseLogsError()
+    {
+        WebSocketServer server = new();
+        server.Start();
+        Driver driver = new();
+
+        try
+        {
+            await driver.Start($"ws://localhost:{server.Port}");
+            ManualResetEvent syncEvent = new(false);
+            driver.BrowsingContext.Load += (sender, e) =>
+            {
+            };
+
+            List<string> driverLog = new();
+            driver.LogMessage += (sender, e) =>
+            {
+                if (e.Level >= WebDriverBidiLogLevel.Error)
+                {
+                    driverLog.Add(e.Message);
+                }
+            };
+
+            string unknownMessage = string.Empty;
+            driver.UnknownMessageReceived += (sender, e) =>
+            {
+                unknownMessage = e.Message;
+                syncEvent.Set();
+            };
+
+            // This payload uses an object for the error field, which should cause an exception
+            // in parsing.
+            await server.SendData(@"{ ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
+            syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(driverLog, Has.Count.EqualTo(1));
+                Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing error JSON"));
+                Assert.That(unknownMessage, Is.Not.Empty);
+            });
+        }
+        finally
+        {
+            await driver.Stop();
+            server.Stop();
+        }
+    }
+
+    [Test]
+    public async Task TestMalformedIncomingMessageLogsError()
+    {
+        WebSocketServer server = new();
+        server.Start();
+        Driver driver = new();
+
+        try
+        {
+            await driver.Start($"ws://localhost:{server.Port}");
+            ManualResetEvent syncEvent = new(false);
+
+            List<string> driverLog = new();
+            driver.LogMessage += (sender, e) =>
+            {
+                if (e.Level >= WebDriverBidiLogLevel.Error)
+                {
+                    driverLog.Add(e.Message);
+                }
+            };
+
+            string unknownMessage = string.Empty;
+            driver.UnknownMessageReceived += (sender, e) =>
+            {
+                unknownMessage = e.Message;
+                syncEvent.Set();
+            };
+
+            // This payload uses unparsable JSON, which should cause an exception
+            // in parsing.
+            await server.SendData(@"{ ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
+            syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+            Assert.Multiple(() =>
+            {
+                Assert.That(driverLog, Has.Count.EqualTo(1));
+                Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing JSON message"));
+                Assert.That(unknownMessage, Is.Not.Empty);
+            });
+        }
+        finally
+        {
+            await driver.Stop();
+            server.Stop();
+        }
+    }
 }

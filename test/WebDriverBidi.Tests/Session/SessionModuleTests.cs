@@ -9,7 +9,6 @@ public class SessionModuleTests
     [Test]
     public void TestExecuteStatusCommand()
     {
-        
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
@@ -17,7 +16,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         var task = driver.Session.Status(new StatusCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
@@ -40,7 +39,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
         var subscribeParameters = new SubscribeCommandParameters();
@@ -62,7 +61,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
         var unsubscribeParameters = new UnsubscribeCommandParameters();
@@ -84,7 +83,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         SessionModule module = new(driver);
 
         var newCommandParameters = new NewCommandParameters();

@@ -16,7 +16,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.CaptureScreenshot(new CaptureScreenshotCommandParameters("myContextId"));
@@ -37,7 +37,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.Close(new CloseCommandParameters("myContextId"));
@@ -57,7 +57,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.Create(new CreateCommandParameters(CreateType.Tab));
@@ -78,7 +78,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.GetTree(new GetTreeCommandParameters());
@@ -105,7 +105,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.HandleUserPrompt(new HandleUserPromptCommandParameters("myContextId"));
@@ -125,7 +125,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.Navigate(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
@@ -150,7 +150,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.Print(new PrintCommandParameters("myContextId"));
@@ -171,7 +171,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.Reload(new ReloadCommandParameters("myContext"));
@@ -190,12 +190,11 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveContextCreatedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        bool eventRaised = false;
+        ManualResetEvent syncEvent = new(false);
         module.ContextCreated += (object? obj, BrowsingContextEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -203,10 +202,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Children, Has.Count.EqualTo(0));
                 Assert.That(e.Parent, Is.Null);
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.contextCreated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -214,12 +215,11 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveContextDestroyedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        bool eventRaised = false;
+        ManualResetEvent syncEvent = new(false);
         module.ContextDestroyed += (object? obj, BrowsingContextEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -227,10 +227,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Children, Has.Count.EqualTo(0));
                 Assert.That(e.Parent, Is.Null);
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.contextDestroyed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -238,13 +240,12 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveDomContentLoadedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
+        ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        bool eventRaised = false;
         module.DomContentLoaded += (object? obj, NavigationEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -253,10 +254,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.domContentLoaded"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -264,13 +267,12 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveDownloadWillBeginEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
+        ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        bool eventRaised = false;
         module.DownloadWillBegin += (object? obj, NavigationEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -279,10 +281,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.downloadWillBegin"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -290,13 +294,12 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveFragmentNavigatedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
+        ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        bool eventRaised = false;
         module.FragmentNavigated += (object? obj, NavigationEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -305,10 +308,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.fragmentNavigated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -316,13 +321,12 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveLoadEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
+        ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        bool eventRaised = false;
         module.Load += (object? obj, NavigationEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -331,10 +335,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -342,13 +348,12 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationAbortedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
+        ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        bool eventRaised = false;
         module.NavigationAborted += (object? obj, NavigationEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -357,10 +362,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.navigationAborted"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -368,13 +375,12 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationFailedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
+        ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        bool eventRaised = false;
         module.NavigationFailed += (object? obj, NavigationEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -383,10 +389,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.navigationFailed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -394,13 +402,12 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationStartedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
+        ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        bool eventRaised = false;
         module.NavigationStarted += (object? obj, NavigationEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -409,10 +416,12 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.navigationStarted"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -420,22 +429,23 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveUserPromptClosedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        bool eventRaised = false;
+        ManualResetEvent syncEvent = new(false);
         module.UserPromptClosed += (object? obj, UserPromptClosedEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.IsAccepted, Is.EqualTo(true));
                 Assert.That(e.UserText, Is.EqualTo("my prompt text"));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.userPromptClosed"", ""params"": { ""context"": ""myContext"", ""accepted"": true, ""userText"": ""my prompt text"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -443,22 +453,23 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveUserPromptOpenedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        bool eventRaised = false;
+        ManualResetEvent syncEvent = new(false);
         module.UserPromptOpened += (object? obj, UserPromptOpenedEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.PromptType, Is.EqualTo(UserPromptType.Confirm));
                 Assert.That(e.Message, Is.EqualTo("my message text"));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""browsingContext.userPromptOpened"", ""params"": { ""context"": ""myContext"", ""type"": ""confirm"", ""message"": ""my message text"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
 }

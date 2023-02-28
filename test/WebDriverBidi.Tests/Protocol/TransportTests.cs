@@ -24,7 +24,6 @@ public class TransportTests
 
         TestConnection connection = new();
         Transport transport = new(TimeSpan.Zero, connection);
-        await transport.Connect("ws://localhost:5555");
 
         TestCommand command = new(commandName);
         _ = await transport.SendCommand(command);
@@ -39,7 +38,6 @@ public class TransportTests
         string commandName = "module.command";
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        await transport.Connect("ws://localhost:5555");
 
         TestCommand command = new(commandName);
         long commandId = await transport.SendCommand(command);
@@ -57,7 +55,6 @@ public class TransportTests
         string commandName = "module.command";
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(10), connection);
-        await transport.Connect("ws://localhost:5555");
 
         TestCommand command = new(commandName);
         long commandId = await transport.SendCommand(command);
@@ -78,7 +75,6 @@ public class TransportTests
         string commandName = "module.command";
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        await transport.Connect("ws://localhost:5555");
 
         TestCommand command = new(commandName);
         long commandId = await transport.SendCommand(command);
@@ -104,7 +100,6 @@ public class TransportTests
         string commandName = "module.command";
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        await transport.Connect("ws://localhost:5555");
 
         TestCommand command = new(commandName);
         long commandId = await transport.SendCommand(command);
@@ -135,7 +130,6 @@ public class TransportTests
         string commandName = "module.command";
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        await transport.Connect("ws://localhost:5555");
 
         TestCommand command = new(commandName);
         long commandId = await transport.SendCommand(command);
@@ -174,7 +168,6 @@ public class TransportTests
         string commandName = "module.command";
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        await transport.Connect("ws://localhost:5555");
 
         TestCommand command = new(commandName);
         long commandId = await transport.SendCommand(command);
@@ -193,7 +186,6 @@ public class TransportTests
         string commandName = "module.command";
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        await transport.Connect("ws://localhost:5555");
 
         TestCommand command = new(commandName);
         long commandId = await transport.SendCommand(command);
@@ -216,7 +208,7 @@ public class TransportTests
             syncEvent.Set();
         };
         connection.RaiseDataReceivedEvent(@"{ ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
-        syncEvent.WaitOne();
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.Multiple(() =>
         {
             Assert.That(receivedName, Is.EqualTo("protocol.event"));
@@ -239,7 +231,7 @@ public class TransportTests
             syncEvent.Set();
         };
         connection.RaiseDataReceivedEvent(@"{ ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }");
-        syncEvent.WaitOne();
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
         Assert.That(receivedData, Is.TypeOf<ErrorResult>());
         var convertedData = receivedData as ErrorResult;
@@ -267,7 +259,7 @@ public class TransportTests
         {
         };
         connection.RaiseDataReceivedEvent(@"{ ""method"": null }");
-        syncEvent.WaitOne();
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
     }
 
     [Test]

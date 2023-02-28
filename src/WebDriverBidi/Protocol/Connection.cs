@@ -127,7 +127,7 @@ public class Connection
             await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token);
 
             // Now we wait for the server response, which will close the socket
-            while (this.client.State != WebSocketState.Closed && !timeout.Token.IsCancellationRequested)
+            while (this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted && !timeout.Token.IsCancellationRequested)
             {
                 // The loop may be too tight for the cancellation token to get triggered, so add a small delay
                 await Task.Delay(10);
@@ -229,9 +229,9 @@ public class Connection
         {
             // An OperationCanceledExcetption is normal upon task/token cancellation, so disregard it
         }
-        catch (Exception e)
+        catch (WebSocketException e)
         {
-            throw new WebDriverBidiException($"Unexpected error during receive of data: {e.Message}", e);
+            this.Log($"Unexpected error during receive of data: {e.Message}", WebDriverBidiLogLevel.Warn);
         }
         finally
         {

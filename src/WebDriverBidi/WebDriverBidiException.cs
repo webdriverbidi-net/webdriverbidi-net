@@ -18,14 +18,4 @@ public class WebDriverBidiException : Exception
         : base(message)
     {
     }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WebDriverBidiException" /> class with a given message and inner exception.
-    /// </summary>
-    /// <param name="message">The message of the exception.</param>
-    /// <param name="innerException">The inner exception wrapped by this exception.</param>
-    public WebDriverBidiException(string message, Exception innerException)
-        : base(message, innerException)
-    {
-    }
 }

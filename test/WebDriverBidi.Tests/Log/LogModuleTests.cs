@@ -10,12 +10,11 @@ public class LogModuleTests
     public void TestCanReceiveEntryAddedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         LogModule module = new(driver);
 
-        bool eventRaised = false;
+        ManualResetEvent syncEvent = new(false);
         module.EntryAdded += (object? obj, EntryAddedEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.Type, Is.EqualTo("javascript"));
@@ -25,11 +24,13 @@ public class LogModuleTests
                 Assert.That(e.StackTrace, Is.Not.Null);
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
             });
+            syncEvent.Set();
         };
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string eventJson = @"{ ""method"": ""log.entryAdded"", ""params"": { ""type"": ""javascript"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""stackTrace"": { ""callFrames"": [] } } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -37,13 +38,12 @@ public class LogModuleTests
     public void TestCanReceiveEntryAddedEventForConsoleLogType()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         LogModule module = new(driver);
 
+        ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        bool eventRaised = false;
         module.EntryAdded += (object? obj, EntryAddedEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.Type, Is.EqualTo("console"));
@@ -55,10 +55,12 @@ public class LogModuleTests
                 Assert.That(e.StackTrace, Is.Not.Null);
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""log.entryAdded"", ""params"": { ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
 }

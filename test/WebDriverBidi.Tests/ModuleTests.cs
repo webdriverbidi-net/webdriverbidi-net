@@ -11,14 +11,39 @@ public class ModuleTests
     public void TestContextCreatedEventWithInvalidEventArgsThrows()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Driver driver = new(transport);
         TestProtocolModule module = new(driver);
 
         module.EventInvoked += (object? obj, TestEventArgs e) =>
         {
         };
 
+        ManualResetEvent syncEvent = new(false);
+        List<string> driverLog = new();
+        transport.LogMessage += (sender, e) =>
+        {
+            if (e.Level >= WebDriverBidiLogLevel.Error)
+            {
+                driverLog.Add(e.Message);
+            }
+        };
+
+        string unknownMessage = string.Empty;
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            unknownMessage = e.Message;
+            syncEvent.Set();
+        };
+
         string eventJson = @"{ ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
-        Assert.That(() => connection.RaiseDataReceivedEvent(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        connection.RaiseDataReceivedEvent(eventJson);
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(driverLog, Has.Count.EqualTo(1));
+            Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing event JSON"));
+            Assert.That(unknownMessage, Is.Not.Empty);
+        });
     }
 }

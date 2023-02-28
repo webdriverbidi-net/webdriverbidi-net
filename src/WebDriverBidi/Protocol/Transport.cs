@@ -6,6 +6,7 @@
 namespace WebDriverBidi.Protocol;
 
 using System.Collections.Concurrent;
+using System.Threading.Channels;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -18,7 +19,16 @@ public class Transport
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
+    private readonly Channel<string> messageQueue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions()
+    {
+        SingleReader = true,
+        SingleWriter = true,
+    });
+
+    private readonly Task messageQueueMonitorTask;
+
     private long nextCommandId = 0;
+    private bool isConnected;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Transport"/> class.
@@ -44,6 +54,8 @@ public class Transport
     /// <param name="connection">The connection used to communicate with the protocol remote end.</param>
     public Transport(TimeSpan commandWaitTimeout, Connection connection)
     {
+        this.messageQueueMonitorTask = Task.Run(() => this.MonitorMessageQueue());
+        this.messageQueueMonitorTask.ConfigureAwait(false);
         this.commandWaitTimeout = commandWaitTimeout;
         this.connection = connection;
         connection.DataReceived += this.OnMessageReceived;
@@ -82,7 +94,11 @@ public class Transport
     /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task Connect(string websocketUri)
     {
-        await this.connection.Start(websocketUri);
+        if (!this.isConnected)
+        {
+            await this.connection.Start(websocketUri);
+            this.isConnected = true;
+        }
     }
 
     /// <summary>
@@ -92,6 +108,9 @@ public class Transport
     public async Task Disconnect()
     {
         await this.connection.Stop();
+        this.messageQueue.Writer.Complete();
+        this.messageQueueMonitorTask.Wait();
+        this.isConnected = false;
     }
 
     /// <summary>
@@ -246,80 +265,122 @@ public class Transport
 
     private void OnMessageReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
-        bool isProcessed = false;
-        JObject message = JObject.Parse(e.Data);
-        if (message.ContainsKey("id"))
+        _ = this.messageQueue.Writer.TryWrite(e.Data);
+    }
+
+    private async Task MonitorMessageQueue()
+    {
+        while (await this.messageQueue.Reader.WaitToReadAsync())
         {
-            // Note: We have already determined there is a property named "id",
-            // so the token cannot be null. Use the null-forgiving operator to
-            // suppress the compiler warning.
-            JToken? idToken = message["id"];
-            if (idToken!.Type != JTokenType.Null)
+            while (this.messageQueue.Reader.TryRead(out string? message))
             {
-                long? responseId = message["id"]!.Value<long>();
-                if (this.pendingCommands.ContainsKey(responseId.Value))
+                this.ProcessMessage(message);
+            }
+        }
+    }
+
+    private void ProcessMessage(string messageData)
+    {
+        bool isProcessed = false;
+        JObject? message = null;
+        try
+        {
+            message = JObject.Parse(messageData);
+        }
+        catch (JsonReaderException e)
+        {
+            this.OnLogMessage(this, new LogMessageEventArgs($"Unexpected error parsing JSON message: {e.Message}", WebDriverBidiLogLevel.Error));
+        }
+
+        if (message is not null)
+        {
+            if (message.ContainsKey("id"))
+            {
+                // Note: We have already determined there is a property named "id",
+                // so the token cannot be null. Use the null-forgiving operator to
+                // suppress the compiler warning.
+                JToken? idToken = message["id"];
+                if (idToken!.Type != JTokenType.Null)
                 {
-                    if (this.pendingCommands.TryGetValue(responseId.Value, out Command? executedCommand))
+                    long? responseId = message["id"]!.Value<long>();
+                    if (this.pendingCommands.ContainsKey(responseId.Value))
                     {
-                        try
+                        if (this.pendingCommands.TryGetValue(responseId.Value, out Command? executedCommand))
                         {
-                            if (message.ContainsKey("result"))
+                            try
                             {
-                                CommandResponseMessage? response = message.ToObject(executedCommand.ResponseType) as CommandResponseMessage;
-                                executedCommand.Result = response!.Result;
-                                executedCommand.Result.AdditionalData = response.AdditionalData;
-                                isProcessed = true;
+                                if (message.ContainsKey("result"))
+                                {
+                                    CommandResponseMessage? response = message.ToObject(executedCommand.ResponseType) as CommandResponseMessage;
+                                    executedCommand.Result = response!.Result;
+                                    executedCommand.Result.AdditionalData = response.AdditionalData;
+                                    isProcessed = true;
+                                }
+                                else if (message.ContainsKey("error"))
+                                {
+                                    ErrorResponseMessage? response = message.ToObject<ErrorResponseMessage>();
+                                    executedCommand.Result = response!.GetErrorResponseData();
+                                    isProcessed = true;
+                                }
+                                else
+                                {
+                                    throw new WebDriverBidiException("Response contained neither result nor error");
+                                }
                             }
-                            else if (message.ContainsKey("error"))
+                            catch (Exception ex)
                             {
-                                ErrorResponseMessage? response = message.ToObject<ErrorResponseMessage>();
-                                executedCommand.Result = response!.GetErrorResponseData();
-                                isProcessed = true;
+                                executedCommand.ThrownException = ex;
                             }
-                            else
+                            finally
                             {
-                                throw new WebDriverBidiException("Response contained neither result nor error");
+                                executedCommand.SynchronizationEvent.Set();
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            executedCommand.ThrownException = ex;
-                        }
-                        finally
-                        {
-                            executedCommand.SynchronizationEvent.Set();
                         }
                     }
                 }
-            }
-            else if (message.ContainsKey("error"))
-            {
-                // This is an error response, not connected to a command.
-                ErrorResponseMessage? unexpectedError = message.ToObject<ErrorResponseMessage>();
-                isProcessed = true;
-                this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(unexpectedError!.GetErrorResponseData()));
-            }
-        }
-        else if (message.ContainsKey("method") && message.ContainsKey("params"))
-        {
-            // There must be a property named "method", so eventName cannot
-            // be null. Use the null forgiving operator to suppress the
-            // compiler warning.
-            string? eventName = message["method"]!.Value<string>();
-            if (eventName is not null)
-            {
-                if (this.eventMessageTypes.ContainsKey(eventName))
+                else if (message.ContainsKey("error"))
                 {
-                    EventMessage? eventMessageData = message.ToObject(this.eventMessageTypes[eventName]) as EventMessage;
-                    isProcessed = true;
-                    this.OnProtocolEventReceived(this, new EventReceivedEventArgs(eventMessageData!));
+                    try
+                    {
+                        // This is an error response, not connected to a command.
+                        ErrorResponseMessage? unexpectedError = message.ToObject<ErrorResponseMessage>();
+                        isProcessed = true;
+                        this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(unexpectedError!.GetErrorResponseData()));
+                    }
+                    catch (Exception e)
+                    {
+                        this.OnLogMessage(this, new LogMessageEventArgs($"Unexpected error parsing error JSON: {e.Message}", WebDriverBidiLogLevel.Error));
+                    }
+                }
+            }
+            else if (message.ContainsKey("method") && message.ContainsKey("params"))
+            {
+                // There must be a property named "method", so eventName cannot
+                // be null. Use the null forgiving operator to suppress the
+                // compiler warning.
+                string? eventName = message["method"]!.Value<string>();
+                if (eventName is not null)
+                {
+                    if (this.eventMessageTypes.ContainsKey(eventName))
+                    {
+                        try
+                        {
+                            EventMessage? eventMessageData = message.ToObject(this.eventMessageTypes[eventName]) as EventMessage;
+                            isProcessed = true;
+                            this.OnProtocolEventReceived(this, new EventReceivedEventArgs(eventMessageData!));
+                        }
+                        catch (Exception e)
+                        {
+                            this.OnLogMessage(this, new LogMessageEventArgs($"Unexpected error parsing event JSON: {e.Message}", WebDriverBidiLogLevel.Error));
+                        }
+                    }
                 }
             }
         }
 
         if (!isProcessed)
         {
-            this.OnProtocolUnknownMessageReceived(this, new UnknownMessageReceivedEventArgs(e.Data));
+            this.OnProtocolUnknownMessageReceived(this, new UnknownMessageReceivedEventArgs(messageData));
         }
     }
 

@@ -206,9 +206,8 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        bool eventRaised = false;
+        ManualResetEvent syncEvent = new(false);
         module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
@@ -216,10 +215,12 @@ public class ScriptModuleTests
                 Assert.That(e.Type, Is.EqualTo(RealmType.Window));
                 Assert.That(e.BrowsingContext, Is.EqualTo("myContext"));
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""window"", ""context"": ""myContext"", ""origin"": ""myOrigin"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -230,9 +231,8 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        bool eventRaised = false;
+        ManualResetEvent syncEvent = new(false);
         module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
-            eventRaised = true;
             Assert.Multiple(() =>
             {
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
@@ -240,10 +240,12 @@ public class ScriptModuleTests
                 Assert.That(e.Type, Is.EqualTo(RealmType.Worker));
                 Assert.That(e.BrowsingContext, Is.Null);
             });
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": ""myOrigin"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
 
@@ -254,15 +256,16 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        bool eventRaised = false;
+        ManualResetEvent syncEvent = new(false);
         module.RealmDestroyed += (object? obj, RealmDestroyedEventArgs e) =>
         {
-            eventRaised = true;
             Assert.That(e.RealmId, Is.EqualTo("myRealm"));
+            syncEvent.Set();
         };
 
         string eventJson = @"{ ""method"": ""script.realmDestroyed"", ""params"": { ""realm"": ""myRealm"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
 
