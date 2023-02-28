@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using WebDriverBidi;
+﻿using WebDriverBidi;
 using WebDriverBidi.Client;
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Script;
@@ -7,55 +6,41 @@ using WebDriverBidi.Session;
 
 // See https://aka.ms/new-console-template for more information
 
-int port = 38267;
-string testProfilePath = Path.Join(Path.GetTempPath(), Path.GetTempFileName());
+// To use a specific port, uncomment the line below and modify it to
+// use the desired port.
+// int port = 38267;
 
-BrowserType testBrowserName = BrowserType.Chrome;
-string testBrowserCommandLine = @"/Applications/Firefox.app/Contents/MacOS/firefox-bin";
-string testBrowserArguments = $"--remote-debugging-port {port} --no-remote --profile {testProfilePath}";
-Process? testProcess = null;
-AutoResetEvent syncEvent = new(false);
+// Path to the directory containing the browser launcher executables.
+// We use the WebDriver Classic browser drivers (chromedriver, geckodriver, etc.)
+// as browser launchers.
+string browserLauncherDirectory = string.Empty;
 
-try
-{
-    if (testBrowserName == BrowserType.Firefox)
-    {
-        testProcess = StartServer(testProfilePath, testBrowserName, testBrowserCommandLine, testBrowserArguments);
-    }
-    await DriveBrowser();
-}
-finally
-{
-    if (testBrowserName == BrowserType.Firefox)
-    {
-        StopServer(testProfilePath, testBrowserName, testProcess);
-    }
-}
+BrowserType testBrowserType = BrowserType.Chrome;
+BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory);
+await launcher.Start();
+await launcher.LaunchBrowser();
+await DriveBrowser(launcher.WebSocketUrl);
+await launcher.QuitBrowser();
+await launcher.Stop();
 
-async Task DriveBrowser()
+async Task DriveBrowser(string webSocketUrl)
 {
     Driver driver = new();
     driver.LogMessage += OnDriverLogMessage;
-    driver.BrowsingContext.NavigationStarted += delegate(object? sender, NavigationEventArgs e)
+    driver.BrowsingContext.NavigationStarted += (sender, e) =>
     {
         Console.WriteLine($"Navigation to {e.Url} started");
     };
 
-    driver.BrowsingContext.Load += delegate(object? sender, NavigationEventArgs e)
+    driver.BrowsingContext.Load += (sender, e) =>
     {
         Console.WriteLine($"Load of {e.Url} complete!");
     };
 
-    await driver.Start($"ws://localhost:{port}/session");
+    await driver.Start(webSocketUrl);
 
     var status = await driver.Session.Status(new StatusCommandParameters());
     Console.WriteLine($"Is ready? {status.IsReady}");
-
-    if (testBrowserName == BrowserType.Firefox)
-    {
-        var session = await driver.Session.NewSession(new NewCommandParameters());
-        Console.WriteLine($"Started session {session.SessionId}");
-    }
 
     var subscribe = new SubscribeCommandParameters();
     subscribe.Events.Add("browsingContext.load");
@@ -92,29 +77,4 @@ async Task DriveBrowser()
 void OnDriverLogMessage(object? sender, LogMessageEventArgs e)
 {
     Console.WriteLine(e.Message);
-    syncEvent.Set();
-}
-
-Process StartServer(string profilePath, BrowserType browserName, string browserCommandLine, string browserArguments)
-{
-    Console.WriteLine($"Creating temp folder for profile at {profilePath}");
-    DirectoryInfo profileDirectory = Directory.CreateDirectory(profilePath);
-
-    Console.WriteLine($"Starting {browserName}");
-    Process process = new();
-    process.StartInfo.FileName = browserCommandLine;
-    process.StartInfo.Arguments = browserArguments;
-    process.StartInfo.RedirectStandardError = true;
-    process.StartInfo.RedirectStandardOutput = true;
-    process.Start();
-    return process;
-}
-
-void StopServer(string profilePath, BrowserType browserName, Process? process)
-{
-    Console.WriteLine($"Closing {browserName}");
-    process?.Kill();
-    
-    Console.WriteLine($"Deleting temp folder for profile {profilePath}");
-    Directory.Delete(profilePath, true);
 }
