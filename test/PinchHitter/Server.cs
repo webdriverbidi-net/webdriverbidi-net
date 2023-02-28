@@ -79,7 +79,7 @@ public abstract class Server
             this.port = localEndpoint.Port;
         }
 
-        Task.Run(() => this.ReceiveData().ConfigureAwait(false));
+        _ = Task.Run(() => this.ReceiveData()).ConfigureAwait(false);
     }
 
     /// <summary>
