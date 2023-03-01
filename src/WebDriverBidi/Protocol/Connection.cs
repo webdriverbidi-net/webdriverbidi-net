@@ -101,7 +101,7 @@ public class Connection
             throw new TimeoutException($"Could not connect to browser within {this.startupTimeout.TotalSeconds} seconds");
         }
 
-        _ = Task.Run(() => this.ReceiveData()).ConfigureAwait(false);
+        _ = Task.Run(async () => await this.ReceiveData()).ConfigureAwait(false);
         this.isActive = true;
         this.Log($"Connection opened", WebDriverBidiLogLevel.Info);
     }

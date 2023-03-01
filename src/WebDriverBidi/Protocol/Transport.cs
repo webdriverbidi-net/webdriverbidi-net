@@ -6,7 +6,6 @@
 namespace WebDriverBidi.Protocol;
 
 using System.Collections.Concurrent;
-using System.Threading.Channels;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -19,14 +18,6 @@ public class Transport
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
-    private readonly Channel<string> messageQueue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions()
-    {
-        SingleReader = true,
-        SingleWriter = true,
-    });
-
-    private readonly Task messageQueueMonitorTask;
-
     private long nextCommandId = 0;
     private bool isConnected;
 
@@ -54,8 +45,6 @@ public class Transport
     /// <param name="connection">The connection used to communicate with the protocol remote end.</param>
     public Transport(TimeSpan commandWaitTimeout, Connection connection)
     {
-        this.messageQueueMonitorTask = Task.Run(() => this.MonitorMessageQueue());
-        this.messageQueueMonitorTask.ConfigureAwait(false);
         this.commandWaitTimeout = commandWaitTimeout;
         this.connection = connection;
         connection.DataReceived += this.OnMessageReceived;
@@ -108,8 +97,6 @@ public class Transport
     public async Task Disconnect()
     {
         await this.connection.Stop();
-        this.messageQueue.Writer.Complete();
-        this.messageQueueMonitorTask.Wait();
         this.isConnected = false;
     }
 
@@ -265,18 +252,7 @@ public class Transport
 
     private void OnMessageReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
-        _ = this.messageQueue.Writer.TryWrite(e.Data);
-    }
-
-    private async Task MonitorMessageQueue()
-    {
-        while (await this.messageQueue.Reader.WaitToReadAsync())
-        {
-            while (this.messageQueue.Reader.TryRead(out string? message))
-            {
-                this.ProcessMessage(message);
-            }
-        }
+        this.ProcessMessage(e.Data);
     }
 
     private void ProcessMessage(string messageData)
