@@ -19,9 +19,15 @@ BrowserType testBrowserType = BrowserType.Chrome;
 BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory);
 await launcher.Start();
 await launcher.LaunchBrowser();
-await DriveBrowser(launcher.WebSocketUrl);
-await launcher.QuitBrowser();
-await launcher.Stop();
+try
+{
+    await DriveBrowser(launcher.WebSocketUrl);
+}
+finally
+{
+    await launcher.QuitBrowser();
+    await launcher.Stop();
+}
 
 async Task DriveBrowser(string webSocketUrl)
 {
