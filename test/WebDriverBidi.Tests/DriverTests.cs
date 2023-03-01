@@ -188,6 +188,7 @@ public class DriverTests
     [Test]
     public void TestDriverCanEmitLogMessagesFromProtocol()
     {
+        DateTime testStart = DateTime.UtcNow;
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
@@ -202,6 +203,7 @@ public class DriverTests
         {
             Assert.That(logs[0].Message, Is.EqualTo("test log message"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Warn));
+            Assert.That(logs[0].Timestamp, Is.GreaterThanOrEqualTo(testStart));
         });
     }
 

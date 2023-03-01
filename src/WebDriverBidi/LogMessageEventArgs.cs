@@ -12,6 +12,7 @@ public class LogMessageEventArgs : WebDriverBidiEventArgs
 {
     private readonly string message;
     private readonly WebDriverBidiLogLevel level;
+    private readonly DateTime timestamp = DateTime.UtcNow;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LogMessageEventArgs" /> class with a log message and log level.
@@ -33,4 +34,9 @@ public class LogMessageEventArgs : WebDriverBidiEventArgs
     /// Gets the log level of the message sent to the log.
     /// </summary>
     public WebDriverBidiLogLevel Level => this.level;
+
+    /// <summary>
+    /// Gets the date and time (in UTC) when this log entry was created.
+    /// </summary>
+    public DateTime Timestamp => this.timestamp;
 }
