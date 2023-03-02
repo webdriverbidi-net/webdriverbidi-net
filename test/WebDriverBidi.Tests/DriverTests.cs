@@ -327,7 +327,8 @@ public class DriverTests
             // This payload omits the required "timestamp" field, which should cause an exception
             // in parsing.
             await server.SendData(@"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
-            WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
+            bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
+            Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
             {
                 Assert.That(driverLog, Has.Count.EqualTo(1));
