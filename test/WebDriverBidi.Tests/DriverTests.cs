@@ -204,6 +204,7 @@ public class DriverTests
             Assert.That(logs[0].Message, Is.EqualTo("test log message"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Warn));
             Assert.That(logs[0].Timestamp, Is.GreaterThanOrEqualTo(testStart));
+            Assert.That(logs[0].ComponentName, Is.EqualTo("TestConnection"));
         });
     }
 

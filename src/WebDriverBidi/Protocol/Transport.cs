@@ -265,7 +265,7 @@ public class Transport
         }
         catch (JsonReaderException e)
         {
-            this.OnLogMessage(this, new LogMessageEventArgs($"Unexpected error parsing JSON message: {e.Message}", WebDriverBidiLogLevel.Error));
+            this.Log($"Unexpected error parsing JSON message: {e.Message}", WebDriverBidiLogLevel.Error);
         }
 
         if (message is not null)
@@ -325,7 +325,7 @@ public class Transport
                     }
                     catch (Exception e)
                     {
-                        this.OnLogMessage(this, new LogMessageEventArgs($"Unexpected error parsing error JSON: {e.Message}", WebDriverBidiLogLevel.Error));
+                        this.Log($"Unexpected error parsing error JSON: {e.Message}", WebDriverBidiLogLevel.Error);
                     }
                 }
             }
@@ -347,7 +347,7 @@ public class Transport
                         }
                         catch (Exception e)
                         {
-                            this.OnLogMessage(this, new LogMessageEventArgs($"Unexpected error parsing event JSON: {e.Message}", WebDriverBidiLogLevel.Error));
+                            this.Log($"Unexpected error parsing event JSON: {e.Message}", WebDriverBidiLogLevel.Error);
                         }
                     }
                 }
@@ -358,6 +358,11 @@ public class Transport
         {
             this.OnProtocolUnknownMessageReceived(this, new UnknownMessageReceivedEventArgs(messageData));
         }
+    }
+
+    private void Log(string message, WebDriverBidiLogLevel level)
+    {
+        this.OnLogMessage(this, new LogMessageEventArgs(message, level, "Transport"));
     }
 
     private void OnConnectionLogMessage(object? sender, LogMessageEventArgs e)

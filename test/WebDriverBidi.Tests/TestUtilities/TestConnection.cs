@@ -15,7 +15,7 @@ public class TestConnection : Connection
 
     public void RaiseLogMessageEvent(string message, WebDriverBidiLogLevel level)
     {
-        this.OnLogMessage(new LogMessageEventArgs(message, level));
+        this.OnLogMessage(new LogMessageEventArgs(message, level, "TestConnection"));
     }
 
     public override Task Start(string url)

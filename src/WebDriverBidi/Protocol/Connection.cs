@@ -247,6 +247,6 @@ public class Connection
 
     private void Log(string message, WebDriverBidiLogLevel level)
     {
-        this.OnLogMessage(new LogMessageEventArgs(message, level));
+        this.OnLogMessage(new LogMessageEventArgs(message, level, "Connection"));
     }
 }
