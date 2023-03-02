@@ -67,9 +67,7 @@ async Task DriveBrowser(string webSocketUrl)
 
     string functionDefinition = "function(){ return document.querySelector('input'); }";
     var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
-    var scriptSuccessResult = scriptResult as EvaluateResultSuccess;
-    var scriptExceptionResult = scriptResult as EvaluateResultException;
-    if (scriptSuccessResult is not null)
+    if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
     {
         Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Value!.GetType()}");
         NodeProperties? nodeProperties = scriptSuccessResult.Result.ValueAs<NodeProperties>();
@@ -78,7 +76,7 @@ async Task DriveBrowser(string webSocketUrl)
             Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
         }
     }
-    else if (scriptExceptionResult is not null)
+    else if (scriptResult is EvaluateResultException scriptExceptionResult)
     {
         Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
     }

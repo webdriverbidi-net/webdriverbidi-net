@@ -292,9 +292,14 @@ public abstract class BrowserLauncher
             }
         }
 
-        if (string.IsNullOrEmpty(this.sessionId) || string.IsNullOrEmpty(this.webSocketUrl))
+        if (string.IsNullOrEmpty(this.sessionId))
         {
-            throw new BrowserNotLaunchedException($"Unable to launch browser. Could not dectect session ID or WebSocket URL in WebDriver classic new session response (response JSON: {responseJson})");
+            throw new BrowserNotLaunchedException($"Unable to launch browser. Could not dectect session ID in WebDriver classic new session response (response JSON: {responseJson})");
+        }
+
+        if (string.IsNullOrEmpty(this.webSocketUrl))
+        {
+            throw new BrowserNotLaunchedException($"Unable to connect to WebSocket. Launched browse may not supoort the WebDriver BiDi protocol (response JSON: {responseJson})");
         }
     }
 
