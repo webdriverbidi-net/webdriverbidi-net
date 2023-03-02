@@ -300,7 +300,7 @@ public class DriverTests
         try
         {
             await driver.Start($"ws://localhost:{server.Port}");
-            ManualResetEvent syncEvent = new(false);
+            ManualResetEvent logSyncEvent = new(false);
             driver.BrowsingContext.Load += (sender, e) =>
             {
             };
@@ -311,20 +311,22 @@ public class DriverTests
                 if (e.Level >= WebDriverBidiLogLevel.Error)
                 {
                     driverLog.Add(e.Message);
+                    logSyncEvent.Set();
                 }
             };
 
+            ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
             driver.UnknownMessageReceived += (sender, e) =>
             {
                 unknownMessage = e.Message;
-                syncEvent.Set();
+                unknownMessageSyncEvent.Set();
             };
 
             // This payload omits the required "timestamp" field, which should cause an exception
             // in parsing.
             await server.SendData(@"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
-            syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+            WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.Multiple(() =>
             {
                 Assert.That(driverLog, Has.Count.EqualTo(1));
@@ -349,31 +351,34 @@ public class DriverTests
         try
         {
             await driver.Start($"ws://localhost:{server.Port}");
-            ManualResetEvent syncEvent = new(false);
             driver.BrowsingContext.Load += (sender, e) =>
             {
             };
 
+            ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
             driver.LogMessage += (sender, e) =>
             {
                 if (e.Level >= WebDriverBidiLogLevel.Error)
                 {
                     driverLog.Add(e.Message);
+                    logSyncEvent.Set();
                 }
             };
 
+            ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
             driver.UnknownMessageReceived += (sender, e) =>
             {
                 unknownMessage = e.Message;
-                syncEvent.Set();
+                unknownMessageSyncEvent.Set();
             };
 
             // This payload uses an object for the error field, which should cause an exception
             // in parsing.
             await server.SendData(@"{ ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
-            syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+            WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
+            unknownMessageSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
             Assert.Multiple(() =>
             {
                 Assert.That(driverLog, Has.Count.EqualTo(1));
@@ -398,28 +403,30 @@ public class DriverTests
         try
         {
             await driver.Start($"ws://localhost:{server.Port}");
-            ManualResetEvent syncEvent = new(false);
 
+            ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
             driver.LogMessage += (sender, e) =>
             {
                 if (e.Level >= WebDriverBidiLogLevel.Error)
                 {
                     driverLog.Add(e.Message);
+                    logSyncEvent.Set();
                 }
             };
 
+            ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
             driver.UnknownMessageReceived += (sender, e) =>
             {
                 unknownMessage = e.Message;
-                syncEvent.Set();
+                unknownMessageSyncEvent.Set();
             };
 
             // This payload uses unparsable JSON, which should cause an exception
             // in parsing.
             await server.SendData(@"{ ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
-            syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+            WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.Multiple(() =>
             {
                 Assert.That(driverLog, Has.Count.EqualTo(1));
