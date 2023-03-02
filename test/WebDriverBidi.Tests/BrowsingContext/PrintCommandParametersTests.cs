@@ -393,7 +393,7 @@ public class PrintCommandParametersTests
         {
             PageRanges = new()
             {
-                "1",
+                1,
                 "3-5"
             }
         };
@@ -414,20 +414,17 @@ public class PrintCommandParametersTests
         Assert.That(pageRanges, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(pageRanges![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(pageRanges[0].Value<string>, Is.EqualTo("1"));
+            Assert.That(pageRanges![0].Type, Is.EqualTo(JTokenType.Integer));
+            Assert.That(pageRanges[0].Value<long>, Is.EqualTo(1));
             Assert.That(pageRanges[1].Type, Is.EqualTo(JTokenType.String));
             Assert.That(pageRanges[1].Value<string>, Is.EqualTo("3-5"));
          });
     }
 
     [Test]
-    public void TestCanSerializeParametersWithNullPageRanges()
+    public void TestCanSerializeParametersWithNoPageRanges()
     {
-        PrintCommandParameters properties = new("myContextId")
-        {
-            PageRanges = null
-        };
+        PrintCommandParameters properties = new("myContextId");
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
@@ -437,5 +434,20 @@ public class PrintCommandParametersTests
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
+    }
+
+    [Test]
+    public void TestSerializeParametersWithInvalidPageRangesThrows()
+    {
+        PrintCommandParameters properties = new("myContextId")
+        {
+            PageRanges = new()
+            {
+                1,
+                "3-5",
+                true
+            }
+        };
+        Assert.That(() => JsonConvert.SerializeObject(properties), Throws.InstanceOf<JsonSerializationException>().With.InnerException.InstanceOf<WebDriverBidiException>().With.InnerException.Message.Contains("Page range must be a string or an integer value"));
     }
 }

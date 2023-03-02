@@ -18,7 +18,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     private PrintMarginParameters? margins;
     private PrintOrientation? orientation;
     private PrintPageParameters? page;
-    private List<string>? pageRanges;
+    private List<object> pageRanges = new();
     private double? scale;
     private bool? shrinkToFit;
 
@@ -97,7 +97,38 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
 
     /// <summary>
     /// Gets or sets the list of page ranges to print in the resulting output.
+    /// The objects of the list must be strings or longs. Other value types
+    /// will cause an error when sending the browsingContext.print command.
+    /// </summary>
+    public List<object> PageRanges { get => this.pageRanges; set => this.pageRanges = value; }
+
+    /// <summary>
+    /// Gets the list of page ranges to print for serialization purposes.
     /// </summary>
     [JsonProperty("pageRanges", NullValueHandling = NullValueHandling.Ignore)]
-    public List<string>? PageRanges { get => this.pageRanges; set => this.pageRanges = value; }
+    internal List<object>? SerializablePageRanges
+    {
+        get
+        {
+            if (this.pageRanges.Count == 0)
+            {
+                return null;
+            }
+
+            List<object> serializable = new();
+            foreach (object pageRange in this.pageRanges)
+            {
+                if (pageRange is string || pageRange is long || pageRange is int || pageRange is short)
+                {
+                    serializable.Add(pageRange);
+                }
+                else
+                {
+                    throw new WebDriverBidiException("Page range must be a string or an integer value.");
+                }
+            }
+
+            return serializable;
+        }
+    }
 }
