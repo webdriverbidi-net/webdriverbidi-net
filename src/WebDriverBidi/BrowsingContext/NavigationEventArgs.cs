@@ -60,7 +60,7 @@ public class NavigationEventArgs : WebDriverBidiEventArgs
     public string Url { get => this.url; internal set => this.url = value; }
 
     /// <summary>
-    /// Gets the timestamp of the navigation.
+    /// Gets the timestamp of the navigationin UTC.
     /// </summary>
     public DateTime Timestamp => this.timestamp;
 

@@ -65,7 +65,7 @@ public class LogEntry
     public StackTrace? StackTrace { get => this.stacktrace; internal set => this.stacktrace = value; }
 
     /// <summary>
-    /// Gets the timestamp of the log entry.
+    /// Gets the timestamp in UTC of the log entry.
     /// </summary>
     public DateTime Timestamp => this.timestamp;
 
