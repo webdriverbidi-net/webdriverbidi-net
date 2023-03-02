@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 
 public abstract class BrowserLauncher
 {
+    private static readonly SemaphoreSlim lockObject = new(1, 1);
     private readonly string launcherPath;
     private readonly string launcherExecutableName;
     private readonly HttpClient httpClient = new();
@@ -156,28 +157,45 @@ public abstract class BrowserLauncher
             return;
         }
 
-        if (this.launcherPort == 0)
+        // A word about the locking mechanism. It's not entirely possible to make
+        // atomic the finding of a free port, then using that port as the port for
+        // the launcher to listen on. There will always be a race condition between
+        // releasing the port and starting the launcher where another application
+        // could acquire the same port. The window of opportunity is likely in the
+        // millisecond order of magnitude, but the chance does exist. We will attempt
+        // to mitigate at least other instances of a BrowserLauncher acquiring the
+        // same port when launching the browser.
+        bool launcherAvailable = false;
+        await lockObject.WaitAsync();
+        try
         {
-            this.launcherPort = FindFreePort();
+            if (this.launcherPort == 0)
+            {
+                this.launcherPort = FindFreePort();
+            }
+
+            this.launcherProcess = new Process();
+            this.launcherProcess.StartInfo.FileName = Path.Combine(this.launcherPath, this.launcherExecutableName);
+            this.launcherProcess.StartInfo.Arguments = this.CommandLineArguments;
+            this.launcherProcess.StartInfo.UseShellExecute = false;
+            this.launcherProcess.StartInfo.CreateNoWindow = this.hideCommandPromptWindow;
+
+            BrowserLauncherProcessStartingEventArgs eventArgs = new(this.launcherProcess.StartInfo);
+            this.OnLauncherProcessStarting(eventArgs);
+
+            this.launcherProcess.Start();
+            launcherAvailable = await this.WaitForInitialization();
+            BrowserLauncherProcessStartedEventArgs processStartedEventArgs = new(this.launcherProcess);
+            this.OnLauncherProcessStarted(processStartedEventArgs);
+        }
+        finally
+        {
+            lockObject.Release();
         }
 
-        this.launcherProcess = new Process();
-        this.launcherProcess.StartInfo.FileName = Path.Combine(this.launcherPath, this.launcherExecutableName);
-        this.launcherProcess.StartInfo.Arguments = this.CommandLineArguments;
-        this.launcherProcess.StartInfo.UseShellExecute = false;
-        this.launcherProcess.StartInfo.CreateNoWindow = this.hideCommandPromptWindow;
-
-        BrowserLauncherProcessStartingEventArgs eventArgs = new(this.launcherProcess.StartInfo);
-        this.OnLauncherProcessStarting(eventArgs);
-
-        this.launcherProcess.Start();
-        bool serviceAvailable = await this.WaitForInitialization();
-        BrowserLauncherProcessStartedEventArgs processStartedEventArgs = new(this.launcherProcess);
-        this.OnLauncherProcessStarted(processStartedEventArgs);
-
-        if (!serviceAvailable)
+        if (!launcherAvailable)
         {
-            string msg = "Cannot start the driver service on " + this.ServiceUrl;
+            string msg = "Cannot start the browser launcher on " + this.ServiceUrl;
             throw new WebDriverBidiException(msg);
         }
     }
@@ -241,7 +259,7 @@ public abstract class BrowserLauncher
                 ["firstMatch"] = new List<object>()
                 {
                     this.CreateBrowserLaunchCapabilities()
-    }
+                }
             }
         };
         string json = JsonConvert.SerializeObject(classicCapabilities);
@@ -274,6 +292,10 @@ public abstract class BrowserLauncher
             }
         }
 
+        if (string.IsNullOrEmpty(this.sessionId) || string.IsNullOrEmpty(this.webSocketUrl))
+        {
+            throw new BrowserNotLaunchedException($"Unable to launch browser. Could not dectect session ID or WebSocket URL in WebDriver classic new session response (response JSON: {responseJson})");
+        }
     }
 
     /// <summary>
@@ -283,11 +305,14 @@ public abstract class BrowserLauncher
     /// <exception cref="BrowserNotLaunchedException"></exception>
     public async Task QuitBrowser()
     {
-        using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}");
-        string responseJson = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode != HttpStatusCode.OK)
+        if (!string.IsNullOrEmpty(this.sessionId))
         {
-            throw new CannotQuitBrowserException($"Unable to quit browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
+            using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}");
+            string responseJson = await response.Content.ReadAsStringAsync();
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new CannotQuitBrowserException($"Unable to quit browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
+            }
         }
     }
 

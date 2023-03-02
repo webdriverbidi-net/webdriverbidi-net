@@ -15,12 +15,18 @@ using WebDriverBidi.Session;
 // as browser launchers.
 string browserLauncherDirectory = string.Empty;
 
+// The level at which to log to the console in this demo app. Adjust this
+// to control how verbose the logging is.
+WebDriverBidiLogLevel logReportingLevel = WebDriverBidiLogLevel.Debug;
+
+// Select the browser type for which to run this demo.
 BrowserType testBrowserType = BrowserType.Chrome;
+
 BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory);
-await launcher.Start();
-await launcher.LaunchBrowser();
 try
 {
+    await launcher.Start();
+    await launcher.LaunchBrowser();
     await DriveBrowser(launcher.WebSocketUrl);
 }
 finally
@@ -65,7 +71,7 @@ async Task DriveBrowser(string webSocketUrl)
     var scriptExceptionResult = scriptResult as EvaluateResultException;
     if (scriptSuccessResult is not null)
     {
-        Console.WriteLine($"Script result: {scriptSuccessResult.Result.Value}");
+        Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Value!.GetType()}");
         NodeProperties? nodeProperties = scriptSuccessResult.Result.ValueAs<NodeProperties>();
         if (nodeProperties is not null)
         {
@@ -82,5 +88,8 @@ async Task DriveBrowser(string webSocketUrl)
 
 void OnDriverLogMessage(object? sender, LogMessageEventArgs e)
 {
-    Console.WriteLine(e.Message);
+    if (e.Level >= logReportingLevel)
+    {
+        Console.WriteLine(e.Message);
+    }
 }
