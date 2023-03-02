@@ -379,8 +379,8 @@ public class DriverTests
             // This payload uses an object for the error field, which should cause an exception
             // in parsing.
             await server.SendData(@"{ ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
-            WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
-            unknownMessageSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
+            bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
+            Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
             {
                 Assert.That(driverLog, Has.Count.EqualTo(1));
@@ -428,7 +428,8 @@ public class DriverTests
             // This payload uses unparsable JSON, which should cause an exception
             // in parsing.
             await server.SendData(@"{ ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
-            WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
+            bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
+            Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
             {
                 Assert.That(driverLog, Has.Count.EqualTo(1));
