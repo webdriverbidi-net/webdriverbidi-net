@@ -1,5 +1,5 @@
-// <copyright file="WebServer.cs" company="WebDriverBidi.NET Committers">
-// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// <copyright file="WebServer.cs" company="PinchHitter Committers">
+// Copyright (c) PinchHitter Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -20,7 +20,7 @@ public class WebServer : Server
     /// Initializes a new instance of the <see cref="WebServer"/> class listening on a random port.
     /// </summary>
     public WebServer()
-        : base()
+        : this(0)
     {
     }
 

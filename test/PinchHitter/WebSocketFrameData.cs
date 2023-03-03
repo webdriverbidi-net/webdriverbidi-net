@@ -1,5 +1,5 @@
-// <copyright file="WebSocketFrameData.cs" company="WebDriverBidi.NET Committers">
-// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// <copyright file="WebSocketFrameData.cs" company="PinchHitter Committers">
+// Copyright (c) PinchHitter Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 

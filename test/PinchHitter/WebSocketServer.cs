@@ -1,5 +1,5 @@
-// <copyright file="WebSocketServer.cs" company="WebDriverBidi.NET Committers">
-// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// <copyright file="WebSocketServer.cs" company="PinchHitter Committers">
+// Copyright (c) PinchHitter Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -47,7 +47,7 @@ public class WebSocketServer : Server
     /// Initializes a new instance of the <see cref="WebSocketServer"/> class listening on a random port.
     /// </summary>
     public WebSocketServer()
-        : base()
+        : this(0)
     {
     }
 
@@ -61,16 +61,25 @@ public class WebSocketServer : Server
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the server should ignore requests from the client to close the WebSocket.
+    /// Gets or sets a value indicating whether the server should ignore requests
+    /// from the client to close the WebSocket. This allows simulating servers that
+    /// do not properly implement cleanly closing a WebSocket.
     /// </summary>
     public bool IgnoreCloseRequest { get => this.ignoreCloseRequest; set => this.ignoreCloseRequest = value; }
 
     /// <summary>
     /// Gets a value indicating whether the server should continue listening for incoming connections.
     /// </summary>
-    protected override bool ContinueRunning
+    protected override bool ContinueRunning => base.ContinueRunning && this.state != WebSocketState.Closed;
+
+    /// <summary>
+    /// Registers a resource with this web server to be returned when requested.
+    /// </summary>
+    /// <param name="url">The relative URL associated with this resource.</param>
+    /// <param name="resource">The web resource to return when requested.</param>
+    public void RegisterResource(string url, WebResource resource)
     {
-        get { return base.ContinueRunning && this.state != WebSocketState.Closed; }
+        this.httpProcessor.RegisterResource(url, resource);
     }
 
     /// <summary>
@@ -88,7 +97,7 @@ public class WebSocketServer : Server
     /// Asynchrounously forcibly disconnects the server without following the appropriate shutdown procedure.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public override async Task Disconnect()
+    public async Task Disconnect()
     {
         if (this.HasClientSocket && this.state == WebSocketState.Open)
         {
@@ -130,7 +139,7 @@ public class WebSocketServer : Server
 
             if (frame.Opcode == WebSocketOpcodeType.ClosedConnection)
             {
-                if (this.state == WebSocketState.Open && !this.ignoreCloseRequest)
+                if (!this.ignoreCloseRequest)
                 {
                     this.state = WebSocketState.CloseReceived;
                     await this.SendCloseFrame("Acknowledge close");
@@ -263,7 +272,7 @@ public class WebSocketServer : Server
             frameHeader[1] = Convert.ToByte(messageLength);
             dataOffset = 2;
         }
-        else if (messageLength >= 126 && messageLength <= 65535)
+        else if (messageLength <= 65535)
         {
             // Message length is between 126 and 65535 bytes, inclusive
             frameHeader[1] = MessageLengthIndicatorTwoBytes;

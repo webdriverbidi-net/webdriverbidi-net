@@ -1,5 +1,5 @@
-// <copyright file="HttpRequest.cs" company="WebDriverBidi.NET Committers">
-// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// <copyright file="HttpRequest.cs" company="PinchHitter Committers">
+// Copyright (c) PinchHitter Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -90,7 +90,12 @@ public class HttpRequest
         StringBuilder bodyBuilder = new();
         for (; currentLine < requestLines.Length; currentLine++)
         {
-            bodyBuilder.AppendLine(requestLines[currentLine]);
+            if (bodyBuilder.Length > 0)
+            {
+                bodyBuilder.AppendLine();
+            }
+
+            bodyBuilder.Append(requestLines[currentLine]);
         }
 
         result.body = bodyBuilder.ToString();

@@ -1,11 +1,10 @@
-// <copyright file="WebResource.cs" company="WebDriverBidi.NET Committers">
-// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// <copyright file="WebResource.cs" company="PinchHitter Committers">
+// Copyright (c) PinchHitter Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
 namespace PinchHitter;
 
-using System.Globalization;
 using System.Net;
 using System.Text;
 
@@ -17,6 +16,7 @@ public class WebResource
     private readonly List<WebAuthenticator> authenticators = new();
     private readonly byte[] data;
     private string mimeType = "text/html;charset=utf-8";
+    private bool isRedirect = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WebResource"/> class with a string.
@@ -50,6 +50,11 @@ public class WebResource
     /// Gets a value indicating whether this resource requires authentication.
     /// </summary>
     public bool RequiresAuthentication => this.authenticators.Count > 0;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether this resource redirects to another.
+    /// </summary>
+    public bool IsRedirect { get => this.isRedirect; set => this.isRedirect = value; }
 
     /// <summary>
     /// Creates a WebResource representing an HTML page.

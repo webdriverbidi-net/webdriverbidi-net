@@ -1,11 +1,12 @@
-// <copyright file="HttpRequestProcessor.cs" company="WebDriverBidi.NET Committers">
-// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// <copyright file="HttpRequestProcessor.cs" company="PinchHitter Committers">
+// Copyright (c) PinchHitter Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
 namespace PinchHitter;
 
 using System.Net;
+using System.Text;
 
 /// <summary>
 /// A processor for managing HTTP requests, including generating responses
@@ -41,21 +42,39 @@ public class HttpRequestProcessor
                 }
                 else
                 {
-                    string authorizationHeader = request.Headers["Authorization"][0];
-                    if (!resource.TryAuthenticate(authorizationHeader))
+                    if (request.Headers["Authorization"].Count == 0)
                     {
-                        WebResource forbiddenResource = WebResource.CreateHtmlResource("<h1>403 Forbidden</h1><div>You do not have the permissions to view this resource</div>");
-                        responseData = forbiddenResource.CreateHttpResponse(HttpStatusCode.Forbidden);
+                        WebResource forbiddenResource = WebResource.CreateHtmlResource("<h1>400 Invalid request</h1><div>The authorization request was incorrect</div>");
+                        responseData = forbiddenResource.CreateHttpResponse(HttpStatusCode.BadRequest);
                     }
                     else
                     {
-                        responseData = resource.CreateHttpResponse(HttpStatusCode.OK);
+                        string authorizationHeader = request.Headers["Authorization"][0];
+                        if (!resource.TryAuthenticate(authorizationHeader))
+                        {
+                            WebResource forbiddenResource = WebResource.CreateHtmlResource("<h1>403 Forbidden</h1><div>You do not have the permissions to view this resource</div>");
+                            responseData = forbiddenResource.CreateHttpResponse(HttpStatusCode.Forbidden);
+                        }
+                        else
+                        {
+                            responseData = resource.CreateHttpResponse(HttpStatusCode.OK);
+                        }
                     }
                 }
             }
             else
             {
-                responseData = resource.CreateHttpResponse(HttpStatusCode.OK);
+                if (resource.IsRedirect)
+                {
+                    responseData = resource.CreateHttpResponse(HttpStatusCode.MovedPermanently);
+                    responseData.Headers["Location"] = new List<string>() { Encoding.UTF8.GetString(resource.Data) };
+                    responseData.Headers["Content-Length"] = new List<string>() { "0" };
+                    responseData.BodyContent = Array.Empty<byte>();
+                }
+                else
+                {
+                    responseData = resource.CreateHttpResponse(HttpStatusCode.OK);
+                }
             }
         }
 

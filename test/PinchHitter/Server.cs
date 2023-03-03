@@ -1,5 +1,5 @@
-// <copyright file="Server.cs" company="WebDriverBidi.NET Committers">
-// Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
+// <copyright file="Server.cs" company="PinchHitter Committers">
+// Copyright (c) PinchHitter Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
@@ -20,14 +20,8 @@ public abstract class Server
     private readonly List<string> serverLog = new();
     private Socket? clientSocket;
     private int port = 0;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Server"/> class listening on a random port.
-    /// </summary>
-    protected Server()
-        : this(0)
-    {
-    }
+    private int bufferSize = 1024;
+    private bool isStarted = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Server"/> class listening on a specific port.
@@ -55,6 +49,28 @@ public abstract class Server
     public IList<string> Log => this.serverLog.AsReadOnly();
 
     /// <summary>
+    /// Gets or sets the size in bytes of the buffer for receiving incoming requests.
+    /// Defaults to 1024 bytes. Cannot be set once the server has started listening.
+    /// </summary>
+    public int BufferSize
+    {
+        get
+        {
+            return this.bufferSize;
+        }
+
+        set
+        {
+            if (this.isStarted)
+            {
+                throw new ArgumentException("Cannot set buffer size once server has started listening for requests");
+            }
+
+            this.bufferSize = value;
+        }
+    }
+
+    /// <summary>
     /// Gets a value indicating whether the server has a current client socket assigned.
     /// </summary>
     protected bool HasClientSocket => this.clientSocket is not null;
@@ -79,7 +95,10 @@ public abstract class Server
             this.port = localEndpoint.Port;
         }
 
+        // this.receiveDataTask = Task.Run(() => this.ReceiveData());
+        // this.receiveDataTask.ConfigureAwait(false);
         _ = Task.Run(() => this.ReceiveData()).ConfigureAwait(false);
+        this.isStarted = true;
     }
 
     /// <summary>
@@ -87,17 +106,12 @@ public abstract class Server
     /// </summary>
     public void Stop()
     {
-        this.listenerCancelationTokenSource.Cancel();
-        this.listener.Stop();
-    }
-
-    /// <summary>
-    /// Asynchrounously forcibly disconnects the server without following the appropriate shutdown procedure.
-    /// </summary>
-    /// <returns>A Task indicating the shutdown is complete.</returns>
-    public virtual Task Disconnect()
-    {
-        return Task.CompletedTask;
+        if (this.isStarted)
+        {
+            this.listenerCancelationTokenSource.Cancel();
+            this.listener.Stop();
+            this.isStarted = false;
+        }
     }
 
     /// <summary>
@@ -105,12 +119,12 @@ public abstract class Server
     /// </summary>
     /// <param name="data">A byte array representing the data to be sent.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebServerException">Thrown when there is no client socket connected.</exception>
+    /// <exception cref="PinchHitterException">Thrown when there is no client socket connected.</exception>
     protected async Task SendData(byte[] data)
     {
         if (this.clientSocket is null)
         {
-            throw new Exception("No attached client");
+            throw new PinchHitterException("No attached client");
         }
 
         int bytesSent = await this.clientSocket.SendAsync(data, SocketFlags.None);
@@ -152,7 +166,7 @@ public abstract class Server
         this.LogMessage("Socket connected");
         while (this.ContinueRunning)
         {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[this.bufferSize];
             using NetworkStream networkStream = new(this.clientSocket);
             using MemoryStream memoryStream = new();
             do
