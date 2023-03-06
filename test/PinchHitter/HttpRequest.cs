@@ -49,6 +49,19 @@ public class HttpRequest
     public string Body => this.body;
 
     /// <summary>
+    /// Gets a value indicating whether this HTTP request is a WebSocket handshake request.
+    /// </summary>
+    public bool IsWebSocketHandshakeRequest
+    {
+        get
+        {
+            return this.headers.ContainsKey("Connection") && this.headers["Connection"].Contains("Upgrade") &&
+                this.headers.ContainsKey("Upgrade") && this.headers["Upgrade"].Contains("websocket") &&
+                this.headers.ContainsKey("Sec-WebSocket-Key") && this.headers["Sec-WebSocket-Key"].Count > 0;
+        }
+    }
+
+    /// <summary>
     /// Parses an incoming HTTP request.
     /// </summary>
     /// <param name="rawRequest">The string containing the HTTP request.</param>

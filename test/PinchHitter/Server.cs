@@ -18,6 +18,7 @@ public abstract class Server
     private readonly TcpListener listener;
     private readonly CancellationTokenSource listenerCancelationTokenSource = new();
     private readonly List<string> serverLog = new();
+    private readonly HttpRequestProcessor httpProcessor = new();
     private Socket? clientSocket;
     private int port = 0;
     private int bufferSize = 1024;
@@ -115,6 +116,16 @@ public abstract class Server
     }
 
     /// <summary>
+    /// Registers a resource with this web server to be returned when requested.
+    /// </summary>
+    /// <param name="url">The relative URL associated with this resource.</param>
+    /// <param name="resource">The web resource to return when requested.</param>
+    public void RegisterResource(string url, WebResource resource)
+    {
+        this.httpProcessor.RegisterResource(url, resource);
+    }
+
+    /// <summary>
     /// Asynchronously sends data to the client requesing data from this server.
     /// </summary>
     /// <param name="data">A byte array representing the data to be sent.</param>
@@ -138,6 +149,16 @@ public abstract class Server
     /// <param name="receivedLength">The length of the data in the buffer.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected abstract Task ProcessIncomingData(byte[] buffer, int receivedLength);
+
+    /// <summary>
+    /// Processes an incoming HTTP request.
+    /// </summary>
+    /// <param name="request">The request to process.</param>
+    /// <returns>The response for the request.</returns>
+    protected HttpResponse ProcessHttpRequest(HttpRequest request)
+    {
+        return this.httpProcessor.ProcessRequest(request);
+    }
 
     /// <summary>
     /// Adds a message to the server log.

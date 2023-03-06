@@ -68,6 +68,16 @@ public class WebResource
     }
 
     /// <summary>
+    /// Creates a WebResource representing the HTTP response for a WebSocket upgrade request.
+    /// </summary>
+    /// <param name="websocketAcceptResponseHash">The WebSocket handshake response hash as a base64 encoded string.</param>
+    /// <returns>The WebResource representing the HTTP response for a WebSocket upgrade request.</returns>
+    public static WebResource CreateWebSocketHandshakeResponse(string websocketAcceptResponseHash)
+    {
+        return new WebSocketResponseWebResource(websocketAcceptResponseHash);
+    }
+
+    /// <summary>
     /// Adds an authenticator for this resource.
     /// </summary>
     /// <param name="authenticator">The authenticator to add.</param>
@@ -97,6 +107,15 @@ public class WebResource
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Creates an HttpResponse from this resource with a default status code.
+    /// </summary>
+    /// <returns>The HTTP response to be transmitted.</returns>
+    public virtual HttpResponse CreateHttpResponse()
+    {
+        return this.CreateHttpResponse(HttpStatusCode.OK);
     }
 
     /// <summary>

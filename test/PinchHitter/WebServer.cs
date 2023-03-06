@@ -14,8 +14,6 @@ using System.Text;
 /// </summary>
 public class WebServer : Server
 {
-    private readonly HttpRequestProcessor httpProcessor = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WebServer"/> class listening on a random port.
     /// </summary>
@@ -34,16 +32,6 @@ public class WebServer : Server
     }
 
     /// <summary>
-    /// Registers a resource with this web server to be returned when requested.
-    /// </summary>
-    /// <param name="url">The relative URL associated with this resource.</param>
-    /// <param name="resource">The web resource to return when requested.</param>
-    public void RegisterResource(string url, WebResource resource)
-    {
-        this.httpProcessor.RegisterResource(url, resource);
-    }
-
-    /// <summary>
     /// Asynchronously processes incoming data from the client.
     /// </summary>
     /// <param name="buffer">A byte array buffer containing the data.</param>
@@ -55,7 +43,7 @@ public class WebServer : Server
         string rawRequest = Encoding.UTF8.GetString(buffer, 0, receivedLength);
         this.OnDataReceived(new ServerDataReceivedEventArgs(rawRequest));
         HttpRequest request = HttpRequest.Parse(rawRequest);
-        HttpResponse responseData = this.httpProcessor.ProcessRequest(request);
+        HttpResponse responseData = this.ProcessHttpRequest(request);
         await this.SendData(responseData.ToByteArray());
     }
 }
