@@ -278,29 +278,44 @@ public class DriverTests
     [Test]
     public async Task TestDriverCanUseDefaultTransport()
     {
+        ManualResetEvent connectionSyncEvent = new(false);
+        void connectionHandler(object? sender, ClientConnectionEventArgs e) { connectionSyncEvent.Set(); }
         static void handler(object? sender, ServerDataReceivedEventArgs e) { }
-        WebSocketServer server = new();
+        Server server = new();
         server.DataReceived += handler;
+        server.ClientConnected += connectionHandler;
         server.Start();
 
         Driver driver = new();
         await driver.Start($"ws://localhost:{server.Port}");
+        bool connectionEventRaised = connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
         await driver.Stop();
 
         server.Stop();
         server.DataReceived -= handler;
+        Assert.That(connectionEventRaised, Is.True);
     }
 
     [Test]
     public async Task TestMalformedEventResponseLogsError()
     {
-        WebSocketServer server = new();
+        string connectionId = string.Empty;
+        ManualResetEvent connectionSyncEvent = new(false);
+        void connectionHandler(object? sender, ClientConnectionEventArgs e)
+        {
+            connectionId = e.ConnectionId;
+            connectionSyncEvent.Set();
+        }
+
+        Server server = new();
+        server.ClientConnected += connectionHandler;
         server.Start();
         Driver driver = new();
 
         try
         {
             await driver.Start($"ws://localhost:{server.Port}");
+            connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
             ManualResetEvent logSyncEvent = new(false);
             driver.BrowsingContext.Load += (sender, e) =>
             {
@@ -326,7 +341,7 @@ public class DriverTests
 
             // This payload omits the required "timestamp" field, which should cause an exception
             // in parsing.
-            await server.SendData(@"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
+            await server.SendData(connectionId, @"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
@@ -346,7 +361,16 @@ public class DriverTests
     [Test]
     public async Task TestMalformedNonCommandErrorResponseLogsError()
     {
-        WebSocketServer server = new();
+        string connectionId = string.Empty;
+        ManualResetEvent connectionSyncEvent = new(false);
+        void connectionHandler(object? sender, ClientConnectionEventArgs e)
+        {
+            connectionId = e.ConnectionId;
+            connectionSyncEvent.Set();
+        }
+
+        Server server = new();
+        server.ClientConnected += connectionHandler;
         server.Start();
         Driver driver = new();
 
@@ -378,7 +402,7 @@ public class DriverTests
 
             // This payload uses an object for the error field, which should cause an exception
             // in parsing.
-            await server.SendData(@"{ ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
+            await server.SendData(connectionId, @"{ ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
@@ -398,7 +422,16 @@ public class DriverTests
     [Test]
     public async Task TestMalformedIncomingMessageLogsError()
     {
-        WebSocketServer server = new();
+        string connectionId = string.Empty;
+        ManualResetEvent connectionSyncEvent = new(false);
+        void connectionHandler(object? sender, ClientConnectionEventArgs e)
+        {
+            connectionId = e.ConnectionId;
+            connectionSyncEvent.Set();
+        }
+
+        Server server = new();
+        server.ClientConnected += connectionHandler;
         server.Start();
         Driver driver = new();
 
@@ -427,7 +460,7 @@ public class DriverTests
 
             // This payload uses unparsable JSON, which should cause an exception
             // in parsing.
-            await server.SendData(@"{ ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
+            await server.SendData(connectionId, @"{ ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>

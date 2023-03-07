@@ -259,7 +259,8 @@ public class TransportTests
         {
         };
         connection.RaiseDataReceivedEvent(@"{ ""method"": null }");
-        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        Assert.That(eventRaised, Is.True);
     }
 
     [Test]
@@ -284,16 +285,22 @@ public class TransportTests
     [Test]
     public async Task TestTransportCanUseDefaultConnection()
     {
-        static void handler(object? sender, ServerDataReceivedEventArgs e) { }
-        WebSocketServer server = new();
-        server.DataReceived += handler;
+        ManualResetEvent connectionSyncEvent = new(false);
+        static void dataReceivedHandler(object? sender, ServerDataReceivedEventArgs e) { }
+        void connectionHandler(object? sender, ClientConnectionEventArgs e) { connectionSyncEvent.Set(); }
+        Server server = new();
+        server.DataReceived += dataReceivedHandler;
+        server.ClientConnected += connectionHandler;
         server.Start();
 
         Transport transport = new();
         await transport.Connect($"ws://localhost:{server.Port}");
+        bool connectionEventRaised = connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
         server.Stop();
-        server.DataReceived -= handler;
+        server.DataReceived -= dataReceivedHandler;
+        server.ClientConnected -= connectionHandler;
+        Assert.That(connectionEventRaised, Is.True);
     }
 
     [Test]

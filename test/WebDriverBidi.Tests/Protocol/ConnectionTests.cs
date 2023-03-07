@@ -6,40 +6,49 @@ using PinchHitter;
 [TestFixture]
 public class ConnectionTests
 {
-    private WebSocketServer? server;
-    private string lastReceivedData = string.Empty;
-    private readonly AutoResetEvent syncEvent = new(false);
+    private Server? server;
+    private string lastServerReceivedData = string.Empty;
+    private string lastConnnectionReceivedData = string.Empty;
+    private string connectionId = string.Empty;
+    private readonly AutoResetEvent serverReceiveSyncEvent = new(false);
+    private readonly AutoResetEvent connectionReceiveSyncEvent = new(false);
+    private readonly AutoResetEvent connectionSyncEvent = new(false);
 
     [SetUp]
     public void InitializeServer()
     {
-        lastReceivedData = string.Empty;
-        syncEvent.Reset();
-        server = new WebSocketServer();
-        server.DataReceived += OnSocketDataReceived;
-        server.Start();
+        this.connectionId = string.Empty;
+        this.lastServerReceivedData = string.Empty;
+        this.lastConnnectionReceivedData = string.Empty;
+        this.connectionReceiveSyncEvent.Reset();
+        this.serverReceiveSyncEvent.Reset();
+        this.connectionSyncEvent.Reset();
+        this.server = new Server();
+        this.server.ClientConnected += OnClientConnected;
+        this.server.Start();
     }
 
     [TearDown]
     public void DisposeServer()
     {
-        if (server is not null)
+        if (this.server is not null)
         {
-            server.Stop();
-            server.DataReceived -= OnSocketDataReceived;
-            server = null;
+            this.server.Stop();
+            this.server.DataReceived -= OnSocketDataReceived;
+            this.server.ClientConnected -= OnClientConnected;
+            this.server = null;
         }
     }
 
     [Test]
     public void TestConnectionFailure()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
-        int port = server.Port;
+        int port = this.server.Port;
         DisposeServer();
         Connection connection = new(TimeSpan.FromMilliseconds(250));
         Assert.That(async () => await connection.Start($"ws://localhost:{port}"), Throws.InstanceOf<TimeoutException>().With.Message.Contains(".25 seconds"));
@@ -48,89 +57,92 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanSendData()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
         Connection connection = new();
-        connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{server.Port}");
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.DataReceived += OnSocketDataReceived;
 
         await connection.SendData("Hello world");
-        syncEvent.WaitOne(TimeSpan.FromSeconds(3));
+        string dataReceivedByServer = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
 
-        Assert.That(this.lastReceivedData, Is.EqualTo("Hello world"));
+        Assert.That(dataReceivedByServer, Is.EqualTo("Hello world"));
         await connection.Stop();
     }
 
     [Test]
     public async Task TestConnectionCanReceiveData()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
         Connection connection = new();
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{server.Port}");
 
-        await server.SendData("Hello back");
-        syncEvent.WaitOne(TimeSpan.FromSeconds(3));
+        await this.server.SendData(registeredConnectionId, "Hello back");
+        string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
-        Assert.That(this.lastReceivedData, Is.EqualTo("Hello back"));
+        Assert.That(dataReceivedByConnection, Is.EqualTo("Hello back"));
         await connection.Stop();
     }
 
     [Test]
     public async Task TestConnectionReceivesDataOnBufferBoundary()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
-
         Connection connection = new();
-        connection.DataReceived += OnConnectionDataReceived;
         await connection.Start($"ws://localhost:{server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        connection.DataReceived += OnConnectionDataReceived;
 
         // Create a message on an exact boundary of the buffer
         string data = new('a', 2 * connection.BufferSize);
-        await server.SendData(data);
-        syncEvent.WaitOne(TimeSpan.FromSeconds(3));
+        await this.server.SendData(registeredConnectionId, data);
+        string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
-        Assert.That(this.lastReceivedData, Is.EqualTo(data));
+        Assert.That(dataReceivedByConnection, Is.EqualTo(data));
         await connection.Stop();
     }
 
     [Test]
     public async Task TestConnectionReceivesDataOnVeryLongMessage()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
 
         Connection connection = new();
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{server.Port}");
 
         // Create a message on an exact boundary of the buffer
         string data = new('a', 70000);
-        await server.SendData(data);
-        syncEvent.WaitOne(TimeSpan.FromSeconds(3));
+        await this.server.SendData(registeredConnectionId, data);
+        string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
-        Assert.That(this.lastReceivedData, Is.EqualTo(data));
+        Assert.That(dataReceivedByConnection, Is.EqualTo(data));
         await connection.Stop();
     }
 
     [Test]
     public async Task TestConnectionLog()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
@@ -145,13 +157,14 @@ public class ConnectionTests
                 logValues.Add(e);
             }
         };
-        await connection.Start($"ws://localhost:{server.Port}");
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.DataReceived += OnSocketDataReceived;
         await connection.SendData("Hello world");
-        syncEvent.WaitOne(TimeSpan.FromSeconds(4));
+        this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
 
-        this.lastReceivedData = string.Empty;
-        await server.SendData("Hello back");
-        syncEvent.WaitOne();
+        await this.server.SendData(registeredConnectionId, "Hello back");
+        this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(4));
         await connection.Stop();
 
         List<string> messages = new();
@@ -174,7 +187,7 @@ public class ConnectionTests
     [Test]
     public async Task TestIsActiveProperty()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
@@ -182,7 +195,8 @@ public class ConnectionTests
         Connection connection = new();
         Assert.That(connection.IsActive, Is.False);
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{server.Port}");
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.IsActive, Is.True);
         await connection.Stop();
         Assert.That(connection.IsActive, Is.False);
@@ -191,14 +205,15 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionStopCanBeCalledMultipleTimes()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
         Connection connection = new();
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{server.Port}");
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.Stop();
         await connection.Stop();
     }
@@ -206,22 +221,23 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionHandlesRemoteEndStop()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{server.Port}");
-        server.Stop();
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.Stop();
         await connection.Stop();
     }
 
     [Test]
     public async Task TestConnectionHandlesDisconnectInitiatedByRemoteEnd()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
@@ -233,25 +249,26 @@ public class ConnectionTests
             connectionLog.Add(e.Message);
         };
 
-        IList<string> serverLog = server.Log;
-        await connection.Start($"ws://localhost:{server.Port}");
+        IList<string> serverLog = this.server.Log;
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.DataReceived += OnSocketDataReceived;
     
         // Server initiated disconnection requires waiting for the
         // close websocket message to be received by the client.
-        await server.Disconnect();
-        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        await this.server.Disconnect(registeredConnectionId);
+        this.WaitForServerToReceiveData(TimeSpan.FromSeconds(1));
         await connection.Stop();
     }
 
     [Test]
     public async Task TestConnectionHandlesHungRemoteEnd()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
-        server.IgnoreCloseRequest = true;
         List<string> connectionLog = new();
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         connection.LogMessage += (sender, e) =>
@@ -259,20 +276,21 @@ public class ConnectionTests
             connectionLog.Add(e.Message);
         };
 
-        IList<string> serverLog = server.Log;
-        await connection.Start($"ws://localhost:{server.Port}");
+        IList<string> serverLog = this.server.Log;
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.Stop();
     }
 
     [Test]
     public async Task TestCanShutdownWhenCleanShutdownExceedsTimeout()
     {
-        if (server is null)
+        if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
 
-        server.IgnoreCloseRequest = true;
         List<string> connectionLog = new();
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.Zero);
         connection.LogMessage += (sender, e) =>
@@ -280,20 +298,46 @@ public class ConnectionTests
             connectionLog.Add(e.Message);
         };
 
-        IList<string> serverLog = server.Log;
-        await connection.Start($"ws://localhost:{server.Port}");
+        IList<string> serverLog = this.server.Log;
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.Stop();
     }
 
     private void OnSocketDataReceived(object? sender, ServerDataReceivedEventArgs e)
     {
-        this.lastReceivedData = e.Data;
-        this.syncEvent.Set();
+        this.lastServerReceivedData = e.Data;
+        this.serverReceiveSyncEvent.Set();
     }
 
     private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
-        this.lastReceivedData = e.Data;
-        this.syncEvent.Set();
+        this.lastConnnectionReceivedData = e.Data;
+        this.connectionReceiveSyncEvent.Set();
+    }
+
+    private void OnClientConnected(object? sender, ClientConnectionEventArgs e)
+    {
+        this.connectionId = e.ConnectionId;
+        this.connectionSyncEvent.Set();
+    }
+
+    private string WaitForServerToRegisterConnection(TimeSpan timeout)
+    {
+        this.connectionSyncEvent.WaitOne(timeout);
+        return this.connectionId;
+    }
+
+    private string WaitForConnectionToReceiveData(TimeSpan timeout)
+    {
+        this.connectionReceiveSyncEvent.WaitOne(timeout);
+        return this.lastConnnectionReceivedData;
+    }
+
+    private string WaitForServerToReceiveData(TimeSpan timeout)
+    {
+        this.serverReceiveSyncEvent.WaitOne(timeout);
+        return this.lastServerReceivedData;
     }
 }

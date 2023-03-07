@@ -6,6 +6,7 @@
 namespace PinchHitter;
 
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 
@@ -13,22 +14,30 @@ using System.Net.Sockets;
 /// An abstract base class for a server listening on a port for TCP messages and able
 /// to process incoming data received on that port.
 /// </summary>
-public abstract class Server
+public class Server
 {
+    private readonly ConcurrentDictionary<string, ClientConnection> activeConnections = new();
     private readonly TcpListener listener;
     private readonly CancellationTokenSource listenerCancelationTokenSource = new();
     private readonly List<string> serverLog = new();
     private readonly HttpRequestProcessor httpProcessor = new();
-    private Socket? clientSocket;
     private int port = 0;
     private int bufferSize = 1024;
-    private bool isStarted = false;
+    private bool isAcceptingConnections = false;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Server"/> class.
+    /// </summary>
+    public Server()
+        : this(0)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Server"/> class listening on a specific port.
     /// </summary>
     /// <param name="port">The port on which to listen. Passing zero (0) for the port will select a random port.</param>
-    protected Server(int port)
+    public Server(int port)
     {
         this.port = port;
         this.listener = new(new IPEndPoint(IPAddress.Loopback, this.port));
@@ -38,6 +47,16 @@ public abstract class Server
     /// Event raised when data is received by the server.
     /// </summary>
     public event EventHandler<ServerDataReceivedEventArgs>? DataReceived;
+
+    /// <summary>
+    /// Event raised when a client connects to the server.
+    /// </summary>
+    public event EventHandler<ClientConnectionEventArgs>? ClientConnected;
+
+    /// <summary>
+    /// Event raised when a client disconnects from the server.
+    /// </summary>
+    public event EventHandler<ClientConnectionEventArgs>? ClientDisconnected;
 
     /// <summary>
     /// Gets the port on which the server is listening for connections.
@@ -62,26 +81,13 @@ public abstract class Server
 
         set
         {
-            if (this.isStarted)
+            if (this.isAcceptingConnections)
             {
                 throw new ArgumentException("Cannot set buffer size once server has started listening for requests");
             }
 
             this.bufferSize = value;
         }
-    }
-
-    /// <summary>
-    /// Gets a value indicating whether the server has a current client socket assigned.
-    /// </summary>
-    protected bool HasClientSocket => this.clientSocket is not null;
-
-    /// <summary>
-    /// Gets a value indicating whether the server should continue listening for incoming connections.
-    /// </summary>
-    protected virtual bool ContinueRunning
-    {
-        get { return !this.listenerCancelationTokenSource.Token.IsCancellationRequested; }
     }
 
     /// <summary>
@@ -96,10 +102,8 @@ public abstract class Server
             this.port = localEndpoint.Port;
         }
 
-        // this.receiveDataTask = Task.Run(() => this.ReceiveData());
-        // this.receiveDataTask.ConfigureAwait(false);
-        _ = Task.Run(() => this.ReceiveData()).ConfigureAwait(false);
-        this.isStarted = true;
+        _ = Task.Run(() => this.AcceptConnections()).ConfigureAwait(false);
+        this.isAcceptingConnections = true;
     }
 
     /// <summary>
@@ -107,12 +111,34 @@ public abstract class Server
     /// </summary>
     public void Stop()
     {
-        if (this.isStarted)
+        if (this.isAcceptingConnections)
         {
+            // Stop accepting connections, so that the population of the
+            // dictionary of connections is stable.
+            this.isAcceptingConnections = false;
+            foreach (KeyValuePair<string, ClientConnection> pair in this.activeConnections)
+            {
+                pair.Value.StopReceiving();
+            }
+
             this.listenerCancelationTokenSource.Cancel();
             this.listener.Stop();
-            this.isStarted = false;
         }
+    }
+
+    /// <summary>
+    /// Asynchrounously forcibly disconnects the server without following the appropriate shutdown procedure.
+    /// </summary>
+    /// <param name="connectionId">The ID of the client connection to disconnect.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public async Task Disconnect(string connectionId)
+    {
+        if (!this.activeConnections.TryGetValue(connectionId, out ClientConnection? connection))
+        {
+            throw new PinchHitterException($"Unknown connecxtion ID {connectionId}");
+        }
+
+        await connection.Disconnect();
     }
 
     /// <summary>
@@ -126,38 +152,50 @@ public abstract class Server
     }
 
     /// <summary>
-    /// Asynchronously sends data to the client requesing data from this server.
+    /// Asynchronously sends data to the client connected via this client connection.
     /// </summary>
-    /// <param name="data">A byte array representing the data to be sent.</param>
+    /// <param name="connectionId">The ID of the client connection to send data to.</param>
+    /// <param name="data">The data to be sent.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="PinchHitterException">Thrown when there is no client socket connected.</exception>
-    protected async Task SendData(byte[] data)
+    public async Task SendData(string connectionId, string data)
     {
-        if (this.clientSocket is null)
-        {
-            throw new PinchHitterException("No attached client");
-        }
-
-        int bytesSent = await this.clientSocket.SendAsync(data, SocketFlags.None);
-        this.serverLog.Add($"SEND {bytesSent} bytes");
+        WebSocketFrame frame = WebSocketFrame.Encode(data, WebSocketOpcodeType.Text);
+        await this.SendData(connectionId, frame.Data);
     }
 
     /// <summary>
-    /// Asynchronously processes incoming data from the client.
+    /// Sets a value indicating whether the client connection should ignore requests
+    /// from the client to close the WebSocket. This allows simulating servers that
+    /// do not properly implement cleanly closing a WebSocket.
     /// </summary>
-    /// <param name="buffer">A byte array buffer containing the data.</param>
-    /// <param name="receivedLength">The length of the data in the buffer.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    protected abstract Task ProcessIncomingData(byte[] buffer, int receivedLength);
+    /// <param name="connectionId">The ID of the connection for which to set the close request behavior.</param>
+    /// <param name="ignoreCloseConnectionRequest"><see langword="true"/> to have the client connection ignore close requests; otherwise, <see langword="false"/>.</param>
+    /// <exception cref="PinchHitterException">Thrown when an invalid connection ID is specified.</exception>
+    public void IgnoreCloseConnectionRequest(string connectionId, bool ignoreCloseConnectionRequest)
+    {
+        if (!this.activeConnections.TryGetValue(connectionId, out ClientConnection? connection))
+        {
+            throw new PinchHitterException($"Unknown connecxtion ID {connectionId}");
+        }
+
+        connection.IgnoreCloseRequest = ignoreCloseConnectionRequest;
+    }
 
     /// <summary>
-    /// Processes an incoming HTTP request.
+    /// Asynchronously sends data to the client requesing data from this server.
     /// </summary>
-    /// <param name="request">The request to process.</param>
-    /// <returns>The response for the request.</returns>
-    protected HttpResponse ProcessHttpRequest(HttpRequest request)
+    /// <param name="connectionId">The ID of the client connection to send data to.</param>
+    /// <param name="data">A byte array representing the data to be sent.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="PinchHitterException">Thrown when an invalid connection ID is specified.</exception>
+    protected async Task SendData(string connectionId, byte[] data)
     {
-        return this.httpProcessor.ProcessRequest(request);
+        if (!this.activeConnections.TryGetValue(connectionId, out ClientConnection? connection))
+        {
+            throw new PinchHitterException($"Unknown connecxtion ID {connectionId}");
+        }
+
+        await connection.SendData(data);
     }
 
     /// <summary>
@@ -172,7 +210,7 @@ public abstract class Server
     /// <summary>
     /// Raises the DataReceived event.
     /// </summary>
-    /// <param name="e">The WebServerDataReceivedEventArgs object containing information about the DataReceived event.</param>
+    /// <param name="e">The ServerDataReceivedEventArgs object containing information about the event.</param>
     protected virtual void OnDataReceived(ServerDataReceivedEventArgs e)
     {
         if (this.DataReceived is not null)
@@ -181,37 +219,70 @@ public abstract class Server
         }
     }
 
-    private async Task ReceiveData()
+    /// <summary>
+    /// Raises the ClientConnected event.
+    /// </summary>
+    /// <param name="e">The ClientConnectionEventArgs object containing information about the event.</param>
+    protected virtual void OnClientConnected(ClientConnectionEventArgs e)
     {
-        this.clientSocket = await this.listener.AcceptSocketAsync(this.listenerCancelationTokenSource.Token);
-        this.LogMessage("Socket connected");
-        while (this.ContinueRunning)
+        if (this.ClientConnected is not null)
         {
-            byte[] buffer = new byte[this.bufferSize];
-            using NetworkStream networkStream = new(this.clientSocket);
-            using MemoryStream memoryStream = new();
-            do
-            {
-                // Use a NetworkStream to read the data from the socket, then write
-                // the received data to a MemoryStream. This allows the server to
-                // read requests that exceed the size of the buffer.
-                int receivedLength = await networkStream.ReadAsync(buffer, this.listenerCancelationTokenSource.Token);
-                await memoryStream.WriteAsync(buffer.AsMemory(0, receivedLength), this.listenerCancelationTokenSource.Token);
-            }
-            while (networkStream.DataAvailable);
+            this.ClientConnected(this, e);
+        }
+    }
 
-            if (memoryStream.Length > 0)
+    /// <summary>
+    /// Raises the ClientDisconnected event.
+    /// </summary>
+    /// <param name="e">The ClientConnectionEventArgs object containing information about the event.</param>
+    protected virtual void OnClientDisconnected(ClientConnectionEventArgs e)
+    {
+        if (this.ClientDisconnected is not null)
+        {
+            this.ClientDisconnected(this, e);
+        }
+    }
+
+    private async Task AcceptConnections()
+    {
+        this.isAcceptingConnections = true;
+        while (true)
+        {
+            Socket socket = await this.listener.AcceptSocketAsync(this.listenerCancelationTokenSource.Token);
+            if (this.isAcceptingConnections)
             {
-                // Reset the memory stream position, and copy the data into a buffer
-                // suitable for processing.
-                int totalReceived = Convert.ToInt32(memoryStream.Length);
-                memoryStream.Position = 0;
-                byte[] messageBytes = new byte[totalReceived];
-                await memoryStream.ReadAsync(messageBytes.AsMemory(0, totalReceived), this.listenerCancelationTokenSource.Token);
-                await this.ProcessIncomingData(messageBytes, totalReceived);
+                ClientConnection clientConnection = new(socket, this.httpProcessor, this.bufferSize);
+                clientConnection.DataReceived += (sender, e) =>
+                {
+                    this.OnDataReceived(new ServerDataReceivedEventArgs(e.ConnectionId, e.DataReceived));
+                };
+                clientConnection.LogMessage += (sender, e) =>
+                {
+                this.LogMessage(e.Message);
+                };
+                clientConnection.Starting += (sender, e) =>
+                {
+                    this.OnClientConnectionStarting(clientConnection);
+                };
+                clientConnection.Stopped += (sender, e) =>
+                {
+                    this.OnClientConnectionStopped(e.ConnectionId);
+                };
+                clientConnection.StartReceiving();
+                this.LogMessage("Client connected");
             }
         }
+    }
 
-        this.clientSocket.Close();
+    private void OnClientConnectionStarting(ClientConnection connection)
+    {
+        this.activeConnections.TryAdd(connection.ConnectionId, connection);
+        this.OnClientConnected(new ClientConnectionEventArgs(connection.ConnectionId));
+    }
+
+    private void OnClientConnectionStopped(string connectionId)
+    {
+        this.activeConnections.TryRemove(connectionId, out ClientConnection _);
+        this.OnClientDisconnected(new ClientConnectionEventArgs(connectionId));
     }
 }
