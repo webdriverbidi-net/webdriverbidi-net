@@ -25,11 +25,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="PinchHitter" Version="0.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\WebDriverBidi\WebDriverBidi.csproj" />
-    <ProjectReference Include="..\PinchHitter\PinchHitter.csproj" />
   </ItemGroup>
 
 </Project>
