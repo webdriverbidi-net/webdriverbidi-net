@@ -124,7 +124,6 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-
         Connection connection = new();
         await connection.Start($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -210,7 +209,12 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
+        List<string> connectionLog = new();
         Connection connection = new();
+        connection.LogMessage += (sender, e) =>
+        {
+            connectionLog.Add(e.Message);
+        };
         connection.DataReceived += OnConnectionDataReceived;
         await connection.Start($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -235,12 +239,52 @@ public class ConnectionTests
     }
 
     [Test]
+    public async Task TestConnectionInitiateWebSocketClose()
+    {
+        if (this.server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        List<string> expectedLogEntries = new()
+        {
+            $"Opening connection to URL ws://localhost:{this.server.Port}",
+            "Connection opened",
+            "Closing connection",
+            "Ending processing loop in state Closed",
+            "Client state is Closed"
+        };
+
+        List<string> connectionLog = new();
+        Connection connection = new();
+        connection.LogMessage += (sender, e) =>
+        {
+            connectionLog.Add(e.Message);
+        };
+        connection.DataReceived += OnConnectionDataReceived;
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await connection.Stop();
+        Assert.That(connectionLog, Is.EquivalentTo(expectedLogEntries));
+    }
+
+    [Test]
     public async Task TestConnectionHandlesDisconnectInitiatedByRemoteEnd()
     {
         if (this.server is null)
         {
             throw new WebDriverBidiException("No server available");
         }
+
+        List<string> expectedLogEntries = new()
+        {
+            $"Opening connection to URL ws://localhost:{this.server.Port}",
+            "Connection opened",
+            "Acknowledging Close frame received from server",
+            "Ending processing loop in state Closed",
+            "Closing connection",
+            "Socket already closed (Socket state: Closed)"
+        };
 
         List<string> connectionLog = new();
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
@@ -252,13 +296,21 @@ public class ConnectionTests
         IList<string> serverLog = this.server.Log;
         await connection.Start($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.server.DataReceived += OnSocketDataReceived;
+        ManualResetEvent disconnectEvent = new(false);
+        this.server.ClientDisconnected += (sender, e) =>
+        {
+            if (e.ConnectionId == registeredConnectionId)
+            {
+                disconnectEvent.Set();
+            }
+        };
     
         // Server initiated disconnection requires waiting for the
         // close websocket message to be received by the client.
         await this.server.Disconnect(registeredConnectionId);
-        this.WaitForServerToReceiveData(TimeSpan.FromSeconds(1));
+        disconnectEvent.WaitOne(TimeSpan.FromSeconds(1));
         await connection.Stop();
+        Assert.That(connectionLog, Is.EquivalentTo(expectedLogEntries));
     }
 
     [Test]
@@ -268,6 +320,15 @@ public class ConnectionTests
         {
             throw new WebDriverBidiException("No server available");
         }
+
+        List<string> expectedLogEntries = new()
+        {
+            $"Opening connection to URL ws://localhost:{this.server.Port}",
+            "Connection opened",
+            "Closing connection",
+            "Unexpected error during receive of data: The remote party closed the WebSocket connection without completing the close handshake.",
+            "Client state is Aborted"
+        };
 
         List<string> connectionLog = new();
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
@@ -281,6 +342,7 @@ public class ConnectionTests
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.Stop();
+        Assert.That(connectionLog, Is.EquivalentTo(expectedLogEntries));
     }
 
     [Test]

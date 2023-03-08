@@ -115,7 +115,7 @@ public class Connection
         this.Log($"Closing connection", WebDriverBidiLogLevel.Info);
         if (this.client.State != WebSocketState.Open)
         {
-            this.Log($"Socket already closed. ({this.client.State}");
+            this.Log($"Socket already closed (Socket state: {this.client.State})");
             return;
         }
 
@@ -130,7 +130,7 @@ public class Connection
             while (this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted && !timeout.Token.IsCancellationRequested)
             {
                 // The loop may be too tight for the cancellation token to get triggered, so add a small delay
-                await Task.Delay(10);
+                await Task.Delay(TimeSpan.FromMilliseconds(10));
             }
 
             this.Log($"Client state is {this.client.State}", WebDriverBidiLogLevel.Info);

@@ -377,6 +377,8 @@ public class DriverTests
         try
         {
             await driver.Start($"ws://localhost:{server.Port}");
+            connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
+
             driver.BrowsingContext.Load += (sender, e) =>
             {
             };
@@ -438,6 +440,7 @@ public class DriverTests
         try
         {
             await driver.Start($"ws://localhost:{server.Port}");
+            connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
             ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
