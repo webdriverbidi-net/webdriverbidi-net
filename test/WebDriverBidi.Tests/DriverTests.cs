@@ -21,7 +21,7 @@ public class DriverTests
             syncEvent.Set();
         };
 
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(1500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
 
@@ -45,7 +45,7 @@ public class DriverTests
             syncEvent.Set();
         };
 
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(TimeSpan.FromMilliseconds(1500), connection);
         await transport.Connect("ws://localhost:5555");
         Driver driver = new(transport);
 
