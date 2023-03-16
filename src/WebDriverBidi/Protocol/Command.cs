@@ -16,7 +16,7 @@ public class Command
 {
     private readonly CommandParameters commandData;
     private readonly long commandId;
-    private readonly ManualResetEvent synchronizationEvent = new(false);
+    private readonly ManualResetEventSlim synchronizationEvent = new(false);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Command" /> class.
@@ -62,7 +62,7 @@ public class Command
     /// <summary>
     /// Gets a synchronization object used to wait for completion of the command.
     /// </summary>
-    public ManualResetEvent SynchronizationEvent => this.synchronizationEvent;
+    public ManualResetEventSlim SynchronizationEvent => this.synchronizationEvent;
 
     /// <summary>
     /// Gets or sets the result of the command.

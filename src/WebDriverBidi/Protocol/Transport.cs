@@ -156,7 +156,7 @@ public class Transport
         }
         else
         {
-            if (!this.pendingCommands[commandId].SynchronizationEvent.WaitOne(waitTimeout))
+            if (!this.pendingCommands[commandId].SynchronizationEvent.Wait(waitTimeout))
             {
                 throw new WebDriverBidiException($"Timed out waiting for response for command id {commandId}");
             }
