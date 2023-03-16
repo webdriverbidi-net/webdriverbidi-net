@@ -208,7 +208,7 @@ public class Connection
                 if (!cancellationToken.IsCancellationRequested)
                 {
                     // The server is notifying us that the connection will close; send acknowledgement
-                    if (this.client.State == WebSocketState.CloseReceived)
+                    if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed)
                     {
                         this.Log($"Acknowledging Close frame received from server", WebDriverBidiLogLevel.Info);
                         await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None);
