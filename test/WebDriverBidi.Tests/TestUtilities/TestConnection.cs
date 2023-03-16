@@ -4,6 +4,10 @@ using WebDriverBidi.Protocol;
 
 public class TestConnection : Connection
 {
+    public bool BypassStart { get; set; } = true;
+
+    public bool BypassStop { get; set; } = true;
+
     public string? DataSent { get; set; }
 
     public event EventHandler<TestConnectionDataSentEventArgs>? DataSendComplete;
@@ -20,7 +24,26 @@ public class TestConnection : Connection
 
     public override Task Start(string url)
     {
-        return Task.CompletedTask;
+        if (this.BypassStart)
+        {
+            return Task.CompletedTask;
+        }
+        else
+        {
+            return base.Start(url);
+        }
+    }
+
+    public override Task Stop()
+    {
+        if (this.BypassStop)
+        {
+            return Task.CompletedTask;
+        }
+        else
+        {
+            return base.Stop();
+        }
     }
 
     public override Task SendData(string data)
@@ -30,7 +53,7 @@ public class TestConnection : Connection
         return Task.CompletedTask;
     }
 
-    public override Task Stop()
+    protected override Task CloseClientWebSocket()
     {
         return Task.CompletedTask;
     }

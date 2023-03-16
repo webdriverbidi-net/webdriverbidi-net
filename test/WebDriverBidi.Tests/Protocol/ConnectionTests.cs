@@ -2,6 +2,7 @@ namespace WebDriverBidi.Protocol;
 
 using System.Threading;
 using PinchHitter;
+using WebDriverBidi.TestUtilities;
 
 [TestFixture]
 public class ConnectionTests
@@ -211,6 +212,34 @@ public class ConnectionTests
 
         Connection connection = new();
         Assert.That(connection.IsActive, Is.False);
+        await connection.Stop();
+        Assert.That(connection.IsActive, Is.False);
+    }
+
+    [Test]
+    public async Task TestStopForcesCancellationOfDataReceiveTask()
+    {
+        if (this.server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        TestConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false
+        };
+        Assert.That(connection.IsActive, Is.False);
+        connection.DataReceived += OnConnectionDataReceived;
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        Assert.That(connection.IsActive, Is.True);
+        connection.DataReceived += OnConnectionDataReceived;
+
+        // Send data to the connection, which should force the receive data
+        // task to enter a waiting state after receiving the first message.
+        await this.server.SendData(registeredConnectionId, "Hello back");
+        string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.Stop();
         Assert.That(connection.IsActive, Is.False);
     }
