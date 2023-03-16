@@ -353,10 +353,6 @@ public class DriverTests
             await driver.Start($"ws://localhost:{server.Port}");
             connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
             ManualResetEvent logSyncEvent = new(false);
-            driver.BrowsingContext.Load += (sender, e) =>
-            {
-            };
-
             List<string> driverLog = new();
             driver.LogMessage += (sender, e) =>
             {
@@ -379,9 +375,9 @@ public class DriverTests
             // in parsing.
             await server.SendData(connectionId, @"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
-            Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
             {
+                Assert.That(eventsRaised, Is.True);
                 Assert.That(driverLog, Has.Count.EqualTo(1));
                 Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing event JSON"));
                 Assert.That(unknownMessage, Is.Not.Empty);
