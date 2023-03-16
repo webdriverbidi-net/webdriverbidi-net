@@ -202,6 +202,20 @@ public class ConnectionTests
     }
 
     [Test]
+    public async Task TestStopWithoutStart()
+    {
+        if (this.server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        Connection connection = new();
+        Assert.That(connection.IsActive, Is.False);
+        await connection.Stop();
+        Assert.That(connection.IsActive, Is.False);
+    }
+
+    [Test]
     public async Task TestConnectionStopCanBeCalledMultipleTimes()
     {
         if (this.server is null)

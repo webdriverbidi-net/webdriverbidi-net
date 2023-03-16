@@ -18,6 +18,7 @@ public class Connection
     private readonly TimeSpan startupTimeout;
     private readonly TimeSpan shutdownTimeout;
     private readonly int bufferSize = 4096;
+    private Task? dataReceiveTask;
     private bool isActive = false;
     private ClientWebSocket client = new();
 
@@ -101,7 +102,7 @@ public class Connection
             throw new TimeoutException($"Could not connect to browser within {this.startupTimeout.TotalSeconds} seconds");
         }
 
-        _ = Task.Run(async () => await this.ReceiveData()).ConfigureAwait(false);
+        this.dataReceiveTask = Task.Run(async () => await this.ReceiveData());
         this.isActive = true;
         this.Log($"Connection opened", WebDriverBidiLogLevel.Info);
     }
@@ -116,33 +117,35 @@ public class Connection
         if (this.client.State != WebSocketState.Open)
         {
             this.Log($"Socket already closed (Socket state: {this.client.State})");
-            return;
         }
-
-        // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-        CancellationTokenSource timeout = new(this.shutdownTimeout);
-        try
+        else
         {
-            // After this, the socket state which change to CloseSent
-            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token);
-
-            // Now we wait for the server response, which will close the socket
-            while (this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted && !timeout.Token.IsCancellationRequested)
+            // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
+            CancellationTokenSource timeout = new(this.shutdownTimeout);
+            try
             {
-                // The loop may be too tight for the cancellation token to get triggered, so add a small delay
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
-            }
+                // After this, the socket state which change to CloseSent
+                await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token);
 
-            this.Log($"Client state is {this.client.State}", WebDriverBidiLogLevel.Info);
-        }
-        catch (OperationCanceledException)
-        {
-            // An OperationCanceledExcetption is normal upon task/token cancellation, so disregard it
+                // Now we wait for the server response, which will close the socket
+                while (this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted && !timeout.Token.IsCancellationRequested)
+                {
+                    // The loop may be too tight for the cancellation token to get triggered, so add a small delay
+                    await Task.Delay(TimeSpan.FromMilliseconds(10));
+                }
+
+                this.Log($"Client state is {this.client.State}", WebDriverBidiLogLevel.Info);
+            }
+            catch (OperationCanceledException)
+            {
+                // An OperationCanceledExcetption is normal upon task/token cancellation, so disregard it
+            }
         }
 
         // Whether we closed the socket or timed out, we cancel the token causing RecieveAsync to abort the socket.
         // The finally block at the end of the processing loop will dispose of the ClientWebSocket object.
         this.clientTokenSource.Cancel();
+        this.dataReceiveTask?.Wait();
     }
 
     /// <summary>
