@@ -119,6 +119,42 @@ public class DriverTests
     }
 
     [Test]
+    public async Task TestDriverWillProcessPendingMessagesOnStop()
+    {
+        string receivedEvent = string.Empty;
+        object? receivedData = null;
+        ManualResetEvent syncEvent = new(false);
+
+        string eventName = "module.event";
+        TestConnection connection = new();
+        TestTransport transport = new(TimeSpan.FromMilliseconds(500), connection)
+        {
+            MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
+        };
+        Driver driver = new(transport);
+        await driver.Start("ws://localhost:5555");
+        driver.RegisterEvent<TestEventArgs>(eventName);
+        driver.EventReceived += (sender, e) =>
+        {
+            receivedEvent = e.EventName;
+            receivedData = e.EventData;
+            syncEvent.Set();
+        };
+
+        connection.RaiseDataReceivedEvent(@"{ ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await driver.Stop();
+        syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(receivedEvent, Is.EqualTo(eventName));
+            Assert.That(receivedData, Is.Not.Null);
+            Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
+        });
+        TestEventArgs? convertedData = receivedData as TestEventArgs;
+        Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
+    }
+
+    [Test]
     public async Task TestUnregisteredEventRaisesUnknownMessageEvent()
     {
         string receivedMessage = string.Empty;

@@ -6,6 +6,8 @@ using WebDriverBidi;
 
 public class TestTransport : Transport
 {
+    private TimeSpan messageProcessingDelay = TimeSpan.Zero;
+
     public TestTransport(TimeSpan commandWaitTimeout, Connection connection) : base(commandWaitTimeout, connection)
     {
     }
@@ -13,6 +15,8 @@ public class TestTransport : Transport
     public long LastTestCommandId => this.LastCommandId;
 
     public bool ReturnCustomValue { get; set; }
+
+    public TimeSpan MessageProcessingDelay { get => this.messageProcessingDelay; set => this.messageProcessingDelay = value; }
 
     public CommandResult? CustomReturnValue { get; set; }
 
@@ -29,5 +33,15 @@ public class TestTransport : Transport
         }
 
         return await base.SendCommandAndWait(command);
+    }
+
+    protected override void ReadIncomingMessages()
+    {
+        if (this.messageProcessingDelay != TimeSpan.Zero)
+        {
+            Task.Delay(this.messageProcessingDelay).Wait();
+        }
+
+        base.ReadIncomingMessages();
     }
 }

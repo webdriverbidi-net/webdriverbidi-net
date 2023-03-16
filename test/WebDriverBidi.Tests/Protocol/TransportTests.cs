@@ -190,7 +190,7 @@ public class TransportTests
         TestCommand command = new(commandName);
         long commandId = await transport.SendCommand(command);
         Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Result and thrown exception for command with id 1 are both null"));
-   }
+    }
 
     [Test]
     public void TestTransportEventReceived()
@@ -311,5 +311,36 @@ public class TransportTests
         long commandId = transport.LastTestCommandId + 1;
         transport.AddTestCommand(new Command(commandId, command));
         Assert.That(async () => await transport.SendCommand(command), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("id already exists"));
+    }
+
+    [Test]
+    public async Task TestTransportDisconnectWithPendingIncomingMessagesWillProcess()
+    {
+        string receivedName = string.Empty;
+        object? receivedData = null;
+        ManualResetEvent syncEvent = new(false);
+
+        TestConnection connection = new();
+        TestTransport transport = new(TimeSpan.FromMilliseconds(100), connection)
+        {
+            MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.EventReceived += (object? sender, EventReceivedEventArgs e) => {
+            receivedName = e.EventName;
+            receivedData = e.EventData;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(@"{ ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await transport.Disconnect();
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        Assert.That(eventRaised, Is.True);
+        Assert.Multiple(() =>
+        {
+            Assert.That(receivedName, Is.EqualTo("protocol.event"));
+            Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
+        });
+        var convertedData = receivedData as TestEventArgs;
+        Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
     }
 }
