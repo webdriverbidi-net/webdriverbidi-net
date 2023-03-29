@@ -21,6 +21,7 @@ public class NodeProperties
     private List<RemoteValue>? children;
     private NodeAttributes? attributes;
     private Dictionary<string, string>? attributesDictionary;
+    private ShadowRootMode? mode;
     private RemoteValue? shadowRoot;
 
     /// <summary>
@@ -94,6 +95,12 @@ public class NodeProperties
             return this.attributes;
         }
     }
+
+    /// <summary>
+    /// Gets the mode of the shadow root, if one is present.
+    /// </summary>
+    [JsonProperty("mode", NullValueHandling = NullValueHandling.Ignore)]
+    public ShadowRootMode? Mode { get => this.mode; internal set => this.mode = value; }
 
     /// <summary>
     /// Gets the RemoteValue representing the shadow root of this node, if available.

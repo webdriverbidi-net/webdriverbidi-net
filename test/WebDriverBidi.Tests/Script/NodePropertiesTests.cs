@@ -21,6 +21,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Attributes, Is.Null);
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
+            Assert.That(nodeProperties.Mode, Is.Null);
         });
     }
 
@@ -68,6 +69,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Attributes, Is.Null);
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
+            Assert.That(nodeProperties.Mode, Is.Null);
         });
     }
 
@@ -94,6 +96,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Attributes, Is.Null);
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
+            Assert.That(nodeProperties.Mode, Is.Null);
         });
     }
 
@@ -120,6 +123,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Attributes, Is.Null);
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
+            Assert.That(nodeProperties.Mode, Is.Null);
         });
     }
 
@@ -149,6 +153,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Attributes!["attributeName"], Is.EqualTo("attributeValue"));
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
+            Assert.That(nodeProperties.Mode, Is.Null);
         });
     }
 
@@ -192,6 +197,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children![0].HasValue, Is.True);
             Assert.That(nodeProperties.Children[0].Value, Is.TypeOf<NodeProperties>());
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
+            Assert.That(nodeProperties.Mode, Is.Null);
         });
     }
 
@@ -212,6 +218,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children, Is.Not.Null);
             Assert.That(nodeProperties.Children!, Is.Empty);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
+            Assert.That(nodeProperties.Mode, Is.Null);
         });
     }
 
@@ -227,6 +234,40 @@ public class NodePropertiesTests
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""children"": [ ""invalid"" ] }";
         Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
+    }
+
+    [Test]
+    public void TestCanDeserializeWithOptionalModeValue()
+    {
+        string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""mode"": ""open"" }";
+        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
+            Assert.That(nodeProperties.Mode, Is.EqualTo(ShadowRootMode.Open));
+            Assert.That(nodeProperties.NodeValue, Is.Null);
+            Assert.That(nodeProperties.LocalName, Is.Null);
+            Assert.That(nodeProperties.NamespaceUri, Is.Null);
+            Assert.That(nodeProperties.Attributes, Is.Null);
+            Assert.That(nodeProperties.Children, Is.Null);
+            Assert.That(nodeProperties.ShadowRoot, Is.Null);
+        });
+    }
+
+    [Test]
+    public void TestDeserializeWithInvalidModeValueTypeThrows()
+    {
+        string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""mode"": {}} }";
+        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<WebDriverBidiException>());
+    }
+
+    [Test]
+    public void TestDeserializeWithInvalidModeValueThrows()
+    {
+        string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""mode"": ""invalid"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<WebDriverBidiException>());
     }
 
     [Test]
@@ -247,6 +288,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.ShadowRoot, Is.Not.Null);
             Assert.That(nodeProperties.ShadowRoot!.HasValue, Is.True);
             Assert.That(nodeProperties.ShadowRoot.Value, Is.TypeOf<NodeProperties>());
+            Assert.That(nodeProperties.Mode, Is.Null);
         });
     }
 
