@@ -15,7 +15,7 @@ public class CreateCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("tab"));
         });
@@ -30,7 +30,7 @@ public class CreateCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
         });
@@ -48,10 +48,10 @@ public class CreateCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("tab"));
-            Assert.That(serialized.ContainsKey("referenceContext"));
+            Assert.That(serialized, Contains.Key("referenceContext"));
             Assert.That(serialized["referenceContext"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["referenceContext"]!.Value<string>(), Is.EqualTo("myReferenceContext"));
         });
@@ -69,7 +69,7 @@ public class CreateCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
         });

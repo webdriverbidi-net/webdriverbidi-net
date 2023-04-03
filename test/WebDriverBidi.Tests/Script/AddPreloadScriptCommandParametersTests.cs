@@ -15,7 +15,7 @@ public class AddPreloadScriptCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("expression"));
+            Assert.That(serialized, Contains.Key("expression"));
             Assert.That(serialized["expression"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["expression"]!.Value<string>(), Is.EqualTo("myExpression"));
         });
@@ -33,10 +33,10 @@ public class AddPreloadScriptCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("expression"));
+            Assert.That(serialized, Contains.Key("expression"));
             Assert.That(serialized["expression"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["expression"]!.Value<string>(), Is.EqualTo("myExpression"));
-            Assert.That(serialized.ContainsKey("sandbox"));
+            Assert.That(serialized, Contains.Key("sandbox"));
             Assert.That(serialized["sandbox"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["sandbox"]!.Value<string>(), Is.EqualTo("mySandbox"));
         });

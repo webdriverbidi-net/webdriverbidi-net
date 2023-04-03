@@ -27,7 +27,7 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("browserName"));
+            Assert.That(result, Contains.Key("browserName"));
             Assert.That(result["browserName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(result["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
         });
@@ -45,7 +45,7 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("browserVersion"));
+            Assert.That(result, Contains.Key("browserVersion"));
             Assert.That(result["browserVersion"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(result["browserVersion"]!.Value<string>(), Is.EqualTo("101.5b"));
         });
@@ -63,7 +63,7 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("platformName"));
+            Assert.That(result, Contains.Key("platformName"));
             Assert.That(result["platformName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(result["platformName"]!.Value<string>(), Is.EqualTo("oddOS"));
         });
@@ -81,7 +81,7 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("acceptInsecureCerts"));
+            Assert.That(result, Contains.Key("acceptInsecureCerts"));
             Assert.That(result["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(result["acceptInsecureCerts"]!.Value<bool>(), Is.True);
         });
@@ -99,7 +99,7 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("acceptInsecureCerts"));
+            Assert.That(result, Contains.Key("acceptInsecureCerts"));
             Assert.That(result["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(result["acceptInsecureCerts"]!.Value<bool>(), Is.False);
         });
@@ -117,7 +117,7 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("proxy"));
+            Assert.That(result, Contains.Key("proxy"));
             Assert.That(result["proxy"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? proxyObject = result["proxy"] as JObject;
@@ -136,15 +136,15 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("proxy"));
+            Assert.That(result, Contains.Key("proxy"));
             Assert.That(result["proxy"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? proxyObject = result["proxy"] as JObject;
         Assert.Multiple(() =>
         {
             Assert.That(proxyObject, Has.Count.EqualTo(1));
-            Assert.That(proxyObject!.ContainsKey("httpProxy"));
-            Assert.That(proxyObject["httpProxy"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(proxyObject!, Contains.Key("httpProxy"));
+            Assert.That(proxyObject!["httpProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(proxyObject["httpProxy"]!.Value<string>(), Is.EqualTo("http.proxy"));
         });
     }
@@ -159,7 +159,7 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("capName"));
+            Assert.That(result, Contains.Key("capName"));
             Assert.That(result["capName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(result["capName"]!.Value<string>(), Is.EqualTo("capValue"));
         });
@@ -175,16 +175,16 @@ public class ExceptionDetailsTests
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result.ContainsKey("additional"));
+            Assert.That(result, Contains.Key("additional"));
             Assert.That(result["additional"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? additionalObject = result["additional"] as JObject;
         Assert.Multiple(() =>
         {
             Assert.That(additionalObject, Has.Count.EqualTo(1));
-            Assert.That(additionalObject!.ContainsKey("capName"));
-            Assert.That(additionalObject["capName"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(additionalObject["capName"]!.Value<string>(), Is.EqualTo("capValue"));
+            Assert.That(additionalObject!, Contains.Key("capName"));
+            Assert.That(additionalObject!["capName"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(additionalObject!["capName"]!.Value<string>(), Is.EqualTo("capValue"));
         });
     }
 }

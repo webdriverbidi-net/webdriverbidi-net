@@ -532,11 +532,11 @@ public class RemoteValueTests
         Assert.That(dictionaryValue, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(dictionaryValue!.ContainsKey("stringProperty"));
+            Assert.That(dictionaryValue!, Contains.Key("stringProperty"));
             Assert.That(dictionaryValue!["stringProperty"].ValueAs<string>, Is.EqualTo("stringValue"));
-            Assert.That(dictionaryValue.ContainsKey("numberProperty"));
+            Assert.That(dictionaryValue, Contains.Key("numberProperty"));
             Assert.That(dictionaryValue!["numberProperty"].ValueAs<long>, Is.EqualTo(123));
-            Assert.That(dictionaryValue.ContainsKey("booleanProperty"));
+            Assert.That(dictionaryValue, Contains.Key("booleanProperty"));
             Assert.That(dictionaryValue!["booleanProperty"].ValueAs<bool>, Is.EqualTo(true));
         });
     }
@@ -847,11 +847,11 @@ public class RemoteValueTests
         Assert.That(dictionaryValue, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(dictionaryValue!.ContainsKey("stringProperty"));
+            Assert.That(dictionaryValue!, Contains.Key("stringProperty"));
             Assert.That(dictionaryValue!["stringProperty"].ValueAs<string>, Is.EqualTo("stringValue"));
-            Assert.That(dictionaryValue.ContainsKey("numberProperty"));
+            Assert.That(dictionaryValue, Contains.Key("numberProperty"));
             Assert.That(dictionaryValue!["numberProperty"].ValueAs<long>, Is.EqualTo(123));
-            Assert.That(dictionaryValue.ContainsKey("booleanProperty"));
+            Assert.That(dictionaryValue, Contains.Key("booleanProperty"));
             Assert.That(dictionaryValue!["booleanProperty"].ValueAs<bool>, Is.EqualTo(true));
         });
     }

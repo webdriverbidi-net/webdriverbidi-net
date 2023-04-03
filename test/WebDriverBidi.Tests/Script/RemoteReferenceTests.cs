@@ -15,7 +15,7 @@ public class RemoteReferenceTests
         Assert.That(referenceObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(referenceObject.ContainsKey("handle"));
+            Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
         });
     }
@@ -32,7 +32,7 @@ public class RemoteReferenceTests
         Assert.That(referenceObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(referenceObject.ContainsKey("handle"));
+            Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myNewHandle"));
         });
     }
@@ -49,9 +49,9 @@ public class RemoteReferenceTests
         Assert.That(referenceObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(referenceObject.ContainsKey("handle"));
+            Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
-            Assert.That(referenceObject.ContainsKey("sharedId"));
+            Assert.That(referenceObject, Contains.Key("sharedId"));
             Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
         });
     }
@@ -65,7 +65,7 @@ public class RemoteReferenceTests
         Assert.That(referenceObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(referenceObject.ContainsKey("sharedId"));
+            Assert.That(referenceObject, Contains.Key("sharedId"));
             Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
         });
     }
@@ -82,7 +82,7 @@ public class RemoteReferenceTests
         Assert.That(referenceObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(referenceObject.ContainsKey("sharedId"));
+            Assert.That(referenceObject, Contains.Key("sharedId"));
             Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("myNewSharedId"));
         });
     }
@@ -99,9 +99,9 @@ public class RemoteReferenceTests
         Assert.That(referenceObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(referenceObject.ContainsKey("sharedId"));
+            Assert.That(referenceObject, Contains.Key("sharedId"));
             Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-            Assert.That(referenceObject.ContainsKey("handle"));
+            Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
         });
     }
@@ -116,9 +116,9 @@ public class RemoteReferenceTests
         Assert.That(referenceObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(referenceObject.ContainsKey("handle"));
+            Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
-            Assert.That(referenceObject.ContainsKey("myPropertyName"));
+            Assert.That(referenceObject, Contains.Key("myPropertyName"));
             Assert.That(referenceObject["myPropertyName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(referenceObject["myPropertyName"]!.Value<string>(), Is.EqualTo("myValue"));
         });

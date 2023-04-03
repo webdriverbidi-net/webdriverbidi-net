@@ -15,7 +15,7 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
@@ -39,10 +39,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("margin"));
+            Assert.That(serialized, Contains.Key("margin"));
             Assert.That(serialized["margin"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? margins = serialized["margin"] as JObject;
@@ -53,13 +53,13 @@ public class PrintCommandParametersTests
             Assert.That(margins!, Contains.Key("right"));
             Assert.That(margins!["right"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(margins["right"]!.Value<double>(), Is.EqualTo(2.54));
-            Assert.That(margins.ContainsKey("left"));
+            Assert.That(margins, Contains.Key("left"));
             Assert.That(margins["left"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(margins["left"]!.Value<double>(), Is.EqualTo(2.54));
-            Assert.That(margins.ContainsKey("top"));
+            Assert.That(margins, Contains.Key("top"));
             Assert.That(margins["top"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(margins["top"]!.Value<double>(), Is.EqualTo(2.54));
-            Assert.That(margins.ContainsKey("bottom"));
+            Assert.That(margins, Contains.Key("bottom"));
             Assert.That(margins["bottom"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(margins["bottom"]!.Value<double>(), Is.EqualTo(2.54));
         });
@@ -83,10 +83,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("margin"));
+            Assert.That(serialized, Contains.Key("margin"));
             Assert.That(serialized["margin"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? margins = serialized["margin"] as JObject;
@@ -123,10 +123,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("page"));
+            Assert.That(serialized, Contains.Key("page"));
             Assert.That(serialized["page"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? margins = serialized["page"] as JObject;
@@ -157,7 +157,7 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
@@ -179,10 +179,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("page"));
+            Assert.That(serialized, Contains.Key("page"));
             Assert.That(serialized["page"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? pageSize = serialized["page"] as JObject;
@@ -190,15 +190,10 @@ public class PrintCommandParametersTests
         Assert.That(pageSize, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-<<<<<<< HEAD
-            Assert.That(pageSize!.ContainsKey("width"));
-            Assert.That(pageSize["width"]!.Type, Is.EqualTo(JTokenType.Float));
-=======
             Assert.That(pageSize!, Contains.Key("width"));
             Assert.That(pageSize!["width"]!.Type, Is.EqualTo(JTokenType.Float));
->>>>>>> b3433e6 (chore: Suppress warning in PrintCommandParametersTests)
             Assert.That(pageSize["width"]!.Value<double>(), Is.EqualTo(24));
-            Assert.That(pageSize.ContainsKey("height"));
+            Assert.That(pageSize, Contains.Key("height"));
             Assert.That(pageSize["height"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(pageSize["height"]!.Value<double>(), Is.EqualTo(29.7));
         });
@@ -216,7 +211,7 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
@@ -234,10 +229,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("orientation"));
+            Assert.That(serialized, Contains.Key("orientation"));
             Assert.That(serialized["orientation"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["orientation"]!.Value<string>(), Is.EqualTo("landscape"));
         });
@@ -255,7 +250,7 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
@@ -273,10 +268,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("background"));
+            Assert.That(serialized, Contains.Key("background"));
             Assert.That(serialized["background"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["background"]!.Value<bool>(), Is.True);
         });
@@ -294,7 +289,7 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
@@ -312,10 +307,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("scale"));
+            Assert.That(serialized, Contains.Key("scale"));
             Assert.That(serialized["scale"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(serialized["scale"]!.Value<double>(), Is.EqualTo(1.5));
         });
@@ -333,7 +328,7 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
@@ -364,10 +359,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("shrinkToFit"));
+            Assert.That(serialized, Contains.Key("shrinkToFit"));
             Assert.That(serialized["shrinkToFit"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["shrinkToFit"]!.Value<bool>(), Is.False);
         });
@@ -385,7 +380,7 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
@@ -407,10 +402,10 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("pageRanges"));
+            Assert.That(serialized, Contains.Key("pageRanges"));
             Assert.That(serialized["pageRanges"]!.Type, Is.EqualTo(JTokenType.Array));
         });
 
@@ -435,7 +430,7 @@ public class PrintCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });

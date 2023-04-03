@@ -15,11 +15,11 @@ public class CallFunctionCommandParametersTests
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
-            Assert.That(serialized.ContainsKey("functionDeclaration"));
+            Assert.That(serialized, Contains.Key("functionDeclaration"));
             Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized.ContainsKey("target"));
+            Assert.That(serialized, Contains.Key("target"));
             Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized.ContainsKey("awaitPromise"));
+            Assert.That(serialized, Contains.Key("awaitPromise"));
             Assert.That(serialized["awaitPromise"]!.Type, Is.EqualTo(JTokenType.Boolean));
         });
     }
@@ -36,17 +36,17 @@ public class CallFunctionCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(6));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("functionDeclaration"));
+            Assert.That(serialized, Contains.Key("functionDeclaration"));
             Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized.ContainsKey("target"));
+            Assert.That(serialized, Contains.Key("target"));
             Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized.ContainsKey("awaitPromise"));
+            Assert.That(serialized, Contains.Key("awaitPromise"));
             Assert.That(serialized["awaitPromise"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized.ContainsKey("arguments"));
+            Assert.That(serialized, Contains.Key("arguments"));
             Assert.That(serialized["arguments"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized.ContainsKey("this"));
+            Assert.That(serialized, Contains.Key("this"));
             Assert.That(serialized["this"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized.ContainsKey("resultOwnership"));
+            Assert.That(serialized, Contains.Key("resultOwnership"));
             Assert.That(serialized["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
         });
     }

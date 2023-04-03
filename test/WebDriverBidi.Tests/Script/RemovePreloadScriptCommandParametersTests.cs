@@ -15,7 +15,7 @@ public class RemovePreloadScriptCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("script"));
+            Assert.That(serialized, Contains.Key("script"));
             Assert.That(serialized["script"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["script"]!.Value<string>(), Is.EqualTo("myLoadScriptId"));
         });

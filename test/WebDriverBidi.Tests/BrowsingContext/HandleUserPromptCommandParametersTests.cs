@@ -15,7 +15,7 @@ public class HandleUserPromptCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
         });
@@ -33,10 +33,10 @@ public class HandleUserPromptCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("accept"));
+            Assert.That(serialized, Contains.Key("accept"));
             Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["accept"]!.Value<bool>(), Is.EqualTo(true));
         });
@@ -54,10 +54,10 @@ public class HandleUserPromptCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("accept"));
+            Assert.That(serialized, Contains.Key("accept"));
             Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["accept"]!.Value<bool>(), Is.EqualTo(false));
         });
@@ -75,10 +75,10 @@ public class HandleUserPromptCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("userText"));
+            Assert.That(serialized, Contains.Key("userText"));
             Assert.That(serialized["userText"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["userText"]!.Value<string>(), Is.EqualTo("myUserText"));
         });

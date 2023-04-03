@@ -62,7 +62,7 @@ public class TargetTests
         string json = JsonConvert.SerializeObject(target);
         JObject deserialized = JObject.Parse(json);
         Assert.That(deserialized, Has.Count.EqualTo(1));
-        Assert.That(deserialized.ContainsKey("realm"));
+        Assert.That(deserialized, Contains.Key("realm"));
         JToken realmValue = deserialized.GetValue("realm")!;
         Assert.Multiple(() =>
         {
@@ -78,7 +78,7 @@ public class TargetTests
         string json = JsonConvert.SerializeObject(target);
         JObject deserialized = JObject.Parse(json);
         Assert.That(deserialized, Has.Count.EqualTo(1));
-        Assert.That(deserialized.ContainsKey("context"));
+        Assert.That(deserialized, Contains.Key("context"));
         JToken contextValue = deserialized.GetValue("context")!;
         Assert.Multiple(() =>
         {

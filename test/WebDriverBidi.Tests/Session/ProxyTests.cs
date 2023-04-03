@@ -27,7 +27,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("httpProxy"));
+            Assert.That(serialized, Contains.Key("httpProxy"));
             Assert.That(serialized["httpProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["httpProxy"]!.Value<string>(), Is.EqualTo("http.proxy"));
         });
@@ -45,7 +45,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("sslProxy"));
+            Assert.That(serialized, Contains.Key("sslProxy"));
             Assert.That(serialized["sslProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["sslProxy"]!.Value<string>(), Is.EqualTo("ssl.proxy"));
         });
@@ -63,7 +63,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("ftpProxy"));
+            Assert.That(serialized, Contains.Key("ftpProxy"));
             Assert.That(serialized["ftpProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["ftpProxy"]!.Value<string>(), Is.EqualTo("ftp.proxy"));
         });
@@ -81,7 +81,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("proxyAutoconfigUrl"));
+            Assert.That(serialized, Contains.Key("proxyAutoconfigUrl"));
             Assert.That(serialized["proxyAutoconfigUrl"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyAutoconfigUrl"]!.Value<string>(), Is.EqualTo("proxy.autoconfig.url"));
         });
@@ -99,7 +99,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("socksProxy"));
+            Assert.That(serialized, Contains.Key("socksProxy"));
             Assert.That(serialized["socksProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["socksProxy"]!.Value<string>(), Is.EqualTo("socks.proxy"));
         });
@@ -117,7 +117,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("socksVersion"));
+            Assert.That(serialized, Contains.Key("socksVersion"));
             Assert.That(serialized["socksVersion"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["socksVersion"]!.Value<long>(), Is.EqualTo(4));
         });
@@ -135,7 +135,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("noProxy"));
+            Assert.That(serialized, Contains.Key("noProxy"));
             Assert.That(serialized["noProxy"]!.Type, Is.EqualTo(JTokenType.Array));
         });
         JArray? noProxyArray = serialized["noProxy"] as JArray;
@@ -159,7 +159,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("noProxy"));
+            Assert.That(serialized, Contains.Key("noProxy"));
             Assert.That(serialized["noProxy"]!.Type, Is.EqualTo(JTokenType.Array));
         });
         JArray? noProxyArray = serialized["noProxy"] as JArray;
@@ -178,7 +178,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("proxyType"));
+            Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("direct"));
         });
@@ -196,7 +196,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("proxyType"));
+            Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
         });
@@ -214,7 +214,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("proxyType"));
+            Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("system"));
         });
@@ -232,7 +232,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("proxyType"));
+            Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("autodetect"));
         });
@@ -250,7 +250,7 @@ public class ProxyTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("proxyType"));
+            Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("pac"));
         });

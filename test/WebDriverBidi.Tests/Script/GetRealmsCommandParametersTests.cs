@@ -27,7 +27,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
         });
@@ -45,7 +45,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("worker"));
         });
@@ -63,7 +63,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("dedicated-worker"));
         });
@@ -81,7 +81,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("service-worker"));
         });
@@ -99,7 +99,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("shared-worker"));
         });
@@ -117,7 +117,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("worklet"));
         });
@@ -135,7 +135,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("paint-worklet"));
         });
@@ -153,7 +153,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("type"));
+            Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("audio-worklet"));
         });
@@ -171,7 +171,7 @@ public class GetRealmsCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("contextId"));
         });

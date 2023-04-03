@@ -22,7 +22,7 @@ public class NewCommandResultTests
             Assert.That(result.Capabilities.Proxy.HttpProxy, Is.EqualTo("http.proxy"));
             Assert.That(result.Capabilities.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.Capabilities.AdditionalCapabilities, Has.Count.EqualTo(1));
-            Assert.That(result.Capabilities.AdditionalCapabilities.ContainsKey("capName"));
+            Assert.That(result.Capabilities.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.Not.Null);
             Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
         });

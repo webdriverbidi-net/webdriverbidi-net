@@ -15,10 +15,10 @@ public class NavigateCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("url"));
+            Assert.That(serialized, Contains.Key("url"));
             Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
         });
@@ -36,13 +36,13 @@ public class NavigateCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("url"));
+            Assert.That(serialized, Contains.Key("url"));
             Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
-            Assert.That(serialized.ContainsKey("wait"));
+            Assert.That(serialized, Contains.Key("wait"));
             Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("none"));
         });
@@ -60,13 +60,13 @@ public class NavigateCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("url"));
+            Assert.That(serialized, Contains.Key("url"));
             Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
-            Assert.That(serialized.ContainsKey("wait"));
+            Assert.That(serialized, Contains.Key("wait"));
             Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("interactive"));
         });
@@ -84,13 +84,13 @@ public class NavigateCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("context"));
+            Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized.ContainsKey("url"));
+            Assert.That(serialized, Contains.Key("url"));
             Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
-            Assert.That(serialized.ContainsKey("wait"));
+            Assert.That(serialized, Contains.Key("wait"));
             Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("complete"));
         });

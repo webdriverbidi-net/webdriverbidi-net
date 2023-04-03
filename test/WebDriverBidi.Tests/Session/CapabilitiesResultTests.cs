@@ -27,7 +27,7 @@ public class CapabilitiesResultTests
             Assert.That(result!.Proxy.ProxyAutoConfigUrl, Is.Null);
             Assert.That(result!.Proxy.NoProxyAddresses, Is.Null);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities.ContainsKey("capName"));
+            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
         });
     }
@@ -54,7 +54,7 @@ public class CapabilitiesResultTests
             Assert.That(result!.Proxy.ProxyAutoConfigUrl, Is.EqualTo("http://example.com"));
             Assert.That(result!.Proxy.NoProxyAddresses, Has.Count.EqualTo(1));
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities.ContainsKey("capName"));
+            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
         });
     }
@@ -80,7 +80,7 @@ public class CapabilitiesResultTests
             Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
             Assert.That(result.Proxy, Is.Not.Null);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
-            Assert.That(result.AdditionalCapabilities.ContainsKey("capName"));
+            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
         });
     }

@@ -145,8 +145,8 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.NamespaceUri, Is.Null);
             Assert.That(nodeProperties!.Attributes, Is.Not.Null);
             Assert.That(nodeProperties.Attributes!, Has.Count.EqualTo(1));
-            Assert.That(nodeProperties.Attributes!.ContainsKey("attributeName"));
-            Assert.That(nodeProperties.Attributes["attributeName"], Is.EqualTo("attributeValue"));
+            Assert.That(nodeProperties.Attributes!, Contains.Key("attributeName"));
+            Assert.That(nodeProperties.Attributes!["attributeName"], Is.EqualTo("attributeValue"));
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
         });

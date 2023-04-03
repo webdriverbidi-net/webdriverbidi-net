@@ -27,15 +27,15 @@ public class NewCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("alwaysMatch"));
+            Assert.That(serialized, Contains.Key("alwaysMatch"));
             Assert.That(serialized["alwaysMatch"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? alwaysMatch = serialized["alwaysMatch"] as JObject;
         Assert.That(alwaysMatch, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(alwaysMatch!.ContainsKey("browserName"));
-            Assert.That(alwaysMatch["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
+            Assert.That(alwaysMatch!, Contains.Key("browserName"));
+            Assert.That(alwaysMatch!["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
         });
     }
 
@@ -49,7 +49,7 @@ public class NewCommandParametersTests
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized.ContainsKey("firstMatch"));
+            Assert.That(serialized, Contains.Key("firstMatch"));
             Assert.That(serialized["firstMatch"]!.Type, Is.EqualTo(JTokenType.Array));
         });
         JArray? firstMatch = serialized["firstMatch"] as JArray;
@@ -61,8 +61,8 @@ public class NewCommandParametersTests
         Assert.Multiple(() =>
         {
             Assert.That(firstMatchElement, Has.Count.EqualTo(1));
-            Assert.That(firstMatchElement!.ContainsKey("browserName"));
-            Assert.That(firstMatchElement["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
+            Assert.That(firstMatchElement!, Contains.Key("browserName"));
+            Assert.That(firstMatchElement!["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
         });
     }
 }

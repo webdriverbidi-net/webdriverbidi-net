@@ -102,7 +102,7 @@ public class SessionModuleTests
             Assert.That(result.Capabilities.SetWindowRect, Is.True);
             Assert.That(result.Capabilities.Proxy, Is.Not.Null);
             Assert.That(result.Capabilities.AdditionalCapabilities, Has.Count.EqualTo(1));
-            Assert.That(result.Capabilities.AdditionalCapabilities.ContainsKey("additionalCapName"));
+            Assert.That(result.Capabilities.AdditionalCapabilities, Contains.Key("additionalCapName"));
             Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"], Is.Not.Null);
             Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"], Is.TypeOf<string>());
             Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"]!.ToString(), Is.EqualTo("additionalCapValue"));

@@ -16,7 +16,7 @@ public class LocalValueTests
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(1));
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("undefined"));
         });
     }
@@ -31,7 +31,7 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("null"));
         });
     }
@@ -46,9 +46,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("hello"));
         });
@@ -64,9 +64,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(parsed["value"]!.Value<long>(), Is.EqualTo(123));
         });
@@ -82,9 +82,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(parsed["value"]!.Value<long>(), Is.EqualTo(123));
         });
@@ -100,9 +100,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(3.14));
         });
@@ -118,9 +118,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("NaN"));
         });
@@ -136,9 +136,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("Infinity"));
         });
@@ -154,9 +154,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("-Infinity"));
         });
@@ -172,9 +172,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("-0"));
         });
@@ -190,9 +190,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(0.0));
         });
@@ -208,9 +208,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("boolean"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(parsed["value"]!.Value<bool>(), Is.EqualTo(true));
         });
@@ -226,9 +226,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("bigint"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("123"));
         });
@@ -246,9 +246,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("date"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo(expectedValue));
         });
     }
@@ -263,17 +263,17 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("regexp"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? valueObject = parsed["value"] as JObject;
         Assert.Multiple(() =>
         {
             Assert.That(valueObject!, Has.Count.EqualTo(1));
-            Assert.That(valueObject!.ContainsKey("pattern"));
-            Assert.That(valueObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(valueObject!, Contains.Key("pattern"));
+            Assert.That(valueObject!["pattern"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(valueObject["pattern"]!.Value<string>(), Is.EqualTo("pattern.*"));
         });
     }
@@ -288,19 +288,19 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("regexp"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
         });
         JObject? valueObject = parsed["value"] as JObject;
         Assert.Multiple(() =>
         {
             Assert.That(valueObject!, Has.Count.EqualTo(2));
-            Assert.That(valueObject!.ContainsKey("pattern"));
-            Assert.That(valueObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(valueObject!, Contains.Key("pattern"));
+            Assert.That(valueObject!["pattern"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(valueObject["pattern"]!.Value<string>(), Is.EqualTo("pattern.*"));
-            Assert.That(valueObject.ContainsKey("flags"));
+            Assert.That(valueObject, Contains.Key("flags"));
             Assert.That(valueObject["flags"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(valueObject["flags"]!.Value<string>(), Is.EqualTo("gi"));
         });
@@ -323,9 +323,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("array"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
         });
         JArray? valueObject = parsed["value"] as JArray;
@@ -340,9 +340,9 @@ public class LocalValueTests
         Assert.That(itemObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(itemObject!.ContainsKey("type"));
-            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject!, Contains.Key("type"));
+            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("string"));
+            Assert.That(itemObject, Contains.Key("value"));
             Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(itemObject["value"]!.Value<string>(), Is.EqualTo("hello"));
 
@@ -353,9 +353,9 @@ public class LocalValueTests
         Assert.That(itemObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(itemObject!.ContainsKey("type"));
-            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject!, Contains.Key("type"));
+            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(itemObject, Contains.Key("value"));
             Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(itemObject["value"]!.Value<long>(), Is.EqualTo(123));
 
@@ -366,8 +366,8 @@ public class LocalValueTests
         Assert.That(itemObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(itemObject!.ContainsKey("type"));
-            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("null"));
+            Assert.That(itemObject!, Contains.Key("type"));
+            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("null"));
 
             Assert.That(valueObject[3].Type, Is.EqualTo(JTokenType.Object));
         });
@@ -376,9 +376,9 @@ public class LocalValueTests
         Assert.That(itemObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(itemObject!.ContainsKey("type"));
-            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("boolean"));
-            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject!, Contains.Key("type"));
+            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("boolean"));
+            Assert.That(itemObject, Contains.Key("value"));
             Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(itemObject["value"]!.Value<bool>(), Is.EqualTo(true));
         });
@@ -401,9 +401,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("set"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
         });
         JArray? valueObject = parsed["value"] as JArray;
@@ -416,9 +416,9 @@ public class LocalValueTests
         Assert.That(itemObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(itemObject!.ContainsKey("type"));
-            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("string"));
-            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject!, Contains.Key("type"));
+            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("string"));
+            Assert.That(itemObject, Contains.Key("value"));
             Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(itemObject["value"]!.Value<string>(), Is.EqualTo("hello"));
         });
@@ -429,9 +429,9 @@ public class LocalValueTests
         Assert.That(itemObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(itemObject!.ContainsKey("type"));
-            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("number"));
-            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject!, Contains.Key("type"));
+            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(itemObject, Contains.Key("value"));
             Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(itemObject["value"]!.Value<long>(), Is.EqualTo(123));
         });
@@ -442,8 +442,8 @@ public class LocalValueTests
         Assert.That(itemObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(itemObject!.ContainsKey("type"));
-            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("null"));
+            Assert.That(itemObject!, Contains.Key("type"));
+            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("null"));
        });
 
         Assert.That(valueObject[3].Type, Is.EqualTo(JTokenType.Object));
@@ -452,9 +452,9 @@ public class LocalValueTests
         Assert.That(itemObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(itemObject!.ContainsKey("type"));
-            Assert.That(itemObject["type"]!.Value<string>(), Is.EqualTo("boolean"));
-            Assert.That(itemObject.ContainsKey("value"));
+            Assert.That(itemObject!, Contains.Key("type"));
+            Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("boolean"));
+            Assert.That(itemObject, Contains.Key("value"));
             Assert.That(itemObject["value"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(itemObject["value"]!.Value<bool>(), Is.EqualTo(true));
         });
@@ -478,9 +478,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
         });
 
@@ -526,9 +526,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
         });
 
@@ -576,9 +576,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
         });
 
@@ -622,9 +622,9 @@ public class LocalValueTests
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
-            Assert.That(parsed.ContainsKey("type"));
+            Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
-            Assert.That(parsed.ContainsKey("value"));
+            Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
         });
 
