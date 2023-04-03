@@ -50,8 +50,8 @@ public class PrintCommandParametersTests
         Assert.That(margins, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
         {
-            Assert.That(margins!.ContainsKey("right"));
-            Assert.That(margins["right"]!.Type, Is.EqualTo(JTokenType.Float));
+            Assert.That(margins!, Contains.Key("right"));
+            Assert.That(margins!["right"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(margins["right"]!.Value<double>(), Is.EqualTo(2.54));
             Assert.That(margins.ContainsKey("left"));
             Assert.That(margins["left"]!.Type, Is.EqualTo(JTokenType.Float));
@@ -190,8 +190,13 @@ public class PrintCommandParametersTests
         Assert.That(pageSize, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
         {
+<<<<<<< HEAD
             Assert.That(pageSize!.ContainsKey("width"));
             Assert.That(pageSize["width"]!.Type, Is.EqualTo(JTokenType.Float));
+=======
+            Assert.That(pageSize!, Contains.Key("width"));
+            Assert.That(pageSize!["width"]!.Type, Is.EqualTo(JTokenType.Float));
+>>>>>>> b3433e6 (chore: Suppress warning in PrintCommandParametersTests)
             Assert.That(pageSize["width"]!.Value<double>(), Is.EqualTo(24));
             Assert.That(pageSize.ContainsKey("height"));
             Assert.That(pageSize["height"]!.Type, Is.EqualTo(JTokenType.Float));
