@@ -6,6 +6,7 @@
 namespace WebDriverBidi;
 
 using WebDriverBidi.BrowsingContext;
+using WebDriverBidi.Input;
 using WebDriverBidi.Log;
 using WebDriverBidi.Protocol;
 using WebDriverBidi.Script;
@@ -42,6 +43,7 @@ public class Driver
         this.RegisterModule(new SessionModule(this));
         this.RegisterModule(new ScriptModule(this));
         this.RegisterModule(new LogModule(this));
+        this.RegisterModule(new InputModule(this));
     }
 
     /// <summary>
@@ -83,6 +85,11 @@ public class Driver
     /// Gets the log module as described in the WebDriver Bidi protocol.
     /// </summary>
     public LogModule Log => this.GetModule<LogModule>(LogModule.LogModuleName);
+
+    /// <summary>
+    /// Gets the input module as described in the WebDriver Bidi protocol.
+    /// </summary>
+    public InputModule Input => this.GetModule<InputModule>(InputModule.InputModuleName);
 
     /// <summary>
     /// Asynchronously starts the communication with the remote end of the WebDriver Bidi protocol.
