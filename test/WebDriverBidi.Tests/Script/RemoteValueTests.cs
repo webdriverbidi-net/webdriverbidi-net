@@ -1208,4 +1208,26 @@ public class RemoteValueTests
             Assert.That(() => remoteValue!.ToRemoteReference(), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Primitive values cannot be used as remote references"));
         });
     }
+
+    [Test]
+    public void TestConvertNodeRemoteValueToSharedReference()
+    {
+        string json = @"{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        SharedReference reference = remoteValue!.ToSharedReference();
+        Assert.That(reference, Is.InstanceOf<SharedReference>());
+    }
+
+    [Test]
+    public void TestConvertNonNodeRemoteValueToSharedReferenceThrows()
+    {
+        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": 123 }";
+        RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
+        Assert.Multiple(() =>
+        {
+            Assert.That(remoteValue, Is.Not.Null);
+            Assert.That(() => remoteValue!.ToSharedReference(), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Remote value cannot be converted to SharedReference"));
+        });
+     }
 }

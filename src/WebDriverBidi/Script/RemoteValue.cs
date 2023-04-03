@@ -188,4 +188,18 @@ public class RemoteValue
 
         return new RemoteObjectReference(this.handle) { SharedId = this.sharedId };
     }
+
+    /// <summary>
+    /// Converts this RemoteReference to a SharedReference.
+    /// </summary>
+    /// <returns>The SharedReference object representing this RemoteValue.</returns>
+    public SharedReference ToSharedReference()
+    {
+        if (this.ToRemoteReference() is not SharedReference reference)
+        {
+            throw new WebDriverBidiException("Remote value cannot be converted to SharedReference");
+        }
+
+        return reference;
+    }
 }
