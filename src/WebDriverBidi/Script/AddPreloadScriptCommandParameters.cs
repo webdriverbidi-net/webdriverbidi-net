@@ -13,16 +13,16 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScriptCommandResult>
 {
-    private string expression;
+    private string functionDeclaration;
     private string? sandbox;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AddPreloadScriptCommandParameters"/> class.
     /// </summary>
-    /// <param name="expression">The expression containing the preload script.</param>
-    public AddPreloadScriptCommandParameters(string expression)
+    /// <param name="functionDeclaration">The function declaration defining the preload script.</param>
+    public AddPreloadScriptCommandParameters(string functionDeclaration)
     {
-        this.expression = expression;
+        this.functionDeclaration = functionDeclaration;
     }
 
     /// <summary>
@@ -31,10 +31,10 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     public override string MethodName => "script.addPreloadScript";
 
     /// <summary>
-    /// Gets or sets the expression defining the preload script.
+    /// Gets or sets the function delcaration defining the preload script.
     /// </summary>
-    [JsonProperty("expression")]
-    public string Expression { get => this.expression; set => this.expression = value; }
+    [JsonProperty("functionDeclaration")]
+    public string FunctionDeclaration { get => this.functionDeclaration; set => this.functionDeclaration = value; }
 
     /// <summary>
     /// Gets or sets the sandbox name of the preload script.
