@@ -31,9 +31,13 @@ public class CallFunctionCommandParametersTests
         properties.Arguments.Add(LocalValue.String("myArgument"));
         properties.ThisObject = LocalValue.String("thisObject");
         properties.OwnershipModel = OwnershipModel.None;
+        properties.SerializationOptions = new()
+        {
+            MaxDomDepth = 1,
+        };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(6));
+        Assert.That(serialized, Has.Count.EqualTo(7));
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Contains.Key("functionDeclaration"));
@@ -48,6 +52,8 @@ public class CallFunctionCommandParametersTests
             Assert.That(serialized["this"]!.Type, Is.EqualTo(JTokenType.Object));
             Assert.That(serialized, Contains.Key("resultOwnership"));
             Assert.That(serialized["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized, Contains.Key("serializationOptions"));
+            Assert.That(serialized["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
         });
     }
 }

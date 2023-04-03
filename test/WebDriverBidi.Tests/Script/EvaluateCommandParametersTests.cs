@@ -29,11 +29,15 @@ public class EvaluateCommandParametersTests
     {
         EvaluateCommandParameters properties = new("myExpression", new RealmTarget("myRealm"), true)
         {
-            OwnershipModel = OwnershipModel.None
+            OwnershipModel = OwnershipModel.None,
+            SerializationOptions = new()
+            {
+                MaxDomDepth = 1,
+            },
         };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
+        Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Contains.Key("expression"));
@@ -44,6 +48,8 @@ public class EvaluateCommandParametersTests
             Assert.That(serialized["awaitPromise"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized, Contains.Key("resultOwnership"));
             Assert.That(serialized["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized, Contains.Key("serializationOptions"));
+            Assert.That(serialized["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
         });
     }
 }

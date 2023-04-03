@@ -19,6 +19,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     private bool awaitPromise;
     private ArgumentValue? thisObject;
     private OwnershipModel? ownershipModel;
+    private SerializationOptions? serializationOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CallFunctionCommandParameters"/> class.
@@ -72,6 +73,12 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// </summary>
     [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
     public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value; }
+
+    /// <summary>
+    /// Gets or sets the serialization options for serializing results.
+    /// </summary>
+    [JsonProperty("serializationOptions", NullValueHandling = NullValueHandling.Ignore)]
+    public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
 
     /// <summary>
     /// Gets the list of arguments for serialization purposes.

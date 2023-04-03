@@ -18,6 +18,7 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     private Target scriptTarget;
     private bool awaitPromise;
     private OwnershipModel? ownershipModel;
+    private SerializationOptions? serializationOptions;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EvaluateCommandParameters"/> class.
@@ -60,4 +61,10 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// </summary>
     [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
     public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value; }
+
+    /// <summary>
+    /// Gets or sets the serialization options for serializing results.
+    /// </summary>
+    [JsonProperty("serializationOptions", NullValueHandling = NullValueHandling.Ignore)]
+    public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
 }
