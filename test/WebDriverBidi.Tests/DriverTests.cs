@@ -5,6 +5,7 @@ using PinchHitter;
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Input;
 using WebDriverBidi.Log;
+using WebDriverBidi.Network;
 using WebDriverBidi.Protocol;
 using WebDriverBidi.Script;
 using WebDriverBidi.Session;
@@ -215,6 +216,7 @@ public class DriverTests
                 Assert.That(driver.Log, Is.InstanceOf<LogModule>());
                 Assert.That(driver.Session, Is.InstanceOf<SessionModule>());
                 Assert.That(driver.Input, Is.InstanceOf<InputModule>());
+                Assert.That(driver.Network, Is.InstanceOf<NetworkModule>());
             });
         }
         finally
