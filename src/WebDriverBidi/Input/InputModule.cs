@@ -6,7 +6,7 @@
 namespace WebDriverBidi.Input;
 
 /// <summary>
-/// The Input module contains commands and events relating to browsing contexts.
+/// The Input module contains commands and events relating to simulating user input.
 /// </summary>
 public sealed class InputModule : Module
 {
