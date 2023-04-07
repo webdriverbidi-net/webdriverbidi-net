@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 public class PauseAction : INoneSourceAction, IKeySourceAction, IPointerSourceAction, IWheelSourceAction
 {
     private readonly string actionType = "pause";
-    private long? duration;
+    private TimeSpan? duration;
 
     /// <summary>
     /// Gets the type of the action.
@@ -25,6 +25,22 @@ public class PauseAction : INoneSourceAction, IKeySourceAction, IPointerSourceAc
     /// <summary>
     /// Gets or sets the duration of the pause.
     /// </summary>
+    public TimeSpan? Duration { get => this.duration; set => this.duration = value; }
+
+    /// <summary>
+    /// Gets the duration of the pause for serialization purposes.
+    /// </summary>
     [JsonProperty("duration", NullValueHandling = NullValueHandling.Ignore)]
-    public long? Duration { get => this.duration; set => this.duration = value; }
+    internal ulong? SerializedDuration
+    {
+        get
+        {
+            if (!this.duration.HasValue)
+            {
+                return null;
+            }
+
+            return Convert.ToUInt64(this.duration.Value.TotalMilliseconds);
+        }
+    }
 }
