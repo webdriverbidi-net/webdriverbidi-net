@@ -9,7 +9,7 @@ public class PointerUpActionTests
     [Test]
     public void TestCanSerializeParameters()
     {
-        PointerUpAction properties = new();
+        PointerUpAction properties = new(0);
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
@@ -27,7 +27,7 @@ public class PointerUpActionTests
     [Test]
     public void TestCanSerializeParametersWithOptionalWidthAndHeight()
     {
-        PointerUpAction properties = new()
+        PointerUpAction properties = new(0)
         {
             Width = 1,
             Height = 1,
@@ -55,7 +55,7 @@ public class PointerUpActionTests
     [Test]
     public void TestCanSerializeParametersWithOptionalPressureProperties()
     {
-        PointerUpAction properties = new()
+        PointerUpAction properties = new(0)
         {
             Pressure = 1,
             TangentialPressure = 1,
@@ -83,7 +83,7 @@ public class PointerUpActionTests
     [Test]
     public void TestCanSerializeParametersWithOptionalTwistProperty()
     {
-        PointerUpAction properties = new()
+        PointerUpAction properties = new(0)
         {
             Twist = 1,
         };
@@ -107,14 +107,14 @@ public class PointerUpActionTests
     [Test]
     public void TestSettingTwistPropertyToInvalidValueThrows()
     {
-        PointerUpAction properties = new();
+        PointerUpAction properties = new(0);
         Assert.That(() => properties.Twist = 360, Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Twist value must be between 0 and 359"));
     }
 
     [Test]
     public void TestCanSerializeParametersWithOptionalAngleProperties()
     {
-        PointerUpAction properties = new()
+        PointerUpAction properties = new(0)
         {
             AzimuthAngle = 1,
             AltitudeAngle = 1,
@@ -142,7 +142,7 @@ public class PointerUpActionTests
     [Test]
     public void TestCanSerializeParametersWithOptionalTiltProperties()
     {
-        PointerUpAction properties = new()
+        PointerUpAction properties = new(0)
         {
             TiltX = 1,
             TiltY = 1,
@@ -170,7 +170,7 @@ public class PointerUpActionTests
     [Test]
     public void TestSettingTiltPropertiesToInvalidValueThrows()
     {
-        PointerUpAction properties = new();
+        PointerUpAction properties = new(0);
         Assert.Multiple(() =>
         {
             Assert.That(() => properties.TiltX = -91, Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("TiltX value must be between -90 and 90 inclusive"));

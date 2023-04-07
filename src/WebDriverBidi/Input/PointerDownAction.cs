@@ -14,14 +14,16 @@ using Newtonsoft.Json;
 public class PointerDownAction : PointerAction, IPointerSourceAction
 {
     private readonly string actionType = "pointerDown";
-    private long button = 0;
+    private long button;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PointerDownAction"/> class.
     /// </summary>
-    public PointerDownAction()
+    /// <param name="button">The button used for the pointer down.</param>
+    public PointerDownAction(long button)
         : base()
     {
+        this.button = button;
     }
 
     /// <summary>
