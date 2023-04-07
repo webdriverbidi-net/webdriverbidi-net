@@ -155,7 +155,7 @@ public class PointerSourceActionsTests
     public void TestCanSerializeParametersWithActions()
     {
         PointerSourceActions properties = new();
-        properties.Actions.Add(new PointerDownAction());
+        properties.Actions.Add(new PointerDownAction(0));
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
