@@ -9,14 +9,17 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
+/// <summary>
+/// Abstract base class for launching a browser to connect to using a WebDriverBiDi session.
+/// </summary>
 public abstract class BrowserLauncher
 {
     private static readonly SemaphoreSlim lockObject = new(1, 1);
     private readonly string launcherPath;
     private readonly string launcherExecutableName;
+    private readonly string browserExecutableLocation;
     private readonly HttpClient httpClient = new();
     private string launcherHostName = "localhost";
     private int launcherPort;
@@ -26,11 +29,12 @@ public abstract class BrowserLauncher
     private string sessionId = string.Empty;
     private string webSocketUrl = string.Empty;
 
-    protected BrowserLauncher(string launcherExecutablePath, string launcherExecutableName, int port)
+    protected BrowserLauncher(string launcherExecutablePath, string launcherExecutableName, int port, string browserExecutableLocation = "")
     {
         this.launcherPath = launcherExecutablePath;
         this.launcherExecutableName = launcherExecutableName;
         this.launcherPort = port;
+        this.browserExecutableLocation = browserExecutableLocation;
     }
 
     /// <summary>
@@ -121,6 +125,11 @@ public abstract class BrowserLauncher
     protected virtual TimeSpan TerminationTimeout => TimeSpan.FromSeconds(10);
 
     /// <summary>
+    /// Gets the location of the browser executable.
+    /// </summary>
+    protected string BrowserExecutableLocation => this.browserExecutableLocation;
+
+    /// <summary>
     /// Gets the Uri of the service.
     /// </summary>
     private string ServiceUrl => $"http://{this.launcherHostName}:{this.launcherPort}";
@@ -129,19 +138,20 @@ public abstract class BrowserLauncher
     /// Creates a launcher for the specified browser.
     /// </summary>
     /// <param name="browserType">The type of browser launcher to create.</param>
-    /// <param name="launcherPath">The path to the browser launcher.</param>
+    /// <param name="launcherPath">The path to the browser launcher, not including the executable name.</param>
+    /// <param name="browserExecutableLocation">The path and executable name of the browser executable.</param>
     /// <returns>The launcher for the specified browser type.</returns>
     /// <exception cref="WebDriverBidiException">Thrown when an invalid browser type is specified.</exception>
-    public static BrowserLauncher Create(BrowserType browserType, string launcherPath)
+    public static BrowserLauncher Create(BrowserType browserType, string launcherPath, string browserExecutableLocation = "")
     {
         if (browserType == BrowserType.Firefox)
         {
-            return new FirefoxLauncher(launcherPath);
+            return new FirefoxLauncher(launcherPath, browserExecutableLocation);
         }
 
         if (browserType == BrowserType.Chrome)
         {
-            return new ChromeLauncher(launcherPath);
+            return new ChromeLauncher(launcherPath, browserExecutableLocation);
         }
 
         throw new WebDriverBidiException("Invalid browser type");
@@ -262,7 +272,8 @@ public abstract class BrowserLauncher
                 }
             }
         };
-        string json = JsonConvert.SerializeObject(classicCapabilities);
+        string json = JsonSerializer.Serialize(classicCapabilities);
+        Console.WriteLine($"Sending classic new session command. JSON:\n{json}");
         StringContent content = new(json, Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await this.httpClient.PostAsync($"{this.ServiceUrl}/session", content);
         string responseJson = await response.Content.ReadAsStringAsync();
@@ -271,23 +282,23 @@ public abstract class BrowserLauncher
             throw new BrowserNotLaunchedException($"Unable to launch browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
         }
 
-        JObject returned = JObject.Parse(responseJson);
-        if (returned.ContainsKey("value") && returned["value"] is not null && returned["value"]!.Type == JTokenType.Object)
+        Console.WriteLine($"Received classic new session response. JSON:\n{responseJson}");
+        using (JsonDocument returned = JsonDocument.Parse(responseJson))
         {
-            JObject? returnedValue = returned["value"] as JObject;
-            if (returnedValue is not null && returnedValue.ContainsKey("sessionId") && returnedValue["sessionId"]!.Type == JTokenType.String)
+            JsonElement rootElement = returned.RootElement;
+            if (rootElement.TryGetProperty("value", out JsonElement returnedValue))
             {
-                string? returnedSessionId = returnedValue["sessionId"]!.Value<string>();
-                this.sessionId = returnedSessionId!;
-            }
-
-            if (returnedValue is not null && returnedValue.ContainsKey("capabilities") && returnedValue["capabilities"]!.Type == JTokenType.Object)
-            {
-                JObject? capabilities = returnedValue["capabilities"] as JObject;
-                if (capabilities is not null && capabilities.ContainsKey("webSocketUrl") && capabilities["webSocketUrl"]!.Type == JTokenType.String)
+                if (returnedValue.TryGetProperty("sessionId", out JsonElement returnedSessionId))
                 {
-                    string? returnedWebSocketUrl = capabilities["webSocketUrl"]!.Value<string>();
-                    this.webSocketUrl = returnedWebSocketUrl!;
+                    this.sessionId = returnedSessionId.GetString()!;
+                }
+
+                if (returnedValue.TryGetProperty("capabilities", out JsonElement capabilities))
+                {
+                    if (capabilities.TryGetProperty("webSocketUrl", out JsonElement returnedWebSocketUrl))
+                    {
+                        this.webSocketUrl = returnedWebSocketUrl.GetString()!;
+                    }
                 }
             }
         }

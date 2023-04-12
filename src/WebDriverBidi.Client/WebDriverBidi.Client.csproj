@@ -4,14 +4,10 @@
     <ProjectReference Include="..\WebDriverBidi\WebDriverBidi.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-  </ItemGroup>
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>WebDriverBidiClient</RootNamespace>
+    <RootNamespace>WebDriverBidi.Client</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
