@@ -39,7 +39,7 @@ public class WheelScrollActionTests
     {
         WheelScrollAction properties = new()
         {
-            Duration = 1
+            Duration = TimeSpan.FromMilliseconds(1),
         };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);

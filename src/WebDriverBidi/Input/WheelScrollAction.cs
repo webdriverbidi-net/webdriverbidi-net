@@ -18,7 +18,7 @@ public class WheelScrollAction : IWheelSourceAction
     private ulong y = 0;
     private long deltaX = 0;
     private long deltaY = 0;
-    private ulong? duration;
+    private TimeSpan? duration;
     private Origin? origin;
 
     /// <summary>
@@ -62,14 +62,31 @@ public class WheelScrollAction : IWheelSourceAction
     /// <summary>
     /// Gets or sets the duration, in milliseconds, of the move.
     /// </summary>
-    [JsonProperty("duration", NullValueHandling = NullValueHandling.Ignore)]
-    public ulong? Duration { get => this.duration; set => this.duration = value; }
+    [JsonIgnore]
+    public TimeSpan? Duration { get => this.duration; set => this.duration = value; }
 
     /// <summary>
     /// Gets or sets the origin of the move.
     /// </summary>
     [JsonIgnore]
     public Origin? Origin { get => this.origin; set => this.origin = value; }
+
+    /// <summary>
+    /// Gets the duration, in milliseconds, of the move for serialization purposes.
+    /// </summary>
+    [JsonProperty("duration", NullValueHandling = NullValueHandling.Ignore)]
+    internal ulong? SerializableDuration
+    {
+        get
+        {
+            if (this.duration is null)
+            {
+                return null;
+            }
+
+            return Convert.ToUInt64(this.duration.Value.TotalMilliseconds);
+        }
+    }
 
     /// <summary>
     /// Gets the serializable origin of the move.

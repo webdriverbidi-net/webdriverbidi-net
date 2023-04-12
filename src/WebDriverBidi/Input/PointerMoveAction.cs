@@ -14,9 +14,9 @@ using Newtonsoft.Json;
 public class PointerMoveAction : PointerAction, IPointerSourceAction
 {
     private readonly string actionType = "pointerMove";
-    private ulong x = 0;
-    private ulong y = 0;
-    private ulong? duration;
+    private long x = 0;
+    private long y = 0;
+    private TimeSpan? duration;
     private Origin? origin;
 
     /// <summary>
@@ -37,26 +37,42 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     /// Gets or sets the horizontal distance of the move, measured in pixels from the origin point.
     /// </summary>
     [JsonProperty("x")]
-    public ulong X { get => this.x; set => this.x = value; }
+    public long X { get => this.x; set => this.x = value; }
 
     /// <summary>
     /// Gets or sets the vertical distance of the move, measured in pixels from the origin point.
     /// </summary>
     [JsonProperty("y")]
-    public ulong Y { get => this.y; set => this.y = value; }
+    public long Y { get => this.y; set => this.y = value; }
 
     /// <summary>
-    /// Gets or sets the duration, in milliseconds, of the move.
+    /// Gets or sets the duration of the move.
     /// </summary>
-    [JsonProperty("duration", NullValueHandling = NullValueHandling.Ignore)]
-    public ulong? Duration
-    { get => this.duration; set => this.duration = value; }
+    [JsonIgnore]
+    public TimeSpan? Duration { get => this.duration; set => this.duration = value; }
 
     /// <summary>
     /// Gets or sets the origin of the move.
     /// </summary>
     [JsonIgnore]
     public Origin? Origin { get => this.origin; set => this.origin = value; }
+
+    /// <summary>
+    /// Gets the duration, in milliseconds, of the move for serialization purposes.
+    /// </summary>
+    [JsonProperty("duration", NullValueHandling = NullValueHandling.Ignore)]
+    internal ulong? SerializableDuration
+    {
+        get
+        {
+            if (this.duration is null)
+            {
+                return null;
+            }
+
+            return Convert.ToUInt64(this.duration.Value.TotalMilliseconds);
+        }
+    }
 
     /// <summary>
     /// Gets the serializable origin of the move.
