@@ -18,7 +18,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     private Target scriptTarget;
     private bool awaitPromise;
     private ArgumentValue? thisObject;
-    private OwnershipModel? ownershipModel;
+    private ResultOwnership? resultOwnership;
     private SerializationOptions? serializationOptions;
 
     /// <summary>
@@ -72,7 +72,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// Gets or sets the ownership model to use for objects in the function call.
     /// </summary>
     [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
-    public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value; }
+    public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing results.

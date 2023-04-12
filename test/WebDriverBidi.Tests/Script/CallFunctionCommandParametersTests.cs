@@ -30,7 +30,7 @@ public class CallFunctionCommandParametersTests
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), true);
         properties.Arguments.Add(LocalValue.String("myArgument"));
         properties.ThisObject = LocalValue.String("thisObject");
-        properties.OwnershipModel = OwnershipModel.None;
+        properties.ResultOwnership = ResultOwnership.None;
         properties.SerializationOptions = new()
         {
             MaxDomDepth = 1,

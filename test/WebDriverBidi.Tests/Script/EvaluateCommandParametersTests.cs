@@ -29,7 +29,7 @@ public class EvaluateCommandParametersTests
     {
         EvaluateCommandParameters properties = new("myExpression", new RealmTarget("myRealm"), true)
         {
-            OwnershipModel = OwnershipModel.None,
+            ResultOwnership = ResultOwnership.None,
             SerializationOptions = new()
             {
                 MaxDomDepth = 1,

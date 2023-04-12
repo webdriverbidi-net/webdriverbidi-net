@@ -17,7 +17,7 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     private string expression;
     private Target scriptTarget;
     private bool awaitPromise;
-    private OwnershipModel? ownershipModel;
+    private ResultOwnership? resultOwnership;
     private SerializationOptions? serializationOptions;
 
     /// <summary>
@@ -60,7 +60,7 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// Gets or sets the value of the model of ownership of the handles of the values in the script.
     /// </summary>
     [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
-    public OwnershipModel? OwnershipModel { get => this.ownershipModel; set => this.ownershipModel = value; }
+    public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing results.
