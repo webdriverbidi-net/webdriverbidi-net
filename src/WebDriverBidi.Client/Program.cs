@@ -3,6 +3,7 @@ using WebDriverBidi.Client;
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Script;
 using WebDriverBidi.Session;
+using WebDriverBidi.Input;
 
 // See https://aka.ms/new-console-template for more information
 
@@ -22,7 +23,12 @@ WebDriverBidiLogLevel logReportingLevel = WebDriverBidiLogLevel.Debug;
 // Select the browser type for which to run this demo.
 BrowserType testBrowserType = BrowserType.Chrome;
 
-BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory);
+// Optionally select the location of the browser executable to use.
+// The empty string will launch the browser executable from its default
+// installed location.
+string browserExecutableLocation = string.Empty;
+
+BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation);
 try
 {
     await launcher.Start();
@@ -64,8 +70,7 @@ async Task DriveBrowser(string webSocketUrl)
 
     var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandParameters(contextId, "https://google.com") { Wait = ReadinessState.Complete });
     Console.WriteLine($"Performed navigation to {navigation.Url}");
-
-    string functionDefinition = "function(){ return document.querySelector('input'); }";
+    string functionDefinition = @"function(){ return document.querySelector('*[name=""q""]'); }";
     var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
     if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
     {
