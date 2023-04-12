@@ -12,9 +12,11 @@ public class KeySourceActionsTests
         KeySourceActions properties = new();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("key"));
@@ -31,9 +33,11 @@ public class KeySourceActionsTests
         properties.Actions.Add(new KeyDownAction("a"));
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"], Is.Not.Null);
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -50,6 +54,8 @@ public class KeySourceActionsTests
         {
             Assert.That(action, Is.Not.Null);
             Assert.That(action, Has.Count.EqualTo(2));
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(action, Contains.Key("type"));
             Assert.That(action!["type"], Is.Not.Null);
             Assert.That(action!["type"]!.Type, Is.EqualTo(JTokenType.String));

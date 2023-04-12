@@ -13,9 +13,17 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 public abstract class SourceActions
 {
+    private readonly string id = Guid.NewGuid().ToString();
+
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
     [JsonProperty("type")]
     public abstract string Type { get; }
+
+    /// <summary>
+    /// Gets the ID of the device.
+    /// </summary>
+    [JsonProperty("id")]
+    public string Id => this.id;
 }

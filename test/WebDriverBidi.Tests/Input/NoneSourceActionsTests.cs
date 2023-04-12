@@ -12,9 +12,11 @@ public class NoneSourceActionsTests
         NoneSourceActions properties = new();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("none"));
@@ -31,9 +33,11 @@ public class NoneSourceActionsTests
         properties.Actions.Add(new PauseAction());
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"], Is.Not.Null);
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));

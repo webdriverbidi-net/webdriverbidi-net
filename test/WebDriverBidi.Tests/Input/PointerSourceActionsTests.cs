@@ -12,9 +12,11 @@ public class PointerSourceActionsTests
         PointerSourceActions properties = new();
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointer"));
@@ -36,9 +38,11 @@ public class PointerSourceActionsTests
         };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointer"));
@@ -70,9 +74,11 @@ public class PointerSourceActionsTests
         };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointer"));
@@ -104,9 +110,11 @@ public class PointerSourceActionsTests
         };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointer"));
@@ -135,9 +143,11 @@ public class PointerSourceActionsTests
         };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointer"));
@@ -158,9 +168,11 @@ public class PointerSourceActionsTests
         properties.Actions.Add(new PointerDownAction(0));
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
+            Assert.That(serialized, Contains.Key("id"));
+            Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"], Is.Not.Null);
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
