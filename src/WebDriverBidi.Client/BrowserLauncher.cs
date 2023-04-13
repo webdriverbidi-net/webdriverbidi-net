@@ -16,7 +16,7 @@ using System.Text.Json;
 /// </summary>
 public abstract class BrowserLauncher
 {
-    private static readonly SemaphoreSlim lockObject = new(1, 1);
+    private static readonly SemaphoreSlim LockObject = new(1, 1);
     private readonly string launcherPath;
     private readonly string launcherExecutableName;
     private readonly string browserExecutableLocation;
@@ -29,6 +29,13 @@ public abstract class BrowserLauncher
     private string sessionId = string.Empty;
     private string webSocketUrl = string.Empty;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
+    /// </summary>
+    /// <param name="launcherExecutablePath">The path to the directory containing the launcher executable.</param>
+    /// <param name="launcherExecutableName">The name of the launcher executable.</param>
+    /// <param name="port">The port on which the launcher executable should listen for connections.</param>
+    /// <param name="browserExecutableLocation">The path containing the directory and file name of the browser executable. Derault to an empty string, indicating to use the default installed browser.</param>
     protected BrowserLauncher(string launcherExecutablePath, string launcherExecutableName, int port, string browserExecutableLocation = "")
     {
         this.launcherPath = launcherExecutablePath;
@@ -38,17 +45,17 @@ public abstract class BrowserLauncher
     }
 
     /// <summary>
-    /// Occurs when the launcher process is starting. 
+    /// Occurs when the launcher process is starting.
     /// </summary>
     public event EventHandler<BrowserLauncherProcessStartingEventArgs>? LauncherProcessStarting;
 
     /// <summary>
-    /// Occurs when the launcher process has completely started. 
+    /// Occurs when the launcher process has completely started.
     /// </summary>
     public event EventHandler<BrowserLauncherProcessStartedEventArgs>? LauncherProcessStarted;
 
     /// <summary>
-    /// Gets or sets the host name of the launcher. Defaults to "localhost."
+    /// Gets or sets the host name of the launcher. Defaults to "localhost".
     /// </summary>
     /// <remarks>
     /// Most browser launcher executables do not allow connections from remote
@@ -158,8 +165,9 @@ public abstract class BrowserLauncher
     }
 
     /// <summary>
-    /// Starts the browser launcher if it is not already running.
+    /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
+    /// <returns>A Task representing the result of the asynchronous operation.</returns>
     public async Task Start()
     {
         if (this.launcherProcess is not null)
@@ -176,7 +184,7 @@ public abstract class BrowserLauncher
         // to mitigate at least other instances of a BrowserLauncher acquiring the
         // same port when launching the browser.
         bool launcherAvailable = false;
-        await lockObject.WaitAsync();
+        await LockObject.WaitAsync();
         try
         {
             if (this.launcherPort == 0)
@@ -200,7 +208,7 @@ public abstract class BrowserLauncher
         }
         finally
         {
-            lockObject.Release();
+            LockObject.Release();
         }
 
         if (!launcherAvailable)
@@ -211,8 +219,9 @@ public abstract class BrowserLauncher
     }
 
     /// <summary>
-    /// Stops the browser launcher.
+    /// Asynchronously stops the browser launcher.
     /// </summary>
+    /// <returns>A Task representing the result of the asynchronous operation.</returns>
     public async Task Stop()
     {
         if (this.IsRunning)
@@ -268,9 +277,9 @@ public abstract class BrowserLauncher
             {
                 ["firstMatch"] = new List<object>()
                 {
-                    this.CreateBrowserLaunchCapabilities()
-                }
-            }
+                    this.CreateBrowserLaunchCapabilities(),
+                },
+            },
         };
         string json = JsonSerializer.Serialize(classicCapabilities);
         Console.WriteLine($"Sending classic new session command. JSON:\n{json}");
@@ -318,7 +327,7 @@ public abstract class BrowserLauncher
     /// Asynchronously quits the browser.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="BrowserNotLaunchedException"></exception>
+    /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
     public async Task QuitBrowser()
     {
         if (!string.IsNullOrEmpty(this.sessionId))

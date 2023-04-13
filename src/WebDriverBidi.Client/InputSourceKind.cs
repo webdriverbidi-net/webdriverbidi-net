@@ -28,5 +28,5 @@ public enum InputSourceKind
     /// <summary>
     /// Represents a wheel input source.
     /// </summary>
-    Wheel
+    Wheel,
 }

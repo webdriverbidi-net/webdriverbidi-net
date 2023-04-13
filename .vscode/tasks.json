@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/src/WebDriverBidi.Client/WebDriverBidi.Client.csproj",
+                "${workspaceFolder}/src/WebDriverBidi.Demo/WebDriverBidi.Demo.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/src/WebDriverBidi.Client/WebDriverBidi.Client.csproj",
+                "${workspaceFolder}/src/WebDriverBidi.Demo/WebDriverBidi.Demo.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/src/WebDriverBidi.Client/WebDriverBidi.Client.csproj",
+                "${workspaceFolder}/src/WebDriverBidi.Demo/WebDriverBidi.Demo.csproj",
             ],
             "problemMatcher": "$msCompile"
         }

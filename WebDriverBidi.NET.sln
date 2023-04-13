@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBidi.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBidi.Client", "src\WebDriverBidi.Client\WebDriverBidi.Client.csproj", "{9768379F-1061-49F3-A00C-0786AC722906}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D295B08E-55AF-4DB0-B958-8D2CAE2CB7DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBidi.Demo", "src\WebDriverBidi.Demo\WebDriverBidi.Demo.csproj", "{3635B4F4-80B6-4FEB-A751-1108617EF1EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,12 @@ Global
 		{9768379F-1061-49F3-A00C-0786AC722906}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9768379F-1061-49F3-A00C-0786AC722906}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9768379F-1061-49F3-A00C-0786AC722906}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3635B4F4-80B6-4FEB-A751-1108617EF1EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3635B4F4-80B6-4FEB-A751-1108617EF1EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3635B4F4-80B6-4FEB-A751-1108617EF1EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3635B4F4-80B6-4FEB-A751-1108617EF1EE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3635B4F4-80B6-4FEB-A751-1108617EF1EE} = {D295B08E-55AF-4DB0-B958-8D2CAE2CB7DD}
 	EndGlobalSection
 EndGlobal

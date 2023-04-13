@@ -52,9 +52,12 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are three projects in this repository:
+There are four projects in this repository:
 * src/WebDriverBidi/WebDriverBidi.csproj - The main library source code
-* src/WebDriverBidi.Client/WebDriverBidi.Client.csproj - A console application used as a "playground"
+* src/WebDriverBidi.Client/WebDriverBidi.Cleint.csproj - A library containing helper methods to
+demonstrate scaffolding required to make the main library useful. This code is not unit tested,
+and should be viewed as a demonstration library only.
+* src/WebDriverBidi.Demo/WebDriverBidi.Demo.csproj - A console application used as a "playground"
 for practice using the library. Changes to this project are not canonical at this time, and this
 project should not be viewed as having desirable coding practices.
 * test/WebDriverBidi.Tests/WebDriverBidi.Tests.csproj - The unit tests for the main library

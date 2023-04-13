@@ -68,34 +68,24 @@ async Task DriveBrowser(string webSocketUrl)
     string contextId = tree.ContextTree[0].BrowsingContextId;
     Console.WriteLine($"Active context: {contextId}");
 
-    await driver.Script.AddPreloadScript(new AddPreloadScriptCommandParameters("(thisChannel) => { window.sendToMe = () => thisChannel(\"hello from the browser\") }")
-    {
-        Arguments = new()
-        {
-            new ChannelValue(new ChannelProperties("myChannel"))
-        }
-    });
-
-    var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandParameters(contextId, "https://google.com") { Wait = ReadinessState.Complete });
+    var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandParameters(contextId, "https://google.com/") { Wait = ReadinessState.Complete });
     Console.WriteLine($"Performed navigation to {navigation.Url}");
 
-    string functionDefinition = @"() => sendToMe();";
+    string functionDefinition = @"function(){ return document.querySelector('*[name=""q""]'); }";
     var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
-    // string functionDefinition = @"function(){ return document.querySelector('*[name=""q""]'); }";
-    // var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
-    // if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
-    // {
-    //     Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Value!.GetType()}");
-    //     NodeProperties? nodeProperties = scriptSuccessResult.Result.ValueAs<NodeProperties>();
-    //     if (nodeProperties is not null)
-    //     {
-    //         Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
-    //     }
-    // }
-    // else if (scriptResult is EvaluateResultException scriptExceptionResult)
-    // {
-    //     Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
-    // }
+    if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
+    {
+        Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Value!.GetType()}");
+        NodeProperties? nodeProperties = scriptSuccessResult.Result.ValueAs<NodeProperties>();
+        if (nodeProperties is not null)
+        {
+            Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
+        }
+    }
+    else if (scriptResult is EvaluateResultException scriptExceptionResult)
+    {
+        Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
+    }
 
     await driver.Stop();
 }

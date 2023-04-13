@@ -44,8 +44,8 @@ public class InputBuilder
         {
             Parameters = new PointerParameters()
             {
-                PointerType = pointerType
-            }
+                PointerType = pointerType,
+            },
         };
         source.Actions.AddRange(this.CreatePauseActions());
         this.sources[source.Id] = source;
@@ -80,7 +80,7 @@ public class InputBuilder
     /// Adds an action to the built set of actions. Adding an action will
     /// add a "tick" to the set of all actions to be executed.
     /// </summary>
-    /// <param name="actionToAdd">The action to add to the set of actions</param>
+    /// <param name="actionToAdd">The action to add to the set of actions.</param>
     /// <returns>A self reference.</returns>
     public InputBuilder AddAction(Action actionToAdd)
     {
@@ -185,7 +185,6 @@ public class InputBuilder
                 maxActionCount = Math.Max(maxActionCount, wheelSource.Actions.Count);
             }
         }
-
 
         if (maxActionCount > 0)
         {

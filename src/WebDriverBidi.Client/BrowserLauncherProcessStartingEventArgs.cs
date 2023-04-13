@@ -1,4 +1,4 @@
-// <copyright file="BrowserLauncherProcessStartingdEventArgs.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="BrowserLauncherProcessStartingEventArgs.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>

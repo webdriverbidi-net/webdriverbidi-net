@@ -112,7 +112,7 @@ public class PointerInputSource : InputSource
             X = x,
             Y = y,
             Duration = duration,
-            Origin = origin
+            Origin = origin,
         };
         if (additionalProperties is not null)
         {

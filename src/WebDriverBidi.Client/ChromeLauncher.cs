@@ -3,9 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using System.Runtime.InteropServices;
-
 namespace WebDriverBidi.Client;
+
+using System.Runtime.InteropServices;
 
 /// <summary>
 /// Object for launching a Chrome browser to connect to using a WebDriverBiDi session.
@@ -91,7 +91,7 @@ public class ChromeLauncher : BrowserLauncher
     }
 
     /// <summary>
-    /// Returns the Firefox driver filename for the currently running platform
+    /// Returns the Firefox driver filename for the currently running platform.
     /// </summary>
     /// <returns>The file name of the Firefox driver service executable.</returns>
     private static string ChromeLauncherFileName()

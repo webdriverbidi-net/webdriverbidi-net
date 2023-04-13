@@ -19,7 +19,7 @@ public class BrowserLauncherProcessStartedEventArgs : EventArgs
     private readonly StreamReader? standardErrorStreamReader;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BrowserLauncherProcessStartedEvetArgs"/> class.
+    /// Initializes a new instance of the <see cref="BrowserLauncherProcessStartedEventArgs"/> class.
     /// </summary>
     /// <param name="launcherProcess">The <see cref="Process"/> object started.</param>
     public BrowserLauncherProcessStartedEventArgs(Process launcherProcess)
@@ -59,7 +59,6 @@ public class BrowserLauncherProcessStartedEventArgs : EventArgs
     /// </summary>
     public StreamReader? StandardErrorStreamReader
     {
-        get { return standardErrorStreamReader; }
+        get { return this.standardErrorStreamReader; }
     }
 }
-

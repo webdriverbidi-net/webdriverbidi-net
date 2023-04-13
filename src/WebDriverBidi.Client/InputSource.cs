@@ -58,7 +58,7 @@ public abstract class InputSource
     /// that <see cref="TimeSpan.Zero"/> pauses to synchronize with other action
     /// sequences for other input sources.
     /// </param>
-    /// <returns>The <see cref="Interaction"/> representing the action.</returns>
+    /// <returns>The <see cref="Action"/> representing the action.</returns>
     public Action CreatePause(TimeSpan duration)
     {
         PauseAction action = new();

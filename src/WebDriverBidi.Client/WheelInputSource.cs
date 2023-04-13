@@ -33,8 +33,8 @@ public class WheelInputSource : InputSource
     /// <param name="y">The vertical distance of the scroll, measured in pixels from the origin point.</param>
     /// <param name="deltaX">The horizontal distance of each increment of the scroll, measured in pixels.</param>
     /// <param name="deltaY">The vertical distance of each increment of the scroll, measured in pixels.</param>
-    /// <param name="duration">Optional duration for the wheel scroll. Defaults to <see langword="null"/>, which implies a zero duration.</param>
     /// <param name="origin">Optional origin point for the wheel scroll. Defaults to <see langword="null"/>, which implies the origin is the browser view port.</param>
+    /// <param name="duration">Optional duration for the wheel scroll. Defaults to <see langword="null"/>, which implies a zero duration.</param>
     /// <returns>The <see cref="Action"/> representing the action.</returns>
     public Action CreateScroll(ulong x, ulong y, long deltaX, long deltaY, Origin? origin = null, TimeSpan? duration = null)
     {
