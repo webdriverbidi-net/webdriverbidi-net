@@ -41,4 +41,41 @@ public class AddPreloadScriptCommandParametersTests
             Assert.That(serialized["sandbox"]!.Value<string>(), Is.EqualTo("mySandbox"));
         });
     }
+
+    [Test]
+    public void TestCanSerializePropertiesWithArguments()
+    {
+        AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
+        {
+            Arguments = new()
+            {
+                new ChannelValue(new ChannelProperties("myChannel"))
+            }
+        };
+        string json = JsonConvert.SerializeObject(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("functionDeclaration"));
+            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
+            Assert.That(serialized, Contains.Key("arguments"));
+            Assert.That(serialized["arguments"]!.Type, Is.EqualTo(JTokenType.Array));
+            JArray? argsArray = serialized["arguments"]!.Value<JArray>();
+            Assert.That(argsArray, Has.Count.EqualTo(1));
+            Assert.That(argsArray![0].Type, Is.EqualTo(JTokenType.Object));
+            JObject? argObject = argsArray[0].Value<JObject>();
+            Assert.That(argObject, Has.Count.EqualTo(2));
+            Assert.That(argObject, Contains.Key("type"));
+            Assert.That(argObject!["type"]!.Value<string>(), Is.EqualTo("channel"));
+            Assert.That(argObject, Contains.Key("value"));
+            Assert.That(argObject["value"]!.Type, Is.EqualTo(JTokenType.Object));
+            JObject? argValue = argObject["value"]!.Value<JObject>();
+            Assert.That(argValue!.Value<JObject>(), Has.Count.EqualTo(1));
+            Assert.That(argValue, Contains.Key("channel"));
+            Assert.That(argValue!["channel"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(argValue!["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
+        });
+    }
 }

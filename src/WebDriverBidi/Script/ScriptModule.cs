@@ -24,6 +24,7 @@ public sealed class ScriptModule : Module
     {
         this.RegisterEventInvoker<RealmInfo>("script.realmCreated", this.OnRealmCreated);
         this.RegisterEventInvoker<RealmDestroyedEventArgs>("script.realmDestroyed", this.OnRealmDestroyed);
+        this.RegisterEventInvoker<MessageEventArgs>("script.message", this.OnMessage);
     }
 
     /// <summary>
@@ -35,6 +36,11 @@ public sealed class ScriptModule : Module
     /// Occurs with a script realm is destroyed.
     /// </summary>
     public event EventHandler<RealmDestroyedEventArgs>? RealmDestroyed;
+
+    /// <summary>
+    /// Occurs when a preload script sends data to the client.
+    /// </summary>
+    public event EventHandler<MessageEventArgs>? Message;
 
     /// <summary>
     /// Gets the module name.
@@ -121,6 +127,15 @@ public sealed class ScriptModule : Module
         {
             RealmDestroyedEventArgs eventArgs = eventData.ToEventArgs<RealmDestroyedEventArgs>();
             this.RealmDestroyed(this, eventArgs);
+        }
+    }
+
+    private void OnMessage(EventInfo<MessageEventArgs> eventData)
+    {
+        if (this.Message is not null)
+        {
+            MessageEventArgs eventArgs = eventData.ToEventArgs<MessageEventArgs>();
+            this.Message(this, eventArgs);
         }
     }
 }

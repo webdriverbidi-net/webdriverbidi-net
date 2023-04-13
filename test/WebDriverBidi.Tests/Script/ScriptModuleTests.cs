@@ -270,6 +270,33 @@ public class ScriptModuleTests
     }
 
     [Test]
+    public void TestCanReceiveMessageEvent()
+    {
+        TestConnection connection = new();
+        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        ScriptModule module = new(driver);
+
+        ManualResetEvent syncEvent = new(false);
+        module.Message += (object? obj, MessageEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.ChannelId, Is.EqualTo("myChannel"));
+                Assert.That(e.Data, Is.Not.Null);
+                Assert.That(e.Data.Type, Is.EqualTo("string"));
+                Assert.That(e.Data.ValueAs<string>(), Is.EqualTo("myChannelValue"));
+                Assert.That(e.Source, Is.Not.Null);
+                Assert.That(e.Source.RealmId, Is.EqualTo("myRealm"));
+            });
+            syncEvent.Set();
+        };
+
+        string eventJson = @"{ ""method"": ""script.message"", ""params"": { ""channel"": ""myChannel"", ""data"": { ""type"": ""string"", ""value"": ""myChannelValue"" }, ""source"": { ""realm"": ""myRealm"" } } }";
+        connection.RaiseDataReceivedEvent(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        Assert.That(eventRaised, Is.True);
+    }
+
+    [Test]
     public void TestCanAddPreloadScript()
     {
         TestConnection connection = new();

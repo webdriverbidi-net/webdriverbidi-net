@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScriptCommandResult>
 {
     private string functionDeclaration;
+    private List<ChannelValue>? arguments;
     private string? sandbox;
 
     /// <summary>
@@ -35,6 +36,12 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     /// </summary>
     [JsonProperty("functionDeclaration")]
     public string FunctionDeclaration { get => this.functionDeclaration; set => this.functionDeclaration = value; }
+
+    /// <summary>
+    /// Gets or sets the arguments for the function declaration.
+    /// </summary>
+    [JsonProperty("arguments", NullValueHandling = NullValueHandling.Ignore)]
+    public List<ChannelValue>? Arguments { get => this.arguments; set => this.arguments = value; }
 
     /// <summary>
     /// Gets or sets the sandbox name of the preload script.
