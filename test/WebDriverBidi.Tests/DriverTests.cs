@@ -2,6 +2,7 @@ namespace WebDriverBidi;
 
 using TestUtilities;
 using PinchHitter;
+using WebDriverBidi.Browser;
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Input;
 using WebDriverBidi.Log;
@@ -217,6 +218,7 @@ public class DriverTests
                 Assert.That(driver.Session, Is.InstanceOf<SessionModule>());
                 Assert.That(driver.Input, Is.InstanceOf<InputModule>());
                 Assert.That(driver.Network, Is.InstanceOf<NetworkModule>());
+                Assert.That(driver.Browser, Is.InstanceOf<BrowserModule>());
             });
         }
         finally

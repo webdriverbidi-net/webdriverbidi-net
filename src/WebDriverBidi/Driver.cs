@@ -5,6 +5,7 @@
 
 namespace WebDriverBidi;
 
+using WebDriverBidi.Browser;
 using WebDriverBidi.BrowsingContext;
 using WebDriverBidi.Input;
 using WebDriverBidi.Log;
@@ -40,6 +41,7 @@ public class Driver
         this.transport.ErrorEventReceived += this.OnTransportErrorEventReceived;
         this.transport.UnknownMessageReceived += this.OnTransportUnknownMessageReceived;
         this.transport.LogMessage += this.OnTransportLogMessage;
+        this.RegisterModule(new BrowserModule(this));
         this.RegisterModule(new BrowsingContextModule(this));
         this.RegisterModule(new SessionModule(this));
         this.RegisterModule(new ScriptModule(this));
@@ -67,6 +69,11 @@ public class Driver
     /// Raised when a log message is emitted by this driver.
     /// </summary>
     public event EventHandler<LogMessageEventArgs>? LogMessage;
+
+    /// <summary>
+    /// Gets the browser module as described in the WebDriver Bidi protocol.
+    /// </summary>
+    public BrowserModule Browser => this.GetModule<BrowserModule>(BrowserModule.BrowserModuleName);
 
     /// <summary>
     /// Gets the browsingContext module as described in the WebDriver Bidi protocol.

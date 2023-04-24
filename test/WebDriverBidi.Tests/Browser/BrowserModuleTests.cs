@@ -1,0 +1,27 @@
+namespace WebDriverBidi.Browser;
+
+using TestUtilities;
+
+[TestFixture]
+public class BrowserModuleTests
+{
+    [Test]
+    public void TestExecuteCloseCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        BrowserModule module = new(driver);
+
+        var task = module.Close(new CloseCommandParameters());
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
+}
