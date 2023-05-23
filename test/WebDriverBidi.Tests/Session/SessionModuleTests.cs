@@ -108,4 +108,25 @@ public class SessionModuleTests
             Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"]!.ToString(), Is.EqualTo("additionalCapValue"));
         });
     }
+
+    [Test]
+    public void TestExecuteEndCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        SessionModule module = new(driver);
+
+        var endParameters = new EndCommandParameters();
+        var task = module.End(endParameters);
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
 }

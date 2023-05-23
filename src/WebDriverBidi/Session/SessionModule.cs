@@ -68,4 +68,14 @@ public sealed class SessionModule : Module
     {
         return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
     }
+
+    /// <summary>
+    /// Ends the current session.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<EmptyResult> End(EndCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
 }
