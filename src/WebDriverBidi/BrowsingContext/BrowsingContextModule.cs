@@ -175,6 +175,16 @@ public sealed class BrowsingContextModule : Module
         return await this.Driver.ExecuteCommand<NavigationResult>(commandProperties);
     }
 
+    /// <summary>
+    /// Sets the viewport of a browsing context to the specified dimensions.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command.</returns>
+    public async Task<EmptyResult> SetViewport(SetViewportCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
     private void OnContextCreated(EventInfo<BrowsingContextInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters

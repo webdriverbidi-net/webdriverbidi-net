@@ -1,7 +1,6 @@
 namespace WebDriverBidi.BrowsingContext;
 
 using TestUtilities;
-using WebDriverBidi.Protocol;
 
 [TestFixture]
 public class BrowsingContextModuleTests
@@ -184,6 +183,26 @@ public class BrowsingContextModuleTests
             Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
             Assert.That(result.Url, Is.EqualTo("https://example.com"));
         });
+    }
+
+    [Test]
+    public void TestExecuteSetViewportCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        BrowsingContextModule module = new(driver);
+
+        var task = module.SetViewport(new SetViewportCommandParameters("myContextId"));
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+        
+        Assert.That(result, Is.Not.Null);
     }
 
     [Test]
