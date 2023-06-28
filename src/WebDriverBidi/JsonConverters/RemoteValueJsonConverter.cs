@@ -244,6 +244,18 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             result.Value = nodeProperties;
         }
 
+        if (valueType == "window")
+        {
+            if (token is not JObject windowProxyObject)
+            {
+                throw new JsonSerializationException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
+            }
+
+            WindowProxyProperties windowProxyProperties = new();
+            serializer.Populate(windowProxyObject.CreateReader(), windowProxyProperties);
+            result.Value = windowProxyProperties;
+        }
+
         if (valueType == "array" || valueType == "set" || valueType == "nodelist" || valueType == "htmlcollection")
         {
             if (token is not JArray arrayObject)

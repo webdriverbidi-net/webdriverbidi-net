@@ -731,7 +731,7 @@ public class RemoteValueTests
     }
 
     [Test]
-    public void TestDeserializingMapRemoteValueWitComplexRemoteValueKeyContainingHandle()
+    public void TestDeserializingMapRemoteValueWithComplexRemoteValueKeyContainingHandle()
     {
         string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""symbol"", ""handle"": ""myHandle"" }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
         RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
@@ -758,7 +758,7 @@ public class RemoteValueTests
     }
 
     [Test]
-    public void TestDeserializingMapRemoteValueWitComplexRemoteValueKeyContainingInternalId()
+    public void TestDeserializingMapRemoteValueWithComplexRemoteValueKeyContainingInternalId()
     {
         string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""symbol"", ""internalId"": 123 }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
         RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
@@ -1038,46 +1038,57 @@ public class RemoteValueTests
     [Test]
     public void TestDeserializingWindowRemoteValue()
     {
-        string json = @"{ ""type"": ""window"" }";
+        string json = @"{ ""type"": ""window"", ""value"": { ""context"": ""myContext"" } }";
         RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
             Assert.That(remoteValue!.Type, Is.EqualTo("window"));
-            Assert.That(remoteValue.HasValue, Is.False);
+            Assert.That(remoteValue.HasValue, Is.True);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Value, Is.TypeOf<WindowProxyProperties>());
         });
+        var windowProxyObject = remoteValue!.ValueAs<WindowProxyProperties>();
+        Assert.That(windowProxyObject!.Context, Is.EqualTo("myContext"));
     }
 
     [Test]
     public void TestDeserializingWindowRemoteValueWithHandleAndInternalId()
     {
-        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": 123 }";
+        string json = @"{ ""type"": ""window"", ""value"": { ""context"": ""myContext"" }, ""handle"": ""myHandle"", ""internalId"": 123 }";
         RemoteValue? remoteValue = JsonConvert.DeserializeObject<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
             Assert.That(remoteValue!.Type, Is.EqualTo("window"));
-            Assert.That(remoteValue.HasValue, Is.False);
+            Assert.That(remoteValue.HasValue, Is.True);
             Assert.That(remoteValue.Handle, Is.Not.Null);
             Assert.That(remoteValue.Handle, Is.EqualTo("myHandle"));
             Assert.That(remoteValue.InternalId, Is.Not.Null);
             Assert.That(remoteValue.InternalId, Is.EqualTo(123));
+            Assert.That(remoteValue.Value, Is.TypeOf<WindowProxyProperties>());
         });
     }
 
     [Test]
-    public void TestDeserializingRemoteValueWithInvalidHandleTypeThrows()
+    public void TestDeserializingInvalidWindowValueRemoteValueThrows()
     {
-        string json = @"{ ""type"": ""window"", ""handle"": {}, ""internalId"": 123 }";
+        string json = @"{ ""type"": ""window"", ""value"": ""some value"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("window must have a non-null 'value' property whose value is an object"));
+    }
+
+    [Test]
+    public void TestDeserializingWindowRemoteValueWithInvalidHandleTypeThrows()
+    {
+        string json = @"{ ""type"": ""window"", ""value"": { ""context"": ""myContext"" }, ""handle"": {}, ""internalId"": 123 }";
         Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>());
     }
 
     [Test]
-    public void TestDeserializingRemoteValueWithInvalidInternalIdTypeThrows()
+    public void TestDeserializingWindowRemoteValueWithInvalidInternalIdTypeThrows()
     {
-        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": 123.45 }";
+        string json = @"{ ""type"": ""window"", ""value"": { ""context"": ""myContext"" }, ""handle"": ""myHandle"", ""internalId"": 123.45 }";
         Assert.That(() => JsonConvert.DeserializeObject<RemoteValue>(json), Throws.InstanceOf<JsonSerializationException>());
     }
 
