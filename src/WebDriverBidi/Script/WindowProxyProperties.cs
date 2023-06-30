@@ -26,5 +26,6 @@ public class WindowProxyProperties
     /// Gets the browsing context ID for the window proxy.
     /// </summary>
     [JsonProperty("context")]
+    [JsonRequired]
     public string Context { get => this.context; internal set => this.context = value; }
 }
