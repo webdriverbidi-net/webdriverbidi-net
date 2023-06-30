@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class ExceptionDetailsTests
+public class CapabilitiesRequestTests
 {
     [Test]
     public void TestCanSerialize()
