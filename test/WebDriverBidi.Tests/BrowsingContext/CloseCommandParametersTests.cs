@@ -7,6 +7,13 @@ using Newtonsoft.Json.Linq;
 public class CloseCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        CloseCommandParameters properties = new("myContextId");
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.close"));
+    }
+
+    [Test]
     public void TestCanSerializeParameters()
     {
         CloseCommandParameters properties = new("myContextId");

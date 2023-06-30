@@ -6,6 +6,13 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class DisownCommandParametersTests
 {
+   [Test]
+    public void TestCommandName()
+    {
+        DisownCommandParameters properties = new(new RealmTarget("myRealm"));
+        Assert.That(properties.MethodName, Is.EqualTo("script.disown"));
+    }
+
     [Test]
     public void TestCanSerializeParameters()
     {

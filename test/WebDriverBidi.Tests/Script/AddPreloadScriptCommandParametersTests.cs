@@ -6,6 +6,13 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class AddPreloadScriptCommandParametersTests
 {
+   [Test]
+    public void TestCommandName()
+    {
+        AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration");
+        Assert.That(properties.MethodName, Is.EqualTo("script.addPreloadScript"));
+    }
+
     [Test]
     public void TestCanSerializeProperties()
     {

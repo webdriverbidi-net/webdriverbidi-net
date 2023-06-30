@@ -6,6 +6,13 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class ReleaseActionsCommandParametersTests
 {
+   [Test]
+    public void TestCommandName()
+    {
+        ReleaseActionsCommandParameters properties = new("myContextId");
+        Assert.That(properties.MethodName, Is.EqualTo("input.releaseActions"));
+    }
+
     [Test]
     public void TestCanSerializeParameters()
     {

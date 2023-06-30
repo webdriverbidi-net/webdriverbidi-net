@@ -6,6 +6,13 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class CallFunctionCommandParametersTests
 {
+   [Test]
+    public void TestCommandName()
+    {
+        CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), true);
+        Assert.That(properties.MethodName, Is.EqualTo("script.callFunction"));
+    }
+
     [Test]
     public void TestCanSerializeParameters()
     {

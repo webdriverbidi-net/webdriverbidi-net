@@ -7,6 +7,13 @@ using Newtonsoft.Json.Linq;
 public class GetTreeCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        GetTreeCommandParameters properties = new();
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.getTree"));
+    }
+
+    [Test]
     public void TestCanSerializeParameters()
     {
         GetTreeCommandParameters properties = new();

@@ -8,6 +8,13 @@ using WebDriverBidi.Script;
 public class CaptureScreenshotCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        CaptureScreenshotCommandParameters properties = new("myContextId");
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.captureScreenshot"));
+    }
+
+    [Test]
     public void TestCanSerializeParameters()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId");

@@ -7,6 +7,13 @@ using Newtonsoft.Json.Linq;
 public class ReloadCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        ReloadCommandParameters properties = new("myContextId");
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.reload"));
+    }
+
+    [Test]
     public void TestCanSerializeParameters()
     {
         ReloadCommandParameters properties = new("myContextId");

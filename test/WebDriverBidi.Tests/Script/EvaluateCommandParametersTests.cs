@@ -6,6 +6,13 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class EvaluateCommandParametersTests
 {
+   [Test]
+    public void TestCommandName()
+    {
+        EvaluateCommandParameters properties = new("myExpression", new RealmTarget("myRealm"), true);
+        Assert.That(properties.MethodName, Is.EqualTo("script.evaluate"));
+    }
+
     [Test]
     public void TestCanSerializeParameters()
     {

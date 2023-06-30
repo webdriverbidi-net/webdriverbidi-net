@@ -7,6 +7,13 @@ using Newtonsoft.Json.Linq;
 public class SetViewportCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        SetViewportCommandParameters properties = new("myContextId");
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.setViewport"));
+    }
+
+    [Test]
     public void TestCanSerializeParameters()
     {
         SetViewportCommandParameters properties = new("myContextId");

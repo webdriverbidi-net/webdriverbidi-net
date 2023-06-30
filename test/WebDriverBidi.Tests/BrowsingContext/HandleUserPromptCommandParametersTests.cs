@@ -7,6 +7,13 @@ using Newtonsoft.Json.Linq;
 public class HandleUserPromptCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        HandleUserPromptCommandParameters properties = new("myContextId");
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.handleUserPrompt"));
+    }
+
+    [Test]
     public void TestCanSerializeParameters()
     {
         HandleUserPromptCommandParameters properties = new("myContextId");

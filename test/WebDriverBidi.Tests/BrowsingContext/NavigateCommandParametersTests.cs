@@ -7,6 +7,13 @@ using Newtonsoft.Json.Linq;
 public class NavigateCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        NavigateCommandParameters properties = new("myContextId", "http://example.com");
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.navigate"));
+    }
+
+    [Test]
     public void TestCanSerializeParameters()
     {
         NavigateCommandParameters properties = new("myContextId", "http://example.com");

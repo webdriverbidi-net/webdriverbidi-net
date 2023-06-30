@@ -6,6 +6,13 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class StatusCommandParametersTests
 {
+   [Test]
+    public void TestCommandName()
+    {
+        StatusCommandParameters properties = new();
+        Assert.That(properties.MethodName, Is.EqualTo("session.status"));
+    }
+
     [Test]
     public void TestCanSerializeParameters()
     {

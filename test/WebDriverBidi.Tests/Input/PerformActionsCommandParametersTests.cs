@@ -6,6 +6,13 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class PerformActionsCommandParametersTests
 {
+   [Test]
+    public void TestCommandName()
+    {
+        PerformActionsCommandParameters properties = new("myContextId");
+        Assert.That(properties.MethodName, Is.EqualTo("input.performActions"));
+    }
+
     [Test]
     public void TestCanSerializeParameters()
     {

@@ -6,6 +6,13 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class RemovePreloadScriptCommandParametersTests
 {
+   [Test]
+    public void TestCommandName()
+    {
+        RemovePreloadScriptCommandParameters properties = new("myLoadScriptId");
+        Assert.That(properties.MethodName, Is.EqualTo("script.removePreloadScript"));
+    }
+
     [Test]
     public void TestCanSerializeProperties()
     {

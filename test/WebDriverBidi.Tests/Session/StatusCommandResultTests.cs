@@ -3,7 +3,7 @@ namespace WebDriverBidi.Session;
 using Newtonsoft.Json;
 
 [TestFixture]
-public class StatusCommandResultPropertiesTests
+public class StatusCommandResultTests
 {
     [Test]
     public void TestCanDeserialize()

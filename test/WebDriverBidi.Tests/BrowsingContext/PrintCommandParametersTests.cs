@@ -7,6 +7,13 @@ using Newtonsoft.Json.Linq;
 public class PrintCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        PrintCommandParameters properties = new("myContextId");
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.print"));
+    }
+
+    [Test]
     public void TestCanSerializeParameters()
     {
         PrintCommandParameters properties = new("myContextId");

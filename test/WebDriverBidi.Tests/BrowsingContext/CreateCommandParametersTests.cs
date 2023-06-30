@@ -7,6 +7,13 @@ using Newtonsoft.Json.Linq;
 public class CreateCommandParametersTests
 {
     [Test]
+    public void TestCommandName()
+    {
+        CreateCommandParameters properties = new(CreateType.Tab);
+        Assert.That(properties.MethodName, Is.EqualTo("browsingContext.create"));
+    }
+
+    [Test]
     public void TestCanSerializeParametersForTab()
     {
         CreateCommandParameters properties = new(CreateType.Tab);
