@@ -375,7 +375,7 @@ public class Transport
                             isProcessed = true;
                             this.OnProtocolEventReceived(this, new EventReceivedEventArgs(eventMessageData!));
                         }
-                        catch (Exception e)
+                        catch (JsonException e)
                         {
                             this.Log($"Unexpected error parsing event JSON: {e.Message}", WebDriverBidiLogLevel.Error);
                         }
