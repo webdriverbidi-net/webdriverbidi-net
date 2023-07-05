@@ -14,8 +14,7 @@ using Newtonsoft.Json;
 public class Cookie
 {
     private string name = string.Empty;
-    private string? value;
-    private byte[]? binaryValue;
+    private BytesValue value = new(BytesValueType.String, string.Empty);
     private string domain = string.Empty;
     private string path = string.Empty;
     private ulong? epochExpires;
@@ -42,15 +41,9 @@ public class Cookie
     /// <summary>
     /// Gets the value of the cookie.
     /// </summary>
-    [JsonProperty("value", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Value { get => this.value; internal set => this.value = value; }
-
-    /// <summary>
-    /// Gets the binary value of a cookie as an array of bytes. Property
-    /// is used when the cookie value cannot be expressed as a UTF-8 string.
-    /// </summary>
-    [JsonProperty("binaryValue", NullValueHandling = NullValueHandling.Ignore)]
-    public byte[]? BinaryValue { get => this.binaryValue; internal set => this.binaryValue = value; }
+    [JsonProperty("value")]
+    [JsonRequired]
+    public BytesValue Value { get => this.value; internal set => this.value = value; }
 
     /// <summary>
     /// Gets the domain of the cookie.

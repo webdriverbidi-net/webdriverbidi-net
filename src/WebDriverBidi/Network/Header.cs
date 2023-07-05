@@ -14,8 +14,7 @@ using Newtonsoft.Json;
 public class Header
 {
     private string name = string.Empty;
-    private string? value;
-    private byte[]? binaryValue;
+    private BytesValue value = new(BytesValueType.String, string.Empty);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Header"/> class.
@@ -35,12 +34,6 @@ public class Header
     /// Gets the value of the header.
     /// </summary>
     [JsonProperty("value")]
-    public string? Value { get => this.value; internal set => this.value = value; }
-
-    /// <summary>
-    /// Gets the binary value of a cookie as an array of bytes. Property
-    /// is used when the cookie value cannot be expressed as a UTF-8 string.
-    /// </summary>
-    [JsonProperty("binaryValue", NullValueHandling = NullValueHandling.Ignore)]
-    public byte[]? BinaryValue { get => this.binaryValue; internal set => this.binaryValue = value; }
+    [JsonRequired]
+    public BytesValue Value { get => this.value; internal set => this.value = value; }
 }

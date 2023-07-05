@@ -30,10 +30,12 @@ public class NetworkModuleTests
                 Assert.That(e.Request.Method, Is.EqualTo("get"));
                 Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
                 Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value, Is.EqualTo("headerValue"));
+                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
                 Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
                 Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value, Is.EqualTo("cookieValue"));
+                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
                 Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
                 Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
                 Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
@@ -63,13 +65,19 @@ public class NetworkModuleTests
             ""headers"": [
                 {
                     ""name"": ""headerName"",
-                    ""value"": ""headerValue""
+                    ""value"":  {
+                        ""type"": ""string"",
+                        ""value"": ""headerValue""
+                    }
                 }
             ],
             ""cookies"": [
                 {
                     ""name"": ""cookieName"",
-                    ""value"": ""cookieValue"",
+                    ""value"": {
+                        ""type"": ""string"",
+                        ""value"": ""cookieValue""
+                    },
                     ""domain"": ""cookieDomain"",
                     ""path"": ""/cookiePath"",
                     ""sameSite"": ""strict"",
@@ -131,10 +139,12 @@ public class NetworkModuleTests
                 Assert.That(e.Request.Method, Is.EqualTo("get"));
                 Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
                 Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value, Is.EqualTo("headerValue"));
+                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
                 Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
                 Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value, Is.EqualTo("cookieValue"));
+                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
                 Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
                 Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
                 Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
@@ -164,13 +174,19 @@ public class NetworkModuleTests
             ""headers"": [
                 {
                     ""name"": ""headerName"",
-                    ""value"": ""headerValue""
+                    ""value"": {
+                        ""type"": ""string"",
+                        ""value"": ""headerValue""
+                    }
                 }
             ],
             ""cookies"": [
                 {
                     ""name"": ""cookieName"",
-                    ""value"": ""cookieValue"",
+                    ""value"": {
+                        ""type"": ""string"",
+                        ""value"": ""cookieValue""
+                    },
                     ""domain"": ""cookieDomain"",
                     ""path"": ""/cookiePath"",
                     ""sameSite"": ""strict"",
@@ -230,10 +246,12 @@ public class NetworkModuleTests
                 Assert.That(e.Request.Method, Is.EqualTo("get"));
                 Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
                 Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value, Is.EqualTo("headerValue"));
+                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
                 Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
                 Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value, Is.EqualTo("cookieValue"));
+                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
                 Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
                 Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
                 Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
@@ -251,7 +269,8 @@ public class NetworkModuleTests
                 Assert.That(e.Response.FromCache, Is.False);
                 Assert.That(e.Response.Headers, Has.Count.EqualTo(1));
                 Assert.That(e.Response.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Response.Headers[0].Value, Is.EqualTo("headerValue"));
+                Assert.That(e.Response.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Response.Headers[0].Value.Value, Is.EqualTo("headerValue"));
                 Assert.That(e.Response.MimeType, Is.EqualTo("text/html"));
                 Assert.That(e.Response.BytesReceived, Is.EqualTo(400));
                 Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
@@ -275,13 +294,19 @@ public class NetworkModuleTests
             ""headers"": [
                 {
                     ""name"": ""headerName"",
-                    ""value"": ""headerValue""
+                    ""value"": {
+                        ""type"": ""string"",
+                        ""value"": ""headerValue""
+                    }
                 }
             ],
             ""cookies"": [
                 {
                     ""name"": ""cookieName"",
-                    ""value"": ""cookieValue"",
+                    ""value"": {
+                        ""type"": ""string"",
+                        ""value"": ""cookieValue""
+                    },
                     ""domain"": ""cookieDomain"",
                     ""path"": ""/cookiePath"",
                     ""sameSite"": ""strict"",
@@ -317,7 +342,10 @@ public class NetworkModuleTests
             ""headers"": [
                 {
                     ""name"": ""headerName"",
-                    ""value"": ""headerValue""
+                    ""value"": {
+                        ""type"": ""string"",
+                        ""value"": ""headerValue""
+                    }
                 }
             ],
             ""mimeType"": ""text/html"",
@@ -360,10 +388,12 @@ public class NetworkModuleTests
                 Assert.That(e.Request.Method, Is.EqualTo("get"));
                 Assert.That(e.Request.Headers, Has.Count.EqualTo(1));
                 Assert.That(e.Request.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Request.Headers[0].Value, Is.EqualTo("headerValue"));
+                Assert.That(e.Request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
                 Assert.That(e.Request.Cookies, Has.Count.EqualTo(1));
                 Assert.That(e.Request.Cookies[0].Name, Is.EqualTo("cookieName"));
-                Assert.That(e.Request.Cookies[0].Value, Is.EqualTo("cookieValue"));
+                Assert.That(e.Request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
                 Assert.That(e.Request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
                 Assert.That(e.Request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
                 Assert.That(e.Request.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
@@ -381,7 +411,8 @@ public class NetworkModuleTests
                 Assert.That(e.Response.FromCache, Is.False);
                 Assert.That(e.Response.Headers, Has.Count.EqualTo(1));
                 Assert.That(e.Response.Headers[0].Name, Is.EqualTo("headerName"));
-                Assert.That(e.Response.Headers[0].Value, Is.EqualTo("headerValue"));
+                Assert.That(e.Response.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
+                Assert.That(e.Response.Headers[0].Value.Value, Is.EqualTo("headerValue"));
                 Assert.That(e.Response.MimeType, Is.EqualTo("text/html"));
                 Assert.That(e.Response.BytesReceived, Is.EqualTo(400));
                 Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
@@ -405,13 +436,19 @@ public class NetworkModuleTests
             ""headers"": [
                 {
                     ""name"": ""headerName"",
-                    ""value"": ""headerValue""
+                    ""value"": {
+                        ""type"": ""string"",
+                        ""value"": ""headerValue""
+                    }
                 }
             ],
             ""cookies"": [
                 {
                     ""name"": ""cookieName"",
-                    ""value"": ""cookieValue"",
+                    ""value"": {
+                        ""type"": ""string"", 
+                        ""value"": ""cookieValue""
+                    },
                     ""domain"": ""cookieDomain"",
                     ""path"": ""/cookiePath"",
                     ""sameSite"": ""strict"",
@@ -447,7 +484,10 @@ public class NetworkModuleTests
             ""headers"": [
                 {
                     ""name"": ""headerName"",
-                    ""value"": ""headerValue""
+                    ""value"": {
+                        ""type"": ""string"",
+                        ""value"": ""headerValue""
+                    }
                 }
             ],
             ""mimeType"": ""text/html"",

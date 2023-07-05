@@ -8,35 +8,44 @@ public class HeaderTests
     [Test]
     public void TestCanDeserializeHeader()
     {
-        string json = @"{ ""name"": ""headerName"", ""value"": ""headerValue"" }";
+        string json = @"{ ""name"": ""headerName"", ""value"": { ""type"": ""string"", ""value"": ""headerValue"" } }";
         Header? header = JsonConvert.DeserializeObject<Header>(json);
         Assert.That(header, Is.Not.Null);
         Assert.Multiple(() =>
         {
             Assert.That(header!.Name, Is.EqualTo("headerName"));
-            Assert.That(header!.Value, Is.EqualTo("headerValue"));
-            Assert.That(header.BinaryValue, Is.Null);
+            Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
+            Assert.That(header.Value.Value, Is.EqualTo("headerValue"));
         });
     }
 
     [Test]
     public void TestCanDeserializeHeaderWithBinaryValue()
     {
-        string json = @"{ ""name"": ""headerName"", ""binaryValue"": [ 65, 66, 67 ] }";
+        byte[] byteArray = new byte[] { 0x41, 0x42, 0x43 };
+        string base64Value = Convert.ToBase64String(byteArray);
+        string json = $@"{{ ""name"": ""headerName"", ""value"": {{ ""type"": ""base64"", ""value"": ""{base64Value}"" }} }}";
         Header? header = JsonConvert.DeserializeObject<Header>(json);
         Assert.That(header, Is.Not.Null);
         Assert.Multiple(() =>
         {
             Assert.That(header!.Name, Is.EqualTo("headerName"));
-            Assert.That(header!.Value, Is.Null);
-            Assert.That(header.BinaryValue, Is.EqualTo(new byte[] { 65, 66, 67 }));
+            Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.Base64));
+            Assert.That(header.Value.Value, Is.EqualTo(base64Value));
         });
     }
 
     [Test]
     public void TestDeserializingWithMissingNameThrows()
     {
-        string json = @"{ ""value"": ""headerValue"" }";
+        string json = @"{ ""value"":  { ""type"": ""string"", ""value"": ""headerValue"" } }";
         Assert.That(() => JsonConvert.DeserializeObject<Header>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'name' not found in JSON"));
+    }
+
+    [Test]
+    public void TestDeserializingWithMissingValueThrows()
+    {
+        string json = @"{ ""name"": ""headerName"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<Header>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'value' not found in JSON"));
     }
 }

@@ -31,7 +31,7 @@ public class ResponseDataTests
     [Test]
     public void TestCanDeserializeResponseDataWithHeaders()
     {
-        string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [{ ""name"": ""headerName"", ""value"": ""headerValue"" }], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
+        string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [{ ""name"": ""headerName"", ""value"": { ""type"": ""string"", ""value"": ""headerValue"" } }], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
         ResponseData? response = JsonConvert.DeserializeObject<ResponseData>(json);
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
@@ -43,8 +43,8 @@ public class ResponseDataTests
             Assert.That(response.FromCache, Is.False);
             Assert.That(response.Headers, Has.Count.EqualTo(1));
             Assert.That(response.Headers[0].Name, Is.EqualTo("headerName"));
-            Assert.That(response.Headers[0].Value, Is.EqualTo("headerValue"));
-            Assert.That(response.Headers[0].BinaryValue, Is.Null);
+            Assert.That(response.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
+            Assert.That(response.Headers[0].Value.Value, Is.EqualTo("headerValue"));
             Assert.That(response.MimeType, Is.EqualTo("text/html"));
             Assert.That(response.BytesReceived, Is.EqualTo(400));
             Assert.That(response.HeadersSize, Is.EqualTo(100));

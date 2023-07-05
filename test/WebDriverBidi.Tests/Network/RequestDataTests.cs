@@ -40,7 +40,7 @@ public class RequestDataTests
     [Test]
     public void CanDeserializeRequestDataWithHeaders()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [{ ""name"": ""headerName"", ""value"": ""headerValue"" }], ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [{ ""name"": ""headerName"", ""value"": { ""type"": ""string"", ""value"": ""headerValue"" } }], ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
         RequestData? request = JsonConvert.DeserializeObject<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
@@ -50,8 +50,8 @@ public class RequestDataTests
             Assert.That(request.Method, Is.EqualTo("get"));
             Assert.That(request.Headers, Has.Count.EqualTo(1));
             Assert.That(request.Headers[0].Name, Is.EqualTo("headerName"));
-            Assert.That(request.Headers[0].Value, Is.EqualTo("headerValue"));
-            Assert.That(request.Headers[0].BinaryValue, Is.Null);
+            Assert.That(request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
+            Assert.That(request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
             Assert.That(request.Cookies, Is.Empty);
             Assert.That(request.HeadersSize, Is.EqualTo(0));
             Assert.That(request.BodySize, Is.EqualTo(0));
@@ -75,7 +75,7 @@ public class RequestDataTests
     [Test]
     public void CanDeserializeRequestDataWithCookies()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""cookies"": [{ ""name"": ""cookieName"", ""value"": ""cookieValue"", ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": true, ""httpOnly"": true, ""sameSite"": ""lax"", ""size"": 100 }], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""cookies"": [{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": true, ""httpOnly"": true, ""sameSite"": ""lax"", ""size"": 100 }], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
         RequestData? request = JsonConvert.DeserializeObject<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
@@ -86,8 +86,8 @@ public class RequestDataTests
             Assert.That(request.Headers, Is.Empty);
             Assert.That(request.Cookies, Has.Count.EqualTo(1));
             Assert.That(request.Cookies[0].Name, Is.EqualTo("cookieName"));
-            Assert.That(request.Cookies[0].Value, Is.EqualTo("cookieValue"));
-            Assert.That(request.Cookies[0].BinaryValue, Is.Null);
+            Assert.That(request.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
+            Assert.That(request.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
             Assert.That(request.Cookies[0].Domain, Is.EqualTo("cookieDomain"));
             Assert.That(request.Cookies[0].Path, Is.EqualTo("/cookiePath"));
             Assert.That(request.Cookies[0].Secure, Is.True);
