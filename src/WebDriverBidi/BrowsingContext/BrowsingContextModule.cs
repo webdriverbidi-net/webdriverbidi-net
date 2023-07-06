@@ -96,6 +96,16 @@ public sealed class BrowsingContextModule : Module
     public override string ModuleName => BrowsingContextModuleName;
 
     /// <summary>
+    /// Activates a browsing context by bringing it to the foreground.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    public async Task<EmptyResult> Activate(ActivateCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
+    /// <summary>
     /// Captures a screenshot of the current page in the browsing context.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>

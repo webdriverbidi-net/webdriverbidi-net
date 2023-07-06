@@ -6,6 +6,26 @@ using TestUtilities;
 public class BrowsingContextModuleTests
 {
     [Test]
+    public void TestExecuteActivateCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        BrowsingContextModule module = new(driver);
+
+        var task = module.Activate(new ActivateCommandParameters("myContextId"));
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+        
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
     public void TestExecuteCaptureScreenshotCommand()
     {
         TestConnection connection = new();
