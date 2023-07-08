@@ -19,11 +19,13 @@ public class ResponseData
     private string statusText = string.Empty;
     private bool fromCache;
     private List<Header> headers = new();
+    private List<ReadOnlyHeader>? readOnlyHeaders;
     private string mimeType = string.Empty;
     private ulong bytesReceived = 0;
     private ulong? headersSize;
     private ulong? bodySize;
     private ResponseContent content = new();
+    private AuthChallenge? authChallenge;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseData"/> class.
@@ -70,7 +72,19 @@ public class ResponseData
     /// <summary>
     /// Gets the headers of the response.
     /// </summary>
-    public IList<Header> Headers => this.headers.AsReadOnly();
+    public IList<ReadOnlyHeader> Headers
+    {
+        get
+        {
+            this.readOnlyHeaders ??= new();
+            foreach (Header header in this.headers)
+            {
+                this.readOnlyHeaders.Add(new ReadOnlyHeader(header));
+            }
+
+            return this.readOnlyHeaders.AsReadOnly();
+        }
+    }
 
     /// <summary>
     /// Gets the MIME type of the response.
@@ -89,13 +103,13 @@ public class ResponseData
     /// <summary>
     /// Gets the size, in bytes, of the headers in the response.
     /// </summary>
-    [JsonProperty("headersSize")]
+    [JsonProperty("headersSize", Required = Required.AllowNull)]
     public ulong? HeadersSize { get => this.headersSize; internal set => this.headersSize = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the response.
     /// </summary>
-    [JsonProperty("bodySize")]
+    [JsonProperty("bodySize", Required = Required.AllowNull)]
     public ulong? BodySize { get => this.bodySize; internal set => this.bodySize = value; }
 
     /// <summary>
@@ -104,6 +118,12 @@ public class ResponseData
     [JsonProperty("content")]
     [JsonRequired]
     public ResponseContent Content { get => this.content; internal set => this.content = value; }
+
+    /// <summary>
+    /// Gets the authorization challenge in the response, if any.
+    /// </summary>
+    [JsonProperty("authChallenge")]
+    public AuthChallenge? AuthChallenge { get => this.authChallenge; internal set => this.authChallenge = value; }
 
     /// <summary>
     /// Gets or sets the headers of the response for serialization purposes.

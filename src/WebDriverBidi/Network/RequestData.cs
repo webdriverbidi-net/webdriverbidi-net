@@ -17,8 +17,9 @@ public class RequestData
     private string url = string.Empty;
     private string method = string.Empty;
     private List<Header> headers = new();
+    private List<ReadOnlyHeader>? readOnlyHeaders;
     private List<Cookie> cookies = new();
-    private ulong headersSize = 0;
+    private ulong? headersSize;
     private ulong? bodySize;
     private FetchTimingInfo timingInfo = new();
 
@@ -53,7 +54,19 @@ public class RequestData
     /// <summary>
     /// Gets the headers of the request.
     /// </summary>
-    public IList<Header> Headers => this.headers.AsReadOnly();
+    public IList<ReadOnlyHeader> Headers
+    {
+        get
+        {
+            this.readOnlyHeaders ??= new();
+            foreach (Header header in this.headers)
+            {
+                this.readOnlyHeaders.Add(new ReadOnlyHeader(header));
+            }
+
+            return this.readOnlyHeaders.AsReadOnly();
+        }
+    }
 
     /// <summary>
     /// Gets the cookies of the request.
@@ -65,7 +78,7 @@ public class RequestData
     /// </summary>
     [JsonProperty("headersSize")]
     [JsonRequired]
-    public ulong HeadersSize { get => this.headersSize; internal set => this.headersSize = value; }
+    public ulong? HeadersSize { get => this.headersSize; internal set => this.headersSize = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the request.

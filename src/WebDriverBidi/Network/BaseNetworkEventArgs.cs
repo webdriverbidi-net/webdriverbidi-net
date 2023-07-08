@@ -15,10 +15,12 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
 {
     private string? browsingContextId;
     private string? navigationId;
+    private bool isBlocked = false;
     private ulong redirectCount = 0;
     private RequestData request = new();
     private ulong epochTimestamp = 0;
     private DateTime timestamp = DateTime.UnixEpoch;
+    private List<string>? intercepts;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseNetworkEventArgs"/> class.
@@ -30,14 +32,21 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
     /// <summary>
     /// Gets the ID of the browsing context initiating the request.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonProperty("context", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Include)]
     public string? BrowsingContextId { get => this.browsingContextId; internal set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the ID of the navigation initiating the request.
     /// </summary>
-    [JsonProperty("navigation")]
+    [JsonProperty("navigation", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Include)]
     public string? NavigationId { get => this.navigationId; internal set => this.navigationId = value; }
+
+    /// <summary>
+    /// Gets a value indicating whether this request is blocked by a network intercept.
+    /// </summary>
+    [JsonProperty("isBlocked")]
+    [JsonRequired]
+    public bool IsBlocked { get => this.isBlocked; internal set => this.isBlocked = value; }
 
     /// <summary>
     /// Gets the count of redirects for the request.
@@ -52,6 +61,11 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
     [JsonProperty("request")]
     [JsonRequired]
     public RequestData Request { get => this.request; internal set => this.request = value; }
+
+    /// <summary>
+    /// Gets the list of network intercepts for this request.
+    /// </summary>
+    public IList<string>? Intercepts => this.intercepts?.AsReadOnly();
 
     /// <summary>
     /// Gets the timestamp of the navigation in UTC.
@@ -76,4 +90,10 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
             this.timestamp = DateTime.UnixEpoch.AddMilliseconds(value);
         }
     }
+
+    /// <summary>
+    /// Gets or sets the list of intercepts for this request, if any.
+    /// </summary>
+    [JsonProperty("intercepts", NullValueHandling = NullValueHandling.Ignore)]
+    internal List<string>? SerializableIntercepts { get => this.intercepts; set => this.intercepts = value; }
 }

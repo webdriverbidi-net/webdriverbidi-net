@@ -1,4 +1,4 @@
-// <copyright file="Header.cs" company="WebDriverBidi.NET Committers">
+// <copyright file="CookieHeader.cs" company="WebDriverBidi.NET Committers">
 // Copyright (c) WebDriverBidi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -11,25 +11,25 @@ using Newtonsoft.Json;
 /// A header from a request.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
-public class Header
+public class CookieHeader
 {
     private string name = string.Empty;
     private BytesValue value = new(BytesValueType.String, string.Empty);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Header"/> class.
+    /// Initializes a new instance of the <see cref="CookieHeader"/> class.
     /// </summary>
     [JsonConstructor]
-    public Header()
+    public CookieHeader()
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Header"/> class with the specified name and string value.
+    /// Initializes a new instance of the <see cref="CookieHeader"/> class with the specified name and string value.
     /// </summary>
     /// <param name="name">The name of the header.</param>
     /// <param name="value">The string value of the header.</param>
-    public Header(string name, string value)
+    public CookieHeader(string name, string value)
     {
         this.name = name;
         this.value = new BytesValue(BytesValueType.String, value);

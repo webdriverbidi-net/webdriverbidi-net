@@ -111,11 +111,18 @@ public class Cookie
     public bool HttpOnly { get => this.isHttpOnly; internal set => this.isHttpOnly = value; }
 
     /// <summary>
-    /// Gets a value indicating whether the cookie is only available via HTTP headers
-    /// (<see langword="true" />), or if the cookie can be inspected and manipulated
-    /// via JavaScript (<see langword="false" />).
+    /// Gets a value indicating whether the cookie a same site cookie.
     /// </summary>
     [JsonProperty("sameSite")]
     [JsonRequired]
     public CookieSameSiteValue SameSite { get => this.sameSite; internal set => this.sameSite = value; }
+
+    /// <summary>
+    /// Converts this cookie to a <see cref="SetCookieHeader"/>.
+    /// </summary>
+    /// <returns>The SetCookieHeader representing this cookie.</returns>
+    public SetCookieHeader ToSetCookieHeader()
+    {
+        return new SetCookieHeader(this);
+    }
 }

@@ -127,6 +127,31 @@ public class CookieTests
     }
 
     [Test]
+    public void TestCanConvertDeserializeCookieToSetCookieHeader()
+    {
+        DateTime now = DateTime.UtcNow.AddSeconds(10);
+        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string json = @"{ ""name"": ""cookieName"", ""value"":{ ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100, ""expires"": " + milliseconds + @" }";
+        Cookie? cookie = JsonConvert.DeserializeObject<Cookie>(json);
+        Assert.That(cookie, Is.Not.Null);
+        SetCookieHeader header = cookie!.ToSetCookieHeader();
+        Assert.Multiple(() =>
+        {
+            Assert.That(header!.Name, Is.EqualTo("cookieName"));
+            Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
+            Assert.That(header.Value.Value, Is.EqualTo("cookieValue"));
+            Assert.That(header.Domain, Is.EqualTo("cookieDomain"));
+            Assert.That(header.Path, Is.EqualTo("/cookiePath"));
+            Assert.That(header.Secure, Is.False);
+            Assert.That(header.HttpOnly, Is.False);
+            Assert.That(header.SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
+            Assert.That(header.Expires, Is.EqualTo(expireTime));
+            Assert.That(header.MaxAge, Is.Null);
+        });
+    }
+
+    [Test]
     public void TestDeserializeWithMissingNameThrows()
     {
         string json = @"{ ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100 }";

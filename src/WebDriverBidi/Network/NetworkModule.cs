@@ -22,11 +22,17 @@ public sealed class NetworkModule : Module
     public NetworkModule(Driver driver)
         : base(driver)
     {
+        this.RegisterEventInvoker<AuthRequiredEventArgs>("network.authRequired", this.OnAuthRequired);
         this.RegisterEventInvoker<BeforeRequestSentEventArgs>("network.beforeRequestSent", this.OnBeforeRequestSent);
         this.RegisterEventInvoker<FetchErrorEventArgs>("network.fetchError", this.OnFetchError);
         this.RegisterEventInvoker<ResponseStartedEventArgs>("network.responseStarted", this.OnResponseStarted);
         this.RegisterEventInvoker<ResponseCompletedEventArgs>("network.responseCompleted", this.OnResponseCompleted);
     }
+
+    /// <summary>
+    /// Occurs when an authorization required repsonse is received.
+    /// </summary>
+    public event EventHandler<AuthRequiredEventArgs>? AuthRequired;
 
     /// <summary>
     /// Occurs before a network request is sent.
@@ -52,6 +58,86 @@ public sealed class NetworkModule : Module
     /// Gets the module name.
     /// </summary>
     public override string ModuleName => NetworkModuleName;
+
+    /// <summary>
+    /// Adds an intercept for network traffic matching specific phases of the traffic and URL patterns.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    public async Task<AddInterceptCommandResult> AddIntercept(AddInterceptCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<AddInterceptCommandResult>(commandProperties);
+    }
+
+    /// <summary>
+    /// Continues a paused request intercepted by the driver.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    public async Task<EmptyResult> ContinueRequest(ContinueRequestCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
+    /// <summary>
+    /// Continues a paused response intercepted by the driver after the response has been received from the server,
+    /// but before presented to the browser.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    public async Task<EmptyResult> ContinueResponse(ContinueResponseCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
+    /// <summary>
+    /// Continues a paused request intercepted by the driver with authentication information.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    public async Task<EmptyResult> ContinueWithAuth(ContinueWithAuthCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
+    /// <summary>
+    /// Fails a paused request intercepted by the driver.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    public async Task<EmptyResult> FailRequest(FailRequestCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
+    /// <summary>
+    /// Provides a full response for request intercepted by the driver without sending the request to the server.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    public async Task<EmptyResult> ProvideResponse(ProvideResponseCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
+    /// <summary>
+    /// Removes an added intercept for network traffic matching specific phases of the traffic and URL patterns.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    public async Task<EmptyResult> RemoveIntercept(RemoveInterceptCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommand<EmptyResult>(commandProperties);
+    }
+
+    private void OnAuthRequired(EventInfo<AuthRequiredEventArgs> eventData)
+    {
+        if (this.AuthRequired is not null)
+        {
+            AuthRequiredEventArgs eventArgs = eventData.ToEventArgs<AuthRequiredEventArgs>();
+            this.AuthRequired(this, eventArgs);
+        }
+    }
 
     private void OnBeforeRequestSent(EventInfo<BeforeRequestSentEventArgs> eventData)
     {
