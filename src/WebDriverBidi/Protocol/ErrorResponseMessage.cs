@@ -18,7 +18,7 @@ public class ErrorResponseMessage : Message
     /// <summary>
     /// Gets the ID for the command causing this error during execution, if any.
     /// </summary>
-    [JsonProperty("id")]
+    [JsonProperty("id", Required = Required.AllowNull)]
     public long? CommandId { get; internal set; }
 
     /// <summary>
