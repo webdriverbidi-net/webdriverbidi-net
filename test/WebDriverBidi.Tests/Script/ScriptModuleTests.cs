@@ -12,7 +12,7 @@ public class ScriptModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -45,7 +45,7 @@ public class ScriptModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -81,7 +81,7 @@ public class ScriptModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -114,7 +114,7 @@ public class ScriptModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stacktrace"": { ""callFrames"": [] } } } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -150,7 +150,7 @@ public class ScriptModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""realms"": [ { ""realm"": ""myRealmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContextId"" } ] } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""realms"": [ { ""realm"": ""myRealmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContextId"" } ] } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -184,7 +184,7 @@ public class ScriptModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -218,7 +218,7 @@ public class ScriptModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""window"", ""context"": ""myContext"", ""origin"": ""myOrigin"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""window"", ""context"": ""myContext"", ""origin"": ""myOrigin"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
@@ -243,7 +243,7 @@ public class ScriptModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": ""myOrigin"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": ""myOrigin"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
@@ -263,7 +263,7 @@ public class ScriptModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""script.realmDestroyed"", ""params"": { ""realm"": ""myRealm"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmDestroyed"", ""params"": { ""realm"": ""myRealm"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
@@ -290,7 +290,7 @@ public class ScriptModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""script.message"", ""params"": { ""channel"": ""myChannel"", ""data"": { ""type"": ""string"", ""value"": ""myChannelValue"" }, ""source"": { ""realm"": ""myRealm"" } } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""script.message"", ""params"": { ""channel"": ""myChannel"", ""data"": { ""type"": ""string"", ""value"": ""myChannelValue"" }, ""source"": { ""realm"": ""myRealm"" } } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
@@ -302,7 +302,7 @@ public class ScriptModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""script"": ""loadScriptId"" } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""script"": ""loadScriptId"" } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -323,7 +323,7 @@ public class ScriptModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 

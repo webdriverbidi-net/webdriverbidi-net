@@ -25,12 +25,14 @@ public class ErrorResponseMessage : Message
     /// Gets the type of error encountered.
     /// </summary>
     [JsonProperty("error")]
+    [JsonRequired]
     public string ErrorType { get => this.error; internal set => this.error = value; }
 
     /// <summary>
     /// Gets the message of the error.
     /// </summary>
     [JsonProperty("message")]
+    [JsonRequired]
     public string ErrorMessage { get => this.message; internal set => this.message = value; }
 
     /// <summary>

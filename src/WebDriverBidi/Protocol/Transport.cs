@@ -300,86 +300,21 @@ public class Transport
 
         if (message is not null)
         {
-            if (message.ContainsKey("id"))
+            JToken? messageTypeToken = message["type"];
+            if (messageTypeToken is not null && messageTypeToken.Type == JTokenType.String)
             {
-                // Note: We have already determined there is a property named "id",
-                // so the token cannot be null. Use the null-forgiving operator to
-                // suppress the compiler warning.
-                JToken? idToken = message["id"];
-                if (idToken!.Type != JTokenType.Null)
+                string messageType = messageTypeToken.Value<string>()!;
+                if (messageType == "success")
                 {
-                    long? responseId = message["id"]!.Value<long>();
-                    if (this.pendingCommands.ContainsKey(responseId.Value))
-                    {
-                        if (this.pendingCommands.TryGetValue(responseId.Value, out Command? executedCommand))
-                        {
-                            try
-                            {
-                                if (message.ContainsKey("result"))
-                                {
-                                    CommandResponseMessage? response = message.ToObject(executedCommand.ResponseType) as CommandResponseMessage;
-                                    executedCommand.Result = response!.Result;
-                                    executedCommand.Result.AdditionalData = response.AdditionalData;
-                                    isProcessed = true;
-                                }
-                                else if (message.ContainsKey("error"))
-                                {
-                                    ErrorResponseMessage? response = message.ToObject<ErrorResponseMessage>();
-                                    executedCommand.Result = response!.GetErrorResponseData();
-                                    isProcessed = true;
-                                }
-                                else
-                                {
-                                    throw new WebDriverBidiException("Response contained neither result nor error");
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                executedCommand.ThrownException = ex;
-                            }
-                            finally
-                            {
-                                executedCommand.SynchronizationEvent.Set();
-                            }
-                        }
-                    }
+                    isProcessed = this.ProcessCommandResponseMessage(message);
                 }
-                else if (message.ContainsKey("error"))
+                else if (messageType == "error")
                 {
-                    try
-                    {
-                        // This is an error response, not connected to a command.
-                        ErrorResponseMessage? unexpectedError = message.ToObject<ErrorResponseMessage>();
-                        isProcessed = true;
-                        this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(unexpectedError!.GetErrorResponseData()));
-                    }
-                    catch (Exception e)
-                    {
-                        this.Log($"Unexpected error parsing error JSON: {e.Message}", WebDriverBidiLogLevel.Error);
-                    }
+                    isProcessed = this.ProcessErrorMessage(message);
                 }
-            }
-            else if (message.ContainsKey("method") && message.ContainsKey("params"))
-            {
-                // There must be a property named "method", so eventName cannot
-                // be null. Use the null forgiving operator to suppress the
-                // compiler warning.
-                string? eventName = message["method"]!.Value<string>();
-                if (eventName is not null)
+                else if (messageType == "event")
                 {
-                    if (this.eventMessageTypes.ContainsKey(eventName))
-                    {
-                        try
-                        {
-                            EventMessage? eventMessageData = message.ToObject(this.eventMessageTypes[eventName]) as EventMessage;
-                            isProcessed = true;
-                            this.OnProtocolEventReceived(this, new EventReceivedEventArgs(eventMessageData!));
-                        }
-                        catch (JsonException e)
-                        {
-                            this.Log($"Unexpected error parsing event JSON: {e.Message}", WebDriverBidiLogLevel.Error);
-                        }
-                    }
+                    isProcessed = this.ProcessEventMessage(message);
                 }
             }
         }
@@ -388,6 +323,90 @@ public class Transport
         {
             this.OnProtocolUnknownMessageReceived(this, new UnknownMessageReceivedEventArgs(messageData));
         }
+    }
+
+    private bool ProcessCommandResponseMessage(JObject message)
+    {
+        JToken? idToken = message["id"];
+        if (idToken is not null && idToken.Type == JTokenType.Integer)
+        {
+            long responseId = idToken.Value<long>()!;
+            if (this.pendingCommands.TryGetValue(responseId, out Command? executedCommand))
+            {
+                try
+                {
+                    if (message.ToObject(executedCommand.ResponseType) is CommandResponseMessage response)
+                    {
+                        executedCommand.Result = response.Result;
+                        executedCommand.Result.AdditionalData = response.AdditionalData;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    executedCommand.ThrownException = new WebDriverBidiException($"Response did not contain properly formed JSON for response type (response JSON:{message})", ex);
+                }
+
+                executedCommand.SynchronizationEvent.Set();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool ProcessErrorMessage(JObject message)
+    {
+        try
+        {
+            // If the message doesn't match the schema of an actual error message,
+            // an exception will be thrown by the JSON serializer, and we can log
+            // the malformed response.
+            ErrorResponseMessage errorMessage = message.ToObject<ErrorResponseMessage>()!;
+            if (errorMessage.CommandId.HasValue && this.pendingCommands.TryGetValue(errorMessage.CommandId.Value, out Command? executedCommand))
+            {
+                executedCommand.Result = errorMessage.GetErrorResponseData();
+                executedCommand.SynchronizationEvent.Set();
+            }
+            else
+            {
+                this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(errorMessage.GetErrorResponseData()));
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            this.Log($"Unexpected error parsing error JSON: {ex.Message} (JSON: {message})", WebDriverBidiLogLevel.Error);
+        }
+
+        return false;
+    }
+
+    private bool ProcessEventMessage(JObject message)
+    {
+        JToken? eventNameToken = message["method"];
+        if (eventNameToken is not null && eventNameToken.Type == JTokenType.String)
+        {
+            string eventName = eventNameToken.Value<string>()!;
+            if (this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
+            {
+                try
+                {
+                    // If the message doesn't match the schema of the specified event args type,
+                    // an exception will be thrown by the JSON serializer, and we can log
+                    // the malformed response.
+                    EventMessage? eventMessageData = message.ToObject(eventMessageType) as EventMessage;
+                    this.OnProtocolEventReceived(this, new EventReceivedEventArgs(eventMessageData!));
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    this.Log($"Unexpected error parsing event JSON: {ex.Message} (JSON: {message})", WebDriverBidiLogLevel.Error);
+                }
+            }
+        }
+
+        return false;
     }
 
     private async Task ShutdownMessageQueue()

@@ -36,7 +36,7 @@ public class ModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.Multiple(() =>

@@ -11,7 +11,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -31,7 +31,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""data"": ""encodedScreenshotData"" } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""data"": ""encodedScreenshotData"" } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -52,7 +52,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -72,7 +72,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""context"": ""myContext"" } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""context"": ""myContext"" } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -93,7 +93,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""contexts"": [ { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } ] } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""contexts"": [ { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } ] } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -120,7 +120,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -140,7 +140,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -165,7 +165,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""data"": ""encodedPdf"" } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""data"": ""encodedPdf"" } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -186,7 +186,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -211,7 +211,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -244,7 +244,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.contextCreated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.contextCreated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -269,7 +269,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.contextDestroyed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.contextDestroyed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""children"": [] } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -296,7 +296,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.domContentLoaded"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.domContentLoaded"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -323,7 +323,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.downloadWillBegin"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.downloadWillBegin"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -350,7 +350,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.fragmentNavigated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.fragmentNavigated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -377,7 +377,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -404,7 +404,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.navigationAborted"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.navigationAborted"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -431,7 +431,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.navigationFailed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.navigationFailed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -458,7 +458,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.navigationStarted"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.navigationStarted"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -482,7 +482,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.userPromptClosed"", ""params"": { ""context"": ""myContext"", ""accepted"": true, ""userText"": ""my prompt text"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.userPromptClosed"", ""params"": { ""context"": ""myContext"", ""accepted"": true, ""userText"": ""my prompt text"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -506,7 +506,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""method"": ""browsingContext.userPromptOpened"", ""params"": { ""context"": ""myContext"", ""type"": ""confirm"", ""message"": ""my message text"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.userPromptOpened"", ""params"": { ""context"": ""myContext"", ""type"": ""confirm"", ""message"": ""my message text"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);

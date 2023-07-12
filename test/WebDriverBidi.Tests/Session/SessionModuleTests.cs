@@ -12,7 +12,7 @@ public class SessionModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""ready"": true, ""message"": ""ready for connection"" } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""ready"": true, ""message"": ""ready for connection"" } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -35,7 +35,7 @@ public class SessionModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -57,7 +57,7 @@ public class SessionModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -79,7 +79,7 @@ public class SessionModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""additionalCapName"": ""additionalCapValue"" } } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""additionalCapName"": ""additionalCapValue"" } } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -115,7 +115,7 @@ public class SessionModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 

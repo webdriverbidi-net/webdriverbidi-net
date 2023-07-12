@@ -33,7 +33,7 @@ public class DriverTests
         var task = Task.Run(() => driver.ExecuteCommand<TestCommandResult>(command));
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
 
-        connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""result"": { ""value"": ""command result value"" } }");
+        connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""command result value"" } }");
         task.Wait(TimeSpan.FromSeconds(3));
         Assert.That(task.Result.Value, Is.EqualTo("command result value"));
     }
@@ -58,7 +58,7 @@ public class DriverTests
         {
             var task = Task.Run(() => driver.ExecuteCommand<TestCommandResult>(command));
             syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
-            connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
             task.Wait(TimeSpan.FromSeconds(3));
         }, Throws.InstanceOf<AggregateException>().With.InnerException.TypeOf<WebDriverBidiException>().With.Message.Contains("'unknown command' error executing command module.command: This is a test error message"));
     }
@@ -78,7 +78,7 @@ public class DriverTests
             syncEvent.Set();
         };
 
-        connection.RaiseDataReceivedEvent(@"{ ""id"": null, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+        connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
 
         Assert.That(response, Is.Not.Null);
@@ -109,7 +109,7 @@ public class DriverTests
             syncEvent.Set();
         };
 
-        connection.RaiseDataReceivedEvent(@"{ ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -144,7 +144,7 @@ public class DriverTests
             syncEvent.Set();
         };
 
-        connection.RaiseDataReceivedEvent(@"{ ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         await driver.Stop();
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
@@ -173,7 +173,7 @@ public class DriverTests
             syncEvent.Set();
         };
 
-        string serialized = @"{ ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string serialized = @"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }";
         connection.RaiseDataReceivedEvent(serialized);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.That(receivedMessage, Is.EqualTo(serialized));
@@ -379,7 +379,7 @@ public class DriverTests
 
             // This payload omits the required "timestamp" field, which should cause an exception
             // in parsing.
-            await server.SendData(connectionId, @"{ ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
+            await server.SendData(connectionId, @"{ ""type"": ""event"", ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.Multiple(() =>
             {
@@ -442,7 +442,7 @@ public class DriverTests
 
             // This payload uses an object for the error field, which should cause an exception
             // in parsing.
-            await server.SendData(connectionId, @"{ ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
+            await server.SendData(connectionId, @"{ ""type"": ""error"", ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
@@ -501,7 +501,7 @@ public class DriverTests
 
             // This payload uses unparsable JSON, which should cause an exception
             // in parsing.
-            await server.SendData(connectionId, @"{ ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
+            await server.SendData(connectionId, @"{ ""type"": ""error"", ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>

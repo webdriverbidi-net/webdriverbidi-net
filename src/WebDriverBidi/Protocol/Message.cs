@@ -14,9 +14,16 @@ using WebDriverBidi.JsonConverters;
 [JsonObject(MemberSerialization.OptIn)]
 public class Message
 {
+    private string type = string.Empty;
     private Dictionary<string, object?> writableAdditionalData = new();
-
     private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
+
+    /// <summary>
+    /// Gets the type of message.
+    /// </summary>
+    [JsonProperty("type")]
+    [JsonRequired]
+    public string Type { get => this.type; internal set => this.type = value; }
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.

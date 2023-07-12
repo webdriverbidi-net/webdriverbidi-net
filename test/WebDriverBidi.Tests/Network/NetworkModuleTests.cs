@@ -52,6 +52,7 @@ public class NetworkModuleTests
         };
 
         string eventJson = @"{
+    ""type"": ""event"", 
     ""method"": ""network.beforeRequestSent"",
     ""params"": {
         ""context"": ""myContext"",
@@ -161,6 +162,7 @@ public class NetworkModuleTests
         };
 
         string eventJson = @"{
+    ""type"": ""event"", 
     ""method"": ""network.fetchError"",
     ""params"": {
         ""context"": ""myContext"",
@@ -281,6 +283,7 @@ public class NetworkModuleTests
         };
 
         string eventJson = @"{
+    ""type"": ""event"", 
     ""method"": ""network.responseStarted"",
     ""params"": {
         ""context"": ""myContext"",
@@ -423,6 +426,7 @@ public class NetworkModuleTests
         };
 
         string eventJson = @"{
+    ""type"": ""event"", 
     ""method"": ""network.responseCompleted"",
     ""params"": {
         ""context"": ""myContext"",

@@ -1,5 +1,6 @@
 namespace WebDriverBidi.Protocol;
 
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TestUtilities;
 using PinchHitter;
@@ -7,6 +8,29 @@ using PinchHitter;
 [TestFixture]
 public class TransportTests
 {
+    [Test]
+    public async Task TestTransportCanSendCommandAndWaitForResult()
+    {
+        string commandName = "module.command";
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            Task.Delay(TimeSpan.FromMilliseconds(50));
+            connection.RaiseDataReceivedEvent($@"{{ ""type"": ""success"", ""id"": {e.SentCommandId}, ""result"": {{ ""value"": ""response value"" }} }}");
+        };
+
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        TestCommand command = new(commandName);
+        CommandResult actualResult = await transport.SendCommandAndWait(command);
+        Assert.Multiple(() =>
+        {
+            Assert.That(actualResult.IsError, Is.False);
+            Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
+        });
+        var convertedResult = actualResult as TestCommandResult;
+        Assert.That(convertedResult!.Value, Is.EqualTo("response value"));
+    }
+
     [Test]
     public async Task TestTransportCanSendCommand()
     {
@@ -44,7 +68,7 @@ public class TransportTests
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""result"": { ""value"": ""response value"" } }");
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
         });
         transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
     }
@@ -81,7 +105,7 @@ public class TransportTests
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""result"": { ""value"": ""response value"" } }");
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
         });
         transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
         var actualResult = transport.GetCommandResponse(1);
@@ -106,7 +130,7 @@ public class TransportTests
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""result"": { ""value"": ""response value"" }, ""extraDataName"": ""extraDataValue"" }");
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" }, ""extraDataName"": ""extraDataValue"" }");
         });
         transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
         var actualResult = transport.GetCommandResponse(1);
@@ -136,7 +160,7 @@ public class TransportTests
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         });
         transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
         var actualResult = transport.GetCommandResponse(1);
@@ -174,10 +198,10 @@ public class TransportTests
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""id"": 1, ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" }");
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
         });
         transport.WaitForCommandComplete(1, TimeSpan.FromSeconds(250));
-        Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Response contained neither result nor error"));
+        Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
    }
 
     [Test]
@@ -207,7 +231,7 @@ public class TransportTests
             receivedData = e.EventData;
             syncEvent.Set();
         };
-        connection.RaiseDataReceivedEvent(@"{ ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.Multiple(() =>
         {
@@ -230,7 +254,7 @@ public class TransportTests
             receivedData = e.ErrorData;
             syncEvent.Set();
         };
-        connection.RaiseDataReceivedEvent(@"{ ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }");
+        connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }");
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
         Assert.That(receivedData, Is.TypeOf<ErrorResult>());
@@ -258,7 +282,7 @@ public class TransportTests
         transport.ErrorEventReceived += (object? sender, ErrorReceivedEventArgs e) =>
         {
         };
-        connection.RaiseDataReceivedEvent(@"{ ""method"": null }");
+        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": null }");
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -279,6 +303,330 @@ public class TransportTests
         {
             Assert.That(logs[0].Message, Is.EqualTo("test log message"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Warn));
+        });
+    }
+
+    [Test]
+    public void TestTransportLogsMalformedJsonMessages()
+    {
+        ManualResetEventSlim syncEvent = new(false);
+        List<LogMessageEventArgs> logs = new();
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.LogMessage += (sender, e) =>
+        {
+            logs.Add(e);
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent("{ { }");
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(logs, Has.Count.EqualTo(1));
+            Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing JSON message"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Error));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventWithMissingMessageType()
+    {
+        string json = @"{ ""id"": 1, ""result"": { ""value"": ""response value"" } }";
+        string loggedEvent = string.Empty;
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventWithInvalidMessageTypeValue()
+    {
+        string json = @"{ ""type"": ""invalid"", ""id"": 1, ""result"": { ""value"": ""response value"" } }";
+        string loggedEvent = string.Empty;
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForSuccessMessageWithMissingId()
+    {
+        string json = @"{ ""type"": ""success"", ""result"": { ""value"": ""response value"" } }";
+        string loggedEvent = string.Empty;
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForSuccessMessageWitInvalidIdDataType()
+    {
+        string json = @"{ ""type"": ""success"", ""id"": true, ""result"": { ""value"": ""response value"" } }";
+        string loggedEvent = string.Empty;
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForSuccessMessageWitInvalidIdValue()
+    {
+        string json = @"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }";
+        string loggedEvent = string.Empty;
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingId()
+    {
+        string json = @"{ ""type"": ""error"", ""error"": ""unknown error"", ""message"": ""This is a test error message"" }";
+        string loggedEvent = string.Empty;
+        List<LogMessageEventArgs> logs = new();
+        CountdownEvent signaler = new(2);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            signaler.Signal();
+        };
+        transport.LogMessage += (sender, e) =>
+        {
+            logs.Add(e);
+            signaler.Signal();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+            Assert.That(logs, Has.Count.EqualTo(1));
+            Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing error JSON"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Error));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingErrorProperty()
+    {
+        string json = @"{ ""type"": ""error"", ""id"": null, ""message"": ""This is a test error message"" }";
+        string loggedEvent = string.Empty;
+        List<LogMessageEventArgs> logs = new();
+        CountdownEvent signaler = new(2);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            signaler.Signal();
+        };
+        transport.LogMessage += (sender, e) =>
+        {
+            logs.Add(e);
+            signaler.Signal();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+            Assert.That(logs, Has.Count.EqualTo(1));
+            Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing error JSON"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Error));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingMessageProperty()
+    {
+        string json = @"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown error"" }";
+        string loggedEvent = string.Empty;
+        List<LogMessageEventArgs> logs = new();
+        CountdownEvent signaler = new(2);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            signaler.Signal();
+        };
+        transport.LogMessage += (sender, e) =>
+        {
+            logs.Add(e);
+            signaler.Signal();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+            Assert.That(logs, Has.Count.EqualTo(1));
+            Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing error JSON"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Error));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForEventMessageWithMissingMethod()
+    {
+        string json = @"{ ""type"": ""event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string loggedEvent = string.Empty;
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForEventMessageWithMissingParams()
+    {
+        string json = @"{ ""type"": ""event"", ""method"": ""protocol.event"" }";
+        string loggedEvent = string.Empty;
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForEventMessageWithUnregisteredEventMethod()
+    {
+        string json = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string loggedEvent = string.Empty;
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            syncEvent.Set();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+        });
+    }
+
+    [Test]
+    public void TestTransportRaisesUnknownMessageEventForEventMessageWithUnmatchingEventParameters()
+    {
+        string json = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""invalidParamName"": ""paramValue"" } }";
+        string loggedEvent = string.Empty;
+        List<LogMessageEventArgs> logs = new();
+        CountdownEvent signaler = new(2);
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.UnknownMessageReceived += (sender, e) =>
+        {
+            loggedEvent = e.Message;
+            signaler.Signal();
+        };
+        transport.LogMessage += (sender, e) =>
+        {
+            logs.Add(e);
+            signaler.Signal();
+        };
+        connection.RaiseDataReceivedEvent(json);
+        bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+            Assert.That(logs, Has.Count.EqualTo(1));
+            Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing event JSON"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBidiLogLevel.Error));
         });
     }
 
@@ -304,7 +652,7 @@ public class TransportTests
     }
 
     [Test]
-    public void TestCanDetectExsitingCommandId()
+    public void TestCanDetectExistingCommandId()
     {
         CommandParameters command = new TestCommand("test.commmand");
         TestTransport transport = new(TimeSpan.FromMilliseconds(100), new TestConnection());
@@ -331,7 +679,7 @@ public class TransportTests
             receivedData = e.EventData;
             syncEvent.Set();
         };
-        connection.RaiseDataReceivedEvent(@"{ ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         await transport.Disconnect();
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);

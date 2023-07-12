@@ -11,7 +11,7 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""id"": " + e.SentCommandId + @", ""result"": { } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
