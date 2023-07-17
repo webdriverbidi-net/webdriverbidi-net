@@ -323,7 +323,7 @@ public class ConnectionTests
         {
             $"Opening connection to URL ws://localhost:{this.server.Port}",
             "Connection opened",
-            "Acknowledging Close frame received from server",
+            "Acknowledging Close frame received from server (client state: CloseReceived)",
             "Ending processing loop in state Closed",
             "Closing connection",
             "Socket already closed (Socket state: Closed)"
