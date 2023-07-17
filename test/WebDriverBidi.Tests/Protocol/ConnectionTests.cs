@@ -9,7 +9,7 @@ public class ConnectionTests
 {
     private Server? server;
     private string lastServerReceivedData = string.Empty;
-    private string lastConnnectionReceivedData = string.Empty;
+    private string lastConnectionReceivedData = string.Empty;
     private string connectionId = string.Empty;
     private readonly AutoResetEvent serverReceiveSyncEvent = new(false);
     private readonly AutoResetEvent connectionReceiveSyncEvent = new(false);
@@ -20,7 +20,7 @@ public class ConnectionTests
     {
         this.connectionId = string.Empty;
         this.lastServerReceivedData = string.Empty;
-        this.lastConnnectionReceivedData = string.Empty;
+        this.lastConnectionReceivedData = string.Empty;
         this.connectionReceiveSyncEvent.Reset();
         this.serverReceiveSyncEvent.Reset();
         this.connectionSyncEvent.Reset();
@@ -418,7 +418,7 @@ public class ConnectionTests
 
     private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
-        this.lastConnnectionReceivedData = e.Data;
+        this.lastConnectionReceivedData = e.Data;
         this.connectionReceiveSyncEvent.Set();
     }
 
@@ -437,7 +437,7 @@ public class ConnectionTests
     private string WaitForConnectionToReceiveData(TimeSpan timeout)
     {
         this.connectionReceiveSyncEvent.WaitOne(timeout);
-        return this.lastConnnectionReceivedData;
+        return this.lastConnectionReceivedData;
     }
 
     private string WaitForServerToReceiveData(TimeSpan timeout)

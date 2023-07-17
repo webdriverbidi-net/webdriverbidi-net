@@ -92,7 +92,7 @@ public class Connection
             {
                 // If the server-side socket is not yet ready, it leaves the client socket in a closed state,
                 // which sees the object as disposed, so we must create a new one to try again
-                await Task.Delay(500);
+                await Task.Delay(TimeSpan.FromMilliseconds(500));
                 this.client = new ClientWebSocket();
             }
         }
@@ -123,7 +123,7 @@ public class Connection
             await this.CloseClientWebSocket();
         }
 
-        // Whether we closed the socket or timed out, we cancel the token causing RecieveAsync to abort the socket.
+        // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket.
         // The finally block at the end of the processing loop will dispose of the ClientWebSocket object.
         this.clientTokenSource.Cancel();
         this.dataReceiveTask?.Wait();
@@ -165,7 +165,7 @@ public class Connection
         }
         catch (OperationCanceledException)
         {
-            // An OperationCanceledExcetption is normal upon task/token cancellation, so disregard it
+            // An OperationCanceledException is normal upon task/token cancellation, so disregard it
         }
     }
 
@@ -207,8 +207,9 @@ public class Connection
                 // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    // The server is notifying us that the connection will close; send acknowledgement
-                    if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed)
+                    // The server is notifying us that the connection will close, and we did
+                    // not initiate the close; send acknowledgement
+                    if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
                     {
                         this.Log($"Acknowledging Close frame received from server", WebDriverBidiLogLevel.Info);
                         await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None);
@@ -239,7 +240,7 @@ public class Connection
         }
         catch (OperationCanceledException)
         {
-            // An OperationCanceledExcetption is normal upon task/token cancellation, so disregard it
+            // An OperationCanceledException is normal upon task/token cancellation, so disregard it
         }
         catch (WebSocketException e)
         {
