@@ -89,7 +89,10 @@ reviewed.
 Some useful plugins in your Visual Studio Code environment for this project are:
 * [.NET Core Test Explorer](https://marketplace.visualstudio.com/items?itemName=formulahendry.dotnet-test-explorer):
 This plugin allows one to execute any or all of the unit tests from within the IDE. By changing the settings
-of the plugin to add `/p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=../coverage/lcov` to
-the test arguments, code coverage data can be collected locally when the tests are executed using the explorer.
+of the plugin to add
+<!-- spell-checker: disable -->
+`/p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=../coverage/lcov`
+<!-- spell-checker: ensable -->
+to the test arguments, code coverage data can be collected locally when the tests are executed using the explorer.
 * [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters):
 This plugin allows visualization of code coverage directly within the IDE.
