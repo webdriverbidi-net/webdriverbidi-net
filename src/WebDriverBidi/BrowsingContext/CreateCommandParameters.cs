@@ -16,6 +16,7 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     private CreateType createType;
 
     private string? referenceContextId;
+    private bool? background;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateCommandParameters" /> class.
@@ -42,4 +43,10 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     /// </summary>
     [JsonProperty("referenceContext", NullValueHandling = NullValueHandling.Ignore)]
     public string? ReferenceContextId { get => this.referenceContextId; set => this.referenceContextId = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to create the new browsing context in the background.
+    /// </summary>
+    [JsonProperty("background", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? IsCreatedInBackground { get => this.background; set => this.background = value; }
 }
