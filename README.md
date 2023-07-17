@@ -92,7 +92,7 @@ This plugin allows one to execute any or all of the unit tests from within the I
 of the plugin to add
 <!-- spell-checker: disable -->
 `/p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=../coverage/lcov`
-<!-- spell-checker: ensable -->
+<!-- spell-checker: enable -->
 to the test arguments, code coverage data can be collected locally when the tests are executed using the explorer.
 * [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters):
 This plugin allows visualization of code coverage directly within the IDE.
