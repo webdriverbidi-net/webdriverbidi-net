@@ -81,7 +81,7 @@ public class Driver
     public BrowsingContextModule BrowsingContext => this.GetModule<BrowsingContextModule>(BrowsingContextModule.BrowsingContextModuleName);
 
     /// <summary>
-    /// Gets the sessiom module as described in the WebDriver Bidi protocol.
+    /// Gets the session module as described in the WebDriver Bidi protocol.
     /// </summary>
     public SessionModule Session => this.GetModule<SessionModule>(SessionModule.SessionModuleName);
 

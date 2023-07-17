@@ -22,7 +22,7 @@ public class EventMessage<T> : EventMessage
     public override object EventData => this.data!;
 
     /// <summary>
-    /// Gets the data of the event for serialization purpopses.
+    /// Gets the data of the event for serialization purposes.
     /// </summary>
     [JsonProperty("params")]
     [JsonRequired]

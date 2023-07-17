@@ -20,7 +20,7 @@ public enum ShadowRootMode
     Open,
 
     /// <summary>
-    /// Shaodw root is closed.
+    /// Shadow root is closed.
     /// </summary>
     Closed,
 }

@@ -599,7 +599,7 @@ public class TransportTests
     }
 
     [Test]
-    public void TestTransportRaisesUnknownMessageEventForEventMessageWithUnmatchingEventParameters()
+    public void TestTransportRaisesUnknownMessageEventForEventMessageWithMismatchingEventParameters()
     {
         string json = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""invalidParamName"": ""paramValue"" } }";
         string loggedEvent = string.Empty;
@@ -654,7 +654,7 @@ public class TransportTests
     [Test]
     public void TestCanDetectExistingCommandId()
     {
-        CommandParameters command = new TestCommand("test.commmand");
+        CommandParameters command = new TestCommand("test.command");
         TestTransport transport = new(TimeSpan.FromMilliseconds(100), new TestConnection());
         long commandId = transport.LastTestCommandId + 1;
         transport.AddTestCommand(new Command(commandId, command));

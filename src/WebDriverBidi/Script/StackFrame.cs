@@ -31,7 +31,7 @@ public class StackFrame
     public string FunctionName { get => this.functionName; internal set => this.functionName = value; }
 
     /// <summary>
-    /// Gets the line nubmer for this stack frame.
+    /// Gets the line number for this stack frame.
     /// </summary>
     [JsonProperty("lineNumber")]
     [JsonRequired]

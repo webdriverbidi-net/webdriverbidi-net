@@ -23,7 +23,7 @@ public class CommandResponseMessage<T> : CommandResponseMessage
     public override CommandResult Result => this.result!;
 
     /// <summary>
-    /// Gets the result of the command for serialization purpopses.
+    /// Gets the result of the command for serialization purposes.
     /// </summary>
     [JsonProperty("result")]
     [JsonRequired]

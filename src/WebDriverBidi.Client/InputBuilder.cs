@@ -21,9 +21,9 @@ public class InputBuilder
     /// <returns>The key-based input source.</returns>
     public KeyInputSource CreateKeyInputSource()
     {
-        // When created, the input source action list is prepopulated with the number of
+        // When created, the input source action list is pre-populated with the number of
         // pause actions equal to the number of the current longest action sequence. This
-        // ensures that the action sequences of all input sources are synchonized.
+        // ensures that the action sequences of all input sources are synchronized.
         KeySourceActions source = new();
         source.Actions.AddRange(this.CreatePauseActions());
         this.sources[source.Id] = source;
@@ -37,9 +37,9 @@ public class InputBuilder
     /// <returns>The pointer input source.</returns>
     public PointerInputSource CreatePointerInputSource(PointerType pointerType)
     {
-        // When created, the input source action list is prepopulated with the number of
+        // When created, the input source action list is pre-populated with the number of
         // pause actions equal to the number of the current longest action sequence. This
-        // ensures that the action sequences of all input sources are synchonized.
+        // ensures that the action sequences of all input sources are synchronized.
         PointerSourceActions source = new()
         {
             Parameters = new PointerParameters()
@@ -59,9 +59,9 @@ public class InputBuilder
     /// <returns>The wheel input source.</returns>
     public WheelInputSource CreateWheelInputSource()
     {
-        // When created, the input source action list is prepopulated with the number of
+        // When created, the input source action list is pre-populated with the number of
         // pause actions equal to the number of the current longest action sequence. This
-        // ensures that the action sequences of all input sources are synchonized.
+        // ensures that the action sequences of all input sources are synchronized.
         WheelSourceActions source = new();
         source.Actions.AddRange(this.CreatePauseActions());
         this.sources[source.Id] = source;

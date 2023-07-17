@@ -101,7 +101,7 @@ public class Transport
     }
 
     /// <summary>
-    /// Asyncronously disconnects from the remote end web socket.
+    /// Asynchronously disconnects from the remote end web socket.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task Disconnect()
@@ -124,7 +124,7 @@ public class Transport
     }
 
     /// <summary>
-    /// Asynchonously sends a command to the remote end.
+    /// Asynchronously sends a command to the remote end.
     /// </summary>
     /// <param name="command">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
@@ -168,7 +168,7 @@ public class Transport
     /// </summary>
     /// <param name="commandId">The ID of the command for which to get the response.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBidiException">Thrown if the command result could not be retreived, or if the command result is not valid.</exception>
+    /// <exception cref="WebDriverBidiException">Thrown if the command result could not be retrieved, or if the command result is not valid.</exception>
     public virtual CommandResult GetCommandResponse(long commandId)
     {
         if (this.pendingCommands.TryRemove(commandId, out Command? command))
@@ -223,7 +223,7 @@ public class Transport
     }
 
     /// <summary>
-    /// Raises the EventRecived event.
+    /// Raises the EventReceived event.
     /// </summary>
     /// <param name="sender">The object raising the event.</param>
     /// <param name="e">The EventArgs containing information about the event.</param>
@@ -236,7 +236,7 @@ public class Transport
     }
 
     /// <summary>
-    /// Raises the ErrorEventRecieved event.
+    /// Raises the ErrorEventReceived event.
     /// </summary>
     /// <param name="sender">The object raising the event.</param>
     /// <param name="e">The EventArgs containing information about the event.</param>

@@ -6,7 +6,7 @@ using WebDriverBidi.TestUtilities;
 public class NetworkModuleTests
 {
     [Test]
-    public void TestCanRecieveBeforeRequestSendEvent()
+    public void TestCanReceiveBeforeRequestSendEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -116,7 +116,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestCanRecieveFetchErrorEvent()
+    public void TestCanReceiveFetchErrorEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -224,7 +224,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestCanRecieveResponseStartedEvent()
+    public void TestCanReceiveResponseStartedEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -367,7 +367,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestCanRecieveResponseCompletedEvent()
+    public void TestCanReceiveResponseCompletedEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));

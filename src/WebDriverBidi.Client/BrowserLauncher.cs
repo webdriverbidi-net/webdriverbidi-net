@@ -35,7 +35,7 @@ public abstract class BrowserLauncher
     /// <param name="launcherExecutablePath">The path to the directory containing the launcher executable.</param>
     /// <param name="launcherExecutableName">The name of the launcher executable.</param>
     /// <param name="port">The port on which the launcher executable should listen for connections.</param>
-    /// <param name="browserExecutableLocation">The path containing the directory and file name of the browser executable. Derault to an empty string, indicating to use the default installed browser.</param>
+    /// <param name="browserExecutableLocation">The path containing the directory and file name of the browser executable. Default to an empty string, indicating to use the default installed browser.</param>
     protected BrowserLauncher(string launcherExecutablePath, string launcherExecutableName, int port, string browserExecutableLocation = "")
     {
         this.launcherPath = launcherExecutablePath;
@@ -314,12 +314,12 @@ public abstract class BrowserLauncher
 
         if (string.IsNullOrEmpty(this.sessionId))
         {
-            throw new BrowserNotLaunchedException($"Unable to launch browser. Could not dectect session ID in WebDriver classic new session response (response JSON: {responseJson})");
+            throw new BrowserNotLaunchedException($"Unable to launch browser. Could not detect session ID in WebDriver classic new session response (response JSON: {responseJson})");
         }
 
         if (string.IsNullOrEmpty(this.webSocketUrl))
         {
-            throw new BrowserNotLaunchedException($"Unable to connect to WebSocket. Launched browse may not supoort the WebDriver BiDi protocol (response JSON: {responseJson})");
+            throw new BrowserNotLaunchedException($"Unable to connect to WebSocket. Launched browse may not support the WebDriver BiDi protocol (response JSON: {responseJson})");
         }
     }
 
@@ -421,7 +421,7 @@ public abstract class BrowserLauncher
                 using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/status");
 
                 // Checking the response from the 'status' end point. Note that we are simply checking
-                // that the HTTP status returned is a 200 status, and that the resposne has the correct
+                // that the HTTP status returned is a 200 status, and that the response has the correct
                 // Content-Type header. A more sophisticated check would parse the JSON response and
                 // validate its values. At the moment we do not do this more sophisticated check.
                 isInitialized = response.StatusCode == HttpStatusCode.OK &&

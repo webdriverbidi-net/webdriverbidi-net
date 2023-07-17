@@ -174,7 +174,7 @@ public class NodePropertiesTests
     [Test]
     public void TestDeserializeWithInvalidAttributeValueTypeThrows()
     {
-        string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""attributes"": { ""attrbuteName"": [] } }";
+        string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""attributes"": { ""attributeName"": [] } }";
         Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
     }
 

@@ -62,8 +62,11 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeWithInvalidProxyTypeThrows()
     {
+        // spell-checker: disable
+        // Disable spell checker for specifically disallowed value proxyautocomplete
         string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""proxyautoconfig"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
         Assert.That(() => JsonConvert.DeserializeObject<CapabilitiesResult>(json), Throws.InstanceOf<WebDriverBidiException>().With.Message.Contains("value 'proxyautoconfig' is not valid for enum type"));
+        // spell-checker: ensable
     }
 
     [Test]

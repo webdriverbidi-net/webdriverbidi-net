@@ -41,7 +41,7 @@ public class InitiatorTests
     [Test]
     public void TestDeserializingInitiatorWithMissingTypeThrows()
     {
-        string json = @"{ ""lineNumber"": 2, ""culumnNumber"": 1, ""stackTrace"": { ""callFrames"": [ { ""functionName"": ""myFunction"", ""lineNumber"": 2, ""columnNumber"": 1, ""url"": ""http://some.url/file.js"" } ] }, ""request"": ""myRequestId"" }";
+        string json = @"{ ""lineNumber"": 2, ""columnNumber"": 1, ""stackTrace"": { ""callFrames"": [ { ""functionName"": ""myFunction"", ""lineNumber"": 2, ""columnNumber"": 1, ""url"": ""http://some.url/file.js"" } ] }, ""request"": ""myRequestId"" }";
         Assert.That(() => JsonConvert.DeserializeObject<Initiator>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'type' not found in JSON"));
     }
 

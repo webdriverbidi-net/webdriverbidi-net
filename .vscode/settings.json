@@ -1,3 +1,19 @@
 {
-    "omnisharp.enableRoslynAnalyzers": true
+    "omnisharp.enableRoslynAnalyzers": true,
+    "cSpell.words": [
+        "arraybuffer",
+        "autoconfig",
+        "Bidi",
+        "chromedriver",
+        "geckodriver",
+        "htmlcollection",
+        "Newtonsoft",
+        "nodelist",
+        "prefs",
+        "typedarray",
+        "weakmap",
+        "weakset",
+        "webdriverbidi",
+        "worklet"
+    ]
 }

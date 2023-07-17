@@ -8,7 +8,7 @@ namespace WebDriverBidi.Session;
 using Newtonsoft.Json;
 
 /// <summary>
-/// Result for creating a new sesstion using the session.new command.
+/// Result for creating a new session using the session.new command.
 /// </summary>
 [JsonObject(MemberSerialization.OptIn)]
 public class NewCommandResult : CommandResult

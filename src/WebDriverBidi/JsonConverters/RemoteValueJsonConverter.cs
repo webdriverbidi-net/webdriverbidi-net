@@ -345,8 +345,8 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonSerializationException($"RemoteValue array element for dictionary must have a second element (value) that is an object");
             }
 
-            // Since valueToken is of type object, it must be castable to
-            // JObject. Use the null forgiveness operator to suppress the
+            // Since valueToken is of type object, it must be able to be cast
+            // to JObject. Use the null forgiveness operator to suppress the
             // compiler warning.
             JObject? valueObject = valueToken as JObject;
             RemoteValue pairValue = this.ProcessObject(valueObject!, serializer);

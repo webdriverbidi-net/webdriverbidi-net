@@ -33,7 +33,7 @@ It is important to note some of the things this library is explicitly _not_ inte
 * This library is not itself a replacement for [Selenium](https://selenium.dev), [Puppeteer](https://pptr.dev)
 or [Playwright](https://playwright.dev). It does not provide a user-friendly automation API. This is intentional,
 as the library is a low-level implementation of a client for the protocol. However, any project like those
-aforementioned could conceiveably use this library as a mechanism for driving the browser using .NET.
+aforementioned could conceivably use this library as a mechanism for driving the browser using .NET.
 * This library does not manage browser launching and/or profile information. It expects a browser to already
 be launched, and for the WebDriver Bidi websocket to already be open and available for communication. Moreover,
 it is the user's responsibility to know what the URL of the websocket connection is to initiate a session.
@@ -54,7 +54,7 @@ To run the project unit tests, execute the following in a terminal window:
 ## Development
 There are four projects in this repository:
 * src/WebDriverBidi/WebDriverBidi.csproj - The main library source code
-* src/WebDriverBidi.Client/WebDriverBidi.Cleint.csproj - A library containing helper methods to
+* src/WebDriverBidi.Client/WebDriverBidi.Client.csproj - A library containing helper methods to
 demonstrate scaffolding required to make the main library useful. This code is not unit tested,
 and should be viewed as a demonstration library only.
 * src/WebDriverBidi.Demo/WebDriverBidi.Demo.csproj - A console application used as a "playground"

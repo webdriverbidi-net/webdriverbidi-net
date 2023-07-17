@@ -32,7 +32,7 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     public override string MethodName => "script.addPreloadScript";
 
     /// <summary>
-    /// Gets or sets the function delcaration defining the preload script.
+    /// Gets or sets the function declaration defining the preload script.
     /// </summary>
     [JsonProperty("functionDeclaration")]
     public string FunctionDeclaration { get => this.functionDeclaration; set => this.functionDeclaration = value; }

@@ -54,7 +54,7 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
     public RequestData Request { get => this.request; internal set => this.request = value; }
 
     /// <summary>
-    /// Gets the timestamp of the navigationin UTC.
+    /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     public DateTime Timestamp => this.timestamp;
 

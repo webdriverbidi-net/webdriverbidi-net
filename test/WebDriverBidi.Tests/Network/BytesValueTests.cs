@@ -83,6 +83,8 @@ public class BytesValueTests
     [Test]
     public void TestCanDeserializeBase64Value()
     {
+        // Disable spell checking only for the base64-encoded value.
+        // cspell: disable-next
         string base64Value = "dGhpcyBpcyBteSBzdHJpbmc=";
         byte[] valueArray = Convert.FromBase64String(base64Value);
         string json = $@"{{ ""type"": ""base64"", ""value"": ""{base64Value}"" }}";
@@ -91,6 +93,9 @@ public class BytesValueTests
         {
             Assert.That(value, Is.Not.Null);
             Assert.That(value!.Type, Is.EqualTo(BytesValueType.Base64));
+
+            // Disable spell checking only for the base64-encoded value.
+            // cspell: disable-next
             Assert.That(value.Value, Is.EqualTo("dGhpcyBpcyBteSBzdHJpbmc="));
             Assert.That(value.ValueAsByteArray, Is.EqualTo(valueArray));
         });

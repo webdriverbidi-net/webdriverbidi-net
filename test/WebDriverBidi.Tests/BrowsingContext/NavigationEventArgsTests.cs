@@ -70,7 +70,7 @@ public class NavigationEventArgsTests
     }
 
     [Test]
-    public void TestDeserializeWithMissingTimestamplValueThrows()
+    public void TestDeserializeWithMissingTimestampValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"" }";
         Assert.That(() => JsonConvert.DeserializeObject<NavigationEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());

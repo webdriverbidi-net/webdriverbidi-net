@@ -95,7 +95,7 @@ public class CapabilitiesResult
     internal Proxy SerializableProxy { get => this.proxy; set => this.proxy = value; }
 
     /// <summary>
-    /// Gets the dictionary containing additional, unenumerated capabilities for deserialization purposes.
+    /// Gets the dictionary containing additional, un-enumerated capabilities for deserialization purposes.
     /// </summary>
     [JsonExtensionData]
     [JsonConverter(typeof(ReceivedDataJsonConverter))]

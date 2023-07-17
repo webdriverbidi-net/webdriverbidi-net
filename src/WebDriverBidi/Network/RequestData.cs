@@ -74,7 +74,7 @@ public class RequestData
     public ulong? BodySize { get => this.bodySize; internal set => this.bodySize = value; }
 
     /// <summary>
-    /// Gets the fetch timing info of the requext.
+    /// Gets the fetch timing info of the request.
     /// </summary>
     [JsonProperty("timings")]
     [JsonRequired]

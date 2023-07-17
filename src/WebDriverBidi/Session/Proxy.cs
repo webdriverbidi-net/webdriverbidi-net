@@ -14,7 +14,7 @@ using Newtonsoft.Json;
 public class Proxy
 {
     private ProxyType? type;
-    private string? proxyAutoconfigUrl;
+    private string? proxyAutoConfigUrl;
     private string? httpProxy;
     private string? sslProxy;
     private string? ftpProxy;
@@ -37,7 +37,7 @@ public class Proxy
     /// Gets or sets the URL to the proxy autoconfig (PAC) settings.
     /// </summary>
     [JsonProperty("proxyAutoconfigUrl", NullValueHandling = NullValueHandling.Ignore)]
-    public string? ProxyAutoConfigUrl { get => this.proxyAutoconfigUrl; set => this.proxyAutoconfigUrl = value; }
+    public string? ProxyAutoConfigUrl { get => this.proxyAutoConfigUrl; set => this.proxyAutoConfigUrl = value; }
 
     /// <summary>
     /// Gets or sets the address to be used to proxy HTTP commands.
