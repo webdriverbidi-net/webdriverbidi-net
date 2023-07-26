@@ -20,6 +20,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     private ArgumentValue? thisObject;
     private ResultOwnership? resultOwnership;
     private SerializationOptions? serializationOptions;
+    private bool? userActivation;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CallFunctionCommandParameters"/> class.
@@ -79,6 +80,12 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// </summary>
     [JsonProperty("serializationOptions", NullValueHandling = NullValueHandling.Ignore)]
     public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to activate the browsing context when calling the function. When omitted, is treated as if false.
+    /// </summary>
+    [JsonProperty("userActivation", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? UserActivation { get => this.userActivation; set => this.userActivation = value; }
 
     /// <summary>
     /// Gets the list of arguments for serialization purposes.

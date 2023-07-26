@@ -19,6 +19,7 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     private bool awaitPromise;
     private ResultOwnership? resultOwnership;
     private SerializationOptions? serializationOptions;
+    private bool? userActivation;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EvaluateCommandParameters"/> class.
@@ -67,4 +68,10 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// </summary>
     [JsonProperty("serializationOptions", NullValueHandling = NullValueHandling.Ignore)]
     public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to activate the browsing context when evaluating the script. When omitted, is treated as if false.
+    /// </summary>
+    [JsonProperty("userActivation", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? UserActivation { get => this.userActivation; set => this.userActivation = value; }
 }

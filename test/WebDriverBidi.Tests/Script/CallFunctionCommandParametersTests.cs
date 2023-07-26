@@ -42,9 +42,10 @@ public class CallFunctionCommandParametersTests
         {
             MaxDomDepth = 1,
         };
+        properties.UserActivation = true;
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(7));
+        Assert.That(serialized, Has.Count.EqualTo(8));
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Contains.Key("functionDeclaration"));
@@ -61,6 +62,8 @@ public class CallFunctionCommandParametersTests
             Assert.That(serialized["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("serializationOptions"));
             Assert.That(serialized["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(serialized, Contains.Key("userActivation"));
+            Assert.That(serialized["userActivation"]!.Type, Is.EqualTo(JTokenType.Boolean));
         });
     }
 }

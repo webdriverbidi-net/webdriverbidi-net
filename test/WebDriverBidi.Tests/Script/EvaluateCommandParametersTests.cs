@@ -41,10 +41,11 @@ public class EvaluateCommandParametersTests
             {
                 MaxDomDepth = 1,
             },
+            UserActivation = true,
         };
         string json = JsonConvert.SerializeObject(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(5));
+        Assert.That(serialized, Has.Count.EqualTo(6));
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Contains.Key("expression"));
@@ -57,6 +58,8 @@ public class EvaluateCommandParametersTests
             Assert.That(serialized["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized, Contains.Key("serializationOptions"));
             Assert.That(serialized["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(serialized, Contains.Key("userActivation"));
+            Assert.That(serialized["userActivation"]!.Type, Is.EqualTo(JTokenType.Boolean));
         });
     }
 }
