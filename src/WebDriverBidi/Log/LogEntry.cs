@@ -84,7 +84,7 @@ public class LogEntry
         private set
         {
             this.epochTimestamp = value;
-            this.timestamp = DateTime.UnixEpoch.AddMilliseconds(value);
+            this.timestamp = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(value);
         }
     }
 }

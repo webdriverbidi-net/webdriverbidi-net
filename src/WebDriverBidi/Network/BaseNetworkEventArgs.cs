@@ -19,7 +19,7 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
     private ulong redirectCount = 0;
     private RequestData request = new();
     private ulong epochTimestamp = 0;
-    private DateTime timestamp = DateTime.UnixEpoch;
+    private DateTime timestamp = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private List<string>? intercepts;
 
     /// <summary>
@@ -87,7 +87,7 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
         private set
         {
             this.epochTimestamp = value;
-            this.timestamp = DateTime.UnixEpoch.AddMilliseconds(value);
+            this.timestamp = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(value);
         }
     }
 

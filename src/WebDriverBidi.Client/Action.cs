@@ -37,7 +37,7 @@ public class Action
     /// <exception cref="WebDriverBidiException">Thrown if this action cannot be converted to the specified type.</exception>
     public T AsActionType<T>()
     {
-        if (!this.action.GetType().IsAssignableTo(typeof(T)))
+        if (!typeof(T).IsAssignableFrom(this.action.GetType()))
         {
             throw new WebDriverBidiException($"Object cannot be cast to type {typeof(T)}");
         }

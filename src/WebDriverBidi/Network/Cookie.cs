@@ -81,7 +81,7 @@ public class Cookie
             this.epochExpires = value;
             if (value.HasValue)
             {
-                this.expires = DateTime.UnixEpoch.AddMilliseconds(value.Value);
+                this.expires = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(value.Value);
             }
         }
     }
