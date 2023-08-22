@@ -13,7 +13,7 @@ using WebDriverBidi.Session;
 // Path to the directory containing the browser launcher executables.
 // We use the WebDriver Classic browser drivers (chromedriver, geckodriver, etc.)
 // as browser launchers.
-string browserLauncherDirectory = "/Users/james.evans/Downloads";
+string browserLauncherDirectory = string.Empty;
 
 // The level at which to log to the console in this demo app. Adjust this
 // to control how verbose the logging is.
@@ -42,7 +42,7 @@ finally
 
 async Task DriveBrowser(string webSocketUrl)
 {
-    Driver driver = new(new WebDriverBidi.Protocol.Transport(TimeSpan.FromSeconds(30)));
+    Driver driver = new();
     driver.LogMessage += OnDriverLogMessage;
     driver.BrowsingContext.NavigationStarted += (sender, e) =>
     {
