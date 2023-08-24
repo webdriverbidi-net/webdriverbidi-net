@@ -6,6 +6,7 @@
 namespace WebDriverBidi.Network;
 
 using Newtonsoft.Json;
+using WebDriverBidi.Internal;
 
 /// <summary>
 /// Represents a cookie in a web request or response.
@@ -81,7 +82,7 @@ public class Cookie
             this.epochExpires = value;
             if (value.HasValue)
             {
-                this.expires = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(value.Value);
+                this.expires = DateTimeUtilities.UnixEpoch.AddMilliseconds(value.Value);
             }
         }
     }
