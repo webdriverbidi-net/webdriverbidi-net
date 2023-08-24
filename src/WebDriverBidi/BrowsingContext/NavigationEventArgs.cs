@@ -6,6 +6,7 @@
 namespace WebDriverBidi.BrowsingContext;
 
 using Newtonsoft.Json;
+using WebDriverBidi.Internal;
 
 /// <summary>
 /// Object containing event data for events raised during navigation.
@@ -60,7 +61,7 @@ public class NavigationEventArgs : WebDriverBidiEventArgs
     public string Url { get => this.url; internal set => this.url = value; }
 
     /// <summary>
-    /// Gets the timestamp of the navigationin UTC.
+    /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     public DateTime Timestamp => this.timestamp;
 
@@ -79,7 +80,7 @@ public class NavigationEventArgs : WebDriverBidiEventArgs
         private set
         {
             this.epochTimestamp = value;
-            this.timestamp = DateTime.UnixEpoch.AddMilliseconds(value);
+            this.timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
         }
     }
 }

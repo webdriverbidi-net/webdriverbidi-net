@@ -25,7 +25,7 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     public EnumValueJsonConverter()
     {
         Type enumType = typeof(T);
-        T[] values = Enum.GetValues<T>();
+        T[] values = (T[])Enum.GetValues(typeof(T));
 
         foreach (T value in values)
         {

@@ -39,8 +39,8 @@ be launched, and for the WebDriver Bidi websocket to already be open and availab
 it is the user's responsibility to know what the URL of the websocket connection is to initiate a session.
 
 ## Getting Started
-The library is built using .NET 6. There are no plans at present to support earlier versions of .NET.
-Future versions of .NET will be supported when [a new LTS version](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core) is released. The next LTS version of .NET is scheduled to be .NET 8, released in November, 2023.
+The library is built to support .NETStandard 2.0. This should allow the widest usage of the library across
+the largest number of framework versions, including .NET Framework, .NET Core, and .NET 5 and higher.
 
 To build the library, after cloning the repository, execute the following in a terminal window
 in the root of your clone:

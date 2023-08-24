@@ -6,6 +6,7 @@
 namespace WebDriverBidi.Network;
 
 using Newtonsoft.Json;
+using WebDriverBidi.Internal;
 
 /// <summary>
 /// The base properties of all events for network traffic.
@@ -19,7 +20,7 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
     private ulong redirectCount = 0;
     private RequestData request = new();
     private ulong epochTimestamp = 0;
-    private DateTime timestamp = DateTime.UnixEpoch;
+    private DateTime timestamp = DateTimeUtilities.UnixEpoch;
     private List<string>? intercepts;
 
     /// <summary>
@@ -87,7 +88,7 @@ public class BaseNetworkEventArgs : WebDriverBidiEventArgs
         private set
         {
             this.epochTimestamp = value;
-            this.timestamp = DateTime.UnixEpoch.AddMilliseconds(value);
+            this.timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
         }
     }
 

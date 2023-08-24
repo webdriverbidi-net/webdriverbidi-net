@@ -6,6 +6,7 @@
 namespace WebDriverBidi.Log;
 
 using Newtonsoft.Json;
+using WebDriverBidi.Internal;
 using WebDriverBidi.JsonConverters;
 using WebDriverBidi.Script;
 
@@ -84,7 +85,7 @@ public class LogEntry
         private set
         {
             this.epochTimestamp = value;
-            this.timestamp = DateTime.UnixEpoch.AddMilliseconds(value);
+            this.timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
         }
     }
 }
