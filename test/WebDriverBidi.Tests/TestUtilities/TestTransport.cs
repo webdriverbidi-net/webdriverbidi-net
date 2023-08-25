@@ -34,14 +34,4 @@ public class TestTransport : Transport
 
         return await base.SendCommandAndWait(command);
     }
-
-    protected override void ReadIncomingMessages()
-    {
-        if (this.messageProcessingDelay != TimeSpan.Zero)
-        {
-            Task.Delay(this.messageProcessingDelay).Wait();
-        }
-
-        base.ReadIncomingMessages();
-    }
 }
