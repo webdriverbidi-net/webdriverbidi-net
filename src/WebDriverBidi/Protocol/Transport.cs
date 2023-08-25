@@ -6,7 +6,6 @@
 namespace WebDriverBidi.Protocol;
 
 using System.Collections.Concurrent;
-using System.Threading.Channels;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -19,8 +18,8 @@ public class Transport
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
-    private readonly Channel<string> messageQueue;
-    private readonly Task messageQueueMonitorTask;
+    private readonly Dispatcher<string> messageQueue = new();
+    private readonly Dispatcher<EventMessage> eventDispatcher = new();
     private long nextCommandId = 0;
     private bool isConnected;
 
@@ -48,16 +47,11 @@ public class Transport
     /// <param name="connection">The connection used to communicate with the protocol remote end.</param>
     public Transport(TimeSpan commandWaitTimeout, Connection connection)
     {
-        this.messageQueue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions()
-        {
-            SingleReader = true,
-            SingleWriter = true,
-        });
-        this.messageQueueMonitorTask = Task.Run(() => this.MonitorMessageQueue());
-        this.messageQueueMonitorTask.ConfigureAwait(false);
         this.commandWaitTimeout = commandWaitTimeout;
         this.connection = connection;
-        connection.DataReceived += this.OnMessageReceived;
+        this.messageQueue.ItemDispatched += this.OnMessageDispatched;
+        this.eventDispatcher.ItemDispatched += this.OnEventDispatched;
+        connection.DataReceived += this.OnConnectionDataReceived;
         connection.LogMessage += this.OnConnectionLogMessage;
     }
 
@@ -107,7 +101,8 @@ public class Transport
     public async Task Disconnect()
     {
         await this.connection.Stop();
-        await this.ShutdownMessageQueue();
+        await this.messageQueue.Shutdown();
+        await this.eventDispatcher.Shutdown();
         this.isConnected = false;
     }
 
@@ -261,28 +256,14 @@ public class Transport
         }
     }
 
-    /// <summary>
-    /// Reads incoming messages in the message queue.
-    /// </summary>
-    protected virtual void ReadIncomingMessages()
+    private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
-        while (this.messageQueue.Reader.TryRead(out string? message))
-        {
-            this.ProcessMessage(message);
-        }
+        this.messageQueue.Dispatch(e.Data);
     }
 
-    private void OnMessageReceived(object? sender, ConnectionDataReceivedEventArgs e)
+    private void OnMessageDispatched(object sender, ItemDispatchedEventArgs<string> e)
     {
-        _ = this.messageQueue.Writer.TryWrite(e.Data);
-    }
-
-    private async Task MonitorMessageQueue()
-    {
-        while (await this.messageQueue.Reader.WaitToReadAsync())
-        {
-            this.ReadIncomingMessages();
-        }
+        this.ProcessMessage(e.DispatchedItem);
     }
 
     private void ProcessMessage(string messageData)
@@ -396,7 +377,7 @@ public class Transport
                     // an exception will be thrown by the JSON serializer, and we can log
                     // the malformed response.
                     EventMessage? eventMessageData = message.ToObject(eventMessageType) as EventMessage;
-                    this.OnProtocolEventReceived(this, new EventReceivedEventArgs(eventMessageData!));
+                    this.eventDispatcher.Dispatch(eventMessageData!);
                     return true;
                 }
                 catch (Exception ex)
@@ -409,17 +390,9 @@ public class Transport
         return false;
     }
 
-    private async Task ShutdownMessageQueue()
+    private void OnEventDispatched(object sender, ItemDispatchedEventArgs<EventMessage> e)
     {
-        // Attempt to wait for the channel to empty before marking the
-        // writer as complete and waiting for the monitor task to end.
-        while (this.messageQueue.Reader.TryPeek(out _))
-        {
-            await Task.Delay(TimeSpan.FromMilliseconds(10));
-        }
-
-        this.messageQueue.Writer.Complete();
-        this.messageQueueMonitorTask.Wait();
+        this.OnProtocolEventReceived(this, new EventReceivedEventArgs(e.DispatchedItem));
     }
 
     private void Log(string message, WebDriverBidiLogLevel level)
