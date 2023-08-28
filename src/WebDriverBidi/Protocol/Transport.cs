@@ -101,8 +101,8 @@ public class Transport
     public async Task Disconnect()
     {
         await this.connection.Stop();
-        await this.messageQueue.Shutdown();
-        await this.eventDispatcher.Shutdown();
+        await this.messageQueue.StopDispatching();
+        await this.eventDispatcher.StopDispatching();
         this.isConnected = false;
     }
 
@@ -258,7 +258,7 @@ public class Transport
 
     private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
-        this.messageQueue.Dispatch(e.Data);
+        this.messageQueue.TryDispatch(e.Data);
     }
 
     private void OnMessageDispatched(object sender, ItemDispatchedEventArgs<string> e)
@@ -377,7 +377,7 @@ public class Transport
                     // an exception will be thrown by the JSON serializer, and we can log
                     // the malformed response.
                     EventMessage? eventMessageData = message.ToObject(eventMessageType) as EventMessage;
-                    this.eventDispatcher.Dispatch(eventMessageData!);
+                    this.eventDispatcher.TryDispatch(eventMessageData!);
                     return true;
                 }
                 catch (Exception ex)

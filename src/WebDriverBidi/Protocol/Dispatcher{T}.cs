@@ -14,7 +14,11 @@ using System.Threading.Channels;
 /// <typeparam name="T">The type of items to be dispatched.</typeparam>
 public class Dispatcher<T>
 {
-    private readonly Channel<T> queue;
+    private readonly Channel<T> queue = Channel.CreateUnbounded<T>(new UnboundedChannelOptions()
+    {
+        SingleReader = true,
+        SingleWriter = true,
+    });
     private readonly Task monitorTask;
     private bool isDispatching;
 
@@ -23,11 +27,6 @@ public class Dispatcher<T>
     /// </summary>
     public Dispatcher()
     {
-        this.queue = Channel.CreateUnbounded<T>(new UnboundedChannelOptions()
-        {
-            SingleReader = true,
-            SingleWriter = true,
-        });
         this.monitorTask = Task.Run(() => this.MonitorQueue());
         this.monitorTask.ConfigureAwait(false);
         this.isDispatching = true;
@@ -44,11 +43,11 @@ public class Dispatcher<T>
     public bool IsDispatching => this.isDispatching;
 
     /// <summary>
-    /// Adds an item to the queue to be dispatched.
+    /// Attempts to add an item to the queue to be dispatched.
     /// </summary>
     /// <param name="itemToDispatch">The item to be dispatched.</param>
-    /// <returns><see langword="true"/> if the item was queued for dispatching; otherwise, false.</returns>
-    public bool Dispatch(T itemToDispatch)
+    /// <returns><see langword="true"/> if the item was queued for dispatching; otherwise, <see langword="false"/>.</returns>
+    public bool TryDispatch(T itemToDispatch)
     {
         return this.queue.Writer.TryWrite(itemToDispatch);
     }
@@ -57,18 +56,21 @@ public class Dispatcher<T>
     /// Asynchronously shuts down the dispatcher.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task Shutdown()
+    public async Task StopDispatching()
     {
-        // Attempt to wait for the channel to empty before marking the
-        // writer as complete and waiting for the monitor task to end.
-        while (this.queue.Reader.TryPeek(out _))
+        if (this.isDispatching)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(10));
-        }
+            // Attempt to wait for the channel to empty before marking the
+            // writer as complete and waiting for the monitor task to end.
+            while (this.queue.Reader.TryPeek(out _))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(10));
+            }
 
-        this.queue.Writer.Complete();
-        this.monitorTask.Wait();
-        this.isDispatching = false;
+            this.queue.Writer.Complete();
+            this.monitorTask.Wait();
+            this.isDispatching = false;
+        }
     }
 
     /// <summary>

@@ -16,7 +16,7 @@ public class DispatcherTests
     {
         if (dispatcher is not null && dispatcher.IsDispatching)
         {
-            await dispatcher.Shutdown();
+            await dispatcher.StopDispatching();
         }
         
         dispatcher = null;
@@ -32,7 +32,7 @@ public class DispatcherTests
             dispatched = e.DispatchedItem;
             syncEvent.Set();
         };
-        Assert.That(dispatcher!.Dispatch("Hello dispatcher"), Is.True);
+        Assert.That(dispatcher!.TryDispatch("Hello dispatcher"), Is.True);
         bool eventFired = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.That(eventFired, Is.True);
         Assert.That(dispatched, Is.EqualTo("Hello dispatcher"));
@@ -47,8 +47,16 @@ public class DispatcherTests
     [Test]
     public async Task TestCannotDispatchItemsWhenShutdown()
     {
-        await dispatcher!.Shutdown();
-        Assert.That(dispatcher!.Dispatch("error"), Is.False);
+        await dispatcher!.StopDispatching();
+        Assert.That(dispatcher!.TryDispatch("error"), Is.False);
+        Assert.That(dispatcher.IsDispatching, Is.False);
+    }
+
+    [Test]
+    public async Task TestCanCallStopDispatchingTwice()
+    {
+        await dispatcher!.StopDispatching();
+        await dispatcher.StopDispatching();
         Assert.That(dispatcher.IsDispatching, Is.False);
     }
 
@@ -63,9 +71,9 @@ public class DispatcherTests
             dispatchedItems.Add(e.DispatchedItem);
             syncEvent.Signal();
         };
-        dispatcher.Dispatch("Item1");
-        dispatcher.Dispatch("Item2");
-        await dispatcher.Shutdown();
+        dispatcher.TryDispatch("Item1");
+        dispatcher.TryDispatch("Item2");
+        await dispatcher.StopDispatching();
         syncEvent.Wait(TimeSpan.FromSeconds(3));
         Assert.That(dispatchedItems, Is.EqualTo(new List<string>() { "Item1", "Item2" }));
     }
