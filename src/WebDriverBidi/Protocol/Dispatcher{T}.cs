@@ -19,6 +19,7 @@ public class Dispatcher<T>
         SingleReader = true,
         SingleWriter = true,
     });
+
     private readonly Task monitorTask;
     private bool isDispatching;
 
