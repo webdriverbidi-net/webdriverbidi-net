@@ -85,4 +85,34 @@ public class AddPreloadScriptCommandParametersTests
             Assert.That(argValue!["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
         });
     }
+
+    [Test]
+    public void TestCanSerializePropertiesWithContexts()
+    {
+        AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
+        {
+            Contexts = new()
+            {
+                "context1",
+                "context2",
+            }
+        };
+        string json = JsonConvert.SerializeObject(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("functionDeclaration"));
+            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
+            Assert.That(serialized, Contains.Key("contexts"));
+            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
+            JArray? argsArray = serialized["contexts"]!.Value<JArray>();
+            Assert.That(argsArray, Has.Count.EqualTo(2));
+            Assert.That(argsArray![0].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(argsArray[0].Value<string>(), Is.EqualTo("context1"));
+            Assert.That(argsArray[1].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(argsArray[1].Value<string>(), Is.EqualTo("context2"));
+        });
+    }
 }
