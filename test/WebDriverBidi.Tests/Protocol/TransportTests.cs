@@ -662,6 +662,25 @@ public class TransportTests
     }
 
     [Test]
+    public void TestSendingCommandWhileCommandBeingSentThrows()
+    {
+        ManualResetEventSlim syncEvent = new(false);
+        TestConnection connection = new()
+        {
+            DataSendDelay = TimeSpan.FromMilliseconds(500)
+        };
+        connection.DataSendStarting += (sender, e) =>
+        {
+            syncEvent.Set();
+        };
+
+        Transport transport = new(TimeSpan.FromMilliseconds(250), connection);
+        Task.Run(async () => await transport.SendCommand(new TestCommand("longSendingCommand")));
+        bool syncEventFired = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.That(async () => await transport.SendCommand(new TestCommand("imposingCommand")), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Could not send command imposingCommand, as only one command can be actively sending at one time"));
+    }
+
+    [Test]
     public async Task TestTransportDisconnectWithPendingIncomingMessagesWillProcess()
     {
         string receivedName = string.Empty;

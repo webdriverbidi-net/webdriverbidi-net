@@ -10,6 +10,10 @@ public class TestConnection : Connection
 
     public string? DataSent { get; set; }
 
+    public TimeSpan? DataSendDelay { get; set; }
+
+    public event EventHandler? DataSendStarting;
+
     public event EventHandler<TestConnectionDataSentEventArgs>? DataSendComplete;
 
     public void RaiseDataReceivedEvent(string data)
@@ -49,6 +53,11 @@ public class TestConnection : Connection
     public override Task SendData(string data)
     {
         this.DataSent = data;
+        if (this.DataSendDelay.HasValue)
+        {
+            Task.Delay(this.DataSendDelay.Value).Wait();
+        }
+
         this.OnDataSendComplete();
         return Task.CompletedTask;
     }
@@ -56,6 +65,14 @@ public class TestConnection : Connection
     protected override Task CloseClientWebSocket()
     {
         return Task.CompletedTask;
+    }
+
+    protected virtual void OnDataSendStarting()
+    {
+        if (this.DataSendStarting is not null)
+        {
+            this.DataSendStarting(this, new EventArgs());
+        }
     }
 
     protected virtual void OnDataSendComplete()
