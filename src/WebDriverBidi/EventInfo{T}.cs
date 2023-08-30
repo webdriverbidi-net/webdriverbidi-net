@@ -65,10 +65,24 @@ public class EventInfo<T>
         }
         else
         {
+            // We are trying to create a new instance of TEventArgs here using a public
+            // constructor that takes an argument of type T. To do so, we will rely on
+            // the convenience of Activator.CreateInstance(). However, in the unlikely
+            // event that performance becomes an issue, we can create a dynamic lambda
+            // method and invoke it directly, which is known to be more performant in
+            // high-throughput situations. It is unlikely we will need this optimization,
+            // but the implementation is provided below for reference.
+            // ConstructorInfo constructorInfo = typeof(TEventArgs).GetConstructor(new Type[] { typeof(T) });
+            // if (constructorInfo is not null)
+            // {
+            //     ParameterExpression ctorArgExpression = Expression.Parameter(typeof(T), "eventData");
+            //     NewExpression ctorExpression = Expression.New(constructorInfo, ctorArgExpression);
+            //     Expression<Func<T, TEventArgs>> lambdaExpression = Expression.Lambda<Func<T, TEventArgs>>(ctorExpression, ctorArgExpression);
+            //     Func<T, TEventArgs> invoker = lambdaExpression.Compile();
+            //     result = invoker(this.EventData);
+            // }
             try
             {
-                // We are trying to create a new instance of TEventArgs here using a
-                // constructor that takes an argument of type T
                 result = Activator.CreateInstance(typeof(TEventArgs), this.EventData) as TEventArgs;
             }
             catch (MissingMethodException)
