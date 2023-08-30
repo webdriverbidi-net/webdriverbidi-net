@@ -18,7 +18,7 @@ public class Transport
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
-    private readonly Dispatcher<string> messageQueue = new();
+    private readonly Dispatcher<string> incomingMessageQueue = new();
     private readonly Dispatcher<EventMessage> eventDispatcher = new();
     private long nextCommandId = 0;
     private bool isConnected;
@@ -49,7 +49,7 @@ public class Transport
     {
         this.commandWaitTimeout = commandWaitTimeout;
         this.connection = connection;
-        this.messageQueue.ItemDispatched += this.OnMessageDispatched;
+        this.incomingMessageQueue.ItemDispatched += this.OnIncomingMessageDispatched;
         this.eventDispatcher.ItemDispatched += this.OnEventDispatched;
         connection.DataReceived += this.OnConnectionDataReceived;
         connection.LogMessage += this.OnConnectionLogMessage;
@@ -101,7 +101,7 @@ public class Transport
     public async Task Disconnect()
     {
         await this.connection.Stop();
-        await this.messageQueue.StopDispatching();
+        await this.incomingMessageQueue.StopDispatching();
         await this.eventDispatcher.StopDispatching();
         this.isConnected = false;
     }
@@ -258,10 +258,10 @@ public class Transport
 
     private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
     {
-        this.messageQueue.TryDispatch(e.Data);
+        this.incomingMessageQueue.TryDispatch(e.Data);
     }
 
-    private void OnMessageDispatched(object sender, ItemDispatchedEventArgs<string> e)
+    private void OnIncomingMessageDispatched(object sender, ItemDispatchedEventArgs<string> e)
     {
         this.ProcessMessage(e.DispatchedItem);
     }
