@@ -1,7 +1,6 @@
 namespace WebDriverBidi.Protocol;
 
 using System.Threading;
-using NUnit.Framework.Internal.Execution;
 using PinchHitter;
 using WebDriverBidi.TestUtilities;
 
@@ -529,6 +528,37 @@ public class ConnectionTests
         await connection.Start($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
+        await connection.Stop();
+    }
+
+    [Test]
+    public async Task TestDataSendOperationsAreSynchronized()
+    {
+        if (this.server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        TestConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+            BypassDataSend = false,
+            DataSendDelay = TimeSpan.FromMilliseconds(500),
+            DataTimeout = TimeSpan.FromMilliseconds(250),
+        };
+        await connection.Start($"ws://localhost:{this.server.Port}");
+
+        ManualResetEventSlim syncEvent = new(false);
+        connection.DataSendStarting += (sender, e) =>
+        {
+            syncEvent.Set();
+        };
+
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        _ = Task.Run(() => connection.SendData("first data"));
+        syncEvent.Wait();
+        Assert.That(async () => await connection.SendData("second data"), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
         await connection.Stop();
     }
 

@@ -1,5 +1,6 @@
 namespace WebDriverBidi.TestUtilities;
 
+using System.Text;
 using WebDriverBidi.Protocol;
 
 public class TestConnection : Connection
@@ -7,6 +8,8 @@ public class TestConnection : Connection
     public bool BypassStart { get; set; } = true;
 
     public bool BypassStop { get; set; } = true;
+
+    public bool BypassDataSend { get; set; } = true;
 
     public string? DataSent { get; set; }
 
@@ -53,14 +56,34 @@ public class TestConnection : Connection
 
     public override Task SendData(string data)
     {
-        this.DataSent = data;
+        if (this.BypassStart)
+        {
+            // Bypass the check to see if the connection has been started,
+            // so that we can test the plumbing without needing an actual
+            // WebSocket server active.
+            return this.SendWebSocketData(Encoding.UTF8.GetBytes(data));
+        }
+
+        return base.SendData(data);
+    }
+
+    protected override Task SendWebSocketData(ArraySegment<byte> data)
+    {
+        this.OnDataSendStarting();
+        this.DataSent = Encoding.UTF8.GetString(data);
+        Task result = Task.CompletedTask;
+        if (!this.BypassDataSend)
+        {
+            result = base.SendWebSocketData(data);
+        }
+
         if (this.DataSendDelay.HasValue)
         {
             Task.Delay(this.DataSendDelay.Value).Wait();
         }
 
         this.OnDataSendComplete();
-        return Task.CompletedTask;
+        return result;
     }
 
     protected override Task CloseClientWebSocket()

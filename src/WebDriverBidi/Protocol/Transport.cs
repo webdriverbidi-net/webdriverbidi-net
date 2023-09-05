@@ -18,7 +18,6 @@ public class Transport
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
-    private readonly SemaphoreSlim sendDataSemaphore = new(1, 1);
     private Dispatcher<string> incomingMessageQueue = new();
     private Dispatcher<EventMessage> eventDispatcher = new();
     private long nextCommandId = 0;
@@ -144,11 +143,6 @@ public class Transport
     /// <exception cref="WebDriverBidiException">Thrown if the command ID is already in use.</exception>
     public virtual async Task<long> SendCommand(CommandParameters command)
     {
-        if (!await this.sendDataSemaphore.WaitAsync(this.commandWaitTimeout))
-        {
-            throw new WebDriverBidiException($"Could not send command {command.MethodName}, as only one command can be actively sending at one time");
-        }
-
         long commandId = Interlocked.Increment(ref this.nextCommandId);
         Command executionData = new(commandId, command);
         if (!this.AddPendingCommand(executionData))
@@ -156,15 +150,7 @@ public class Transport
             throw new WebDriverBidiException($"Could not add command with id {executionData.CommandId}, as id already exists");
         }
 
-        try
-        {
-            await this.connection.SendData(JsonConvert.SerializeObject(executionData));
-        }
-        finally
-        {
-            this.sendDataSemaphore.Release();
-        }
-
+        await this.connection.SendData(JsonConvert.SerializeObject(executionData));
         return executionData.CommandId;
     }
 

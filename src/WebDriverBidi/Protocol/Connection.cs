@@ -14,9 +14,11 @@ using System.Text;
 public class Connection
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
+    private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
+    private readonly int bufferSize = 4096;
     private readonly TimeSpan startupTimeout;
     private readonly TimeSpan shutdownTimeout;
-    private readonly int bufferSize = 4096;
+    private TimeSpan socketTimeout = DefaultTimeout;
     private string url = string.Empty;
     private Task? dataReceiveTask;
     private ClientWebSocket client = new();
@@ -74,6 +76,11 @@ public class Connection
     /// Gets or sets the WebSocket URL to which the connection is connected.
     /// </summary>
     public string ConnectedUrl { get => this.url; protected set => this.url = value; }
+
+    /// <summary>
+    /// Gets or sets the value of the timeout to wait for exclusive access when sending to or receiving data from the ClientWebSocket.
+    /// </summary>
+    public TimeSpan DataTimeout { get => this.socketTimeout; set => this.socketTimeout = value; }
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -164,8 +171,27 @@ public class Connection
             throw new WebDriverBidiException("The WebSocket has not been initialized; you must call the Start method before sending data");
         }
 
+        // Only one send operation at a time can be active on a ClientWebSocket instance,
+        // so we must synchronize send access to the socket in case multiple threads are
+        // attempting to send commands or other data simultaneously.
+        if (!await this.dataSendSemaphore.WaitAsync(this.socketTimeout))
+        {
+            throw new WebDriverBidiException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
+        }
+
         ArraySegment<byte> messageBuffer = new(Encoding.UTF8.GetBytes(data));
         this.Log($"SEND >>> {data}");
+        await this.SendWebSocketData(messageBuffer);
+        this.dataSendSemaphore.Release();
+    }
+
+    /// <summary>
+    /// Asynchronously sends data to the underlying WebSocket of this connection.
+    /// </summary>
+    /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the WebSocket.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    protected virtual async Task SendWebSocketData(ArraySegment<byte> messageBuffer)
+    {
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
     }
 
@@ -230,6 +256,12 @@ public class Connection
             ArraySegment<byte> buffer = WebSocket.CreateClientBuffer(this.bufferSize, this.bufferSize);
             while (this.client.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
             {
+                // Only one receive operation at a time can be active on a ClientWebSocket instance,
+                // so we should synchronize receive access to the socket. However, this receive
+                // operation is private and should only be accessible by a single thread, that of the
+                // Task running this method, so we will forego use of a semaphore to serialize such
+                // access. If there is a use case where this could happen, we will resolve it at that
+                // time.
                 WebSocketReceiveResult receiveResult = await this.client.ReceiveAsync(buffer, cancellationToken);
 
                 // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used

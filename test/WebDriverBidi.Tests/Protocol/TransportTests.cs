@@ -671,11 +671,21 @@ public class TransportTests
     }
 
     [Test]
-    public void TestSendingCommandWhileCommandBeingSentThrows()
+    public async Task TestSendingCommandWhileCommandBeingSentThrows()
     {
+        ManualResetEvent connectionSyncEvent = new(false);
+        void connectionHandler(object? sender, ClientConnectionEventArgs e) { connectionSyncEvent.Set(); }
+        Server server = new();
+        server.ClientConnected += connectionHandler;
+        server.Start();
+
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new()
         {
+            BypassStart = false,
+            BypassStop = false,
+            BypassDataSend = false,
+            DataTimeout = TimeSpan.FromMilliseconds(250),
             DataSendDelay = TimeSpan.FromMilliseconds(500)
         };
         connection.DataSendStarting += (sender, e) =>
@@ -684,9 +694,21 @@ public class TransportTests
         };
 
         Transport transport = new(TimeSpan.FromMilliseconds(250), connection);
-        Task.Run(async () => await transport.SendCommand(new TestCommand("longSendingCommand")));
-        bool syncEventFired = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.That(async () => await transport.SendCommand(new TestCommand("imposingCommand")), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Could not send command imposingCommand, as only one command can be actively sending at one time"));
+        await transport.Connect($"ws://localhost:{server.Port}");
+        bool connectionEventRaised = connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        Assert.That(connectionEventRaised, Is.True);
+        try
+        {
+            _ = Task.Run(async () => await transport.SendCommand(new TestCommand("longSendingCommand")));
+            bool syncEventFired = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+            Assert.That(async () => await transport.SendCommand(new TestCommand("imposingCommand")), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
+        }
+        finally
+        {
+            await transport.Disconnect();
+            server.Stop();
+            server.ClientConnected -= connectionHandler;
+        }
     }
 
     [Test]
