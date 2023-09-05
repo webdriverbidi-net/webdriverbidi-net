@@ -110,18 +110,18 @@ public class Driver
     /// </summary>
     /// <param name="url">The URL of the remote end.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task Start(string url)
+    public virtual async Task StartAsync(string url)
     {
-        await this.transport.Connect(url);
+        await this.transport.ConnectAsync(url);
     }
 
     /// <summary>
     /// Asynchronously stops the communication with the remote end of the WebDriver Bidi protocol.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task Stop()
+    public virtual async Task StopAsync()
     {
-        await this.transport.Disconnect();
+        await this.transport.DisconnectAsync();
     }
 
     /// <summary>
@@ -131,10 +131,10 @@ public class Driver
     /// <param name="command">The object containing settings for the command, including parameters.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if an error occurs during the execution of the command.</exception>
-    public virtual async Task<T> ExecuteCommand<T>(CommandParameters command)
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command)
         where T : CommandResult
     {
-        CommandResult result = await this.transport.SendCommandAndWait(command) ?? throw new WebDriverBidiException("Received null response from transport for SendCommandAndWait");
+        CommandResult result = await this.transport.SendCommandAndWaitAsync(command) ?? throw new WebDriverBidiException("Received null response from transport for SendCommandAndWait");
         if (result.IsError)
         {
             if (result is not ErrorResult errorResponse)

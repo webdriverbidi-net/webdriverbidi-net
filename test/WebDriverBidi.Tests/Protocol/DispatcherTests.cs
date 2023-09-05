@@ -12,11 +12,11 @@ public class DispatcherTests
     }
 
     [TearDown]
-    public async Task TearDown()
+    public void TearDown()
     {
         if (dispatcher is not null && dispatcher.IsDispatching)
         {
-            await dispatcher.StopDispatching();
+            dispatcher.StopDispatching();
         }
         
         dispatcher = null;
@@ -45,23 +45,23 @@ public class DispatcherTests
     }
 
     [Test]
-    public async Task TestCannotDispatchItemsWhenShutdown()
+    public void TestCannotDispatchItemsWhenShutdown()
     {
-        await dispatcher!.StopDispatching();
+        dispatcher!.StopDispatching();
         Assert.That(dispatcher!.TryDispatch("error"), Is.False);
         Assert.That(dispatcher.IsDispatching, Is.False);
     }
 
     [Test]
-    public async Task TestCanCallStopDispatchingTwice()
+    public void TestCanCallStopDispatchingTwice()
     {
-        await dispatcher!.StopDispatching();
-        await dispatcher.StopDispatching();
+        dispatcher!.StopDispatching();
+        dispatcher.StopDispatching();
         Assert.That(dispatcher.IsDispatching, Is.False);
     }
 
     [Test]
-    public async Task TestQueuedItemsWillDispatchAfterShutdown()
+    public void TestQueuedItemsWillDispatchAfterShutdown()
     {
         List<string> dispatchedItems = new();
         CountdownEvent syncEvent = new(2);
@@ -73,7 +73,7 @@ public class DispatcherTests
         };
         dispatcher.TryDispatch("Item1");
         dispatcher.TryDispatch("Item2");
-        await dispatcher.StopDispatching();
+        dispatcher.StopDispatching();
         syncEvent.Wait(TimeSpan.FromSeconds(3));
         Assert.That(dispatchedItems, Is.EqualTo(new List<string>() { "Item1", "Item2" }));
     }

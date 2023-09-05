@@ -18,7 +18,7 @@ public class BrowserModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowserModule module = new(driver);
 
-        var task = module.Close(new CloseCommandParameters());
+        var task = module.CloseAsync(new CloseCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 

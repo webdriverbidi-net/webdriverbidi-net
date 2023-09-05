@@ -85,7 +85,7 @@ public class Transport
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task Connect(string websocketUri)
+    public async Task ConnectAsync(string websocketUri)
     {
         if (this.isConnected)
         {
@@ -106,7 +106,7 @@ public class Transport
 
         // Reset the command counter for each connection.
         this.nextCommandId = 0;
-        await this.connection.Start(websocketUri);
+        await this.connection.StartAsync(websocketUri);
         this.isConnected = true;
     }
 
@@ -114,11 +114,11 @@ public class Transport
     /// Asynchronously disconnects from the remote end web socket.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task Disconnect()
+    public async Task DisconnectAsync()
     {
-        await this.connection.Stop();
-        await this.incomingMessageQueue.StopDispatching();
-        await this.eventDispatcher.StopDispatching();
+        await this.connection.StopAsync();
+        this.incomingMessageQueue.StopDispatching();
+        this.eventDispatcher.StopDispatching();
         this.pendingCommands.Clear();
         this.isConnected = false;
     }
@@ -128,10 +128,10 @@ public class Transport
     /// </summary>
     /// <param name="command">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task<CommandResult> SendCommandAndWait(CommandParameters command)
+    public virtual async Task<CommandResult> SendCommandAndWaitAsync(CommandParameters command)
     {
-        long commandId = await this.SendCommand(command);
-        this.WaitForCommandComplete(commandId, this.commandWaitTimeout);
+        long commandId = await this.SendCommandAsync(command);
+        this.WaitForCommandCompleteAsync(commandId, this.commandWaitTimeout);
         return this.GetCommandResponse(commandId);
     }
 
@@ -141,7 +141,7 @@ public class Transport
     /// <param name="command">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBidiException">Thrown if the command ID is already in use.</exception>
-    public virtual async Task<long> SendCommand(CommandParameters command)
+    public virtual async Task<long> SendCommandAsync(CommandParameters command)
     {
         long commandId = Interlocked.Increment(ref this.nextCommandId);
         Command executionData = new(commandId, command);
@@ -150,7 +150,7 @@ public class Transport
             throw new WebDriverBidiException($"Could not add command with id {executionData.CommandId}, as id already exists");
         }
 
-        await this.connection.SendData(JsonConvert.SerializeObject(executionData));
+        await this.connection.SendDataAsync(JsonConvert.SerializeObject(executionData));
         return executionData.CommandId;
     }
 
@@ -160,7 +160,7 @@ public class Transport
     /// <param name="commandId">The ID of the command for which to wait for completion.</param>
     /// <param name="waitTimeout">The timeout describing how long to wait for the command to complete.</param>
     /// <exception cref="WebDriverBidiException">Thrown if the command ID is invalid or if the command times out.</exception>
-    public virtual void WaitForCommandComplete(long commandId, TimeSpan waitTimeout)
+    public virtual void WaitForCommandCompleteAsync(long commandId, TimeSpan waitTimeout)
     {
         if (!this.pendingCommands.ContainsKey(commandId))
         {

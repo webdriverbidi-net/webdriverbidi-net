@@ -17,7 +17,7 @@ public class SessionModuleTests
         };
 
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
-        var task = driver.Session.Status(new StatusCommandParameters());
+        var task = driver.Session.StatusAsync(new StatusCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -44,7 +44,7 @@ public class SessionModuleTests
 
         var subscribeParameters = new SubscribeCommandParameters();
         subscribeParameters.Events.Add("log.entryAdded");
-        var task = module.Subscribe(subscribeParameters);
+        var task = module.SubscribeAsync(subscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -66,7 +66,7 @@ public class SessionModuleTests
 
         var unsubscribeParameters = new UnsubscribeCommandParameters();
         unsubscribeParameters.Events.Add("log.entryAdded");
-        var task = module.Unsubscribe(unsubscribeParameters);
+        var task = module.UnsubscribeAsync(unsubscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -87,7 +87,7 @@ public class SessionModuleTests
         SessionModule module = new(driver);
 
         var newCommandParameters = new NewCommandParameters();
-        var task = module.NewSession(newCommandParameters);
+        var task = module.NewSessionAsync(newCommandParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -123,7 +123,7 @@ public class SessionModuleTests
         SessionModule module = new(driver);
 
         var endParameters = new EndCommandParameters();
-        var task = module.End(endParameters);
+        var task = module.EndAsync(endParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 

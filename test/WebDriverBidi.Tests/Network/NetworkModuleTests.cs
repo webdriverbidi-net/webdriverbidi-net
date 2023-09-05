@@ -94,7 +94,7 @@ public class NetworkModuleTests
             UrlPatterns = new List<UrlPattern>() { new UrlPatternString("https://example.com/*") }
         };
         commandParameters.Phases.Add(InterceptPhase.BeforeRequestSent);
-        var task = module.AddIntercept(commandParameters);
+        var task = module.AddInterceptAsync(commandParameters);
 
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
@@ -116,7 +116,7 @@ public class NetworkModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         NetworkModule module = new(driver);
 
-        var task = module.ContinueRequest(new ContinueRequestCommandParameters("requestId"));
+        var task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
@@ -137,7 +137,7 @@ public class NetworkModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         NetworkModule module = new(driver);
 
-        var task = module.ContinueResponse(new ContinueResponseCommandParameters("requestId"));
+        var task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
@@ -158,7 +158,7 @@ public class NetworkModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         NetworkModule module = new(driver);
 
-        var task = module.ContinueWithAuth(new ContinueWithAuthCommandParameters("requestId")
+        var task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
         {
             Action = ContinueWithAuthActionType.ProvideCredentials,
             Credentials = new AuthCredentials("username", "password")
@@ -183,7 +183,7 @@ public class NetworkModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         NetworkModule module = new(driver);
 
-        var task = module.FailRequest(new FailRequestCommandParameters("requestId"));
+        var task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
@@ -204,7 +204,7 @@ public class NetworkModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         NetworkModule module = new(driver);
 
-        var task = module.ProvideResponse(new ProvideResponseCommandParameters("requestId"));
+        var task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
@@ -225,7 +225,7 @@ public class NetworkModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         NetworkModule module = new(driver);
 
-        var task = module.RemoveIntercept(new RemoveInterceptCommandParameters("interceptId"));
+        var task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;

@@ -19,7 +19,7 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.CallFunction(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -52,7 +52,7 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.CallFunction(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -88,7 +88,7 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
         
-        var task = module.Evaluate(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -121,7 +121,7 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.Evaluate(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
+        var task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -157,7 +157,7 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.GetRealms(new GetRealmsCommandParameters());
+        var task = module.GetRealmsAsync(new GetRealmsCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -191,7 +191,7 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
 
-        var task = module.Disown(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
+        var task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -308,7 +308,7 @@ public class ScriptModuleTests
 
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
-        var task = module.AddPreloadScript(new AddPreloadScriptCommandParameters("window.foo = false;"));
+        var task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -330,7 +330,7 @@ public class ScriptModuleTests
         Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
         ScriptModule module = new(driver);
         
-        var task = module.RemovePreloadScript(new RemovePreloadScriptCommandParameters("loadScriptId"));
+        var task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 

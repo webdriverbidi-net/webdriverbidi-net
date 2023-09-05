@@ -25,13 +25,13 @@ public class TestTransport : Transport
         return this.AddPendingCommand(testPendingCommand);
     }
 
-    public override async Task<CommandResult> SendCommandAndWait(CommandParameters command)
+    public override async Task<CommandResult> SendCommandAndWaitAsync(CommandParameters command)
     {
         if (this.ReturnCustomValue)
         {
             return this.CustomReturnValue!;
         }
 
-        return await base.SendCommandAndWait(command);
+        return await base.SendCommandAndWaitAsync(command);
     }
 }

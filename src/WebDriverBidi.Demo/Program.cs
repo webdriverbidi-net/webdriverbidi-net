@@ -30,17 +30,17 @@ string browserExecutableLocation = string.Empty;
 BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation);
 try
 {
-    await launcher.Start();
-    await launcher.LaunchBrowser();
-    await DriveBrowser(launcher.WebSocketUrl);
+    await launcher.StartAsync();
+    await launcher.LaunchBrowserAsync();
+    await DriveBrowserAsync(launcher.WebSocketUrl);
 }
 finally
 {
-    await launcher.QuitBrowser();
-    await launcher.Stop();
+    await launcher.QuitBrowserAsync();
+    await launcher.StopAsync();
 }
 
-async Task DriveBrowser(string webSocketUrl)
+async Task DriveBrowserAsync(string webSocketUrl)
 {
     Driver driver = new();
     driver.LogMessage += OnDriverLogMessage;
@@ -54,24 +54,24 @@ async Task DriveBrowser(string webSocketUrl)
         Console.WriteLine($"Load of {e.Url} complete!");
     };
 
-    await driver.Start(webSocketUrl);
+    await driver.StartAsync(webSocketUrl);
 
-    var status = await driver.Session.Status(new StatusCommandParameters());
+    var status = await driver.Session.StatusAsync(new StatusCommandParameters());
     Console.WriteLine($"Is ready? {status.IsReady}");
 
     var subscribe = new SubscribeCommandParameters();
     subscribe.Events.Add("browsingContext.load");
-    await driver.Session.Subscribe(subscribe);
+    await driver.Session.SubscribeAsync(subscribe);
 
-    var tree = await driver.BrowsingContext.GetTree(new GetTreeCommandParameters());
+    var tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
     string contextId = tree.ContextTree[0].BrowsingContextId;
     Console.WriteLine($"Active context: {contextId}");
 
-    var navigation = await driver.BrowsingContext.Navigate(new NavigateCommandParameters(contextId, "https://google.com/") { Wait = ReadinessState.Complete });
+    var navigation = await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(contextId, "https://google.com/") { Wait = ReadinessState.Complete });
     Console.WriteLine($"Performed navigation to {navigation.Url}");
 
     string functionDefinition = @"function(){ return document.querySelector('*[name=""q""]'); }";
-    var scriptResult = await driver.Script.CallFunction(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
+    var scriptResult = await driver.Script.CallFunctionAsync(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
     if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
     {
         Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Value!.GetType()}");
@@ -86,7 +86,7 @@ async Task DriveBrowser(string webSocketUrl)
         Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
     }
 
-    await driver.Stop();
+    await driver.StopAsync();
 }
 
 void OnDriverLogMessage(object? sender, LogMessageEventArgs e)

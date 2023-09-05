@@ -29,7 +29,7 @@ public class TestConnection : Connection
         this.OnLogMessage(new LogMessageEventArgs(message, level, "TestConnection"));
     }
 
-    public override Task Start(string url)
+    public override Task StartAsync(string url)
     {
         this.ConnectedUrl = url;
         if (this.BypassStart)
@@ -38,11 +38,11 @@ public class TestConnection : Connection
         }
         else
         {
-            return base.Start(url);
+            return base.StartAsync(url);
         }
     }
 
-    public override Task Stop()
+    public override Task StopAsync()
     {
         if (this.BypassStop)
         {
@@ -50,31 +50,31 @@ public class TestConnection : Connection
         }
         else
         {
-            return base.Stop();
+            return base.StopAsync();
         }
     }
 
-    public override Task SendData(string data)
+    public override Task SendDataAsync(string data)
     {
         if (this.BypassStart)
         {
             // Bypass the check to see if the connection has been started,
             // so that we can test the plumbing without needing an actual
             // WebSocket server active.
-            return this.SendWebSocketData(Encoding.UTF8.GetBytes(data));
+            return this.SendWebSocketDataAsync(Encoding.UTF8.GetBytes(data));
         }
 
-        return base.SendData(data);
+        return base.SendDataAsync(data);
     }
 
-    protected override Task SendWebSocketData(ArraySegment<byte> data)
+    protected override Task SendWebSocketDataAsync(ArraySegment<byte> data)
     {
         this.OnDataSendStarting();
         this.DataSent = Encoding.UTF8.GetString(data);
         Task result = Task.CompletedTask;
         if (!this.BypassDataSend)
         {
-            result = base.SendWebSocketData(data);
+            result = base.SendWebSocketDataAsync(data);
         }
 
         if (this.DataSendDelay.HasValue)
@@ -86,7 +86,7 @@ public class TestConnection : Connection
         return result;
     }
 
-    protected override Task CloseClientWebSocket()
+    protected override Task CloseClientWebSocketAsync()
     {
         return Task.CompletedTask;
     }

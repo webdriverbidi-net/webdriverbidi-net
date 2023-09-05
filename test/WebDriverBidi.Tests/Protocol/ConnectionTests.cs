@@ -52,7 +52,7 @@ public class ConnectionTests
         int port = this.server.Port;
         DisposeServer();
         Connection connection = new(TimeSpan.FromMilliseconds(250));
-        Assert.That(async () => await connection.Start($"ws://localhost:{port}"), Throws.InstanceOf<TimeoutException>().With.Message.Contains(".25 seconds"));
+        Assert.That(async () => await connection.StartAsync($"ws://localhost:{port}"), Throws.InstanceOf<TimeoutException>().With.Message.Contains(".25 seconds"));
     }
 
     [Test]
@@ -64,15 +64,15 @@ public class ConnectionTests
         }
 
         Connection connection = new();
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += OnSocketDataReceived;
 
-        await connection.SendData("Hello world");
+        await connection.SendDataAsync("Hello world");
         string dataReceivedByServer = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.That(dataReceivedByServer, Is.EqualTo("Hello world"));
-        await connection.Stop();
+        await connection.StopAsync();
     }
 
     [Test]
@@ -84,7 +84,7 @@ public class ConnectionTests
         }
 
         Connection connection = new();
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.DataReceived += OnConnectionDataReceived;
 
@@ -92,7 +92,7 @@ public class ConnectionTests
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.That(dataReceivedByConnection, Is.EqualTo("Hello back"));
-        await connection.Stop();
+        await connection.StopAsync();
     }
 
     [Test]
@@ -104,7 +104,7 @@ public class ConnectionTests
         }
 
         Connection connection = new();
-        await connection.Start($"ws://localhost:{server.Port}");
+        await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.DataReceived += OnConnectionDataReceived;
 
@@ -114,7 +114,7 @@ public class ConnectionTests
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.That(dataReceivedByConnection, Is.EqualTo(data));
-        await connection.Stop();
+        await connection.StopAsync();
     }
 
     [Test]
@@ -126,7 +126,7 @@ public class ConnectionTests
         }
 
         Connection connection = new();
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.DataReceived += OnConnectionDataReceived;
 
@@ -136,7 +136,7 @@ public class ConnectionTests
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.That(dataReceivedByConnection, Is.EqualTo(data));
-        await connection.Stop();
+        await connection.StopAsync();
     }
 
     [Test]
@@ -157,15 +157,15 @@ public class ConnectionTests
                 logValues.Add(e);
             }
         };
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += OnSocketDataReceived;
-        await connection.SendData("Hello world");
+        await connection.SendDataAsync("Hello world");
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
 
         await this.server.SendData(registeredConnectionId, "Hello back");
         this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(4));
-        await connection.Stop();
+        await connection.StopAsync();
 
         List<string> messages = new();
         foreach (LogMessageEventArgs logValue in logValues)
@@ -195,10 +195,10 @@ public class ConnectionTests
         Connection connection = new();
         Assert.That(connection.IsActive, Is.False);
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.IsActive, Is.True);
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(connection.IsActive, Is.False);
     }
 
@@ -214,10 +214,10 @@ public class ConnectionTests
         Connection connection = new();
         Assert.That(connection.ConnectedUrl, Is.EqualTo(string.Empty));
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start(serverWebSocketUrl);
+        await connection.StartAsync(serverWebSocketUrl);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.ConnectedUrl, Is.EqualTo(serverWebSocketUrl));
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(connection.ConnectedUrl, Is.EqualTo(string.Empty));
     }
 
@@ -231,7 +231,7 @@ public class ConnectionTests
 
         Connection connection = new();
         Assert.That(connection.IsActive, Is.False);
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(connection.IsActive, Is.False);
     }
 
@@ -250,7 +250,7 @@ public class ConnectionTests
         };
         Assert.That(connection.IsActive, Is.False);
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.IsActive, Is.True);
         connection.DataReceived += OnConnectionDataReceived;
@@ -259,7 +259,7 @@ public class ConnectionTests
         // task to enter a waiting state after receiving the first message.
         await this.server.SendData(registeredConnectionId, "Hello back");
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(connection.IsActive, Is.False);
     }
 
@@ -278,10 +278,10 @@ public class ConnectionTests
             connectionLog.Add(e.Message);
         };
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        await connection.Stop();
-        await connection.Stop();
+        await connection.StopAsync();
+        await connection.StopAsync();
     }
 
     [Test]
@@ -294,10 +294,10 @@ public class ConnectionTests
 
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.Stop();
-        await connection.Stop();
+        await connection.StopAsync();
     }
 
     [Test]
@@ -324,9 +324,9 @@ public class ConnectionTests
             connectionLog.Add(e.Message);
         };
         connection.DataReceived += OnConnectionDataReceived;
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(connectionLog, Is.EquivalentTo(expectedLogEntries));
     }
 
@@ -356,7 +356,7 @@ public class ConnectionTests
         };
 
         IList<string> serverLog = this.server.Log;
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         ManualResetEvent disconnectEvent = new(false);
         this.server.ClientDisconnected += (sender, e) =>
@@ -371,7 +371,7 @@ public class ConnectionTests
         // close websocket message to be received by the client.
         await this.server.Disconnect(registeredConnectionId);
         disconnectEvent.WaitOne(TimeSpan.FromSeconds(1));
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(connectionLog, Is.EquivalentTo(expectedLogEntries));
     }
 
@@ -400,10 +400,10 @@ public class ConnectionTests
         };
 
         IList<string> serverLog = this.server.Log;
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(connectionLog, Is.EquivalentTo(expectedLogEntries));
     }
 
@@ -418,32 +418,32 @@ public class ConnectionTests
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         connection.DataReceived += this.OnConnectionDataReceived;
 
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += this.OnSocketDataReceived;
 
-        await connection.SendData("First connection hello");
+        await connection.SendDataAsync("First connection hello");
         string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
 
         await this.server.SendData(registeredConnectionId, "First connection acknowledged");
         string receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(receivedData, Is.EqualTo("First connection acknowledged"));
 
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += this.OnSocketDataReceived;
 
-        await connection.SendData("Second connection hello");
+        await connection.SendDataAsync("Second connection hello");
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
 
         await this.server.SendData(registeredConnectionId, "Second connection acknowledged");
         receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"));
     }
 
@@ -458,11 +458,11 @@ public class ConnectionTests
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         connection.DataReceived += this.OnConnectionDataReceived;
 
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += this.OnSocketDataReceived;
 
-        await connection.SendData("First connection hello");
+        await connection.SendDataAsync("First connection hello");
         string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
@@ -470,21 +470,21 @@ public class ConnectionTests
         await this.server.SendData(registeredConnectionId, "First connection acknowledged");
         string receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(receivedData, Is.EqualTo("First connection acknowledged"));
 
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += this.OnSocketDataReceived;
 
-        await connection.SendData("Second connection hello");
+        await connection.SendDataAsync("Second connection hello");
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
 
         await this.server.SendData(registeredConnectionId, "Second connection acknowledged");
         receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
-        await connection.Stop();
+        await connection.StopAsync();
         Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"));
     }
 
@@ -497,16 +497,16 @@ public class ConnectionTests
         }
 
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        Assert.That(async () => await connection.Start($"ws://localhost:{this.server.Port}"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The WebSocket is already connected to ws://localhost:{this.server.Port}"));
+        Assert.That(async () => await connection.StartAsync($"ws://localhost:{this.server.Port}"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The WebSocket is already connected to ws://localhost:{this.server.Port}"));
     }
 
     [Test]
     public void TestCannotSendDataOnAConnectionNotYetStarted()
     {
         Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
-        Assert.That(async () => await connection.SendData($"This send should fail"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The WebSocket has not been initialized"));
+        Assert.That(async () => await connection.SendDataAsync($"This send should fail"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The WebSocket has not been initialized"));
     }
 
     [Test]
@@ -525,10 +525,10 @@ public class ConnectionTests
         };
 
         IList<string> serverLog = this.server.Log;
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
-        await connection.Stop();
+        await connection.StopAsync();
     }
 
     [Test]
@@ -547,7 +547,7 @@ public class ConnectionTests
             DataSendDelay = TimeSpan.FromMilliseconds(500),
             DataTimeout = TimeSpan.FromMilliseconds(250),
         };
-        await connection.Start($"ws://localhost:{this.server.Port}");
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
 
         ManualResetEventSlim syncEvent = new(false);
         connection.DataSendStarting += (sender, e) =>
@@ -556,10 +556,10 @@ public class ConnectionTests
         };
 
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        _ = Task.Run(() => connection.SendData("first data"));
+        _ = Task.Run(() => connection.SendDataAsync("first data"));
         syncEvent.Wait();
-        Assert.That(async () => await connection.SendData("second data"), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
-        await connection.Stop();
+        Assert.That(async () => await connection.SendDataAsync("second data"), Throws.InstanceOf<WebDriverBidiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
+        await connection.StopAsync();
     }
 
     private void OnSocketDataReceived(object? sender, ServerDataReceivedEventArgs e)

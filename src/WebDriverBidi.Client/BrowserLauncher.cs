@@ -168,7 +168,7 @@ public abstract class BrowserLauncher
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
-    public async Task Start()
+    public async Task StartAsync()
     {
         if (this.launcherProcess is not null)
         {
@@ -202,7 +202,7 @@ public abstract class BrowserLauncher
             this.OnLauncherProcessStarting(eventArgs);
 
             this.launcherProcess.Start();
-            launcherAvailable = await this.WaitForInitialization();
+            launcherAvailable = await this.WaitForInitializationAsync();
             BrowserLauncherProcessStartedEventArgs processStartedEventArgs = new(this.launcherProcess);
             this.OnLauncherProcessStarted(processStartedEventArgs);
         }
@@ -222,7 +222,7 @@ public abstract class BrowserLauncher
     /// Asynchronously stops the browser launcher.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
-    public async Task Stop()
+    public async Task StopAsync()
     {
         if (this.IsRunning)
         {
@@ -269,7 +269,7 @@ public abstract class BrowserLauncher
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
-    public async Task LaunchBrowser()
+    public async Task LaunchBrowserAsync()
     {
         Dictionary<string, object> classicCapabilities = new()
         {
@@ -328,7 +328,7 @@ public abstract class BrowserLauncher
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
-    public async Task QuitBrowser()
+    public async Task QuitBrowserAsync()
     {
         if (!string.IsNullOrEmpty(this.sessionId))
         {
@@ -404,7 +404,7 @@ public abstract class BrowserLauncher
     /// Asynchronously waits for the initialization of the browser launcher.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    private async Task<bool> WaitForInitialization()
+    private async Task<bool> WaitForInitializationAsync()
     {
         bool isInitialized = false;
         DateTime timeout = DateTime.Now.Add(this.InitializationTimeout);

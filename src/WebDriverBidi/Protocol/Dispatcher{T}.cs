@@ -29,7 +29,6 @@ public class Dispatcher<T>
     public Dispatcher()
     {
         this.monitorTask = Task.Run(() => this.MonitorQueue());
-        this.monitorTask.ConfigureAwait(false);
         this.isDispatching = true;
     }
 
@@ -54,10 +53,9 @@ public class Dispatcher<T>
     }
 
     /// <summary>
-    /// Asynchronously shuts down the dispatcher.
+    /// Shuts down the dispatcher.
     /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task StopDispatching()
+    public void StopDispatching()
     {
         if (this.isDispatching)
         {
@@ -65,7 +63,13 @@ public class Dispatcher<T>
             // writer as complete and waiting for the monitor task to end.
             while (this.queue.Reader.TryPeek(out _))
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
+                // N.B. We are doing an explicit .Wait() call here to avoid
+                // having this become an async method. Since all we are doing
+                // is waiting for the reader to become empty, this should be
+                // an acceptable use of a synchronizing API on a typically
+                // async structure. If this becomes an issue on shutdown
+                // of the Dispatcher, we can add a configurable shutdown timeout.
+                Task.Delay(TimeSpan.FromMilliseconds(10)).Wait();
             }
 
             this.queue.Writer.Complete();

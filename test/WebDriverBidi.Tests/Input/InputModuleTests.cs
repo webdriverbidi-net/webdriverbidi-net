@@ -18,7 +18,7 @@ public class InputModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         InputModule module = new(driver);
 
-        var task = module.PerformActions(new PerformActionsCommandParameters("myContextId"));
+        var task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -38,7 +38,7 @@ public class InputModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         InputModule module = new(driver);
 
-        var task = module.ReleaseActions(new ReleaseActionsCommandParameters("myContextId"));
+        var task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         

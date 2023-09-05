@@ -88,7 +88,7 @@ public class Connection
     /// <param name="url">The URL used to connect to the remote end.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="TimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
-    public virtual async Task Start(string url)
+    public virtual async Task StartAsync(string url)
     {
         if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)
         {
@@ -132,7 +132,7 @@ public class Connection
             throw new TimeoutException($"Could not connect to remote WebSocket server within {this.startupTimeout.TotalSeconds} seconds");
         }
 
-        this.dataReceiveTask = Task.Run(async () => await this.ReceiveData());
+        this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync());
         this.Log($"Connection opened", WebDriverBidiLogLevel.Info);
     }
 
@@ -140,7 +140,7 @@ public class Connection
     /// Asynchronously stops communication with the remote end of this connection.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task Stop()
+    public virtual async Task StopAsync()
     {
         this.Log($"Closing connection", WebDriverBidiLogLevel.Info);
         if (this.client.State != WebSocketState.Open)
@@ -149,7 +149,7 @@ public class Connection
         }
         else
         {
-            await this.CloseClientWebSocket();
+            await this.CloseClientWebSocketAsync();
         }
 
         // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket.
@@ -164,7 +164,7 @@ public class Connection
     /// </summary>
     /// <param name="data">The data to be sent to the remote end of this connection.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task SendData(string data)
+    public virtual async Task SendDataAsync(string data)
     {
         if (!this.IsActive)
         {
@@ -181,7 +181,7 @@ public class Connection
 
         ArraySegment<byte> messageBuffer = new(Encoding.UTF8.GetBytes(data));
         this.Log($"SEND >>> {data}");
-        await this.SendWebSocketData(messageBuffer);
+        await this.SendWebSocketDataAsync(messageBuffer);
         this.dataSendSemaphore.Release();
     }
 
@@ -190,7 +190,7 @@ public class Connection
     /// </summary>
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the WebSocket.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task SendWebSocketData(ArraySegment<byte> messageBuffer)
+    protected virtual async Task SendWebSocketDataAsync(ArraySegment<byte> messageBuffer)
     {
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
     }
@@ -199,7 +199,7 @@ public class Connection
     /// Asynchronously closes the client WebSocket.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task CloseClientWebSocket()
+    protected virtual async Task CloseClientWebSocketAsync()
     {
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
         CancellationTokenSource timeout = new(this.shutdownTimeout);
@@ -247,7 +247,7 @@ public class Connection
         }
     }
 
-    private async Task ReceiveData()
+    private async Task ReceiveDataAsync()
     {
         CancellationToken cancellationToken = this.clientTokenSource.Token;
         try

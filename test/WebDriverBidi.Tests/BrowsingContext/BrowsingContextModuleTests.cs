@@ -18,7 +18,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Activate(new ActivateCommandParameters("myContextId"));
+        var task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -38,7 +38,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.CaptureScreenshot(new CaptureScreenshotCommandParameters("myContextId"));
+        var task = module.CaptureScreenshotAsync(new CaptureScreenshotCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -59,7 +59,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Close(new CloseCommandParameters("myContextId"));
+        var task = module.CloseAsync(new CloseCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
@@ -79,7 +79,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Create(new CreateCommandParameters(CreateType.Tab));
+        var task = module.CreateAsync(new CreateCommandParameters(CreateType.Tab));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -100,7 +100,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.GetTree(new GetTreeCommandParameters());
+        var task = module.GetTreeAsync(new GetTreeCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -127,7 +127,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.HandleUserPrompt(new HandleUserPromptCommandParameters("myContextId"));
+        var task = module.HandleUserPromptAsync(new HandleUserPromptCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -147,7 +147,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Navigate(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
+        var task = module.NavigateAsync(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -172,7 +172,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Print(new PrintCommandParameters("myContextId"));
+        var task = module.PrintAsync(new PrintCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -193,7 +193,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.Reload(new ReloadCommandParameters("myContext"));
+        var task = module.ReloadAsync(new ReloadCommandParameters("myContext"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -218,7 +218,7 @@ public class BrowsingContextModuleTests
         Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
         BrowsingContextModule module = new(driver);
 
-        var task = module.SetViewport(new SetViewportCommandParameters("myContextId"));
+        var task = module.SetViewportAsync(new SetViewportCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
         
