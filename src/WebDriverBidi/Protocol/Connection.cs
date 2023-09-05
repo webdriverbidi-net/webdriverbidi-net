@@ -16,8 +16,8 @@ public class Connection
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
     private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
     private readonly int bufferSize = 4096;
-    private readonly TimeSpan startupTimeout;
-    private readonly TimeSpan shutdownTimeout;
+    private TimeSpan startupTimeout = DefaultTimeout;
+    private TimeSpan shutdownTimeout = DefaultTimeout;
     private TimeSpan socketTimeout = DefaultTimeout;
     private string url = string.Empty;
     private Task? dataReceiveTask;
@@ -28,28 +28,7 @@ public class Connection
     /// Initializes a new instance of the <see cref="Connection" /> class.
     /// </summary>
     public Connection()
-        : this(DefaultTimeout)
     {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Connection" /> class with a given startup timeout.
-    /// </summary>
-    /// <param name="startupTimeout">The timeout before throwing an error when starting up the connection.</param>
-    public Connection(TimeSpan startupTimeout)
-        : this(startupTimeout, DefaultTimeout)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Connection" /> class with a given startup and shutdown timeout.
-    /// </summary>
-    /// <param name="startupTimeout">The timeout before throwing an error when starting up the connection.</param>
-    /// <param name="shutdownTimeout">The timeout before throwing an error when shutting down the connection.</param>
-    public Connection(TimeSpan startupTimeout, TimeSpan shutdownTimeout)
-    {
-        this.startupTimeout = startupTimeout;
-        this.shutdownTimeout = shutdownTimeout;
     }
 
     /// <summary>
@@ -76,6 +55,16 @@ public class Connection
     /// Gets or sets the WebSocket URL to which the connection is connected.
     /// </summary>
     public string ConnectedUrl { get => this.url; protected set => this.url = value; }
+
+    /// <summary>
+    /// Gets or sets the value of the timeout to wait before throwing an error when starting up the connection.
+    /// </summary>
+    public TimeSpan StartupTimeout { get => this.startupTimeout; set => this.startupTimeout = value; }
+
+    /// <summary>
+    /// Gets or sets the value of the timeout to wait before throwing an error when shutting down the connection.
+    /// </summary>
+    public TimeSpan ShutdownTimeout { get => this.shutdownTimeout; set => this.shutdownTimeout = value; }
 
     /// <summary>
     /// Gets or sets the value of the timeout to wait for exclusive access when sending to or receiving data from the ClientWebSocket.

@@ -51,7 +51,10 @@ public class ConnectionTests
 
         int port = this.server.Port;
         DisposeServer();
-        Connection connection = new(TimeSpan.FromMilliseconds(250));
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromMilliseconds(250)
+        };
         Assert.That(async () => await connection.StartAsync($"ws://localhost:{port}"), Throws.InstanceOf<TimeoutException>().With.Message.Contains(".25 seconds"));
     }
 
@@ -292,7 +295,11 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
         connection.DataReceived += OnConnectionDataReceived;
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -349,7 +356,11 @@ public class ConnectionTests
         };
 
         List<string> connectionLog = new();
-        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
         connection.LogMessage += (sender, e) =>
         {
             connectionLog.Add(e.Message);
@@ -393,7 +404,11 @@ public class ConnectionTests
         };
 
         List<string> connectionLog = new();
-        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
         connection.LogMessage += (sender, e) =>
         {
             connectionLog.Add(e.Message);
@@ -415,7 +430,11 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
         connection.DataReceived += this.OnConnectionDataReceived;
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
@@ -455,7 +474,11 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
         connection.DataReceived += this.OnConnectionDataReceived;
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
@@ -496,7 +519,11 @@ public class ConnectionTests
             throw new WebDriverBidiException("No server available");
         }
 
-        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(async () => await connection.StartAsync($"ws://localhost:{this.server.Port}"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The WebSocket is already connected to ws://localhost:{this.server.Port}"));
@@ -505,7 +532,11 @@ public class ConnectionTests
     [Test]
     public void TestCannotSendDataOnAConnectionNotYetStarted()
     {
-        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
         Assert.That(async () => await connection.SendDataAsync($"This send should fail"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The WebSocket has not been initialized"));
     }
 
@@ -518,7 +549,11 @@ public class ConnectionTests
         }
 
         List<string> connectionLog = new();
-        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.Zero);
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.Zero,
+        };
         connection.LogMessage += (sender, e) =>
         {
             connectionLog.Add(e.Message);
