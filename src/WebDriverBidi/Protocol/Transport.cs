@@ -18,9 +18,9 @@ public class Transport
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
-    private readonly Dispatcher<string> incomingMessageQueue = new();
-    private readonly Dispatcher<EventMessage> eventDispatcher = new();
     private readonly SemaphoreSlim sendDataSemaphore = new(1, 1);
+    private Dispatcher<string> incomingMessageQueue = new();
+    private Dispatcher<EventMessage> eventDispatcher = new();
     private long nextCommandId = 0;
     private bool isConnected;
 
@@ -88,11 +88,27 @@ public class Transport
     /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task Connect(string websocketUri)
     {
-        if (!this.isConnected)
+        if (this.isConnected)
         {
-            await this.connection.Start(websocketUri);
-            this.isConnected = true;
+            throw new WebDriverBidiException($"The transport is already connected to {this.connection.ConnectedUrl}; you must disconnect before connecting to another URL");
         }
+
+        if (!this.incomingMessageQueue.IsDispatching)
+        {
+            this.incomingMessageQueue = new Dispatcher<string>();
+            this.incomingMessageQueue.ItemDispatched += this.OnIncomingMessageDispatched;
+        }
+
+        if (!this.eventDispatcher.IsDispatching)
+        {
+            this.eventDispatcher = new Dispatcher<EventMessage>();
+            this.eventDispatcher.ItemDispatched += this.OnEventDispatched;
+        }
+
+        // Reset the command counter for each connection.
+        this.nextCommandId = 0;
+        await this.connection.Start(websocketUri);
+        this.isConnected = true;
     }
 
     /// <summary>
@@ -104,6 +120,7 @@ public class Transport
         await this.connection.Stop();
         await this.incomingMessageQueue.StopDispatching();
         await this.eventDispatcher.StopDispatching();
+        this.pendingCommands.Clear();
         this.isConnected = false;
     }
 
@@ -139,8 +156,15 @@ public class Transport
             throw new WebDriverBidiException($"Could not add command with id {executionData.CommandId}, as id already exists");
         }
 
-        await this.connection.SendData(JsonConvert.SerializeObject(executionData));
-        this.sendDataSemaphore.Release();
+        try
+        {
+            await this.connection.SendData(JsonConvert.SerializeObject(executionData));
+        }
+        finally
+        {
+            this.sendDataSemaphore.Release();
+        }
+
         return executionData.CommandId;
     }
 
@@ -303,6 +327,32 @@ public class Transport
                 else if (messageType == "event")
                 {
                     isProcessed = this.ProcessEventMessage(message);
+                }
+            }
+            else
+            {
+                // TODO: Remove this else clause when the browser stable channels
+                // have the message type property implemented.
+                JToken? errorToken = message["error"];
+                if (errorToken is not null && errorToken.Type == JTokenType.String)
+                {
+                    isProcessed = this.ProcessErrorMessage(message);
+                }
+                else
+                {
+                    JToken? idToken = message["id"];
+                    if (idToken is not null && idToken.Type == JTokenType.Integer)
+                    {
+                        isProcessed = this.ProcessCommandResponseMessage(message);
+                    }
+                    else
+                    {
+                        JToken? eventNameToken = message["method"];
+                        if (eventNameToken is not null && eventNameToken.Type == JTokenType.String)
+                        {
+                            isProcessed = this.ProcessEventMessage(message);
+                        }
+                    }
                 }
             }
         }

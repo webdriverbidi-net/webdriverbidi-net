@@ -14,13 +14,13 @@ using System.Text;
 public class Connection
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
-    private readonly CancellationTokenSource clientTokenSource = new();
     private readonly TimeSpan startupTimeout;
     private readonly TimeSpan shutdownTimeout;
     private readonly int bufferSize = 4096;
+    private string url = string.Empty;
     private Task? dataReceiveTask;
-    private bool isActive = false;
     private ClientWebSocket client = new();
+    private CancellationTokenSource clientTokenSource = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Connection" /> class.
@@ -63,12 +63,17 @@ public class Connection
     /// <summary>
     /// Gets a value indicating whether this connection is active.
     /// </summary>
-    public bool IsActive => this.isActive;
+    public bool IsActive => this.client.State != WebSocketState.None && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted;
 
     /// <summary>
     /// Gets the buffer size for communication used by this connection.
     /// </summary>
     public int BufferSize => this.bufferSize;
+
+    /// <summary>
+    /// Gets or sets the WebSocket URL to which the connection is connected.
+    /// </summary>
+    public string ConnectedUrl { get => this.url; protected set => this.url = value; }
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -78,6 +83,23 @@ public class Connection
     /// <exception cref="TimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
     public virtual async Task Start(string url)
     {
+        if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)
+        {
+            // A ClientWebSocket in a closed or aborted state means that we had
+            // a connection at one time that was in use, and is no longer valid.
+            // replace that ClientWebSocket with a new one to allow for reuse of
+            // the connection.
+            this.client = new ClientWebSocket();
+            this.clientTokenSource = new CancellationTokenSource();
+        }
+
+        if (this.client.State != WebSocketState.None)
+        {
+            // Since we've already ruled out closed or aborted sockets in the above
+            // code, ClientWebSocket in any state other than none is already connected.
+            throw new WebDriverBidiException($"The WebSocket is already connected to {this.url}; call the Stop method to disconnect before calling Start");
+        }
+
         this.Log($"Opening connection to URL {url}", WebDriverBidiLogLevel.Info);
         bool connected = false;
         DateTime timeout = DateTime.Now.Add(this.startupTimeout);
@@ -87,6 +109,7 @@ public class Connection
             {
                 await this.client.ConnectAsync(new Uri(url), this.clientTokenSource.Token);
                 connected = true;
+                this.url = url;
             }
             catch (WebSocketException)
             {
@@ -99,11 +122,10 @@ public class Connection
 
         if (!connected)
         {
-            throw new TimeoutException($"Could not connect to browser within {this.startupTimeout.TotalSeconds} seconds");
+            throw new TimeoutException($"Could not connect to remote WebSocket server within {this.startupTimeout.TotalSeconds} seconds");
         }
 
         this.dataReceiveTask = Task.Run(async () => await this.ReceiveData());
-        this.isActive = true;
         this.Log($"Connection opened", WebDriverBidiLogLevel.Info);
     }
 
@@ -127,6 +149,7 @@ public class Connection
         // The finally block at the end of the processing loop will dispose of the ClientWebSocket object.
         this.clientTokenSource.Cancel();
         this.dataReceiveTask?.Wait();
+        this.url = string.Empty;
     }
 
     /// <summary>
@@ -136,6 +159,11 @@ public class Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task SendData(string data)
     {
+        if (!this.IsActive)
+        {
+            throw new WebDriverBidiException("The WebSocket has not been initialized; you must call the Start method before sending data");
+        }
+
         ArraySegment<byte> messageBuffer = new(Encoding.UTF8.GetBytes(data));
         this.Log($"SEND >>> {data}");
         await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
@@ -249,7 +277,6 @@ public class Connection
         finally
         {
             this.client.Dispose();
-            this.isActive = false;
         }
     }
 

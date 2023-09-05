@@ -652,6 +652,15 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestCannotConnectWhenAlreadyConnected()
+    {
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        await transport.Connect($"ws://localhost:1234");
+        Assert.That(async () => await transport.Connect($"ws://localhost:5678"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The transport is already connected to ws://localhost:1234"));
+    }
+
+    [Test]
     public void TestCanDetectExistingCommandId()
     {
         CommandParameters command = new TestCommand("test.command");
@@ -709,5 +718,39 @@ public class TransportTests
         });
         var convertedData = receivedData as TestEventArgs;
         Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
+    }
+
+    [Test]
+    public async Task TestTransportCanReuseConnectionToDifferentUrl()
+    {
+        string commandName = "module.command";
+        Dictionary<string, object?> expectedCommandParameters = new()
+        {
+            { "parameterName", "parameterValue" }
+        };
+        Dictionary<string, object?> expected = new()
+        {
+            { "id", 1 },
+            { "method", commandName },
+            { "params", expectedCommandParameters }
+        };
+
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.Zero, connection);
+        await transport.Connect("ws://example.com:1234");
+
+        TestCommand command = new(commandName);
+        _ = await transport.SendCommand(command);
+
+        var dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        Assert.That(dataValue, Is.EquivalentTo(expected));
+        await transport.Disconnect();
+
+        await transport.Connect("ws://example.com:5678");
+        _ = await transport.SendCommand(command);
+
+        dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        Assert.That(dataValue, Is.EquivalentTo(expected));
+        await transport.Disconnect();
     }
 }

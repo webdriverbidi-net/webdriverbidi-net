@@ -28,6 +28,7 @@ public class TestConnection : Connection
 
     public override Task Start(string url)
     {
+        this.ConnectedUrl = url;
         if (this.BypassStart)
         {
             return Task.CompletedTask;

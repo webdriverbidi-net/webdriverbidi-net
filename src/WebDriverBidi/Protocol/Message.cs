@@ -21,8 +21,10 @@ public class Message
     /// <summary>
     /// Gets the type of message.
     /// </summary>
+    // TODO: Uncomment this attribute when the browser stable channels
+    // have the message type property implemented.
+    // [JsonRequired]
     [JsonProperty("type")]
-    [JsonRequired]
     public string Type { get => this.type; internal set => this.type = value; }
 
     /// <summary>

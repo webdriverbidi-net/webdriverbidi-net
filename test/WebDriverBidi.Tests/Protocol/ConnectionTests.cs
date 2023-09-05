@@ -1,6 +1,7 @@
 namespace WebDriverBidi.Protocol;
 
 using System.Threading;
+using NUnit.Framework.Internal.Execution;
 using PinchHitter;
 using WebDriverBidi.TestUtilities;
 
@@ -203,6 +204,25 @@ public class ConnectionTests
     }
 
     [Test]
+    public async Task TestUrlProperty()
+    {
+        if (this.server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        string serverWebSocketUrl = $"ws://localhost:{this.server.Port}";
+        Connection connection = new();
+        Assert.That(connection.ConnectedUrl, Is.EqualTo(string.Empty));
+        connection.DataReceived += OnConnectionDataReceived;
+        await connection.Start(serverWebSocketUrl);
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        Assert.That(connection.ConnectedUrl, Is.EqualTo(serverWebSocketUrl));
+        await connection.Stop();
+        Assert.That(connection.ConnectedUrl, Is.EqualTo(string.Empty));
+    }
+
+    [Test]
     public async Task TestStopWithoutStart()
     {
         if (this.server is null)
@@ -386,6 +406,108 @@ public class ConnectionTests
         this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.Stop();
         Assert.That(connectionLog, Is.EquivalentTo(expectedLogEntries));
+    }
+
+    [Test]
+    public async Task TestConnectionCanBeReusedAfterBeingShutDown()
+    {
+        if (this.server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        connection.DataReceived += this.OnConnectionDataReceived;
+
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.DataReceived += this.OnSocketDataReceived;
+
+        await connection.SendData("First connection hello");
+        string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
+        this.server.DataReceived -= this.OnSocketDataReceived;
+        Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
+
+        await this.server.SendData(registeredConnectionId, "First connection acknowledged");
+        string receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        await connection.Stop();
+        Assert.That(receivedData, Is.EqualTo("First connection acknowledged"));
+
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.DataReceived += this.OnSocketDataReceived;
+
+        await connection.SendData("Second connection hello");
+        serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
+        this.server.DataReceived -= this.OnSocketDataReceived;
+        Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
+
+        await this.server.SendData(registeredConnectionId, "Second connection acknowledged");
+        receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        await connection.Stop();
+        Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"));
+    }
+
+    [Test]
+    public async Task TestConnectionCanBeReusedAfterBeingAborted()
+    {
+        if (this.server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        connection.DataReceived += this.OnConnectionDataReceived;
+
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.DataReceived += this.OnSocketDataReceived;
+
+        await connection.SendData("First connection hello");
+        string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
+        this.server.DataReceived -= this.OnSocketDataReceived;
+        Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
+
+        await this.server.SendData(registeredConnectionId, "First connection acknowledged");
+        string receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
+        await connection.Stop();
+        Assert.That(receivedData, Is.EqualTo("First connection acknowledged"));
+
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.DataReceived += this.OnSocketDataReceived;
+
+        await connection.SendData("Second connection hello");
+        serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
+        this.server.DataReceived -= this.OnSocketDataReceived;
+        Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
+
+        await this.server.SendData(registeredConnectionId, "Second connection acknowledged");
+        receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        await connection.Stop();
+        Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"));
+    }
+
+    [Test]
+    public async Task TestCannotStartAlreadyStartedConnection()
+    {
+        if (this.server is null)
+        {
+            throw new WebDriverBidiException("No server available");
+        }
+
+        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        await connection.Start($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        Assert.That(async () => await connection.Start($"ws://localhost:{this.server.Port}"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The WebSocket is already connected to ws://localhost:{this.server.Port}"));
+    }
+
+    [Test]
+    public void TestCannotSendDataOnAConnectionNotYetStarted()
+    {
+        Connection connection = new(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        Assert.That(async () => await connection.SendData($"This send should fail"), Throws.InstanceOf<WebDriverBidiException>().With.Message.StartsWith($"The WebSocket has not been initialized"));
     }
 
     [Test]
