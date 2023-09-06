@@ -579,7 +579,7 @@ public class ConnectionTests
             BypassStart = false,
             BypassStop = false,
             BypassDataSend = false,
-            DataSendDelay = TimeSpan.FromMilliseconds(500),
+            DataSendDelay = TimeSpan.FromMilliseconds(1000),
             DataTimeout = TimeSpan.FromMilliseconds(250),
         };
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
