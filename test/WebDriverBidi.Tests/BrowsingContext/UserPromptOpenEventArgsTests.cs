@@ -16,6 +16,7 @@ public class UserPromptOpenedEventArgsTests
             Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Alert));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+            Assert.That(eventArgs.DefaultValue, Is.Null);
         });
     }
 
@@ -30,6 +31,7 @@ public class UserPromptOpenedEventArgsTests
             Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Confirm));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+            Assert.That(eventArgs.DefaultValue, Is.Null);
         });
     }
 
@@ -44,6 +46,7 @@ public class UserPromptOpenedEventArgsTests
             Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Prompt));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+            Assert.That(eventArgs.DefaultValue, Is.Null);
         });
     }
 
@@ -58,6 +61,22 @@ public class UserPromptOpenedEventArgsTests
             Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.BeforeUnload));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+            Assert.That(eventArgs.DefaultValue, Is.Null);
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeWithOptionalDefaultValue()
+    {
+        string json = @"{ ""context"": ""myContextId"", ""type"": ""prompt"", ""message"": ""some prompt message"", ""defaultValue"": ""prompt default"" }";
+        UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Prompt));
+            Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+            Assert.That(eventArgs.DefaultValue, Is.EqualTo("prompt default"));
         });
     }
 

@@ -16,6 +16,7 @@ public class UserPromptOpenedEventArgs : WebDriverBidiEventArgs
     private string browsingContextId;
     private UserPromptType promptType;
     private string message;
+    private string? defaultValue;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserPromptOpenedEventArgs" /> class.
@@ -51,4 +52,10 @@ public class UserPromptOpenedEventArgs : WebDriverBidiEventArgs
     [JsonProperty("message")]
     [JsonRequired]
     public string Message { get => this.message; internal set => this.message = value; }
+
+    /// <summary>
+    /// Gets the default value of the user prompt, if any.
+    /// </summary>
+    [JsonProperty("defaultValue")]
+    public string? DefaultValue { get => this.defaultValue; internal set => this.defaultValue = value; }
 }
