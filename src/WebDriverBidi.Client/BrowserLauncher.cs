@@ -184,7 +184,7 @@ public abstract class BrowserLauncher
         // to mitigate at least other instances of a BrowserLauncher acquiring the
         // same port when launching the browser.
         bool launcherAvailable = false;
-        await LockObject.WaitAsync();
+        await LockObject.WaitAsync().ConfigureAwait(false);
         try
         {
             if (this.launcherPort == 0)
@@ -202,7 +202,7 @@ public abstract class BrowserLauncher
             this.OnLauncherProcessStarting(eventArgs);
 
             this.launcherProcess.Start();
-            launcherAvailable = await this.WaitForInitializationAsync();
+            launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
             BrowserLauncherProcessStartedEventArgs processStartedEventArgs = new(this.launcherProcess);
             this.OnLauncherProcessStarted(processStartedEventArgs);
         }
@@ -238,7 +238,7 @@ public abstract class BrowserLauncher
                         // we'll retry. We wait for exit here, since catching the exception
                         // for a failed HTTP request due to a closed socket is particularly
                         // expensive.
-                        using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/shutdown");
+                        using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/shutdown").ConfigureAwait(false);
                         this.launcherProcess!.WaitForExit(3000);
                     }
                     catch (WebException)
@@ -284,8 +284,8 @@ public abstract class BrowserLauncher
         string json = JsonSerializer.Serialize(classicCapabilities);
         Console.WriteLine($"Sending classic new session command. JSON:\n{json}");
         StringContent content = new(json, Encoding.UTF8, "application/json");
-        using HttpResponseMessage response = await this.httpClient.PostAsync($"{this.ServiceUrl}/session", content);
-        string responseJson = await response.Content.ReadAsStringAsync();
+        using HttpResponseMessage response = await this.httpClient.PostAsync($"{this.ServiceUrl}/session", content).ConfigureAwait(false);
+        string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         if (response.StatusCode != HttpStatusCode.OK)
         {
             throw new BrowserNotLaunchedException($"Unable to launch browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
@@ -332,8 +332,8 @@ public abstract class BrowserLauncher
     {
         if (!string.IsNullOrEmpty(this.sessionId))
         {
-            using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}");
-            string responseJson = await response.Content.ReadAsStringAsync();
+            using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}").ConfigureAwait(false);
+            string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new CannotQuitBrowserException($"Unable to quit browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
@@ -418,7 +418,7 @@ public abstract class BrowserLauncher
 
             try
             {
-                using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/status");
+                using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/status").ConfigureAwait(false);
 
                 // Checking the response from the 'status' end point. Note that we are simply checking
                 // that the HTTP status returned is a 200 status, and that the response has the correct

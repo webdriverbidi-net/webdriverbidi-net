@@ -54,7 +54,7 @@ public sealed class ScriptModule : Module
     /// <returns>The result of the command containing the ID of the created preload script.</returns>
     public async Task<AddPreloadScriptCommandResult> AddPreloadScriptAsync(AddPreloadScriptCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<AddPreloadScriptCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<AddPreloadScriptCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public sealed class ScriptModule : Module
     /// <returns>The result of the command containing the result of the function execution.</returns>
     public async Task<EvaluateResult> CallFunctionAsync(CallFunctionCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public sealed class ScriptModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> DisownAsync(DisownCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -84,7 +84,7 @@ public sealed class ScriptModule : Module
     /// <returns>The result of the command containing the result of the script evaluation.</returns>
     public async Task<EvaluateResult> EvaluateAsync(EvaluateCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -94,7 +94,7 @@ public sealed class ScriptModule : Module
     /// <returns>The result of the command containing IDs of the realms.</returns>
     public async Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<GetRealmsCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<GetRealmsCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -104,7 +104,7 @@ public sealed class ScriptModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     private void OnRealmCreated(EventInfo<RealmInfo> eventData)

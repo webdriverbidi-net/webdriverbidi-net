@@ -103,7 +103,7 @@ public class Connection
         {
             try
             {
-                await this.client.ConnectAsync(new Uri(url), this.clientTokenSource.Token);
+                await this.client.ConnectAsync(new Uri(url), this.clientTokenSource.Token).ConfigureAwait(false);
                 connected = true;
                 this.url = url;
             }
@@ -111,7 +111,7 @@ public class Connection
             {
                 // If the server-side socket is not yet ready, it leaves the client socket in a closed state,
                 // which sees the object as disposed, so we must create a new one to try again
-                await Task.Delay(TimeSpan.FromMilliseconds(500));
+                await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
                 this.client = new ClientWebSocket();
             }
         }
@@ -121,7 +121,7 @@ public class Connection
             throw new TimeoutException($"Could not connect to remote WebSocket server within {this.startupTimeout.TotalSeconds} seconds");
         }
 
-        this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync());
+        this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync().ConfigureAwait(false));
         this.Log($"Connection opened", WebDriverBidiLogLevel.Info);
     }
 
@@ -138,7 +138,7 @@ public class Connection
         }
         else
         {
-            await this.CloseClientWebSocketAsync();
+            await this.CloseClientWebSocketAsync().ConfigureAwait(false);
         }
 
         // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket.
@@ -163,14 +163,14 @@ public class Connection
         // Only one send operation at a time can be active on a ClientWebSocket instance,
         // so we must synchronize send access to the socket in case multiple threads are
         // attempting to send commands or other data simultaneously.
-        if (!await this.dataSendSemaphore.WaitAsync(this.socketTimeout))
+        if (!await this.dataSendSemaphore.WaitAsync(this.socketTimeout).ConfigureAwait(false))
         {
             throw new WebDriverBidiException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
 
         ArraySegment<byte> messageBuffer = new(Encoding.UTF8.GetBytes(data));
         this.Log($"SEND >>> {data}");
-        await this.SendWebSocketDataAsync(messageBuffer);
+        await this.SendWebSocketDataAsync(messageBuffer).ConfigureAwait(false);
         this.dataSendSemaphore.Release();
     }
 
@@ -181,7 +181,7 @@ public class Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected virtual async Task SendWebSocketDataAsync(ArraySegment<byte> messageBuffer)
     {
-        await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None);
+        await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -195,13 +195,13 @@ public class Connection
         try
         {
             // After this, the socket state which change to CloseSent
-            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token);
+            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token).ConfigureAwait(false);
 
             // Now we wait for the server response, which will close the socket
             while (this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted && !timeout.Token.IsCancellationRequested)
             {
                 // The loop may be too tight for the cancellation token to get triggered, so add a small delay
-                await Task.Delay(TimeSpan.FromMilliseconds(10));
+                await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
             }
 
             this.Log($"Client state is {this.client.State}", WebDriverBidiLogLevel.Info);
@@ -251,7 +251,7 @@ public class Connection
                 // Task running this method, so we will forego use of a semaphore to serialize such
                 // access. If there is a use case where this could happen, we will resolve it at that
                 // time.
-                WebSocketReceiveResult receiveResult = await this.client.ReceiveAsync(buffer, cancellationToken);
+                WebSocketReceiveResult receiveResult = await this.client.ReceiveAsync(buffer, cancellationToken).ConfigureAwait(false);
 
                 // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
                 if (!cancellationToken.IsCancellationRequested)
@@ -261,7 +261,7 @@ public class Connection
                     if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
                     {
                         this.Log($"Acknowledging Close frame received from server (client state: {this.client.State})", WebDriverBidiLogLevel.Info);
-                        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None);
+                        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None).ConfigureAwait(false);
                     }
 
                     // Display text or binary data

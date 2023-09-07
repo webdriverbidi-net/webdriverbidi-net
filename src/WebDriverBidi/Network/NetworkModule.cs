@@ -66,7 +66,7 @@ public sealed class NetworkModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<AddInterceptCommandResult> AddInterceptAsync(AddInterceptCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<AddInterceptCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<AddInterceptCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public sealed class NetworkModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<EmptyResult> ContinueRequestAsync(ContinueRequestCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -87,7 +87,7 @@ public sealed class NetworkModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<EmptyResult> ContinueResponseAsync(ContinueResponseCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public sealed class NetworkModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<EmptyResult> ContinueWithAuthAsync(ContinueWithAuthCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public sealed class NetworkModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<EmptyResult> FailRequestAsync(FailRequestCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -117,7 +117,7 @@ public sealed class NetworkModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<EmptyResult> ProvideResponseAsync(ProvideResponseCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public sealed class NetworkModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<EmptyResult> RemoveInterceptAsync(RemoveInterceptCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     private void OnAuthRequired(EventInfo<AuthRequiredEventArgs> eventData)

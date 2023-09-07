@@ -36,7 +36,7 @@ public sealed class SessionModule : Module
     /// <returns>The result of the command containing the information about the remote end status.</returns>
     public async Task<StatusCommandResult> StatusAsync(StatusCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<StatusCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<StatusCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ public sealed class SessionModule : Module
     /// <returns>The result of the command containing the information new session.</returns>
     public async Task<NewCommandResult> NewSessionAsync(NewCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<NewCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<NewCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public sealed class SessionModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> SubscribeAsync(SubscribeCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public sealed class SessionModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> UnsubscribeAsync(UnsubscribeCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -76,6 +76,6 @@ public sealed class SessionModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> EndAsync(EndCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 }

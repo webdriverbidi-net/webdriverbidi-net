@@ -36,7 +36,7 @@ public sealed class InputModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> PerformActionsAsync(PerformActionsCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -46,6 +46,6 @@ public sealed class InputModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> ReleaseActionsAsync(ReleaseActionsCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 }

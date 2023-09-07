@@ -112,7 +112,7 @@ public class Driver
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task StartAsync(string url)
     {
-        await this.transport.ConnectAsync(url);
+        await this.transport.ConnectAsync(url).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public class Driver
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task StopAsync()
     {
-        await this.transport.DisconnectAsync();
+        await this.transport.DisconnectAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -134,7 +134,7 @@ public class Driver
     public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command)
         where T : CommandResult
     {
-        CommandResult result = await this.transport.SendCommandAndWaitAsync(command) ?? throw new WebDriverBidiException("Received null response from transport for SendCommandAndWait");
+        CommandResult result = await this.transport.SendCommandAndWaitAsync(command).ConfigureAwait(false) ?? throw new WebDriverBidiException("Received null response from transport for SendCommandAndWait");
         if (result.IsError)
         {
             if (result is not ErrorResult errorResponse)

@@ -102,7 +102,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<EmptyResult> ActivateAsync(ActivateCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
     public async Task<CaptureScreenshotCommandResult> CaptureScreenshotAsync(CaptureScreenshotCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<CaptureScreenshotCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<CaptureScreenshotCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> CloseAsync(CloseCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -132,7 +132,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>The result of the command including the ID of the new context.</returns>
     public async Task<CreateCommandResult> CreateAsync(CreateCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<CreateCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<CreateCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>The tree associated browsing contexts.</returns>
     public async Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<GetTreeCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<GetTreeCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -152,7 +152,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>An empty command result.</returns>
     public async Task<EmptyResult> HandleUserPromptAsync(HandleUserPromptCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>The result of the command.</returns>
     public async Task<NavigationResult> NavigateAsync(NavigateCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<NavigationResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<NavigationResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>>The result of the command containing a base64-encoded PDF of the current page.</returns>
     public async Task<PrintCommandResult> PrintAsync(PrintCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<PrintCommandResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<PrintCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -182,7 +182,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>The result of the command.</returns>
     public async Task<NavigationResult> ReloadAsync(ReloadCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<NavigationResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<NavigationResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -192,7 +192,7 @@ public sealed class BrowsingContextModule : Module
     /// <returns>The result of the command.</returns>
     public async Task<EmptyResult> SetViewportAsync(SetViewportCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
     private void OnContextCreated(EventInfo<BrowsingContextInfo> eventData)

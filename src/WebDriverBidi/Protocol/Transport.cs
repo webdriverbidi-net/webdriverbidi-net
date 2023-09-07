@@ -106,7 +106,7 @@ public class Transport
 
         // Reset the command counter for each connection.
         this.nextCommandId = 0;
-        await this.connection.StartAsync(websocketUri);
+        await this.connection.StartAsync(websocketUri).ConfigureAwait(false);
         this.isConnected = true;
     }
 
@@ -116,7 +116,7 @@ public class Transport
     /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task DisconnectAsync()
     {
-        await this.connection.StopAsync();
+        await this.connection.StopAsync().ConfigureAwait(false);
         this.incomingMessageQueue.StopDispatching();
         this.eventDispatcher.StopDispatching();
         this.pendingCommands.Clear();
@@ -130,7 +130,7 @@ public class Transport
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task<CommandResult> SendCommandAndWaitAsync(CommandParameters command)
     {
-        long commandId = await this.SendCommandAsync(command);
+        long commandId = await this.SendCommandAsync(command).ConfigureAwait(false);
         this.WaitForCommandCompleteAsync(commandId, this.commandWaitTimeout);
         return this.GetCommandResponse(commandId);
     }
@@ -150,7 +150,7 @@ public class Transport
             throw new WebDriverBidiException($"Could not add command with id {executionData.CommandId}, as id already exists");
         }
 
-        await this.connection.SendDataAsync(JsonConvert.SerializeObject(executionData));
+        await this.connection.SendDataAsync(JsonConvert.SerializeObject(executionData)).ConfigureAwait(false);
         return executionData.CommandId;
     }
 

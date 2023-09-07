@@ -28,7 +28,7 @@ public class Dispatcher<T>
     /// </summary>
     public Dispatcher()
     {
-        this.monitorTask = Task.Run(() => this.MonitorQueue());
+        this.monitorTask = Task.Run(async () => await this.MonitorQueue().ConfigureAwait(false));
         this.isDispatching = true;
     }
 
@@ -93,7 +93,7 @@ public class Dispatcher<T>
 
     private async Task MonitorQueue()
     {
-        while (await this.queue.Reader.WaitToReadAsync())
+        while (await this.queue.Reader.WaitToReadAsync().ConfigureAwait(false))
         {
             this.DispatchPendingItems();
         }
