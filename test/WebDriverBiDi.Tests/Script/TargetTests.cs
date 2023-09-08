@@ -1,0 +1,97 @@
+namespace WebDriverBiDi.Script;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using WebDriverBiDi.JsonConverters;
+
+[TestFixture]
+public class TargetTests
+{
+    [Test]
+    public void TestCanDeserializeRealmTarget()
+    {
+        string json = @"{ ""realm"": ""myRealm"" }";
+        Target? target = JsonConvert.DeserializeObject<Target>(json);
+        Assert.That(target, Is.Not.Null);
+        Assert.That(target, Is.InstanceOf<RealmTarget>());
+        RealmTarget realmTarget = (RealmTarget)target!;
+        Assert.That(realmTarget.RealmId, Is.EqualTo("myRealm"));
+    }
+
+    [Test]
+    public void TestCanDeserializeContextTarget()
+    {
+        string json = @"{ ""context"": ""myContext"" }";
+        Target? target = JsonConvert.DeserializeObject<Target>(json);
+        Assert.That(target, Is.Not.Null);
+        Assert.That(target, Is.InstanceOf<ContextTarget>());
+        ContextTarget contextTarget = (ContextTarget)target!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
+            Assert.That(contextTarget.Sandbox, Is.Null);
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeContextTargetWithSandbox()
+    {
+        string json = @"{ ""context"": ""myContext"", ""sandbox"": ""mySandbox"" }";
+        Target? target = JsonConvert.DeserializeObject<Target>(json);
+        Assert.That(target, Is.Not.Null);
+        Assert.That(target, Is.InstanceOf<ContextTarget>());
+        ContextTarget contextTarget = (ContextTarget)target!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
+            Assert.That(contextTarget.Sandbox, Is.EqualTo("mySandbox"));
+        });
+    }
+
+    [Test]
+    public void TestDeserializationOfInvalidJsonThrows()
+    {
+        string json = @"{ ""invalid"": ""invalidValue"" }";
+        Assert.That(() => JsonConvert.DeserializeObject<Target>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("ScriptTarget must contain either a 'realm' or a 'context' property"));
+    }
+
+    [Test]
+    public void TestCanSerializeRealmTarget()
+    {
+        Target target = new RealmTarget("myRealm");
+        string json = JsonConvert.SerializeObject(target);
+        JObject deserialized = JObject.Parse(json);
+        Assert.That(deserialized, Has.Count.EqualTo(1));
+        Assert.That(deserialized, Contains.Key("realm"));
+        JToken realmValue = deserialized.GetValue("realm")!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmValue.Type, Is.EqualTo(JTokenType.String));
+            Assert.That((string?)realmValue, Is.EqualTo("myRealm"));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeContextTarget()
+    {
+        Target target = new ContextTarget("myContext");
+        string json = JsonConvert.SerializeObject(target);
+        JObject deserialized = JObject.Parse(json);
+        Assert.That(deserialized, Has.Count.EqualTo(1));
+        Assert.That(deserialized, Contains.Key("context"));
+        JToken contextValue = deserialized.GetValue("context")!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(contextValue.Type, Is.EqualTo(JTokenType.String));
+            Assert.That((string?)contextValue, Is.EqualTo("myContext"));
+        });
+    }
+
+    [Test]
+    public void TestCannotCallJsonDeserializerDirectly()
+    {
+        Target target = new RealmTarget("myRealm");
+        ScriptTargetJsonConverter converter = new();
+        Assert.That(() => converter.WriteJson(new JsonTextWriter(new StringWriter()), target, new JsonSerializer()), Throws.InstanceOf<NotImplementedException>());
+    }
+}

@@ -4,7 +4,7 @@
       "src": [
         {
           "files": [
-            "src/WebDriverBidi/**.csproj"
+            "src/WebDriverBiDi/**.csproj"
           ],
           "src": "../"
         }

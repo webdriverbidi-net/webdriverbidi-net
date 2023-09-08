@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/WebDriverBidi.Demo/bin/Debug/net6.0/WebDriverBidi.Demo.dll",
+            "program": "${workspaceFolder}/src/WebDriverBiDi.Demo/bin/Debug/net6.0/WebDriverBiDi.Demo.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/src/WebDriverBidi.Demo",
+            "cwd": "${workspaceFolder}/src/WebDriverBiDi.Demo",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
