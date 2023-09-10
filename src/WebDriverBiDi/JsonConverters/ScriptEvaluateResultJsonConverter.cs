@@ -5,8 +5,9 @@
 
 namespace WebDriverBiDi.JsonConverters;
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -19,7 +20,7 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
     /// Returns true for this converter (converter used for deserialization
     /// only).
     /// </summary>
-    public override bool CanRead => true;
+    // public override bool CanRead => true;
 
     /// <summary>
     /// Serializes an object and writes it to a JSON string.
@@ -27,10 +28,10 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
     /// <param name="writer">The JSON writer to use during serialization.</param>
     /// <param name="value">The object to serialize.</param>
     /// <param name="serializer">The JSON serializer to use in serialization.</param>
-    public override void WriteJson(JsonWriter writer, EvaluateResult? value, JsonSerializer serializer)
-    {
-        throw new NotImplementedException();
-    }
+    // public override void WriteJson(JsonWriter writer, EvaluateResult? value, JsonSerializer serializer)
+    // {
+    //     throw new NotImplementedException();
+    // }
 
     /// <summary>
     /// Reads a JSON string and deserializes it to an object.
@@ -41,33 +42,71 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
     /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
     /// <param name="serializer">The JSON serializer to use in deserialization.</param>
     /// <returns>The deserialized object created from JSON.</returns>
-    public override EvaluateResult ReadJson(JsonReader reader, Type objectType, EvaluateResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    // public override EvaluateResult ReadJson(JsonReader reader, Type objectType, EvaluateResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    // {
+    //     JObject jsonObject = JObject.Load(reader);
+    //     if (jsonObject.TryGetValue("type", out JToken? typeToken))
+    //     {
+    //         if (typeToken.Type == JTokenType.String)
+    //         {
+    //             string resultType = typeToken.Value<string>()!;
+    //             if (resultType == "success")
+    //             {
+    //                 EvaluateResultSuccess successResult = new();
+    //                 serializer.Populate(jsonObject.CreateReader(), successResult);
+    //                 return successResult;
+    //             }
+    //             else if (resultType == "exception")
+    //             {
+    //                 EvaluateResultException exceptionResult = new();
+    //                 serializer.Populate(jsonObject.CreateReader(), exceptionResult);
+    //                 return exceptionResult;
+    //             }
+    //             else
+    //             {
+    //                 throw new WebDriverBiDiException($"Malformed response: unknown type '{resultType}' for script result");
+    //             }
+    //         }
+    //     }
+
+    //     throw new WebDriverBiDiException("Malformed response: Script response must contain a 'type' property that contains a non-null string value");
+    // }
+
+    public override EvaluateResult? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        JObject jsonObject = JObject.Load(reader);
-        if (jsonObject.TryGetValue("type", out JToken? typeToken))
+        JsonNode? node = JsonNode.Parse(ref reader);
+        if (node is not null)
         {
-            if (typeToken.Type == JTokenType.String)
+            JsonObject jsonObject = node.AsObject();
+            if (jsonObject.ContainsKey("type") && jsonObject["type"] is not null)
             {
-                string resultType = typeToken.Value<string>()!;
+                JsonNode typeNode = jsonObject["type"]!;
+                if (typeNode.GetValueKind() != JsonValueKind.String)
+                {
+                    throw new WebDriverBiDiException("Script response must contain a 'type' property that contains a non-null string value");
+                }
+
+                string resultType = typeNode.GetValue<string>();
                 if (resultType == "success")
                 {
-                    EvaluateResultSuccess successResult = new();
-                    serializer.Populate(jsonObject.CreateReader(), successResult);
-                    return successResult;
+                    return jsonObject.Deserialize<EvaluateResultSuccess>();
                 }
                 else if (resultType == "exception")
                 {
-                    EvaluateResultException exceptionResult = new();
-                    serializer.Populate(jsonObject.CreateReader(), exceptionResult);
-                    return exceptionResult;
+                    return jsonObject.Deserialize<EvaluateResultException>();
                 }
-                else
-                {
-                    throw new WebDriverBiDiException($"Malformed response: unknown type '{resultType}' for script result");
-                }
+
+                throw new WebDriverBiDiException($"Malformed response: unknown type '{resultType}' for script result");
             }
+
+            throw new WebDriverBiDiException("Malformed response: Script response must contain a 'type' property that contains a non-null string value");
         }
 
-        throw new WebDriverBiDiException("Malformed response: Script response must contain a 'type' property that contains a non-null string value");
+        throw new JsonException("JSON could not be parsed");
+    }
+
+    public override void Write(Utf8JsonWriter writer, EvaluateResult value, JsonSerializerOptions options)
+    {
+        throw new NotImplementedException();
     }
 }

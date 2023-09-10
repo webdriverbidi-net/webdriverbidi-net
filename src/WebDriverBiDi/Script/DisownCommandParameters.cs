@@ -5,13 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the script.disown command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class DisownCommandParameters : CommandParameters<EmptyResult>
 {
     private List<string> handles = new();
@@ -31,17 +29,18 @@ public class DisownCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "script.disown";
 
     /// <summary>
     /// Gets or sets the target for which to disown handles.
     /// </summary>
-    [JsonProperty("target")]
+    [JsonPropertyName("target")]
     public Target Target { get => this.target; set => this.target = value; }
 
     /// <summary>
     /// Gets or sets the list of handles to disown.
     /// </summary>
-    [JsonProperty("handles")]
+    [JsonPropertyName("handles")]
     public List<string> Handles { get => this.handles; set => this.handles = value; }
 }

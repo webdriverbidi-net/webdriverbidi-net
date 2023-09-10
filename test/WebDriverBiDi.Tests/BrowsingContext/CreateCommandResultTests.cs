@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class CreateCommandResultTests
@@ -9,7 +9,7 @@ public class CreateCommandResultTests
     public void TestCanDeserialize()
     {
         string json = @"{ ""context"": ""myContextId"" }";
-        CreateCommandResult? result = JsonConvert.DeserializeObject<CreateCommandResult>(json);
+        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.BrowsingContextId, Is.EqualTo("myContextId"));
     }
@@ -18,13 +18,13 @@ public class CreateCommandResultTests
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonConvert.DeserializeObject<CreateCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
         string json = @"{ ""context"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<CreateCommandResult>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

@@ -5,13 +5,11 @@
 
 namespace WebDriverBiDi.Log;
 
-using Newtonsoft.Json;
 using WebDriverBiDi.Script;
 
 /// <summary>
 /// Object containing event data for the event raised when a log entry is added.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class EntryAddedEventArgs : WebDriverBiDiEventArgs
 {
     private readonly LogEntry entry;

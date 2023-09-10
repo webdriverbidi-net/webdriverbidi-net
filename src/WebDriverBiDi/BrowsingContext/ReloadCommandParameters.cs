@@ -6,12 +6,11 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.reload command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ReloadCommandParameters : CommandParameters<NavigationResult>
 {
     private string browsingContextId;
@@ -30,23 +29,26 @@ public class ReloadCommandParameters : CommandParameters<NavigationResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.reload";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to reload.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the browser cache should be ignored when reloading.
     /// </summary>
-    [JsonProperty("ignoreCache", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("ignoreCache")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IgnoreCache { get => this.ignoreCache; set => this.ignoreCache = value; }
 
     /// <summary>
     /// Gets or sets the <see cref="ReadinessState" /> value for which to wait during the reload.
     /// </summary>
-    [JsonProperty("wait", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("wait")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ReadinessState? Wait { get => this.wait; set => this.wait = value; }
 }

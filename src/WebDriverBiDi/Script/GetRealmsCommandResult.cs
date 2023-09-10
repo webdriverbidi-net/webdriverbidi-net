@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for getting realms using the script.getRealms command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class GetRealmsCommandResult : CommandResult
 {
     private List<RealmInfo> realms = new();
@@ -18,11 +17,13 @@ public class GetRealmsCommandResult : CommandResult
     /// <summary>
     /// Gets a read-only list of information about the realms.
     /// </summary>
+    [JsonIgnore]
     public IList<RealmInfo> Realms => this.realms.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the list of information about the realms for serialization purposes.
     /// </summary>
-    [JsonProperty("realms")]
+    [JsonPropertyName("realms")]
+    [JsonInclude]
     internal List<RealmInfo> SerializableRealms { get => this.realms; set => this.realms = value; }
 }

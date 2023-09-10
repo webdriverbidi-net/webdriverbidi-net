@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object representing a remote value in the browser.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 [JsonConverter(typeof(RemoteValueJsonConverter))]
 public class RemoteValue
 {
@@ -56,7 +55,8 @@ public class RemoteValue
     /// Initializes a new instance of the <see cref="RemoteValue"/> class.
     /// </summary>
     /// <param name="valueType">The string describing the type of this RemoteValue.</param>
-    internal RemoteValue(string valueType)
+    [JsonConstructor]
+    public RemoteValue(string valueType)
     {
         this.valueType = valueType;
     }
@@ -64,41 +64,43 @@ public class RemoteValue
     /// <summary>
     /// Gets the type of this RemoteValue.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type { get => this.valueType; internal set => this.valueType = value; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
     /// </summary>
-    [JsonProperty("handle")]
+    [JsonPropertyName("handle")]
     public string? Handle { get => this.handle; internal set => this.handle = value; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
-    [JsonProperty("internalId")]
+    [JsonPropertyName("internalId")]
     public ulong? InternalId { get => this.internalId; internal set => this.internalId = value; }
 
     /// <summary>
     /// Gets the shared ID of this RemoteValue.
     /// </summary>
-    [JsonProperty("sharedId")]
+    [JsonPropertyName("sharedId")]
     public string? SharedId { get => this.sharedId; internal set => this.sharedId = value; }
 
     /// <summary>
     /// Gets the object that contains the value of this RemoteValue.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     public object? Value { get => this.valueObject; internal set => this.valueObject = value; }
 
     /// <summary>
     /// Gets a value indicating whether this RemoteValue has a value.
     /// </summary>
+    [JsonIgnore]
     public bool HasValue => this.valueObject is not null;
 
     /// <summary>
     /// Gets a value indicating whether this RemoteValue contains a primitive value.
     /// </summary>
+    [JsonIgnore]
     internal bool IsPrimitive => this.valueType == "string" || this.valueType == "number" || this.valueType == "boolean" || this.valueType == "bigint" || this.valueType == "null" || this.valueType == "undefined";
 
     /// <summary>

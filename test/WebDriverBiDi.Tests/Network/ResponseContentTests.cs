@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class ResponseContentTests
@@ -9,7 +9,7 @@ public class ResponseContentTests
     public void TestCanDeserializeResponseContent()
     {
         string json = @"{ ""size"": 300 }";
-        ResponseContent? responseContent = JsonConvert.DeserializeObject<ResponseContent>(json);
+        ResponseContent? responseContent = JsonSerializer.Deserialize<ResponseContent>(json);
         Assert.That(responseContent, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -21,6 +21,6 @@ public class ResponseContentTests
     public void TestDeserializeWithMissingSizeThrows()
     {
         string json = @"{ }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseContent>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'size' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseContent>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: size"));
     }
 }

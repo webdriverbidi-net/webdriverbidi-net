@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Provides parameters for the script.evaluate command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
 {
     private string expression;
@@ -37,41 +36,48 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "script.evaluate";
 
     /// <summary>
     /// Gets or sets the expression to evaluate.
     /// </summary>
-    [JsonProperty("expression")]
+    [JsonPropertyName("expression")]
     public string Expression { get => this.expression; set => this.expression = value; }
 
     /// <summary>
     /// Gets or sets the target against which to evaluate the script.
     /// </summary>
-    [JsonProperty("target")]
+    [JsonPropertyName("target")]
     public Target ScriptTarget { get => this.scriptTarget; set => this.scriptTarget = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to await the completion of the evaluation of the script.
     /// </summary>
-    [JsonProperty("awaitPromise")]
+    [JsonPropertyName("awaitPromise")]
     public bool AwaitPromise { get => this.awaitPromise; set => this.awaitPromise = value; }
 
     /// <summary>
     /// Gets or sets the value of the model of ownership of the handles of the values in the script.
     /// </summary>
-    [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("resultOwnership")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing results.
     /// </summary>
-    [JsonProperty("serializationOptions", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("serializationOptions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to activate the browsing context when evaluating the script. When omitted, is treated as if false.
     /// </summary>
-    [JsonProperty("userActivation", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("userActivation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public bool? UserActivation { get => this.userActivation; set => this.userActivation = value; }
 }

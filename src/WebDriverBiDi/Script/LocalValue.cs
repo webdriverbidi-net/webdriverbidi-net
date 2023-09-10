@@ -7,12 +7,11 @@ namespace WebDriverBiDi.Script;
 
 using System.Globalization;
 using System.Numerics;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing a local value for use as an argument in script execution.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class LocalValue : ArgumentValue
 {
     private string argType;
@@ -56,18 +55,21 @@ public class LocalValue : ArgumentValue
     /// <summary>
     /// Gets the type of this LocalValue.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type { get => this.argType; internal set => this.argType = value; }
 
     /// <summary>
     /// Gets the object containing the value of this LocalValue.
     /// </summary>
+    [JsonIgnore]
     public object? Value { get => this.argValue; internal set => this.argValue = value; }
 
     /// <summary>
     /// Gets the object containing the value of this LocalValue for serialization purposes.
     /// </summary>
-    [JsonProperty("value", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("value")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal object? SerializableValue
     {
         get

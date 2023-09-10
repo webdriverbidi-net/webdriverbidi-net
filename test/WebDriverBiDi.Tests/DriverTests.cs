@@ -17,10 +17,12 @@ public class DriverTests
     [Test]
     public async Task CanExecuteCommand()
     {
+        string sentData;
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
         connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
         {
+            sentData = e.DataSent;
             syncEvent.Set();
         };
 
@@ -29,7 +31,7 @@ public class DriverTests
         Driver driver = new(transport);
 
         string commandName = "module.command";
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         var task = Task.Run(() => driver.ExecuteCommandAsync<TestCommandResult>(command));
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
 
@@ -53,7 +55,7 @@ public class DriverTests
         Driver driver = new(transport);
 
         string commandName = "module.command";
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         Assert.That(() =>
         {
             var task = Task.Run(() => driver.ExecuteCommandAsync<TestCommandResult>(command));
@@ -287,7 +289,7 @@ public class DriverTests
             ReturnCustomValue = true
         };
         Driver driver = new(transport);
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommand("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Received null response from transport for SendCommandAndWait"));
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Received null response from transport for SendCommandAndWait"));
     }
 
     [Test]
@@ -301,7 +303,7 @@ public class DriverTests
             CustomReturnValue = result
         };
         Driver driver = new(transport);
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommand("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert error response from transport for SendCommandAndWait to ErrorResult"));
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert error response from transport for SendCommandAndWait to ErrorResult"));
     }
 
     [Test]
@@ -314,7 +316,7 @@ public class DriverTests
             CustomReturnValue = result
         };
         Driver driver = new(transport);
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommand("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert response from transport for SendCommandAndWait to WebDriverBiDi.TestUtilities.TestCommandResult"));
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert response from transport for SendCommandAndWait to WebDriverBiDi.TestUtilities.TestCommandResult"));
     }
 
     [Test]

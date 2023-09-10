@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// An action to send a key down on a keyboard device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class KeyDownAction : IKeySourceAction
 {
     private readonly string actionType = "keyDown";
@@ -33,12 +32,12 @@ public class KeyDownAction : IKeySourceAction
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type => this.actionType;
 
     /// <summary>
     /// Gets or sets the value of the key down action.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     public string Value { get => this.value; set => this.value = value; }
 }

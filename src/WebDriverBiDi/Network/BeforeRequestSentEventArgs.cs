@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing event data for events raised by before a network request is sent.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class BeforeRequestSentEventArgs : BaseNetworkEventArgs
 {
     private Initiator initiator = new();
@@ -26,7 +25,8 @@ public class BeforeRequestSentEventArgs : BaseNetworkEventArgs
     /// <summary>
     /// Gets the initiator of the request.
     /// </summary>
-    [JsonProperty("initiator")]
+    [JsonPropertyName("initiator")]
     [JsonRequired]
+    [JsonInclude]
     public Initiator Initiator { get => this.initiator; internal set => this.initiator = value; }
 }

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class UrlPatternStringTests
     public void TestCanSerializeValue()
     {
         UrlPattern value = new UrlPatternString("https://example.com/*");
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -28,7 +28,7 @@ public class UrlPatternStringTests
     public void TestCanSerializeValueWithDefaultConstructor()
     {
         UrlPattern value = new UrlPatternString();
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

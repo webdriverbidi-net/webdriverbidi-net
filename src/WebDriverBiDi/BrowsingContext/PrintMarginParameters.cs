@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Parameters of margins for printing.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PrintMarginParameters
 {
     private double? bottom;
@@ -27,9 +26,10 @@ public class PrintMarginParameters
 
     /// <summary>
     /// Gets or sets the left margin in centimeters for printing.
-    /// The value must be greater than or equsl to zero, and if omitted, defaults to 1.0.
+    /// The value must be greater than or equal to zero, and if omitted, defaults to 1.0.
     /// </summary>
-    [JsonProperty("left", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("left")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Left
     {
         get
@@ -50,9 +50,10 @@ public class PrintMarginParameters
 
     /// <summary>
     /// Gets or sets the right margin in centimeters for printing.
-    /// The value must be greater than or equsl to zero, and if omitted, defaults to 1.0.
+    /// The value must be greater than or equal to zero, and if omitted, defaults to 1.0.
     /// </summary>
-    [JsonProperty("right", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("right")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Right
     {
         get
@@ -73,9 +74,10 @@ public class PrintMarginParameters
 
     /// <summary>
     /// Gets or sets the top margin in centimeters for printing.
-    /// The value must be greater than or equsl to zero, and if omitted, defaults to 1.0.
+    /// The value must be greater than or equal to zero, and if omitted, defaults to 1.0.
     /// </summary>
-    [JsonProperty("top", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("top")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Top
     {
         get
@@ -96,9 +98,10 @@ public class PrintMarginParameters
 
     /// <summary>
     /// Gets or sets the bottom margin in centimeters for printing.
-    /// The value must be greater than or equsl to zero, and if omitted, defaults to 1.0.
+    /// The value must be greater than or equal to zero, and if omitted, defaults to 1.0.
     /// </summary>
-    [JsonProperty("bottom", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("bottom")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Bottom
     {
         get

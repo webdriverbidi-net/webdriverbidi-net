@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Log;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class EntryAddedEventArgsTests
@@ -10,7 +10,7 @@ public class EntryAddedEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": null, ""timestamp"": " + epochTimestamp + @" }";
-        LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         EntryAddedEventArgs eventArgs = new(entry!);
         Assert.Multiple(() =>
         {
@@ -29,7 +29,7 @@ public class EntryAddedEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } }";
-        LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         EntryAddedEventArgs eventArgs = new(entry!);
         Assert.Multiple(() =>
         {
@@ -48,7 +48,7 @@ public class EntryAddedEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [{ ""type"": ""string"", ""value"": ""argValue"" }], ""stackTrace"": { ""callFrames"": [] } }";
-        LogEntry? entry = JsonConvert.DeserializeObject<LogEntry>(json);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         EntryAddedEventArgs eventArgs = new(entry!);
         Assert.Multiple(() =>
         {

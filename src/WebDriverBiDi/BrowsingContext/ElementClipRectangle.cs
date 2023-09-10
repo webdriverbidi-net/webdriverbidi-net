@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
 /// The abstract base class for a clipping rectangle for a screenshot.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ElementClipRectangle : ClipRectangle
 {
     private SharedReference element;
@@ -30,17 +29,22 @@ public class ElementClipRectangle : ClipRectangle
     /// <summary>
     /// Gets the type of clip rectangle.
     /// </summary>
+    [JsonPropertyName("type")]
+    [JsonInclude]
     public override string Type => "element";
 
     /// <summary>
     /// Gets or sets the element to use to clip the screenshot.
     /// </summary>
-    [JsonProperty("element")]
+    [JsonPropertyName("element")]
+    [JsonInclude]
     public SharedReference Element { get => this.element; set => this.element = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to scroll the element into view before taking the screenshot.
     /// </summary>
-    [JsonProperty("scrollIntoView", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("scrollIntoView")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public bool? ScrollIntoView { get => this.scrollIntoView; set => this.scrollIntoView = value; }
 }

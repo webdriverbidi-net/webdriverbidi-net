@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides information about a browsing context.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class BrowsingContextInfo
 {
     private string id = string.Empty;
@@ -19,22 +18,24 @@ public class BrowsingContextInfo
     private string? parentId;
 
     [JsonConstructor]
-    private BrowsingContextInfo()
+    public BrowsingContextInfo()
     {
     }
 
     /// <summary>
     /// Gets the ID of the browsing context.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
+    [JsonInclude]
     public string BrowsingContextId { get => this.id; internal set => this.id = value; }
 
     /// <summary>
     /// Gets the URL of the browsing context.
     /// </summary>
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     [JsonRequired]
+    [JsonInclude]
     public string Url { get => this.url; internal set => this.url = value; }
 
     /// <summary>
@@ -45,13 +46,15 @@ public class BrowsingContextInfo
     /// <summary>
     /// Gets the ID of the parent browsing context of this browsing context.
     /// </summary>
-    [JsonProperty("parent")]
+    [JsonPropertyName("parent")]
+    [JsonInclude]
     public string? Parent { get => this.parentId; internal set => this.parentId = value; }
 
     /// <summary>
     /// Gets or sets the list of child browsing contexts for this browsing context.
     /// </summary>
-    [JsonProperty("children")]
+    [JsonPropertyName("children")]
     [JsonRequired]
+    [JsonInclude]
     internal List<BrowsingContextInfo> SerializableChildren { get => this.children; set => this.children = value; }
 }

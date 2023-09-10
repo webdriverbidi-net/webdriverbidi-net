@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Browser;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browser.close command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CloseCommandParameters : CommandParameters<EmptyResult>
 {
     /// <summary>
@@ -23,5 +22,6 @@ public class CloseCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browser.close";
 }

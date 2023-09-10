@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class UserPromptOpenedEventArgsTests
@@ -9,7 +9,7 @@ public class UserPromptOpenedEventArgsTests
     public void TestCanDeserializeWithTypeAlert()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""alert"", ""message"": ""some prompt message"" }";
-        UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -24,7 +24,7 @@ public class UserPromptOpenedEventArgsTests
     public void TestCanDeserializeWithTypeConfirm()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""confirm"", ""message"": ""some prompt message"" }";
-        UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -39,7 +39,7 @@ public class UserPromptOpenedEventArgsTests
     public void TestCanDeserializeWithTypePrompt()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""prompt"", ""message"": ""some prompt message"" }";
-        UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -54,7 +54,7 @@ public class UserPromptOpenedEventArgsTests
     public void TestCanDeserializeWithTypeBeforeUnload()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""beforeunload"", ""message"": ""some prompt message"" }";
-        UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -69,7 +69,7 @@ public class UserPromptOpenedEventArgsTests
     public void TestCanDeserializeWithOptionalDefaultValue()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""prompt"", ""message"": ""some prompt message"", ""defaultValue"": ""prompt default"" }";
-        UserPromptOpenedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json);
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -84,41 +84,41 @@ public class UserPromptOpenedEventArgsTests
     public void TestDeserializeWithMissingContextValueThrows()
     {
         string json = @"{ ""type"": ""beforeunload"", ""message"": ""some prompt message"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidContextValueThrows()
     {
         string json = @"{ ""context"": {}, ""type"": ""beforeunload"", ""message"": ""some prompt message"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingTypeValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""message"": ""some prompt message"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidTypeValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""invalid"", ""message"": ""some prompt message"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingMessageValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""beforeunload"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidMessageValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""type"": ""beforeunload"", ""message"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 }

@@ -6,12 +6,11 @@
 namespace WebDriverBiDi.Session;
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the session.new command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class StatusCommandParameters : CommandParameters<StatusCommandResult>
 {
     /// <summary>
@@ -24,5 +23,6 @@ public class StatusCommandParameters : CommandParameters<StatusCommandResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "session.status";
 }

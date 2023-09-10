@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// An action to send a pointer move on a pointer device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PointerMoveAction : PointerAction, IPointerSourceAction
 {
     private readonly string actionType = "pointerMove";
@@ -30,19 +29,19 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type => this.actionType;
 
     /// <summary>
     /// Gets or sets the horizontal distance of the move, measured in pixels from the origin point.
     /// </summary>
-    [JsonProperty("x")]
+    [JsonPropertyName("x")]
     public long X { get => this.x; set => this.x = value; }
 
     /// <summary>
     /// Gets or sets the vertical distance of the move, measured in pixels from the origin point.
     /// </summary>
-    [JsonProperty("y")]
+    [JsonPropertyName("y")]
     public long Y { get => this.y; set => this.y = value; }
 
     /// <summary>
@@ -60,7 +59,9 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     /// <summary>
     /// Gets the duration, in milliseconds, of the move for serialization purposes.
     /// </summary>
-    [JsonProperty("duration", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("duration")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal ulong? SerializableDuration
     {
         get
@@ -77,7 +78,9 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     /// <summary>
     /// Gets the serializable origin of the move.
     /// </summary>
-    [JsonProperty("origin", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("origin")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal object? SerializableOrigin
     {
         get

@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the script.getRealms command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class GetRealmsCommandParameters : CommandParameters<GetRealmsCommandResult>
 {
     private string? browsingContextId;
@@ -26,17 +25,22 @@ public class GetRealmsCommandParameters : CommandParameters<GetRealmsCommandResu
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "script.getRealms";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context of the realms to get.
     /// </summary>
-    [JsonProperty("context", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("context")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public string? BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets the type of realms to get.
     /// </summary>
-    [JsonProperty("type", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("type")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public RealmType? RealmType { get => this.realmType; set => this.realmType = value; }
 }

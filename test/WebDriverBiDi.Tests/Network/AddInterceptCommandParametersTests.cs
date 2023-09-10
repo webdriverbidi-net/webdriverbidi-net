@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class AddInterceptCommandParametersTests
     public void TestCanSerializeParameters()
     {
         AddInterceptCommandParameters properties = new();
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -33,7 +33,7 @@ public class AddInterceptCommandParametersTests
     {
         AddInterceptCommandParameters properties = new();
         properties.Phases.Add(InterceptPhase.BeforeRequestSent);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -55,7 +55,7 @@ public class AddInterceptCommandParametersTests
             UrlPatterns = new List<UrlPattern>() { new UrlPatternString("https://example.com/*") }
         };
         properties.Phases.Add(InterceptPhase.BeforeRequestSent);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

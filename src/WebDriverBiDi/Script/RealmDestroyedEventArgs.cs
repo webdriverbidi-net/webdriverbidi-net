@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing event data for the event raised when a script realm is destroyed.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class RealmDestroyedEventArgs : WebDriverBiDiEventArgs
 {
     private string realmId;
@@ -28,7 +27,8 @@ public class RealmDestroyedEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets the ID of the realm being destroyed.
     /// </summary>
-    [JsonProperty("realm")]
+    [JsonPropertyName("realm")]
     [JsonRequired]
+    [JsonInclude]
     public string RealmId { get => this.realmId; internal set => this.realmId = value; }
 }

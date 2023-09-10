@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class BaseNetworkEventArgsTests
@@ -44,7 +44,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        BaseNetworkEventArgs? eventArgs = JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -76,7 +76,7 @@ public class BaseNetworkEventArgsTests
     ""intercepts"": [ ""myInterceptId"" ],
     ""request"": {requestDataJson}
 }}";
-        BaseNetworkEventArgs? eventArgs = JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -109,7 +109,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        BaseNetworkEventArgs? eventArgs = JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -139,7 +139,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -156,7 +156,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -173,7 +173,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        BaseNetworkEventArgs? eventArgs = JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -203,7 +203,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -220,7 +220,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -236,7 +236,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -253,7 +253,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -269,7 +269,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -286,7 +286,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -302,7 +302,7 @@ public class BaseNetworkEventArgsTests
     ""redirectCount"": 0,
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -319,7 +319,7 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {{}},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -335,7 +335,7 @@ public class BaseNetworkEventArgsTests
     ""redirectCount"": 0,
     ""timestamp"": {milliseconds}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -352,6 +352,6 @@ public class BaseNetworkEventArgsTests
     ""timestamp"": {{}},
     ""request"": ""requestData""
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

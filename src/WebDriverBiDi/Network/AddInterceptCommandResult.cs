@@ -5,25 +5,25 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for adding an intercept for network traffic using the network.addIntercept command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class AddInterceptCommandResult : CommandResult
 {
     private string interceptId = string.Empty;
 
     [JsonConstructor]
-    private AddInterceptCommandResult()
+    public AddInterceptCommandResult()
     {
     }
 
     /// <summary>
     /// Gets the screenshot image data as a base64-encoded string.
     /// </summary>
-    [JsonProperty("intercept")]
+    [JsonPropertyName("intercept")]
     [JsonRequired]
+    [JsonInclude]
     public string InterceptId { get => this.interceptId; internal set => this.interceptId = value; }
 }

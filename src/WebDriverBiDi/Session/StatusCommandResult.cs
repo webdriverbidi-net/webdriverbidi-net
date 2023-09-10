@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for getting the status of a remote end using the session.status command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class StatusCommandResult : CommandResult
 {
     private bool ready;
@@ -20,21 +19,23 @@ public class StatusCommandResult : CommandResult
     /// Initializes a new instance of the <see cref="StatusCommandResult"/> class.
     /// </summary>
     [JsonConstructor]
-    internal StatusCommandResult()
+    public StatusCommandResult()
     {
     }
 
     /// <summary>
     /// Gets a value indicating whether the remote end is able to create new sessions.
     /// </summary>
-    [JsonProperty("ready")]
+    [JsonPropertyName("ready")]
     [JsonRequired]
+    [JsonInclude]
     public bool IsReady { get => this.ready; internal set => this.ready = value; }
 
     /// <summary>
     /// Gets a message about the status from the remote end.
     /// </summary>
-    [JsonProperty("message")]
+    [JsonPropertyName("message")]
     [JsonRequired]
+    [JsonInclude]
     public string Message { get => this.message; internal set => this.message = value; }
 }

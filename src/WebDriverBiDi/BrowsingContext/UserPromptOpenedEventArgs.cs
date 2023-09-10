@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing event data for the event raised when a user prompt opens.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId;
@@ -35,27 +34,31 @@ public class UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets the ID of the browsing context for which the user prompt was opened.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
+    [JsonInclude]
     public string BrowsingContextId { get => this.browsingContextId; internal set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the type of user prompt opened.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     [JsonRequired]
+    [JsonInclude]
     public UserPromptType PromptType { get => this.promptType; internal set => this.promptType = value; }
 
     /// <summary>
     /// Gets the message displayed by the user prompt.
     /// </summary>
-    [JsonProperty("message")]
+    [JsonPropertyName("message")]
     [JsonRequired]
+    [JsonInclude]
     public string Message { get => this.message; internal set => this.message = value; }
 
     /// <summary>
     /// Gets the default value of the user prompt, if any.
     /// </summary>
-    [JsonProperty("defaultValue")]
+    [JsonPropertyName("defaultValue")]
+    [JsonInclude]
     public string? DefaultValue { get => this.defaultValue; internal set => this.defaultValue = value; }
 }

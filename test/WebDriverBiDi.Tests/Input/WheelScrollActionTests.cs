@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
 
@@ -11,7 +11,7 @@ public class WheelScrollActionTests
     public void TestCanSerializeParameters()
     {
         WheelScrollAction properties = new();
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>
@@ -41,7 +41,7 @@ public class WheelScrollActionTests
         {
             Duration = TimeSpan.FromMilliseconds(1),
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
         Assert.Multiple(() =>
@@ -74,7 +74,7 @@ public class WheelScrollActionTests
         {
             Origin = Origin.Viewport
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
         Assert.Multiple(() =>
@@ -107,7 +107,7 @@ public class WheelScrollActionTests
         {
             Origin = Origin.Pointer
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
         Assert.Multiple(() =>
@@ -137,12 +137,12 @@ public class WheelScrollActionTests
     public void TestCanSerializeParametersWithOptionalElementOrigin()
     {
         string nodeJson = @"{ ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 }, ""sharedId"": ""testSharedId"" }";
-        SharedReference node = JsonConvert.DeserializeObject<RemoteValue>(nodeJson)!.ToSharedReference();
+        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!.ToSharedReference();
         WheelScrollAction properties = new()
         {
             Origin = Origin.Element(new ElementOrigin(node))
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
         Assert.Multiple(() =>
@@ -190,7 +190,7 @@ public class WheelScrollActionTests
             Width = 1,
             Height = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>
@@ -221,7 +221,7 @@ public class WheelScrollActionTests
             Pressure = 1,
             TangentialPressure = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>
@@ -251,7 +251,7 @@ public class WheelScrollActionTests
         {
             Twist = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -286,7 +286,7 @@ public class WheelScrollActionTests
             AzimuthAngle = 1,
             AltitudeAngle = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>
@@ -317,7 +317,7 @@ public class WheelScrollActionTests
             TiltX = 1,
             TiltY = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>

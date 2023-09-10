@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class CookieHeaderTests
     public void TestCanSerialize()
     {
         CookieHeader cookieHeader = new();
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -35,7 +35,7 @@ public class CookieHeaderTests
     public void TestCanSerializeWithConstructorValues()
     {
         CookieHeader cookieHeader = new("cookieName", "cookieValue");
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -64,7 +64,7 @@ public class CookieHeaderTests
             Name = "cookieName",
             Value = BytesValue.FromString("cookieValue")
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -95,7 +95,7 @@ public class CookieHeaderTests
             Name = "cookieName",
             Value = BytesValue.FromByteArray(cookieValue)
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the network.continueRequest command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ContinueRequestCommandParameters : CommandParameters<EmptyResult>
 {
     private string requestId;
@@ -32,41 +31,48 @@ public class ContinueRequestCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "network.continueRequest";
 
     /// <summary>
     /// Gets or sets the ID of the request to continue.
     /// </summary>
-    [JsonProperty("request")]
+    [JsonPropertyName("request")]
     public string RequestId { get => this.requestId; set => this.requestId = value; }
 
     /// <summary>
     /// Gets or sets the body of the request.
     /// </summary>
-    [JsonProperty("body", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("body")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public BytesValue? Body { get => this.body; set => this.body = value; }
 
     /// <summary>
     /// Gets or sets the headers of the request.
     /// </summary>
-    [JsonProperty("headers", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("headers")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<Header>? Headers { get => this.headers; set => this.headers = value; }
 
     /// <summary>
     /// Gets or sets the cookie headers of the request.
     /// </summary>
-    [JsonProperty("cookies", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("cookies")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<CookieHeader>? Cookies { get => this.cookieHeaders; set => this.cookieHeaders = value; }
 
     /// <summary>
     /// Gets or sets the HTTP method of the request.
     /// </summary>
-    [JsonProperty("method", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("method")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Method { get => this.method; set => this.method = value; }
 
     /// <summary>
     /// Gets or sets the URL of the request.
     /// </summary>
-    [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("url")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Url { get => this.url; set => this.url = value; }
 }

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
 
@@ -11,7 +11,7 @@ public class PointerMoveActionTests
     public void TestCanSerializeParameters()
     {
         PointerMoveAction properties = new();
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -35,7 +35,7 @@ public class PointerMoveActionTests
         {
             Duration = TimeSpan.FromMilliseconds(1),
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -62,7 +62,7 @@ public class PointerMoveActionTests
         {
             Origin = Origin.Viewport
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -89,7 +89,7 @@ public class PointerMoveActionTests
         {
             Origin = Origin.Pointer
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -113,12 +113,12 @@ public class PointerMoveActionTests
     public void TestCanSerializeParametersWithOptionalElementOrigin()
     {
         string nodeJson = @"{ ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 }, ""sharedId"": ""testSharedId"" }";
-        SharedReference node = JsonConvert.DeserializeObject<RemoteValue>(nodeJson)!.ToSharedReference();
+        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!.ToSharedReference();
         PointerMoveAction properties = new()
         {
             Origin = Origin.Element(new ElementOrigin(node))
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -160,7 +160,7 @@ public class PointerMoveActionTests
             Width = 1,
             Height = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>
@@ -191,7 +191,7 @@ public class PointerMoveActionTests
             Pressure = 1,
             TangentialPressure = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>
@@ -221,7 +221,7 @@ public class PointerMoveActionTests
         {
             Twist = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -256,7 +256,7 @@ public class PointerMoveActionTests
             AzimuthAngle = 1,
             AltitudeAngle = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>
@@ -287,7 +287,7 @@ public class PointerMoveActionTests
             TiltX = 1,
             TiltY = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
         Assert.Multiple(() =>

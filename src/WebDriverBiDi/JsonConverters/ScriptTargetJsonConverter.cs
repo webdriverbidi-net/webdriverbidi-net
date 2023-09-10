@@ -5,8 +5,9 @@
 
 namespace WebDriverBiDi.JsonConverters;
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -19,14 +20,14 @@ public class ScriptTargetJsonConverter : JsonConverter<Target>
     /// Returns true for this converter (converter used for deserialization
     /// only).
     /// </summary>
-    public override bool CanRead => true;
+    // public override bool CanRead => true;
 
     /// <summary>
     /// Gets a value indicating whether this converter can write JSON values.
     /// Returns false for this converter (converter not used for
     /// serialization).
     /// </summary>
-    public override bool CanWrite => false;
+    // public override bool CanWrite => false;
 
     /// <summary>
     /// Reads a JSON string and deserializes it to an object.
@@ -37,25 +38,54 @@ public class ScriptTargetJsonConverter : JsonConverter<Target>
     /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
     /// <param name="serializer">The JSON serializer to use in deserialization.</param>
     /// <returns>The deserialized object created from JSON.</returns>
-    public override Target ReadJson(JsonReader reader, Type objectType, Target? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    // public override Target ReadJson(JsonReader reader, Type objectType, Target? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    // {
+    //     JObject jsonObject = JObject.Load(reader);
+    //     Target target;
+    //     if (jsonObject.ContainsKey("realm"))
+    //     {
+    //         target = new RealmTarget(string.Empty);
+    //         serializer.Populate(jsonObject.CreateReader(), target);
+    //         return target;
+    //     }
+
+    //     if (jsonObject.ContainsKey("context"))
+    //     {
+    //         target = new ContextTarget(string.Empty);
+    //         serializer.Populate(jsonObject.CreateReader(), target);
+    //         return target;
+    //     }
+
+    //     throw new WebDriverBiDiException("Malformed response: ScriptTarget must contain either a 'realm' or a 'context' property");
+    // }
+
+    public override Target? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        JObject jsonObject = JObject.Load(reader);
-        Target target;
-        if (jsonObject.ContainsKey("realm"))
+        JsonNode? node = JsonNode.Parse(ref reader);
+        if (node is not null)
         {
-            target = new RealmTarget(string.Empty);
-            serializer.Populate(jsonObject.CreateReader(), target);
-            return target;
+            JsonObject jsonObject = node.AsObject();
+            if (jsonObject.ContainsKey("realm"))
+            {
+                return jsonObject.Deserialize<RealmTarget>();
+            }
+
+            if (jsonObject.ContainsKey("context"))
+            {
+                return jsonObject.Deserialize<ContextTarget>();
+            }
+
+            throw new WebDriverBiDiException("Malformed response: ScriptTarget must contain either a 'realm' or a 'context' property");
         }
 
-        if (jsonObject.ContainsKey("context"))
-        {
-            target = new ContextTarget(string.Empty);
-            serializer.Populate(jsonObject.CreateReader(), target);
-            return target;
-        }
+        throw new JsonException("JSON could not be parsed");
+    }
 
-        throw new WebDriverBiDiException("Malformed response: ScriptTarget must contain either a 'realm' or a 'context' property");
+    public override void Write(Utf8JsonWriter writer, Target value, JsonSerializerOptions options)
+    {
+        string json = JsonSerializer.Serialize(value);
+        writer.WriteRawValue(json);
+        writer.Flush();
     }
 
     /// <summary>
@@ -64,8 +94,8 @@ public class ScriptTargetJsonConverter : JsonConverter<Target>
     /// <param name="writer">The JSON writer to use during serialization.</param>
     /// <param name="value">The object to serialize.</param>
     /// <param name="serializer">The JSON serializer to use in serialization.</param>
-    public override void WriteJson(JsonWriter writer, Target? value, JsonSerializer serializer)
-    {
-        throw new NotImplementedException();
-    }
+    // public override void WriteJson(JsonWriter writer, Target? value, JsonSerializer serializer)
+    // {
+    //     throw new NotImplementedException();
+    // }
 }

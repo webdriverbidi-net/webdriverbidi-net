@@ -6,12 +6,11 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.captureScreenshot command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScreenshotCommandResult>
 {
     private string browsingContextId;
@@ -29,17 +28,19 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.captureScreenshot";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context for which to capture the screenshot.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets the clip rectangle for the screenshot, if any.
     /// </summary>
-    [JsonProperty("clip", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("clip")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ClipRectangle? Clip { get => this.clip; set => this.clip = value; }
 }

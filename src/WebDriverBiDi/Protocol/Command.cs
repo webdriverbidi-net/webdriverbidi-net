@@ -5,13 +5,13 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing data about a WebDriver Bidi command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
+[JsonConverter(typeof(CommandJsonConverter))]
 public class Command
 {
     private readonly CommandParameters commandData;
@@ -32,45 +32,48 @@ public class Command
     /// <summary>
     /// Gets the ID of the command.
     /// </summary>
-    [JsonProperty("id")]
+    [JsonPropertyName("id")]
     public long CommandId => this.commandId;
 
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
-    [JsonProperty("method")]
+    [JsonPropertyName("method")]
     public string CommandName => this.commandData.MethodName;
 
     /// <summary>
     /// Gets the parameters of the command.
     /// </summary>
-    [JsonProperty("params")]
+    [JsonPropertyName("params")]
     public CommandParameters CommandParameters => this.commandData;
 
     /// <summary>
     /// Gets additional properties to be serialized with this command.
     /// </summary>
     [JsonExtensionData]
-    [JsonConverter(typeof(ReceivedDataJsonConverter))]
     public Dictionary<string, object?> AdditionalData => this.commandData.AdditionalData;
 
     /// <summary>
     /// Gets the type of the response for this command.
     /// </summary>
+    [JsonIgnore]
     public Type ResponseType => this.commandData.ResponseType;
 
     /// <summary>
     /// Gets a synchronization object used to wait for completion of the command.
     /// </summary>
+    [JsonIgnore]
     public ManualResetEventSlim SynchronizationEvent => this.synchronizationEvent;
 
     /// <summary>
     /// Gets or sets the result of the command.
     /// </summary>
+    [JsonIgnore]
     public CommandResult? Result { get; set; }
 
     /// <summary>
     /// Gets or sets the exception thrown during execution of the command, if any.
     /// </summary>
+    [JsonIgnore]
     public Exception? ThrownException { get; set; }
 }

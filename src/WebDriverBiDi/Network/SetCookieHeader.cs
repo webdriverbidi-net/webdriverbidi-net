@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents a header to set a cookie in a web response.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class SetCookieHeader
 {
     private string name = string.Empty;
@@ -60,45 +59,50 @@ public class SetCookieHeader
     /// <summary>
     /// Gets or sets the name of the cookie.
     /// </summary>
-    [JsonProperty("name")]
+    [JsonPropertyName("name")]
     [JsonRequired]
     public string Name { get => this.name; set => this.name = value; }
 
     /// <summary>
     /// Gets or sets the value of the cookie.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     [JsonRequired]
     public BytesValue Value { get => this.value; set => this.value = value; }
 
     /// <summary>
     /// Gets or sets the domain of the cookie.
     /// </summary>
-    [JsonProperty("domain", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("domain")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Domain { get => this.domain; set => this.domain = value; }
 
     /// <summary>
     /// Gets or sets the path of the cookie.
     /// </summary>
-    [JsonProperty("path", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("path")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Path { get => this.path; set => this.path = value; }
 
     /// <summary>
     /// Gets or sets the expiration time of the cookie.
     /// </summary>
+    [JsonIgnore]
     public DateTime? Expires { get => this.expires; set => this.expires = value; }
 
     /// <summary>
     /// Gets or sets the max age of the cookie.
     /// </summary>
-    [JsonProperty("maxAge", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("maxAge")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? MaxAge { get => this.maxAge; set => this.maxAge = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the cookie is secure, delivered via an
     /// encrypted connection like HTTPS.
     /// </summary>
-    [JsonProperty("secure", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("secure")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Secure { get => this.isSecure; set => this.isSecure = value; }
 
     /// <summary>
@@ -106,19 +110,23 @@ public class SetCookieHeader
     /// (<see langword="true" />), or if the cookie can be inspected and manipulated
     /// via JavaScript (<see langword="false" />).
     /// </summary>
-    [JsonProperty("httpOnly", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("httpOnly")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? HttpOnly { get => this.isHttpOnly; set => this.isHttpOnly = value; }
 
     /// <summary>
     /// Gets or sets a value detailing whether the cookie is a sames site cookie.
     /// </summary>
-    [JsonProperty("sameSite", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("sameSite")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CookieSameSiteValue? SameSite { get => this.sameSite; set => this.sameSite = value; }
 
     /// <summary>
     /// Gets the expiration time of the cookie as the total number of milliseconds
     /// elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
     /// </summary>
-    [JsonProperty("expires", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("expires")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal string? EpochExpires => this.expires.HasValue ? $"{this.expires.Value.ToUniversalTime():ddd, dd MMM yyyy HH:mm:ss} GMT" : null;
 }

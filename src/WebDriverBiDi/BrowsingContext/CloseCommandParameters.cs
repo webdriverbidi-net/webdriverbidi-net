@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.close command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CloseCommandParameters : CommandParameters<EmptyResult>
 {
     private string browsingContextId;
@@ -27,11 +26,12 @@ public class CloseCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.close";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to close.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 }

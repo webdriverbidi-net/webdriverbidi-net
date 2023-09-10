@@ -5,13 +5,17 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
 
 /// <summary>
 /// The base properties of all events for network traffic.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
+[JsonDerivedType(typeof(AuthRequiredEventArgs))]
+[JsonDerivedType(typeof(BeforeRequestSentEventArgs))]
+[JsonDerivedType(typeof(FetchErrorEventArgs))]
+[JsonDerivedType(typeof(ResponseCompletedEventArgs))]
+[JsonDerivedType(typeof(ResponseStartedEventArgs))]
 public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
 {
     private string? browsingContextId;
@@ -26,58 +30,68 @@ public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseNetworkEventArgs"/> class.
     /// </summary>
-    protected BaseNetworkEventArgs()
+    public BaseNetworkEventArgs()
     {
     }
 
     /// <summary>
     /// Gets the ID of the browsing context initiating the request.
     /// </summary>
-    [JsonProperty("context", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Include)]
+    [JsonPropertyName("context")]
+    [JsonRequired]
+    [JsonInclude]
     public string? BrowsingContextId { get => this.browsingContextId; internal set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the ID of the navigation initiating the request.
     /// </summary>
-    [JsonProperty("navigation", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Include)]
+    [JsonPropertyName("navigation")]
+    [JsonRequired]
+    [JsonInclude]
     public string? NavigationId { get => this.navigationId; internal set => this.navigationId = value; }
 
     /// <summary>
     /// Gets a value indicating whether this request is blocked by a network intercept.
     /// </summary>
-    [JsonProperty("isBlocked")]
+    [JsonPropertyName("isBlocked")]
     [JsonRequired]
+    [JsonInclude]
     public bool IsBlocked { get => this.isBlocked; internal set => this.isBlocked = value; }
 
     /// <summary>
     /// Gets the count of redirects for the request.
     /// </summary>
-    [JsonProperty("redirectCount")]
+    [JsonPropertyName("redirectCount")]
     [JsonRequired]
+    [JsonInclude]
     public ulong RedirectCount { get => this.redirectCount; internal set => this.redirectCount = value; }
 
     /// <summary>
     /// Gets the request data of the request.
     /// </summary>
-    [JsonProperty("request")]
+    [JsonPropertyName("request")]
     [JsonRequired]
+    [JsonInclude]
     public RequestData Request { get => this.request; internal set => this.request = value; }
 
     /// <summary>
     /// Gets the list of network intercepts for this request.
     /// </summary>
+    [JsonIgnore]
     public IList<string>? Intercepts => this.intercepts?.AsReadOnly();
 
     /// <summary>
     /// Gets the timestamp of the navigation in UTC.
     /// </summary>
+    [JsonIgnore]
     public DateTime Timestamp => this.timestamp;
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
     /// </summary>
-    [JsonProperty("timestamp")]
+    [JsonPropertyName("timestamp")]
     [JsonRequired]
+    [JsonInclude]
     public ulong EpochTimestamp
     {
         get
@@ -95,6 +109,8 @@ public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets or sets the list of intercepts for this request, if any.
     /// </summary>
-    [JsonProperty("intercepts", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("intercepts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal List<string>? SerializableIntercepts { get => this.intercepts; set => this.intercepts = value; }
 }

@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Base class for input actions.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public abstract class SourceActions
 {
     private readonly string id = Guid.NewGuid().ToString();
@@ -18,12 +17,12 @@ public abstract class SourceActions
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public abstract string Type { get; }
 
     /// <summary>
     /// Gets the ID of the device.
     /// </summary>
-    [JsonProperty("id")]
+    [JsonPropertyName("id")]
     public string Id => this.id;
 }

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class PrintCommandParametersTests
     public void TestCanSerializeParameters()
     {
         PrintCommandParameters properties = new("myContextId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -41,7 +41,7 @@ public class PrintCommandParametersTests
                 Bottom = 2.54
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -85,7 +85,7 @@ public class PrintCommandParametersTests
                 Bottom = null
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -125,7 +125,7 @@ public class PrintCommandParametersTests
                 Height = null
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -159,7 +159,7 @@ public class PrintCommandParametersTests
         {
             Margins = null
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -181,7 +181,7 @@ public class PrintCommandParametersTests
                 Height = 29.7
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -213,7 +213,7 @@ public class PrintCommandParametersTests
         {
             Page = null
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -231,7 +231,7 @@ public class PrintCommandParametersTests
         {
             Orientation = PrintOrientation.Landscape
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -252,7 +252,7 @@ public class PrintCommandParametersTests
         {
             Orientation = null
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -270,7 +270,7 @@ public class PrintCommandParametersTests
         {
             Background = true
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -291,7 +291,7 @@ public class PrintCommandParametersTests
         {
             Background = null
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -309,7 +309,7 @@ public class PrintCommandParametersTests
         {
             Scale = 1.5
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -330,7 +330,7 @@ public class PrintCommandParametersTests
         {
             Scale = null
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -361,7 +361,7 @@ public class PrintCommandParametersTests
         {
             ShrinkToFit = false
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -382,7 +382,7 @@ public class PrintCommandParametersTests
         {
             ShrinkToFit = null
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -404,7 +404,7 @@ public class PrintCommandParametersTests
                 "3-5"
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -432,7 +432,7 @@ public class PrintCommandParametersTests
     public void TestCanSerializeParametersWithNoPageRanges()
     {
         PrintCommandParameters properties = new("myContextId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -455,6 +455,6 @@ public class PrintCommandParametersTests
                 true
             }
         };
-        Assert.That(() => JsonConvert.SerializeObject(properties), Throws.InstanceOf<JsonSerializationException>().With.InnerException.InstanceOf<WebDriverBiDiException>().With.InnerException.Message.Contains("Page range must be a string or an integer value"));
+        Assert.That(() => JsonSerializer.Serialize(properties), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Page range must be a string or an integer value"));
     }
 }

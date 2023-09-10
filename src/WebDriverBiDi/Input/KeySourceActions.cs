@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents actions with a keyboard input device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class KeySourceActions : SourceActions
 {
     private readonly List<IKeySourceAction> actions = new();
@@ -18,12 +17,12 @@ public class KeySourceActions : SourceActions
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public override string Type => "key";
 
     /// <summary>
     /// Gets the list of actions for this input device.
     /// </summary>
-    [JsonProperty("actions")]
+    [JsonPropertyName("actions")]
     public List<IKeySourceAction> Actions => this.actions;
 }

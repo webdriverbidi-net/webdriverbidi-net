@@ -1,9 +1,10 @@
 namespace WebDriverBiDi.Protocol;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using TestUtilities;
 using PinchHitter;
+using WebDriverBiDi.BrowsingContext;
 
 [TestFixture]
 public class TransportTests
@@ -20,7 +21,7 @@ public class TransportTests
         };
 
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         CommandResult actualResult = await transport.SendCommandAndWaitAsync(command);
         Assert.Multiple(() =>
         {
@@ -49,7 +50,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(TimeSpan.Zero, connection);
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         _ = await transport.SendCommandAsync(command);
 
         var dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
@@ -63,7 +64,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         long commandId = await transport.SendCommandAsync(command);
         _ = Task.Run(() => 
         {
@@ -80,7 +81,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(10), connection);
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         long commandId = await transport.SendCommandAsync(command);
         Assert.That(() => transport.WaitForCommandCompleteAsync(1, TimeSpan.FromMilliseconds(50)), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Timed out"));
     }
@@ -100,7 +101,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         long commandId = await transport.SendCommandAsync(command);
         _ = Task.Run(() => 
         {
@@ -125,7 +126,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         long commandId = await transport.SendCommandAsync(command);
         _ = Task.Run(() => 
         {
@@ -155,7 +156,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         long commandId = await transport.SendCommandAsync(command);
         _ = Task.Run(() => 
         {
@@ -193,7 +194,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         long commandId = await transport.SendCommandAsync(command);
         _ = Task.Run(() => 
         {
@@ -211,7 +212,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         long commandId = await transport.SendCommandAsync(command);
         Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Result and thrown exception for command with id 1 are both null"));
     }
@@ -663,7 +664,7 @@ public class TransportTests
     [Test]
     public void TestCanDetectExistingCommandId()
     {
-        CommandParameters command = new TestCommand("test.command");
+        CommandParameters command = new TestCommandParameters("test.command");
         TestTransport transport = new(TimeSpan.FromMilliseconds(100), new TestConnection());
         long commandId = transport.LastTestCommandId + 1;
         transport.AddTestCommand(new Command(commandId, command));
@@ -699,9 +700,9 @@ public class TransportTests
         Assert.That(connectionEventRaised, Is.True);
         try
         {
-            _ = Task.Run(async () => await transport.SendCommandAsync(new TestCommand("longSendingCommand")));
+            _ = Task.Run(async () => await transport.SendCommandAsync(new TestCommandParameters("longSendingCommand")));
             bool syncEventFired = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-            Assert.That(async () => await transport.SendCommandAsync(new TestCommand("imposingCommand")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
+            Assert.That(async () => await transport.SendCommandAsync(new TestCommandParameters("imposingCommand")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
         }
         finally
         {
@@ -761,7 +762,7 @@ public class TransportTests
         Transport transport = new(TimeSpan.Zero, connection);
         await transport.ConnectAsync("ws://example.com:1234");
 
-        TestCommand command = new(commandName);
+        TestCommandParameters command = new(commandName);
         _ = await transport.SendCommandAsync(command);
 
         var dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       

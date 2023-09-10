@@ -5,25 +5,25 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for getting the tree of browsing contexts using the browserContext.getTree command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PrintCommandResult : CommandResult
 {
     private string base64PdfPrintOutput = string.Empty;
 
     [JsonConstructor]
-    private PrintCommandResult()
+    public PrintCommandResult()
     {
     }
 
     /// <summary>
     /// Gets the screenshot image data as a base64-encoded string.
     /// </summary>
-    [JsonProperty("data")]
+    [JsonPropertyName("data")]
     [JsonRequired]
+    [JsonInclude]
     public string Data { get => this.base64PdfPrintOutput; internal set => this.base64PdfPrintOutput = value; }
 }

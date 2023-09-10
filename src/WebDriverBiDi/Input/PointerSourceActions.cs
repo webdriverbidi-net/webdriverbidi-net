@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents actions with a pointer input device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PointerSourceActions : SourceActions
 {
     private readonly List<IPointerSourceAction> actions = new();
@@ -19,18 +18,19 @@ public class PointerSourceActions : SourceActions
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public override string Type => "pointer";
 
     /// <summary>
     /// Gets or sets the parameters for the pointer device.
     /// </summary>
-    [JsonProperty("parameters", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("parameters")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PointerParameters? Parameters { get => this.parameters; set => this.parameters = value; }
 
     /// <summary>
     /// Gets the list of actions for this input device.
     /// </summary>
-    [JsonProperty("actions")]
+    [JsonPropertyName("actions")]
     public List<IPointerSourceAction> Actions => this.actions;
 }

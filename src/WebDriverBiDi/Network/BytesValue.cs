@@ -6,12 +6,11 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// The abstract base class for a value that can contain either a string or a byte array.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class BytesValue
 {
     private BytesValueType valueType;
@@ -20,27 +19,29 @@ public class BytesValue
     /// <summary>
     /// Initializes a new instance of the <see cref="BytesValue"/> class.
     /// </summary>
-    /// <param name="valueType">The type of value to initialize.</param>
-    /// <param name="actualValue">The value to use in the object.</param>
+    /// <param name="type">The type of value to initialize.</param>
+    /// <param name="value">The value to use in the object.</param>
     [JsonConstructor]
-    internal BytesValue(BytesValueType valueType, string actualValue)
+    public  BytesValue(BytesValueType type, string value)
     {
-        this.valueType = valueType;
-        this.actualValue = actualValue;
+        this.valueType = type;
+        this.actualValue = value;
     }
 
     /// <summary>
     /// Gets the type of the value object.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     [JsonRequired]
+    [JsonInclude]
     public BytesValueType Type { get => this.valueType; internal set => this.valueType = value; }
 
     /// <summary>
     /// Gets the value of the value object.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     [JsonRequired]
+    [JsonInclude]
     public string Value { get => this.actualValue; internal set => this.actualValue = value; }
 
     /// <summary>

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class AddPreloadScriptCommandResultTests
@@ -9,7 +9,7 @@ public class AddPreloadScriptCommandResultTests
     public void TestCanDeserializeAddLoadScriptCommandResult()
     {
         string json = @"{ ""script"": ""myLoadScript"" }";
-        AddPreloadScriptCommandResult? result = JsonConvert.DeserializeObject<AddPreloadScriptCommandResult>(json);
+        AddPreloadScriptCommandResult? result = JsonSerializer.Deserialize<AddPreloadScriptCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.PreloadScriptId, Is.EqualTo("myLoadScript"));
     }

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class ChannelPropertiesTests
     public void TestCanSerializeChannelProperties()
     {
         ChannelProperties properties = new("myChannel");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -27,7 +27,7 @@ public class ChannelPropertiesTests
         {
             ResultOwnership = ResultOwnership.Root
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -49,7 +49,7 @@ public class ChannelPropertiesTests
         {
             SerializationOptions = new()
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         { 

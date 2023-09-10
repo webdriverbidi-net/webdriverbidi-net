@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class SerializationOptionsTests
     public void TestCanSerializeOptions()
     {
         SerializationOptions options = new();
-        string json = JsonConvert.SerializeObject(options);
+        string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -26,7 +26,7 @@ public class SerializationOptionsTests
         {
             MaxDomDepth = 1
         };
-        string json = JsonConvert.SerializeObject(options);
+        string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -45,7 +45,7 @@ public class SerializationOptionsTests
         {
             MaxObjectDepth = 1
         };
-        string json = JsonConvert.SerializeObject(options);
+        string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -64,7 +64,7 @@ public class SerializationOptionsTests
         {
             IncludeShadowTree = IncludeShadowTreeSerializationOption.None
         };
-        string json = JsonConvert.SerializeObject(options);
+        string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -83,7 +83,7 @@ public class SerializationOptionsTests
         {
             IncludeShadowTree = IncludeShadowTreeSerializationOption.Open
         };
-        string json = JsonConvert.SerializeObject(options);
+        string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -102,7 +102,7 @@ public class SerializationOptionsTests
         {
             IncludeShadowTree = IncludeShadowTreeSerializationOption.All
         };
-        string json = JsonConvert.SerializeObject(options);
+        string json = JsonSerializer.Serialize(options);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

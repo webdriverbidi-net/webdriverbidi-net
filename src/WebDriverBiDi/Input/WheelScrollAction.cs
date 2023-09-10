@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// An action so scroll a wheel device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class WheelScrollAction : IWheelSourceAction
 {
     private readonly string actionType = "scroll";
@@ -32,31 +31,31 @@ public class WheelScrollAction : IWheelSourceAction
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type => this.actionType;
 
     /// <summary>
     /// Gets or sets the horizontal position of the action.
     /// </summary>
-    [JsonProperty("x")]
+    [JsonPropertyName("x")]
     public ulong X { get => this.x; set => this.x = value; }
 
     /// <summary>
     /// Gets or sets the vertical position of the action.
     /// </summary>
-    [JsonProperty("y")]
+    [JsonPropertyName("y")]
     public ulong Y { get => this.y; set => this.y = value; }
 
     /// <summary>
     /// Gets or sets the horizontal change for the action.
     /// </summary>
-    [JsonProperty("deltaX")]
+    [JsonPropertyName("deltaX")]
     public long DeltaX { get => this.deltaX; set => this.deltaX = value; }
 
     /// <summary>
     /// Gets or sets the vertical change for the action.
     /// </summary>
-    [JsonProperty("deltaY")]
+    [JsonPropertyName("deltaY")]
     public long DeltaY { get => this.deltaY; set => this.deltaY = value; }
 
     /// <summary>
@@ -74,7 +73,9 @@ public class WheelScrollAction : IWheelSourceAction
     /// <summary>
     /// Gets the duration, in milliseconds, of the move for serialization purposes.
     /// </summary>
-    [JsonProperty("duration", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("duration")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal ulong? SerializableDuration
     {
         get
@@ -91,7 +92,9 @@ public class WheelScrollAction : IWheelSourceAction
     /// <summary>
     /// Gets the serializable origin of the move.
     /// </summary>
-    [JsonProperty("origin", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("origin")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal object? SerializableOrigin
     {
         get

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class SetCookieHeaderTests
     public void TestCanSerialize()
     {
         SetCookieHeader cookieHeader = new();
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -35,7 +35,7 @@ public class SetCookieHeaderTests
     public void TestCanSerializeWithConstructorValues()
     {
         SetCookieHeader cookieHeader = new("cookieName", "cookieValue");
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -64,7 +64,7 @@ public class SetCookieHeaderTests
             Name = "cookieName",
             Value = BytesValue.FromString("cookieValue")
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -95,7 +95,7 @@ public class SetCookieHeaderTests
             Name = "cookieName",
             Value = BytesValue.FromByteArray(cookieValue)
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -123,7 +123,7 @@ public class SetCookieHeaderTests
         {
             Domain = "myDomain"
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -154,7 +154,7 @@ public class SetCookieHeaderTests
         {
             Path = "myPath"
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -185,7 +185,7 @@ public class SetCookieHeaderTests
         {
             HttpOnly = true
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -216,7 +216,7 @@ public class SetCookieHeaderTests
         {
             Secure = true
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -247,7 +247,7 @@ public class SetCookieHeaderTests
         {
             SameSite = CookieSameSiteValue.Strict
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -280,7 +280,7 @@ public class SetCookieHeaderTests
         {
             Expires = expirationTime
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -311,7 +311,7 @@ public class SetCookieHeaderTests
         {
             MaxAge = 100
         };
-        string json = JsonConvert.SerializeObject(cookieHeader);
+        string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -342,7 +342,7 @@ public class SetCookieHeaderTests
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""name"": ""cookieName"", ""value"":{ ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100, ""expires"": " + milliseconds + @" }";
-        Cookie? cookie = JsonConvert.DeserializeObject<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         SetCookieHeader header = cookie!.ToSetCookieHeader();
         Assert.Multiple(() =>
         {

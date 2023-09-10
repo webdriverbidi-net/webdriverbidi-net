@@ -5,12 +5,12 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Parameters of page size for printing.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PrintPageParameters
 {
     private double? height;
@@ -25,9 +25,11 @@ public class PrintPageParameters
 
     /// <summary>
     /// Gets or sets the width in centimeters of the page for printing.
-    /// The value must be greater than or equsl to zero, and if omitted, defaults to 21.59.
+    /// The value must be greater than or equal to zero, and if omitted, defaults to 21.59.
     /// </summary>
-    [JsonProperty("width", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("width")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Width
     {
         get
@@ -48,9 +50,11 @@ public class PrintPageParameters
 
     /// <summary>
     /// Gets or sets the height in centimeters of the page for printing.
-    /// The value must be greater than or equsl to zero, and if omitted, defaults to 27.94.
+    /// The value must be greater than or equal to zero, and if omitted, defaults to 27.94.
     /// </summary>
-    [JsonProperty("height", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("height")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Height
     {
         get

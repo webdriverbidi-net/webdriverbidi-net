@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// A class providing credentials for authorization.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class AuthCredentials
 {
     private readonly string credentialType = "password";
@@ -38,18 +37,18 @@ public class AuthCredentials
     /// <summary>
     /// Gets the type of credentials.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type => this.credentialType;
 
     /// <summary>
     /// Gets or sets the user name to use for authentication.
     /// </summary>
-    [JsonProperty("username")]
+    [JsonPropertyName("username")]
     public string UserName { get => this.userName; set => this.userName = value; }
 
     /// <summary>
     /// Gets or sets the password used for authentication.
     /// </summary>
-    [JsonProperty("password")]
+    [JsonPropertyName("password")]
     public string Password { get => this.password; set => this.password = value; }
 }

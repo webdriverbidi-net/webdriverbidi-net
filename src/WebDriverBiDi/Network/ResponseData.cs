@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Data of a network response.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ResponseData
 {
     private string url = string.Empty;
@@ -30,48 +29,54 @@ public class ResponseData
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseData"/> class.
     /// </summary>
-    internal ResponseData()
+    public ResponseData()
     {
     }
 
     /// <summary>
     /// Gets the URL of the response.
     /// </summary>
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     [JsonRequired]
+    [JsonInclude]
     public string Url { get => this.url; internal set => this.url = value; }
 
     /// <summary>
     /// Gets the protocol of the response.
     /// </summary>
-    [JsonProperty("protocol")]
+    [JsonPropertyName("protocol")]
     [JsonRequired]
+    [JsonInclude]
     public string Protocol { get => this.protocol; internal set => this.protocol = value; }
 
     /// <summary>
     /// Gets the status code of the response.
     /// </summary>
-    [JsonProperty("status")]
+    [JsonPropertyName("status")]
     [JsonRequired]
+    [JsonInclude]
     public ulong Status { get => this.status; internal set => this.status = value; }
 
     /// <summary>
     /// Gets the status text of the response.
     /// </summary>
-    [JsonProperty("statusText")]
+    [JsonPropertyName("statusText")]
     [JsonRequired]
+    [JsonInclude]
     public string StatusText { get => this.statusText; internal set => this.statusText = value; }
 
     /// <summary>
     /// Gets a value indicating whether the response was retrieved from the cache.
     /// </summary>
-    [JsonProperty("fromCache")]
+    [JsonPropertyName("fromCache")]
     [JsonRequired]
+    [JsonInclude]
     public bool FromCache { get => this.fromCache; internal set => this.fromCache = value; }
 
     /// <summary>
     /// Gets the headers of the response.
     /// </summary>
+    [JsonIgnore]
     public IList<ReadOnlyHeader> Headers
     {
         get
@@ -89,46 +94,55 @@ public class ResponseData
     /// <summary>
     /// Gets the MIME type of the response.
     /// </summary>
-    [JsonProperty("mimeType")]
+    [JsonPropertyName("mimeType")]
     [JsonRequired]
+    [JsonInclude]
     public string MimeType { get => this.mimeType; internal set => this.mimeType = value; }
 
     /// <summary>
     /// Gets the count of the bytes received in the response.
     /// </summary>
-    [JsonProperty("bytesReceived")]
+    [JsonPropertyName("bytesReceived")]
     [JsonRequired]
+    [JsonInclude]
     public ulong BytesReceived { get => this.bytesReceived; internal set => this.bytesReceived = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the headers in the response.
     /// </summary>
-    [JsonProperty("headersSize", Required = Required.AllowNull)]
+    [JsonPropertyName("headersSize")]
+    [JsonRequired]
+    [JsonInclude]
     public ulong? HeadersSize { get => this.headersSize; internal set => this.headersSize = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the response.
     /// </summary>
-    [JsonProperty("bodySize", Required = Required.AllowNull)]
+    [JsonPropertyName("bodySize")]
+    [JsonRequired]
+    [JsonInclude]
     public ulong? BodySize { get => this.bodySize; internal set => this.bodySize = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the response.
     /// </summary>
-    [JsonProperty("content")]
+    [JsonPropertyName("content")]
     [JsonRequired]
+    [JsonInclude]
     public ResponseContent Content { get => this.content; internal set => this.content = value; }
 
     /// <summary>
     /// Gets the authorization challenge in the response, if any.
     /// </summary>
-    [JsonProperty("authChallenge")]
+    [JsonPropertyName("authChallenge")]
+    [JsonInclude]
     public AuthChallenge? AuthChallenge { get => this.authChallenge; internal set => this.authChallenge = value; }
 
     /// <summary>
     /// Gets or sets the headers of the response for serialization purposes.
     /// </summary>
-    [JsonProperty("headers")]
+    [JsonPropertyName("headers")]
     [JsonRequired]
+    [JsonInclude]
     internal List<Header> SerializableHeaders { get => this.headers; set => this.headers = value; }
 }

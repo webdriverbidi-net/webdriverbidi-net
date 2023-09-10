@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class ContinueResponseCommandParametersTests
     public void TestCanSerializeParameters()
     {
         ContinueResponseCommandParameters properties = new("myRequestId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -35,7 +35,7 @@ public class ContinueResponseCommandParametersTests
         {
             Credentials = new AuthCredentials("myUserName", "myPassword")
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -66,7 +66,7 @@ public class ContinueResponseCommandParametersTests
         {
             Cookies = new List<SetCookieHeader>() { new SetCookieHeader("cookieName", "cookieValue") }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -104,7 +104,7 @@ public class ContinueResponseCommandParametersTests
         {
             Headers = new List<Header>() { new Header("headerName", "headerValue") }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -142,7 +142,7 @@ public class ContinueResponseCommandParametersTests
         {
             ReasonPhrase = "Not Found"
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -163,7 +163,7 @@ public class ContinueResponseCommandParametersTests
         {
             StatusCode = 404
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

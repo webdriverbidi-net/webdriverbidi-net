@@ -5,13 +5,14 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing a remote reference.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
+[JsonDerivedType(typeof(RemoteObjectReference))]
+[JsonDerivedType(typeof(SharedReference))]
 public class RemoteReference : ArgumentValue
 {
     private readonly Dictionary<string, object?> additionalData = new();
@@ -33,18 +34,21 @@ public class RemoteReference : ArgumentValue
     /// Gets the dictionary of additional data about the remote reference.
     /// </summary>
     [JsonExtensionData]
-    [JsonConverter(typeof(ReceivedDataJsonConverter))]
     public Dictionary<string, object?> AdditionalData => this.additionalData;
 
     /// <summary>
     /// Gets or sets the internally accessible handle of the remote reference.
     /// </summary>
-    [JsonProperty("handle", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("handle")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     protected string? InternalHandle { get => this.handle; set => this.handle = value; }
 
     /// <summary>
     /// Gets or sets the internally accessible shared ID of the remote reference.
     /// </summary>
-    [JsonProperty("sharedId", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("sharedId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     protected string? InternalSharedId { get => this.sharedId; set => this.sharedId = value; }
 }

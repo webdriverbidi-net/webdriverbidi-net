@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class NodePropertiesTests
@@ -9,7 +9,7 @@ public class NodePropertiesTests
     public void TestCanDeserialize()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0 }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -29,35 +29,35 @@ public class NodePropertiesTests
     public void TestDeserializeWithMissingNodeTypeThrows()
     {
         string json = @"{ ""childNodeCount"": 0 }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidNodeTypeThrows()
     {
         string json = @"{ ""nodeType"": {}, ""childNodeCount"": 0 }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingChildNodeCountThrows()
     {
         string json = @"{ ""nodeType"": 1 }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidChildNodeCountTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": ""invalid"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalNodeValue()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""nodeValue"": ""myNodeValue"" }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -77,14 +77,14 @@ public class NodePropertiesTests
     public void TestDeserializeWithInvalidNodeValueTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""nodeValue"": {}}, ""childNodeCount"": 0 }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalLocalName()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""localName"": ""myLocalName"" }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -104,14 +104,14 @@ public class NodePropertiesTests
     public void TestDeserializeWithInvalidLocalNameTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""localName"": {}} }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalNamespaceUri()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""namespaceURI"": ""myNamespace"" }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -131,14 +131,14 @@ public class NodePropertiesTests
     public void TestDeserializeWithInvalidNamespaceUriTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""namespaceURI"": {}} }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalAttributes()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""attributes"": { ""attributeName"": ""attributeValue"" } }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -161,28 +161,28 @@ public class NodePropertiesTests
     public void TestDeserializeWithInvalidAttributesTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""attributes"": [] }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidAttributeNameTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""attributes"": { {}: ""attributeValue"" } }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidAttributeValueTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""attributes"": { ""attributeName"": [] } }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalChildren()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""children"": [ { ""type"": ""node"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } } ] }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -205,7 +205,7 @@ public class NodePropertiesTests
     public void TestCanDeserializeWithOptionalEmptyChildren()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""children"": [] }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -226,21 +226,21 @@ public class NodePropertiesTests
     public void TestDeserializeWithInvalidChildrenTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""children"": ""invalid"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidChildrenElementTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""children"": [ ""invalid"" ] }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalModeValue()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""mode"": ""open"" }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -260,21 +260,21 @@ public class NodePropertiesTests
     public void TestDeserializeWithInvalidModeValueTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""mode"": {}} }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidModeValueThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""mode"": ""invalid"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalShadowRoot()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""shadowRoot"": { ""type"": ""node"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } } }";
-        NodeProperties? nodeProperties = JsonConvert.DeserializeObject<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -296,6 +296,6 @@ public class NodePropertiesTests
     public void TestDeserializeWithInvalidShadowRootTypeThrows()
     {
         string json = @"{ ""nodeType"": 1, ""childNodeCount"": 0, ""shadowRoot"": ""invalid"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NodeProperties>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 }

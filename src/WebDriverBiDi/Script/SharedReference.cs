@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Object containing a remote reference to an object in the browser containing a shared ID, such as a node.
 /// </summary>
@@ -22,10 +24,12 @@ public class SharedReference : RemoteReference
     /// <summary>
     /// Gets or sets the shared ID of the remote object.
     /// </summary>
+    [JsonIgnore]
     public string SharedId { get => this.InternalSharedId!; set => this.InternalSharedId = value; }
 
     /// <summary>
     /// Gets or sets the handle of the remote object.
     /// </summary>
+    [JsonIgnore]
     public string? Handle { get => this.InternalHandle!; set => this.InternalHandle = value; }
 }

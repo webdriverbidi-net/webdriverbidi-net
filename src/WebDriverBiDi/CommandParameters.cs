@@ -5,12 +5,12 @@
 
 namespace WebDriverBiDi;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using WebDriverBiDi.BrowsingContext;
 
 /// <summary>
 /// Abstract base class for a set of settings for a command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public abstract class CommandParameters
 {
     private readonly Dictionary<string, object?> additionalData = new();
@@ -18,15 +18,18 @@ public abstract class CommandParameters
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public abstract string MethodName { get; }
 
     /// <summary>
     /// Gets the type of the response for this command.
     /// </summary>
+    [JsonIgnore]
     public abstract Type ResponseType { get; }
 
     /// <summary>
     /// Gets additional properties to be serialized with this command.
     /// </summary>
+    [JsonExtensionData]
     public Dictionary<string, object?> AdditionalData => this.additionalData;
 }

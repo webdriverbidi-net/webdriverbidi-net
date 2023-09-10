@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents a frame within a stack trace for a script.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class StackFrame
 {
     private int lineNumber = -1;
@@ -19,35 +18,39 @@ public class StackFrame
     private string url = string.Empty;
 
     [JsonConstructor]
-    private StackFrame()
+    public StackFrame()
     {
     }
 
     /// <summary>
     /// Gets the name of the function for this stack frame.
     /// </summary>
-    [JsonProperty("functionName")]
+    [JsonPropertyName("functionName")]
     [JsonRequired]
+    [JsonInclude]
     public string FunctionName { get => this.functionName; internal set => this.functionName = value; }
 
     /// <summary>
     /// Gets the line number for this stack frame.
     /// </summary>
-    [JsonProperty("lineNumber")]
+    [JsonPropertyName("lineNumber")]
     [JsonRequired]
+    [JsonInclude]
     public int LineNumber { get => this.lineNumber; internal set => this.lineNumber = value; }
 
     /// <summary>
     /// Gets the column number for this stack frame.
     /// </summary>
-    [JsonProperty("columnNumber")]
+    [JsonPropertyName("columnNumber")]
     [JsonRequired]
+    [JsonInclude]
     public int ColumnNumber { get => this.columnNumber; internal set => this.columnNumber = value; }
 
     /// <summary>
     /// Gets the URL for this stack frame.
     /// </summary>
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     [JsonRequired]
+    [JsonInclude]
     public string Url { get => this.url; internal set => this.url = value; }
 }

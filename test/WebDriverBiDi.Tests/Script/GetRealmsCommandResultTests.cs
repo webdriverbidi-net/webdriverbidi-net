@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class GetRealmsCommandResultTests
@@ -9,7 +9,7 @@ public class GetRealmsCommandResultTests
     public void TestCanDeserializeGetRealmsCommandResult()
     {
         string json = @"{ ""realms"": [] }";
-        GetRealmsCommandResult? result = JsonConvert.DeserializeObject<GetRealmsCommandResult>(json);
+        GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Realms, Is.Empty);
     }
@@ -18,7 +18,7 @@ public class GetRealmsCommandResultTests
     public void TestCanDeserializeGetRealmsCommandResultWithWindowRealmInfo()
     {
         string json = @"{ ""realms"": [ { ""realm"": ""realmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""contextId"" } ] }";
-        GetRealmsCommandResult? result = JsonConvert.DeserializeObject<GetRealmsCommandResult>(json);
+        GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Realms, Has.Count.EqualTo(1));
         Assert.That(result!.Realms[0], Is.TypeOf<WindowRealmInfo>());
@@ -35,7 +35,7 @@ public class GetRealmsCommandResultTests
     public void TestCanDeserializeGetRealmsCommandResultWithNonWindowRealmInfo()
     {
         string json = @"{ ""realms"": [ { ""realm"": ""realmId"", ""origin"": ""myOrigin"", ""type"": ""worker"" } ] }";
-        GetRealmsCommandResult? result = JsonConvert.DeserializeObject<GetRealmsCommandResult>(json);
+        GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Realms, Has.Count.EqualTo(1));
         Assert.That(result!.Realms[0], Is.Not.TypeOf<WindowRealmInfo>());

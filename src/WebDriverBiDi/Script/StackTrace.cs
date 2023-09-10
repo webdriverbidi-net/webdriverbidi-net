@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing a stack trace from a script.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class StackTrace
 {
     private List<StackFrame> callFrames = new();
@@ -19,7 +18,7 @@ public class StackTrace
     /// Initializes a new instance of the <see cref="StackTrace"/> class.
     /// </summary>
     [JsonConstructor]
-    internal StackTrace()
+    public StackTrace()
     {
     }
 
@@ -31,7 +30,8 @@ public class StackTrace
     /// <summary>
     /// Gets or sets the list of stack frames for serialization purposes.
     /// </summary>
-    [JsonProperty("callFrames")]
+    [JsonPropertyName("callFrames")]
     [JsonRequired]
+    [JsonInclude]
     internal List<StackFrame> SerializableCallFrames { get => this.callFrames; set => this.callFrames = value; }
 }

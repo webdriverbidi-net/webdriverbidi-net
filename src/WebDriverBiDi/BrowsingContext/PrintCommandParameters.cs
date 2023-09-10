@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.navigate command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PrintCommandParameters : CommandParameters<PrintCommandResult>
 {
     private string browsingContextId;
@@ -34,43 +33,49 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.print";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context for which to capture the screenshot.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to print background images. Defaults to false.
     /// </summary>
-    [JsonProperty("background", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("background")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Background { get => this.background; set => this.background = value; }
 
     /// <summary>
     /// Gets or sets a value containing the margins for the printed page.
     /// </summary>
-    [JsonProperty("margin", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("margin")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PrintMarginParameters? Margins { get => this.margins; set => this.margins = value; }
 
     /// <summary>
     /// Gets or sets the orientation of the printed page. If omitted, defaults to Portrait.
     /// </summary>
-    [JsonProperty("orientation", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("orientation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PrintOrientation? Orientation { get => this.orientation; set => this.orientation = value; }
 
     /// <summary>
     /// Gets or sets a value containing information about the size of the printed page.
     /// </summary>
-    [JsonProperty("page", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("page")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PrintPageParameters? Page { get => this.page; set => this.page = value; }
 
     /// <summary>
     /// Gets or sets the scale factor of the printed page.
     /// The value must be between 0.1 and 2.0 inclusive, and if omitted, defaults to 1.0.
     /// </summary>
-    [JsonProperty("scale", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("scale")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Scale
     {
         get
@@ -92,7 +97,8 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// <summary>
     /// Gets or sets a value indicating whether or shrink the content to fit on a single page. If omitted, defaults to true.
     /// </summary>
-    [JsonProperty("shrinkToFit", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("shrinkToFit")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? ShrinkToFit { get => this.shrinkToFit; set => this.shrinkToFit = value; }
 
     /// <summary>
@@ -100,12 +106,15 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// The objects of the list must be strings or longs. Other value types
     /// will cause an error when sending the browsingContext.print command.
     /// </summary>
+    [JsonIgnore]
     public List<object> PageRanges { get => this.pageRanges; set => this.pageRanges = value; }
 
     /// <summary>
     /// Gets the list of page ranges to print for serialization purposes.
     /// </summary>
-    [JsonProperty("pageRanges", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("pageRanges")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal List<object>? SerializablePageRanges
     {
         get

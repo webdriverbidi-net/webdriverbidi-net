@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the network.provideResponse command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ProvideResponseCommandParameters : CommandParameters<EmptyResult>
 {
     private string requestId;
@@ -32,41 +31,52 @@ public class ProvideResponseCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "network.provideResponse";
 
     /// <summary>
     /// Gets or sets the ID of the request to continue.
     /// </summary>
-    [JsonProperty("request")]
+    [JsonPropertyName("request")]
     public string RequestId { get => this.requestId; set => this.requestId = value; }
 
     /// <summary>
     /// Gets or sets the body of the response.
     /// </summary>
-    [JsonProperty("body", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("body")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public BytesValue? Body { get => this.body; set => this.body = value; }
 
     /// <summary>
     /// Gets or sets the cookies of the response.
     /// </summary>
-    [JsonProperty("cookies", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("cookies")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public List<SetCookieHeader>? Cookies { get => this.cookieHeaders; set => this.cookieHeaders = value; }
 
     /// <summary>
     /// Gets or sets the headers of the response.
     /// </summary>
-    [JsonProperty("headers", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("headers")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public List<Header>? Headers { get => this.headers; set => this.headers = value; }
 
     /// <summary>
     /// Gets or sets the HTTP reason phrase ('OK', 'Not Found', etc.) of the response.
     /// </summary>
-    [JsonProperty("reasonPhrase", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("reasonPhrase")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public string? ReasonPhrase { get => this.reasonPhrase; set => this.reasonPhrase = value; }
 
     /// <summary>
     /// Gets or sets the HTTP status code of the response.
     /// </summary>
-    [JsonProperty("statusCode", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("statusCode")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public uint? StatusCode { get => this.statusCode; set => this.statusCode = value; }
 }

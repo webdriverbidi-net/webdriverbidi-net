@@ -5,12 +5,9 @@
 
 namespace WebDriverBiDi;
 
-using Newtonsoft.Json;
-
 /// <summary>
 /// Represents an empty result from a command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class EmptyResult : CommandResult
 {
 }

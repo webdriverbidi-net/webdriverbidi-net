@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing event data for events raised by before a network request is sent.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class AuthRequiredEventArgs : BaseNetworkEventArgs
 {
     private ResponseData response = new();
@@ -26,7 +25,8 @@ public class AuthRequiredEventArgs : BaseNetworkEventArgs
     /// <summary>
     /// Gets the initiator of the request.
     /// </summary>
-    [JsonProperty("response")]
+    [JsonPropertyName("response")]
     [JsonRequired]
+    [JsonInclude]
     public ResponseData Response { get => this.response; internal set => this.response = value; }
 }

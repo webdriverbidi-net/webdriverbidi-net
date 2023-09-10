@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the session.end command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class EndCommandParameters : CommandParameters<EmptyResult>
 {
     /// <summary>
@@ -23,5 +22,6 @@ public class EndCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "session.end";
 }

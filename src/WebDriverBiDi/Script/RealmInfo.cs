@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing information about a script realm.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 [JsonConverter(typeof(RealmInfoJsonConverter))]
 public class RealmInfo
 {
@@ -22,28 +21,31 @@ public class RealmInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="RealmInfo"/> class.
     /// </summary>
-    internal RealmInfo()
+    public RealmInfo()
     {
     }
 
     /// <summary>
     /// Gets the ID of the realm.
     /// </summary>
-    [JsonProperty("realm")]
+    [JsonPropertyName("realm")]
     [JsonRequired]
+    [JsonInclude]
     public string RealmId { get => this.realmId; internal set => this.realmId = value; }
 
     /// <summary>
     /// Gets the origin of the realm.
     /// </summary>
-    [JsonProperty("origin")]
+    [JsonPropertyName("origin")]
     [JsonRequired]
+    [JsonInclude]
     public string Origin { get => this.origin; internal set => this.origin = value; }
 
     /// <summary>
     /// Gets the type of the realm.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     [JsonRequired]
+    [JsonInclude]
     public RealmType Type { get => this.realmType; internal set => this.realmType = value; }
 }

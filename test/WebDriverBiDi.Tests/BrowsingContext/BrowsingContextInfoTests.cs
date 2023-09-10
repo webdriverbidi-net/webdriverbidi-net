@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class BrowsingContextInfoTests
@@ -9,7 +9,7 @@ public class BrowsingContextInfoTests
     public void TestCanDeserialize()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""children"": [] }";
-        BrowsingContextInfo? info = JsonConvert.DeserializeObject<BrowsingContextInfo>(json);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         Assert.Multiple(() =>
@@ -26,7 +26,7 @@ public class BrowsingContextInfoTests
     public void TestCanDeserializeWithChildren()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""children"": [{ ""context"": ""childContextId"", ""url"": ""http://example.com/subdirectory"", ""children"": [] }] }";
-        BrowsingContextInfo? info = JsonConvert.DeserializeObject<BrowsingContextInfo>(json);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         Assert.Multiple(() =>
@@ -43,7 +43,7 @@ public class BrowsingContextInfoTests
     public void TestCanDeserializeWithOptionalParent()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""children"": [], ""parent"": ""parentContextId"" }";
-        BrowsingContextInfo? info = JsonConvert.DeserializeObject<BrowsingContextInfo>(json);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         Assert.Multiple(() =>
@@ -61,48 +61,48 @@ public class BrowsingContextInfoTests
     public void TestDeserializingBrowsingContextInfoWithMissingContextThrows()
     {
         string json = @"{ ""url"": ""http://example.com"", ""children"": [] }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextInfo>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingBrowsingContextInfoWithMissingUrlThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""children"": [] }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextInfo>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingBrowsingContextInfoWithMissingChildrenThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextInfo>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingBrowsingContextInfoWithInvalidContextTypeThrows()
     {
         string json = @"{ ""context"": {}, ""url"": ""http://example.com"", ""children"": [] }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextInfo>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingBrowsingContextInfoWithInvalidUrlTypeThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": {}, ""children"": [] }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextInfo>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingBrowsingContextInfoWithInvalidChildrenTypeThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""children"": ""invalid"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextInfo>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingBrowsingContextInfoWithInvalidParentTypeThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""children"": [], ""parent"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<BrowsingContextInfo>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 }

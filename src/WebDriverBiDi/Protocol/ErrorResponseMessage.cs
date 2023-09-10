@@ -5,7 +5,8 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Response class that contains the result of a command when an error is encountered.
@@ -18,27 +19,32 @@ public class ErrorResponseMessage : Message
     /// <summary>
     /// Gets the ID for the command causing this error during execution, if any.
     /// </summary>
-    [JsonProperty("id", Required = Required.AllowNull)]
+    [JsonPropertyName("id")]
+    [JsonRequired]
+    [JsonInclude]
     public long? CommandId { get; internal set; }
 
     /// <summary>
     /// Gets the type of error encountered.
     /// </summary>
-    [JsonProperty("error")]
+    [JsonPropertyName("error")]
     [JsonRequired]
+    [JsonInclude]
     public string ErrorType { get => this.error; internal set => this.error = value; }
 
     /// <summary>
     /// Gets the message of the error.
     /// </summary>
-    [JsonProperty("message")]
+    [JsonPropertyName("message")]
     [JsonRequired]
+    [JsonInclude]
     public string ErrorMessage { get => this.message; internal set => this.message = value; }
 
     /// <summary>
     /// Gets the stack trace associated with this error.
     /// </summary>
-    [JsonProperty("stacktrace", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("stacktrace")]
+    [JsonInclude]
     public string? StackTrace { get; internal set; }
 
     /// <summary>

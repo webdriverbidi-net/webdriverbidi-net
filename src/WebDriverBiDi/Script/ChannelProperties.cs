@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Properties of a channel used to initiate passing information back from the browser from a preload script.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ChannelProperties
 {
     private string channelId = string.Empty;
@@ -29,18 +28,22 @@ public class ChannelProperties
     /// <summary>
     /// Gets or sets the ID of the channel.
     /// </summary>
-    [JsonProperty("channel")]
+    [JsonPropertyName("channel")]
     public string ChannelId { get => this.channelId; set => this.channelId = value; }
 
     /// <summary>
     /// Gets or sets the serialization options for the channel.
     /// </summary>
-    [JsonProperty("serializationOptions", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("serializationOptions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
 
     /// <summary>
     /// Gets or sets the result ownership for the channel.
     /// </summary>
-    [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("resultOwnership")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
 }

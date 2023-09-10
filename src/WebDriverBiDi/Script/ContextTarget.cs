@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing a script target that is a browsing context.
@@ -19,6 +19,7 @@ public class ContextTarget : Target
     /// Initializes a new instance of the <see cref="ContextTarget"/> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context of the script target.</param>
+    [JsonConstructor]
     public ContextTarget(string browsingContextId)
     {
         this.browsingContextId = browsingContextId;
@@ -27,12 +28,16 @@ public class ContextTarget : Target
     /// <summary>
     /// Gets the ID of the browsing context used as a script target.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
+    [JsonRequired]
+    [JsonInclude]
     public string BrowsingContextId { get => this.browsingContextId; internal set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the name of the sandbox.
     /// </summary>
-    [JsonProperty("sandbox", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("sandbox")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public string? Sandbox { get => this.sandbox; internal set => this.sandbox = value; }
 }

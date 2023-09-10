@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class HeaderTests
@@ -9,7 +9,7 @@ public class HeaderTests
     public void TestCanDeserializeHeader()
     {
         string json = @"{ ""name"": ""headerName"", ""value"": { ""type"": ""string"", ""value"": ""headerValue"" } }";
-        Header? header = JsonConvert.DeserializeObject<Header>(json);
+        Header? header = JsonSerializer.Deserialize<Header>(json);
         Assert.That(header, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -25,7 +25,7 @@ public class HeaderTests
         byte[] byteArray = new byte[] { 0x41, 0x42, 0x43 };
         string base64Value = Convert.ToBase64String(byteArray);
         string json = $@"{{ ""name"": ""headerName"", ""value"": {{ ""type"": ""base64"", ""value"": ""{base64Value}"" }} }}";
-        Header? header = JsonConvert.DeserializeObject<Header>(json);
+        Header? header = JsonSerializer.Deserialize<Header>(json);
         Assert.That(header, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -39,13 +39,13 @@ public class HeaderTests
     public void TestDeserializingWithMissingNameThrows()
     {
         string json = @"{ ""value"":  { ""type"": ""string"", ""value"": ""headerValue"" } }";
-        Assert.That(() => JsonConvert.DeserializeObject<Header>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'name' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<Header>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: name"));
     }
 
     [Test]
     public void TestDeserializingWithMissingValueThrows()
     {
         string json = @"{ ""name"": ""headerName"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<Header>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'value' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<Header>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: value"));
     }
 }

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class RealmCreatedEventArgsTests
@@ -9,7 +9,7 @@ public class RealmCreatedEventArgsTests
     public void TestCanCreateWithWindowRealmInfo()
     {
         string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContext"" }";
-        RealmInfo? info = JsonConvert.DeserializeObject<RealmInfo>(json);
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         RealmCreatedEventArgs eventArgs = new(info!);
         Assert.Multiple(() =>
         {
@@ -24,7 +24,7 @@ public class RealmCreatedEventArgsTests
     public void TestCanCreateWithNonWindowRealmInfo()
     {
         string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""worker"" }";
-        RealmInfo? info = JsonConvert.DeserializeObject<RealmInfo>(json);
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         RealmCreatedEventArgs eventArgs = new(info!);
         Assert.Multiple(() =>
         {

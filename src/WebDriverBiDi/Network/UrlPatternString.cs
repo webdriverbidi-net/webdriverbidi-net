@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// The abstract base class for a value that can contain either a string or a byte array.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class UrlPatternString : UrlPattern
 {
     private string pattern;
@@ -36,6 +35,7 @@ public class UrlPatternString : UrlPattern
     /// <summary>
     /// Gets or sets the pattern to match.
     /// </summary>
-    [JsonProperty("pattern")]
+    [JsonPropertyName("pattern")]
+    [JsonInclude]
     public string Pattern { get => this.pattern; set => this.pattern = value; }
 }

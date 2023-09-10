@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing event data for the event raised when a user prompt is closed.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class UserPromptClosedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId;
@@ -32,20 +31,24 @@ public class UserPromptClosedEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets the ID of the browsing context for which the user prompt was closed.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
+    [JsonInclude]
     public string BrowsingContextId { get => this.browsingContextId; internal set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets a value indicating whether the user prompt was accepted (true), or if it was canceled (false).
     /// </summary>
-    [JsonProperty("accepted")]
+    [JsonPropertyName("accepted")]
     [JsonRequired]
+    [JsonInclude]
     public bool IsAccepted { get => this.isAccepted; internal set => this.isAccepted = value; }
 
     /// <summary>
     /// Gets the text of the user prompt.
     /// </summary>
-    [JsonProperty("userText", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("userText")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public string? UserText { get => this.userText; internal set => this.userText = value; }
 }

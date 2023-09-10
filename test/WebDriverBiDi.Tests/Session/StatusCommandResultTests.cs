@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class StatusCommandResultTests
@@ -9,7 +9,7 @@ public class StatusCommandResultTests
     public void TestCanDeserialize()
     {
         string json = @"{ ""ready"": true, ""message"": ""myMessage"" }";
-        StatusCommandResult? result = JsonConvert.DeserializeObject<StatusCommandResult>(json);
+        StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -22,27 +22,27 @@ public class StatusCommandResultTests
     public void TestDeserializingWithMissingReadyThrows()
     {
         string json = @"{ ""message"": ""myMessage"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<StatusCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<StatusCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidReadyTypeThrows()
     {
         string json = @"{ ""ready"": ""invalid value"", ""message"": ""myMessage"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<StatusCommandResult>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<StatusCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithMissingMessageThrows()
     {
         string json = @"{ ""ready"": true }";
-        Assert.That(() => JsonConvert.DeserializeObject<StatusCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<StatusCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidMessageTypeThrows()
     {
         string json = @"{ ""ready"": true, ""message"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<StatusCommandResult>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<StatusCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

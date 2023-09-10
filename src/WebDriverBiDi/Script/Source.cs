@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing the source for a script.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class Source
 {
     private string realmId = string.Empty;
@@ -20,20 +19,23 @@ public class Source
     /// Initializes a new instance of the <see cref="Source"/> class.
     /// </summary>
     [JsonConstructor]
-    internal Source()
+    public Source()
     {
     }
 
     /// <summary>
     /// Gets the ID of the realm for a script.
     /// </summary>
-    [JsonProperty("realm")]
+    [JsonPropertyName("realm")]
     [JsonRequired]
+    [JsonInclude]
     public string RealmId { get => this.realmId; internal set => this.realmId = value; }
 
     /// <summary>
     /// Gets the browsing context ID for a script.
     /// </summary>
-    [JsonProperty("context", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("context")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public string? Context { get => this.browsingContextId; internal set => this.browsingContextId = value; }
 }

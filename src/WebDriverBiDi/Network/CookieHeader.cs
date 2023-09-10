@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// A header from a request.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CookieHeader
 {
     private string name = string.Empty;
@@ -38,14 +37,14 @@ public class CookieHeader
     /// <summary>
     /// Gets or sets the name of the header.
     /// </summary>
-    [JsonProperty("name")]
+    [JsonPropertyName("name")]
     [JsonRequired]
     public string Name { get => this.name; set => this.name = value; }
 
     /// <summary>
     /// Gets or sets the value of the header.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     [JsonRequired]
     public BytesValue Value { get => this.value; set => this.value = value; }
 }

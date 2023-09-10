@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class RemoteReferenceTests
     public void TestCanSerializeRemoteObjectReference()
     {
         RemoteObjectReference reference = new("myHandle");
-        string json = JsonConvert.SerializeObject(reference);
+        string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -27,7 +27,7 @@ public class RemoteReferenceTests
         {
             Handle = "myNewHandle"
         };
-        string json = JsonConvert.SerializeObject(reference);
+        string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -44,7 +44,7 @@ public class RemoteReferenceTests
         {
             SharedId = "mySharedId"
         };
-        string json = JsonConvert.SerializeObject(reference);
+        string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -60,7 +60,7 @@ public class RemoteReferenceTests
     public void TestCanSerializeSharedReference()
     {
         SharedReference reference = new("mySharedId");
-        string json = JsonConvert.SerializeObject(reference);
+        string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -77,7 +77,7 @@ public class RemoteReferenceTests
         {
             SharedId = "myNewSharedId"
         };
-        string json = JsonConvert.SerializeObject(reference);
+        string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -94,7 +94,7 @@ public class RemoteReferenceTests
         {
             Handle = "myHandle"
         };
-        string json = JsonConvert.SerializeObject(reference);
+        string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -111,7 +111,7 @@ public class RemoteReferenceTests
     {
         RemoteObjectReference reference = new("myHandle");
         reference.AdditionalData["myPropertyName"] = "myValue";
-        string json = JsonConvert.SerializeObject(reference);
+        string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(2));
         Assert.Multiple(() =>

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class AuthRequiredEventArgsTests
@@ -67,7 +67,7 @@ public class AuthRequiredEventArgsTests
             }}
     }}
 }}";
-        AuthRequiredEventArgs? eventArgs = JsonConvert.DeserializeObject<AuthRequiredEventArgs>(eventJson);
+        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -91,6 +91,6 @@ public class AuthRequiredEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<AuthRequiredEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

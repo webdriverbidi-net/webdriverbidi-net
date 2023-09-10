@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class BeforeRequestSentEventArgsTests
@@ -47,7 +47,7 @@ public class BeforeRequestSentEventArgsTests
         ""type"": ""parser""
     }}
 }}";
-        BeforeRequestSentEventArgs? eventArgs = JsonConvert.DeserializeObject<BeforeRequestSentEventArgs>(eventJson);
+        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -72,7 +72,7 @@ public class BeforeRequestSentEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BeforeRequestSentEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -90,6 +90,6 @@ public class BeforeRequestSentEventArgsTests
     ""request"": {requestDataJson},
     ""initiator"": []
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<BeforeRequestSentEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

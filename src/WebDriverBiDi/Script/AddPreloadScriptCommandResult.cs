@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for adding a preload script using the script.addPreloadScript command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class AddPreloadScriptCommandResult : CommandResult
 {
     private string preloadScriptId = string.Empty;
@@ -19,13 +18,14 @@ public class AddPreloadScriptCommandResult : CommandResult
     /// Initializes a new instance of the <see cref="AddPreloadScriptCommandResult"/> class.
     /// </summary>
     [JsonConstructor]
-    internal AddPreloadScriptCommandResult()
+    public AddPreloadScriptCommandResult()
     {
     }
 
     /// <summary>
     /// Gets the ID of the preload script.
     /// </summary>
-    [JsonProperty("script")]
+    [JsonPropertyName("script")]
+    [JsonInclude]
     public string PreloadScriptId { get => this.preloadScriptId; internal set => this.preloadScriptId = value; }
 }

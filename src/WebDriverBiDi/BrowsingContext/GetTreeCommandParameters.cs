@@ -6,12 +6,11 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.create command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class GetTreeCommandParameters : CommandParameters<GetTreeCommandResult>
 {
     private int? maxDepth;
@@ -27,17 +26,20 @@ public class GetTreeCommandParameters : CommandParameters<GetTreeCommandResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.getTree";
 
     /// <summary>
     /// Gets or sets the maximum depth to traverse the tree.
     /// </summary>
-    [JsonProperty("maxDepth", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("maxDepth")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? MaxDepth { get => this.maxDepth; set => this.maxDepth = value; }
 
     /// <summary>
     /// Gets or sets the ID of the browsing context used as the root of the tree.
     /// </summary>
-    [JsonProperty("root", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("root")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? RootBrowsingContextId { get => this.rootBrowsingContextId; set => this.rootBrowsingContextId = value; }
 }

@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing the evaluation of a script that throws an exception.
@@ -18,7 +18,7 @@ public class EvaluateResultException : EvaluateResult
     /// Initializes a new instance of the <see cref="EvaluateResultException"/> class.
     /// </summary>
     [JsonConstructor]
-    internal EvaluateResultException()
+    public EvaluateResultException()
         : base()
     {
     }
@@ -26,6 +26,7 @@ public class EvaluateResultException : EvaluateResult
     /// <summary>
     /// Gets the exception details of the script evaluation.
     /// </summary>
-    [JsonProperty("exceptionDetails")]
+    [JsonPropertyName("exceptionDetails")]
+    [JsonInclude]
     public ExceptionDetails ExceptionDetails { get => this.result; internal set => this.result = value; }
 }

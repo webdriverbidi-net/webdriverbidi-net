@@ -1,13 +1,12 @@
 namespace WebDriverBiDi.TestUtilities;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
-[JsonObject(MemberSerialization.OptIn)]
 public class TestEventArgs: WebDriverBiDiEventArgs
 {
-    private readonly string parameterName = "paramValue";
+    private string parameterName = "paramValue";
 
-    [JsonProperty("paramName")]
+    [JsonPropertyName("paramName")]
     [JsonRequired]
-    public string ParamName => parameterName;
+    public string ParamName { get => parameterName; set => parameterName = value; }
 }

@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for creating a new session using the session.new command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class NewCommandResult : CommandResult
 {
     private string sessionId = string.Empty;
@@ -18,21 +17,23 @@ public class NewCommandResult : CommandResult
     private CapabilitiesResult capabilitiesResult = new();
 
     [JsonConstructor]
-    private NewCommandResult()
+    public NewCommandResult()
     {
     }
 
     /// <summary>
     /// Gets the ID of the session.
     /// </summary>
-    [JsonProperty("sessionId")]
+    [JsonPropertyName("sessionId")]
     [JsonRequired]
+    [JsonInclude]
     public string SessionId { get => this.sessionId; internal set => this.sessionId = value; }
 
     /// <summary>
     /// Gets the actual capabilities used in this session.
     /// </summary>
-    [JsonProperty("capabilities")]
+    [JsonPropertyName("capabilities")]
     [JsonRequired]
+    [JsonInclude]
     public CapabilitiesResult Capabilities { get => this.capabilitiesResult; internal set => this.capabilitiesResult = value; }
 }

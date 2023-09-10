@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class ResponseCompletedEventArgsTests
@@ -67,7 +67,7 @@ public class ResponseCompletedEventArgsTests
         }}       
     }}
 }}";
-        ResponseCompletedEventArgs? eventArgs = JsonConvert.DeserializeObject<ResponseCompletedEventArgs>(eventJson);
+        ResponseCompletedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -100,6 +100,6 @@ public class ResponseCompletedEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseCompletedEventArgs>(eventJson), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }
