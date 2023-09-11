@@ -3,9 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using System.Text.Json.Serialization;
-
 namespace WebDriverBiDi.Input;
+
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Interface marking an action as an action used with a wheel input device.

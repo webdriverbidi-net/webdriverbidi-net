@@ -22,7 +22,7 @@ public class BytesValue
     /// <param name="type">The type of value to initialize.</param>
     /// <param name="value">The value to use in the object.</param>
     [JsonConstructor]
-    public  BytesValue(BytesValueType type, string value)
+    public BytesValue(BytesValueType type, string value)
     {
         this.valueType = type;
         this.actualValue = value;

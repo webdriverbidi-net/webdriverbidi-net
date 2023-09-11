@@ -43,6 +43,13 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
         }
     }
 
+    /// <summary>
+    /// Deserializes the JSON string to an enum value.
+    /// </summary>
+    /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
+    /// <param name="typeToConvert">The Type description of the type to convert.</param>
+    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <returns>A value of the specified enum.</returns>
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.String)
@@ -50,7 +57,7 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
             throw new WebDriverBiDiException("Deserialization error reading enumerated string value");
         }
 
-        string stringValue = reader.GetString();
+        string? stringValue = reader.GetString();
         if (stringValue is not null && this.stringToEnumValues.TryGetValue(stringValue, out T enumValue))
         {
             return enumValue;
@@ -59,43 +66,14 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
         throw new WebDriverBiDiException($"Deserialization error: value '{stringValue}' is not valid for enum type {typeof(T)}");
     }
 
+    /// <summary>
+    /// Serializes an enum value to a JSON string.
+    /// </summary>
+    /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
+    /// <param name="value">The enum value to be serialized.</param>
+    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
         writer.WriteStringValue(this.enumValuesToStrings[value]);
     }
-
-    /// <summary>
-    /// Reads a JSON string and deserializes it to an object.
-    /// </summary>
-    /// <param name="reader">The JSON reader to use during deserialization.</param>
-    /// <param name="objectType">The type of object to which to deserialize.</param>
-    /// <param name="existingValue">The existing value of the object.</param>
-    /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
-    /// <param name="serializer">The JSON serializer to use in deserialization.</param>
-    /// <returns>The deserialized object created from JSON.</returns>
-    // public override T ReadJson(JsonReader reader, Type objectType, T existingValue, bool hasExistingValue, JsonSerializer serializer)
-    // {
-    //     if (reader.Value is not string stringValue)
-    //     {
-    //         throw new WebDriverBiDiException("Deserialization error reading enumerated string value");
-    //     }
-
-    //     if (this.stringToEnumValues.TryGetValue(stringValue, out T enumValue))
-    //     {
-    //         return enumValue;
-    //     }
-
-    //     throw new WebDriverBiDiException($"Deserialization error: value '{stringValue}' is not valid for enum type {typeof(T)}");
-    // }
-
-    /// <summary>
-    /// Serializes an object and writes it to a JSON string.
-    /// </summary>
-    /// <param name="writer">The JSON writer to use during serialization.</param>
-    /// <param name="value">The object to serialize.</param>
-    /// <param name="serializer">The JSON serializer to use in serialization.</param>
-    // public override void WriteJson(JsonWriter writer, T value, JsonSerializer serializer)
-    // {
-    //     writer.WriteValue(this.enumValuesToStrings[value]);
-    // }
 }

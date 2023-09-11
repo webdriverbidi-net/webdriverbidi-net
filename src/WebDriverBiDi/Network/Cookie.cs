@@ -60,8 +60,8 @@ public class Cookie
     /// </summary>
     [JsonPropertyName("path")]
     [JsonRequired]
-     [JsonInclude]
-   public string Path { get => this.path; internal set => this.path = value; }
+    [JsonInclude]
+    public string Path { get => this.path; internal set => this.path = value; }
 
     /// <summary>
     /// Gets the expiration time of the cookie.

@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.JsonConverters;
 
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
@@ -15,6 +14,14 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
 {
+    /// <summary>
+    /// Deserializes the JSON string to an RealmInfo value.
+    /// </summary>
+    /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
+    /// <param name="typeToConvert">The Type description of the type to convert.</param>
+    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <returns>A LogEntry, including the proper subclasses.</returns>
+    /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override RealmInfo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         RealmInfo? realmInfo;
@@ -36,7 +43,7 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
             {
                 throw new JsonException("RealmInfo 'realm' property is required");
             }
-            
+
             if (realmIdElement.ValueKind != JsonValueKind.String)
             {
                 throw new JsonException("RealmInfo 'realm' property must be a string");
@@ -101,6 +108,13 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
         throw new JsonException("JSON could not be parsed");
     }
 
+    /// <summary>
+    /// Serializes a RealmInfo object to a JSON string.
+    /// </summary>
+    /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
+    /// <param name="value">The Command to be serialized.</param>
+    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <exception cref="NotImplementedException">Thrown when called, as this converter is only used for deserialization.</exception>
     public override void Write(Utf8JsonWriter writer, RealmInfo value, JsonSerializerOptions options)
     {
         throw new NotImplementedException();

@@ -1,11 +1,22 @@
-using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text.Json;
+// <copyright file="JsonConverterUtilities.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
 namespace WebDriverBiDi.Internal;
 
+using System.Text.Json;
+
+/// <summary>
+/// Provides utilities for converting deserialized JSON data to proper formats.
+/// </summary>
 public static class JsonConverterUtilities
 {
+    /// <summary>
+    /// Converts overflow JSON data into appropriate read-only .NET data structures.
+    /// </summary>
+    /// <param name="overflowData">A dictionary containing JsonElements to be converted.</param>
+    /// <returns>A read-only, immutable data structure of .NET objects.</returns>
     public static ReceivedDataDictionary ConvertIncomingExtensionData(Dictionary<string, JsonElement> overflowData)
     {
         Dictionary<string, object?> receivedData = new();

@@ -15,6 +15,14 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class LogEntryJsonConverter : JsonConverter<LogEntry>
 {
+    /// <summary>
+    /// Deserializes the JSON string to an LogEntry value.
+    /// </summary>
+    /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
+    /// <param name="typeToConvert">The Type description of the type to convert.</param>
+    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <returns>A LogEntry, including the proper subclasses.</returns>
+    /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override LogEntry? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         LogEntry? entry;
@@ -107,6 +115,13 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
         throw new JsonException("JSON could not be parsed");
     }
 
+    /// <summary>
+    /// Serializes a LogEntry object to a JSON string.
+    /// </summary>
+    /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
+    /// <param name="value">The Command to be serialized.</param>
+    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <exception cref="NotImplementedException">Thrown when called, as this converter is only used for deserialization.</exception>
     public override void Write(Utf8JsonWriter writer, LogEntry value, JsonSerializerOptions options)
     {
         throw new NotImplementedException();

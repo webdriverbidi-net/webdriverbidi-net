@@ -410,7 +410,7 @@ public class Transport
         if (message.TryGetProperty("method", out JsonElement eventNameToken) && eventNameToken.ValueKind == JsonValueKind.String)
         {
             string eventName = eventNameToken.GetString();
-            if (this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
+            if (!string.IsNullOrEmpty(eventName) && this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
             {
                 try
                 {
