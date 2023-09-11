@@ -325,24 +325,24 @@ public class Transport
             {
                 // TODO: Remove this else clause when the browser stable channels
                 // have the message type property implemented.
-                // if (message.RootElement.TryGetProperty("error", out JsonElement errorToken) && errorToken.ValueKind == JsonValueKind.String)
-                // {
-                //     isProcessed = this.ProcessErrorMessage(message.RootElement);
-                // }
-                // else
-                // {
-                //     if (message.RootElement.TryGetProperty("id", out JsonElement idToken) && idToken.TryGetInt64(out long _))
-                //     {
-                //         isProcessed = this.ProcessCommandResponseMessage(message.RootElement);
-                //     }
-                //     else
-                //     {
-                //         if (message.RootElement.TryGetProperty("method", out JsonElement eventNameToken) && eventNameToken.ValueKind == JsonValueKind.String)
-                //         {
-                //             isProcessed = this.ProcessEventMessage(message.RootElement);
-                //         }
-                //     }
-                // }
+                if (message.RootElement.TryGetProperty("error", out JsonElement errorToken) && errorToken.ValueKind == JsonValueKind.String)
+                {
+                    isProcessed = this.ProcessErrorMessage(message.RootElement);
+                }
+                else
+                {
+                    if (message.RootElement.TryGetProperty("id", out JsonElement idToken) && idToken.TryGetInt64(out long _))
+                    {
+                        isProcessed = this.ProcessCommandResponseMessage(message.RootElement);
+                    }
+                    else
+                    {
+                        if (message.RootElement.TryGetProperty("method", out JsonElement eventNameToken) && eventNameToken.ValueKind == JsonValueKind.String)
+                        {
+                            isProcessed = this.ProcessEventMessage(message.RootElement);
+                        }
+                    }
+                }
             }
         }
 
