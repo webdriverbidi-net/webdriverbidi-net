@@ -26,6 +26,7 @@ public class Message
     // have the message type property implemented.
     // [JsonRequired]
     [JsonPropertyName("type")]
+    [JsonInclude]
     public string Type { get => this.type; private set => this.type = value; }
 
     /// <summary>
