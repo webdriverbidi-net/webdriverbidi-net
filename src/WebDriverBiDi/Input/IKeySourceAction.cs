@@ -12,6 +12,7 @@ using System.Text.Json.Serialization;
 /// </summary>
 [JsonDerivedType(typeof(KeyDownAction))]
 [JsonDerivedType(typeof(KeyUpAction))]
+[JsonDerivedType(typeof(PauseAction))]
 public interface IKeySourceAction
 {
 }

@@ -13,6 +13,7 @@ using System.Text.Json.Serialization;
 [JsonDerivedType(typeof(PointerDownAction))]
 [JsonDerivedType(typeof(PointerUpAction))]
 [JsonDerivedType(typeof(PointerMoveAction))]
+[JsonDerivedType(typeof(PauseAction))]
 public interface IPointerSourceAction
 {
 }

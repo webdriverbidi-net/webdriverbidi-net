@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 /// Interface marking an action as an action used with a wheel input device.
 /// </summary>
 [JsonDerivedType(typeof(WheelScrollAction))]
+[JsonDerivedType(typeof(PauseAction))]
 public interface IWheelSourceAction
 {
 }
