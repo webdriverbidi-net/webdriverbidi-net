@@ -17,41 +17,6 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 {
-    /// <summary>
-    /// Gets a value indicating whether this converter can read JSON values.
-    /// Returns true for this converter (converter used for deserialization
-    /// only).
-    /// </summary>
-    // public override bool CanRead => true;
-
-    /// <summary>
-    /// Serializes an object and writes it to a JSON string.
-    /// </summary>
-    /// <param name="writer">The JSON writer to use during serialization.</param>
-    /// <param name="value">The object to serialize.</param>
-    /// <param name="serializer">The JSON serializer to use in serialization.</param>
-    // public override void WriteJson(JsonWriter writer, RemoteValue? value, JsonSerializer serializer)
-    // {
-    //     throw new NotImplementedException();
-    // }
-
-    /// <summary>
-    /// Reads a JSON string and deserializes it to an object.
-    /// </summary>
-    /// <param name="reader">The JSON reader to use during deserialization.</param>
-    /// <param name="objectType">The type of object to which to deserialize.</param>
-    /// <param name="existingValue">The existing value of the object.</param>
-    /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
-    /// <param name="serializer">The JSON serializer to use in deserialization.</param>
-    /// <returns>The deserialized object created from JSON.</returns>
-    // public override RemoteValue ReadJson(JsonReader reader, Type objectType, RemoteValue? existingValue, bool hasExistingValue, JsonSerializer serializer)
-    // {
-    //     reader.DateParseHandling = DateParseHandling.None;
-    //     JObject jsonObject = JObject.Load(reader);
-
-    //     return this.ProcessObject(jsonObject, serializer);
-    // }
-
     public override void Write(Utf8JsonWriter writer, RemoteValue value, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
