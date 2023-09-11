@@ -6,12 +6,12 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Abstract base class for script targets.
 /// </summary>
-[JsonDerivedType(typeof(RealmTarget))]
-[JsonDerivedType(typeof(ContextTarget))]
+[JsonConverter(typeof(ScriptTargetJsonConverter))]
 public abstract class Target
 {
 }

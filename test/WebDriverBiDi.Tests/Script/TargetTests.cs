@@ -11,7 +11,7 @@ public class TargetTests
     public void TestCanDeserializeRealmTarget()
     {
         string json = @"{ ""realm"": ""myRealm"" }";
-        Target? target = JsonSerializer.Deserialize<RealmTarget>(json);
+        Target? target = JsonSerializer.Deserialize<Target>(json);
         Assert.That(target, Is.Not.Null);
         Assert.That(target, Is.InstanceOf<RealmTarget>());
         RealmTarget realmTarget = (RealmTarget)target!;
@@ -22,7 +22,7 @@ public class TargetTests
     public void TestCanDeserializeContextTarget()
     {
         string json = @"{ ""context"": ""myContext"" }";
-        Target? target = JsonSerializer.Deserialize<ContextTarget>(json);
+        Target? target = JsonSerializer.Deserialize<Target>(json);
         Assert.That(target, Is.Not.Null);
         Assert.That(target, Is.InstanceOf<ContextTarget>());
         ContextTarget contextTarget = (ContextTarget)target!;
@@ -37,7 +37,7 @@ public class TargetTests
     public void TestCanDeserializeContextTargetWithSandbox()
     {
         string json = @"{ ""context"": ""myContext"", ""sandbox"": ""mySandbox"" }";
-        Target? target = JsonSerializer.Deserialize<ContextTarget>(json);
+        Target? target = JsonSerializer.Deserialize<Target>(json);
         Assert.That(target, Is.Not.Null);
         Assert.That(target, Is.InstanceOf<ContextTarget>());
         ContextTarget contextTarget = (ContextTarget)target!;
