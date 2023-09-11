@@ -40,11 +40,11 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
                 string resultType = typeNode.GetValue<string>();
                 if (resultType == "success")
                 {
-                    return jsonObject.Deserialize<EvaluateResultSuccess>();
+                    return jsonObject.Deserialize<EvaluateResultSuccess>(options);
                 }
                 else if (resultType == "exception")
                 {
-                    return jsonObject.Deserialize<EvaluateResultException>();
+                    return jsonObject.Deserialize<EvaluateResultException>(options);
                 }
 
                 throw new JsonException($"Malformed response: unknown type '{resultType}' for script result");

@@ -3,9 +3,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-using System.Text.Json.Serialization;
-
 namespace WebDriverBiDi.Script;
+
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing a remote reference to an existing ECMAScript object in the browser.

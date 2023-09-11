@@ -56,7 +56,7 @@ public class RemoteValue
     /// </summary>
     /// <param name="valueType">The string describing the type of this RemoteValue.</param>
     [JsonConstructor]
-    public RemoteValue(string valueType)
+    internal RemoteValue(string valueType)
     {
         this.valueType = valueType;
     }

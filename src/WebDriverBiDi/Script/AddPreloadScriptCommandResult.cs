@@ -14,11 +14,8 @@ public class AddPreloadScriptCommandResult : CommandResult
 {
     private string preloadScriptId = string.Empty;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AddPreloadScriptCommandResult"/> class.
-    /// </summary>
     [JsonConstructor]
-    public AddPreloadScriptCommandResult()
+    private AddPreloadScriptCommandResult()
     {
     }
 

@@ -17,7 +17,7 @@ public class ResponseContent
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseContent"/> class.
     /// </summary>
-    public ResponseContent()
+    internal ResponseContent()
     {
     }
 

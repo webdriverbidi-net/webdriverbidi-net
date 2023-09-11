@@ -14,6 +14,11 @@ public class GetRealmsCommandResult : CommandResult
 {
     private List<RealmInfo> realms = new();
 
+    [JsonConstructor]
+    private GetRealmsCommandResult()
+    {
+    }
+
     /// <summary>
     /// Gets a read-only list of information about the realms.
     /// </summary>

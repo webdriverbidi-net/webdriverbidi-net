@@ -13,19 +13,23 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class BytesValue
 {
-    private BytesValueType valueType;
-    private string actualValue;
+    private BytesValueType valueType = BytesValueType.String;
+    private string actualValue = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BytesValue"/> class.
     /// </summary>
     /// <param name="type">The type of value to initialize.</param>
     /// <param name="value">The value to use in the object.</param>
-    [JsonConstructor]
-    public BytesValue(BytesValueType type, string value)
+    internal BytesValue(BytesValueType type, string value)
     {
         this.valueType = type;
         this.actualValue = value;
+    }
+
+    [JsonConstructor]
+    private BytesValue()
+    {
     }
 
     /// <summary>

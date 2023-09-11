@@ -15,7 +15,7 @@ public class CreateCommandResult : CommandResult
     private string contextId = string.Empty;
 
     [JsonConstructor]
-    public CreateCommandResult()
+    private CreateCommandResult()
     {
     }
 

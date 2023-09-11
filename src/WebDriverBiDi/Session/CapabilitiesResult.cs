@@ -26,6 +26,14 @@ public class CapabilitiesResult
     private ReceivedDataDictionary additionalCapabilities = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="CapabilitiesResult"/> class.
+    /// </summary>
+    [JsonConstructor]
+    internal CapabilitiesResult()
+    {
+    }
+
+    /// <summary>
     /// Gets a value indicating whether the browser should accept insecure (self-signed) SSL certificates.
     /// </summary>
     [JsonPropertyName("acceptInsecureCerts")]

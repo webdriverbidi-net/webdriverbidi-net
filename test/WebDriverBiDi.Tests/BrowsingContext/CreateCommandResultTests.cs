@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class CreateCommandResultTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserialize()
     {
         string json = @"{ ""context"": ""myContextId"" }";
-        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
+        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.BrowsingContextId, Is.EqualTo("myContextId"));
     }
@@ -18,13 +24,13 @@ public class CreateCommandResultTests
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
         string json = @"{ ""context"": {} }";
-        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

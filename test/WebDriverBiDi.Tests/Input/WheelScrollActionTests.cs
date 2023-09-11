@@ -2,6 +2,7 @@ namespace WebDriverBiDi.Input;
 
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
+using WebDriverBiDi.JsonConverters;
 using WebDriverBiDi.Script;
 
 [TestFixture]
@@ -136,8 +137,12 @@ public class WheelScrollActionTests
     [Test]
     public void TestCanSerializeParametersWithOptionalElementOrigin()
     {
+        JsonSerializerOptions deserializationOptions = new()
+        {
+            TypeInfoResolver = new PrivateConstructorContractResolver(),
+        };
         string nodeJson = @"{ ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 }, ""sharedId"": ""testSharedId"" }";
-        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!.ToSharedReference();
+        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson, deserializationOptions)!.ToSharedReference();
         WheelScrollAction properties = new()
         {
             Origin = Origin.Element(new ElementOrigin(node))

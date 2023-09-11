@@ -17,7 +17,7 @@ public class NewCommandResult : CommandResult
     private CapabilitiesResult capabilitiesResult = new();
 
     [JsonConstructor]
-    public NewCommandResult()
+    private NewCommandResult()
     {
     }
 

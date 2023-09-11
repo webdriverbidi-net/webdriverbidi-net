@@ -15,7 +15,7 @@ public class AddInterceptCommandResult : CommandResult
     private string interceptId = string.Empty;
 
     [JsonConstructor]
-    public AddInterceptCommandResult()
+    private AddInterceptCommandResult()
     {
     }
 

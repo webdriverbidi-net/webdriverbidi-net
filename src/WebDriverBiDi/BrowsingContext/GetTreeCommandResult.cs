@@ -15,7 +15,7 @@ public class GetTreeCommandResult : CommandResult
     private List<BrowsingContextInfo> contextTree = new();
 
     [JsonConstructor]
-    public GetTreeCommandResult()
+    private GetTreeCommandResult()
     {
     }
 

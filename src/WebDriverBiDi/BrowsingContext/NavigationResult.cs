@@ -16,7 +16,7 @@ public class NavigationResult : CommandResult
     private string url = string.Empty;
 
     [JsonConstructor]
-    public NavigationResult()
+    private NavigationResult()
     {
     }
 

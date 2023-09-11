@@ -2,6 +2,7 @@ namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class SetCookieHeaderTests
@@ -338,11 +339,16 @@ public class SetCookieHeaderTests
     [Test]
     public void TestConstructionWithCookie()
     {
+        JsonSerializerOptions deserializationOptions = new()
+        {
+            TypeInfoResolver = new PrivateConstructorContractResolver(),
+        };
+
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""name"": ""cookieName"", ""value"":{ ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100, ""expires"": " + milliseconds + @" }";
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         SetCookieHeader header = cookie!.ToSetCookieHeader();
         Assert.Multiple(() =>
         {

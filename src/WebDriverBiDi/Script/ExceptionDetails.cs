@@ -22,7 +22,7 @@ public class ExceptionDetails
     /// Initializes a new instance of the <see cref="ExceptionDetails"/> class.
     /// </summary>
     [JsonConstructor]
-    public ExceptionDetails()
+    internal ExceptionDetails()
     {
     }
 

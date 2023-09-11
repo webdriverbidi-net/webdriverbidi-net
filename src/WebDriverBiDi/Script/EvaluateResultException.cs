@@ -18,7 +18,7 @@ public class EvaluateResultException : EvaluateResult
     /// Initializes a new instance of the <see cref="EvaluateResultException"/> class.
     /// </summary>
     [JsonConstructor]
-    public EvaluateResultException()
+    internal EvaluateResultException()
         : base()
     {
     }

@@ -21,7 +21,7 @@ public class RealmInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="RealmInfo"/> class.
     /// </summary>
-    public RealmInfo()
+    internal RealmInfo()
     {
     }
 

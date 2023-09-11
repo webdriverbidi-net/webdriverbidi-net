@@ -1,10 +1,16 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class AuthRequiredEventArgsTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     private readonly string requestDataJson = @"{
     ""request"": ""myRequestId"",
     ""url"": ""https://example.com"",
@@ -67,7 +73,7 @@ public class AuthRequiredEventArgsTests
             }}
     }}
 }}";
-        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson);
+        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -91,6 +97,6 @@ public class AuthRequiredEventArgsTests
     ""timestamp"": {milliseconds},
     ""request"": {requestDataJson}
 }}";
-        Assert.That(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

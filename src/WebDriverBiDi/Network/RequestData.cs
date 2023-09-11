@@ -25,7 +25,7 @@ public class RequestData
     /// <summary>
     /// Initializes a new instance of the <see cref="RequestData"/> class.
     /// </summary>
-    public RequestData()
+    internal RequestData()
     {
     }
 

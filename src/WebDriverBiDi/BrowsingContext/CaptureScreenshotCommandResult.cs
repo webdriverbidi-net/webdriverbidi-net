@@ -15,7 +15,7 @@ public class CaptureScreenshotCommandResult : CommandResult
     private string base64Screenshot = string.Empty;
 
     [JsonConstructor]
-    public CaptureScreenshotCommandResult()
+    private CaptureScreenshotCommandResult()
     {
     }
 

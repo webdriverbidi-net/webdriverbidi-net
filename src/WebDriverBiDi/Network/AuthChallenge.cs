@@ -18,7 +18,7 @@ public class AuthChallenge
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthChallenge"/> class.
     /// </summary>
-    public AuthChallenge()
+    internal AuthChallenge()
     {
     }
 

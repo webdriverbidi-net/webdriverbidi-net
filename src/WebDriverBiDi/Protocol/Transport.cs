@@ -6,15 +6,20 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Collections.Concurrent;
-using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// The transport object used for serializing and deserializing JSON data used in the WebDriver Bidi protocol.
 /// </summary>
 public class Transport
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     private readonly ConcurrentDictionary<long, Command> pendingCommands = new();
     private readonly Connection connection;
     private readonly TimeSpan commandWaitTimeout;
@@ -355,7 +360,7 @@ public class Transport
             {
                 try
                 {
-                    if (message.Deserialize(executedCommand.ResponseType) is CommandResponseMessage response)
+                    if (message.Deserialize(executedCommand.ResponseType, this.options) is CommandResponseMessage response)
                     {
                         executedCommand.Result = response.Result;
                         executedCommand.Result.AdditionalData = response.AdditionalData;
@@ -381,7 +386,7 @@ public class Transport
             // If the message doesn't match the schema of an actual error message,
             // an exception will be thrown by the JSON serializer, and we can log
             // the malformed response.
-            ErrorResponseMessage? errorMessage = message.Deserialize<ErrorResponseMessage>();
+            ErrorResponseMessage? errorMessage = message.Deserialize<ErrorResponseMessage>(this.options);
             if (errorMessage is not null)
             {
                 if (errorMessage.CommandId.HasValue && this.pendingCommands.TryGetValue(errorMessage.CommandId.Value, out Command? executedCommand))
@@ -409,12 +414,12 @@ public class Transport
     {
         if (message.TryGetProperty("method", out JsonElement eventNameToken) && eventNameToken.ValueKind == JsonValueKind.String)
         {
-            string eventName = eventNameToken.GetString();
-            if (!string.IsNullOrEmpty(eventName) && this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
+            string? eventName = eventNameToken.GetString();
+            if (eventName is not null && this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
             {
                 try
                 {
-                    EventMessage? eventMessageData = message.Deserialize(eventMessageType) as EventMessage;
+                    EventMessage? eventMessageData = message.Deserialize(eventMessageType, this.options) as EventMessage;
                     if (eventMessageData is not null)
                     {
                         this.eventDispatcher.TryDispatch(eventMessageData!);

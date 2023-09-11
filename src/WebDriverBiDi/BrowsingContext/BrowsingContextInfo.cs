@@ -18,7 +18,7 @@ public class BrowsingContextInfo
     private string? parentId;
 
     [JsonConstructor]
-    public BrowsingContextInfo()
+    private BrowsingContextInfo()
     {
     }
 

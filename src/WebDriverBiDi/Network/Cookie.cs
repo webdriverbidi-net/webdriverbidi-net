@@ -27,7 +27,7 @@ public class Cookie
     /// <summary>
     /// Initializes a new instance of the <see cref="Cookie"/> class.
     /// </summary>
-    public Cookie()
+    internal Cookie()
     {
     }
 

@@ -19,7 +19,7 @@ public class ConsoleLogEntry : LogEntry
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsoleLogEntry" /> class.
     /// </summary>
-    public ConsoleLogEntry()
+    internal ConsoleLogEntry()
         : base()
     {
     }

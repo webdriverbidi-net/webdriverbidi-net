@@ -17,7 +17,7 @@ public class WindowProxyProperties
     /// <summary>
     /// Initializes a new instance of the <see cref="WindowProxyProperties"/> class.
     /// </summary>
-    public WindowProxyProperties()
+    internal WindowProxyProperties()
     {
     }
 

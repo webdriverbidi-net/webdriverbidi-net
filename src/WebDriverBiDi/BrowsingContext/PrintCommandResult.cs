@@ -15,7 +15,7 @@ public class PrintCommandResult : CommandResult
     private string base64PdfPrintOutput = string.Empty;
 
     [JsonConstructor]
-    public PrintCommandResult()
+    private PrintCommandResult()
     {
     }
 

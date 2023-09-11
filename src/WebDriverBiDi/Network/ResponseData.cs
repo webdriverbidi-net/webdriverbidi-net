@@ -29,7 +29,7 @@ public class ResponseData
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseData"/> class.
     /// </summary>
-    public ResponseData()
+    internal ResponseData()
     {
     }
 

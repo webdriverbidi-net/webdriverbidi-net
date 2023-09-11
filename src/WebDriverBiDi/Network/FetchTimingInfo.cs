@@ -30,7 +30,7 @@ public class FetchTimingInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="FetchTimingInfo"/> class.
     /// </summary>
-    public FetchTimingInfo()
+    internal FetchTimingInfo()
     {
     }
 

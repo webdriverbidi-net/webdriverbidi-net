@@ -19,7 +19,7 @@ public class StatusCommandResult : CommandResult
     /// Initializes a new instance of the <see cref="StatusCommandResult"/> class.
     /// </summary>
     [JsonConstructor]
-    public StatusCommandResult()
+    internal StatusCommandResult()
     {
     }
 

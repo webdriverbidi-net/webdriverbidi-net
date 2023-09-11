@@ -30,7 +30,7 @@ public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseNetworkEventArgs"/> class.
     /// </summary>
-    public BaseNetworkEventArgs()
+    internal BaseNetworkEventArgs()
     {
     }
 

@@ -27,7 +27,7 @@ public class NodeProperties
     /// Initializes a new instance of the <see cref="NodeProperties"/> class.
     /// </summary>
     [JsonConstructor]
-    public NodeProperties()
+    internal NodeProperties()
     {
     }
 

@@ -18,7 +18,7 @@ public class StackFrame
     private string url = string.Empty;
 
     [JsonConstructor]
-    public StackFrame()
+    private StackFrame()
     {
     }
 

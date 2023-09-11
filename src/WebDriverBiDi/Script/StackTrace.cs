@@ -18,7 +18,7 @@ public class StackTrace
     /// Initializes a new instance of the <see cref="StackTrace"/> class.
     /// </summary>
     [JsonConstructor]
-    public StackTrace()
+    internal StackTrace()
     {
     }
 

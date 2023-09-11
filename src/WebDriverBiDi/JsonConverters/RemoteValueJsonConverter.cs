@@ -32,7 +32,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             throw new JsonException("RemoteValue must be an object");
         }
 
-        return this.ProcessObject(doc.RootElement);
+        return this.ProcessObject(doc.RootElement, options);
     }
 
     /// <summary>
@@ -47,7 +47,51 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
         throw new NotImplementedException();
     }
 
-    private RemoteValue ProcessObject(JsonElement jsonObject)
+    private static object ProcessNumber(JsonElement token)
+    {
+        if (token.ValueKind == JsonValueKind.String)
+        {
+            string specialValue = token.GetString()!;
+            if (specialValue == "Infinity")
+            {
+                return double.PositiveInfinity;
+            }
+            else if (specialValue == "-Infinity")
+            {
+                return double.NegativeInfinity;
+            }
+            else if (specialValue == "NaN")
+            {
+                return double.NaN;
+            }
+            else if (specialValue == "-0")
+            {
+                return decimal.Negate(decimal.Zero);
+            }
+
+            throw new JsonException($"RemoteValue invalid value '{specialValue}' for 'value' property of number");
+        }
+        else if (token.ValueKind == JsonValueKind.Number)
+        {
+            if (token.TryGetInt64(out long longValue))
+            {
+                return longValue;
+            }
+            else if (token.TryGetDouble(out double doubleValue))
+            {
+                return doubleValue;
+            }
+
+            throw new JsonException($"Remote value could not be parsed as either long or double");
+        }
+        else
+        {
+            string tokenKind = token.ValueKind == JsonValueKind.True || token.ValueKind == JsonValueKind.False ? "Boolean" : token.ValueKind.ToString();
+            throw new JsonException($"RemoteValue invalid type {tokenKind} for 'value' property of number");
+        }
+    }
+
+    private RemoteValue ProcessObject(JsonElement jsonObject, JsonSerializerOptions options)
     {
         if (!jsonObject.TryGetProperty("type", out JsonElement typeToken))
         {
@@ -75,7 +119,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
         RemoteValue result = new(valueTypeString);
         if (jsonObject.TryGetProperty("value", out JsonElement valueToken))
         {
-            this.ProcessValue(result, valueTypeString, valueToken);
+            this.ProcessValue(result, valueTypeString, valueToken, options);
         }
 
         if (jsonObject.TryGetProperty("handle", out JsonElement handleToken))
@@ -111,10 +155,10 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             result.SharedId = sharedId;
         }
 
-        return result;        
+        return result;
     }
 
-    private void ProcessValue(RemoteValue result, string valueType, JsonElement valueToken)
+    private void ProcessValue(RemoteValue result, string valueType, JsonElement valueToken, JsonSerializerOptions options)
     {
         if (valueType == "string")
         {
@@ -182,7 +226,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            RegularExpressionValue regexProperties = valueToken.Deserialize<RegularExpressionValue>();
+            RegularExpressionValue regexProperties = valueToken.Deserialize<RegularExpressionValue>(options);
             result.Value = regexProperties;
         }
 
@@ -193,7 +237,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            NodeProperties nodeProperties = valueToken.Deserialize<NodeProperties>();
+            NodeProperties nodeProperties = valueToken.Deserialize<NodeProperties>(options);
             result.Value = nodeProperties;
         }
 
@@ -204,7 +248,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            WindowProxyProperties windowProxyProperties = valueToken.Deserialize<WindowProxyProperties>();
+            WindowProxyProperties windowProxyProperties = valueToken.Deserialize<WindowProxyProperties>(options);
             result.Value = windowProxyProperties;
         }
 
@@ -215,7 +259,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an array");
             }
 
-            result.Value = this.ProcessList(valueToken);
+            result.Value = this.ProcessList(valueToken, options);
         }
 
         if (valueType == "map" || valueType == "object")
@@ -225,56 +269,11 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an array");
             }
 
-            result.Value = this.ProcessMap(valueToken);
+            result.Value = this.ProcessMap(valueToken, options);
         }
     }
 
-    private static object ProcessNumber(JsonElement token)
-    {
-
-        if (token.ValueKind == JsonValueKind.String)
-        {
-            string specialValue = token.GetString()!;
-            if (specialValue == "Infinity")
-            {
-                return double.PositiveInfinity;
-            }
-            else if (specialValue == "-Infinity")
-            {
-                return double.NegativeInfinity;
-            }
-            else if (specialValue == "NaN")
-            {
-                return double.NaN;
-            }
-            else if (specialValue == "-0")
-            {
-                return decimal.Negate(decimal.Zero);
-            }
-
-            throw new JsonException($"RemoteValue invalid value '{specialValue}' for 'value' property of number");
-        }
-        else if (token.ValueKind == JsonValueKind.Number)
-        {
-            if (token.TryGetInt64(out long longValue))
-            {
-                return longValue;
-            }
-            else if (token.TryGetDouble(out double doubleValue))
-            {
-                return doubleValue;
-            }
-
-            throw new JsonException($"Remote value could not be parsed as either long or double");
-        }
-        else
-        {
-            string tokenKind = token.ValueKind == JsonValueKind.True || token.ValueKind == JsonValueKind.False ? "Boolean" : token.ValueKind.ToString();
-            throw new JsonException($"RemoteValue invalid type {tokenKind} for 'value' property of number");
-        }
-    }
-
-    private RemoteValueList ProcessList(JsonElement arrayObject)
+    private RemoteValueList ProcessList(JsonElement arrayObject, JsonSerializerOptions options)
     {
         List<RemoteValue> remoteValueList = new();
         foreach (JsonElement arrayItem in arrayObject.EnumerateArray())
@@ -284,13 +283,13 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue each element for list must be an object");
             }
 
-            remoteValueList.Add(this.ProcessObject(arrayItem));
+            remoteValueList.Add(this.ProcessObject(arrayItem, options));
         }
 
         return new RemoteValueList(remoteValueList);
     }
 
-    private RemoteValueDictionary ProcessMap(JsonElement mapArray)
+    private RemoteValueDictionary ProcessMap(JsonElement mapArray, JsonSerializerOptions options)
     {
         Dictionary<object, RemoteValue> remoteValueDictionary = new();
         foreach (JsonElement mapElementToken in mapArray.EnumerateArray())
@@ -311,7 +310,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue array element for dictionary must have a first element (key) that is either a string or an object");
             }
 
-            object pairKey = this.ProcessMapKey(keyToken);
+            object pairKey = this.ProcessMapKey(keyToken, options);
 
             JsonElement valueToken = mapElementToken[1];
             if (valueToken.ValueKind != JsonValueKind.Object)
@@ -319,14 +318,14 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue array element for dictionary must have a second element (value) that is an object");
             }
 
-            RemoteValue pairValue = this.ProcessObject(valueToken);
+            RemoteValue pairValue = this.ProcessObject(valueToken, options);
             remoteValueDictionary[pairKey] = pairValue;
         }
 
         return new RemoteValueDictionary(remoteValueDictionary);
     }
 
-    private object ProcessMapKey(JsonElement keyToken)
+    private object ProcessMapKey(JsonElement keyToken, JsonSerializerOptions options)
     {
         object pairKey;
         if (keyToken.ValueKind == JsonValueKind.String)
@@ -339,7 +338,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             // a string or object. We will use the null forgiving operator since
             // the token must be an object, and therefore the cast cannot return
             // null.
-            RemoteValue keyRemoteValue = this.ProcessObject(keyToken);
+            RemoteValue keyRemoteValue = this.ProcessObject(keyToken, options);
             if ((keyRemoteValue.IsPrimitive || keyRemoteValue.Type == "date" || keyRemoteValue.Type == "regexp") && keyRemoteValue.Value is not null)
             {
                 pairKey = keyRemoteValue.Value;

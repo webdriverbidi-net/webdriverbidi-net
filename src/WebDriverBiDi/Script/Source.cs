@@ -19,7 +19,7 @@ public class Source
     /// Initializes a new instance of the <see cref="Source"/> class.
     /// </summary>
     [JsonConstructor]
-    public Source()
+    internal Source()
     {
     }
 

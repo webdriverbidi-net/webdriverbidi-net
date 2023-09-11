@@ -22,7 +22,7 @@ public class Initiator
     /// <summary>
     /// Initializes a new instance of the <see cref="Initiator"/> class.
     /// </summary>
-    public Initiator()
+    internal Initiator()
     {
     }
 

@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class NavigationResultTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserialize()
     {
         string json = @"{ ""url"": ""http://example.com"" }";
-        NavigationResult? result = JsonSerializer.Deserialize<NavigationResult>(json);
+        NavigationResult? result = JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -22,7 +28,7 @@ public class NavigationResultTests
     public void TestCanDeserializeWithNavigationId()
     {
         string json = @"{ ""url"": ""http://example.com"", ""navigation"": ""myNavigationId"" }";
-        NavigationResult? result = JsonSerializer.Deserialize<NavigationResult>(json);
+        NavigationResult? result = JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -35,20 +41,20 @@ public class NavigationResultTests
     public void TestDeserializingWithMissingUrlThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidUrlTypeThrows()
     {
         string json = @"{ ""url"": {} }";
-        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidNavigationIdTypeThrows()
     {
         string json = @"{ ""url"": ""http://example.com"", ""navigation"": {} }";
-        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

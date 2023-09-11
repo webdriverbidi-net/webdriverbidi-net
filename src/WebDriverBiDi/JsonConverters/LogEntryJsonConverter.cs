@@ -87,11 +87,11 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
                 List<RemoteValue> args = new();
                 foreach (JsonElement arg in argsElement.EnumerateArray())
                 {
-                    RemoteValue? value = arg.Deserialize<RemoteValue>();
+                    RemoteValue? value = arg.Deserialize<RemoteValue>(options);
                     args.Add(value);
                 }
 
-                consoleEntry.SerializableArgs = args ?? throw new JsonException("ConsoleLogEntry 'args property must not be null");
+                consoleEntry.SerializableArgs = args;
                 entry = consoleEntry;
             }
             else
@@ -101,12 +101,12 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
 
             entry.Type = type;
             entry.Text = textElement.GetString();
-            entry.Level = levelElement.Deserialize<LogLevel>();
-            entry.Source = sourceElement.Deserialize<Source>();
+            entry.Level = levelElement.Deserialize<LogLevel>(options);
+            entry.Source = sourceElement.Deserialize<Source>(options);
             entry.EpochTimestamp = timestampElement.GetInt64();
             if (hasStackTrace)
             {
-                entry.StackTrace = stackTraceElement.Deserialize<StackTrace>();
+                entry.StackTrace = stackTraceElement.Deserialize<StackTrace>(options);
             }
 
             return entry;

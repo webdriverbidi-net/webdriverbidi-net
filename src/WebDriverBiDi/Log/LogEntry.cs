@@ -27,7 +27,7 @@ public class LogEntry
     /// <summary>
     /// Initializes a new instance of the <see cref="LogEntry" /> class.
     /// </summary>
-    public LogEntry()
+    internal LogEntry()
     {
     }
 
