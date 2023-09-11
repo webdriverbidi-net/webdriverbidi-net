@@ -209,7 +209,7 @@ public class LogEntryTests
     }
 
     [Test]
-    public void TestDeserializingWithSourceTypeThrows()
+    public void TestDeserializingWithMissingSourceThrows()
     {
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
@@ -218,11 +218,11 @@ public class LogEntryTests
     }
 
     [Test]
-    public void TestDeserializingWithInvalidSourceThrows()
+    public void TestDeserializingWithInvalidSourceTypeThrows()
     {
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""type"": {}, ""level"": ""debug"", ""source"": ""realmId"", ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @" }";
+        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": ""realmId"", ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @" }";
         Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
@@ -231,7 +231,7 @@ public class LogEntryTests
     {
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""timestamp"": " + epochTimestamp + @" }";
+        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""timestamp"": " + epochTimestamp + @" }";
         Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
@@ -240,7 +240,7 @@ public class LogEntryTests
     {
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": {}, ""timestamp"": " + epochTimestamp + @" }";
+        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": {}, ""timestamp"": " + epochTimestamp + @" }";
         Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
@@ -249,16 +249,16 @@ public class LogEntryTests
     {
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"" }";
+        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"" }";
         Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
-    public void TestDeserializingWithTimestampTypeThrows()
+    public void TestDeserializingWithInvalidTimestampTypeThrows()
     {
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""type"": {}, ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": {} }";
+        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": {} }";
         Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
@@ -304,6 +304,13 @@ public class LogEntryTests
         DateTime timestamp = DateTime.Now;
         long epochTimestamp = Convert.ToInt64((timestamp - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [ ""invalidArgs"" ] }";
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    }
+
+    [Test]
+    public void TestDeserializingLogEntryWithAsNonObjectThrows()
+    {
+        string json = @"[ ""invalid log entry"" ]";
         Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 

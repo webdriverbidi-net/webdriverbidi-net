@@ -30,6 +30,6 @@ public abstract class CommandParameters
     /// <summary>
     /// Gets additional properties to be serialized with this command.
     /// </summary>
-    [JsonExtensionData]
+    [JsonIgnore]
     public Dictionary<string, object?> AdditionalData => this.additionalData;
 }

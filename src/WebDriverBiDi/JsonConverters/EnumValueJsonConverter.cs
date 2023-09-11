@@ -57,8 +57,10 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
             throw new WebDriverBiDiException("Deserialization error reading enumerated string value");
         }
 
-        string? stringValue = reader.GetString();
-        if (stringValue is not null && this.stringToEnumValues.TryGetValue(stringValue, out T enumValue))
+        // We can rely on the string not being null because we know the
+        // token type is explicitly a string type.
+        string stringValue = reader.GetString()!;
+        if (this.stringToEnumValues.TryGetValue(stringValue, out T enumValue))
         {
             return enumValue;
         }

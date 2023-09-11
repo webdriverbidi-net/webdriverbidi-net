@@ -3,6 +3,7 @@ namespace WebDriverBiDi;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using JsonConverters;
+using WebDriverBiDi.Internal;
 
 [TestFixture]
 public class ReceivedDataDictionaryTests
@@ -107,15 +108,32 @@ public class ReceivedDataDictionaryTests
     [Test]
     public void TestCanCreateFromDeserializedData()
     {
-        string json = @"{ ""stringProperty"": ""stringValue"", ""intValue"": 123, ""floatValue"": 456.78, ""boolValue"": true, ""nullValue"": null, ""listValue"": [ ""listString"", 901, true, null ], ""objectValue"": { ""objectProperty"": ""objectValue"" } }";
+        string json = @"{ ""stringProperty"": ""stringValue"", ""intValue"": 123, ""floatValue"": 456.78, ""trueBoolValue"": true, ""falseBoolValue"": false, ""nullValue"": null, ""listValue"": [ ""listString"", 901, true, null ], ""objectValue"": { ""objectProperty"": ""objectValue"" } }";
         OnlyOverflowData? deserializedValue = JsonSerializer.Deserialize<OnlyOverflowData>(json);
-        ReceivedDataDictionary receivedData = new(deserializedValue!.OverflowData);
-        Assert.That(receivedData, Has.Count.EqualTo(7));
+        Assert.That(deserializedValue!.ReceivedData, Has.Count.EqualTo(8));
     }
 
     private class OnlyOverflowData
     {
+        private Dictionary<string, JsonElement> overflowData = new();
+        private ReceivedDataDictionary receivedData = ReceivedDataDictionary.EmptyDictionary;
+
+        [JsonIgnore]
+        public ReceivedDataDictionary ReceivedData
+        {
+            get
+            {
+                if (this.overflowData.Count > 0 && this.receivedData.Count == 0)
+                {
+                    this.receivedData = JsonConverterUtilities.ConvertIncomingExtensionData(this.overflowData);
+                }
+
+                return this.receivedData;
+            }
+        }
+
         [JsonExtensionData]
-        public Dictionary<string, object?> OverflowData { get; set; }
+        [JsonInclude]
+        private Dictionary<string, JsonElement> OverflowData { get => this.overflowData; set => this.overflowData = value; }
     }
 }

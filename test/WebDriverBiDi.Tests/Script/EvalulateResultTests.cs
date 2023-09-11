@@ -58,14 +58,14 @@ public class EvaluateResultTests
     public void TestDeserializeScriptEvaluateResultWithMissingTypePropertyThrows()
     {
         string json = @"{ ""realm"": ""myRealm"", ""noWoman"": ""noCry"" }";
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("Script response must contain a 'type' property that contains a non-null string value"));
+        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("Script response must contain a 'type' property"));
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithInvalidTypePropertyObjectThrows()
     {
         string json = @"{ ""type"": { ""noWoman"": ""noCry"" }, ""realm"": ""myRealm"", ""noWoman"": ""noCry"" }";
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("Script response must contain a 'type' property that contains a non-null string value"));
+        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("Script response 'type' property must be a string"));
     }
 
     [Test]
@@ -79,6 +79,13 @@ public class EvaluateResultTests
     public void TestDeserializeScriptEvaluateResultWithInvalidRealmValueTypeThrows()
     {
         string json = @"{ ""type"": ""success"", ""realm"": { ""noWoman"": ""noCry"" }, ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
+        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    }
+
+    [Test]
+    public void TestDeserializeScriptResultWithNonObjectThrows()
+    {
+        string json = @"[ ""invalid script result"" ]";
         Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 

@@ -150,6 +150,10 @@ public class RemoteValueTests
     {
         string json = @"{ ""type"": ""number"", ""value"": true }";
         Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Boolean for 'value' property of number"));
+        json = @"{ ""type"": ""number"", ""value"": false }";
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Boolean for 'value' property of number"));
+        json = @"{ ""type"": ""number"", ""value"": null }";
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Null for 'value' property of number"));
     }
 
     [Test]
@@ -1160,6 +1164,13 @@ public class RemoteValueTests
             Assert.That(remoteValue, Is.Not.Null);
             Assert.That(remoteValue!.ValueAs<string>(), Is.Null);
         });
+    }
+
+    [Test]
+    public void TestDeserializingNonObjectThrows()
+    {
+        string json = @"[ ""invalid remote value"" ]";
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue JSON must be an object"));
     }
 
     [Test]

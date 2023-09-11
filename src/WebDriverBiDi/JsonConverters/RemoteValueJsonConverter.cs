@@ -27,12 +27,13 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
     public override RemoteValue? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         JsonDocument doc = JsonDocument.ParseValue(ref reader);
-        if (doc.RootElement.ValueKind != JsonValueKind.Object)
+        JsonElement rootElement = doc.RootElement;
+        if (rootElement.ValueKind != JsonValueKind.Object)
         {
-            throw new JsonException("RemoteValue must be an object");
+            throw new JsonException($"RemoteValue JSON must be an object, but was {rootElement.ValueKind}");
         }
 
-        return this.ProcessObject(doc.RootElement, options);
+        return this.ProcessObject(rootElement, options);
     }
 
     /// <summary>
@@ -77,12 +78,8 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             {
                 return longValue;
             }
-            else if (token.TryGetDouble(out double doubleValue))
-            {
-                return doubleValue;
-            }
 
-            throw new JsonException($"Remote value could not be parsed as either long or double");
+            return token.GetDouble();
         }
         else
         {
@@ -226,7 +223,9 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            RegularExpressionValue regexProperties = valueToken.Deserialize<RegularExpressionValue>(options);
+            // Deserialize will properly throw if the value is not a RegularExpressionValue,
+            // and therefore will never be null.
+            RegularExpressionValue regexProperties = valueToken.Deserialize<RegularExpressionValue>(options)!;
             result.Value = regexProperties;
         }
 
@@ -237,7 +236,9 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            NodeProperties nodeProperties = valueToken.Deserialize<NodeProperties>(options);
+            // Deserialize will properly throw if the value is not a NodeProperties,
+            // and therefore will never be null.
+            NodeProperties nodeProperties = valueToken.Deserialize<NodeProperties>(options)!;
             result.Value = nodeProperties;
         }
 
@@ -248,7 +249,9 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
                 throw new JsonException($"RemoteValue for {valueType} must have a non-null 'value' property whose value is an object");
             }
 
-            WindowProxyProperties windowProxyProperties = valueToken.Deserialize<WindowProxyProperties>(options);
+            // Deserialize will properly throw if the value is not a WindowProxyProperties,
+            // and therefore will never be null.
+            WindowProxyProperties windowProxyProperties = valueToken.Deserialize<WindowProxyProperties>(options)!;
             result.Value = windowProxyProperties;
         }
 
@@ -330,7 +333,9 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
         object pairKey;
         if (keyToken.ValueKind == JsonValueKind.String)
         {
-            pairKey = keyToken.GetString();
+            // The token type is already guaranteed to be a string, and
+            // therefore cannot be null.
+            pairKey = keyToken.GetString()!;
         }
         else
         {

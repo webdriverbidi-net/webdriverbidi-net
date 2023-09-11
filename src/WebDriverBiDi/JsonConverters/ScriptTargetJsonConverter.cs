@@ -25,24 +25,24 @@ public class ScriptTargetJsonConverter : JsonConverter<Target>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override Target? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        JsonNode? node = JsonNode.Parse(ref reader);
-        if (node is not null)
+        JsonDocument doc = JsonDocument.ParseValue(ref reader);
+        JsonElement rootElement = doc.RootElement;
+        if (rootElement.ValueKind != JsonValueKind.Object)
         {
-            JsonObject jsonObject = node.AsObject();
-            if (jsonObject.ContainsKey("realm"))
-            {
-                return jsonObject.Deserialize<RealmTarget>();
-            }
-
-            if (jsonObject.ContainsKey("context"))
-            {
-                return jsonObject.Deserialize<ContextTarget>();
-            }
-
-            throw new JsonException("Malformed response: ScriptTarget must contain either a 'realm' or a 'context' property");
+            throw new JsonException($"Script target JSON must be an object, but was {rootElement.ValueKind}");
         }
 
-        throw new JsonException("JSON could not be parsed");
+        if (rootElement.TryGetProperty("realm", out JsonElement realmTargetElement))
+        {
+            return rootElement.Deserialize<RealmTarget>();
+        }
+
+        if (rootElement.TryGetProperty("context", out JsonElement contextTargetElement))
+        {
+            return rootElement.Deserialize<ContextTarget>();
+        }
+
+        throw new JsonException("Malformed response: ScriptTarget must contain either a 'realm' or a 'context' property");
     }
 
     /// <summary>

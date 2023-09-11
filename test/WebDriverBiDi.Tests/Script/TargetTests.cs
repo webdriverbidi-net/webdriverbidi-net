@@ -54,6 +54,8 @@ public class TargetTests
         string json = @"{ ""invalid"": ""invalidValue"" }";
         Assert.That(() => JsonSerializer.Deserialize<ContextTarget>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: context"));
         Assert.That(() => JsonSerializer.Deserialize<RealmTarget>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: realm"));
+        Assert.That(() => JsonSerializer.Deserialize<Target>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("ScriptTarget must contain either a 'realm' or a 'context' property"));
+        Assert.That(() => JsonSerializer.Deserialize<Target>(@"[ ""invalid target"" ]"), Throws.InstanceOf<JsonException>().With.Message.Contains("Script target JSON must be an object"));
     }
 
     [Test]
@@ -87,12 +89,4 @@ public class TargetTests
             Assert.That((string?)contextValue, Is.EqualTo("myContext"));
         });
     }
-
-    // [Test]
-    // public void TestCannotCallJsonDeserializerDirectly()
-    // {
-    //     Target target = new RealmTarget("myRealm");
-    //     ScriptTargetJsonConverter converter = new();
-    //     Assert.That(() => converter.WriteJson(new JsonTextWriter(new StringWriter()), target, new JsonSerializer()), Throws.InstanceOf<NotImplementedException>());
-    // }
 }

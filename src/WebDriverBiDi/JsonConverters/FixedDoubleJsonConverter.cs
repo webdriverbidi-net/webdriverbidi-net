@@ -23,13 +23,7 @@ public class FixedDoubleJsonConverter : JsonConverter<double>
     /// <returns>A value of the specified double.</returns>
     public override double Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TryGetDouble(out double doubleValue))
-        {
-            return doubleValue;
-        }
-
-        string? stringValue = reader.GetString();
-        return string.IsNullOrWhiteSpace(stringValue) ? default : double.Parse(stringValue, CultureInfo.InvariantCulture);
+        return reader.GetDouble();
     }
 
     /// <summary>

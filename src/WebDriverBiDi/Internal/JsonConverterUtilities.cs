@@ -68,7 +68,7 @@ public static class JsonConverterUtilities
 
     private static object? ProcessValue(JsonElement valueElement)
     {
-        if (valueElement.ValueKind == JsonValueKind.Undefined || valueElement.ValueKind == JsonValueKind.Null)
+        if (valueElement.ValueKind == JsonValueKind.Null)
         {
             return null;
         }

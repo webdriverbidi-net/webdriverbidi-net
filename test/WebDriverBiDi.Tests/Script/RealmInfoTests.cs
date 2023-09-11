@@ -113,10 +113,24 @@ public class RealmInfoTests
     }
 
     [Test]
+    public void TestDeserializingRealmInfoWithInvalidRealmTypeThrows()
+    {
+        string json = @"{ ""origin"": ""myOrigin"", ""type"": ""worker"", ""realm"": null }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'realm' property must be a string"));
+    }
+
+    [Test]
     public void TestDeserializingRealmInfoWithMissingOriginThrows()
     {
         string json = @"{ ""realm"": ""myRealm"", ""type"": ""worker"" }";
         Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'origin' property is required"));
+    }
+
+    [Test]
+    public void TestDeserializingRealmInfoWithInvalidOriginTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": null }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'origin' property must be a string"));
     }
 
     [Test]
@@ -134,10 +148,38 @@ public class RealmInfoTests
     }
 
     [Test]
+    public void TestDeserializingRealmInfoWithNonStringTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": null }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>());
+    }
+
+    [Test]
     public void TestDeserializingWindowRealmInfoWithMissingContextThrows()
     {
         string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""window"" }";
         Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'context' property is required"));
+    }
+
+    [Test]
+    public void TestDeserializingWindowRealmInfoWithInvalidContextTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": null }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'context' property must be a string"));
+    }
+
+    [Test]
+    public void TestDeserializingWindowRealmInfoWithInvalidSandboxTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContext"", ""sandbox"": 2 }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'sandbox' property must be a string"));
+    }
+
+    [Test]
+    public void TestDeserializingRealmInfoWithNonObjectThrows()
+    {
+        string json = @"[ ""invalid realm info"" ]";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

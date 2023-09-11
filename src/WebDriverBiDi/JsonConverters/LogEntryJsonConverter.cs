@@ -28,96 +28,107 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
         LogEntry? entry;
         JsonDocument doc = JsonDocument.ParseValue(ref reader);
         JsonElement rootElement = doc.RootElement;
-        if (rootElement.ValueKind == JsonValueKind.Object)
+        if (rootElement.ValueKind != JsonValueKind.Object)
         {
-            if (!rootElement.TryGetProperty("text", out JsonElement textElement))
-            {
-                throw new JsonException("LogEntry 'text' property is required");
-            }
-
-            if (!rootElement.TryGetProperty("type", out JsonElement typeElement))
-            {
-                throw new JsonException("LogEntry 'type' property is required");
-            }
-
-            if (!rootElement.TryGetProperty("level", out JsonElement levelElement))
-            {
-                throw new JsonException("LogEntry must have a 'level' property");
-            }
-
-            if (!rootElement.TryGetProperty("source", out JsonElement sourceElement))
-            {
-                throw new JsonException("LogEntry must have a 'source' property");
-            }
-
-            if (!rootElement.TryGetProperty("timestamp", out JsonElement timestampElement))
-            {
-                throw new JsonException("LogEntry must have a 'timestamp' property");
-            }
-
-            bool hasStackTrace = rootElement.TryGetProperty("stackTrace", out JsonElement stackTraceElement);
-
-            if (typeElement.ValueKind != JsonValueKind.String)
-            {
-                throw new JsonException("LogEntry type property must be a string");
-            }
-
-            string? type = typeElement.GetString() ?? throw new JsonException("LogEntry 'type' property must not be null");
-            if (type == "console")
-            {
-                ConsoleLogEntry consoleEntry = new();
-                if (!rootElement.TryGetProperty("method", out JsonElement methodElement))
-                {
-                    throw new JsonException("ConsoleLogEntry 'method' property is required");
-                }
-
-                string method = methodElement.GetString() ?? throw new JsonException("ConsoleLogEntry 'method' property must not be null");
-                consoleEntry.Method = method;
-
-                if (!rootElement.TryGetProperty("args", out JsonElement argsElement))
-                {
-                    throw new JsonException("ConsoleLogEntry 'args' property is required");
-                }
-
-                if (argsElement.ValueKind != JsonValueKind.Array)
-                {
-                    throw new JsonException("ConsoleLogEntry 'args' property value must be an array");
-                }
-
-                List<RemoteValue> args = new();
-                foreach (JsonElement arg in argsElement.EnumerateArray())
-                {
-                    RemoteValue? value = arg.Deserialize<RemoteValue>(options);
-                    if (value is null)
-                    {
-                        throw new JsonException("ConsoleLogEntry 'args' property array must contain valid RemoteValue items");
-                    }
-
-                    args.Add(value);
-                }
-
-                consoleEntry.SerializableArgs = args;
-                entry = consoleEntry;
-            }
-            else
-            {
-                entry = new LogEntry();
-            }
-
-            entry.Type = type;
-            entry.Text = textElement.GetString();
-            entry.Level = levelElement.Deserialize<LogLevel>(options);
-            entry.Source = sourceElement.Deserialize<Source>(options) ?? throw new JsonException("LogEntry 'source' property could not be deserialized");
-            entry.EpochTimestamp = timestampElement.GetInt64();
-            if (hasStackTrace)
-            {
-                entry.StackTrace = stackTraceElement.Deserialize<StackTrace>(options);
-            }
-
-            return entry;
+            throw new JsonException($"LogEntry JSON must be an object, but was {rootElement.ValueKind}");
         }
 
-        throw new JsonException("JSON could not be parsed");
+        if (!rootElement.TryGetProperty("text", out JsonElement textElement))
+        {
+            throw new JsonException("LogEntry 'text' property is required");
+        }
+
+        if (!rootElement.TryGetProperty("type", out JsonElement typeElement))
+        {
+            throw new JsonException("LogEntry 'type' property is required");
+        }
+
+        if (!rootElement.TryGetProperty("level", out JsonElement levelElement))
+        {
+            throw new JsonException("LogEntry must have a 'level' property");
+        }
+
+        if (!rootElement.TryGetProperty("source", out JsonElement sourceElement))
+        {
+            throw new JsonException("LogEntry must have a 'source' property");
+        }
+
+        if (!rootElement.TryGetProperty("timestamp", out JsonElement timestampElement))
+        {
+            throw new JsonException("LogEntry must have a 'timestamp' property");
+        }
+
+        bool hasStackTrace = rootElement.TryGetProperty("stackTrace", out JsonElement stackTraceElement);
+
+        if (typeElement.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException("LogEntry 'type' property must be a string");
+        }
+
+        // We have already determined the value is a string, and
+        // therefore cannot be null.
+        string? type = typeElement.GetString()!;
+        if (type == "console")
+        {
+            ConsoleLogEntry consoleEntry = new();
+            if (!rootElement.TryGetProperty("method", out JsonElement methodElement))
+            {
+                throw new JsonException("ConsoleLogEntry 'method' property is required");
+            }
+
+            if (methodElement.ValueKind != JsonValueKind.String)
+            {
+                throw new JsonException("ConsoleLogEntry 'method' property must be a string");
+            }
+
+            // We have already determined the value is a string, and
+            // therefore cannot be null.
+            string method = methodElement.GetString()!;
+            consoleEntry.Method = method;
+
+            if (!rootElement.TryGetProperty("args", out JsonElement argsElement))
+            {
+                throw new JsonException("ConsoleLogEntry 'args' property is required");
+            }
+
+            if (argsElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new JsonException("ConsoleLogEntry 'args' property value must be an array");
+            }
+
+            List<RemoteValue> args = new();
+            foreach (JsonElement arg in argsElement.EnumerateArray())
+            {
+                // This will correctly throw if the arg element cannot be
+                // properly deserialized into a RemoteValue, so will never
+                // be null.
+                RemoteValue value = arg.Deserialize<RemoteValue>(options)!;
+                args.Add(value);
+            }
+
+            consoleEntry.SerializableArgs = args;
+            entry = consoleEntry;
+        }
+        else
+        {
+            entry = new LogEntry();
+        }
+
+        entry.Type = type;
+        entry.Text = textElement.GetString();
+        entry.Level = levelElement.Deserialize<LogLevel>(options);
+
+        // This will correctly throw if the arg element cannot be
+        // properly deserialized into a Source object, so will never
+        // be null.
+        entry.Source = sourceElement.Deserialize<Source>(options)!;
+        entry.EpochTimestamp = timestampElement.GetInt64();
+        if (hasStackTrace)
+        {
+            entry.StackTrace = stackTraceElement.Deserialize<StackTrace>(options);
+        }
+
+        return entry;
     }
 
     /// <summary>

@@ -58,6 +58,33 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestTransportCanSendCommandWithExtensionData()
+    {
+        string commandName = "module.command";
+        Dictionary<string, object?> expectedCommandParameters = new()
+        {
+            { "parameterName", "parameterValue" },
+        };
+        Dictionary<string, object?> expected = new()
+        {
+            { "id", 1 },
+            { "method", commandName },
+            { "params", expectedCommandParameters },
+            { "overflowParameterName", "overflowParameterValue" },
+        };
+
+        TestConnection connection = new();
+        Transport transport = new(TimeSpan.Zero, connection);
+
+        TestCommandParameters command = new(commandName);
+        command.AdditionalData["overflowParameterName"] = "overflowParameterValue";
+        _ = await transport.SendCommandAsync(command);
+
+        var dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        Assert.That(dataValue, Is.EquivalentTo(expected));
+    }
+
+    [Test]
     public async Task TestTransportCanWaitForCommandComplete()
     {
         string commandName = "module.command";

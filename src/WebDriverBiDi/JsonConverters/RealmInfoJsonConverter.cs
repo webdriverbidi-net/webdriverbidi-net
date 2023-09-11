@@ -27,85 +27,95 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
         RealmInfo? realmInfo;
         JsonDocument doc = JsonDocument.ParseValue(ref reader);
         JsonElement rootElement = doc.RootElement;
-        if (rootElement.ValueKind == JsonValueKind.Object)
+        if (rootElement.ValueKind != JsonValueKind.Object)
         {
-            if (!rootElement.TryGetProperty("type", out JsonElement typeElement))
-            {
-                throw new JsonException("RealmInfo 'type' property is required");
-            }
-
-            if (typeElement.ValueKind != JsonValueKind.String)
-            {
-                throw new JsonException("RealmInfo 'type' property must be a string");
-            }
-
-            if (!rootElement.TryGetProperty("realm", out JsonElement realmIdElement))
-            {
-                throw new JsonException("RealmInfo 'realm' property is required");
-            }
-
-            if (realmIdElement.ValueKind != JsonValueKind.String)
-            {
-                throw new JsonException("RealmInfo 'realm' property must be a string");
-            }
-
-            if (!rootElement.TryGetProperty("origin", out JsonElement originElement))
-            {
-                throw new JsonException("RealmInfo 'origin' property is required");
-            }
-
-            if (originElement.ValueKind != JsonValueKind.String)
-            {
-                throw new JsonException("RealmInfo 'origin' property must be a string");
-            }
-
-            string typeString = typeElement.GetString() ?? throw new JsonException("RealmInfo 'type' property must not be null");
-            RealmType type = typeElement.Deserialize<RealmType>();
-            if (type == RealmType.Window)
-            {
-                WindowRealmInfo windowRealmInfo = new();
-                if (!rootElement.TryGetProperty("context", out JsonElement contextIdElement))
-                {
-                    throw new JsonException("WindowRealmInfo 'context' property is required");
-                }
-
-                if (contextIdElement.ValueKind != JsonValueKind.String)
-                {
-                    throw new JsonException("WindowRealmInfo 'context' property must be a string");
-                }
-
-                string contextId = contextIdElement.GetString() ?? throw new JsonException("WindowRealmInfo 'context' property must not be null");
-                windowRealmInfo.BrowsingContext = contextId;
-
-                if (rootElement.TryGetProperty("sandbox", out JsonElement sandboxElement))
-                {
-                    if (sandboxElement.ValueKind != JsonValueKind.String)
-                    {
-                        throw new JsonException("WindowRealmInfo 'sandbox' property must be a string");
-                    }
-
-                    string sandbox = sandboxElement.GetString() ?? throw new JsonException("WindowRealmInfo 'sandbox' property must not be null");
-                    windowRealmInfo.Sandbox = sandbox;
-                }
-
-                realmInfo = windowRealmInfo;
-            }
-            else
-            {
-                realmInfo = new RealmInfo();
-            }
-
-            realmInfo.Type = type;
-
-            string? realmId = realmIdElement.GetString() ?? throw new JsonException("RealmInfo 'realm' property must not be null");
-            realmInfo.RealmId = realmId;
-
-            string? origin = originElement.GetString() ?? throw new JsonException("RealmInfo 'type' property must not be null");
-            realmInfo.Origin = origin;
-            return realmInfo;
+            throw new JsonException($"RealmInfo JSON must be an object, but was {rootElement.ValueKind}");
         }
 
-        throw new JsonException("JSON could not be parsed");
+        if (!rootElement.TryGetProperty("type", out JsonElement typeElement))
+        {
+            throw new JsonException("RealmInfo 'type' property is required");
+        }
+
+        if (typeElement.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException("RealmInfo 'type' property must be a string");
+        }
+
+        if (!rootElement.TryGetProperty("realm", out JsonElement realmIdElement))
+        {
+            throw new JsonException("RealmInfo 'realm' property is required");
+        }
+
+        if (realmIdElement.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException("RealmInfo 'realm' property must be a string");
+        }
+
+        if (!rootElement.TryGetProperty("origin", out JsonElement originElement))
+        {
+            throw new JsonException("RealmInfo 'origin' property is required");
+        }
+
+        if (originElement.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException("RealmInfo 'origin' property must be a string");
+        }
+
+        // We have already determined the value is a string, and
+        // therefore cannot be null.
+        string typeString = typeElement.GetString()!;
+        RealmType type = typeElement.Deserialize<RealmType>();
+        if (type == RealmType.Window)
+        {
+            WindowRealmInfo windowRealmInfo = new();
+            if (!rootElement.TryGetProperty("context", out JsonElement contextIdElement))
+            {
+                throw new JsonException("WindowRealmInfo 'context' property is required");
+            }
+
+            if (contextIdElement.ValueKind != JsonValueKind.String)
+            {
+                throw new JsonException("WindowRealmInfo 'context' property must be a string");
+            }
+
+            // We have already determined the value is a string, and
+            // therefore cannot be null.
+            string contextId = contextIdElement.GetString()!;
+            windowRealmInfo.BrowsingContext = contextId;
+
+            if (rootElement.TryGetProperty("sandbox", out JsonElement sandboxElement))
+            {
+                if (sandboxElement.ValueKind != JsonValueKind.String)
+                {
+                    throw new JsonException("WindowRealmInfo 'sandbox' property must be a string");
+                }
+
+                // We have already determined the value is a string, and
+                // therefore cannot be null.
+                string sandbox = sandboxElement.GetString()!;
+                windowRealmInfo.Sandbox = sandbox;
+            }
+
+            realmInfo = windowRealmInfo;
+        }
+        else
+        {
+            realmInfo = new RealmInfo();
+        }
+
+        realmInfo.Type = type;
+
+        // We have already determined the value is a string, and
+        // therefore cannot be null.
+        string realmId = realmIdElement.GetString()!;
+        realmInfo.RealmId = realmId;
+
+        // We have already determined the value is a string, and
+        // therefore cannot be null.
+        string origin = originElement.GetString()!;
+        realmInfo.Origin = origin;
+        return realmInfo;
     }
 
     /// <summary>

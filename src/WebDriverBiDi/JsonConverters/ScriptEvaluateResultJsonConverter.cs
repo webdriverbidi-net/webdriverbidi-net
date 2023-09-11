@@ -25,35 +25,36 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override EvaluateResult? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        JsonNode? node = JsonNode.Parse(ref reader);
-        if (node is not null)
+        JsonDocument doc = JsonDocument.ParseValue(ref reader);
+        JsonElement rootElement = doc.RootElement;
+        if (rootElement.ValueKind != JsonValueKind.Object)
         {
-            JsonObject jsonObject = node.AsObject();
-            if (jsonObject.ContainsKey("type") && jsonObject["type"] is not null)
-            {
-                JsonNode typeNode = jsonObject["type"]!;
-                if (typeNode.GetValueKind() != JsonValueKind.String)
-                {
-                    throw new JsonException("Script response must contain a 'type' property that contains a non-null string value");
-                }
-
-                string resultType = typeNode.GetValue<string>();
-                if (resultType == "success")
-                {
-                    return jsonObject.Deserialize<EvaluateResultSuccess>(options);
-                }
-                else if (resultType == "exception")
-                {
-                    return jsonObject.Deserialize<EvaluateResultException>(options);
-                }
-
-                throw new JsonException($"Malformed response: unknown type '{resultType}' for script result");
-            }
-
-            throw new JsonException("Malformed response: Script response must contain a 'type' property that contains a non-null string value");
+            throw new JsonException($"Script response JSON must be an object, but was {rootElement.ValueKind}");
         }
 
-        throw new JsonException("JSON could not be parsed");
+        if (!rootElement.TryGetProperty("type", out JsonElement typeElement))
+        {
+            throw new JsonException("Script response must contain a 'type' property");
+        }
+
+        if (typeElement.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException("Script response 'type' property must be a string");
+        }
+
+        // We have previously determined that the token exists and is a string, and must
+        // contain a value, so therefore cannot be null.
+        string resultType = typeElement.GetString()!;
+        if (resultType == "success")
+        {
+            return rootElement.Deserialize<EvaluateResultSuccess>(options);
+        }
+        else if (resultType == "exception")
+        {
+            return rootElement.Deserialize<EvaluateResultException>(options);
+        }
+
+        throw new JsonException($"Malformed response: unknown type '{resultType}' for script result");
     }
 
     /// <summary>
