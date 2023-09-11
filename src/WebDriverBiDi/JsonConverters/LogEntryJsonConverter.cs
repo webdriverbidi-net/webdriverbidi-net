@@ -71,7 +71,7 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
                     throw new JsonException("ConsoleLogEntry 'method' property is required");
                 }
 
-                string? method = methodElement.GetString() ?? throw new JsonException("ConsoleLogEntry 'method' property must not be null");
+                string method = methodElement.GetString() ?? throw new JsonException("ConsoleLogEntry 'method' property must not be null");
                 consoleEntry.Method = method;
 
                 if (!rootElement.TryGetProperty("args", out JsonElement argsElement))
@@ -88,6 +88,11 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
                 foreach (JsonElement arg in argsElement.EnumerateArray())
                 {
                     RemoteValue? value = arg.Deserialize<RemoteValue>(options);
+                    if (value is null)
+                    {
+                        throw new JsonException("ConsoleLogEntry 'args' property array must contain valid RemoteValue items");
+                    }
+
                     args.Add(value);
                 }
 
@@ -102,7 +107,7 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
             entry.Type = type;
             entry.Text = textElement.GetString();
             entry.Level = levelElement.Deserialize<LogLevel>(options);
-            entry.Source = sourceElement.Deserialize<Source>(options);
+            entry.Source = sourceElement.Deserialize<Source>(options) ?? throw new JsonException("LogEntry 'source' property could not be deserialized");
             entry.EpochTimestamp = timestampElement.GetInt64();
             if (hasStackTrace)
             {
