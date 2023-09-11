@@ -25,5 +25,5 @@ public class AddInterceptCommandResult : CommandResult
     [JsonPropertyName("intercept")]
     [JsonRequired]
     [JsonInclude]
-    public string InterceptId { get => this.interceptId; internal set => this.interceptId = value; }
+    public string InterceptId { get => this.interceptId; private set => this.interceptId = value; }
 }

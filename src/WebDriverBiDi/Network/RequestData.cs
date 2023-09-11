@@ -35,7 +35,7 @@ public class RequestData
     [JsonPropertyName("request")]
     [JsonRequired]
     [JsonInclude]
-    public string RequestId { get => this.requestId; internal set => this.requestId = value; }
+    public string RequestId { get => this.requestId; private set => this.requestId = value; }
 
     /// <summary>
     /// Gets the URL of the request.
@@ -43,7 +43,7 @@ public class RequestData
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; internal set => this.url = value; }
+    public string Url { get => this.url; private set => this.url = value; }
 
     /// <summary>
     /// Gets the method of the request.
@@ -51,7 +51,7 @@ public class RequestData
     [JsonPropertyName("method")]
     [JsonRequired]
     [JsonInclude]
-    public string Method { get => this.method; internal set => this.method = value; }
+    public string Method { get => this.method; private set => this.method = value; }
 
     /// <summary>
     /// Gets the headers of the request.
@@ -83,14 +83,14 @@ public class RequestData
     [JsonPropertyName("headersSize")]
     [JsonRequired]
     [JsonInclude]
-    public ulong? HeadersSize { get => this.headersSize; internal set => this.headersSize = value; }
+    public ulong? HeadersSize { get => this.headersSize; private set => this.headersSize = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the request.
     /// </summary>
     [JsonPropertyName("bodySize")]
     [JsonInclude]
-    public ulong? BodySize { get => this.bodySize; internal set => this.bodySize = value; }
+    public ulong? BodySize { get => this.bodySize; private set => this.bodySize = value; }
 
     /// <summary>
     /// Gets the fetch timing info of the request.
@@ -98,7 +98,7 @@ public class RequestData
     [JsonPropertyName("timings")]
     [JsonRequired]
     [JsonInclude]
-    public FetchTimingInfo Timings { get => this.timingInfo; internal set => this.timingInfo = value; }
+    public FetchTimingInfo Timings { get => this.timingInfo; private set => this.timingInfo = value; }
 
     /// <summary>
     /// Gets or sets the headers of the request for serialization purposes.

@@ -25,5 +25,5 @@ public class PrintCommandResult : CommandResult
     [JsonPropertyName("data")]
     [JsonRequired]
     [JsonInclude]
-    public string Data { get => this.base64PdfPrintOutput; internal set => this.base64PdfPrintOutput = value; }
+    public string Data { get => this.base64PdfPrintOutput; private set => this.base64PdfPrintOutput = value; }
 }

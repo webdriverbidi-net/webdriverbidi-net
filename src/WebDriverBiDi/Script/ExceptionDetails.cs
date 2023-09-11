@@ -32,7 +32,7 @@ public class ExceptionDetails
     [JsonPropertyName("text")]
     [JsonRequired]
     [JsonInclude]
-    public string Text { get => this.text; internal set => this.text = value; }
+    public string Text { get => this.text; private set => this.text = value; }
 
     /// <summary>
     /// Gets the column number of the statement that caused the exception.
@@ -40,7 +40,7 @@ public class ExceptionDetails
     [JsonPropertyName("columnNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int ColumnNumber { get => this.columnNumber; internal set => this.columnNumber = value; }
+    public int ColumnNumber { get => this.columnNumber; private set => this.columnNumber = value; }
 
     /// <summary>
     /// Gets the line number of the statement that caused the exception.
@@ -48,7 +48,7 @@ public class ExceptionDetails
     [JsonPropertyName("lineNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int LineNumber { get => this.lineNumber; internal set => this.lineNumber = value; }
+    public int LineNumber { get => this.lineNumber; private set => this.lineNumber = value; }
 
     /// <summary>
     /// Gets the stack trace of the exception.
@@ -56,7 +56,7 @@ public class ExceptionDetails
     [JsonPropertyName("stackTrace")]
     [JsonRequired]
     [JsonInclude]
-    public StackTrace StackTrace { get => this.stackTrace; internal set => this.stackTrace = value; }
+    public StackTrace StackTrace { get => this.stackTrace; private set => this.stackTrace = value; }
 
     /// <summary>
     /// Gets the RemoteValue representing the value of the exception.
@@ -64,5 +64,5 @@ public class ExceptionDetails
     [JsonPropertyName("exception")]
     [JsonRequired]
     [JsonInclude]
-    public RemoteValue Exception { get => this.exception; internal set => this.exception = value; }
+    public RemoteValue Exception { get => this.exception; private set => this.exception = value; }
 }

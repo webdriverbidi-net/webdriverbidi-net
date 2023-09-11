@@ -25,5 +25,5 @@ public class CaptureScreenshotCommandResult : CommandResult
     [JsonPropertyName("data")]
     [JsonRequired]
     [JsonInclude]
-    public string Data { get => this.base64Screenshot; internal set => this.base64Screenshot = value; }
+    public string Data { get => this.base64Screenshot; private set => this.base64Screenshot = value; }
 }

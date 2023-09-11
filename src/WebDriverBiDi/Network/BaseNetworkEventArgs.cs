@@ -40,7 +40,7 @@ public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string? BrowsingContextId { get => this.browsingContextId; internal set => this.browsingContextId = value; }
+    public string? BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the ID of the navigation initiating the request.
@@ -48,7 +48,7 @@ public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("navigation")]
     [JsonRequired]
     [JsonInclude]
-    public string? NavigationId { get => this.navigationId; internal set => this.navigationId = value; }
+    public string? NavigationId { get => this.navigationId; private set => this.navigationId = value; }
 
     /// <summary>
     /// Gets a value indicating whether this request is blocked by a network intercept.
@@ -56,7 +56,7 @@ public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("isBlocked")]
     [JsonRequired]
     [JsonInclude]
-    public bool IsBlocked { get => this.isBlocked; internal set => this.isBlocked = value; }
+    public bool IsBlocked { get => this.isBlocked; private set => this.isBlocked = value; }
 
     /// <summary>
     /// Gets the count of redirects for the request.
@@ -64,7 +64,7 @@ public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("redirectCount")]
     [JsonRequired]
     [JsonInclude]
-    public ulong RedirectCount { get => this.redirectCount; internal set => this.redirectCount = value; }
+    public ulong RedirectCount { get => this.redirectCount; private set => this.redirectCount = value; }
 
     /// <summary>
     /// Gets the request data of the request.
@@ -72,7 +72,7 @@ public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("request")]
     [JsonRequired]
     [JsonInclude]
-    public RequestData Request { get => this.request; internal set => this.request = value; }
+    public RequestData Request { get => this.request; private set => this.request = value; }
 
     /// <summary>
     /// Gets the list of network intercepts for this request.

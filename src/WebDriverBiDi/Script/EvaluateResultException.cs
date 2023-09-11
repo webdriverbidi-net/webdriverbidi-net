@@ -28,5 +28,5 @@ public class EvaluateResultException : EvaluateResult
     /// </summary>
     [JsonPropertyName("exceptionDetails")]
     [JsonInclude]
-    public ExceptionDetails ExceptionDetails { get => this.result; internal set => this.result = value; }
+    public ExceptionDetails ExceptionDetails { get => this.result; private set => this.result = value; }
 }

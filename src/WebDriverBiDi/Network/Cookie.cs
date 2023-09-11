@@ -37,7 +37,7 @@ public class Cookie
     [JsonPropertyName("name")]
     [JsonRequired]
     [JsonInclude]
-    public string Name { get => this.name; internal set => this.name = value; }
+    public string Name { get => this.name; private set => this.name = value; }
 
     /// <summary>
     /// Gets the value of the cookie.
@@ -45,7 +45,7 @@ public class Cookie
     [JsonPropertyName("value")]
     [JsonRequired]
     [JsonInclude]
-    public BytesValue Value { get => this.value; internal set => this.value = value; }
+    public BytesValue Value { get => this.value; private set => this.value = value; }
 
     /// <summary>
     /// Gets the domain of the cookie.
@@ -53,7 +53,7 @@ public class Cookie
     [JsonPropertyName("domain")]
     [JsonRequired]
     [JsonInclude]
-    public string Domain { get => this.domain; internal set => this.domain = value; }
+    public string Domain { get => this.domain; private set => this.domain = value; }
 
     /// <summary>
     /// Gets the path of the cookie.
@@ -61,7 +61,7 @@ public class Cookie
     [JsonPropertyName("path")]
     [JsonRequired]
     [JsonInclude]
-    public string Path { get => this.path; internal set => this.path = value; }
+    public string Path { get => this.path; private set => this.path = value; }
 
     /// <summary>
     /// Gets the expiration time of the cookie.
@@ -98,7 +98,7 @@ public class Cookie
     [JsonPropertyName("size")]
     [JsonRequired]
     [JsonInclude]
-    public long Size { get => this.size; internal set => this.size = value; }
+    public long Size { get => this.size; private set => this.size = value; }
 
     /// <summary>
     /// Gets a value indicating whether the cookie is secure, delivered via an
@@ -107,7 +107,7 @@ public class Cookie
     [JsonPropertyName("secure")]
     [JsonRequired]
     [JsonInclude]
-    public bool Secure { get => this.isSecure; internal set => this.isSecure = value; }
+    public bool Secure { get => this.isSecure; private set => this.isSecure = value; }
 
     /// <summary>
     /// Gets a value indicating whether the cookie is only available via HTTP headers
@@ -117,7 +117,7 @@ public class Cookie
     [JsonPropertyName("httpOnly")]
     [JsonRequired]
     [JsonInclude]
-    public bool HttpOnly { get => this.isHttpOnly; internal set => this.isHttpOnly = value; }
+    public bool HttpOnly { get => this.isHttpOnly; private set => this.isHttpOnly = value; }
 
     /// <summary>
     /// Gets a value indicating whether the cookie a same site cookie.
@@ -125,7 +125,7 @@ public class Cookie
     [JsonPropertyName("sameSite")]
     [JsonRequired]
     [JsonInclude]
-    public CookieSameSiteValue SameSite { get => this.sameSite; internal set => this.sameSite = value; }
+    public CookieSameSiteValue SameSite { get => this.sameSite; private set => this.sameSite = value; }
 
     /// <summary>
     /// Converts this cookie to a <see cref="SetCookieHeader"/>.

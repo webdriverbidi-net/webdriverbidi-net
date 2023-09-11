@@ -41,7 +41,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double TimeOrigin { get => this.timeOrigin; internal set => this.timeOrigin = value; }
+    public double TimeOrigin { get => this.timeOrigin; private set => this.timeOrigin = value; }
 
     /// <summary>
     /// Gets the request time of the fetch request.
@@ -50,7 +50,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double RequestTime { get => this.requestTime; internal set => this.requestTime = value; }
+    public double RequestTime { get => this.requestTime; private set => this.requestTime = value; }
 
     /// <summary>
     /// Gets the redirect start time offset from the time origin of the fetch request.
@@ -59,7 +59,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double RedirectStart { get => this.redirectStart; internal set => this.redirectStart = value; }
+    public double RedirectStart { get => this.redirectStart; private set => this.redirectStart = value; }
 
     /// <summary>
     /// Gets the redirect end time offset from the time origin of the fetch request.
@@ -68,7 +68,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double RedirectEnd { get => this.redirectEnd; internal set => this.redirectEnd = value; }
+    public double RedirectEnd { get => this.redirectEnd; private set => this.redirectEnd = value; }
 
     /// <summary>
     /// Gets the fetch start time offset from the time origin of the fetch request.
@@ -77,7 +77,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double FetchStart { get => this.fetchStart; internal set => this.fetchStart = value; }
+    public double FetchStart { get => this.fetchStart; private set => this.fetchStart = value; }
 
     /// <summary>
     /// Gets the DNS start time offset from the time origin of the fetch request.
@@ -86,7 +86,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double DnsStart { get => this.dnsStart; internal set => this.dnsStart = value; }
+    public double DnsStart { get => this.dnsStart; private set => this.dnsStart = value; }
 
     /// <summary>
     /// Gets the DNS end time offset from the time origin of the fetch request.
@@ -95,7 +95,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double DnsEnd { get => this.dnsEnd; internal set => this.dnsEnd = value; }
+    public double DnsEnd { get => this.dnsEnd; private set => this.dnsEnd = value; }
 
     /// <summary>
     /// Gets the connect start time offset from the time origin of the fetch request.
@@ -104,7 +104,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double ConnectStart { get => this.connectStart; internal set => this.connectStart = value; }
+    public double ConnectStart { get => this.connectStart; private set => this.connectStart = value; }
 
     /// <summary>
     /// Gets the connect end time offset from the time origin of the fetch request.
@@ -113,7 +113,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double ConnectEnd { get => this.connectEnd; internal set => this.connectEnd = value; }
+    public double ConnectEnd { get => this.connectEnd; private set => this.connectEnd = value; }
 
     /// <summary>
     /// Gets the TLS start time offset from the time origin of the fetch request.
@@ -122,7 +122,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double TlsStart { get => this.tlsStart; internal set => this.tlsStart = value; }
+    public double TlsStart { get => this.tlsStart; private set => this.tlsStart = value; }
 
     /// <summary>
     /// Gets the request start time offset from the time origin of the fetch request.
@@ -131,7 +131,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double RequestStart { get => this.requestStart; internal set => this.requestStart = value; }
+    public double RequestStart { get => this.requestStart; private set => this.requestStart = value; }
 
     /// <summary>
     /// Gets the response start time offset from the time origin of the fetch request.
@@ -140,7 +140,7 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double ResponseStart { get => this.responseStart; internal set => this.responseStart = value; }
+    public double ResponseStart { get => this.responseStart; private set => this.responseStart = value; }
 
     /// <summary>
     /// Gets the response end time offset from the time origin of the fetch request.
@@ -149,5 +149,5 @@ public class FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double ResponseEnd { get => this.responseEnd; internal set => this.responseEnd = value; }
+    public double ResponseEnd { get => this.responseEnd; private set => this.responseEnd = value; }
 }

@@ -25,5 +25,5 @@ public class CreateCommandResult : CommandResult
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.contextId; internal set => this.contextId = value; }
+    public string BrowsingContextId { get => this.contextId; private set => this.contextId = value; }
 }

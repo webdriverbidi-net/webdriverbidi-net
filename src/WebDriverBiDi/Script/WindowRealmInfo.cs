@@ -36,4 +36,4 @@ public class WindowRealmInfo : RealmInfo
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Sandbox { get => this.sandbox; internal set => this.sandbox = value; }
-}
+} 

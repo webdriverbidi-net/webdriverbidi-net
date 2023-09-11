@@ -56,13 +56,13 @@ public class LocalValue : ArgumentValue
     /// Gets the type of this LocalValue.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get => this.argType; internal set => this.argType = value; }
+    public string Type { get => this.argType; private set => this.argType = value; }
 
     /// <summary>
     /// Gets the object containing the value of this LocalValue.
     /// </summary>
     [JsonIgnore]
-    public object? Value { get => this.argValue; internal set => this.argValue = value; }
+    public object? Value { get => this.argValue; private set => this.argValue = value; }
 
     /// <summary>
     /// Gets the object containing the value of this LocalValue for serialization purposes.

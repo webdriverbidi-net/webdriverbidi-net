@@ -30,7 +30,7 @@ public class ErrorResponseMessage : Message
     [JsonPropertyName("error")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorType { get => this.error; internal set => this.error = value; }
+    public string ErrorType { get => this.error; private set => this.error = value; }
 
     /// <summary>
     /// Gets the message of the error.
@@ -38,7 +38,7 @@ public class ErrorResponseMessage : Message
     [JsonPropertyName("message")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorMessage { get => this.message; internal set => this.message = value; }
+    public string ErrorMessage { get => this.message; private set => this.message = value; }
 
     /// <summary>
     /// Gets the stack trace associated with this error.

@@ -38,7 +38,7 @@ public class BytesValue
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public BytesValueType Type { get => this.valueType; internal set => this.valueType = value; }
+    public BytesValueType Type { get => this.valueType; private set => this.valueType = value; }
 
     /// <summary>
     /// Gets the value of the value object.
@@ -46,7 +46,7 @@ public class BytesValue
     [JsonPropertyName("value")]
     [JsonRequired]
     [JsonInclude]
-    public string Value { get => this.actualValue; internal set => this.actualValue = value; }
+    public string Value { get => this.actualValue; private set => this.actualValue = value; }
 
     /// <summary>
     /// Gets the value of the value object as an array of bytes.

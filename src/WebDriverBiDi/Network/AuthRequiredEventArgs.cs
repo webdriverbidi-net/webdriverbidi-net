@@ -28,5 +28,5 @@ public class AuthRequiredEventArgs : BaseNetworkEventArgs
     [JsonPropertyName("response")]
     [JsonRequired]
     [JsonInclude]
-    public ResponseData Response { get => this.response; internal set => this.response = value; }
+    public ResponseData Response { get => this.response; private set => this.response = value; }
 }

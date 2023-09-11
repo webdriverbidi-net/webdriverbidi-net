@@ -39,7 +39,7 @@ public class ResponseData
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; internal set => this.url = value; }
+    public string Url { get => this.url; private set => this.url = value; }
 
     /// <summary>
     /// Gets the protocol of the response.
@@ -47,7 +47,7 @@ public class ResponseData
     [JsonPropertyName("protocol")]
     [JsonRequired]
     [JsonInclude]
-    public string Protocol { get => this.protocol; internal set => this.protocol = value; }
+    public string Protocol { get => this.protocol; private set => this.protocol = value; }
 
     /// <summary>
     /// Gets the status code of the response.
@@ -55,7 +55,7 @@ public class ResponseData
     [JsonPropertyName("status")]
     [JsonRequired]
     [JsonInclude]
-    public ulong Status { get => this.status; internal set => this.status = value; }
+    public ulong Status { get => this.status; private set => this.status = value; }
 
     /// <summary>
     /// Gets the status text of the response.
@@ -63,7 +63,7 @@ public class ResponseData
     [JsonPropertyName("statusText")]
     [JsonRequired]
     [JsonInclude]
-    public string StatusText { get => this.statusText; internal set => this.statusText = value; }
+    public string StatusText { get => this.statusText; private set => this.statusText = value; }
 
     /// <summary>
     /// Gets a value indicating whether the response was retrieved from the cache.
@@ -71,7 +71,7 @@ public class ResponseData
     [JsonPropertyName("fromCache")]
     [JsonRequired]
     [JsonInclude]
-    public bool FromCache { get => this.fromCache; internal set => this.fromCache = value; }
+    public bool FromCache { get => this.fromCache; private set => this.fromCache = value; }
 
     /// <summary>
     /// Gets the headers of the response.
@@ -97,7 +97,7 @@ public class ResponseData
     [JsonPropertyName("mimeType")]
     [JsonRequired]
     [JsonInclude]
-    public string MimeType { get => this.mimeType; internal set => this.mimeType = value; }
+    public string MimeType { get => this.mimeType; private set => this.mimeType = value; }
 
     /// <summary>
     /// Gets the count of the bytes received in the response.
@@ -105,7 +105,7 @@ public class ResponseData
     [JsonPropertyName("bytesReceived")]
     [JsonRequired]
     [JsonInclude]
-    public ulong BytesReceived { get => this.bytesReceived; internal set => this.bytesReceived = value; }
+    public ulong BytesReceived { get => this.bytesReceived; private set => this.bytesReceived = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the headers in the response.
@@ -113,7 +113,7 @@ public class ResponseData
     [JsonPropertyName("headersSize")]
     [JsonRequired]
     [JsonInclude]
-    public ulong? HeadersSize { get => this.headersSize; internal set => this.headersSize = value; }
+    public ulong? HeadersSize { get => this.headersSize; private set => this.headersSize = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the response.
@@ -121,7 +121,7 @@ public class ResponseData
     [JsonPropertyName("bodySize")]
     [JsonRequired]
     [JsonInclude]
-    public ulong? BodySize { get => this.bodySize; internal set => this.bodySize = value; }
+    public ulong? BodySize { get => this.bodySize; private set => this.bodySize = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the response.
@@ -129,14 +129,14 @@ public class ResponseData
     [JsonPropertyName("content")]
     [JsonRequired]
     [JsonInclude]
-    public ResponseContent Content { get => this.content; internal set => this.content = value; }
+    public ResponseContent Content { get => this.content; private set => this.content = value; }
 
     /// <summary>
     /// Gets the authorization challenge in the response, if any.
     /// </summary>
     [JsonPropertyName("authChallenge")]
     [JsonInclude]
-    public AuthChallenge? AuthChallenge { get => this.authChallenge; internal set => this.authChallenge = value; }
+    public AuthChallenge? AuthChallenge { get => this.authChallenge; private set => this.authChallenge = value; }
 
     /// <summary>
     /// Gets or sets the headers of the response for serialization purposes.

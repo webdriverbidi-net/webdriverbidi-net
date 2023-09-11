@@ -29,7 +29,7 @@ public class StatusCommandResult : CommandResult
     [JsonPropertyName("ready")]
     [JsonRequired]
     [JsonInclude]
-    public bool IsReady { get => this.ready; internal set => this.ready = value; }
+    public bool IsReady { get => this.ready; private set => this.ready = value; }
 
     /// <summary>
     /// Gets a message about the status from the remote end.
@@ -37,5 +37,5 @@ public class StatusCommandResult : CommandResult
     [JsonPropertyName("message")]
     [JsonRequired]
     [JsonInclude]
-    public string Message { get => this.message; internal set => this.message = value; }
+    public string Message { get => this.message; private set => this.message = value; }
 }

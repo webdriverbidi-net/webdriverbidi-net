@@ -65,7 +65,7 @@ public class RemoteValue
     /// Gets the type of this RemoteValue.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get => this.valueType; internal set => this.valueType = value; }
+    public string Type { get => this.valueType; private set => this.valueType = value; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.

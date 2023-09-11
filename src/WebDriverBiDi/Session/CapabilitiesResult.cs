@@ -39,7 +39,7 @@ public class CapabilitiesResult
     [JsonPropertyName("acceptInsecureCerts")]
     [JsonRequired]
     [JsonInclude]
-    public bool AcceptInsecureCertificates { get => this.acceptInsecureCertificates; internal set => this.acceptInsecureCertificates = value; }
+    public bool AcceptInsecureCertificates { get => this.acceptInsecureCertificates; private set => this.acceptInsecureCertificates = value; }
 
     /// <summary>
     /// Gets the name of the browser.
@@ -47,7 +47,7 @@ public class CapabilitiesResult
     [JsonPropertyName("browserName")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowserName { get => this.browserName; internal set => this.browserName = value; }
+    public string BrowserName { get => this.browserName; private set => this.browserName = value; }
 
     /// <summary>
     /// Gets the version of the browser.
@@ -55,7 +55,7 @@ public class CapabilitiesResult
     [JsonPropertyName("browserVersion")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowserVersion { get => this.browserVersion; internal set => this.browserVersion = value; }
+    public string BrowserVersion { get => this.browserVersion; private set => this.browserVersion = value; }
 
     /// <summary>
     /// Gets the platform name.
@@ -63,7 +63,7 @@ public class CapabilitiesResult
     [JsonPropertyName("platformName")]
     [JsonRequired]
     [JsonInclude]
-    public string PlatformName { get => this.platformName; internal set => this.platformName = value; }
+    public string PlatformName { get => this.platformName; private set => this.platformName = value; }
 
     /// <summary>
     /// Gets a value indicating whether this session supports setting the size of the browser window.
@@ -71,7 +71,7 @@ public class CapabilitiesResult
     [JsonPropertyName("setWindowRect")]
     [JsonRequired]
     [JsonInclude]
-    public bool SetWindowRect { get => this.setWindowRect; internal set => this.setWindowRect = value; }
+    public bool SetWindowRect { get => this.setWindowRect; private set => this.setWindowRect = value; }
 
     /// <summary>
     /// Gets a read-only dictionary of additional capabilities specified by this session.

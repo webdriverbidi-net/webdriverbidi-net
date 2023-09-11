@@ -32,33 +32,33 @@ public class Initiator
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public InitiatorType Type { get => this.type; internal set => this.type = value; }
+    public InitiatorType Type { get => this.type; private set => this.type = value; }
 
     /// <summary>
     /// Gets the column number of the script initiating the request.
     /// </summary>
     [JsonPropertyName("columnNumber")]
     [JsonInclude]
-    public ulong? ColumnNumber { get => this.columnNumber; internal set => this.columnNumber = value; }
+    public ulong? ColumnNumber { get => this.columnNumber; private set => this.columnNumber = value; }
 
     /// <summary>
     /// Gets the column number of the script initiating the request.
     /// </summary>
     [JsonPropertyName("lineNumber")]
     [JsonInclude]
-    public ulong? LineNumber { get => this.lineNumber; internal set => this.lineNumber = value; }
+    public ulong? LineNumber { get => this.lineNumber; private set => this.lineNumber = value; }
 
     /// <summary>
     /// Gets the stack trace of the script initiating the request.
     /// </summary>
     [JsonPropertyName("stackTrace")]
     [JsonInclude]
-    public StackTrace? StackTrace { get => this.stackTrace; internal set => this.stackTrace = value; }
+    public StackTrace? StackTrace { get => this.stackTrace; private set => this.stackTrace = value; }
 
     /// <summary>
     /// Gets the ID of the request.
     /// </summary>
     [JsonPropertyName("request")]
     [JsonInclude]
-    public string? RequestId { get => this.requestId; internal set => this.requestId = value; }
+    public string? RequestId { get => this.requestId; private set => this.requestId = value; }
 }

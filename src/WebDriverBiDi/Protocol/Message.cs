@@ -26,7 +26,7 @@ public class Message
     // have the message type property implemented.
     // [JsonRequired]
     [JsonPropertyName("type")]
-    public string Type { get => this.type; internal set => this.type = value; }
+    public string Type { get => this.type; private set => this.type = value; }
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.

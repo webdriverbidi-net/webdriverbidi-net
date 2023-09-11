@@ -24,5 +24,5 @@ public class AddPreloadScriptCommandResult : CommandResult
     /// </summary>
     [JsonPropertyName("script")]
     [JsonInclude]
-    public string PreloadScriptId { get => this.preloadScriptId; internal set => this.preloadScriptId = value; }
+    public string PreloadScriptId { get => this.preloadScriptId; private set => this.preloadScriptId = value; }
 }

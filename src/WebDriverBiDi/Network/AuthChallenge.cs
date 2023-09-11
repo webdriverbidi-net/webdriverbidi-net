@@ -28,7 +28,7 @@ public class AuthChallenge
     [JsonPropertyName("scheme")]
     [JsonRequired]
     [JsonInclude]
-    public string Scheme { get => this.scheme; internal set => this.scheme = value; }
+    public string Scheme { get => this.scheme; private set => this.scheme = value; }
 
     /// <summary>
     /// Gets the realm of the authentication challenge.
@@ -36,5 +36,5 @@ public class AuthChallenge
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string Realm { get => this.realm; internal set => this.realm = value; }
+    public string Realm { get => this.realm; private set => this.realm = value; }
 }

@@ -28,5 +28,5 @@ public class FetchErrorEventArgs : BaseNetworkEventArgs
     [JsonPropertyName("errorText")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorText { get => this.errorText; internal set => this.errorText = value; }
+    public string ErrorText { get => this.errorText; private set => this.errorText = value; }
 }

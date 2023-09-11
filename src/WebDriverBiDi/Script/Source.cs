@@ -29,7 +29,7 @@ public class Source
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get => this.realmId; internal set => this.realmId = value; }
+    public string RealmId { get => this.realmId; private set => this.realmId = value; }
 
     /// <summary>
     /// Gets the browsing context ID for a script.
@@ -37,5 +37,5 @@ public class Source
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Context { get => this.browsingContextId; internal set => this.browsingContextId = value; }
+    public string? Context { get => this.browsingContextId; private set => this.browsingContextId = value; }
 }

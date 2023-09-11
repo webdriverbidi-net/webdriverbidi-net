@@ -44,7 +44,7 @@ public class NavigationEventArgs : WebDriverBiDiEventArgs
     /// </summary>
     [JsonPropertyName("navigation")]
     [JsonInclude]
-    public string? NavigationId { get => this.id; internal set => this.id = value; }
+    public string? NavigationId { get => this.id; private set => this.id = value; }
 
     /// <summary>
     /// Gets the ID of the browsing context being navigated.
@@ -52,7 +52,7 @@ public class NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; internal set => this.browsingContextId = value; }
+    public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the URL to which the browsing context is being navigated.
@@ -60,7 +60,7 @@ public class NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; internal set => this.url = value; }
+    public string Url { get => this.url; private set => this.url = value; }
 
     /// <summary>
     /// Gets the timestamp of the navigation in UTC.

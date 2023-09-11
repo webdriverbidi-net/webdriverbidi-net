@@ -27,7 +27,7 @@ public class NewCommandResult : CommandResult
     [JsonPropertyName("sessionId")]
     [JsonRequired]
     [JsonInclude]
-    public string SessionId { get => this.sessionId; internal set => this.sessionId = value; }
+    public string SessionId { get => this.sessionId; private set => this.sessionId = value; }
 
     /// <summary>
     /// Gets the actual capabilities used in this session.
@@ -35,5 +35,5 @@ public class NewCommandResult : CommandResult
     [JsonPropertyName("capabilities")]
     [JsonRequired]
     [JsonInclude]
-    public CapabilitiesResult Capabilities { get => this.capabilitiesResult; internal set => this.capabilitiesResult = value; }
+    public CapabilitiesResult Capabilities { get => this.capabilitiesResult; private set => this.capabilitiesResult = value; }
 }

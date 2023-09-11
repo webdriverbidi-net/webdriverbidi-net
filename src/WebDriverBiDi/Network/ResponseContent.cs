@@ -27,5 +27,5 @@ public class ResponseContent
     [JsonPropertyName("size")]
     [JsonRequired]
     [JsonInclude]
-    public ulong Size { get => this.size; internal set => this.size = value; }
+    public ulong Size { get => this.size; private set => this.size = value; }
 }

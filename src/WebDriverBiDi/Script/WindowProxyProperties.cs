@@ -27,5 +27,5 @@ public class WindowProxyProperties
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string Context { get => this.context; internal set => this.context = value; }
+    public string Context { get => this.context; private set => this.context = value; }
 }

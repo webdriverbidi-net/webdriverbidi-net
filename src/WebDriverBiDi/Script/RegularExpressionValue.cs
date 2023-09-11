@@ -42,7 +42,7 @@ public class RegularExpressionValue
     [JsonPropertyName("pattern")]
     [JsonRequired]
     [JsonInclude]
-    public string Pattern { get => this.pattern; internal set => this.pattern = value; }
+    public string Pattern { get => this.pattern; private set => this.pattern = value; }
 
     /// <summary>
     /// Gets the flags used in the regular expression.
@@ -50,7 +50,7 @@ public class RegularExpressionValue
     [JsonPropertyName("flags")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Flags { get => this.flags; internal set => this.flags = value; }
+    public string? Flags { get => this.flags; private set => this.flags = value; }
 
     /// <summary>
     /// Computes a hash code for this RegularExpressionValue.

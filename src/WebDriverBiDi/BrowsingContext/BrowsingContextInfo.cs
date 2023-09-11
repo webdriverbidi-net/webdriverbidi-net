@@ -28,7 +28,7 @@ public class BrowsingContextInfo
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.id; internal set => this.id = value; }
+    public string BrowsingContextId { get => this.id; private set => this.id = value; }
 
     /// <summary>
     /// Gets the URL of the browsing context.
@@ -36,7 +36,7 @@ public class BrowsingContextInfo
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; internal set => this.url = value; }
+    public string Url { get => this.url; private set => this.url = value; }
 
     /// <summary>
     /// Gets the read-only list of child browsing contexts for this browsing context.
@@ -48,7 +48,7 @@ public class BrowsingContextInfo
     /// </summary>
     [JsonPropertyName("parent")]
     [JsonInclude]
-    public string? Parent { get => this.parentId; internal set => this.parentId = value; }
+    public string? Parent { get => this.parentId; private set => this.parentId = value; }
 
     /// <summary>
     /// Gets or sets the list of child browsing contexts for this browsing context.

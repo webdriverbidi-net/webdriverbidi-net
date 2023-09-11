@@ -28,5 +28,5 @@ public class BeforeRequestSentEventArgs : BaseNetworkEventArgs
     [JsonPropertyName("initiator")]
     [JsonRequired]
     [JsonInclude]
-    public Initiator Initiator { get => this.initiator; internal set => this.initiator = value; }
+    public Initiator Initiator { get => this.initiator; private set => this.initiator = value; }
 }

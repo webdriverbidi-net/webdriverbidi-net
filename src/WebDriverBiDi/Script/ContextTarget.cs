@@ -31,7 +31,7 @@ public class ContextTarget : Target
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; internal set => this.browsingContextId = value; }
+    public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the name of the sandbox.
@@ -39,5 +39,5 @@ public class ContextTarget : Target
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Sandbox { get => this.sandbox; internal set => this.sandbox = value; }
+    public string? Sandbox { get => this.sandbox; private set => this.sandbox = value; }
 }

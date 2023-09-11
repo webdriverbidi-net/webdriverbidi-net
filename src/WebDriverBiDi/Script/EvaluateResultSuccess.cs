@@ -28,5 +28,5 @@ public class EvaluateResultSuccess : EvaluateResult
     /// </summary>
     [JsonPropertyName("result")]
     [JsonInclude]
-    public RemoteValue Result { get => this.result; internal set => this.result = value; }
+    public RemoteValue Result { get => this.result; private set => this.result = value; }
 }

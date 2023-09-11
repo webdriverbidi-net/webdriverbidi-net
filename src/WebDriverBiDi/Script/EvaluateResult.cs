@@ -30,7 +30,7 @@ public class EvaluateResult : CommandResult
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public EvaluateResultType ResultType { get => this.resultType; internal set => this.resultType = value; }
+    public EvaluateResultType ResultType { get => this.resultType; private set => this.resultType = value; }
 
     /// <summary>
     /// Gets the ID of the realm in which the script was executed.
@@ -38,5 +38,5 @@ public class EvaluateResult : CommandResult
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get => this.realmId; internal set => this.realmId = value; }
+    public string RealmId { get => this.realmId; private set => this.realmId = value; }
 }
