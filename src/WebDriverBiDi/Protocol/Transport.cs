@@ -414,17 +414,18 @@ public class Transport
     {
         if (message.TryGetProperty("method", out JsonElement eventNameToken) && eventNameToken.ValueKind == JsonValueKind.String)
         {
-            string? eventName = eventNameToken.GetString();
-            if (eventName is not null && this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
+            // We have already validated that the token is of type string,
+            // and therefore will never be null.
+            string eventName = eventNameToken.GetString()!;
+            if (this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
             {
                 try
                 {
+                    // Deserialize will correctly throw if the type does not match, meaning
+                    // the eventMessageData variable can never be null.
                     EventMessage? eventMessageData = message.Deserialize(eventMessageType, this.options) as EventMessage;
-                    if (eventMessageData is not null)
-                    {
-                        this.eventDispatcher.TryDispatch(eventMessageData!);
-                        return true;
-                    }
+                    this.eventDispatcher.TryDispatch(eventMessageData!);
+                    return true;
                 }
                 catch (Exception ex)
                 {
