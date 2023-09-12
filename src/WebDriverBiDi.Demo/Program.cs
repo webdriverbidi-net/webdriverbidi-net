@@ -14,14 +14,14 @@ using WebDriverBiDi.Input;
 // Path to the directory containing the browser launcher executables.
 // We use the WebDriver Classic browser drivers (chromedriver, geckodriver, etc.)
 // as browser launchers.
-string browserLauncherDirectory = string.Empty;
+string browserLauncherDirectory = "/Users/james.evans/Downloads";
 
 // The level at which to log to the console in this demo app. Adjust this
 // to control how verbose the logging is.
 WebDriverBiDiLogLevel logReportingLevel = WebDriverBiDiLogLevel.Debug;
 
 // Select the browser type for which to run this demo.
-BrowserType testBrowserType = BrowserType.Chrome;
+BrowserType testBrowserType = BrowserType.Firefox;
 
 // Optionally select the location of the browser executable to use.
 // The empty string will launch the browser executable from its default
@@ -83,25 +83,9 @@ async Task DriveBrowserAsync(string webSocketUrl)
             Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
         }
 
-        SharedReference elementReference = scriptSuccessResult.Result.ToSharedReference();
-        InputBuilder builder = new();
-        PointerInputSource mouse = builder.CreatePointerInputSource(PointerType.Mouse);
-        KeyInputSource keyboard = builder.CreateKeyInputSource();
-        builder.AddAction(mouse.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(elementReference))))
-            .AddAction(mouse.CreatePointerDown())
-            .AddAction(mouse.CreatePointerUp())
-            .AddAction(keyboard.CreateKeyDown('h'))
-            .AddAction(keyboard.CreateKeyUp('h'))
-            .AddAction(keyboard.CreateKeyDown('e'))
-            .AddAction(keyboard.CreateKeyUp('e'))
-            .AddAction(keyboard.CreateKeyDown('l'))
-            .AddAction(keyboard.CreateKeyUp('l'))
-            .AddAction(keyboard.CreateKeyDown('l'))
-            .AddAction(keyboard.CreateKeyUp('l'))
-            .AddAction(keyboard.CreateKeyDown('o'))
-            .AddAction(keyboard.CreateKeyUp('o'));
+        List<SourceActions> actions = GenerateSendKeysToElementActionList(scriptSuccessResult.Result.ToSharedReference(), "webdriver bidi" + Keys.Enter);
         PerformActionsCommandParameters actionsParams = new(contextId);
-        actionsParams.Actions.AddRange(builder.Build());
+        actionsParams.Actions.AddRange(actions);
         await driver.Input.PerformActionsAsync(actionsParams);
     }
     else if (scriptResult is EvaluateResultException scriptExceptionResult)
@@ -109,7 +93,26 @@ async Task DriveBrowserAsync(string webSocketUrl)
         Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
     }
 
+    Console.WriteLine("Pausing 2 seconds to view results");
+    await Task.Delay(TimeSpan.FromSeconds(2));
+
     await driver.StopAsync();
+}
+
+List<SourceActions> GenerateSendKeysToElementActionList(SharedReference elementReference, string keysToSend)
+{
+    InputBuilder builder = new();
+    PointerInputSource mouse = builder.CreatePointerInputSource(PointerType.Mouse);
+    KeyInputSource keyboard = builder.CreateKeyInputSource();
+    builder.AddAction(mouse.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(elementReference))))
+        .AddAction(mouse.CreatePointerDown())
+        .AddAction(mouse.CreatePointerUp());
+    foreach (char character in keysToSend)
+    {
+        builder.AddAction(keyboard.CreateKeyDown(character))
+            .AddAction(keyboard.CreateKeyUp(character));
+    }
+    return builder.Build();
 }
 
 void OnDriverLogMessage(object? sender, LogMessageEventArgs e)
