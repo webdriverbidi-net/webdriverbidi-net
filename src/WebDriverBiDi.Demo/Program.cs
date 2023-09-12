@@ -3,6 +3,7 @@ using WebDriverBiDi.Client;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
+using WebDriverBiDi.Input;
 
 // See https://aka.ms/new-console-template for more information
 
@@ -13,14 +14,14 @@ using WebDriverBiDi.Session;
 // Path to the directory containing the browser launcher executables.
 // We use the WebDriver Classic browser drivers (chromedriver, geckodriver, etc.)
 // as browser launchers.
-string browserLauncherDirectory = string.Empty;
+string browserLauncherDirectory = "/Users/james.evans/Downloads";
 
 // The level at which to log to the console in this demo app. Adjust this
 // to control how verbose the logging is.
 WebDriverBiDiLogLevel logReportingLevel = WebDriverBiDiLogLevel.Debug;
 
 // Select the browser type for which to run this demo.
-BrowserType testBrowserType = BrowserType.Chrome;
+BrowserType testBrowserType = BrowserType.Firefox;
 
 // Optionally select the location of the browser executable to use.
 // The empty string will launch the browser executable from its default
@@ -75,11 +76,33 @@ async Task DriveBrowserAsync(string webSocketUrl)
     if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
     {
         Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Value!.GetType()}");
+        Console.WriteLine($"Script returned element with ID {scriptSuccessResult.Result.SharedId}");
         NodeProperties? nodeProperties = scriptSuccessResult.Result.ValueAs<NodeProperties>();
         if (nodeProperties is not null)
         {
             Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
         }
+
+        SharedReference elementReference = scriptSuccessResult.Result.ToSharedReference();
+        InputBuilder builder = new();
+        PointerInputSource mouse = builder.CreatePointerInputSource(PointerType.Mouse);
+        KeyInputSource keyboard = builder.CreateKeyInputSource();
+        builder.AddAction(mouse.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(elementReference))))
+            .AddAction(mouse.CreatePointerDown())
+            .AddAction(mouse.CreatePointerUp())
+            .AddAction(keyboard.CreateKeyDown('h'))
+            .AddAction(keyboard.CreateKeyUp('h'))
+            .AddAction(keyboard.CreateKeyDown('e'))
+            .AddAction(keyboard.CreateKeyUp('e'))
+            .AddAction(keyboard.CreateKeyDown('l'))
+            .AddAction(keyboard.CreateKeyUp('l'))
+            .AddAction(keyboard.CreateKeyDown('l'))
+            .AddAction(keyboard.CreateKeyUp('l'))
+            .AddAction(keyboard.CreateKeyDown('o'))
+            .AddAction(keyboard.CreateKeyUp('o'));
+        PerformActionsCommandParameters actionsParams = new(contextId);
+        actionsParams.Actions.AddRange(builder.Build());
+        await driver.Input.PerformActionsAsync(actionsParams);
     }
     else if (scriptResult is EvaluateResultException scriptExceptionResult)
     {
