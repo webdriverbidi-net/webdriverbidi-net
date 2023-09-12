@@ -5,8 +5,6 @@ using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Input;
 
-// See https://aka.ms/new-console-template for more information
-
 // To use a specific port, uncomment the line below and modify it to
 // use the desired port.
 // int port = 38267;
@@ -57,37 +55,48 @@ async Task DriveBrowserAsync(string webSocketUrl)
 
     await driver.StartAsync(webSocketUrl);
 
-    var status = await driver.Session.StatusAsync(new StatusCommandParameters());
+    StatusCommandResult status = await driver.Session.StatusAsync(new StatusCommandParameters());
     Console.WriteLine($"Is ready? {status.IsReady}");
 
-    var subscribe = new SubscribeCommandParameters();
+    SubscribeCommandParameters subscribe = new();
     subscribe.Events.Add("browsingContext.load");
     await driver.Session.SubscribeAsync(subscribe);
 
-    var tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+    GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
     string contextId = tree.ContextTree[0].BrowsingContextId;
     Console.WriteLine($"Active context: {contextId}");
 
-    var navigation = await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(contextId, "https://google.com/") { Wait = ReadinessState.Complete });
+    NavigateCommandParameters navigateParams = new(contextId, "https://google.com/")
+    {
+        Wait = ReadinessState.Complete
+    };
+    NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
     Console.WriteLine($"Performed navigation to {navigation.Url}");
 
-    string functionDefinition = @"function(){ return document.querySelector('*[name=""q""]'); }";
-    var scriptResult = await driver.Script.CallFunctionAsync(new CallFunctionCommandParameters(functionDefinition, new ContextTarget(contextId), true));
+    string functionDefinition = @"() => document.querySelector('*[name=""q""]')";
+    CallFunctionCommandParameters callFunctionParams = new(functionDefinition, new ContextTarget(contextId), true);
+    EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
     if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
     {
         Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Value!.GetType()}");
         Console.WriteLine($"Script returned element with ID {scriptSuccessResult.Result.SharedId}");
-        NodeProperties? nodeProperties = scriptSuccessResult.Result.ValueAs<NodeProperties>();
+
+        RemoteValue scriptResultValue = scriptSuccessResult.Result;
+        NodeProperties? nodeProperties = scriptResultValue.ValueAs<NodeProperties>();
         if (nodeProperties is not null)
         {
             Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
+            SharedReference elementReference = scriptResultValue.ToSharedReference();
+            List<SourceActions> actions = GenerateSendKeysToElementActionList(elementReference, "webdriver bidi" + Keys.Enter);
+            PerformActionsCommandParameters actionsParams = new(contextId);
+            actionsParams.Actions.AddRange(actions);
+            await driver.Input.PerformActionsAsync(actionsParams);
         }
-
-        List<SourceActions> actions = GenerateSendKeysToElementActionList(scriptSuccessResult.Result.ToSharedReference(), "webdriver bidi" + Keys.Enter);
-        PerformActionsCommandParameters actionsParams = new(contextId);
-        actionsParams.Actions.AddRange(actions);
-        await driver.Input.PerformActionsAsync(actionsParams);
-    }
+        else
+        {
+            Console.WriteLine($"Script result value did not describe a node; returned type {scriptResultValue.Type}");
+        }
+   }
     else if (scriptResult is EvaluateResultException scriptExceptionResult)
     {
         Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
