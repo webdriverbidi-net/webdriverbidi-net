@@ -78,7 +78,7 @@ async Task DriveBrowserAsync(string webSocketUrl)
     EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
     if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
     {
-        Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Value!.GetType()}");
+        Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type} (.NET type: {scriptSuccessResult.Result.Value!.GetType()})");
         Console.WriteLine($"Script returned element with ID {scriptSuccessResult.Result.SharedId}");
 
         RemoteValue scriptResultValue = scriptSuccessResult.Result;
@@ -102,8 +102,8 @@ async Task DriveBrowserAsync(string webSocketUrl)
         Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
     }
 
-    Console.WriteLine("Pausing 2 seconds to view results");
-    await Task.Delay(TimeSpan.FromSeconds(2));
+    Console.WriteLine("Pausing 3 seconds to view results");
+    await Task.Delay(TimeSpan.FromSeconds(3));
 
     await driver.StopAsync();
 }
@@ -114,7 +114,7 @@ List<SourceActions> GenerateSendKeysToElementActionList(SharedReference elementR
     PointerInputSource mouse = builder.CreatePointerInputSource(PointerType.Mouse);
     KeyInputSource keyboard = builder.CreateKeyInputSource();
     builder.AddAction(mouse.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(elementReference))))
-        .AddAction(mouse.CreatePointerDown())
+        .AddAction(mouse.CreatePointerDown(PointerButton.Left))
         .AddAction(mouse.CreatePointerUp());
     foreach (char character in keysToSend)
     {
