@@ -192,8 +192,14 @@ public abstract class BrowserLauncher
                 this.launcherPort = FindFreePort();
             }
 
+            string browserLauncherFullPath = Path.Combine(this.launcherPath, this.launcherExecutableName);
+            if (!File.Exists(browserLauncherFullPath))
+            {
+                throw new BrowserLauncherNotFoundException($"Could not find browser launcher executable '{browserLauncherFullPath}'");
+            }
+
             this.launcherProcess = new Process();
-            this.launcherProcess.StartInfo.FileName = Path.Combine(this.launcherPath, this.launcherExecutableName);
+            this.launcherProcess.StartInfo.FileName = browserLauncherFullPath;
             this.launcherProcess.StartInfo.Arguments = this.CommandLineArguments;
             this.launcherProcess.StartInfo.UseShellExecute = false;
             this.launcherProcess.StartInfo.CreateNoWindow = this.hideCommandPromptWindow;
