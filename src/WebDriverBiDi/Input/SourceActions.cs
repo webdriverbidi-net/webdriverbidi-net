@@ -10,6 +10,10 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Base class for input actions.
 /// </summary>
+[JsonDerivedType(typeof(KeySourceActions))]
+[JsonDerivedType(typeof(PointerSourceActions))]
+[JsonDerivedType(typeof(WheelSourceActions))]
+[JsonDerivedType(typeof(NoneSourceActions))]
 public abstract class SourceActions
 {
     private readonly string id = Guid.NewGuid().ToString();
