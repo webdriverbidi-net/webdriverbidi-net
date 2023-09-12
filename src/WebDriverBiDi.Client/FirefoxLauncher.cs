@@ -79,14 +79,6 @@ public class FirefoxLauncher : BrowserLauncher
             firefoxOptions["binary"] = this.BrowserExecutableLocation;
         }
 
-        // Preference is required to enable Input module via bidi. Can be
-        // removed when feature is enabled by default in the stable channel
-        // shipping version of Firefox.
-        Dictionary<string, object> prefs = new()
-        {
-            { "remote.experimental.enabled", true },
-        };
-        firefoxOptions["prefs"] = prefs;
         firefoxOptions["log"] = new Dictionary<string, object>()
         {
             { "level", "error" },
