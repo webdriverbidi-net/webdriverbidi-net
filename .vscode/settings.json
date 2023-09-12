@@ -6,6 +6,7 @@
         "Bidi",
         "chromedriver",
         "geckodriver",
+        "Hankaku",
         "htmlcollection",
         "Newtonsoft",
         "nodelist",
@@ -14,6 +15,7 @@
         "weakmap",
         "weakset",
         "webdriverbidi",
-        "worklet"
+        "worklet",
+        "Zenkaku"
     ]
 }
