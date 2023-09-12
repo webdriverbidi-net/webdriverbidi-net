@@ -686,7 +686,7 @@ public class TransportTests
             BypassStop = false,
             BypassDataSend = false,
             DataTimeout = TimeSpan.FromMilliseconds(250),
-            DataSendDelay = TimeSpan.FromMilliseconds(500)
+            DataSendDelay = TimeSpan.FromMilliseconds(1500)
         };
         connection.DataSendStarting += (sender, e) =>
         {
