@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class PrintCommandResultTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserialize()
     {
         string json = @"{ ""data"": ""some print data"" }";
-        PrintCommandResult? result = JsonConvert.DeserializeObject<PrintCommandResult>(json);
+        PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Data, Is.EqualTo("some print data"));
     }
@@ -18,13 +24,13 @@ public class PrintCommandResultTests
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonConvert.DeserializeObject<PrintCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<PrintCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
         string json = @"{ ""data"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<PrintCommandResult>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<PrintCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }
