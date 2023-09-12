@@ -14,14 +14,14 @@ using WebDriverBiDi.Input;
 // Path to the directory containing the browser launcher executables.
 // We use the WebDriver Classic browser drivers (chromedriver, geckodriver, etc.)
 // as browser launchers.
-string browserLauncherDirectory = "/Users/james.evans/Downloads";
+string browserLauncherDirectory = string.Empty;
 
 // The level at which to log to the console in this demo app. Adjust this
 // to control how verbose the logging is.
 WebDriverBiDiLogLevel logReportingLevel = WebDriverBiDiLogLevel.Debug;
 
 // Select the browser type for which to run this demo.
-BrowserType testBrowserType = BrowserType.Firefox;
+BrowserType testBrowserType = BrowserType.Chrome;
 
 // Optionally select the location of the browser executable to use.
 // The empty string will launch the browser executable from its default
