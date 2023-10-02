@@ -3,14 +3,15 @@ namespace WebDriverBiDi.TestUtilities;
 using Newtonsoft.Json;
 using WebDriverBiDi.Protocol;
 
-public class TestCommand : CommandParameters<TestCommandResult>
+public class TestCommandParameters : CommandParameters<TestCommandResult>
 {
-    private readonly string parameterName = "parameterValue";
+    private readonly string parameterName;
     private readonly string commandName;
 
-    public TestCommand(string commandName)
+    public TestCommandParameters(string commandName, string parameterValue = "parameterValue")
     {
         this.commandName = commandName;
+        this.parameterName = parameterValue;
     }
 
     public override string MethodName => this.commandName;
