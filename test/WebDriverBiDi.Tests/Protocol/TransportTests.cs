@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Protocol;
 
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TestUtilities;
 using PinchHitter;
@@ -70,7 +69,7 @@ public class TransportTests
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
         });
-        transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
+        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
     }
 
     [Test]
@@ -107,7 +106,7 @@ public class TransportTests
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
         });
-        transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
+        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
         var actualResult = transport.GetCommandResponse(1);
         Assert.Multiple(() =>
         {
@@ -132,7 +131,7 @@ public class TransportTests
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" }, ""extraDataName"": ""extraDataValue"" }");
         });
-        transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
+        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
         var actualResult = transport.GetCommandResponse(1);
         Assert.Multiple(() =>
         {
@@ -162,7 +161,7 @@ public class TransportTests
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         });
-        transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
+        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
         var actualResult = transport.GetCommandResponse(1);
         Assert.Multiple(() =>
         {
@@ -200,7 +199,7 @@ public class TransportTests
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
         });
-        transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
+        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
         Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
    }
 
