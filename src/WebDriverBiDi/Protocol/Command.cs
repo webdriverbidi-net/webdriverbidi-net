@@ -114,7 +114,7 @@ public class Command
     /// </summary>
     /// <param name="timeout">The timeout to wait for the command to complete.</param>
     /// <returns><see langword="true"/> if the command completes before the timeout; otherwise <see langword="false"/>.</returns>
-    public async Task<bool> WaitForCompletion(TimeSpan timeout)
+    public async Task<bool> WaitForCompletionAsync(TimeSpan timeout)
     {
         Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, Task.Delay(timeout)).ConfigureAwait(false);
         return completedTask == this.taskCompletionSource.Task;
