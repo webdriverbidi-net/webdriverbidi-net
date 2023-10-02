@@ -8,9 +8,10 @@ public class TestCommandParameters : CommandParameters<TestCommandResult>
     private string parameterValue = "parameterValue";
     private readonly string commandName;
 
-    public TestCommandParameters(string commandName)
+    public TestCommandParameters(string commandName, string parameterValue = "parameterValue")
     {
         this.commandName = commandName;
+        this.parameterName = parameterValue;
     }
 
     [JsonIgnore]
