@@ -1,13 +1,8 @@
 namespace WebDriverBiDi.Protocol;
 
-<<<<<<< HEAD
-using System.Text.Json;
-=======
->>>>>>> main
 using Newtonsoft.Json.Linq;
 using TestUtilities;
 using PinchHitter;
-using WebDriverBiDi.BrowsingContext;
 
 [TestFixture]
 public class TransportTests
