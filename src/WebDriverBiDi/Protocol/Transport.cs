@@ -137,7 +137,7 @@ public class Transport
     public virtual async Task<CommandResult> SendCommandAndWaitAsync(CommandParameters command)
     {
         long commandId = await this.SendCommandAsync(command).ConfigureAwait(false);
-        this.WaitForCommandCompleteAsync(commandId, this.commandWaitTimeout);
+        await this.WaitForCommandCompleteAsync(commandId, this.commandWaitTimeout);
         return this.GetCommandResponse(commandId);
     }
 
@@ -162,12 +162,13 @@ public class Transport
     }
 
     /// <summary>
-    /// Waits for a command with the given ID to complete.
+    /// Asynchronously waits for a command with the given ID to complete.
     /// </summary>
     /// <param name="commandId">The ID of the command for which to wait for completion.</param>
     /// <param name="waitTimeout">The timeout describing how long to wait for the command to complete.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is invalid or if the command times out.</exception>
-    public virtual void WaitForCommandCompleteAsync(long commandId, TimeSpan waitTimeout)
+    public virtual async Task WaitForCommandCompleteAsync(long commandId, TimeSpan waitTimeout)
     {
         if (!this.pendingCommands.ContainsKey(commandId))
         {
@@ -175,7 +176,7 @@ public class Transport
         }
         else
         {
-            if (!this.pendingCommands[commandId].SynchronizationEvent.Wait(waitTimeout))
+            if (!await this.pendingCommands[commandId].WaitForCompletion(waitTimeout).ConfigureAwait(false))
             {
                 throw new WebDriverBiDiException($"Timed out waiting for response for command id {commandId}");
             }
@@ -362,16 +363,16 @@ public class Transport
                 {
                     if (message.Deserialize(executedCommand.ResponseType, this.options) is CommandResponseMessage response)
                     {
-                        executedCommand.Result = response.Result;
-                        executedCommand.Result.AdditionalData = response.AdditionalData;
-                    }
+                        CommandResult commandResult = response.Result;
+                        commandResult.AdditionalData = response.AdditionalData;
+                        executedCommand.Result = commandResult;
+                   }
                 }
                 catch (Exception ex)
                 {
                     executedCommand.ThrownException = new WebDriverBiDiException($"Response did not contain properly formed JSON for response type (response JSON:{message})", ex);
                 }
 
-                executedCommand.SynchronizationEvent.Set();
                 return true;
             }
         }
@@ -392,7 +393,6 @@ public class Transport
                 if (errorMessage.CommandId.HasValue && this.pendingCommands.TryGetValue(errorMessage.CommandId.Value, out Command? executedCommand))
                 {
                     executedCommand.Result = errorMessage.GetErrorResponseData();
-                    executedCommand.SynchronizationEvent.Set();
                 }
                 else
                 {

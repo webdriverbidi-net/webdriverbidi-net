@@ -16,7 +16,7 @@ public class Command
 {
     private readonly CommandParameters commandData;
     private readonly long commandId;
-    private readonly ManualResetEventSlim synchronizationEvent = new(false);
+    private readonly TaskCompletionSource<CommandResult> taskCompletionSource = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Command" /> class.
@@ -60,20 +60,63 @@ public class Command
     public Type ResponseType => this.commandData.ResponseType;
 
     /// <summary>
-    /// Gets a synchronization object used to wait for completion of the command.
-    /// </summary>
-    [JsonIgnore]
-    public ManualResetEventSlim SynchronizationEvent => this.synchronizationEvent;
-
-    /// <summary>
     /// Gets or sets the result of the command.
     /// </summary>
     [JsonIgnore]
-    public CommandResult? Result { get; set; }
+    public CommandResult? Result
+    {
+        get
+        {
+            if (this.taskCompletionSource.Task.IsCompleted && !this.taskCompletionSource.Task.IsFaulted)
+            {
+                return this.taskCompletionSource.Task.Result;
+            }
+
+            return null;
+        }
+
+        set
+        {
+            if (value is not null)
+            {
+                this.taskCompletionSource.SetResult(value);
+            }
+        }
+    }
 
     /// <summary>
     /// Gets or sets the exception thrown during execution of the command, if any.
     /// </summary>
     [JsonIgnore]
-    public Exception? ThrownException { get; set; }
+    public Exception? ThrownException
+    {
+        get
+        {
+            if (this.taskCompletionSource.Task.IsFaulted)
+            {
+                return this.taskCompletionSource.Task.Exception.InnerException;
+            }
+
+            return null;
+        }
+
+        set
+        {
+            if (value is not null)
+            {
+                this.taskCompletionSource.SetException(value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Waits for the command to complete or until the specified timeout elapses.
+    /// </summary>
+    /// <param name="timeout">The timeout to wait for the command to complete.</param>
+    /// <returns><see langword="true"/> if the command completes before the timeout; otherwise <see langword="false"/>.</returns>
+    public async Task<bool> WaitForCompletion(TimeSpan timeout)
+    {
+        Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, Task.Delay(timeout)).ConfigureAwait(false);
+        return completedTask == this.taskCompletionSource.Task;
+    }
 }
