@@ -169,7 +169,7 @@ public class Transport
         }
         else
         {
-            if (!await this.pendingCommands[commandId].WaitForCompletion(waitTimeout).ConfigureAwait(false))
+            if (!await this.pendingCommands[commandId].WaitForCompletionAsync(waitTimeout).ConfigureAwait(false))
             {
                 throw new WebDriverBiDiException($"Timed out waiting for response for command id {commandId}");
             }
