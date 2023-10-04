@@ -62,7 +62,7 @@ public class Command
     /// <summary>
     /// Gets or sets the result of the command.
     /// </summary>
-    public CommandResult? Result
+    public virtual CommandResult? Result
     {
         get
         {
@@ -83,7 +83,7 @@ public class Command
     /// <summary>
     /// Gets or sets the exception thrown during execution of the command, if any.
     /// </summary>
-    public Exception? ThrownException
+    public virtual Exception? ThrownException
     {
         get
         {
@@ -109,7 +109,7 @@ public class Command
     /// </summary>
     /// <param name="timeout">The timeout to wait for the command to complete.</param>
     /// <returns><see langword="true"/> if the command completes before the timeout; otherwise <see langword="false"/>.</returns>
-    public async Task<bool> WaitForCompletionAsync(TimeSpan timeout)
+    public virtual async Task<bool> WaitForCompletionAsync(TimeSpan timeout)
     {
         // Task.WhenAny returns when any of the tasks passed in completes, and
         // returns the task that completes first. If that task is the task from
@@ -122,7 +122,7 @@ public class Command
     /// <summary>
     /// Cancels the task used to wait for completion of this command.
     /// </summary>
-    public void Cancel()
+    public virtual void Cancel()
     {
         this.taskCompletionSource.SetCanceled();
     }

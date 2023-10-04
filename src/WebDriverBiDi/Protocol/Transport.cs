@@ -75,7 +75,7 @@ public class Transport
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task ConnectAsync(string websocketUri)
+    public virtual async Task ConnectAsync(string websocketUri)
     {
         if (this.isConnected)
         {
@@ -109,7 +109,7 @@ public class Transport
     /// Asynchronously disconnects from the remote end web socket.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public async Task DisconnectAsync()
+    public virtual async Task DisconnectAsync()
     {
         // Steps in the disconnect process:
         // 1. Close the pending command collection to further addition of commands.
@@ -151,7 +151,7 @@ public class Transport
     /// </summary>
     /// <typeparam name="T">The type of data to be returned in the event.</typeparam>
     /// <param name="eventName">The name of the event.</param>
-    public void RegisterEventMessage<T>(string eventName)
+    public virtual void RegisterEventMessage<T>(string eventName)
     {
         this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
     }

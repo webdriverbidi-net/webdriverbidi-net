@@ -34,7 +34,7 @@ public class PendingCommandCollection
     /// Thrown if the collection is no longer accepting commands, or the collection already
     /// contains a command with the ID of the command being added.
     /// </exception>
-    public void AddPendingCommand(Command command)
+    public virtual void AddPendingCommand(Command command)
     {
         this.commandAdditionSemaphore.Wait();
         try
@@ -61,7 +61,7 @@ public class PendingCommandCollection
     /// <param name="commandId">The ID of the command to remove.</param>
     /// <param name="removedCommand">The command object removed from the collection.</param>
     /// <returns><see langword="true"/> if a command with the specified ID exists in the collection to be removed; otherwise, <see langword="false"/>.</returns>
-    public bool RemovePendingCommand(long commandId, out Command removedCommand)
+    public virtual bool RemovePendingCommand(long commandId, out Command removedCommand)
     {
         return this.pendingCommands.TryRemove(commandId, out removedCommand);
     }
@@ -72,7 +72,7 @@ public class PendingCommandCollection
     /// <exception cref="WebDriverBiDiException">
     /// Thrown if the collection has not been closed to the addition of new commands.
     /// </exception>
-    public void Clear()
+    public virtual void Clear()
     {
         if (this.isAcceptingCommands)
         {
@@ -90,7 +90,7 @@ public class PendingCommandCollection
     /// <summary>
     /// Closes the collection, disallowing addition of any further commands to it.
     /// </summary>
-    public void Close()
+    public virtual void Close()
     {
         this.commandAdditionSemaphore.Wait();
         this.isAcceptingCommands = false;

@@ -203,7 +203,7 @@ public class Driver
     /// Registers a module for use with this driver.
     /// </summary>
     /// <param name="module">The module object.</param>
-    public void RegisterModule(Module module)
+    public virtual void RegisterModule(Module module)
     {
         this.modules[module.ModuleName] = module;
     }
@@ -214,7 +214,7 @@ public class Driver
     /// <typeparam name="T">A module object which is a subclass of <see cref="Module"/>.</typeparam>
     /// <param name="moduleName">The name of the module to return.</param>
     /// <returns>The protocol module object.</returns>
-    public T GetModule<T>(string moduleName)
+    public virtual T GetModule<T>(string moduleName)
         where T : Module
     {
         if (!this.modules.ContainsKey(moduleName))
