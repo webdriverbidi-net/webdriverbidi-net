@@ -1,3 +1,5 @@
+using System.Reflection.Metadata.Ecma335;
+
 namespace WebDriverBiDi.TestUtilities;
 
 using System.Threading.Tasks;
@@ -8,7 +10,7 @@ public class TestTransport : Transport
 {
     private TimeSpan messageProcessingDelay = TimeSpan.Zero;
 
-    public TestTransport(TimeSpan commandWaitTimeout, Connection connection) : base(commandWaitTimeout, connection)
+    public TestTransport(Connection connection) : base(connection)
     {
     }
 
@@ -20,18 +22,18 @@ public class TestTransport : Transport
 
     public CommandResult? CustomReturnValue { get; set; }
 
-    public bool AddTestCommand(Command testPendingCommand)
-    {
-        return this.AddPendingCommand(testPendingCommand);
-    }
-
-    public override async Task<CommandResult> SendCommandAndWaitAsync(CommandParameters command)
+    public override async Task<Command> SendCommandAsync(CommandParameters commandParameters)
     {
         if (this.ReturnCustomValue)
         {
-            return this.CustomReturnValue!;
+            Command returnedCommand = new Command(LastCommandId, commandParameters)
+            {
+                Result = this.CustomReturnValue
+            };
+
+            return returnedCommand;
         }
 
-        return await base.SendCommandAndWaitAsync(command);
+        return await base.SendCommandAsync(commandParameters);
     }
 }

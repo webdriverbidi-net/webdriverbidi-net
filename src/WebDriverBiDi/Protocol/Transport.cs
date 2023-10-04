@@ -5,19 +5,20 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using System.Collections.Concurrent;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 /// <summary>
 /// The transport object used for serializing and deserializing JSON data used in the WebDriver Bidi protocol.
+/// It uses a <see cref="Connection"/> object to communicate with the remote end, and does no further processing
+/// of the objects serialized or deserialized. Consumers of this class are expected to handle things like awaiting
+/// the response of a WebDriver BiDi command message.
 /// </summary>
 public class Transport
 {
-    private readonly ConcurrentDictionary<long, Command> pendingCommands = new();
     private readonly Connection connection;
-    private readonly TimeSpan commandWaitTimeout;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
+    private PendingCommandCollection pendingCommands = new();
     private Dispatcher<string> incomingMessageQueue = new();
     private Dispatcher<EventMessage> eventDispatcher = new();
     private long nextCommandId = 0;
@@ -27,27 +28,16 @@ public class Transport
     /// Initializes a new instance of the <see cref="Transport"/> class.
     /// </summary>
     public Transport()
-        : this(Timeout.InfiniteTimeSpan)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Transport"/> class with a given command timeout.
-    /// </summary>
-    /// <param name="commandWaitTimeout">The timeout used to wait for execution of commands.</param>
-    public Transport(TimeSpan commandWaitTimeout)
-        : this(commandWaitTimeout, new Connection())
+        : this(new Connection())
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Transport"/> class with a given command timeout and connection.
     /// </summary>
-    /// <param name="commandWaitTimeout">The timeout used to wait for execution of commands.</param>
     /// <param name="connection">The connection used to communicate with the protocol remote end.</param>
-    public Transport(TimeSpan commandWaitTimeout, Connection connection)
+    public Transport(Connection connection)
     {
-        this.commandWaitTimeout = commandWaitTimeout;
         this.connection = connection;
         this.incomingMessageQueue.ItemDispatched += this.OnIncomingMessageDispatched;
         this.eventDispatcher.ItemDispatched += this.OnEventDispatched;
@@ -92,6 +82,11 @@ public class Transport
             throw new WebDriverBiDiException($"The transport is already connected to {this.connection.ConnectedUrl}; you must disconnect before connecting to another URL");
         }
 
+        if (!this.pendingCommands.IsAcceptingCommands)
+        {
+            this.pendingCommands = new PendingCommandCollection();
+        }
+
         if (!this.incomingMessageQueue.IsDispatching)
         {
             this.incomingMessageQueue = new Dispatcher<string>();
@@ -116,6 +111,19 @@ public class Transport
     /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task DisconnectAsync()
     {
+        // Steps in the disconnect process:
+        // 1. Close the pending command collection to further addition of commands.
+        // 2. Stop the connection from receiving further communication traffic.
+        // 3. Stop dispatching incoming command responses. Note that the dispatcher
+        //    will attempt to dispatch any pending responses already in the queue.
+        //    Dispatching the pending responses in the queue and processing those
+        //    responses  will also remove those commands from the pending command
+        //    collection.
+        // 4. Stop dispatching incoming event messages. Note that the dispatcher will
+        //    attempt to dispatch any pending event messages already in the queue.
+        // 5. Clear the pending command collection. This will also cancel any tasks
+        //    associated with the remaining pending commands.
+        this.pendingCommands.Close();
         await this.connection.StopAsync().ConfigureAwait(false);
         this.incomingMessageQueue.StopDispatching();
         this.eventDispatcher.StopDispatching();
@@ -124,82 +132,18 @@ public class Transport
     }
 
     /// <summary>
-    /// Asynchronously send a command to the remote end and waits for a response.
-    /// </summary>
-    /// <param name="command">The command settings object containing all data required to execute the command.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task<CommandResult> SendCommandAndWaitAsync(CommandParameters command)
-    {
-        long commandId = await this.SendCommandAsync(command).ConfigureAwait(false);
-        await this.WaitForCommandCompleteAsync(commandId, this.commandWaitTimeout);
-        return this.GetCommandResponse(commandId);
-    }
-
-    /// <summary>
     /// Asynchronously sends a command to the remote end.
     /// </summary>
-    /// <param name="command">The command settings object containing all data required to execute the command.</param>
+    /// <param name="commandData">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
-    public virtual async Task<long> SendCommandAsync(CommandParameters command)
+    public virtual async Task<Command> SendCommandAsync(CommandParameters commandData)
     {
         long commandId = Interlocked.Increment(ref this.nextCommandId);
-        Command executionData = new(commandId, command);
-        if (!this.AddPendingCommand(executionData))
-        {
-            throw new WebDriverBiDiException($"Could not add command with id {executionData.CommandId}, as id already exists");
-        }
-
-        await this.connection.SendDataAsync(JsonConvert.SerializeObject(executionData)).ConfigureAwait(false);
-        return executionData.CommandId;
-    }
-
-    /// <summary>
-    /// Asynchronously waits for a command with the given ID to complete.
-    /// </summary>
-    /// <param name="commandId">The ID of the command for which to wait for completion.</param>
-    /// <param name="waitTimeout">The timeout describing how long to wait for the command to complete.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiException">Thrown if the command ID is invalid or if the command times out.</exception>
-    public virtual async Task WaitForCommandCompleteAsync(long commandId, TimeSpan waitTimeout)
-    {
-        if (!this.pendingCommands.ContainsKey(commandId))
-        {
-            throw new WebDriverBiDiException($"Unknown command id {commandId}");
-        }
-        else
-        {
-            if (!await this.pendingCommands[commandId].WaitForCompletionAsync(waitTimeout).ConfigureAwait(false))
-            {
-                throw new WebDriverBiDiException($"Timed out waiting for response for command id {commandId}");
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets the result of the command.
-    /// </summary>
-    /// <param name="commandId">The ID of the command for which to get the response.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiException">Thrown if the command result could not be retrieved, or if the command result is not valid.</exception>
-    public virtual CommandResult GetCommandResponse(long commandId)
-    {
-        if (this.pendingCommands.TryRemove(commandId, out Command? command))
-        {
-            if (command.Result is null)
-            {
-                if (command.ThrownException is null)
-                {
-                    throw new WebDriverBiDiException($"Result and thrown exception for command with id {commandId} are both null");
-                }
-
-                throw command.ThrownException;
-            }
-
-            return command.Result;
-        }
-
-        throw new WebDriverBiDiException($"Could not remove command with id {commandId}");
+        Command command = new(commandId, commandData);
+        this.pendingCommands.AddPendingCommand(command);
+        await this.connection.SendDataAsync(JsonConvert.SerializeObject(command)).ConfigureAwait(false);
+        return command;
     }
 
     /// <summary>
@@ -210,16 +154,6 @@ public class Transport
     public void RegisterEventMessage<T>(string eventName)
     {
         this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
-    }
-
-    /// <summary>
-    /// Adds a command to the set of pending commands.
-    /// </summary>
-    /// <param name="executionData">The execution data describing the command to be added.</param>
-    /// <returns><see langword="true"/> if the command was successfully added; otherwise <see langword="false"/>.</returns>
-    protected bool AddPendingCommand(Command executionData)
-    {
-        return this.pendingCommands.TryAdd(executionData.CommandId, executionData);
     }
 
     /// <summary>
@@ -356,7 +290,7 @@ public class Transport
         if (idToken is not null && idToken.Type == JTokenType.Integer)
         {
             long responseId = idToken.Value<long>()!;
-            if (this.pendingCommands.TryGetValue(responseId, out Command? executedCommand))
+            if (this.pendingCommands.RemovePendingCommand(responseId, out Command executedCommand))
             {
                 try
                 {
@@ -387,7 +321,7 @@ public class Transport
             // an exception will be thrown by the JSON serializer, and we can log
             // the malformed response.
             ErrorResponseMessage errorMessage = message.ToObject<ErrorResponseMessage>()!;
-            if (errorMessage.CommandId.HasValue && this.pendingCommands.TryGetValue(errorMessage.CommandId.Value, out Command? executedCommand))
+            if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command executedCommand))
             {
                 executedCommand.Result = errorMessage.GetErrorResponseData();
             }
@@ -412,7 +346,7 @@ public class Transport
         if (eventNameToken is not null && eventNameToken.Type == JTokenType.String)
         {
             string eventName = eventNameToken.Value<string>()!;
-            if (this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
+            if (this.eventMessageTypes.TryGetValue(eventName, out Type eventMessageType))
             {
                 try
                 {

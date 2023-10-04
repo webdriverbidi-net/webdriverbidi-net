@@ -15,7 +15,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
@@ -35,7 +35,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.CaptureScreenshotAsync(new CaptureScreenshotCommandParameters("myContextId"));
@@ -56,7 +56,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.CloseAsync(new CloseCommandParameters("myContextId"));
@@ -76,7 +76,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.CreateAsync(new CreateCommandParameters(CreateType.Tab));
@@ -97,7 +97,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.GetTreeAsync(new GetTreeCommandParameters());
@@ -124,7 +124,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.HandleUserPromptAsync(new HandleUserPromptCommandParameters("myContextId"));
@@ -144,7 +144,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.NavigateAsync(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
@@ -169,7 +169,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.PrintAsync(new PrintCommandParameters("myContextId"));
@@ -190,7 +190,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.ReloadAsync(new ReloadCommandParameters("myContext"));
@@ -215,7 +215,7 @@ public class BrowsingContextModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         var task = module.SetViewportAsync(new SetViewportCommandParameters("myContextId"));
@@ -229,7 +229,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveContextCreatedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -254,7 +254,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveContextDestroyedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -279,7 +279,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveDomContentLoadedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -306,7 +306,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveDownloadWillBeginEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -333,7 +333,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveFragmentNavigatedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -360,7 +360,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveLoadEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -387,7 +387,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationAbortedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -414,7 +414,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationFailedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -441,7 +441,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveNavigationStartedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -468,7 +468,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveUserPromptClosedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -492,7 +492,7 @@ public class BrowsingContextModuleTests
     public void TestCanReceiveUserPromptOpenedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);

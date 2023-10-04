@@ -15,7 +15,7 @@ public class InputModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         InputModule module = new(driver);
 
         var task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"));
@@ -35,7 +35,7 @@ public class InputModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         InputModule module = new(driver);
 
         var task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"));

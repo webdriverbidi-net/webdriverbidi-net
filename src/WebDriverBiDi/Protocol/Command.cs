@@ -66,7 +66,7 @@ public class Command
     {
         get
         {
-            if (this.taskCompletionSource.Task.IsCompleted && !this.taskCompletionSource.Task.IsFaulted)
+            if (this.taskCompletionSource.Task.IsCompleted && !this.taskCompletionSource.Task.IsFaulted && !this.taskCompletionSource.Task.IsCanceled)
             {
                 return this.taskCompletionSource.Task.Result;
             }
@@ -76,10 +76,7 @@ public class Command
 
         set
         {
-            if (value is not null)
-            {
-                this.taskCompletionSource.SetResult(value);
-            }
+            this.taskCompletionSource.SetResult(value!);
         }
     }
 
@@ -114,7 +111,19 @@ public class Command
     /// <returns><see langword="true"/> if the command completes before the timeout; otherwise <see langword="false"/>.</returns>
     public async Task<bool> WaitForCompletionAsync(TimeSpan timeout)
     {
+        // Task.WhenAny returns when any of the tasks passed in completes, and
+        // returns the task that completes first. If that task is the task from
+        // our TaskCompletionSource, the command completed. Otherwise, it timed
+        // out.
         Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, Task.Delay(timeout)).ConfigureAwait(false);
         return completedTask == this.taskCompletionSource.Task;
+    }
+
+    /// <summary>
+    /// Cancels the task used to wait for completion of this command.
+    /// </summary>
+    public void Cancel()
+    {
+        this.taskCompletionSource.SetCanceled();
     }
 }

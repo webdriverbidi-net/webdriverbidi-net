@@ -11,6 +11,9 @@ public class TestCommandResult: CommandResult
     [JsonProperty("value")]
     public string? Value { get; set; }
 
+    [JsonProperty("elapsed")]
+    public double? ElapsedMilliseconds { get; set; }
+
     public void SetIsErrorValue(bool isError)
     {
         this.isError = isError;

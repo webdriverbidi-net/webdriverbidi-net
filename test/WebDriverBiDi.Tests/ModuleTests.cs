@@ -11,8 +11,8 @@ public class ModuleTests
     public void TestContextCreatedEventWithInvalidEventArgsThrows()
     {
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
-        Driver driver = new(transport);
+        Transport transport = new(connection);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
         module.EventInvoked += (object? obj, TestEventArgs e) =>
