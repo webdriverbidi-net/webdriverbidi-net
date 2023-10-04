@@ -16,7 +16,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         var task = driver.Session.StatusAsync(new StatusCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
@@ -39,7 +39,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = new(driver);
 
         var subscribeParameters = new SubscribeCommandParameters();
@@ -61,7 +61,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = new(driver);
 
         var unsubscribeParameters = new UnsubscribeCommandParameters();
@@ -83,7 +83,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = new(driver);
 
         var newCommandParameters = new NewCommandParameters();
@@ -119,7 +119,7 @@ public class SessionModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = new(driver);
 
         var endParameters = new EndCommandParameters();

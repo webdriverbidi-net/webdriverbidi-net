@@ -63,11 +63,11 @@ public class Command
     /// Gets or sets the result of the command.
     /// </summary>
     [JsonIgnore]
-    public CommandResult? Result
+    public virtual CommandResult? Result
     {
         get
         {
-            if (this.taskCompletionSource.Task.IsCompleted && !this.taskCompletionSource.Task.IsFaulted)
+            if (this.taskCompletionSource.Task.IsCompleted && !this.taskCompletionSource.Task.IsFaulted && !this.taskCompletionSource.Task.IsCanceled)
             {
                 return this.taskCompletionSource.Task.Result;
             }
@@ -77,10 +77,7 @@ public class Command
 
         set
         {
-            if (value is not null)
-            {
-                this.taskCompletionSource.SetResult(value);
-            }
+            this.taskCompletionSource.SetResult(value!);
         }
     }
 
@@ -88,7 +85,7 @@ public class Command
     /// Gets or sets the exception thrown during execution of the command, if any.
     /// </summary>
     [JsonIgnore]
-    public Exception? ThrownException
+    public virtual Exception? ThrownException
     {
         get
         {
@@ -114,9 +111,21 @@ public class Command
     /// </summary>
     /// <param name="timeout">The timeout to wait for the command to complete.</param>
     /// <returns><see langword="true"/> if the command completes before the timeout; otherwise <see langword="false"/>.</returns>
-    public async Task<bool> WaitForCompletionAsync(TimeSpan timeout)
+    public virtual async Task<bool> WaitForCompletionAsync(TimeSpan timeout)
     {
+        // Task.WhenAny returns when any of the tasks passed in completes, and
+        // returns the task that completes first. If that task is the task from
+        // our TaskCompletionSource, the command completed. Otherwise, it timed
+        // out.
         Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, Task.Delay(timeout)).ConfigureAwait(false);
         return completedTask == this.taskCompletionSource.Task;
+    }
+
+    /// <summary>
+    /// Cancels the task used to wait for completion of this command.
+    /// </summary>
+    public virtual void Cancel()
+    {
+        this.taskCompletionSource.SetCanceled();
     }
 }

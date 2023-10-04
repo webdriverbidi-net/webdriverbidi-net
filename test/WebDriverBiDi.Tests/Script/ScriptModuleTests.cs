@@ -16,7 +16,7 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         var task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -49,7 +49,7 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         var task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -85,7 +85,7 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
         
         var task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -118,7 +118,7 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         var task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -154,7 +154,7 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         var task = module.GetRealmsAsync(new GetRealmsCommandParameters());
@@ -188,7 +188,7 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         var task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
@@ -203,7 +203,7 @@ public class ScriptModuleTests
     public void TestCanReceiveRealmCreatedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -228,7 +228,7 @@ public class ScriptModuleTests
     public void TestCanReceiveRealmCreatedEventForNonWindowRealm()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -253,7 +253,7 @@ public class ScriptModuleTests
     public void TestCanReceiveRealmDestroyedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -273,7 +273,7 @@ public class ScriptModuleTests
     public void TestCanReceiveMessageEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -306,7 +306,7 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
         var task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -327,7 +327,7 @@ public class ScriptModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new Transport(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
         
         var task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));

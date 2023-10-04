@@ -15,7 +15,7 @@ public class BrowserModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(new(TimeSpan.FromMilliseconds(500), connection));
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         BrowserModule module = new(driver);
 
         var task = module.CloseAsync(new CloseCommandParameters());

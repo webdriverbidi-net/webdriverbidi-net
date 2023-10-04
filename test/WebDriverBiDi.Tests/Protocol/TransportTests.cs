@@ -8,29 +8,6 @@ using PinchHitter;
 public class TransportTests
 {
     [Test]
-    public async Task TestTransportCanSendCommandAndWaitForResult()
-    {
-        string commandName = "module.command";
-        TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
-        {
-            Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent($@"{{ ""type"": ""success"", ""id"": {e.SentCommandId}, ""result"": {{ ""value"": ""response value"" }} }}");
-        };
-
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        TestCommandParameters command = new(commandName);
-        CommandResult actualResult = await transport.SendCommandAndWaitAsync(command);
-        Assert.Multiple(() =>
-        {
-            Assert.That(actualResult.IsError, Is.False);
-            Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
-        });
-        var convertedResult = actualResult as TestCommandResult;
-        Assert.That(convertedResult!.Value, Is.EqualTo("response value"));
-    }
-
-    [Test]
     public async Task TestTransportCanSendCommand()
     {
         string commandName = "module.command";
@@ -46,77 +23,13 @@ public class TransportTests
         };
 
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.Zero, connection);
+        Transport transport = new(connection);
 
         TestCommandParameters command = new(commandName);
         _ = await transport.SendCommandAsync(command);
 
         var dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
         Assert.That(dataValue, Is.EquivalentTo(expected));
-    }
-
-    [Test]
-    public async Task TestTransportCanSendCommandWithExtensionData()
-    {
-        string commandName = "module.command";
-        Dictionary<string, object?> expectedCommandParameters = new()
-        {
-            { "parameterName", "parameterValue" },
-        };
-        Dictionary<string, object?> expected = new()
-        {
-            { "id", 1 },
-            { "method", commandName },
-            { "params", expectedCommandParameters },
-            { "overflowParameterName", "overflowParameterValue" },
-        };
-
-        TestConnection connection = new();
-        Transport transport = new(TimeSpan.Zero, connection);
-
-        TestCommandParameters command = new(commandName);
-        command.AdditionalData["overflowParameterName"] = "overflowParameterValue";
-        _ = await transport.SendCommandAsync(command);
-
-        var dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
-        Assert.That(dataValue, Is.EquivalentTo(expected));
-    }
-
-    [Test]
-    public async Task TestTransportCanWaitForCommandComplete()
-    {
-        string commandName = "module.command";
-        TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-
-        TestCommandParameters command = new(commandName);
-        long commandId = await transport.SendCommandAsync(command);
-        _ = Task.Run(() => 
-        {
-            Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
-        });
-        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
-    }
-
-    [Test]
-    public async Task TestTransportWaitForCommandCompleteWillTimeout()
-    {
-        string commandName = "module.command";
-        TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(10), connection);
-
-        TestCommandParameters command = new(commandName);
-        long commandId = await transport.SendCommandAsync(command);
-        Assert.That(() => transport.WaitForCommandCompleteAsync(1, TimeSpan.FromMilliseconds(50)), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Timed out"));
-    }
-
-    [Test]
-    public void TestTransportWaitForCommandCompleteWillErrorForInvalidId()
-    {
-        TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(10), connection);
-        Assert.That(() => transport.WaitForCommandCompleteAsync(1, TimeSpan.FromMilliseconds(50)), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Unknown command id"));
     }
 
     [Test]
@@ -124,20 +37,20 @@ public class TransportTests
     {
         string commandName = "module.command";
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
 
-        TestCommandParameters command = new(commandName);
-        long commandId = await transport.SendCommandAsync(command);
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
         });
-        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
-        var actualResult = transport.GetCommandResponse(1);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
+        var actualResult = command.Result;
         Assert.Multiple(() =>
         {
-            Assert.That(actualResult.IsError, Is.False);
+            Assert.That(actualResult!.IsError, Is.False);
             Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
         });
         var convertedResult = actualResult as TestCommandResult;
@@ -149,20 +62,20 @@ public class TransportTests
     {
         string commandName = "module.command";
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
 
-        TestCommandParameters command = new(commandName);
-        long commandId = await transport.SendCommandAsync(command);
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" }, ""extraDataName"": ""extraDataValue"" }");
         });
-        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
-        var actualResult = transport.GetCommandResponse(1);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
+        var actualResult = command.Result;
         Assert.Multiple(() =>
         {
-            Assert.That(actualResult.IsError, Is.False);
+            Assert.That(actualResult!.IsError, Is.False);
             Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
         });
         var convertedResult = actualResult as TestCommandResult;
@@ -179,20 +92,20 @@ public class TransportTests
     {
         string commandName = "module.command";
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
 
-        TestCommandParameters command = new(commandName);
-        long commandId = await transport.SendCommandAsync(command);
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         });
-        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
-        var actualResult = transport.GetCommandResponse(1);
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
+        var actualResult = command.Result;
         Assert.Multiple(() =>
         {
-            Assert.That(actualResult.IsError, Is.True);
+            Assert.That(actualResult!.IsError, Is.True);
             Assert.That(actualResult, Is.InstanceOf<ErrorResult>());
         });
         var convertedResponse = actualResult as ErrorResult;
@@ -205,41 +118,37 @@ public class TransportTests
     }
 
     [Test]
-    public void TestTransportGetResponseWillErrorForInvalidId()
-    {
-        TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Could not remove command"));
-    }
-
-    [Test]
     public async Task TestTransportGetResponseWithThrownException()
     {
         string commandName = "module.command";
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
 
-        TestCommandParameters command = new(commandName);
-        long commandId = await transport.SendCommandAsync(command);
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
         _ = Task.Run(() => 
         {
             Task.Delay(TimeSpan.FromMilliseconds(50));
             connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
         });
-        await transport.WaitForCommandCompleteAsync(1, TimeSpan.FromSeconds(250));
-        Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
+        Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
    }
 
     [Test]
-    public async Task TestTransportGetResponseWithNullResultAndThrownException()
+    public async Task TestTransportLeavesCommandResultAndThrownExceptionNullWithoutResponse()
     {
         string commandName = "module.command";
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
 
-        TestCommandParameters command = new(commandName);
-        long commandId = await transport.SendCommandAsync(command);
-        Assert.That(() => transport.GetCommandResponse(1), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Result and thrown exception for command with id 1 are both null"));
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
+        Assert.Multiple(() =>
+        {
+            Assert.That(command.Result, Is.Null);
+            Assert.That(command.ThrownException, Is.Null);
+        });
     }
 
     [Test]
@@ -250,7 +159,7 @@ public class TransportTests
         ManualResetEvent syncEvent = new(false);
 
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.EventReceived += (object? sender, EventReceivedEventArgs e) => {
             receivedName = e.EventName;
@@ -275,7 +184,7 @@ public class TransportTests
         ManualResetEvent syncEvent = new(false);
 
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.ErrorEventReceived += (object? sender, ErrorReceivedEventArgs e) => {
             receivedData = e.ErrorData;
             syncEvent.Set();
@@ -299,7 +208,7 @@ public class TransportTests
         ManualResetEvent syncEvent = new(false);
 
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (object? sender, UnknownMessageReceivedEventArgs e) =>
         {
             receivedData = e.Message;
@@ -318,7 +227,7 @@ public class TransportTests
     {
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.LogMessage += (sender, e) =>
         {
             logs.Add(e);
@@ -338,7 +247,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.LogMessage += (sender, e) =>
         {
             logs.Add(e);
@@ -362,7 +271,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -384,7 +293,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -406,7 +315,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -428,7 +337,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -450,7 +359,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -473,7 +382,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = new();
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -504,7 +413,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = new();
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -535,7 +444,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = new();
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -565,7 +474,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -587,7 +496,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -609,7 +518,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.UnknownMessageReceived += (sender, e) =>
         {
             loggedEvent = e.Message;
@@ -632,7 +541,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = new();
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.UnknownMessageReceived += (sender, e) =>
         {
@@ -681,19 +590,9 @@ public class TransportTests
     public async Task TestCannotConnectWhenAlreadyConnected()
     {
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync($"ws://localhost:1234");
         Assert.That(async () => await transport.ConnectAsync($"ws://localhost:5678"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.StartsWith($"The transport is already connected to ws://localhost:1234"));
-    }
-
-    [Test]
-    public void TestCanDetectExistingCommandId()
-    {
-        CommandParameters command = new TestCommandParameters("test.command");
-        TestTransport transport = new(TimeSpan.FromMilliseconds(100), new TestConnection());
-        long commandId = transport.LastTestCommandId + 1;
-        transport.AddTestCommand(new Command(commandId, command));
-        Assert.That(async () => await transport.SendCommandAsync(command), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("id already exists"));
     }
 
     [Test]
@@ -719,7 +618,7 @@ public class TransportTests
             syncEvent.Set();
         };
 
-        Transport transport = new(TimeSpan.FromMilliseconds(250), connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync($"ws://localhost:{server.Port}");
         bool connectionEventRaised = connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(connectionEventRaised, Is.True);
@@ -745,7 +644,7 @@ public class TransportTests
         ManualResetEvent syncEvent = new(false);
 
         TestConnection connection = new();
-        TestTransport transport = new(TimeSpan.FromMilliseconds(100), connection)
+        TestTransport transport = new(connection)
         {
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
         };
@@ -784,7 +683,7 @@ public class TransportTests
         };
 
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.Zero, connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync("ws://example.com:1234");
 
         TestCommandParameters command = new(commandName);

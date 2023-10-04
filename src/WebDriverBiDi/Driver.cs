@@ -19,6 +19,7 @@ using WebDriverBiDi.Session;
 /// </summary>
 public class Driver
 {
+    private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
     private readonly Dictionary<string, Module> modules = new();
 
@@ -26,16 +27,29 @@ public class Driver
     /// Initializes a new instance of the <see cref="Driver" /> class.
     /// </summary>
     public Driver()
-        : this(new Transport())
+        : this(Timeout.InfiniteTimeSpan, new Transport())
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Driver" /> class with the specified <see cref="Transport" />.
+    /// Initializes a new instance of the <see cref="Driver" /> class with the specified
+    /// default command wait timeout.
     /// </summary>
-    /// <param name="transport">The protocol transport object used to communicate with the browser.</param>
-    public Driver(Transport transport)
+    /// <param name="defaultCommandWaitTimeout">The default timeout to wait for a command to complete.</param>
+    public Driver(TimeSpan defaultCommandWaitTimeout)
+        : this(defaultCommandWaitTimeout, new Transport())
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Driver" /> class with the specified
+    /// default command wait timeout and <see cref="Transport" />.
+    /// </summary>
+    /// <param name="defaultCommandWaitTimeout">The default timeout to wait for a command to complete.</param>
+    /// <param name="transport">The protocol transport object used to communicate with the browser.</param>
+    public Driver(TimeSpan defaultCommandWaitTimeout, Transport transport)
+    {
+        this.defaultCommandWaitTimeout = defaultCommandWaitTimeout;
         this.transport = transport;
         this.transport.EventReceived += this.OnTransportEventReceived;
         this.transport.ErrorEventReceived += this.OnTransportErrorEventReceived;
@@ -125,7 +139,8 @@ public class Driver
     }
 
     /// <summary>
-    /// Asynchronously sends a command to the remote end of the WebDriver Bidi protocol and waits for a response.
+    /// Asynchronously sends a command to the remote end of the WebDriver Bidi protocol and waits for the
+    /// default command timeout.
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="command">The object containing settings for the command, including parameters.</param>
@@ -134,7 +149,38 @@ public class Driver
     public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command)
         where T : CommandResult
     {
-        CommandResult result = await this.transport.SendCommandAndWaitAsync(command).ConfigureAwait(false) ?? throw new WebDriverBiDiException("Received null response from transport for SendCommandAndWait");
+        return await this.ExecuteCommandAsync<T>(command, this.defaultCommandWaitTimeout).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously sends a command to the remote end of the WebDriver Bidi protocol and waits for a response.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the result of the command.</typeparam>
+    /// <param name="command">The object containing settings for the command, including parameters.</param>
+    /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if an error occurs during the execution of the command.</exception>
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command, TimeSpan commandTimeout)
+        where T : CommandResult
+    {
+        Command sentCommand = await this.transport.SendCommandAsync(command).ConfigureAwait(false);
+        bool commandCompleted = await sentCommand.WaitForCompletionAsync(commandTimeout).ConfigureAwait(false);
+        if (!commandCompleted)
+        {
+            throw new WebDriverBiDiException($"Timed out executing command {command.MethodName} after ${commandTimeout.TotalMilliseconds} milliseconds");
+        }
+
+        if (sentCommand.Result is null)
+        {
+            if (sentCommand.ThrownException is null)
+            {
+                throw new WebDriverBiDiException($"Result and thrown exception for command {command.MethodName} with id {sentCommand.CommandId} are both null");
+            }
+
+            throw sentCommand.ThrownException;
+        }
+
+        CommandResult result = sentCommand.Result;
         if (result.IsError)
         {
             if (result is not ErrorResult errorResponse)
@@ -157,7 +203,7 @@ public class Driver
     /// Registers a module for use with this driver.
     /// </summary>
     /// <param name="module">The module object.</param>
-    public void RegisterModule(Module module)
+    public virtual void RegisterModule(Module module)
     {
         this.modules[module.ModuleName] = module;
     }
@@ -168,7 +214,7 @@ public class Driver
     /// <typeparam name="T">A module object which is a subclass of <see cref="Module"/>.</typeparam>
     /// <param name="moduleName">The name of the module to return.</param>
     /// <returns>The protocol module object.</returns>
-    public T GetModule<T>(string moduleName)
+    public virtual T GetModule<T>(string moduleName)
         where T : Module
     {
         if (!this.modules.ContainsKey(moduleName))

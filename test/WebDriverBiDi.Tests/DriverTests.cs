@@ -17,52 +17,56 @@ public class DriverTests
     [Test]
     public async Task CanExecuteCommand()
     {
-        string sentData;
-        ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
         connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            sentData = e.DataSent;
-            syncEvent.Set();
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""command result value"" } }");
         };
 
-        Transport transport = new(TimeSpan.FromMilliseconds(1500), connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync("ws://localhost:5555");
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(1500), transport);
 
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
-        var task = Task.Run(() => driver.ExecuteCommandAsync<TestCommandResult>(command));
-        syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
-
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""command result value"" } }");
-        task.Wait(TimeSpan.FromSeconds(3));
-        Assert.That(task.Result.Value, Is.EqualTo("command result value"));
+        var result = await driver.ExecuteCommandAsync<TestCommandResult>(command);
+        Assert.That(result.Value, Is.EqualTo("command result value"));
     }
 
     [Test]
     public async Task CanExecuteCommandWithError()
     {
-        ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
         connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            syncEvent.Set();
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         };
 
-        Transport transport = new(TimeSpan.FromMilliseconds(1500), connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync("ws://localhost:5555");
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(1500), transport);
 
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
-        Assert.That(() =>
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("'unknown command' error executing command module.command: This is a test error message"));
+    }
+
+    [Test]
+    public async Task CanExecuteCommandThatReturnsThrownExceptionThrows()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            var task = Task.Run(() => driver.ExecuteCommandAsync<TestCommandResult>(command));
-            syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
-            task.Wait(TimeSpan.FromSeconds(3));
-        }, Throws.InstanceOf<AggregateException>().With.InnerException.TypeOf<WebDriverBiDiException>().With.Message.Contains("'unknown command' error executing command module.command: This is a test error message"));
+            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
+        };
+
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:5555");
+        Driver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+
+        string commandName = "module.command";
+        TestCommandParameters command = new(commandName);
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
     }
 
     [Test]
@@ -71,9 +75,9 @@ public class DriverTests
         ErrorResult? response = null;
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync("ws://localhost:5555");
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.UnexpectedErrorReceived += (object? sender, ErrorReceivedEventArgs e) =>
         {
             response = e.ErrorData;
@@ -100,9 +104,9 @@ public class DriverTests
 
         string eventName = "module.event";
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync("ws://localhost:5555");
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
         driver.EventReceived += (sender, e) =>
         {
@@ -132,11 +136,11 @@ public class DriverTests
 
         string eventName = "module.event";
         TestConnection connection = new();
-        TestTransport transport = new(TimeSpan.FromMilliseconds(500), connection)
+        TestTransport transport = new(connection)
         {
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
         };
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         await driver.StartAsync("ws://localhost:5555");
         driver.RegisterEvent<TestEventArgs>(eventName);
         driver.EventReceived += (sender, e) =>
@@ -166,9 +170,9 @@ public class DriverTests
         ManualResetEvent syncEvent = new(false);
 
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync("ws://localhost:5555");
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.UnknownMessageReceived += (sender, e) =>
         {
             receivedMessage = e.Message;
@@ -188,9 +192,9 @@ public class DriverTests
         ManualResetEvent syncEvent = new(false);
 
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
+        Transport transport = new(connection);
         await transport.ConnectAsync("ws://localhost:5555");
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.UnknownMessageReceived += (sender, e) =>
         {
             receivedMessage = e.Message;
@@ -207,8 +211,8 @@ public class DriverTests
     public async Task TestModuleAvailability()
     {
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
-        Driver driver = new(transport);
+        Transport transport = new(connection);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         await driver.StartAsync("ws://localhost:5555");
         try
         {
@@ -235,8 +239,8 @@ public class DriverTests
         DateTime testStart = DateTime.UtcNow;
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(100), connection);
-        Driver driver = new(transport);
+        Transport transport = new(connection);
+        Driver driver = new(TimeSpan.FromMilliseconds(100), transport);
         driver.LogMessage += (sender, e) =>
         {
             logs.Add(e);
@@ -256,8 +260,8 @@ public class DriverTests
     public void TestCanRegisterModule()
     {
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
-        Driver driver = new(transport);
+        Transport transport = new(connection);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterModule(new TestProtocolModule(driver));
         Assert.That(driver.GetModule<TestProtocolModule>("protocol"), Is.InstanceOf<TestProtocolModule>());
     }
@@ -266,8 +270,8 @@ public class DriverTests
     public void TestGettingInvalidModuleNameThrows()
     {
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
-        Driver driver = new(transport);
+        Transport transport = new(connection);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         Assert.That(() => driver.GetModule<TestProtocolModule>("protocol"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Module 'protocol' is not registered with this driver"));
     }
 
@@ -275,8 +279,8 @@ public class DriverTests
     public void TestGettingInvalidModuleTypeThrows()
     {
         TestConnection connection = new();
-        Transport transport = new(TimeSpan.FromMilliseconds(500), connection);
-        Driver driver = new(transport);
+        Transport transport = new(connection);
+        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterModule(new TestProtocolModule(driver));
         Assert.That(() => driver.GetModule<SessionModule>("protocol"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Module 'protocol' is registered with this driver, but the module object is not of type WebDriverBiDi.Session.SessionModule"));
     }
@@ -284,12 +288,19 @@ public class DriverTests
     [Test]
     public void TestReceivingNullValueFromSendingCommandThrows()
     {
-        TestTransport transport = new(TimeSpan.FromMilliseconds(250), new TestConnection())
+        TestTransport transport = new(new TestConnection())
         {
             ReturnCustomValue = true
         };
-        Driver driver = new(transport);
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Received null response from transport for SendCommandAndWait"));
+        Driver driver = new(TimeSpan.FromMilliseconds(250), transport);
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Result and thrown exception for command test.command with id 0 are both null"));
+    }
+
+    [Test]
+    public void TestExecutingCommandWillThrowWhenTimeout()
+    {
+        Driver driver = new(TimeSpan.Zero, new Transport(new TestConnection()));
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Timed out executing command test.command"));
     }
 
     [Test]
@@ -297,12 +308,12 @@ public class DriverTests
     {
         TestCommandResult result = new();
         result.SetIsErrorValue(true);
-        TestTransport transport = new(TimeSpan.FromMilliseconds(250), new TestConnection())
+        TestTransport transport = new(new TestConnection())
         {
             ReturnCustomValue = true,
             CustomReturnValue = result
         };
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(250), transport);
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert error response from transport for SendCommandAndWait to ErrorResult"));
     }
 
@@ -310,12 +321,12 @@ public class DriverTests
     public void TestReceivingInvalidResultTypeFromSendingCommandThrows()
     {
         TestCommandResultInvalid result = new();
-        TestTransport transport = new(TimeSpan.FromMilliseconds(250), new TestConnection())
+        TestTransport transport = new(new TestConnection())
         {
             ReturnCustomValue = true,
             CustomReturnValue = result
         };
-        Driver driver = new(transport);
+        Driver driver = new(TimeSpan.FromMilliseconds(250), transport);
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert response from transport for SendCommandAndWait to WebDriverBiDi.TestUtilities.TestCommandResult"));
     }
 
@@ -354,7 +365,7 @@ public class DriverTests
         Server server = new();
         server.ClientConnected += connectionHandler;
         server.Start();
-        Driver driver = new();
+        Driver driver = new(TimeSpan.FromSeconds(30));
 
         try
         {
@@ -518,5 +529,49 @@ public class DriverTests
             await driver.StopAsync();
             server.Stop();
         }
+    }
+
+    [Test]
+    public async Task CanExecuteParallelCommands()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
+        {
+            Task.Run(() =>
+            {
+                DateTime start = DateTime.Now;
+                if (e.SentCommandName!.Contains("delay"))
+                {
+                    Task.Delay(250).Wait();
+                }
+
+                TimeSpan elapsed = DateTime.Now - start;
+                connection.RaiseDataReceivedEvent(@$"{{ ""type"": ""success"", ""id"": {e.SentCommandId}, ""result"": {{ ""value"": ""command result value for {e.SentCommandName}"", ""elapsed"": {elapsed.TotalMilliseconds} }} }}");
+            });
+       };
+
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost:5555");
+        Driver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+
+        string delayCommandName = "module.delayCommand";
+        TestCommandParameters delayCommand = new(delayCommandName);
+
+        string commandName = "module.command";
+        TestCommandParameters command = new(commandName);
+
+        Task<TestCommandResult>[] parallelTasks = new[]
+        {
+            driver.ExecuteCommandAsync<TestCommandResult>(delayCommand),
+            driver.ExecuteCommandAsync<TestCommandResult>(command),
+        };
+
+        int indexOfFirstFinishedTask = Task.WaitAny(parallelTasks);
+        bool allTasksCompleted = Task.WaitAll(parallelTasks, TimeSpan.FromSeconds(1));
+        Assert.That(allTasksCompleted, Is.True);
+        Assert.That(indexOfFirstFinishedTask, Is.EqualTo(1));
+        Assert.That(parallelTasks[0].Result.Value, Is.EqualTo($"command result value for {delayCommandName}"));
+        Assert.That(parallelTasks[0].Result.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(250));
+        Assert.That(parallelTasks[1].Result.Value, Is.EqualTo($"command result value for {commandName}"));
     }
 }
