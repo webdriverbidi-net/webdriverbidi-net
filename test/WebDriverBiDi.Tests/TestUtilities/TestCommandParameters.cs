@@ -17,6 +17,14 @@ public class TestCommandParameters : CommandParameters<TestCommandResult>
     [JsonIgnore]
     public override string MethodName => this.commandName;
 
+<<<<<<< HEAD
     [JsonPropertyName("parameterName")]
     public string ParameterName { get => this.parameterName; set => this.parameterName = value; }
 }
+=======
+    public override Type ResponseType => typeof(CommandResponseMessage<TestCommandResult>);
+
+    [JsonProperty("parameterName")]
+    public string ParameterName => this.parameterName;
+}
+>>>>>>> main

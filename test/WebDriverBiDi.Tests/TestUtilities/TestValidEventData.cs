@@ -11,3 +11,4 @@ public class TestValidEventData
 
     public string Name => this.name;
 }
+
