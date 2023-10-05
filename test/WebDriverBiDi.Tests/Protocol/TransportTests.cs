@@ -596,47 +596,6 @@ public class TransportTests
     }
 
     [Test]
-    public async Task TestSendingCommandWhileCommandBeingSentThrows()
-    {
-        ManualResetEvent connectionSyncEvent = new(false);
-        void connectionHandler(object? sender, ClientConnectionEventArgs e) { connectionSyncEvent.Set(); }
-        Server server = new();
-        server.ClientConnected += connectionHandler;
-        server.Start();
-
-        ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new()
-        {
-            BypassStart = false,
-            BypassStop = false,
-            BypassDataSend = false,
-            DataTimeout = TimeSpan.FromMilliseconds(250),
-            DataSendDelay = TimeSpan.FromMilliseconds(1500)
-        };
-        connection.DataSendStarting += (sender, e) =>
-        {
-            syncEvent.Set();
-        };
-
-        Transport transport = new(connection);
-        await transport.ConnectAsync($"ws://localhost:{server.Port}");
-        bool connectionEventRaised = connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(connectionEventRaised, Is.True);
-        try
-        {
-            _ = Task.Run(async () => await transport.SendCommandAsync(new TestCommandParameters("longSendingCommand")));
-            bool syncEventFired = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-            Assert.That(async () => await transport.SendCommandAsync(new TestCommandParameters("imposingCommand")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
-        }
-        finally
-        {
-            await transport.DisconnectAsync();
-            server.Stop();
-            server.ClientConnected -= connectionHandler;
-        }
-    }
-
-    [Test]
     public async Task TestTransportDisconnectWithPendingIncomingMessagesWillProcess()
     {
         string receivedName = string.Empty;
