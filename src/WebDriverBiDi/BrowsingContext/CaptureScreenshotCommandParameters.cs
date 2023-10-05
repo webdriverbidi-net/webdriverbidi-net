@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScreenshotCommandResult>
 {
     private string browsingContextId;
+    private ImageFormat? format;
     private ClipRectangle? clip;
 
     /// <summary>
@@ -36,6 +37,12 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     /// </summary>
     [JsonProperty("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+
+    /// <summary>
+    /// Gets or sets the format of the screenshot image.
+    /// </summary>
+    [JsonProperty("format", NullValueHandling = NullValueHandling.Ignore)]
+    public ImageFormat? Format { get => this.format; set => this.format = value; }
 
     /// <summary>
     /// Gets or sets the clip rectangle for the screenshot, if any.
