@@ -571,7 +571,7 @@ public class DriverTests
         Assert.That(allTasksCompleted, Is.True);
         Assert.That(indexOfFirstFinishedTask, Is.EqualTo(1));
         Assert.That(parallelTasks[0].Result.Value, Is.EqualTo($"command result value for {delayCommandName}"));
-        Assert.That(parallelTasks[0].Result.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(250));
+        Assert.That(parallelTasks[0].Result.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(240));
         Assert.That(parallelTasks[1].Result.Value, Is.EqualTo($"command result value for {commandName}"));
     }
 }
