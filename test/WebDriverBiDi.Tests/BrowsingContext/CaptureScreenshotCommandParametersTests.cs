@@ -210,4 +210,100 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(sharedReferenceObject!["sharedId"]!.Value<string>(), Is.EqualTo("myElementSharedId"));
         });
     }
+
+    [Test]
+    public void TestCanSerializeWithDefaultFormatParameter()
+    {
+        CaptureScreenshotCommandParameters properties = new("myContextId")
+        {
+            Format = new ImageFormat()
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized, Contains.Key("format"));
+            Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
+            var formatObject = serialized["format"]!.Value<JObject>();
+            Assert.That(formatObject, Has.Count.EqualTo(1));
+            Assert.That(formatObject, Contains.Key("type"));
+            Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(formatObject["type"]!.Value<string>(), Is.EqualTo("image/png"));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeWithNonDefaultFormatParameter()
+    {
+        CaptureScreenshotCommandParameters properties = new("myContextId")
+        {
+            Format = new ImageFormat()
+            {
+                Type = "image/jpeg"
+            }
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized, Contains.Key("format"));
+            Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
+            var formatObject = serialized["format"]!.Value<JObject>();
+            Assert.That(formatObject, Has.Count.EqualTo(1));
+            Assert.That(formatObject, Contains.Key("type"));
+            Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(formatObject["type"]!.Value<string>(), Is.EqualTo("image/jpeg"));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeWithNonDefaultFormatParameterIncludingQuality()
+    {
+        CaptureScreenshotCommandParameters properties = new("myContextId")
+        {
+            Format = new ImageFormat()
+            {
+                Type = "image/jpeg",
+                Quality = 0.5
+            }
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized, Contains.Key("format"));
+            Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
+            var formatObject = serialized["format"]!.Value<JObject>();
+            Assert.That(formatObject, Has.Count.EqualTo(2));
+            Assert.That(formatObject, Contains.Key("type"));
+            Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(formatObject["type"]!.Value<string>(), Is.EqualTo("image/jpeg"));
+            Assert.That(formatObject, Contains.Key("quality"));
+            Assert.That(formatObject!["quality"]!.Type, Is.EqualTo(JTokenType.Float));
+            Assert.That(formatObject["quality"]!.Value<double>(), Is.EqualTo(0.5));
+        });
+    }
+
+    [Test]
+    public void TestImageFormatQualityParameterOutsideValidRangeThrows()
+    {
+        ImageFormat format = new();
+
+        // Also test that Quality property can be explicitly set to null.
+        format.Quality = null;
+        Assert.That(() => format.Quality = -.01, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Quality must be between 0 and 1 inclusive."));
+        Assert.That(() => format.Quality = 1.01, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Quality must be between 0 and 1 inclusive."));
+    }
 }

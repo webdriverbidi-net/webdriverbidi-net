@@ -20,8 +20,6 @@ public class PointerAction
     private ulong? twist;
     private double? altitudeAngle;
     private double? azimuthAngle;
-    private long? tiltX;
-    private long? tiltY;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PointerAction"/> class.
@@ -84,67 +82,52 @@ public class PointerAction
     }
 
     /// <summary>
-    /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device. If omitted, defaults to 0.0.
+    /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device.
+    /// Must be between 0 and 1.5707963267948966 (pi / 2). If omitted, defaults to 0.0.
     /// </summary>
     [JsonPropertyName("altitudeAngle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double? AltitudeAngle { get => this.altitudeAngle; set => this.altitudeAngle = value; }
-
-    /// <summary>
-    /// Gets or sets the azimuth angle (angle from "north," or a line directly up from the point of contact)
-    /// of the pointer device. If omitted, defaults to 0.0.
-    /// </summary>
-    [JsonPropertyName("azimuthAngle")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double? AzimuthAngle { get => this.azimuthAngle; set => this.azimuthAngle = value; }
-
-    /// <summary>
-    /// Gets or sets the angle, in degrees, of the pointer device from left to right from the vertical.
-    /// Must be between -90 and 90; if omitted, defaults to 0.
-    /// </summary>
-    [JsonPropertyName("tiltX")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public long? TiltX
+    public double? AltitudeAngle
     {
         get
         {
-            return this.tiltX;
+            return this.altitudeAngle;
         }
 
         set
         {
-            if (value < -90 || value > 90)
+            if (value < 0 || value > Math.PI / 2)
             {
-                throw new WebDriverBiDiException("TiltX value must be between -90 and 90 inclusive");
+                throw new WebDriverBiDiException("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive");
             }
 
-            this.tiltX = value;
+            this.altitudeAngle = value;
         }
     }
 
     /// <summary>
-    /// Gets or sets the angle, in degrees, of the pointer device away from the user from the vertical.
-    /// Must be between -90 and 90; if omitted, defaults to 0.
+    /// Gets or sets the azimuth angle (angle from "north," or a line directly up from the point of contact)
+    /// of the pointer device. Must be between 0 and 6.283185307179586 (2 *pi) If omitted, defaults to 0.0.
     /// </summary>
-    [JsonPropertyName("tiltY")]
+    [JsonPropertyName("azimuthAngle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public long? TiltY
+    [JsonConverter(typeof(FixedDoubleJsonConverter))]
+    public double? AzimuthAngle
     {
         get
         {
-            return this.tiltY;
+            return this.azimuthAngle;
         }
 
         set
         {
-            if (value < -90 || value > 90)
+            if (value < 0 || value > Math.PI * 2)
             {
-                throw new WebDriverBiDiException("TiltY value must be between -90 and 90 inclusive");
+                throw new WebDriverBiDiException("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive");
             }
 
-            this.tiltY = value;
+            this.azimuthAngle = value;
         }
     }
 }

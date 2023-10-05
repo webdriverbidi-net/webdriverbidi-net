@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using System;
 using System.Text.Json.Serialization;
 
 /// <summary>
@@ -14,6 +13,7 @@ using System.Text.Json.Serialization;
 public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScreenshotCommandResult>
 {
     private string browsingContextId;
+    private ImageFormat? format;
     private ClipRectangle? clip;
 
     /// <summary>
@@ -36,6 +36,13 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     /// </summary>
     [JsonPropertyName("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+
+    /// <summary>
+    /// Gets or sets the format of the screenshot image.
+    /// </summary>
+    [JsonPropertyName("format")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ImageFormat? Format { get => this.format; set => this.format = value; }
 
     /// <summary>
     /// Gets or sets the clip rectangle for the screenshot, if any.

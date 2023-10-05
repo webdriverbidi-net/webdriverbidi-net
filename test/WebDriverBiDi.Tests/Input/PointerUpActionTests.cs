@@ -140,43 +140,15 @@ public class PointerUpActionTests
     }
 
     [Test]
-    public void TestCanSerializeParametersWithOptionalTiltProperties()
+    public void TestSettingAnglePropertiesToInvalidValueThrows()
     {
-        PointerUpAction properties = new(0)
-        {
-            TiltX = 1,
-            TiltY = 1,
-        };
-        string json = JsonSerializer.Serialize(properties);
-        JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
+        PointerDownAction properties = new(0);
         Assert.Multiple(() =>
         {
-            Assert.That(serialized, Contains.Key("type"));
-            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerUp"));
-            Assert.That(serialized, Contains.Key("button"));
-            Assert.That(serialized["button"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["button"]!.Value<long>(), Is.EqualTo(0));
-            Assert.That(serialized, Contains.Key("tiltX"));
-            Assert.That(serialized["tiltX"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["tiltX"]!.Value<long>(), Is.EqualTo(1));
-            Assert.That(serialized, Contains.Key("tiltY"));
-            Assert.That(serialized["tiltY"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["tiltY"]!.Value<long>(), Is.EqualTo(1));
-        });
-    }
-
-    [Test]
-    public void TestSettingTiltPropertiesToInvalidValueThrows()
-    {
-        PointerUpAction properties = new(0);
-        Assert.Multiple(() =>
-        {
-            Assert.That(() => properties.TiltX = -91, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("TiltX value must be between -90 and 90 inclusive"));
-            Assert.That(() => properties.TiltX = 91, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("TiltX value must be between -90 and 90 inclusive"));
-            Assert.That(() => properties.TiltY = -91, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("TiltY value must be between -90 and 90 inclusive"));
-            Assert.That(() => properties.TiltY = 91, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("TiltY value must be between -90 and 90 inclusive"));
+            Assert.That(() => properties.AltitudeAngle = -0.01, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
+            Assert.That(() => properties.AltitudeAngle = 1.58, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
+            Assert.That(() => properties.AzimuthAngle = -0.01, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
+            Assert.That(() => properties.AzimuthAngle = 6.29, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
         });
     }
 }
