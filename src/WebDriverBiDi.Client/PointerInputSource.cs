@@ -56,8 +56,6 @@ public class PointerInputSource : InputSource
             action.Twist = additionalProperties.Twist;
             action.AltitudeAngle = additionalProperties.AltitudeAngle;
             action.AzimuthAngle = additionalProperties.AzimuthAngle;
-            action.TiltX = additionalProperties.TiltX;
-            action.TiltY = additionalProperties.TiltY;
         }
 
         return new Action(this.SourceId, action);
@@ -89,8 +87,6 @@ public class PointerInputSource : InputSource
             action.Twist = additionalProperties.Twist;
             action.AltitudeAngle = additionalProperties.AltitudeAngle;
             action.AzimuthAngle = additionalProperties.AzimuthAngle;
-            action.TiltX = additionalProperties.TiltX;
-            action.TiltY = additionalProperties.TiltY;
         }
 
         return new Action(this.SourceId, action);
@@ -123,8 +119,6 @@ public class PointerInputSource : InputSource
             action.Twist = additionalProperties.Twist;
             action.AltitudeAngle = additionalProperties.AltitudeAngle;
             action.AzimuthAngle = additionalProperties.AzimuthAngle;
-            action.TiltX = additionalProperties.TiltX;
-            action.TiltY = additionalProperties.TiltY;
         }
 
         return new Action(this.SourceId, action);
