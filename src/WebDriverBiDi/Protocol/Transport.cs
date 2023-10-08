@@ -250,32 +250,6 @@ public class Transport
                     isProcessed = this.ProcessEventMessage(message);
                 }
             }
-            else
-            {
-                // TODO: Remove this else clause when the browser stable channels
-                // have the message type property implemented.
-                JToken? errorToken = message["error"];
-                if (errorToken is not null && errorToken.Type == JTokenType.String)
-                {
-                    isProcessed = this.ProcessErrorMessage(message);
-                }
-                else
-                {
-                    JToken? idToken = message["id"];
-                    if (idToken is not null && idToken.Type == JTokenType.Integer)
-                    {
-                        isProcessed = this.ProcessCommandResponseMessage(message);
-                    }
-                    else
-                    {
-                        JToken? eventNameToken = message["method"];
-                        if (eventNameToken is not null && eventNameToken.Type == JTokenType.String)
-                        {
-                            isProcessed = this.ProcessEventMessage(message);
-                        }
-                    }
-                }
-            }
         }
 
         if (!isProcessed)
