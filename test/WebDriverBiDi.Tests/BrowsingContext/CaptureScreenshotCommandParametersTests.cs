@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
@@ -50,7 +51,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(clipObject, Has.Count.EqualTo(5));
             Assert.That(clipObject, Contains.Key("type"));
             Assert.That(clipObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(clipObject["type"]!.Value<string>(), Is.EqualTo("viewport"));
+            Assert.That(clipObject["type"]!.Value<string>(), Is.EqualTo("box"));
             Assert.That(clipObject, Contains.Key("x"));
             Assert.That(clipObject!["x"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(clipObject["x"]!.Value<double>(), Is.EqualTo(0.0));
@@ -93,7 +94,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(clipObject, Has.Count.EqualTo(5));
             Assert.That(clipObject, Contains.Key("type"));
             Assert.That(clipObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(clipObject["type"]!.Value<string>(), Is.EqualTo("viewport"));
+            Assert.That(clipObject["type"]!.Value<string>(), Is.EqualTo("box"));
             Assert.That(clipObject, Contains.Key("x"));
             Assert.That(clipObject!["x"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(clipObject["x"]!.Value<double>(), Is.EqualTo(10.0));
@@ -293,6 +294,48 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(formatObject, Contains.Key("quality"));
             Assert.That(formatObject!["quality"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(formatObject["quality"]!.Value<double>(), Is.EqualTo(0.5));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeParametersWithViewportOrigin()
+    {
+        CaptureScreenshotCommandParameters properties = new("myContextId")
+        {
+            Origin = ScreenshotOrigin.Viewport
+        };
+        string json = JsonConvert.SerializeObject(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized, Contains.Key("origin"));
+            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("viewport"));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeParametersWithDocumentOrigin()
+    {
+        CaptureScreenshotCommandParameters properties = new("myContextId")
+        {
+            Origin = ScreenshotOrigin.Document
+        };
+        string json = JsonConvert.SerializeObject(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized, Contains.Key("origin"));
+            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("document"));
         });
     }
 

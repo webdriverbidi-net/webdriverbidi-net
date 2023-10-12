@@ -1,4 +1,4 @@
-// <copyright file="ClipRectangleType.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="ScreenshotOrigin.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -9,18 +9,18 @@ using Newtonsoft.Json;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// The enumerated value of types of clip rectangles.
+/// The enumerated value of origins for screenshot.
 /// </summary>
-[JsonConverter(typeof(EnumValueJsonConverter<ClipRectangleType>))]
-public enum ClipRectangleType
+[JsonConverter(typeof(EnumValueJsonConverter<ScreenshotOrigin>))]
+public enum ScreenshotOrigin
 {
     /// <summary>
-    /// The clip rectangle is relative to the viewport of the browser.
+    /// The origin of the clip rectangle is relative to the viewport of the browser.
     /// </summary>
     Viewport,
 
     /// <summary>
-    /// The clip rectangle is relative to an element.
+    /// The origin of the clip rectangle is relative to document origin.
     /// </summary>
-    Element,
+    Document,
 }

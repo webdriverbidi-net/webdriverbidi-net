@@ -29,7 +29,7 @@ public class BoxClipRectangle : ClipRectangle
     /// <summary>
     /// Gets the type of clip rectangle.
     /// </summary>
-    public override string Type => "viewport";
+    public override string Type => "box";
 
     /// <summary>
     /// Gets or sets the X coordinate of the clip rectangle relative to the left edge of the viewport.
