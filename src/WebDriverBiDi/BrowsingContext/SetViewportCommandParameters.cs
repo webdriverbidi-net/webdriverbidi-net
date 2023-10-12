@@ -14,6 +14,7 @@ public class SetViewportCommandParameters : CommandParameters<EmptyResult>
 {
     private string browsingContextId;
     private Viewport? viewport;
+    private double? devicePixelRatio;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetViewportCommandParameters"/> class.
@@ -43,4 +44,11 @@ public class SetViewportCommandParameters : CommandParameters<EmptyResult>
     [JsonPropertyName("viewport")]
     [JsonInclude]
     public Viewport? Viewport { get => this.viewport; set => this.viewport = value; }
+
+    /// <summary>
+    /// Gets or sets the device pixel ratio of the viewport.
+    /// </summary>
+    [JsonPropertyName("devicePixelRatio")]
+    [JsonInclude]
+    public double? DevicePixelRatio { get => this.devicePixelRatio; set => this.devicePixelRatio = value; }
 }

@@ -15,6 +15,7 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     private string browsingContextId;
     private ImageFormat? format;
     private ClipRectangle? clip;
+    private ScreenshotOrigin? origin;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CaptureScreenshotCommandParameters" /> class.
@@ -50,4 +51,11 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     [JsonPropertyName("clip")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ClipRectangle? Clip { get => this.clip; set => this.clip = value; }
+
+    /// <summary>
+    /// Gets or sets the origin of the clip rectangle for the screenshot, if any.
+    /// </summary>
+    [JsonPropertyName("origin")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ScreenshotOrigin? Origin { get => this.origin; set => this.origin = value; }
 }
