@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 public class CloseCommandParameters : CommandParameters<EmptyResult>
 {
     private string browsingContextId;
+    private bool? promptUnload;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CloseCommandParameters" /> class.
@@ -34,4 +35,10 @@ public class CloseCommandParameters : CommandParameters<EmptyResult>
     /// </summary>
     [JsonProperty("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to prompt for unloading the page when closing the browsing context.
+    /// </summary>
+    [JsonProperty("promptUnload", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? PromptUnload { get => this.promptUnload; set => this.promptUnload = value; }
 }
