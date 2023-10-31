@@ -7,10 +7,24 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/src/WebDriverBiDi.Demo/WebDriverBiDi.Demo.csproj",
+                "${workspaceFolder}/WebDriverBiDi.NET.sln",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test",
+                "${workspaceFolder}/test/WebDriverBidi.Tests",
+                "/p:CollectCoverage=true",
+                "/p:CoverletOutputFormat=lcov",
+                "/p:CoverletOutput=${workspaceFolder}/test/coverage/lcov"
+            ],
+            "isTestCommand": true,
             "problemMatcher": "$msCompile"
         },
         {

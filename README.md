@@ -65,7 +65,8 @@ project should not be viewed as having desirable coding practices.
 [Visual Studio Code](https://code.visualstudio.com/) is the preferred IDE for development of this library.
 It can be used across multiple operating systems, and there should be nothing platform-specific in the
 library or its unit tests that would require platform-specific code. For working with C# code, we recommend
-using the [C# for Visual Studio Code plugin](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp).
+using the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) extension from Microsoft. It includes a Roslyn based code server, and enables running tests from
+within the test pane of VS Code.
 
 The project currently uses [Json.NET](https://www.newtonsoft.com/json) for JSON serialization/deserialization.
 
@@ -84,13 +85,11 @@ integration (CI). Code coverage statistics are generated and gathered by
 [Coverlet](https://www.nuget.org/packages/coverlet.collector/), and uploaded to
 [coveralls.io](https://coveralls.io/github/jimevans/webdriverbidi-net?branch=main). PRs for which
 the code coverage drops from the current percentage on the `main` branch will need to be carefully
-reviewed.
+reviewed. For convenience, a task has been configured to collect code coverage statistics when the
+tests are executed, so to run code coverage locally, you can run the test task from the Command
+Palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>, 
+type `task`, and choose the `test` task).
 
 Some useful plugins in your Visual Studio Code environment for this project are:
-* [.NET Core Test Explorer](https://marketplace.visualstudio.com/items?itemName=formulahendry.dotnet-test-explorer):
-This plugin allows one to execute any or all of the unit tests from within the IDE. By changing the settings
-of the plugin to add <!-- spell-checker: disable -->
-`/p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=../coverage/lcov`<!-- spell-checker: enable -->
-to the test arguments, code coverage data can be collected locally when the tests are executed using the explorer.
-* [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters):
+* [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters:
 This plugin allows visualization of code coverage directly within the IDE.

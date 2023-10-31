@@ -1,5 +1,4 @@
 {
-    "omnisharp.enableRoslynAnalyzers": true,
     "cSpell.words": [
         "arraybuffer",
         "autoconfig",
@@ -17,5 +16,6 @@
         "webdriverbidi",
         "worklet",
         "Zenkaku"
-    ]
+    ],
+    "sarif-viewer.connectToGithubCodeScanning": "off"
 }
