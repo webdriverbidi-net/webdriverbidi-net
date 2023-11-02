@@ -14,7 +14,6 @@ using WebDriverBiDi.Script;
 public class ElementClipRectangle : ClipRectangle
 {
     private SharedReference element;
-    private bool? scrollIntoView;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ElementClipRectangle"/> class.
@@ -39,12 +38,4 @@ public class ElementClipRectangle : ClipRectangle
     [JsonPropertyName("element")]
     [JsonInclude]
     public SharedReference Element { get => this.element; set => this.element = value; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to scroll the element into view before taking the screenshot.
-    /// </summary>
-    [JsonPropertyName("scrollIntoView")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonInclude]
-    public bool? ScrollIntoView { get => this.scrollIntoView; set => this.scrollIntoView = value; }
 }

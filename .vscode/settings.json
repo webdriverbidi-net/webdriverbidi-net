@@ -1,7 +1,9 @@
 {
+    "dotnet.defaultSolution": "WebDriverBiDi.NET.sln",
     "cSpell.words": [
         "arraybuffer",
         "autoconfig",
+        "beforeunload",
         "Bidi",
         "chromedriver",
         "geckodriver",

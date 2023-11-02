@@ -156,6 +156,16 @@ public sealed class BrowsingContextModule : Module
     }
 
     /// <summary>
+    /// Locates nodes within a browsing context.
+    /// </summary>
+    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <returns>The result of the command containing the located nodes, if any.</returns>
+    public async Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters commandParameters)
+    {
+        return await this.Driver.ExecuteCommandAsync<LocateNodesCommandResult>(commandParameters).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Navigates a browsing context to a new URL.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>

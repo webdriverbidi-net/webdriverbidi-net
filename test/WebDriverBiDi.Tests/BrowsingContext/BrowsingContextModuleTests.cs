@@ -135,6 +135,26 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
+    public void TestExecuteLocateNodesCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""nodes"": [{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }] } }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BrowsingContextModule module = new(driver);
+
+        var task = module.LocateNodesAsync(new LocateNodesCommandParameters("myContextId", new CssLocator(".selector")));
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
     public void TestExecuteNavigateCommand()
     {
         TestConnection connection = new();

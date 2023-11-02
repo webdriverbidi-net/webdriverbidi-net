@@ -2,21 +2,20 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "build",
-                "${workspaceFolder}/WebDriverBiDi.NET.sln",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+            "type": "dotnet",
+            "task": "build",
+            "problemMatcher": [
+                "$msCompile"
             ],
-            "problemMatcher": "$msCompile"
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "label": "dotnet: build"
         },
         {
-            "label": "test",
-            "command": "dotnet",
             "type": "process",
+            "command": "dotnet",
             "args": [
                 "test",
                 "${workspaceFolder}/test/WebDriverBidi.Tests",
@@ -24,32 +23,12 @@
                 "/p:CoverletOutputFormat=lcov",
                 "/p:CoverletOutput=${workspaceFolder}/test/coverage/lcov"
             ],
-            "isTestCommand": true,
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
-                "${workspaceFolder}/src/WebDriverBiDi.Demo/WebDriverBiDi.Demo.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/src/WebDriverBiDi.Demo/WebDriverBiDi.Demo.csproj",
-            ],
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "label": "dotnet: test with coverage"
         }
     ]
 }

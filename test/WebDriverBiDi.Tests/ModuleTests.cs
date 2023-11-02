@@ -1,6 +1,5 @@
 namespace WebDriverBiDi;
 
-using Newtonsoft.Json;
 using TestUtilities;
 using WebDriverBiDi.Protocol;
 

@@ -140,6 +140,7 @@ public class CaptureScreenshotCommandParametersTests
     }
 
     [Test]
+<<<<<<< HEAD
     public void TestCanSerializeParametersWithElementClipRectangleWithScrollIntoViewTrue()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
@@ -212,6 +213,8 @@ public class CaptureScreenshotCommandParametersTests
     }
 
     [Test]
+=======
+>>>>>>> main
     public void TestCanSerializeWithDefaultFormatParameter()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId")
