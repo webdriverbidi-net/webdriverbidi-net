@@ -1,7 +1,6 @@
 namespace WebDriverBiDi.Log;
 
 using TestUtilities;
-using WebDriverBiDi.Protocol;
 
 [TestFixture]
 public class LogModuleTests

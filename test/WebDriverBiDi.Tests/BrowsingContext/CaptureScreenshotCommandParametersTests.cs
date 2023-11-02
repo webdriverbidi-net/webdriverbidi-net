@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
