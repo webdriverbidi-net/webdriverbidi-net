@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
 
@@ -11,7 +11,7 @@ public class LocateNodesCommandResultTests
     public void TestCanDeserialize()
     {
         string json = @"{ ""nodes"": [{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }] }";
-        LocateNodesCommandResult? result = JsonConvert.DeserializeObject<LocateNodesCommandResult>(json);
+        LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Nodes, Has.Count.EqualTo(1));
         Assert.That(result!.Nodes[0].SharedId, Is.EqualTo("mySharedId"));
@@ -21,7 +21,7 @@ public class LocateNodesCommandResultTests
     public void TestCanDeserializeWithEmptyResult()
     {
         string json = @"{ ""nodes"": [] }";
-        LocateNodesCommandResult? result = JsonConvert.DeserializeObject<LocateNodesCommandResult>(json);
+        LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Nodes, Has.Count.EqualTo(0));
     }
@@ -30,13 +30,13 @@ public class LocateNodesCommandResultTests
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonConvert.DeserializeObject<LocateNodesCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
         string json = @"{ ""nodes"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<LocateNodesCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

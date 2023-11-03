@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents a locator for locating nodes via CSS selector.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CssLocator : Locator
 {
     private readonly string type = "css";
@@ -27,6 +26,6 @@ public class CssLocator : Locator
     /// <summary>
     /// Gets the type of locator.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public override string Type => this.type;
 }

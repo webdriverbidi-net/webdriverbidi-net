@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
 /// Result for locating nodes using the browserContext.locateNodes command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class LocateNodesCommandResult : CommandResult
 {
     private List<RemoteValue> resultNodes = new();
@@ -29,7 +28,8 @@ public class LocateNodesCommandResult : CommandResult
     /// <summary>
     /// Gets or sets the list of located nodes for serialization purposes.
     /// </summary>
-    [JsonProperty("nodes")]
+    [JsonPropertyName("nodes")]
     [JsonRequired]
+    [JsonInclude]
     internal List<RemoteValue> SerializableNodes { get => this.resultNodes; set => this.resultNodes = value; }
 }

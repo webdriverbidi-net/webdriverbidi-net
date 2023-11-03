@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
 /// Provides parameters for the browsingContext.locateNodes command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommandResult>
 {
     private readonly List<SharedReference> contextNodes = new();
@@ -36,19 +35,20 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.locateNodes";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context in which to locate nodes.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets the locator used to locate nodes.
     /// </summary>
-    [JsonProperty("locator")]
+    [JsonPropertyName("locator")]
     [JsonRequired]
     public Locator Locator { get => this.locator; set => this.locator = value; }
 
@@ -56,37 +56,44 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// Gets or sets the maximum number of nodes to be returned by the command.
     /// When omitted or <see langword="null"/>, the command returns all located nodes.
     /// </summary>
-    [JsonProperty("maxNodeCount", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("maxNodeCount")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? MaxNodeCount { get => this.maxNodeCount; set => this.maxNodeCount = value; }
 
     /// <summary>
     /// Gets or sets the ownership model to use for references to located nodes.
     /// </summary>
-    [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("resultOwnership")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
 
     /// <summary>
     /// Gets or sets the sandbox into which references to located nodes will be placed, if any.
     /// </summary>
-    [JsonProperty("sandbox", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("sandbox")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing located node references.
     /// </summary>
-    [JsonProperty("serializationOptions", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("serializationOptions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
 
     /// <summary>
     /// Gets the list of context nodes within which to locate child nodes.
     /// If empty, nodes will be located from the top-level document.
     /// </summary>
+    [JsonIgnore]
     public List<SharedReference> ContextNodes => this.contextNodes;
 
     /// <summary>
     /// Gets the list of context nodes for serialization purposes.
     /// </summary>
-    [JsonProperty("contextNodes", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("contextNodes")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     internal IList<SharedReference>? SerializableContextNodes
     {
         get
