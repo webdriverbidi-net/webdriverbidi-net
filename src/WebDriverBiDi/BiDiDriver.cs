@@ -1,4 +1,4 @@
-// <copyright file="Driver.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="BiDiDriver.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -17,37 +17,37 @@ using WebDriverBiDi.Session;
 /// <summary>
 /// Object containing commands to drive a browser using the WebDriver Bidi protocol.
 /// </summary>
-public class Driver
+public class BiDiDriver
 {
     private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
     private readonly Dictionary<string, Module> modules = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Driver" /> class.
+    /// Initializes a new instance of the <see cref="BiDiDriver" /> class.
     /// </summary>
-    public Driver()
+    public BiDiDriver()
         : this(Timeout.InfiniteTimeSpan, new Transport())
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Driver" /> class with the specified
+    /// Initializes a new instance of the <see cref="BiDiDriver" /> class with the specified
     /// default command wait timeout.
     /// </summary>
     /// <param name="defaultCommandWaitTimeout">The default timeout to wait for a command to complete.</param>
-    public Driver(TimeSpan defaultCommandWaitTimeout)
+    public BiDiDriver(TimeSpan defaultCommandWaitTimeout)
         : this(defaultCommandWaitTimeout, new Transport())
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Driver" /> class with the specified
+    /// Initializes a new instance of the <see cref="BiDiDriver" /> class with the specified
     /// default command wait timeout and <see cref="Transport" />.
     /// </summary>
     /// <param name="defaultCommandWaitTimeout">The default timeout to wait for a command to complete.</param>
     /// <param name="transport">The protocol transport object used to communicate with the browser.</param>
-    public Driver(TimeSpan defaultCommandWaitTimeout, Transport transport)
+    public BiDiDriver(TimeSpan defaultCommandWaitTimeout, Transport transport)
     {
         this.defaultCommandWaitTimeout = defaultCommandWaitTimeout;
         this.transport = transport;

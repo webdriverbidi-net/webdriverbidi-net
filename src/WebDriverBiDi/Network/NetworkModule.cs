@@ -18,8 +18,8 @@ public sealed class NetworkModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="NetworkModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
-    public NetworkModule(Driver driver)
+    /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
+    public NetworkModule(BiDiDriver driver)
         : base(driver)
     {
         this.RegisterEventInvoker<AuthRequiredEventArgs>("network.authRequired", this.OnAuthRequired);

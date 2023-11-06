@@ -12,14 +12,14 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public abstract class Module
 {
-    private readonly Driver driver;
+    private readonly BiDiDriver driver;
     private readonly Dictionary<string, EventInvoker> eventInvokers = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Module"/> class.
     /// </summary>
     /// <param name="driver">The driver used for communication by the module.</param>
-    protected Module(Driver driver)
+    protected Module(BiDiDriver driver)
     {
         this.driver = driver;
         this.driver.EventReceived += this.OnDriverEventReceived;
@@ -33,7 +33,7 @@ public abstract class Module
     /// <summary>
     /// Gets the driver used for communication by the module.
     /// </summary>
-    protected Driver Driver => this.driver;
+    protected BiDiDriver Driver => this.driver;
 
     /// <summary>
     /// Registers an invoker for a given event.

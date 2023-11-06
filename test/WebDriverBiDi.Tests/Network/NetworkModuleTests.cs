@@ -86,7 +86,7 @@ public class NetworkModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         AddInterceptCommandParameters commandParameters = new()
@@ -113,7 +113,7 @@ public class NetworkModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         var task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"));
@@ -134,7 +134,7 @@ public class NetworkModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         var task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"));
@@ -155,7 +155,7 @@ public class NetworkModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         var task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
@@ -180,7 +180,7 @@ public class NetworkModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         var task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"));
@@ -201,7 +201,7 @@ public class NetworkModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         var task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"));
@@ -222,7 +222,7 @@ public class NetworkModuleTests
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         var task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"));
@@ -241,7 +241,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestConnection connection = new();
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -319,7 +319,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestConnection connection = new();
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -386,7 +386,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestConnection connection = new();
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -451,7 +451,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestConnection connection = new();
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -529,7 +529,7 @@ public class NetworkModuleTests
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
 
         TestConnection connection = new();
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);

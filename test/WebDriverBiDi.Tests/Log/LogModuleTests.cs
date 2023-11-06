@@ -9,7 +9,7 @@ public class LogModuleTests
     public void TestCanReceiveEntryAddedEvent()
     {
         TestConnection connection = new();
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         LogModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -37,7 +37,7 @@ public class LogModuleTests
     public void TestCanReceiveEntryAddedEventForConsoleLogType()
     {
         TestConnection connection = new();
-        Driver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         LogModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);

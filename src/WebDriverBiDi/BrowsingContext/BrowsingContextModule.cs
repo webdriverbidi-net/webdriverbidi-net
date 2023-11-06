@@ -18,8 +18,8 @@ public sealed class BrowsingContextModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowsingContextModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
-    public BrowsingContextModule(Driver driver)
+    /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
+    public BrowsingContextModule(BiDiDriver driver)
         : base(driver)
     {
         this.RegisterEventInvoker<BrowsingContextInfo>("browsingContext.contextCreated", this.OnContextCreated);

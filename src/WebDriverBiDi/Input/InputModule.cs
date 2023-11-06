@@ -18,8 +18,8 @@ public sealed class InputModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="InputModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
-    public InputModule(Driver driver)
+    /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
+    public InputModule(BiDiDriver driver)
         : base(driver)
     {
     }

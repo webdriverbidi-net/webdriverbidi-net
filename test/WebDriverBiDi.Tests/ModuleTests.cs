@@ -11,7 +11,7 @@ public class ModuleTests
     {
         TestConnection connection = new();
         Transport transport = new(connection);
-        Driver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
         module.EventInvoked += (object? obj, TestEventArgs e) =>
