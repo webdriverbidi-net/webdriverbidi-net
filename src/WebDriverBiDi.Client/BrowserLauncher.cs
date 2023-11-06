@@ -175,6 +175,12 @@ public abstract class BrowserLauncher
             return;
         }
 
+        string browserLauncherFullPath = Path.Combine(this.launcherPath, this.launcherExecutableName);
+        if (!File.Exists(browserLauncherFullPath))
+        {
+            throw new BrowserLauncherNotFoundException($"Could not find browser launcher executable '{browserLauncherFullPath}'");
+        }
+
         // A word about the locking mechanism. It's not entirely possible to make
         // atomic the finding of a free port, then using that port as the port for
         // the launcher to listen on. There will always be a race condition between
@@ -190,12 +196,6 @@ public abstract class BrowserLauncher
             if (this.launcherPort == 0)
             {
                 this.launcherPort = FindFreePort();
-            }
-
-            string browserLauncherFullPath = Path.Combine(this.launcherPath, this.launcherExecutableName);
-            if (!File.Exists(browserLauncherFullPath))
-            {
-                throw new BrowserLauncherNotFoundException($"Could not find browser launcher executable '{browserLauncherFullPath}'");
             }
 
             this.launcherProcess = new Process();
