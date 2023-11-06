@@ -41,7 +41,7 @@ finally
 
 async Task DriveBrowserAsync(string webSocketUrl)
 {
-    Driver driver = new();
+    BiDiDriver driver = new();
     driver.LogMessage += OnDriverLogMessage;
     driver.BrowsingContext.NavigationStarted += (sender, e) =>
     {

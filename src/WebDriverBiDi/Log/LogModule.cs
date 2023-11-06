@@ -18,8 +18,8 @@ public sealed class LogModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="LogModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
-    public LogModule(Driver driver)
+    /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
+    public LogModule(BiDiDriver driver)
         : base(driver)
     {
         this.RegisterEventInvoker<LogEntry>("log.entryAdded", this.OnEntryAdded);

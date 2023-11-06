@@ -18,8 +18,8 @@ public sealed class ScriptModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="ScriptModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
-    public ScriptModule(Driver driver)
+    /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
+    public ScriptModule(BiDiDriver driver)
         : base(driver)
     {
         this.RegisterEventInvoker<RealmInfo>("script.realmCreated", this.OnRealmCreated);

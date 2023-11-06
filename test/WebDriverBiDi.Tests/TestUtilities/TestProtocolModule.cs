@@ -5,8 +5,8 @@ public sealed class TestProtocolModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="TestProtocolModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="Driver"/> used in the module commands and events.</param>
-    public TestProtocolModule(Driver driver)
+    /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
+    public TestProtocolModule(BiDiDriver driver)
         : base(driver)
     {
         this.RegisterEventInvoker<TestEventArgs>("protocol.event", this.OnEventInvoked);
