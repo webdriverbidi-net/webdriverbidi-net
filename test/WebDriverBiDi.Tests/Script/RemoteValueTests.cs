@@ -770,7 +770,7 @@ public class RemoteValueTests
     [Test]
     public void TestDeserializingMapRemoteValueWithComplexRemoteValueKeyContainingInternalId()
     {
-        string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""symbol"", ""internalId"": 123 }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
+        string json = @"{ ""type"": ""map"", ""value"": [ [ { ""type"": ""symbol"", ""internalId"": ""123"" }, { ""type"": ""string"", ""value"": ""stringValue"" } ] ] }";
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
@@ -787,8 +787,8 @@ public class RemoteValueTests
         KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
         Assert.Multiple(() =>
         {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<ulong>());
-            Assert.That((ulong)dictionaryItem.Key, Is.EqualTo(123));
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<string>());
+            Assert.That((string)dictionaryItem.Key, Is.EqualTo("123"));
             Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
             Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
         });
@@ -1066,7 +1066,7 @@ public class RemoteValueTests
     [Test]
     public void TestDeserializingWindowRemoteValueWithHandleAndInternalId()
     {
-        string json = @"{ ""type"": ""window"", ""value"": { ""context"": ""myContext"" }, ""handle"": ""myHandle"", ""internalId"": 123 }";
+        string json = @"{ ""type"": ""window"", ""value"": { ""context"": ""myContext"" }, ""handle"": ""myHandle"", ""internalId"": ""123"" }";
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
@@ -1076,7 +1076,7 @@ public class RemoteValueTests
             Assert.That(remoteValue.Handle, Is.Not.Null);
             Assert.That(remoteValue.Handle, Is.EqualTo("myHandle"));
             Assert.That(remoteValue.InternalId, Is.Not.Null);
-            Assert.That(remoteValue.InternalId, Is.EqualTo(123));
+            Assert.That(remoteValue.InternalId, Is.EqualTo("123"));
             Assert.That(remoteValue.Value, Is.TypeOf<WindowProxyProperties>());
         });
     }
@@ -1091,7 +1091,7 @@ public class RemoteValueTests
     [Test]
     public void TestDeserializingWindowRemoteValueWithInvalidHandleTypeThrows()
     {
-        string json = @"{ ""type"": ""window"", ""value"": { ""context"": ""myContext"" }, ""handle"": {}, ""internalId"": 123 }";
+        string json = @"{ ""type"": ""window"", ""value"": { ""context"": ""myContext"" }, ""handle"": {}, ""internalId"": ""123"" }";
         Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
@@ -1184,7 +1184,7 @@ public class RemoteValueTests
     [Test]
     public void TestConvertToRemoteReference()
     {
-        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": 123 }";
+        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": ""123"" }";
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
         Assert.That(remoteValue, Is.Not.Null);
         RemoteReference reference = remoteValue!.ToRemoteReference();
@@ -1194,7 +1194,7 @@ public class RemoteValueTests
     [Test]
     public void TestConvertToRemoteReferenceWithoutHandleThrows()
     {
-        string json = @"{ ""type"": ""window"", ""internalId"": 123 }";
+        string json = @"{ ""type"": ""window"", ""internalId"": ""123"" }";
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
         Assert.Multiple(() =>
         {
@@ -1250,7 +1250,7 @@ public class RemoteValueTests
     [Test]
     public void TestConvertNonNodeRemoteValueToSharedReferenceThrows()
     {
-        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": 123 }";
+        string json = @"{ ""type"": ""window"", ""handle"": ""myHandle"", ""internalId"": ""123"" }";
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
         Assert.Multiple(() =>
         {

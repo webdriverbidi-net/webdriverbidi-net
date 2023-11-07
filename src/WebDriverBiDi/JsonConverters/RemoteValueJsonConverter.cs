@@ -132,11 +132,12 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
         if (jsonObject.TryGetProperty("internalId", out JsonElement internalIdToken))
         {
-            if (!internalIdToken.TryGetUInt64(out ulong internalId))
+            if (internalIdToken.ValueKind != JsonValueKind.String)
             {
-                throw new JsonException($"RemoteValue 'internalId' property, when present, must be an unsigned integer");
+                throw new JsonException($"RemoteValue 'internalId' property, when present, must be a string");
             }
 
+            string? internalId = internalIdToken.GetString();
             result.InternalId = internalId;
         }
 
