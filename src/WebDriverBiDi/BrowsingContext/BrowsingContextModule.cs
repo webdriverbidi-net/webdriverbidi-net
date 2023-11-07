@@ -205,6 +205,16 @@ public sealed class BrowsingContextModule : Module
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Traverses the history entries of the browser.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command.</returns>
+    public async Task<EmptyResult> TraverseHistoryAsync(TraverseHistoryCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
     private void OnContextCreated(EventInfo<BrowsingContextInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
