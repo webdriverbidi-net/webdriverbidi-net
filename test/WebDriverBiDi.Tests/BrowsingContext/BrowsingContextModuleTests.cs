@@ -246,6 +246,26 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
+    public void TestExecuteTraverseHistoryCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += (sender, e) =>
+        {
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            connection.RaiseDataReceivedEvent(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        BrowsingContextModule module = new(driver);
+
+        var task = module.TraverseHistoryAsync(new TraverseHistoryCommandParameters("myContextId", -3));
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
     public void TestCanReceiveContextCreatedEvent()
     {
         TestConnection connection = new();
