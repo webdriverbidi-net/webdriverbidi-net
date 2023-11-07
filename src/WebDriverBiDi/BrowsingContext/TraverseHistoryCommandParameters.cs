@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.traverseHistory command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class TraverseHistoryCommandParameters : CommandParameters<EmptyResult>
 {
     private string browsingContextId;
@@ -30,18 +29,21 @@ public class TraverseHistoryCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.traverseHistory";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context for which to traverse the history.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
+    [JsonInclude]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets the number of entries in the history to traverse in the browser history. Positive
     /// values move forward in the history; negative values move backward in the history.
     /// </summary>
-    [JsonProperty("delta")]
+    [JsonPropertyName("delta")]
+    [JsonInclude]
     public long Delta { get => this.delta; set => this.delta = value; }
 }
