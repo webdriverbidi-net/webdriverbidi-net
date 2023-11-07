@@ -48,7 +48,7 @@ public class RemoteValue
 
     private string valueType;
     private string? handle;
-    private ulong? internalId;
+    private string? internalId;
     private object? valueObject;
     private string? sharedId;
 
@@ -77,7 +77,7 @@ public class RemoteValue
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
     [JsonProperty("internalId")]
-    public ulong? InternalId { get => this.internalId; internal set => this.internalId = value; }
+    public string? InternalId { get => this.internalId; internal set => this.internalId = value; }
 
     /// <summary>
     /// Gets the shared ID of this RemoteValue.
