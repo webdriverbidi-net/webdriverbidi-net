@@ -18,6 +18,20 @@
             "command": "dotnet",
             "args": [
                 "test",
+                "${workspaceFolder}/test/WebDriverBidi.Tests"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "label": "dotnet: test"
+        },
+        {
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "test",
                 "${workspaceFolder}/test/WebDriverBidi.Tests",
                 "/p:CollectCoverage=true",
                 "/p:CoverletOutputFormat=lcov",
