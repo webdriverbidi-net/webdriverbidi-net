@@ -12,6 +12,7 @@
         "Newtonsoft",
         "nodelist",
         "prefs",
+        "stylesheet",
         "typedarray",
         "weakmap",
         "weakset",

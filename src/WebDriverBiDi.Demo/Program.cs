@@ -4,6 +4,9 @@ using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Input;
+using WebDriverBiDi.DemoWebSite;
+
+DemoWebSiteServer demoSiteServer = new();
 
 // To use a specific port, uncomment the line below and modify it to
 // use the desired port.
@@ -12,11 +15,11 @@ using WebDriverBiDi.Input;
 // Path to the directory containing the browser launcher executables.
 // We use the WebDriver Classic browser drivers (chromedriver, geckodriver, etc.)
 // as browser launchers.
-string browserLauncherDirectory = string.Empty;
+string browserLauncherDirectory = "/Users/james.evans/Downloads";
 
 // The level at which to log to the console in this demo app. Adjust this
 // to control how verbose the logging is.
-WebDriverBiDiLogLevel logReportingLevel = WebDriverBiDiLogLevel.Debug;
+WebDriverBiDiLogLevel logReportingLevel = WebDriverBiDiLogLevel.Info;
 
 // Select the browser type for which to run this demo.
 BrowserType testBrowserType = BrowserType.Chrome;
@@ -29,6 +32,7 @@ string browserExecutableLocation = string.Empty;
 BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation);
 try
 {
+    demoSiteServer.Launch();
     await launcher.StartAsync();
     await launcher.LaunchBrowserAsync();
     await DriveBrowserAsync(launcher.WebSocketUrl);
@@ -37,6 +41,7 @@ finally
 {
     await launcher.QuitBrowserAsync();
     await launcher.StopAsync();
+    demoSiteServer.Shutdown();
 }
 
 async Task DriveBrowserAsync(string webSocketUrl)
@@ -59,6 +64,7 @@ async Task DriveBrowserAsync(string webSocketUrl)
     Console.WriteLine($"Is ready? {status.IsReady}");
 
     SubscribeCommandParameters subscribe = new();
+    subscribe.Events.Add("browsingContext.navigationStarted");
     subscribe.Events.Add("browsingContext.load");
     await driver.Session.SubscribeAsync(subscribe);
 
@@ -66,14 +72,14 @@ async Task DriveBrowserAsync(string webSocketUrl)
     string contextId = tree.ContextTree[0].BrowsingContextId;
     Console.WriteLine($"Active context: {contextId}");
 
-    NavigateCommandParameters navigateParams = new(contextId, "https://google.com/")
+    NavigateCommandParameters navigateParams = new(contextId, $"http://localhost:{demoSiteServer.Port}/inputForm.html")
     {
         Wait = ReadinessState.Complete
     };
     NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
     Console.WriteLine($"Performed navigation to {navigation.Url}");
 
-    string functionDefinition = @"() => document.querySelector('*[name=""q""]')";
+    string functionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
     CallFunctionCommandParameters callFunctionParams = new(functionDefinition, new ContextTarget(contextId), true);
     EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
     if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
@@ -87,7 +93,7 @@ async Task DriveBrowserAsync(string webSocketUrl)
         {
             Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
             SharedReference elementReference = scriptResultValue.ToSharedReference();
-            List<SourceActions> actions = GenerateSendKeysToElementActionList(elementReference, "webdriver bidi" + Keys.Enter);
+            List<SourceActions> actions = GenerateSendKeysToElementActionList(elementReference, "Hello WebDriver BiDi" + Keys.Enter);
             PerformActionsCommandParameters actionsParams = new(contextId);
             actionsParams.Actions.AddRange(actions);
             await driver.Input.PerformActionsAsync(actionsParams);
@@ -96,7 +102,7 @@ async Task DriveBrowserAsync(string webSocketUrl)
         {
             Console.WriteLine($"Script result value did not describe a node; returned type {scriptResultValue.Type}");
         }
-   }
+    }
     else if (scriptResult is EvaluateResultException scriptExceptionResult)
     {
         Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");

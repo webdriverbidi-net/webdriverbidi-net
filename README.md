@@ -52,7 +52,7 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are four projects in this repository:
+There are five projects in this repository:
 * src/WebDriverBiDi/WebDriverBiDi.csproj - The main library source code
 * src/WebDriverBiDi.Client/WebDriverBiDi.Client.csproj - A library containing helper methods to
 demonstrate scaffolding required to make the main library useful. This code is not unit tested,
@@ -60,13 +60,19 @@ and should be viewed as a demonstration library only.
 * src/WebDriverBiDi.Demo/WebDriverBiDi.Demo.csproj - A console application used as a "playground"
 for practice using the library. Changes to this project are not canonical at this time, and this
 project should not be viewed as having desirable coding practices.
+* src/WebDriverBiDi.DemoWebSite/WebDriverBiDi.DemoWebSite.csproj - A project that instantiates
+an in-memory web server hosting content against which to test. The default code in the WebDriverBidi.Demo
+project will start this server and use it to demonstrate the use of the library against a site
+running on localhost. This server can be used programmatically, or as a standalone console application,
+but is designed as a demonstration and is explicitly recommended against production use.
 * test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj - The unit tests for the main library
 
 [Visual Studio Code](https://code.visualstudio.com/) is the preferred IDE for development of this library.
 It can be used across multiple operating systems, and there should be nothing platform-specific in the
 library or its unit tests that would require platform-specific code. For working with C# code, we recommend
-using the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) extension from Microsoft. It includes a Roslyn based code server, and enables running tests from
-within the test pane of VS Code.
+using the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) extension
+from Microsoft. It includes a Roslyn based code server, and enables running tests from within the test pane
+of VS Code.
 
 The project currently uses [Json.NET](https://www.newtonsoft.com/json) for JSON serialization/deserialization.
 
@@ -88,7 +94,7 @@ the code coverage drops from the current percentage on the `main` branch will ne
 reviewed. For convenience, a task has been configured to collect code coverage statistics when the
 tests are executed, so to run code coverage locally, you can run the test task from the Command
 Palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>, 
-type `task`, and choose the `test` task).
+choose the `Tasks: Run Task` entry, and choose the `dotnet: test with coverage` task).
 
 Some useful plugins in your Visual Studio Code environment for this project are:
 * [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters:

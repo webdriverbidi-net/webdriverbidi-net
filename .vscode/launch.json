@@ -5,9 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            // Use IntelliSense to find out which attributes exist for C# debugging
-            // Use hover for the description of the existing attributes
-            // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
             "name": "WebDriverBiDi.Demo Launch (console)",
             "type": "coreclr",
             "request": "launch",
@@ -16,6 +13,20 @@
             "program": "${workspaceFolder}/src/WebDriverBiDi.Demo/bin/Debug/net6.0/WebDriverBiDi.Demo.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/WebDriverBiDi.Demo",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "stopAtEntry": false
+        },
+        {
+            "name": "WebDriverBiDi.DemoWebSite Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "dotnet: build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/src/WebDriverBiDi.DemoWebSite/bin/Debug/net6.0/WebDriverBiDi.DemoWebSite.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/WebDriverBiDi.DemoWebSite",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
