@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\WebDriverBiDi\WebDriverBiDi.csproj" />
     <ProjectReference Include="..\WebDriverBiDi.Client\WebDriverBiDi.Client.csproj" />
+    <ProjectReference Include="..\WebDriverBiDi.DemoWebSite\WebDriverBiDi.DemoWebSite.csproj" />
   </ItemGroup>
 
 </Project>

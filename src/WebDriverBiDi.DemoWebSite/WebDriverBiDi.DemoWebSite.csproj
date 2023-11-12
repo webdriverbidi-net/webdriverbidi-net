@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>WebDriverBiDi.DemoWebSite</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+
+  <ItemGroup>
+    <PackageReference Include="PinchHitter" Version="0.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <Content Include="content/**" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Input Form</title>
+    <link rel="stylesheet" href="./style/form.css" />
+  </head>
+  <body>
+    <h1>Form input demo</h1>
+    <form action="./processForm" method="POST" enctype="text/plain">
+      <div class="form-example">
+        <label for="dataToSend">Enter data to send: </label>
+        <input type="text" name="dataToSend" id="dataToSend" required />
+      </div>
+      <div class="form-example">
+        <input type="submit" value="Send!" />
+      </div>
+    </form>
+  </body>
+</html>
