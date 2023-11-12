@@ -298,9 +298,9 @@ public class SetCookieHeaderTests
             Assert.That(valueObject, Contains.Key("value"));
             Assert.That(valueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(valueObject["value"]!.Value<string>(), Is.EqualTo("cookieValue"));
-            Assert.That(serialized, Contains.Key("expires"));
-            Assert.That(serialized["expires"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["expires"]!.Value<string>(), Is.EqualTo(expected));
+            Assert.That(serialized, Contains.Key("expiry"));
+            Assert.That(serialized["expiry"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["expiry"]!.Value<string>(), Is.EqualTo(expected));
         });
     }
 
@@ -341,7 +341,7 @@ public class SetCookieHeaderTests
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""name"": ""cookieName"", ""value"":{ ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100, ""expires"": " + milliseconds + @" }";
+        string json = @"{ ""name"": ""cookieName"", ""value"":{ ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100, ""expiry"": " + milliseconds + @" }";
         Cookie? cookie = JsonConvert.DeserializeObject<Cookie>(json);
         SetCookieHeader header = cookie!.ToSetCookieHeader();
         Assert.Multiple(() =>
