@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "dotnet: build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/WebDriverBiDi.Demo/bin/Debug/net6.0/WebDriverBiDi.Demo.dll",
+            "program": "${workspaceFolder}/src/WebDriverBiDi.Demo/bin/Debug/net8.0/WebDriverBiDi.Demo.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/WebDriverBiDi.Demo",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
@@ -24,7 +24,7 @@
             "request": "launch",
             "preLaunchTask": "dotnet: build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/WebDriverBiDi.DemoWebSite/bin/Debug/net6.0/WebDriverBiDi.DemoWebSite.dll",
+            "program": "${workspaceFolder}/src/WebDriverBiDi.DemoWebSite/bin/Debug/net8.0/WebDriverBiDi.DemoWebSite.dll",
             "args": [],
             "cwd": "${workspaceFolder}/src/WebDriverBiDi.DemoWebSite",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
