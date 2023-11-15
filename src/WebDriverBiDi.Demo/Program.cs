@@ -30,6 +30,7 @@ BrowserType testBrowserType = BrowserType.Chrome;
 string browserExecutableLocation = string.Empty;
 
 BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation);
+launcher.LogMessage += OnDriverLogMessage;
 try
 {
     demoSiteServer.Launch();
