@@ -97,5 +97,5 @@ Palette (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> or <kbd>Cmd</kbd>+<kbd>Sh
 choose the `Tasks: Run Task` entry, and choose the `dotnet: test with coverage` task).
 
 Some useful plugins in your Visual Studio Code environment for this project are:
-* [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters:
+* [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters):
 This plugin allows visualization of code coverage directly within the IDE.
