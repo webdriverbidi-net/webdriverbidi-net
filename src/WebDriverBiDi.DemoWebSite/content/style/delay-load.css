@@ -1,0 +1,8 @@
+div#contentLoaded {
+  background-color: red;
+}
+
+div.page-loaded {
+  background-color: darkgreen;
+  color: white;
+}
