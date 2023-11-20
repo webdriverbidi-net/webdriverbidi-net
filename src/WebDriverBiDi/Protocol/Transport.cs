@@ -240,14 +240,17 @@ public class Transport
                 if (messageType == "success")
                 {
                     isProcessed = this.ProcessCommandResponseMessage(message);
+                    this.Log($"Command response message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
                 else if (messageType == "error")
                 {
                     isProcessed = this.ProcessErrorMessage(message);
+                    this.Log($"Error response message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
                 else if (messageType == "event")
                 {
                     isProcessed = this.ProcessEventMessage(message);
+                    this.Log($"Event message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
             }
         }
@@ -273,7 +276,7 @@ public class Transport
                         CommandResult commandResult = response.Result;
                         commandResult.AdditionalData = response.AdditionalData;
                         executedCommand.Result = commandResult;
-                   }
+                    }
                 }
                 catch (Exception ex)
                 {

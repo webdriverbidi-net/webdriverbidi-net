@@ -76,7 +76,7 @@ public class Command
 
         set
         {
-            this.taskCompletionSource.SetResult(value!);
+            Task.Run(() => this.taskCompletionSource.SetResult(value!)).ConfigureAwait(false);
         }
     }
 

@@ -390,7 +390,11 @@ public class TransportTests
         };
         transport.LogMessage += (sender, e) =>
         {
-            logs.Add(e);
+            if (e.Level > WebDriverBiDiLogLevel.Trace)
+            {
+                logs.Add(e);
+            }
+
             signaler.Signal();
         };
         connection.RaiseDataReceivedEvent(json);
@@ -421,7 +425,11 @@ public class TransportTests
         };
         transport.LogMessage += (sender, e) =>
         {
-            logs.Add(e);
+            if (e.Level > WebDriverBiDiLogLevel.Trace)
+            {
+                logs.Add(e);
+            }
+
             signaler.Signal();
         };
         connection.RaiseDataReceivedEvent(json);
@@ -452,7 +460,11 @@ public class TransportTests
         };
         transport.LogMessage += (sender, e) =>
         {
-            logs.Add(e);
+            if (e.Level > WebDriverBiDiLogLevel.Trace)
+            {
+                logs.Add(e);
+            }
+
             signaler.Signal();
         };
         connection.RaiseDataReceivedEvent(json);
@@ -550,7 +562,11 @@ public class TransportTests
         };
         transport.LogMessage += (sender, e) =>
         {
-            logs.Add(e);
+            if (e.Level > WebDriverBiDiLogLevel.Trace)
+            {
+                logs.Add(e);
+            }
+
             signaler.Signal();
         };
         connection.RaiseDataReceivedEvent(json);
