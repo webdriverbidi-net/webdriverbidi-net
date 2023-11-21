@@ -72,6 +72,13 @@ public static class DemoScenarios
         }
     }
 
+    /// <summary>
+    /// Demonstrates using a preload script to wait for a condition on the page.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task WaitForDelayLoadAsync(BiDiDriver driver, string baseUrl)
     {
         ManualResetEventSlim syncEvent = new(false);
@@ -120,7 +127,10 @@ public static class DemoScenarios
         bool eventTriggered = syncEvent.Wait(TimeSpan.FromSeconds(10));
         Console.WriteLine($"Event triggered from preload script: {eventTriggered}");
 
-        string functionDefinition = @"() => { const element = document.querySelector('div#contentMessage'); return window.getComputedStyle(element).backgroundColor; }";
+        string functionDefinition = @"() => {
+            const element = document.querySelector('div#contentMessage');
+            return window.getComputedStyle(element).backgroundColor;
+        }";
         CallFunctionCommandParameters callFunctionParams = new(functionDefinition, new ContextTarget(contextId), true);
         EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
@@ -131,6 +141,13 @@ public static class DemoScenarios
         }
     }
 
+    /// <summary>
+    /// Demonstrates getting information about the network traffic.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task MonitorNetworkTraffic(BiDiDriver driver, string baseUrl)
     {
         driver.Network.ResponseCompleted += (object? obj, ResponseCompletedEventArgs e) =>
@@ -172,6 +189,13 @@ public static class DemoScenarios
         }
     }
 
+    /// <summary>
+    /// Demonstrates watching for entries in the browser console.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task MonitorBrowserConsole(BiDiDriver driver, string baseUrl)
     {
         driver.Log.EntryAdded += (object? obj, EntryAddedEventArgs e) =>

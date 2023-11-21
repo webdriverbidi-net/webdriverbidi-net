@@ -12,7 +12,7 @@ DemoWebSiteServer demoSiteServer = new();
 // Path to the directory containing the browser launcher executables.
 // We use the WebDriver Classic browser drivers (chromedriver, geckodriver, etc.)
 // as browser launchers.
-string browserLauncherDirectory = "/Users/james.evans/Downloads";
+string browserLauncherDirectory = string.Empty;
 
 // The level at which to log to the console in this demo app. Adjust this
 // to control how verbose the logging is.
@@ -39,10 +39,10 @@ try
     BiDiDriver driver = InitializeDriver();
     await driver.StartAsync(launcher.WebSocketUrl);
 
-    // await DemoScenarios.SubmitFormAsync(driver, baseDemoSiteUrl);
+    await DemoScenarios.SubmitFormAsync(driver, baseDemoSiteUrl);
     // await DemoScenarios.WaitForDelayLoadAsync(driver, baseDemoSiteUrl);
     // await DemoScenarios.MonitorNetworkTraffic(driver, baseDemoSiteUrl);
-    await DemoScenarios.MonitorBrowserConsole(driver, baseDemoSiteUrl);
+    // await DemoScenarios.MonitorBrowserConsole(driver, baseDemoSiteUrl);
 
     Console.WriteLine("Pausing 3 seconds to view results");
     await Task.Delay(TimeSpan.FromSeconds(3));
