@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class AddInterceptCommandResultTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserialize()
     {
         string json = @"{ ""intercept"": ""myInterceptId"" }";
-        AddInterceptCommandResult? result = JsonConvert.DeserializeObject<AddInterceptCommandResult>(json);
+        AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.InterceptId, Is.EqualTo("myInterceptId"));
     }
@@ -18,13 +24,13 @@ public class AddInterceptCommandResultTests
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonConvert.DeserializeObject<AddInterceptCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
         string json = @"{ ""intercept"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<AddInterceptCommandResult>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

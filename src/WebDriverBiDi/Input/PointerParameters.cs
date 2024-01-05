@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents the parameters of a pointer device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PointerParameters
 {
     private PointerType? pointerType;
@@ -18,6 +17,7 @@ public class PointerParameters
     /// <summary>
     /// Gets or sets the type of pointer device.
     /// </summary>
-    [JsonProperty("pointerType", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("pointerType")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PointerType? PointerType { get => this.pointerType; set => this.pointerType = value; }
 }

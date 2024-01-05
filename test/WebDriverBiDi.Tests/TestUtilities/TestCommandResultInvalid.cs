@@ -1,9 +1,9 @@
 namespace WebDriverBiDi.TestUtilities;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 public class TestCommandResultInvalid: CommandResult
 {
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     public string? Value { get; set; }
 }

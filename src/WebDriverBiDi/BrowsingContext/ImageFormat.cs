@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents the image format of a captured screenshot.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ImageFormat
 {
     private string type = "image/png";
@@ -26,13 +25,14 @@ public class ImageFormat
     /// <summary>
     /// Gets or sets the MIME type of the image format. Default to "image/png".
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type { get => this.type; set => this.type = value; }
 
     /// <summary>
     /// Gets or sets the quality of the image format. If specified, must be between 0 and 1 inclusive.
     /// </summary>
-    [JsonProperty("quality", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("quality")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Quality
     {
         get

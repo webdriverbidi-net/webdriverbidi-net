@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// An action to pause the execution of a device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PauseAction : INoneSourceAction, IKeySourceAction, IPointerSourceAction, IWheelSourceAction
 {
     private readonly string actionType = "pause";
@@ -19,18 +18,21 @@ public class PauseAction : INoneSourceAction, IKeySourceAction, IPointerSourceAc
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type => this.actionType;
 
     /// <summary>
     /// Gets or sets the duration of the pause.
     /// </summary>
+    [JsonIgnore]
     public TimeSpan? Duration { get => this.duration; set => this.duration = value; }
 
     /// <summary>
     /// Gets the duration of the pause for serialization purposes.
     /// </summary>
-    [JsonProperty("duration", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("duration")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal ulong? SerializedDuration
     {
         get

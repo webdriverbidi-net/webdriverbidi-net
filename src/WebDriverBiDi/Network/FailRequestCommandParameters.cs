@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the network.failRequest command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class FailRequestCommandParameters : CommandParameters<EmptyResult>
 {
     private string requestId;
@@ -27,11 +26,12 @@ public class FailRequestCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "network.failRequest";
 
     /// <summary>
     /// Gets or sets the ID of the request to fail..
     /// </summary>
-    [JsonProperty("request")]
+    [JsonPropertyName("request")]
     public string RequestId { get => this.requestId; set => this.requestId = value; }
 }

@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class AuthChallengeTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserializeAuthChallenge()
     {
         string json = @"{ ""scheme"": ""basic"", ""realm"": ""example.com"" }";
-        AuthChallenge? challenge = JsonConvert.DeserializeObject<AuthChallenge>(json);
+        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions);
         Assert.That(challenge, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -22,27 +28,27 @@ public class AuthChallengeTests
     public void TestDeserializingWithMissingSchemeThrows()
     {
         string json = @"{ ""realm"": ""example.com"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<AuthChallenge>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidSchemeTypeThrows()
     {
         string json = @"{ ""scheme"": {}, ""realm"": ""example.com"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<AuthChallenge>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithMissingRealmThrows()
     {
         string json = @"{ ""scheme"": ""basic"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<AuthChallenge>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidRealmTypeThrows()
     {
         string json = @"{ ""scheme"": ""basic"", ""realm"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<AuthChallenge>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

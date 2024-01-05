@@ -1,11 +1,11 @@
 namespace WebDriverBiDi.TestUtilities;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Protocol;
 
 public class TestCommandParameters : CommandParameters<TestCommandResult>
 {
-    private readonly string parameterName;
+    private string parameterName = "parameterValue";
     private readonly string commandName;
 
     public TestCommandParameters(string commandName, string parameterValue = "parameterValue")
@@ -14,10 +14,9 @@ public class TestCommandParameters : CommandParameters<TestCommandResult>
         this.parameterName = parameterValue;
     }
 
+    [JsonIgnore]
     public override string MethodName => this.commandName;
 
-    public override Type ResponseType => typeof(CommandResponseMessage<TestCommandResult>);
-
-    [JsonProperty("parameterName")]
-    public string ParameterName => this.parameterName;
+    [JsonPropertyName("parameterName")]
+    public string ParameterName { get => this.parameterName; set => this.parameterName = value; }
 }

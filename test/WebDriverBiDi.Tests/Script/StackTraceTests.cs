@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class StackTraceTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserialize()
     {
         string json = @"{ ""callFrames"": [ { ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" } ] }";
-        StackTrace? stacktrace = JsonConvert.DeserializeObject<StackTrace>(json);
+        StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions);
         Assert.That(stacktrace, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -23,13 +29,13 @@ public class StackTraceTests
     public void TestDeserializeWithMissingCallFramesThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonConvert.DeserializeObject<StackTrace>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidCallFramesTypeThrows()
     {
         string json = @"{ ""callFrames"": { ""frame"": { ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" } } }";
-        Assert.That(() => JsonConvert.DeserializeObject<StackTrace>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
@@ -17,5 +18,6 @@ public abstract class CommandParameters<T> : CommandParameters
     /// <summary>
     /// Gets the type of the response for this command.
     /// </summary>
+    [JsonIgnore]
     public override Type ResponseType => typeof(CommandResponseMessage<T>);
 }

@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing information about a Node object.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class NodeProperties
 {
     private uint nodeType = 0;
@@ -35,36 +34,47 @@ public class NodeProperties
     /// <summary>
     /// Gets the type of node.
     /// </summary>
-    [JsonProperty("nodeType", Required = Required.Always)]
-    public uint NodeType { get => this.nodeType; internal set => this.nodeType = value; }
+    [JsonPropertyName("nodeType")]
+    [JsonRequired]
+    [JsonInclude]
+    public uint NodeType { get => this.nodeType; private set => this.nodeType = value; }
 
     /// <summary>
     /// Gets the count of the child nodes.
     /// </summary>
-    [JsonProperty("childNodeCount", Required = Required.Always)]
-    public uint ChildNodeCount { get => this.childNodeCount; internal set => this.childNodeCount = value; }
+    [JsonPropertyName("childNodeCount")]
+    [JsonRequired]
+    [JsonInclude]
+    public uint ChildNodeCount { get => this.childNodeCount; private set => this.childNodeCount = value; }
 
     /// <summary>
     /// Gets the value of the node.
     /// </summary>
-    [JsonProperty("nodeValue", NullValueHandling = NullValueHandling.Ignore)]
-    public string? NodeValue { get => this.nodeValue; internal set => this.nodeValue = value; }
+    [JsonPropertyName("nodeValue")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? NodeValue { get => this.nodeValue; private set => this.nodeValue = value; }
 
     /// <summary>
     /// Gets the local name of the node.
     /// </summary>
-    [JsonProperty("localName", NullValueHandling = NullValueHandling.Ignore)]
-    public string? LocalName { get => this.localName; internal set => this.localName = value; }
+    [JsonPropertyName("localName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? LocalName { get => this.localName; private set => this.localName = value; }
 
     /// <summary>
     /// Gets the namespace URI of the node.
     /// </summary>
-    [JsonProperty("namespaceURI", NullValueHandling = NullValueHandling.Ignore)]
-    public string? NamespaceUri { get => this.namespaceUri; internal set => this.namespaceUri = value; }
+    [JsonPropertyName("namespaceURI")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? NamespaceUri { get => this.namespaceUri; private set => this.namespaceUri = value; }
 
     /// <summary>
     /// Gets a read-only list of the children of the node.
     /// </summary>
+    [JsonIgnore]
     public IList<RemoteValue>? Children
     {
         get
@@ -81,6 +91,7 @@ public class NodeProperties
     /// <summary>
     /// Gets a read-only dictionary of the attributes of this node.
     /// </summary>
+    [JsonIgnore]
     public NodeAttributes? Attributes
     {
         get
@@ -99,24 +110,32 @@ public class NodeProperties
     /// <summary>
     /// Gets the mode of the shadow root, if one is present.
     /// </summary>
-    [JsonProperty("mode", NullValueHandling = NullValueHandling.Ignore)]
-    public ShadowRootMode? Mode { get => this.mode; internal set => this.mode = value; }
+    [JsonPropertyName("mode")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public ShadowRootMode? Mode { get => this.mode; private set => this.mode = value; }
 
     /// <summary>
     /// Gets the RemoteValue representing the shadow root of this node, if available.
     /// </summary>
-    [JsonProperty("shadowRoot", NullValueHandling = NullValueHandling.Ignore)]
-    public RemoteValue? ShadowRoot { get => this.shadowRoot; internal set => this.shadowRoot = value; }
+    [JsonPropertyName("shadowRoot")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public RemoteValue? ShadowRoot { get => this.shadowRoot; private set => this.shadowRoot = value; }
 
     /// <summary>
     /// Gets or sets the list of child nodes for serialization purposes.
     /// </summary>
-    [JsonProperty("children", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("children")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal List<RemoteValue>? SerializableChildren { get => this.children; set => this.children = value; }
 
     /// <summary>
     /// Gets or sets the dictionary of attributes of this node for serialization purposes.
     /// </summary>
-    [JsonProperty("attributes", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("attributes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal Dictionary<string, string>? SerializableAttributes { get => this.attributesDictionary; set => this.attributesDictionary = value; }
 }

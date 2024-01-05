@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents a locator for locating nodes via their visible text
 /// as defined by the innerText DOM property.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class InnerTextLocator : Locator
 {
     private readonly string type = "innerText";
@@ -31,21 +30,24 @@ public class InnerTextLocator : Locator
     /// <summary>
     /// Gets the type of locator.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public override string Type => this.type;
 
     /// <summary>
     /// Gets or sets a value indicating whether the locator should ignore case when matching.
     /// When omitted or <see langword="null"/>, the match is case-sensitive.
     /// </summary>
-    [JsonProperty("ignoreCase", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("ignoreCase")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+
     public bool? IgnoreCase { get => this.ignoreCase; set => this.ignoreCase = value; }
 
     /// <summary>
     /// Gets or sets a value indicating the type of match for the text, partial or full.
     /// When omitted or <see langword="null"/>, the match is a full-text match.
     /// </summary>
-    [JsonProperty("matchType", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("matchType")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public InnerTextMatchType? MatchType { get => this.matchType; set => this.matchType = value; }
 
     /// <summary>
@@ -53,6 +55,7 @@ public class InnerTextLocator : Locator
     /// When omitted or <see langword="null"/>, the locator will return matches to an
     /// infinite depth.
     /// </summary>
-    [JsonProperty("maxDepth", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("maxDepth")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? MaxDepth { get => this.maxDepth; set => this.maxDepth = value; }
 }

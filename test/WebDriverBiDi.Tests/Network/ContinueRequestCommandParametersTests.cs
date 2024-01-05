@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class ContinueRequestCommandParametersTests
     public void TestCanSerializeParameters()
     {
         ContinueRequestCommandParameters properties = new("myRequestId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -35,7 +35,7 @@ public class ContinueRequestCommandParametersTests
         {
             Body = BytesValue.FromString("test body")
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -63,7 +63,7 @@ public class ContinueRequestCommandParametersTests
         {
             Cookies = new List<CookieHeader>() { new CookieHeader("cookieName", "cookieValue") }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -101,7 +101,7 @@ public class ContinueRequestCommandParametersTests
         {
             Headers = new List<Header>() { new Header("headerName", "headerValue") }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -139,7 +139,7 @@ public class ContinueRequestCommandParametersTests
         {
             Method = "get"
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -160,7 +160,7 @@ public class ContinueRequestCommandParametersTests
         {
             Url = "https://example.com"
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

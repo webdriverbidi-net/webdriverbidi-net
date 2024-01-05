@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class LocatorTests
     public void TestCanSerializeCssLocator()
     {
         CssLocator value = new(".selector");
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -28,7 +28,7 @@ public class LocatorTests
     public void TestCanSerializeXPathLocator()
     {
         XPathLocator value = new("//selector");
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -46,7 +46,7 @@ public class LocatorTests
     public void TestCanSerializeInnerTextLocator()
     {
         InnerTextLocator value = new("text to locate");
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -67,7 +67,7 @@ public class LocatorTests
         {
             MaxDepth = 0
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -91,7 +91,7 @@ public class LocatorTests
         {
             MaxDepth = 10
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -115,7 +115,7 @@ public class LocatorTests
         {
             IgnoreCase = true
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -139,7 +139,7 @@ public class LocatorTests
         {
             IgnoreCase = false
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -163,7 +163,7 @@ public class LocatorTests
         {
             MatchType = InnerTextMatchType.Full
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -187,7 +187,7 @@ public class LocatorTests
         {
             MatchType = InnerTextMatchType.Partial
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class EvaluateCommandParametersTests
     public void TestCanSerializeParameters()
     {
         EvaluateCommandParameters properties = new("myExpression", new RealmTarget("myRealm"), true);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -43,7 +43,7 @@ public class EvaluateCommandParametersTests
             },
             UserActivation = true,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
         Assert.Multiple(() =>

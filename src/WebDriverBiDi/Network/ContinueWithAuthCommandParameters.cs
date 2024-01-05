@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the network.continueResponse command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ContinueWithAuthCommandParameters : CommandParameters<EmptyResult>
 {
     private string requestId;
@@ -29,30 +28,34 @@ public class ContinueWithAuthCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "network.continueWithAuth";
 
     /// <summary>
     /// Gets or sets the ID of the request to continue.
     /// </summary>
-    [JsonProperty("request")]
+    [JsonPropertyName("request")]
     public string RequestId { get => this.requestId; set => this.requestId = value; }
 
     /// <summary>
     /// Gets or sets the action to use with continuing this request.
     /// </summary>
-    [JsonProperty("action")]
+    [JsonPropertyName("action")]
     public ContinueWithAuthActionType Action { get => this.action; set => this.action = value; }
 
     /// <summary>
     /// Gets or sets the credentials to be used when continuing this request.
     /// Credentials are only sent when the action is set to <see cref="ContinueWithAuthActionType.ProvideCredentials" />.
     /// </summary>
+    [JsonIgnore]
     public AuthCredentials Credentials { get => this.credentials; set => this.credentials = value; }
 
     /// <summary>
     /// Gets the credentials to be used for continuing the request for authorization purposes.
     /// Credentials are only sent when the action is set to <see cref="ContinueWithAuthActionType.ProvideCredentials" />.
     /// </summary>
-    [JsonProperty("credentials", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("credentials")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal AuthCredentials? SerializableCredentials => this.action == ContinueWithAuthActionType.ProvideCredentials ? this.credentials : null;
 }

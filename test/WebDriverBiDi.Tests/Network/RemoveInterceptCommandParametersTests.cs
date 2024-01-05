@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class RemoveInterceptCommandParametersTests
     public void TestCanSerializeParameters()
     {
         RemoveInterceptCommandParameters properties = new("interceptId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

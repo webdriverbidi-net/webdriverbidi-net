@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// A script target for a realm.
@@ -18,6 +18,7 @@ public class RealmTarget : Target
     /// Initializes a new instance of the <see cref="RealmTarget"/> class.
     /// </summary>
     /// <param name="realmId">The ID of the realm.</param>
+    [JsonConstructor]
     public RealmTarget(string realmId)
     {
         this.realmId = realmId;
@@ -26,6 +27,8 @@ public class RealmTarget : Target
     /// <summary>
     /// Gets the ID of the realm.
     /// </summary>
-    [JsonProperty("realm")]
-    public string RealmId { get => this.realmId; internal set => this.realmId = value; }
+    [JsonPropertyName("realm")]
+    [JsonRequired]
+    [JsonInclude]
+    public string RealmId { get => this.realmId; private set => this.realmId = value; }
 }

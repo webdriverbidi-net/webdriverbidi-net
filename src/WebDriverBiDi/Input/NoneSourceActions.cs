@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents actions with no input device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class NoneSourceActions : SourceActions
 {
     private readonly List<INoneSourceAction> actions = new();
@@ -18,12 +17,12 @@ public class NoneSourceActions : SourceActions
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public override string Type => "none";
 
     /// <summary>
     /// Gets the list of actions for this input device.
     /// </summary>
-    [JsonProperty("actions")]
+    [JsonPropertyName("actions")]
     public List<INoneSourceAction> Actions => this.actions;
 }

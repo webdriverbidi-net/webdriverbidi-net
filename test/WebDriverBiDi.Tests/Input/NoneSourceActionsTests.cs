@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class NoneSourceActionsTests
     public void TestCanSerializeParameters()
     {
         NoneSourceActions properties = new();
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -31,7 +31,7 @@ public class NoneSourceActionsTests
     {
         NoneSourceActions properties = new();
         properties.Actions.Add(new PauseAction());
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>

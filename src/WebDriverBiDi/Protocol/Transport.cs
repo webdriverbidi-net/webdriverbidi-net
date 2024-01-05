@@ -5,8 +5,9 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// The transport object used for serializing and deserializing JSON data used in the WebDriver Bidi protocol.
@@ -16,6 +17,11 @@ using Newtonsoft.Json.Linq;
 /// </summary>
 public class Transport
 {
+    private readonly JsonSerializerOptions options = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     private readonly Connection connection;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
     private PendingCommandCollection pendingCommands = new();
@@ -142,7 +148,8 @@ public class Transport
         long commandId = Interlocked.Increment(ref this.nextCommandId);
         Command command = new(commandId, commandData);
         this.pendingCommands.AddPendingCommand(command);
-        await this.connection.SendDataAsync(JsonConvert.SerializeObject(command)).ConfigureAwait(false);
+        string commandJson = JsonSerializer.Serialize(command);
+        await this.connection.SendDataAsync(commandJson).ConfigureAwait(false);
         return command;
     }
 
@@ -221,35 +228,34 @@ public class Transport
     private void ProcessMessage(string messageData)
     {
         bool isProcessed = false;
-        JObject? message = null;
+        JsonDocument? message = null;
         try
         {
-            message = JObject.Parse(messageData);
+            message = JsonDocument.Parse(messageData);
         }
-        catch (JsonReaderException e)
+        catch (JsonException e)
         {
             this.Log($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error);
         }
 
         if (message is not null)
         {
-            JToken? messageTypeToken = message["type"];
-            if (messageTypeToken is not null && messageTypeToken.Type == JTokenType.String)
+            if (message.RootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
             {
-                string messageType = messageTypeToken.Value<string>()!;
+                string messageType = messageTypeToken.GetString()!;
                 if (messageType == "success")
                 {
-                    isProcessed = this.ProcessCommandResponseMessage(message);
+                    isProcessed = this.ProcessCommandResponseMessage(message.RootElement);
                     this.Log($"Command response message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
                 else if (messageType == "error")
                 {
-                    isProcessed = this.ProcessErrorMessage(message);
+                    isProcessed = this.ProcessErrorMessage(message.RootElement);
                     this.Log($"Error response message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
                 else if (messageType == "event")
                 {
-                    isProcessed = this.ProcessEventMessage(message);
+                    isProcessed = this.ProcessEventMessage(message.RootElement);
                     this.Log($"Event message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
             }
@@ -261,17 +267,15 @@ public class Transport
         }
     }
 
-    private bool ProcessCommandResponseMessage(JObject message)
+    private bool ProcessCommandResponseMessage(JsonElement message)
     {
-        JToken? idToken = message["id"];
-        if (idToken is not null && idToken.Type == JTokenType.Integer)
+        if (message.TryGetProperty("id", out JsonElement idToken) && idToken.ValueKind == JsonValueKind.Number && idToken.TryGetInt64(out long responseId))
         {
-            long responseId = idToken.Value<long>()!;
             if (this.pendingCommands.RemovePendingCommand(responseId, out Command executedCommand))
             {
                 try
                 {
-                    if (message.ToObject(executedCommand.ResponseType) is CommandResponseMessage response)
+                    if (message.Deserialize(executedCommand.ResponseType, this.options) is CommandResponseMessage response)
                     {
                         CommandResult commandResult = response.Result;
                         commandResult.AdditionalData = response.AdditionalData;
@@ -290,21 +294,24 @@ public class Transport
         return false;
     }
 
-    private bool ProcessErrorMessage(JObject message)
+    private bool ProcessErrorMessage(JsonElement message)
     {
         try
         {
             // If the message doesn't match the schema of an actual error message,
             // an exception will be thrown by the JSON serializer, and we can log
             // the malformed response.
-            ErrorResponseMessage errorMessage = message.ToObject<ErrorResponseMessage>()!;
-            if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command executedCommand))
+            ErrorResponseMessage? errorMessage = message.Deserialize<ErrorResponseMessage>(this.options);
+            if (errorMessage is not null)
             {
-                executedCommand.Result = errorMessage.GetErrorResponseData();
-            }
-            else
-            {
-                this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(errorMessage.GetErrorResponseData()));
+                if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command executedCommand))
+                {
+                    executedCommand.Result = errorMessage.GetErrorResponseData();
+                }
+                else
+                {
+                    this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(errorMessage.GetErrorResponseData()));
+                }
             }
 
             return true;
@@ -317,20 +324,20 @@ public class Transport
         return false;
     }
 
-    private bool ProcessEventMessage(JObject message)
+    private bool ProcessEventMessage(JsonElement message)
     {
-        JToken? eventNameToken = message["method"];
-        if (eventNameToken is not null && eventNameToken.Type == JTokenType.String)
+        if (message.TryGetProperty("method", out JsonElement eventNameToken) && eventNameToken.ValueKind == JsonValueKind.String)
         {
-            string eventName = eventNameToken.Value<string>()!;
+            // We have already validated that the token is of type string,
+            // and therefore will never be null.
+            string eventName = eventNameToken.GetString()!;
             if (this.eventMessageTypes.TryGetValue(eventName, out Type eventMessageType))
             {
                 try
                 {
-                    // If the message doesn't match the schema of the specified event args type,
-                    // an exception will be thrown by the JSON serializer, and we can log
-                    // the malformed response.
-                    EventMessage? eventMessageData = message.ToObject(eventMessageType) as EventMessage;
+                    // Deserialize will correctly throw if the type does not match, meaning
+                    // the eventMessageData variable can never be null.
+                    EventMessage? eventMessageData = message.Deserialize(eventMessageType, this.options) as EventMessage;
                     this.eventDispatcher.TryDispatch(eventMessageData!);
                     return true;
                 }

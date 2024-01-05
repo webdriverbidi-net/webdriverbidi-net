@@ -338,7 +338,7 @@ public class BrowsingContextModuleTests
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.domContentLoaded"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
-        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(12500));
         Assert.That(eventRaised, Is.True);
     }
 

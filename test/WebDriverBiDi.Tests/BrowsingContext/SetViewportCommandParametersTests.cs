@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class SetViewportCommandParametersTests
     public void TestCanSerializeParameters()
     {
         SetViewportCommandParameters properties = new("myContextId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -45,7 +45,7 @@ public class SetViewportCommandParametersTests
                 Width = 1280,
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -77,7 +77,7 @@ public class SetViewportCommandParametersTests
         {
             Viewport = new Viewport()
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -109,7 +109,7 @@ public class SetViewportCommandParametersTests
         {
             DevicePixelRatio = 1.5
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>

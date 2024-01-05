@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Base class for the result of a script evaluation.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 [JsonConverter(typeof(ScriptEvaluateResultJsonConverter))]
 public class EvaluateResult : CommandResult
 {
@@ -28,14 +27,16 @@ public class EvaluateResult : CommandResult
     /// <summary>
     /// Gets the type of the result of the script execution.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     [JsonRequired]
-    public EvaluateResultType ResultType { get => this.resultType; internal set => this.resultType = value; }
+    [JsonInclude]
+    public EvaluateResultType ResultType { get => this.resultType; private set => this.resultType = value; }
 
     /// <summary>
     /// Gets the ID of the realm in which the script was executed.
     /// </summary>
-    [JsonProperty("realm")]
+    [JsonPropertyName("realm")]
     [JsonRequired]
-    public string RealmId { get => this.realmId; internal set => this.realmId = value; }
+    [JsonInclude]
+    public string RealmId { get => this.realmId; private set => this.realmId = value; }
 }

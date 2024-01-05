@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class NewCommandResultTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserialize()
     {
         string json = @"{ ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
-        NewCommandResult? result = JsonConvert.DeserializeObject<NewCommandResult>(json);
+        NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -32,13 +38,13 @@ public class NewCommandResultTests
     public void TestDeserializingWithMissingSessionIdThrows()
     {
         string json = @"{ ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
-        Assert.That(() => JsonConvert.DeserializeObject<NewCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithMissingCapabilitiesThrows()
     {
         string json = @"{ ""sessionId"": ""mySession"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NewCommandResult>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

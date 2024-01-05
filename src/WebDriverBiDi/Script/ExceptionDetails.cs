@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing the details of an exception thrown by a script.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ExceptionDetails
 {
     private int columnNumber = -1;
@@ -30,35 +29,40 @@ public class ExceptionDetails
     /// <summary>
     /// Gets the text of the exception.
     /// </summary>
-    [JsonProperty("text")]
+    [JsonPropertyName("text")]
     [JsonRequired]
-    public string Text { get => this.text; internal set => this.text = value; }
+    [JsonInclude]
+    public string Text { get => this.text; private set => this.text = value; }
 
     /// <summary>
     /// Gets the column number of the statement that caused the exception.
     /// </summary>
-    [JsonProperty("columnNumber")]
+    [JsonPropertyName("columnNumber")]
     [JsonRequired]
-    public int ColumnNumber { get => this.columnNumber; internal set => this.columnNumber = value; }
+    [JsonInclude]
+    public int ColumnNumber { get => this.columnNumber; private set => this.columnNumber = value; }
 
     /// <summary>
     /// Gets the line number of the statement that caused the exception.
     /// </summary>
-    [JsonProperty("lineNumber")]
+    [JsonPropertyName("lineNumber")]
     [JsonRequired]
-    public int LineNumber { get => this.lineNumber; internal set => this.lineNumber = value; }
+    [JsonInclude]
+    public int LineNumber { get => this.lineNumber; private set => this.lineNumber = value; }
 
     /// <summary>
     /// Gets the stack trace of the exception.
     /// </summary>
-    [JsonProperty("stackTrace")]
+    [JsonPropertyName("stackTrace")]
     [JsonRequired]
-    public StackTrace StackTrace { get => this.stackTrace; internal set => this.stackTrace = value; }
+    [JsonInclude]
+    public StackTrace StackTrace { get => this.stackTrace; private set => this.stackTrace = value; }
 
     /// <summary>
     /// Gets the RemoteValue representing the value of the exception.
     /// </summary>
-    [JsonProperty("exception")]
+    [JsonPropertyName("exception")]
     [JsonRequired]
-    public RemoteValue Exception { get => this.exception; internal set => this.exception = value; }
+    [JsonInclude]
+    public RemoteValue Exception { get => this.exception; private set => this.exception = value; }
 }

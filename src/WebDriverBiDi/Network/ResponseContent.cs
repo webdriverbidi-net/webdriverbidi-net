@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Content of a response.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ResponseContent
 {
     private ulong size = 0;
@@ -25,7 +24,8 @@ public class ResponseContent
     /// <summary>
     /// Gets the decoded size, in bytes, of the response body.
     /// </summary>
-    [JsonProperty("size")]
+    [JsonPropertyName("size")]
     [JsonRequired]
-    public ulong Size { get => this.size; internal set => this.size = value; }
+    [JsonInclude]
+    public ulong Size { get => this.size; private set => this.size = value; }
 }

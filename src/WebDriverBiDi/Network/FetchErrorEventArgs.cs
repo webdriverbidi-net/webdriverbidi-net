@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing event data for events raised by before a network request is sent.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class FetchErrorEventArgs : BaseNetworkEventArgs
 {
     private string errorText = string.Empty;
@@ -26,7 +25,8 @@ public class FetchErrorEventArgs : BaseNetworkEventArgs
     /// <summary>
     /// Gets the error text of the fetch error.
     /// </summary>
-    [JsonProperty("errorText")]
+    [JsonPropertyName("errorText")]
     [JsonRequired]
-    public string ErrorText { get => this.errorText; internal set => this.errorText = value; }
+    [JsonInclude]
+    public string ErrorText { get => this.errorText; private set => this.errorText = value; }
 }

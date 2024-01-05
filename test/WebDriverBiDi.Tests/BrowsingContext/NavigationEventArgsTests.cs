@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class NavigationEventArgsTests
@@ -10,7 +10,7 @@ public class NavigationEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""timestamp"": " + epochTimestamp +  @" }";
-        NavigationEventArgs? eventArgs = JsonConvert.DeserializeObject<NavigationEventArgs>(json);
+        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -27,7 +27,7 @@ public class NavigationEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" }";
-        NavigationEventArgs? eventArgs = JsonConvert.DeserializeObject<NavigationEventArgs>(json);
+        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -42,7 +42,7 @@ public class NavigationEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""url"": ""http://example.com"", ""timestamp"": " + epochTimestamp +  @" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NavigationEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -50,7 +50,7 @@ public class NavigationEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""context"": {}, ""url"": ""http://example.com"", ""timestamp"": " + epochTimestamp +  @" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NavigationEventArgs>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -58,7 +58,7 @@ public class NavigationEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""context"": ""myContextId"", ""timestamp"": " + epochTimestamp +  @" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NavigationEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -66,14 +66,14 @@ public class NavigationEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""context"": ""myContextId"", ""url"": {}, ""timestamp"": " + epochTimestamp +  @"}";
-        Assert.That(() => JsonConvert.DeserializeObject<NavigationEventArgs>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingTimestampValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<NavigationEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -81,7 +81,7 @@ public class NavigationEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""timestamp"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<NavigationEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -89,6 +89,6 @@ public class NavigationEventArgsTests
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<NavigationEventArgs>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 }

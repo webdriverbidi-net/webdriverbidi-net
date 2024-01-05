@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Value to be used as argument to a preload script.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ChannelValue : ArgumentValue
 {
     private readonly string type = "channel";
@@ -28,12 +27,12 @@ public class ChannelValue : ArgumentValue
     /// <summary>
     /// Gets the type of this ChannelValue.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type => this.type;
 
     /// <summary>
     /// Gets the value of this ChannelValue.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     public ChannelProperties Value => this.value;
 }

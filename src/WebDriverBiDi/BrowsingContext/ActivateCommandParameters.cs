@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.activate command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ActivateCommandParameters : CommandParameters<EmptyResult>
 {
     private string browsingContextId;
@@ -27,11 +26,12 @@ public class ActivateCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.activate";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to activate.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 }

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
 
@@ -18,7 +18,7 @@ public class CaptureScreenshotCommandParametersTests
     public void TestCanSerializeParameters()
     {
         CaptureScreenshotCommandParameters properties = new("myContextId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -36,7 +36,7 @@ public class CaptureScreenshotCommandParametersTests
         {
             Clip = new BoxClipRectangle()
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -79,7 +79,7 @@ public class CaptureScreenshotCommandParametersTests
                 Height = 100
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -116,7 +116,7 @@ public class CaptureScreenshotCommandParametersTests
         {
             Clip = new ElementClipRectangle(new SharedReference("myElementSharedId"))
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -146,7 +146,7 @@ public class CaptureScreenshotCommandParametersTests
         {
             Format = new ImageFormat()
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -174,7 +174,7 @@ public class CaptureScreenshotCommandParametersTests
                 Type = "image/jpeg"
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -203,7 +203,7 @@ public class CaptureScreenshotCommandParametersTests
                 Quality = 0.5
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -231,7 +231,7 @@ public class CaptureScreenshotCommandParametersTests
         {
             Origin = ScreenshotOrigin.Viewport
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -252,7 +252,7 @@ public class CaptureScreenshotCommandParametersTests
         {
             Origin = ScreenshotOrigin.Document
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>

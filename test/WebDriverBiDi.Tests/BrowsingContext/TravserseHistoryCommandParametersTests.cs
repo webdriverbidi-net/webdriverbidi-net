@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class TraverseHistoryCommandParametersTests
     public void TestCanSerializeParameters()
     {
         TraverseHistoryCommandParameters properties = new("myContextId", 0);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -35,7 +35,7 @@ public class TraverseHistoryCommandParametersTests
     public void TestCanSerializeParametersWithPositiveDelta()
     {
         TraverseHistoryCommandParameters properties = new("myContextId", 1);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -53,7 +53,7 @@ public class TraverseHistoryCommandParametersTests
     public void TestCanSerializeParametersWithNegativeDelta()
     {
         TraverseHistoryCommandParameters properties = new("myContextId", -1);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>

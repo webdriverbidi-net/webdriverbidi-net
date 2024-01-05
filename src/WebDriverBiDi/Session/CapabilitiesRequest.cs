@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing capabilities requested when starting a new session.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CapabilitiesRequest
 {
     private readonly Dictionary<string, object?> additionalCapabilities = new();
@@ -24,37 +23,41 @@ public class CapabilitiesRequest
     /// <summary>
     /// Gets or sets a value indicating whether the browser should accept insecure (self-signed) SSL certificates.
     /// </summary>
-    [JsonProperty("acceptInsecureCerts", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("acceptInsecureCerts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? AcceptInsecureCertificates { get => this.acceptInsecureCertificates; set => this.acceptInsecureCertificates = value; }
 
     /// <summary>
     /// Gets or sets the name of the browser.
     /// </summary>
-    [JsonProperty("browserName", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("browserName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? BrowserName { get => this.browserName; set => this.browserName = value; }
 
     /// <summary>
     /// Gets or sets the version of the browser.
     /// </summary>
-    [JsonProperty("browserVersion", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("browserVersion")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? BrowserVersion { get => this.browserVersion; set => this.browserVersion = value; }
 
     /// <summary>
     /// Gets or sets the platform name.
     /// </summary>
-    [JsonProperty("platformName", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("platformName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? PlatformName { get => this.platformName; set => this.platformName = value; }
 
     /// <summary>
     /// Gets or sets the proxy to use with this session.
     /// </summary>
-    [JsonProperty("proxy", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("proxy")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Proxy? Proxy { get => this.proxy; set => this.proxy = value; }
 
     /// <summary>
     /// Gets the dictionary containing additional capabilities to use with this session.
     /// </summary>
     [JsonExtensionData]
-    [JsonConverter(typeof(ReceivedDataJsonConverter))]
     public Dictionary<string, object?> AdditionalCapabilities => this.additionalCapabilities;
 }

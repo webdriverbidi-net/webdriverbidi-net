@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -11,7 +11,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.Undefined;
         Assert.That(value.Value, Is.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -26,7 +26,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.Null;
         Assert.That(value.Value, Is.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -41,7 +41,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.String("hello");
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -59,7 +59,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.Number(123);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -77,7 +77,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.Number(123L);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -95,7 +95,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.Number(3.14);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -113,7 +113,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.NaN;
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -131,7 +131,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.Infinity;
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -149,7 +149,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.NegativeInfinity;
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -167,7 +167,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.NegativeZero;
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -185,7 +185,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.Number(0.0);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -193,7 +193,7 @@ public class LocalValueTests
             Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
             Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(0.0));
         });
     }
@@ -203,7 +203,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.Boolean(true);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -221,7 +221,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.BigInt(123);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -241,7 +241,7 @@ public class LocalValueTests
         string expectedValue = actualValue.ToString("YYYY-MM-ddTHH:mm:ss.fffZ");
         LocalValue value = LocalValue.Date(actualValue);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -258,7 +258,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.RegExp("pattern.*");
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -283,7 +283,7 @@ public class LocalValueTests
     {
         LocalValue value = LocalValue.RegExp("pattern.*", "gi");
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -318,7 +318,7 @@ public class LocalValueTests
         };
         LocalValue value = LocalValue.Array(arrayList);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -396,7 +396,7 @@ public class LocalValueTests
         };
         LocalValue value = LocalValue.Set(arrayList);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -473,7 +473,7 @@ public class LocalValueTests
 
         LocalValue value = LocalValue.Map(dictionary);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -521,7 +521,7 @@ public class LocalValueTests
 
         LocalValue value = LocalValue.Object(dictionary);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -571,7 +571,7 @@ public class LocalValueTests
 
         LocalValue value = LocalValue.Map(dictionary);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -617,7 +617,7 @@ public class LocalValueTests
 
         LocalValue value = LocalValue.Object(dictionary);
         Assert.That(value.Value, Is.Not.Null);
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.That(parsed, Has.Count.EqualTo(2));
         Assert.Multiple(() =>

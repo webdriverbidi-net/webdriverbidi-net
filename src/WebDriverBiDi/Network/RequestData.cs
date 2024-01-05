@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// A network request.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class RequestData
 {
     private string requestId = string.Empty;
@@ -33,27 +32,31 @@ public class RequestData
     /// <summary>
     /// Gets the ID of the request.
     /// </summary>
-    [JsonProperty("request")]
+    [JsonPropertyName("request")]
     [JsonRequired]
-    public string RequestId { get => this.requestId; internal set => this.requestId = value; }
+    [JsonInclude]
+    public string RequestId { get => this.requestId; private set => this.requestId = value; }
 
     /// <summary>
     /// Gets the URL of the request.
     /// </summary>
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     [JsonRequired]
-    public string Url { get => this.url; internal set => this.url = value; }
+    [JsonInclude]
+    public string Url { get => this.url; private set => this.url = value; }
 
     /// <summary>
     /// Gets the method of the request.
     /// </summary>
-    [JsonProperty("method")]
+    [JsonPropertyName("method")]
     [JsonRequired]
-    public string Method { get => this.method; internal set => this.method = value; }
+    [JsonInclude]
+    public string Method { get => this.method; private set => this.method = value; }
 
     /// <summary>
     /// Gets the headers of the request.
     /// </summary>
+    [JsonIgnore]
     public IList<ReadOnlyHeader> Headers
     {
         get
@@ -71,39 +74,45 @@ public class RequestData
     /// <summary>
     /// Gets the cookies of the request.
     /// </summary>
+    [JsonIgnore]
     public IList<Cookie> Cookies => this.cookies.AsReadOnly();
 
     /// <summary>
     /// Gets the size, in bytes, of the headers in the request.
     /// </summary>
-    [JsonProperty("headersSize")]
+    [JsonPropertyName("headersSize")]
     [JsonRequired]
-    public ulong? HeadersSize { get => this.headersSize; internal set => this.headersSize = value; }
+    [JsonInclude]
+    public ulong? HeadersSize { get => this.headersSize; private set => this.headersSize = value; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the request.
     /// </summary>
-    [JsonProperty("bodySize")]
-    public ulong? BodySize { get => this.bodySize; internal set => this.bodySize = value; }
+    [JsonPropertyName("bodySize")]
+    [JsonInclude]
+    public ulong? BodySize { get => this.bodySize; private set => this.bodySize = value; }
 
     /// <summary>
     /// Gets the fetch timing info of the request.
     /// </summary>
-    [JsonProperty("timings")]
+    [JsonPropertyName("timings")]
     [JsonRequired]
-    public FetchTimingInfo Timings { get => this.timingInfo; internal set => this.timingInfo = value; }
+    [JsonInclude]
+    public FetchTimingInfo Timings { get => this.timingInfo; private set => this.timingInfo = value; }
 
     /// <summary>
     /// Gets or sets the headers of the request for serialization purposes.
     /// </summary>
-    [JsonProperty("headers")]
+    [JsonPropertyName("headers")]
     [JsonRequired]
+    [JsonInclude]
     internal List<Header> SerializableHeaders { get => this.headers; set => this.headers = value; }
 
     /// <summary>
     /// Gets or sets the cookies of the request for serialization purposes.
     /// </summary>
-    [JsonProperty("cookies")]
+    [JsonPropertyName("cookies")]
     [JsonRequired]
+    [JsonInclude]
     internal List<Cookie> SerializableCookies { get => this.cookies; set => this.cookies = value; }
 }

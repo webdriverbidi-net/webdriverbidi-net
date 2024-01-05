@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ExceptionDetailsTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": { ""callFrames"": [] } }";
-        ExceptionDetails? exceptionDetails = JsonConvert.DeserializeObject<ExceptionDetails>(json);
+        string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stackTrace"": { ""callFrames"": [] } }";
+        ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions);
         Assert.That(exceptionDetails, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -25,69 +31,69 @@ public class ExceptionDetailsTests
     public void TestDeserializeWithMissingTextThrows()
     {
         string json = @"{ ""lineNumber"": 1, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": { ""callFrames"": [] } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidTextTypeThrows()
     {
         string json = @"{ ""text"": bool, ""lineNumber"": 1, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": { ""callFrames"": [] } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingLineNumberThrows()
     {
         string json = @"{ ""text"": ""exception message"", ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": { ""callFrames"": [] } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidLineNumberTypeThrows()
     {
         string json = @"{ ""text"": ""exception message"", ""lineNumber"": true, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": { ""callFrames"": [] } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingColumnNumberThrows()
     {
         string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": { ""callFrames"": [] } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidColumnNumberTypeThrows()
     {
         string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""columnNumber"": true, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": { ""callFrames"": [] } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingExceptionThrows()
     {
         string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""columnNumber"": 5, ""stacktrace"": { ""callFrames"": []} }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidExceptionTypeThrows()
     {
         string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""columnNumber"": 5, ""exception"": ""myException"", ""stacktrace"": { ""callFrames"": [] } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingStackTraceThrows()
     {
         string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidStackTraceTypeThrows()
     {
         string json = @"{ ""text"": ""exception message"", ""lineNumber"": 1, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myException"" }, ""stacktrace"": ""stacktrace"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<ExceptionDetails>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

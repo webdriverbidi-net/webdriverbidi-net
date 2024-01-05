@@ -5,17 +5,18 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using WebDriverBiDi.Internal;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing data about a WebDriver Bidi message.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class Message
 {
     private string type = string.Empty;
-    private Dictionary<string, object?> writableAdditionalData = new();
+    private Dictionary<string, JsonElement> writableAdditionalData = new();
     private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
@@ -24,19 +25,21 @@ public class Message
     // TODO: Uncomment this attribute when the browser stable channels
     // have the message type property implemented.
     // [JsonRequired]
-    [JsonProperty("type")]
-    public string Type { get => this.type; internal set => this.type = value; }
+    [JsonPropertyName("type")]
+    [JsonInclude]
+    public string Type { get => this.type; private set => this.type = value; }
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.
     /// </summary>
+    [JsonIgnore]
     public ReceivedDataDictionary AdditionalData
     {
         get
         {
             if (this.writableAdditionalData.Count > 0 && this.additionalData.Count == 0)
             {
-                this.additionalData = new ReceivedDataDictionary(this.writableAdditionalData);
+                this.additionalData = JsonConverterUtilities.ConvertIncomingExtensionData(this.writableAdditionalData);
             }
 
             return this.additionalData;
@@ -47,6 +50,6 @@ public class Message
     /// Gets additional properties deserialized with this message.
     /// </summary>
     [JsonExtensionData]
-    [JsonConverter(typeof(ReceivedDataJsonConverter))]
-    internal Dictionary<string, object?> SerializableAdditionalData { get => this.writableAdditionalData; private set => this.writableAdditionalData = value; }
+    [JsonInclude]
+    internal Dictionary<string, JsonElement> SerializableAdditionalData { get => this.writableAdditionalData; private set => this.writableAdditionalData = value; }
 }

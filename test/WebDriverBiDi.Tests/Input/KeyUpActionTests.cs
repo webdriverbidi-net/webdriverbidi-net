@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class KeyUpActionTests
     public void TestCanSerializeParameters()
     {
         KeyUpAction properties = new("a");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>

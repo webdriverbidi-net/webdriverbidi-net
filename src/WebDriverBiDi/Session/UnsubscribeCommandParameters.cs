@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the session.unsubscribe command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class UnsubscribeCommandParameters : SubscribeCommandParameters
 {
     /// <summary>
@@ -23,5 +22,6 @@ public class UnsubscribeCommandParameters : SubscribeCommandParameters
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "session.unsubscribe";
 }

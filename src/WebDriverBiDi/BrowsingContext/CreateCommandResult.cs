@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for creating a new browsing context using the browserContext.create command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CreateCommandResult : CommandResult
 {
     private string contextId = string.Empty;
@@ -23,7 +22,8 @@ public class CreateCommandResult : CommandResult
     /// <summary>
     /// Gets the ID of the created browsing context.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
-    public string BrowsingContextId { get => this.contextId; internal set => this.contextId = value; }
+    [JsonInclude]
+    public string BrowsingContextId { get => this.contextId; private set => this.contextId = value; }
 }

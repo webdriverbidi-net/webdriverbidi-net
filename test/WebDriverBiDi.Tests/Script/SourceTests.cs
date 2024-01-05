@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class SourceTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserialize()
     {
         string json = @"{ ""realm"": ""realmId"" }";
-        Source? source = JsonConvert.DeserializeObject<Source>(json);
+        Source? source = JsonSerializer.Deserialize<Source>(json, deserializationOptions);
         Assert.That(source, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -22,21 +28,21 @@ public class SourceTests
     public void TestDeserializeWithMissingRealmThrows()
     {
         string json = @"{}";
-        Assert.That(() => JsonConvert.DeserializeObject<Source>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidRealmTypeThrows()
     {
         string json = @"{ ""realm"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<Source>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalContext()
     {
         string json = @"{ ""realm"": ""realmId"", ""context"": ""contextId"" }";
-        Source? source = JsonConvert.DeserializeObject<Source>(json);
+        Source? source = JsonSerializer.Deserialize<Source>(json, deserializationOptions);
         Assert.That(source, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -50,6 +56,6 @@ public class SourceTests
     public void TestDeserializeWithInvalidFlagsTypeThrows()
     {
         string json = @"{ ""realm"": ""realmId"", ""context"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<Source>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class CreateCommandParametersTests
     public void TestCanSerializeParametersForTab()
     {
         CreateCommandParameters properties = new(CreateType.Tab);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -32,7 +32,7 @@ public class CreateCommandParametersTests
     public void TestCanSerializeParametersForWindow()
     {
         CreateCommandParameters properties = new(CreateType.Window);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -50,7 +50,7 @@ public class CreateCommandParametersTests
         {
             ReferenceContextId = "myReferenceContext"
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -71,7 +71,7 @@ public class CreateCommandParametersTests
         {
             IsCreatedInBackground = true
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -92,7 +92,7 @@ public class CreateCommandParametersTests
         {
             IsCreatedInBackground = false
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -113,7 +113,7 @@ public class CreateCommandParametersTests
         {
             CreateType = CreateType.Window
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>

@@ -6,13 +6,12 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Provides parameters for the browsingContext.navigate command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class NavigateCommandParameters : CommandParameters<NavigationResult>
 {
     private string browsingContextId;
@@ -33,25 +32,27 @@ public class NavigateCommandParameters : CommandParameters<NavigationResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.navigate";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to navigate.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets the URL to which to navigate.
     /// </summary>
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     [JsonRequired]
     public string Url { get => this.url; set => this.url = value; }
 
     /// <summary>
     /// Gets or sets the <see cref="ReadinessState" /> value for which to wait during the navigation.
     /// </summary>
-    [JsonProperty("wait", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("wait")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ReadinessState? Wait { get => this.wait; set => this.wait = value; }
 }

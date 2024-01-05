@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the network.addIntercept command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class AddInterceptCommandParameters : CommandParameters<AddInterceptCommandResult>
 {
     private readonly List<InterceptPhase> interceptPhases = new();
@@ -26,17 +25,20 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "network.addIntercept";
 
     /// <summary>
     /// Gets the list of phases for which network traffic will be intercepted.
     /// </summary>
-    [JsonProperty("phases")]
+    [JsonPropertyName("phases")]
     public List<InterceptPhase> Phases { get => this.interceptPhases; }
 
     /// <summary>
     /// Gets or sets list of URL patterns for which to intercept network traffic.
     /// </summary>
-    [JsonProperty("urlPatterns", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("urlPatterns")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public List<UrlPattern>? UrlPatterns { get => this.urlPatterns; set => this.urlPatterns = value; }
 }

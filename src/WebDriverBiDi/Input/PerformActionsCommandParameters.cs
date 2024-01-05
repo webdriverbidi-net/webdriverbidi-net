@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the input.performActions command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PerformActionsCommandParameters : CommandParameters<EmptyResult>
 {
     private readonly List<SourceActions> actions = new();
@@ -28,17 +27,18 @@ public class PerformActionsCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "input.performActions";
 
     /// <summary>
     /// Gets or sets the browsing context ID on which to perform actions.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     public string Context { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the list of actions to perform.
     /// </summary>
-    [JsonProperty("actions")]
+    [JsonPropertyName("actions")]
     public List<SourceActions> Actions => this.actions;
 }

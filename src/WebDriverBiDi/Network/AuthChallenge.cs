@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// A class providing credentials for authorization.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class AuthChallenge
 {
     private string scheme = string.Empty;
@@ -26,14 +25,16 @@ public class AuthChallenge
     /// <summary>
     /// Gets the scheme of the authentication challenge.
     /// </summary>
-    [JsonProperty("scheme")]
+    [JsonPropertyName("scheme")]
     [JsonRequired]
-    public string Scheme { get => this.scheme; internal set => this.scheme = value; }
+    [JsonInclude]
+    public string Scheme { get => this.scheme; private set => this.scheme = value; }
 
     /// <summary>
     /// Gets the realm of the authentication challenge.
     /// </summary>
-    [JsonProperty("realm")]
+    [JsonPropertyName("realm")]
     [JsonRequired]
-    public string Realm { get => this.realm; internal set => this.realm = value; }
+    [JsonInclude]
+    public string Realm { get => this.realm; private set => this.realm = value; }
 }

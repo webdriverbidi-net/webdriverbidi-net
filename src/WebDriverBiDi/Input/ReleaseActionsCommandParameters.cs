@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the input.releaseActions command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ReleaseActionsCommandParameters : CommandParameters<EmptyResult>
 {
     private string browsingContextId;
@@ -27,11 +26,12 @@ public class ReleaseActionsCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "input.releaseActions";
 
     /// <summary>
     /// Gets or sets the browsing context ID for which to release pending actions.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     public string Context { get => this.browsingContextId; set => this.browsingContextId = value; }
 }

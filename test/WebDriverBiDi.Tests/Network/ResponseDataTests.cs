@@ -1,15 +1,21 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ResponseDataTests
 {
+    private JsonSerializerOptions deserializationOptions = new()
+    {
+        TypeInfoResolver = new PrivateConstructorContractResolver(),
+    };
+
     [Test]
     public void TestCanDeserializeResponseData()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        ResponseData? response = JsonConvert.DeserializeObject<ResponseData>(json);
+        ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -33,7 +39,7 @@ public class ResponseDataTests
     public void TestCanDeserializeResponseDataWithHeaders()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [{ ""name"": ""headerName"", ""value"": { ""type"": ""string"", ""value"": ""headerValue"" } }], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        ResponseData? response = JsonConvert.DeserializeObject<ResponseData>(json);
+        ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -60,7 +66,7 @@ public class ResponseDataTests
     public void TestCanDeserializeResponseDataWithNullHeadersSize()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": null, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        ResponseData? response = JsonConvert.DeserializeObject<ResponseData>(json);
+        ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -84,7 +90,7 @@ public class ResponseDataTests
     public void TestCanDeserializeResponseDataWithNullBodySize()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": null, ""content"": { ""size"": 300 } }";
-        ResponseData? response = JsonConvert.DeserializeObject<ResponseData>(json);
+        ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -107,7 +113,7 @@ public class ResponseDataTests
     public void TestCanDeserializeResponseDataWithAuthChallenge()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 }, ""authChallenge"": { ""scheme"": ""basic"", ""realm"": ""example.com"" } }";
-        ResponseData? response = JsonConvert.DeserializeObject<ResponseData>(json);
+        ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -133,76 +139,76 @@ public class ResponseDataTests
     public void TestDeserializeWithMissingUrlThrows()
     {
         string json = @"{ ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'url' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: url"));
     }
 
     [Test]
     public void TestDeserializeWithMissingProtocolThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'protocol' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: protocol"));
     }
 
     [Test]
     public void TestDeserializeWithMissingStatusThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'status' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: status"));
     }
 
     [Test]
     public void TestDeserializeWithMissingStatusTextThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'statusText' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: statusText"));
     }
 
     [Test]
     public void TestDeserializeWithMissingFromCacheThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'fromCache' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: fromCache"));
     }
 
     [Test]
     public void TestDeserializeWithMissingHeadersThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""mimeType"": ""text/html"",""bytesReceived"": 400,  ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'headers' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: headers"));
     }
 
     [Test]
     public void TestDeserializeWithMissingMimeTypeThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'mimeType' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: mimeType"));
     }
 
     [Test]
     public void TestDeserializeWithMissingBytesReceivedThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'bytesReceived' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: bytesReceived"));
     }
 
     [Test]
     public void TestDeserializeWithMissingHeadersSizeThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'headersSize' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: headersSize"));
     }
 
     [Test]
     public void TestDeserializeWithMissingBodySizeThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""content"": { ""size"": 300 } }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'bodySize' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: bodySize"));
     }
 
     [Test]
     public void TestDeserializeWithMissingContentThrows()
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300 }";
-        Assert.That(() => JsonConvert.DeserializeObject<ResponseData>(json), Throws.InstanceOf<JsonSerializationException>().With.Message.Contains("Required property 'content' not found in JSON"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: content"));
     }
 }

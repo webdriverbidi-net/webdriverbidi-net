@@ -6,12 +6,11 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.handleUserPrompt command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class HandleUserPromptCommandParameters : CommandParameters<EmptyResult>
 {
     private string browsingContextId;
@@ -30,24 +29,27 @@ public class HandleUserPromptCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.handleUserPrompt";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context for which to handle the user prompt.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the user prompt should be accepted (if true) or canceled (if false).
     /// </summary>
-    [JsonProperty("accept", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("accept")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Accept { get => this.accept; set => this.accept = value; }
 
     /// <summary>
     /// Gets or sets the text sent to the user prompt.
     /// </summary>
-    [JsonProperty("userText", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("userText")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? UserText { get => this.userText; set => this.userText = value; }
 }

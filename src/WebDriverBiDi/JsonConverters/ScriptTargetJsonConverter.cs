@@ -5,8 +5,9 @@
 
 namespace WebDriverBiDi.JsonConverters;
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -15,57 +16,45 @@ using WebDriverBiDi.Script;
 public class ScriptTargetJsonConverter : JsonConverter<Target>
 {
     /// <summary>
-    /// Gets a value indicating whether this converter can read JSON values.
-    /// Returns true for this converter (converter used for deserialization
-    /// only).
+    /// Deserializes the JSON string to an Target value.
     /// </summary>
-    public override bool CanRead => true;
-
-    /// <summary>
-    /// Gets a value indicating whether this converter can write JSON values.
-    /// Returns false for this converter (converter not used for
-    /// serialization).
-    /// </summary>
-    public override bool CanWrite => false;
-
-    /// <summary>
-    /// Reads a JSON string and deserializes it to an object.
-    /// </summary>
-    /// <param name="reader">The JSON reader to use during deserialization.</param>
-    /// <param name="objectType">The type of object to which to deserialize.</param>
-    /// <param name="existingValue">The existing value of the object.</param>
-    /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
-    /// <param name="serializer">The JSON serializer to use in deserialization.</param>
-    /// <returns>The deserialized object created from JSON.</returns>
-    public override Target ReadJson(JsonReader reader, Type objectType, Target? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
+    /// <param name="typeToConvert">The Type description of the type to convert.</param>
+    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <returns>An subclass of a Target object as described by the JSON.</returns>
+    /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
+    public override Target? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        JObject jsonObject = JObject.Load(reader);
-        Target target;
-        if (jsonObject.ContainsKey("realm"))
+        JsonDocument doc = JsonDocument.ParseValue(ref reader);
+        JsonElement rootElement = doc.RootElement;
+        if (rootElement.ValueKind != JsonValueKind.Object)
         {
-            target = new RealmTarget(string.Empty);
-            serializer.Populate(jsonObject.CreateReader(), target);
-            return target;
+            throw new JsonException($"Script target JSON must be an object, but was {rootElement.ValueKind}");
         }
 
-        if (jsonObject.ContainsKey("context"))
+        if (rootElement.TryGetProperty("realm", out JsonElement realmTargetElement))
         {
-            target = new ContextTarget(string.Empty);
-            serializer.Populate(jsonObject.CreateReader(), target);
-            return target;
+            return rootElement.Deserialize<RealmTarget>();
         }
 
-        throw new WebDriverBiDiException("Malformed response: ScriptTarget must contain either a 'realm' or a 'context' property");
+        if (rootElement.TryGetProperty("context", out JsonElement contextTargetElement))
+        {
+            return rootElement.Deserialize<ContextTarget>();
+        }
+
+        throw new JsonException("Malformed response: ScriptTarget must contain either a 'realm' or a 'context' property");
     }
 
     /// <summary>
-    /// Serializes an object and writes it to a JSON string.
+    /// Serializes a subclass of a Target object to a JSON string.
     /// </summary>
-    /// <param name="writer">The JSON writer to use during serialization.</param>
-    /// <param name="value">The object to serialize.</param>
-    /// <param name="serializer">The JSON serializer to use in serialization.</param>
-    public override void WriteJson(JsonWriter writer, Target? value, JsonSerializer serializer)
+    /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
+    /// <param name="value">The Command to be serialized.</param>
+    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    public override void Write(Utf8JsonWriter writer, Target value, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        string json = JsonSerializer.Serialize(value, value.GetType());
+        writer.WriteRawValue(json);
+        writer.Flush();
     }
 }

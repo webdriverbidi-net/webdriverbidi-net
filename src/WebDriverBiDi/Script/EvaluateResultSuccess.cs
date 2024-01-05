@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing the successful evaluation of a script.
@@ -26,6 +26,7 @@ public class EvaluateResultSuccess : EvaluateResult
     /// <summary>
     /// Gets the result of the script evaluation.
     /// </summary>
-    [JsonProperty("result")]
-    public RemoteValue Result { get => this.result; internal set => this.result = value; }
+    [JsonPropertyName("result")]
+    [JsonInclude]
+    public RemoteValue Result { get => this.result; private set => this.result = value; }
 }

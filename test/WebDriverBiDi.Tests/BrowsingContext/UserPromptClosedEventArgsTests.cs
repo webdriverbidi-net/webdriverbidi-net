@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 
 [TestFixture]
 public class UserPromptClosedEventArgsTests
@@ -9,7 +9,7 @@ public class UserPromptClosedEventArgsTests
     public void TestCanDeserializeWithAcceptedTrue()
     {
         string json = @"{ ""context"": ""myContextId"", ""accepted"": true }";
-        UserPromptClosedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json);
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -23,7 +23,7 @@ public class UserPromptClosedEventArgsTests
     public void TestCanDeserializeWithAcceptedFalse()
     {
         string json = @"{ ""context"": ""myContextId"", ""accepted"": false }";
-        UserPromptClosedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json);
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -37,7 +37,7 @@ public class UserPromptClosedEventArgsTests
     public void TestCanDeserializeWithUserText()
     {
         string json = @"{ ""context"": ""myContextId"", ""accepted"": true, ""userText"": ""some text"" }";
-        UserPromptClosedEventArgs? eventArgs = JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json);
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -51,34 +51,34 @@ public class UserPromptClosedEventArgsTests
     public void TestDeserializeWithMissingContextValueThrows()
     {
         string json = @"{ ""accepted"": true }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidContextValueThrows()
     {
         string json = @"{ ""context"": {}, ""accepted"": true }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingAcceptedValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonSerializationException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidAcceptedValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""accepted"": ""some value"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidUserTextValueThrows()
     {
         string json = @"{ ""context"": ""myContextId"", ""accepted"": true, ""userText"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonReaderException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 }

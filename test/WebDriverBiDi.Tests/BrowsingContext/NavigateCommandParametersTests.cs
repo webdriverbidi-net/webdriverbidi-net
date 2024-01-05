@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class NavigateCommandParametersTests
     public void TestCanSerializeParameters()
     {
         NavigateCommandParameters properties = new("myContextId", "http://example.com");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -38,7 +38,7 @@ public class NavigateCommandParametersTests
         {
             Wait = ReadinessState.None
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -62,7 +62,7 @@ public class NavigateCommandParametersTests
         {
             Wait = ReadinessState.Interactive
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -86,7 +86,7 @@ public class NavigateCommandParametersTests
         {
             Wait = ReadinessState.Complete
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>

@@ -5,9 +5,14 @@
 
 namespace WebDriverBiDi.Input;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Interface marking an action as an action used with a keyboard input device.
 /// </summary>
+[JsonDerivedType(typeof(KeyDownAction))]
+[JsonDerivedType(typeof(KeyUpAction))]
+[JsonDerivedType(typeof(PauseAction))]
 public interface IKeySourceAction
 {
 }

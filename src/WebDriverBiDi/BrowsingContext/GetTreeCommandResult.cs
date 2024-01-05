@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for getting the tree of browsing contexts using the browserContext.getTree command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class GetTreeCommandResult : CommandResult
 {
     private List<BrowsingContextInfo> contextTree = new();
@@ -28,7 +27,8 @@ public class GetTreeCommandResult : CommandResult
     /// <summary>
     /// Gets or sets the tree of browsing contexts for serialization purposes.
     /// </summary>
-    [JsonProperty("contexts")]
+    [JsonPropertyName("contexts")]
     [JsonRequired]
+    [JsonInclude]
     internal List<BrowsingContextInfo> SerializableContextTree { get => this.contextTree; set => this.contextTree = value; }
 }

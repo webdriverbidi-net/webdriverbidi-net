@@ -5,17 +5,18 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// The abstract base class for a clipping rectangle for a screenshot.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
+[JsonDerivedType(typeof(BoxClipRectangle))]
+[JsonDerivedType(typeof(ElementClipRectangle))]
 public abstract class ClipRectangle
 {
     /// <summary>
     /// Gets the type of clip rectangle.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public abstract string Type { get; }
 }

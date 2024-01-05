@@ -5,8 +5,9 @@
 
 namespace WebDriverBiDi.JsonConverters;
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -15,59 +16,56 @@ using WebDriverBiDi.Script;
 public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
 {
     /// <summary>
-    /// Gets a value indicating whether this converter can read JSON values.
-    /// Returns true for this converter (converter used for deserialization
-    /// only).
+    /// Deserializes the JSON string to an EvaluateResult value.
     /// </summary>
-    public override bool CanRead => true;
-
-    /// <summary>
-    /// Serializes an object and writes it to a JSON string.
-    /// </summary>
-    /// <param name="writer">The JSON writer to use during serialization.</param>
-    /// <param name="value">The object to serialize.</param>
-    /// <param name="serializer">The JSON serializer to use in serialization.</param>
-    public override void WriteJson(JsonWriter writer, EvaluateResult? value, JsonSerializer serializer)
+    /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
+    /// <param name="typeToConvert">The Type description of the type to convert.</param>
+    /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
+    /// <returns>An subclass of an EvaluateResult object as described by the JSON.</returns>
+    /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
+    public override EvaluateResult? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        JsonDocument doc = JsonDocument.ParseValue(ref reader);
+        JsonElement rootElement = doc.RootElement;
+        if (rootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException($"Script response JSON must be an object, but was {rootElement.ValueKind}");
+        }
+
+        if (!rootElement.TryGetProperty("type", out JsonElement typeElement))
+        {
+            throw new JsonException("Script response must contain a 'type' property");
+        }
+
+        if (typeElement.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException("Script response 'type' property must be a string");
+        }
+
+        // We have previously determined that the token exists and is a string, and must
+        // contain a value, so therefore cannot be null.
+        string resultType = typeElement.GetString()!;
+        if (resultType == "success")
+        {
+            return rootElement.Deserialize<EvaluateResultSuccess>(options);
+        }
+        else if (resultType == "exception")
+        {
+            return rootElement.Deserialize<EvaluateResultException>(options);
+        }
+
+        throw new JsonException($"Malformed response: unknown type '{resultType}' for script result");
     }
 
     /// <summary>
-    /// Reads a JSON string and deserializes it to an object.
+    /// Serializes an EvaluateResult object to a JSON string.
     /// </summary>
-    /// <param name="reader">The JSON reader to use during deserialization.</param>
-    /// <param name="objectType">The type of object to which to deserialize.</param>
-    /// <param name="existingValue">The existing value of the object.</param>
-    /// <param name="hasExistingValue">A value indicating whether the existing value is null.</param>
-    /// <param name="serializer">The JSON serializer to use in deserialization.</param>
-    /// <returns>The deserialized object created from JSON.</returns>
-    public override EvaluateResult ReadJson(JsonReader reader, Type objectType, EvaluateResult? existingValue, bool hasExistingValue, JsonSerializer serializer)
+    /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
+    /// <param name="value">The Command to be serialized.</param>
+    /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <exception cref="NotImplementedException">Thrown when called, as this converter is only used for deserialization.</exception>
+    public override void Write(Utf8JsonWriter writer, EvaluateResult value, JsonSerializerOptions options)
     {
-        JObject jsonObject = JObject.Load(reader);
-        if (jsonObject.TryGetValue("type", out JToken? typeToken))
-        {
-            if (typeToken.Type == JTokenType.String)
-            {
-                string resultType = typeToken.Value<string>()!;
-                if (resultType == "success")
-                {
-                    EvaluateResultSuccess successResult = new();
-                    serializer.Populate(jsonObject.CreateReader(), successResult);
-                    return successResult;
-                }
-                else if (resultType == "exception")
-                {
-                    EvaluateResultException exceptionResult = new();
-                    serializer.Populate(jsonObject.CreateReader(), exceptionResult);
-                    return exceptionResult;
-                }
-                else
-                {
-                    throw new WebDriverBiDiException($"Malformed response: unknown type '{resultType}' for script result");
-                }
-            }
-        }
-
-        throw new WebDriverBiDiException("Malformed response: Script response must contain a 'type' property that contains a non-null string value");
+        throw new NotImplementedException();
     }
 }

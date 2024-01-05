@@ -8,6 +8,7 @@ namespace WebDriverBiDi.Client;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.Json;
 using WebDriverBiDi;

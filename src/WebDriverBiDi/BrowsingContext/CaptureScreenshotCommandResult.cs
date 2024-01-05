@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Result for capturing a screenshot using the browserContext.captureScreenshot command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CaptureScreenshotCommandResult : CommandResult
 {
     private string base64Screenshot = string.Empty;
@@ -23,7 +22,8 @@ public class CaptureScreenshotCommandResult : CommandResult
     /// <summary>
     /// Gets the screenshot image data as a base64-encoded string.
     /// </summary>
-    [JsonProperty("data")]
+    [JsonPropertyName("data")]
     [JsonRequired]
-    public string Data { get => this.base64Screenshot; internal set => this.base64Screenshot = value; }
+    [JsonInclude]
+    public string Data { get => this.base64Screenshot; private set => this.base64Screenshot = value; }
 }

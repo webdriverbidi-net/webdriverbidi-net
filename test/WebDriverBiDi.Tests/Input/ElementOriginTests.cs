@@ -1,7 +1,8 @@
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
+using WebDriverBiDi.JsonConverters;
 using WebDriverBiDi.Script;
 
 [TestFixture]
@@ -10,10 +11,15 @@ public class ElementOriginTests
     [Test]
     public void TestCanSerializeOrigin()
     {
+        JsonSerializerOptions deserializationOptions = new()
+        {
+            TypeInfoResolver = new PrivateConstructorContractResolver(),
+        };
+
         string nodeJson = @"{ ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 }, ""sharedId"": ""testSharedId"" }";
-        SharedReference node = JsonConvert.DeserializeObject<RemoteValue>(nodeJson)!.ToSharedReference();
+        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson, deserializationOptions)!.ToSharedReference();
         ElementOrigin origin = new(node);
-        string json = JsonConvert.SerializeObject(origin);
+        string json = JsonSerializer.Serialize(origin);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>

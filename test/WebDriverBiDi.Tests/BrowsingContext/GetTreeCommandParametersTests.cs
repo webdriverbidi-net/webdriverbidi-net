@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class GetTreeCommandParametersTests
     public void TestCanSerializeParameters()
     {
         GetTreeCommandParameters properties = new();
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Is.Empty);
     }
@@ -29,7 +29,7 @@ public class GetTreeCommandParametersTests
         {
             MaxDepth = 2
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -48,7 +48,7 @@ public class GetTreeCommandParametersTests
         {
             RootBrowsingContextId = "rootBrowsingContext"
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>

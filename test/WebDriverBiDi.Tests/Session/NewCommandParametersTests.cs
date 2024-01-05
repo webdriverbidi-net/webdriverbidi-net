@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class NewCommandParametersTests
     public void TestCanSerializeParameters()
     {
         NewCommandParameters properties = new();
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Is.Empty);
     }
@@ -29,7 +29,7 @@ public class NewCommandParametersTests
         {
             AlwaysMatch = new CapabilitiesRequest() { BrowserName = "greatBrowser" }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -51,7 +51,7 @@ public class NewCommandParametersTests
     {
         NewCommandParameters properties = new();
         properties.FirstMatch.Add(new CapabilitiesRequest() { BrowserName = "greatBrowser" });
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>

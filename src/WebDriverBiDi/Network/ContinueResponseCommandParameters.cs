@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the network.continueResponse command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class ContinueResponseCommandParameters : CommandParameters<EmptyResult>
 {
     private string requestId;
@@ -32,41 +31,47 @@ public class ContinueResponseCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "network.continueResponse";
 
     /// <summary>
     /// Gets or sets the ID of the request to continue.
     /// </summary>
-    [JsonProperty("request")]
+    [JsonPropertyName("request")]
     public string RequestId { get => this.requestId; set => this.requestId = value; }
 
     /// <summary>
     /// Gets or sets the credentials to use with this response.
     /// </summary>
-    [JsonProperty("credentials", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("credentials")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public AuthCredentials? Credentials { get => this.credentials; set => this.credentials = value; }
 
     /// <summary>
     /// Gets or sets the headers of the response.
     /// </summary>
-    [JsonProperty("headers", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("headers")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<Header>? Headers { get => this.headers; set => this.headers = value; }
 
     /// <summary>
     /// Gets or sets the cookies of the response.
     /// </summary>
-    [JsonProperty("cookies", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("cookies")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<SetCookieHeader>? Cookies { get => this.cookieHeaders; set => this.cookieHeaders = value; }
 
     /// <summary>
     /// Gets or sets the HTTP reason phrase ('OK', 'Not Found', etc.) of the response.
     /// </summary>
-    [JsonProperty("reasonPhrase", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("reasonPhrase")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ReasonPhrase { get => this.reasonPhrase; set => this.reasonPhrase = value; }
 
     /// <summary>
     /// Gets or sets the HTTP status code of the response.
     /// </summary>
-    [JsonProperty("statusCode", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("statusCode")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? StatusCode { get => this.statusCode; set => this.statusCode = value; }
 }

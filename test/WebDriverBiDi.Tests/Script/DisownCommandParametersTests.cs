@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class DisownCommandParametersTests
     public void TestCanSerializeParameters()
     {
         DisownCommandParameters properties = new(new RealmTarget("myRealm"));
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -34,7 +34,7 @@ public class DisownCommandParametersTests
     public void TestCanSerializeParametersWithHandles()
     {
         DisownCommandParameters properties = new(new RealmTarget("myRealm"), "myHandle");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>

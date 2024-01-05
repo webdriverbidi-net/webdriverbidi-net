@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Base class for the result of a command where the concrete type of the response data is known.
 /// </summary>
 /// <typeparam name="T">The data type of the command response.</typeparam>
-[JsonObject(MemberSerialization.OptIn)]
 public class CommandResponseMessage<T> : CommandResponseMessage
     where T : CommandResult
 {
@@ -20,12 +19,14 @@ public class CommandResponseMessage<T> : CommandResponseMessage
     /// <summary>
     /// Gets the result of the command.
     /// </summary>
+    [JsonIgnore]
     public override CommandResult Result => this.result!;
 
     /// <summary>
     /// Gets the result of the command for serialization purposes.
     /// </summary>
-    [JsonProperty("result")]
+    [JsonPropertyName("result")]
     [JsonRequired]
+    [JsonInclude]
     internal T? SerializableResult { get => this.result; private set => this.result = value; }
 }

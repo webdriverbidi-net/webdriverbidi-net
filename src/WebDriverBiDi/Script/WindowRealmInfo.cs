@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing a window realm for executing script.
@@ -26,13 +26,14 @@ public class WindowRealmInfo : RealmInfo
     /// <summary>
     /// Gets the ID of the browsing context containing this window realm.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
     public string BrowsingContext { get => this.browsingContextId; internal set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets the sandbox name for the realm.
     /// </summary>
-    [JsonProperty("sandbox", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("sandbox")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Sandbox { get => this.sandbox; internal set => this.sandbox = value; }
 }

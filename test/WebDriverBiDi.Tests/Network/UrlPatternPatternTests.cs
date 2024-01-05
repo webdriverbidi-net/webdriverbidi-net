@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class UrlPatternPatternTests
     public void TestCanSerializeValue()
     {
         UrlPattern value = new UrlPatternPattern();
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -28,7 +28,7 @@ public class UrlPatternPatternTests
         {
             Protocol = "https"
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -49,7 +49,7 @@ public class UrlPatternPatternTests
         {
             HostName = "example.com"
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -70,7 +70,7 @@ public class UrlPatternPatternTests
         {
             Port = "2222"
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -91,7 +91,7 @@ public class UrlPatternPatternTests
         {
             PathName = "/data/*"
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -112,7 +112,7 @@ public class UrlPatternPatternTests
         {
             Search = "?user=foo"
         };
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

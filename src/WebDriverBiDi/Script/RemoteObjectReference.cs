@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Object containing a remote reference to an existing ECMAScript object in the browser.
 /// </summary>
@@ -22,10 +24,12 @@ public class RemoteObjectReference : RemoteReference
     /// <summary>
     /// Gets or sets the handle of the remote object.
     /// </summary>
+    [JsonIgnore]
     public string Handle { get => this.InternalHandle!; set => this.InternalHandle = value; }
 
     /// <summary>
     /// Gets or sets the shard ID of the remote object.
     /// </summary>
+    [JsonIgnore]
     public string? SharedId { get => this.InternalSharedId; set => this.InternalSharedId = value; }
 }

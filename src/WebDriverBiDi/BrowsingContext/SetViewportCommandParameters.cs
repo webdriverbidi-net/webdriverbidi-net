@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.create command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class SetViewportCommandParameters : CommandParameters<EmptyResult>
 {
     private string browsingContextId;
@@ -29,23 +28,27 @@ public class SetViewportCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "browsingContext.setViewport";
 
     /// <summary>
     /// Gets or sets the ID of the browsing context for which to set the viewport.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
+    [JsonInclude]
     public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets the viewport dimensions to set. A null value sets the viewport to the default dimensions.
     /// </summary>
-    [JsonProperty("viewport", NullValueHandling = NullValueHandling.Include)]
+    [JsonPropertyName("viewport")]
+    [JsonInclude]
     public Viewport? Viewport { get => this.viewport; set => this.viewport = value; }
 
     /// <summary>
     /// Gets or sets the device pixel ratio of the viewport.
     /// </summary>
-    [JsonProperty("devicePixelRatio", NullValueHandling = NullValueHandling.Include)]
+    [JsonPropertyName("devicePixelRatio")]
+    [JsonInclude]
     public double? DevicePixelRatio { get => this.devicePixelRatio; set => this.devicePixelRatio = value; }
 }

@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>

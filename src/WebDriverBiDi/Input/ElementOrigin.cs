@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -28,12 +28,12 @@ public class ElementOrigin
     /// <summary>
     /// Gets the type of the origin.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type => this.originType;
 
     /// <summary>
     /// Gets the reference to the element used as the origin.
     /// </summary>
-    [JsonProperty("element")]
+    [JsonPropertyName("element")]
     public SharedReference Element => this.elementReference;
 }

@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the script.removePreloadScript command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class RemovePreloadScriptCommandParameters : CommandParameters<EmptyResult>
 {
     private string preloadScriptId;
@@ -27,11 +26,12 @@ public class RemovePreloadScriptCommandParameters : CommandParameters<EmptyResul
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "script.removePreloadScript";
 
     /// <summary>
     /// Gets or sets the ID of the preload script to remove.
     /// </summary>
-    [JsonProperty("script")]
+    [JsonPropertyName("script")]
     public string PreloadScriptId { get => this.preloadScriptId; set => this.preloadScriptId = value; }
 }

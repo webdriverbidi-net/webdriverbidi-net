@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the script.callFunction command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
 {
     private readonly List<ArgumentValue> arguments = new();
@@ -38,59 +37,67 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "script.callFunction";
 
     /// <summary>
     /// Gets or sets the function declaration.
     /// </summary>
-    [JsonProperty("functionDeclaration")]
+    [JsonPropertyName("functionDeclaration")]
     public string FunctionDeclaration { get => this.functionDeclaration; set => this.functionDeclaration = value; }
 
     /// <summary>
     /// Gets or sets the script target against which to call the function.
     /// </summary>
-    [JsonProperty("target")]
+    [JsonPropertyName("target")]
     public Target ScriptTarget { get => this.scriptTarget; set => this.scriptTarget = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to wait for the function execution to complete.
     /// </summary>
-    [JsonProperty("awaitPromise")]
+    [JsonPropertyName("awaitPromise")]
     public bool AwaitPromise { get => this.awaitPromise; set => this.awaitPromise = value; }
 
     /// <summary>
     /// Gets or sets the item to use as the 'this' object when the function is called.
     /// </summary>
-    [JsonProperty("this", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("this")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ArgumentValue? ThisObject { get => this.thisObject; set => this.thisObject = value; }
 
     /// <summary>
     /// Gets the list of arguments to pass to the function.
     /// </summary>
+    [JsonIgnore]
     public List<ArgumentValue> Arguments => this.arguments;
 
     /// <summary>
     /// Gets or sets the ownership model to use for objects in the function call.
     /// </summary>
-    [JsonProperty("resultOwnership", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("resultOwnership")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing results.
     /// </summary>
-    [JsonProperty("serializationOptions", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("serializationOptions")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to activate the browsing context when calling the function. When omitted, is treated as if false.
     /// </summary>
-    [JsonProperty("userActivation", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("userActivation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? UserActivation { get => this.userActivation; set => this.userActivation = value; }
 
     /// <summary>
     /// Gets the list of arguments for serialization purposes.
     /// </summary>
-    [JsonProperty("arguments", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("arguments")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     internal IList<ArgumentValue>? SerializableArguments
     {
         get

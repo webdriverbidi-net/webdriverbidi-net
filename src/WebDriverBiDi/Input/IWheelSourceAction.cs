@@ -5,9 +5,13 @@
 
 namespace WebDriverBiDi.Input;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Interface marking an action as an action used with a wheel input device.
 /// </summary>
+[JsonDerivedType(typeof(WheelScrollAction))]
+[JsonDerivedType(typeof(PauseAction))]
 public interface IWheelSourceAction
 {
 }

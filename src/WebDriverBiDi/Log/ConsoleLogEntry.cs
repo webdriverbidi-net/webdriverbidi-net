@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi.Log;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -27,19 +27,22 @@ public class ConsoleLogEntry : LogEntry
     /// <summary>
     /// Gets the method for the console log entry.
     /// </summary>
-    [JsonProperty("method")]
+    [JsonPropertyName("method")]
     [JsonRequired]
+    [JsonInclude]
     public string Method { get => this.method; internal set => this.method = value; }
 
     /// <summary>
     /// Gets the read-only list of arguments for the console log entry.
     /// </summary>
+    [JsonIgnore]
     public IList<RemoteValue> Args => this.args.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the arguments of the console log entry for serialization purposes.
     /// </summary>
-    [JsonProperty("args")]
+    [JsonPropertyName("args")]
     [JsonRequired]
+    [JsonInclude]
     internal List<RemoteValue> SerializableArgs { get => this.args; set => this.args = value; }
 }

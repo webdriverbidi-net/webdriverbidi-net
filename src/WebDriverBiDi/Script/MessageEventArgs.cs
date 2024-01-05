@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object containing event data for the event raised when a preload script sends a message to the client.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class MessageEventArgs : WebDriverBiDiEventArgs
 {
     private readonly string channelId;
@@ -34,18 +33,18 @@ public class MessageEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets the ID of the channel used for this message.
     /// </summary>
-    [JsonProperty("channel")]
+    [JsonPropertyName("channel")]
     public string ChannelId => this.channelId;
 
     /// <summary>
     /// Gets the data for this message.
     /// </summary>
-    [JsonProperty("data")]
+    [JsonPropertyName("data")]
     public RemoteValue Data => this.data;
 
     /// <summary>
     /// Gets the source for this message.
     /// </summary>
-    [JsonProperty("source")]
+    [JsonPropertyName("source")]
     public Source Source => this.source;
 }

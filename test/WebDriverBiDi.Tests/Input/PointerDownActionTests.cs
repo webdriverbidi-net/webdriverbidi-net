@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class PointerDownActionTests
     public void TestCanSerializeParameters()
     {
         PointerDownAction properties = new(0);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -32,7 +32,7 @@ public class PointerDownActionTests
             Width = 1,
             Height = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -60,7 +60,7 @@ public class PointerDownActionTests
             Pressure = 1,
             TangentialPressure = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -87,7 +87,7 @@ public class PointerDownActionTests
         {
             Twist = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -119,7 +119,7 @@ public class PointerDownActionTests
             AzimuthAngle = 1,
             AltitudeAngle = 1,
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>

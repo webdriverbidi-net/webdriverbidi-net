@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.Script;
 
@@ -18,7 +18,7 @@ public class LocateNodesCommandParametersTests
     public void TestCanSerializeParameters()
     {
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"));
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>
@@ -44,7 +44,7 @@ public class LocateNodesCommandParametersTests
         {
             MaxNodeCount = 10
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -73,7 +73,7 @@ public class LocateNodesCommandParametersTests
         {
             ResultOwnership = ResultOwnership.Root
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -102,7 +102,7 @@ public class LocateNodesCommandParametersTests
         {
             Sandbox = "mySandbox"
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -136,7 +136,7 @@ public class LocateNodesCommandParametersTests
                 MaxObjectDepth = 0,
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -172,11 +172,11 @@ public class LocateNodesCommandParametersTests
     public void TestCanSerializeWithContextNode()
     {
         string nodeJson = @"{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
-        RemoteValue nodeValue = JsonConvert.DeserializeObject<RemoteValue>(nodeJson)!;
+        RemoteValue nodeValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!;
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"));
         properties.ContextNodes.Add(nodeValue.ToSharedReference());
 
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>

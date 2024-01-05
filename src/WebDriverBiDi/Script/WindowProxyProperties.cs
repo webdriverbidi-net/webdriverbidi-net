@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing the properties of a window proxy object.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class WindowProxyProperties
 {
     private string context = string.Empty;
@@ -25,7 +24,8 @@ public class WindowProxyProperties
     /// <summary>
     /// Gets the browsing context ID for the window proxy.
     /// </summary>
-    [JsonProperty("context")]
+    [JsonPropertyName("context")]
     [JsonRequired]
-    public string Context { get => this.context; internal set => this.context = value; }
+    [JsonInclude]
+    public string Context { get => this.context; private set => this.context = value; }
 }

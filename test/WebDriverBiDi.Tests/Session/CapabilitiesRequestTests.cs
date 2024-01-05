@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class CapabilitiesRequestTests
     public void TestCanSerialize()
     {
         CapabilitiesRequest capabilities = new();
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Is.Empty);
     }
@@ -22,7 +22,7 @@ public class CapabilitiesRequestTests
         {
             BrowserName = "greatBrowser"
         };
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -40,7 +40,7 @@ public class CapabilitiesRequestTests
         {
             BrowserVersion = "101.5b"
         };
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -58,7 +58,7 @@ public class CapabilitiesRequestTests
         {
             PlatformName = "oddOS"
         };
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -76,7 +76,7 @@ public class CapabilitiesRequestTests
         {
             AcceptInsecureCertificates = true
         };
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -94,7 +94,7 @@ public class CapabilitiesRequestTests
         {
             AcceptInsecureCertificates = false
         };
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -112,7 +112,7 @@ public class CapabilitiesRequestTests
         {
             Proxy = Proxy.EmptyProxy
         };
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -131,7 +131,7 @@ public class CapabilitiesRequestTests
         {
             Proxy = new Proxy() { HttpProxy = "http.proxy" }
         };
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -154,7 +154,7 @@ public class CapabilitiesRequestTests
     {
         CapabilitiesRequest capabilities = new();
         capabilities.AdditionalCapabilities["capName"] = "capValue";
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -170,7 +170,7 @@ public class CapabilitiesRequestTests
     {
         CapabilitiesRequest capabilities = new();
         capabilities.AdditionalCapabilities["additional"] = new Dictionary<string, object?>() { { "capName", "capValue" } };
-        string json = JsonConvert.SerializeObject(capabilities);
+        string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>

@@ -5,12 +5,14 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents a locator for locating nodes.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
+[JsonDerivedType(typeof(CssLocator))]
+[JsonDerivedType(typeof(InnerTextLocator))]
+[JsonDerivedType(typeof(XPathLocator))]
 public abstract class Locator
 {
     private string value;
@@ -27,12 +29,12 @@ public abstract class Locator
     /// <summary>
     /// Gets the type of locator.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public abstract string Type { get; }
 
     /// <summary>
     /// Gets or sets the value of to use in locating nodes.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     public string Value { get => this.value; set => this.value = value; }
 }

@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class ProxyTests
     public void TestCanSerialize()
     {
         Proxy proxy = new();
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Is.Empty);
     }
@@ -22,7 +22,7 @@ public class ProxyTests
         {
             HttpProxy = "http.proxy"
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -40,7 +40,7 @@ public class ProxyTests
         {
             SslProxy = "ssl.proxy"
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -58,7 +58,7 @@ public class ProxyTests
         {
             FtpProxy = "ftp.proxy"
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -76,7 +76,7 @@ public class ProxyTests
         {
             ProxyAutoConfigUrl = "proxy.autoconfig.url"
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -94,7 +94,7 @@ public class ProxyTests
         {
             SocksProxy = "socks.proxy"
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -112,7 +112,7 @@ public class ProxyTests
         {
             SocksVersion = 4
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -130,7 +130,7 @@ public class ProxyTests
         {
             NoProxyAddresses = new List<string>() { "no.proxy.address" }
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -154,7 +154,7 @@ public class ProxyTests
         {
             NoProxyAddresses = new List<string>()
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -173,7 +173,7 @@ public class ProxyTests
         {
             Type = ProxyType.Direct
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -191,7 +191,7 @@ public class ProxyTests
         {
             Type = ProxyType.Manual
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -209,7 +209,7 @@ public class ProxyTests
         {
             Type = ProxyType.System
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -227,7 +227,7 @@ public class ProxyTests
         {
             Type = ProxyType.AutoDetect
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -245,7 +245,7 @@ public class ProxyTests
         {
             Type = ProxyType.ProxyAutoConfig
         };
-        string json = JsonConvert.SerializeObject(proxy);
+        string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -260,7 +260,7 @@ public class ProxyTests
     public void TestCanDeserialize()
     {
         string json = @"{}";
-        Proxy? deserialized = JsonConvert.DeserializeObject<Proxy>(json);
+        Proxy? deserialized = JsonSerializer.Deserialize<Proxy>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -279,7 +279,7 @@ public class ProxyTests
     public void TestCanDeserializeWithData()
     {
         string json = @"{ ""proxyType"": ""direct"", ""proxyAutoconfigUrl"": ""proxy.autoconfig.url"", ""httpProxy"": ""http.proxy"", ""sslProxy"": ""ssl.proxy"", ""ftpProxy"": ""ftp.proxy"", ""socksProxy"": ""socks.proxy"", ""socksVersion"": 4,""noProxy"": [""no.proxy.address""] }";
-        Proxy? deserialized = JsonConvert.DeserializeObject<Proxy>(json);
+        Proxy? deserialized = JsonSerializer.Deserialize<Proxy>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -299,7 +299,7 @@ public class ProxyTests
     public void TestCanDeserializeWithProxyTypeManual()
     {
         string json = @"{ ""proxyType"": ""manual"" }";
-        Proxy? deserialized = JsonConvert.DeserializeObject<Proxy>(json);
+        Proxy? deserialized = JsonSerializer.Deserialize<Proxy>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -318,7 +318,7 @@ public class ProxyTests
     public void TestCanDeserializeWithProxyTypeSystem()
     {
         string json = @"{ ""proxyType"": ""system"" }";
-        Proxy? deserialized = JsonConvert.DeserializeObject<Proxy>(json);
+        Proxy? deserialized = JsonSerializer.Deserialize<Proxy>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -337,7 +337,7 @@ public class ProxyTests
     public void TestCanDeserializeWithProxyTypeAutoDetect()
     {
         string json = @"{ ""proxyType"": ""autodetect"" }";
-        Proxy? deserialized = JsonConvert.DeserializeObject<Proxy>(json);
+        Proxy? deserialized = JsonSerializer.Deserialize<Proxy>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -356,7 +356,7 @@ public class ProxyTests
     public void TestCanDeserializeWithProxyTypeProxyAutoconfig()
     {
         string json = @"{ ""proxyType"": ""pac"" }";
-        Proxy? deserialized = JsonConvert.DeserializeObject<Proxy>(json);
+        Proxy? deserialized = JsonSerializer.Deserialize<Proxy>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -375,13 +375,13 @@ public class ProxyTests
     public void TestDeserializeWithInvalidProxyTypeThrows()
     {
         string json = @"{ ""proxyType"": ""invalid"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<Proxy>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<Proxy>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
     }
 
     [Test]
     public void TestDeserializeWithNonStringProxyTypeThrows()
     {
         string json = @"{ ""proxyType"": {} }";
-        Assert.That(() => JsonConvert.DeserializeObject<Proxy>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Deserialization error reading enumerated string value"));
+        Assert.That(() => JsonSerializer.Deserialize<Proxy>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Deserialization error reading enumerated string value"));
     }
 }

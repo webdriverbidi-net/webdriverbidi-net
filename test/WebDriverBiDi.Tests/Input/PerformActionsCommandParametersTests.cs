@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class PerformActionsCommandParametersTests
     public void TestCanSerializeParameters()
     {
         PerformActionsCommandParameters properties = new("myContextId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
         Assert.Multiple(() =>

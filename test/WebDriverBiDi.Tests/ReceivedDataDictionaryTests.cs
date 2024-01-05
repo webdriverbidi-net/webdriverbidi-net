@@ -1,7 +1,9 @@
 namespace WebDriverBiDi;
 
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using JsonConverters;
+using WebDriverBiDi.Internal;
 
 [TestFixture]
 public class ReceivedDataDictionaryTests
@@ -106,44 +108,32 @@ public class ReceivedDataDictionaryTests
     [Test]
     public void TestCanCreateFromDeserializedData()
     {
-        string json = @"{ ""stringProperty"": ""stringValue"", ""intValue"": 123, ""floatValue"": 456.78, ""boolValue"": true, ""nullValue"": null, ""listValue"": [ ""listString"", 901, true, null ], ""objectValue"": { ""objectProperty"": ""objectValue"" } }";
-        Dictionary<string, object?>? deserializedValue = JsonConvert.DeserializeObject<Dictionary<string, object?>>(json, new ReceivedDataJsonConverter());
-        ReceivedDataDictionary receivedData = new(deserializedValue!);
-        Assert.That(receivedData, Has.Count.EqualTo(7));
+        string json = @"{ ""stringProperty"": ""stringValue"", ""intValue"": 123, ""floatValue"": 456.78, ""trueBoolValue"": true, ""falseBoolValue"": false, ""nullValue"": null, ""listValue"": [ ""listString"", 901, true, null ], ""objectValue"": { ""objectProperty"": ""objectValue"" } }";
+        OnlyOverflowData? deserializedValue = JsonSerializer.Deserialize<OnlyOverflowData>(json);
+        Assert.That(deserializedValue!.ReceivedData, Has.Count.EqualTo(8));
     }
 
-    [Test]
-    public void TestDeserializingFromInvalidDataThrows()
+    private class OnlyOverflowData
     {
-        string json = @"{ """": ""stringValue"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json, new ReceivedDataJsonConverter()), Throws.InstanceOf<JsonSerializationException>().With.Message.EqualTo("JSON object key cannot be null or the empty string"));
-    }
+        private Dictionary<string, JsonElement> overflowData = new();
+        private ReceivedDataDictionary receivedData = ReceivedDataDictionary.EmptyDictionary;
 
-    [Test]
-    public void TestDeserializingFromInvalidArrayThrows()
-    {
-        string json = @"[ ""value"" ";
-        Assert.That(() => JsonConvert.DeserializeObject<List<object?>>(json, new ReceivedDataJsonConverter()), Throws.InstanceOf<JsonSerializationException>().With.Message.EqualTo("Incomplete array in JSON"));
-    }
+        [JsonIgnore]
+        public ReceivedDataDictionary ReceivedData
+        {
+            get
+            {
+                if (this.overflowData.Count > 0 && this.receivedData.Count == 0)
+                {
+                    this.receivedData = JsonConverterUtilities.ConvertIncomingExtensionData(this.overflowData);
+                }
 
-    [Test]
-    public void TestDeserializingFromIncompleteObjectThrows()
-    {
-        string json = @"{ ""invalidValue"": {";
-        Assert.That(() => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json, new ReceivedDataJsonConverter()), Throws.InstanceOf<JsonSerializationException>().With.Message.EqualTo("Incomplete object in JSON"));
-    }
+                return this.receivedData;
+            }
+        }
 
-    [Test]
-    public void TestDeserializingFromInvalidObjectThrows()
-    {
-        string json = @"{ ""invalidValue"" }";
-        Assert.That(() => JsonConvert.DeserializeObject<Dictionary<string, object?>>(json, new ReceivedDataJsonConverter()), Throws.InstanceOf<JsonReaderException>());
-    }
-
-    [Test]
-    public void TestCannotSerialize()
-    {
-        ReceivedDataDictionary dictionary = ReceivedDataDictionary.EmptyDictionary;
-        Assert.That(() => JsonConvert.SerializeObject(dictionary.ToWritableCopy(), new ReceivedDataJsonConverter()), Throws.InstanceOf<NotImplementedException>());
+        [JsonExtensionData]
+        [JsonInclude]
+        private Dictionary<string, JsonElement> OverflowData { get => this.overflowData; set => this.overflowData = value; }
     }
 }

@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Session;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the session.subscribe command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class SubscribeCommandParameters : CommandParameters<EmptyResult>
 {
     private readonly List<string> eventList = new();
@@ -27,24 +26,28 @@ public class SubscribeCommandParameters : CommandParameters<EmptyResult>
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "session.subscribe";
 
     /// <summary>
     /// Gets the list of events to which to subscribe or unsubscribe.
     /// </summary>
-    [JsonProperty("events")]
+    [JsonPropertyName("events")]
     public List<string> Events => this.eventList;
 
     /// <summary>
     /// Gets the list of browsing context IDs for which to subscribe to or unsubscribe from the specified events.
     /// </summary>
+    [JsonIgnore]
     public List<string> Contexts => this.contextList;
 
     /// <summary>
     /// Gets the list of browsing context IDs for which to subscribe to or unsubscribe from the specified events for serialization purposes.
     /// </summary>
-    [JsonProperty("contexts", NullValueHandling = NullValueHandling.Ignore)]
-    internal List<string>? SeralizableContexts
+    [JsonPropertyName("contexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    internal List<string>? SerializableContexts
     {
         get
         {

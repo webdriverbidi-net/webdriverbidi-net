@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Deserializes a message that represents an event as defined by the WebDriver Bidi protocol where the event data type is known.
 /// </summary>
 /// <typeparam name="T">The type of data contained in the event.</typeparam>
-[JsonObject(MemberSerialization.OptIn)]
 public class EventMessage<T> : EventMessage
 {
     private T? data;
@@ -19,12 +18,14 @@ public class EventMessage<T> : EventMessage
     /// <summary>
     /// Gets the data associated with the event.
     /// </summary>
+    [JsonIgnore]
     public override object EventData => this.data!;
 
     /// <summary>
     /// Gets the data of the event for serialization purposes.
     /// </summary>
-    [JsonProperty("params")]
+    [JsonPropertyName("params")]
     [JsonRequired]
+    [JsonInclude]
     internal T? SerializableData { get => this.data; private set => this.data = value; }
 }

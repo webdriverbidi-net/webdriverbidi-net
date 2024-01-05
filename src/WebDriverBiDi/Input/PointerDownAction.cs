@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// An action to send a pointer down on a pointer device.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class PointerDownAction : PointerAction, IPointerSourceAction
 {
     private readonly string actionType = "pointerDown";
@@ -29,12 +28,12 @@ public class PointerDownAction : PointerAction, IPointerSourceAction
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public string Type => this.actionType;
 
     /// <summary>
     /// Gets or sets the button to be pressed down.
     /// </summary>
-    [JsonProperty("button")]
+    [JsonPropertyName("button")]
     public long Button { get => this.button; set => this.button = value; }
 }

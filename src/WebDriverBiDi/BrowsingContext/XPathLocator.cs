@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Represents a locator for locating nodes via XPath.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class XPathLocator : Locator
 {
     private readonly string type = "xpath";
@@ -27,6 +26,6 @@ public class XPathLocator : Locator
     /// <summary>
     /// Gets the type of locator.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     public override string Type => this.type;
 }

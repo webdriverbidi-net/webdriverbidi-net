@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the script.addPreloadScript command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScriptCommandResult>
 {
     private string functionDeclaration;
@@ -30,29 +29,33 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
+    [JsonIgnore]
     public override string MethodName => "script.addPreloadScript";
 
     /// <summary>
     /// Gets or sets the function declaration defining the preload script.
     /// </summary>
-    [JsonProperty("functionDeclaration")]
+    [JsonPropertyName("functionDeclaration")]
     public string FunctionDeclaration { get => this.functionDeclaration; set => this.functionDeclaration = value; }
 
     /// <summary>
     /// Gets or sets the arguments for the function declaration.
     /// </summary>
-    [JsonProperty("arguments", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("arguments")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<ChannelValue>? Arguments { get => this.arguments; set => this.arguments = value; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to add the preload script.
     /// </summary>
-    [JsonProperty("contexts", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("contexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get => this.contexts; set => this.contexts = value; }
 
     /// <summary>
     /// Gets or sets the sandbox name of the preload script.
     /// </summary>
-    [JsonProperty("sandbox", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("sandbox")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
 }

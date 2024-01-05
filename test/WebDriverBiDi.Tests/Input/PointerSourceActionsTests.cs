@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Input;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -10,7 +10,7 @@ public class PointerSourceActionsTests
     public void TestCanSerializeParameters()
     {
         PointerSourceActions properties = new();
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
@@ -36,7 +36,7 @@ public class PointerSourceActionsTests
                 PointerType = PointerType.Mouse,
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -72,7 +72,7 @@ public class PointerSourceActionsTests
                 PointerType = PointerType.Pen,
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -108,7 +108,7 @@ public class PointerSourceActionsTests
                 PointerType = PointerType.Touch,
             }
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -141,7 +141,7 @@ public class PointerSourceActionsTests
         {
             Parameters = new PointerParameters()
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
         Assert.Multiple(() =>
@@ -166,7 +166,7 @@ public class PointerSourceActionsTests
     {
         PointerSourceActions properties = new();
         properties.Actions.Add(new PointerDownAction(0));
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
         Assert.Multiple(() =>

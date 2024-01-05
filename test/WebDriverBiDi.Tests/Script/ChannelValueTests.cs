@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -11,7 +11,7 @@ public class ChannelValueTests
     {
         // Note that serialization of ChannelProperties (value property) is tested elsewhere.
         ChannelValue value = new(new ChannelProperties("myChannel"));
-        string json = JsonConvert.SerializeObject(value);
+        string json = JsonSerializer.Serialize(value);
         var parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {

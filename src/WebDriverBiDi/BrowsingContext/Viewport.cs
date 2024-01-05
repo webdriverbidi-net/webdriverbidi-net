@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Provides parameters for the browsingContext.create command.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class Viewport
 {
     private ulong height = 0;
@@ -19,12 +18,12 @@ public class Viewport
     /// <summary>
     /// Gets or sets the height of the viewport.
     /// </summary>
-    [JsonProperty("height")]
+    [JsonPropertyName("height")]
     public ulong Height { get => this.height; set => this.height = value; }
 
     /// <summary>
     /// Gets or sets the width of the viewport.
     /// </summary>
-    [JsonProperty("width")]
+    [JsonPropertyName("width")]
     public ulong Width { get => this.width; set => this.width = value; }
 }

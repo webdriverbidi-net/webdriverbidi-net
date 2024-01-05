@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class CallFunctionCommandParametersTests
     public void TestCanSerializeParameters()
     {
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), true);
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -43,7 +43,7 @@ public class CallFunctionCommandParametersTests
             MaxDomDepth = 1,
         };
         properties.UserActivation = true;
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(8));
         Assert.Multiple(() =>

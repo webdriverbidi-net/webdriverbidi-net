@@ -6,42 +6,47 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// The abstract base class for a value that can contain either a string or a byte array.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class BytesValue
 {
-    private BytesValueType valueType;
-    private string actualValue;
+    private BytesValueType valueType = BytesValueType.String;
+    private string actualValue = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BytesValue"/> class.
     /// </summary>
-    /// <param name="valueType">The type of value to initialize.</param>
-    /// <param name="actualValue">The value to use in the object.</param>
-    [JsonConstructor]
-    internal BytesValue(BytesValueType valueType, string actualValue)
+    /// <param name="type">The type of value to initialize.</param>
+    /// <param name="value">The value to use in the object.</param>
+    internal BytesValue(BytesValueType type, string value)
     {
-        this.valueType = valueType;
-        this.actualValue = actualValue;
+        this.valueType = type;
+        this.actualValue = value;
+    }
+
+    [JsonConstructor]
+    private BytesValue()
+    {
     }
 
     /// <summary>
     /// Gets the type of the value object.
     /// </summary>
-    [JsonProperty("type")]
+    [JsonPropertyName("type")]
     [JsonRequired]
-    public BytesValueType Type { get => this.valueType; internal set => this.valueType = value; }
+    [JsonInclude]
+    public BytesValueType Type { get => this.valueType; private set => this.valueType = value; }
 
     /// <summary>
     /// Gets the value of the value object.
     /// </summary>
-    [JsonProperty("value")]
+    [JsonPropertyName("value")]
     [JsonRequired]
-    public string Value { get => this.actualValue; internal set => this.actualValue = value; }
+    [JsonInclude]
+    public string Value { get => this.actualValue; private set => this.actualValue = value; }
 
     /// <summary>
     /// Gets the value of the value object as an array of bytes.

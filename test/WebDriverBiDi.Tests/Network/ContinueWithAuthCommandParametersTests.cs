@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Network;
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
@@ -17,7 +17,7 @@ public class ContinueWithAuthCommandParametersTests
     public void TestCanSerializeParameters()
     {
         ContinueWithAuthCommandParameters properties = new("requestId");
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -38,7 +38,7 @@ public class ContinueWithAuthCommandParametersTests
         {
             Action = ContinueWithAuthActionType.Cancel
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -59,7 +59,7 @@ public class ContinueWithAuthCommandParametersTests
         {
             Action = ContinueWithAuthActionType.ProvideCredentials
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
@@ -94,7 +94,7 @@ public class ContinueWithAuthCommandParametersTests
             Action = ContinueWithAuthActionType.ProvideCredentials,
             Credentials = new AuthCredentials("myUserName", "myPassword")
         };
-        string json = JsonConvert.SerializeObject(properties);
+        string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {

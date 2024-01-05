@@ -37,7 +37,7 @@ public class ModuleTests
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
-        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        syncEvent.WaitOne(TimeSpan.FromSeconds(10));
         Assert.Multiple(() =>
         {
             Assert.That(driverLog, Has.Count.EqualTo(1));

@@ -5,13 +5,12 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Abstract base class for script targets.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 [JsonConverter(typeof(ScriptTargetJsonConverter))]
 public abstract class Target
 {

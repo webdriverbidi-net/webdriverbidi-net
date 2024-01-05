@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Contains the result of a navigation.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class NavigationResult : CommandResult
 {
     private string? id;
@@ -24,13 +23,15 @@ public class NavigationResult : CommandResult
     /// <summary>
     /// Gets the ID of the navigation.
     /// </summary>
-    [JsonProperty("navigation")]
-    public string? NavigationId { get => this.id; internal set => this.id = value; }
+    [JsonPropertyName("navigation")]
+    [JsonInclude]
+    public string? NavigationId { get => this.id; private set => this.id = value; }
 
     /// <summary>
     /// Gets the URL of the navigation.
     /// </summary>
-    [JsonProperty("url")]
+    [JsonPropertyName("url")]
     [JsonRequired]
-    public string Url { get => this.url; internal set => this.url = value; }
+    [JsonInclude]
+    public string Url { get => this.url; private set => this.url = value; }
 }

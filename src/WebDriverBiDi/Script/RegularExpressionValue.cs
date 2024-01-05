@@ -5,12 +5,11 @@
 
 namespace WebDriverBiDi.Script;
 
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Object representing a regular expression.
 /// </summary>
-[JsonObject(MemberSerialization.OptIn)]
 public class RegularExpressionValue
 {
     private string pattern;
@@ -40,15 +39,18 @@ public class RegularExpressionValue
     /// <summary>
     /// Gets the pattern used in the regular expression.
     /// </summary>
-    [JsonProperty("pattern")]
+    [JsonPropertyName("pattern")]
     [JsonRequired]
-    public string Pattern { get => this.pattern; internal set => this.pattern = value; }
+    [JsonInclude]
+    public string Pattern { get => this.pattern; private set => this.pattern = value; }
 
     /// <summary>
     /// Gets the flags used in the regular expression.
     /// </summary>
-    [JsonProperty("flags", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Flags { get => this.flags; internal set => this.flags = value; }
+    [JsonPropertyName("flags")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? Flags { get => this.flags; private set => this.flags = value; }
 
     /// <summary>
     /// Computes a hash code for this RegularExpressionValue.
