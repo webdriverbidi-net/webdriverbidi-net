@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Script;
 
+using System.Runtime;
 using System.Text.Json;
 
 [TestFixture]
@@ -76,7 +77,7 @@ public class RealmInfoTests
     [Test]
     public void TestCanDeserializeSpecializedWorkerRealmInfo()
     {
-        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""service-worker"" }";
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""worker"" }";
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
@@ -85,14 +86,68 @@ public class RealmInfoTests
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worker));
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeDedicatedWorkerRealmInfo()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""dedicated-worker"", ""owners"": [ ""ownerRealm""] }";
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<DedicatedWorkerRealmInfo>());
+        DedicatedWorkerRealmInfo realmInfo = (DedicatedWorkerRealmInfo)info!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.DedicatedWorker));
+            Assert.That(realmInfo.Owners, Has.Count.EqualTo(1));
+            Assert.That(realmInfo.Owners[0], Is.EqualTo("ownerRealm"));
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeSharedWorkerRealmInfo()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""shared-worker"", ""owners"": [ ""ownerRealm""] }";
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<SharedWorkerRealmInfo>());
+        SharedWorkerRealmInfo realmInfo = (SharedWorkerRealmInfo)info!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.SharedWorker));
+            Assert.That(realmInfo.Owners, Has.Count.EqualTo(1));
+            Assert.That(realmInfo.Owners[0], Is.EqualTo("ownerRealm"));
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeServiceWorkerRealmInfo()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""service-worker"", ""owners"": [ ""ownerRealm""] }";
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
+        ServiceWorkerRealmInfo realmInfo = (ServiceWorkerRealmInfo)info!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.ServiceWorker));
+            Assert.That(realmInfo.Owners, Has.Count.EqualTo(1));
+            Assert.That(realmInfo.Owners[0], Is.EqualTo("ownerRealm"));
         });
     }
 
     [Test]
     public void TestCanDeserializeSpecializedWorkletRealmInfo()
     {
-        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""paint-worklet"" }";
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""worklet"" }";
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
@@ -101,7 +156,39 @@ public class RealmInfoTests
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worklet));
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializePaintWorkletRealmInfo()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""paint-worklet"" }";
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<PaintWorkletRealmInfo>());
+        PaintWorkletRealmInfo realmInfo = (PaintWorkletRealmInfo)info!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.PaintWorklet));
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeAudioWorkletRealmInfo()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""audio-worklet"" }";
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<AudioWorkletRealmInfo>());
+        AudioWorkletRealmInfo realmInfo = (AudioWorkletRealmInfo)info!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.AudioWorklet));
         });
     }
 
@@ -176,10 +263,114 @@ public class RealmInfoTests
     }
 
     [Test]
+    public void TestDeserializingDedicatedWorkerRealmInfoWithMissingOwnersThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""dedicated-worker"" }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("DedicatedWorkerRealmInfo 'owners' property is required"));
+    }
+
+    [Test]
+    public void TestDeserializingDedicatedWorkerRealmInfoWithInvalidOwnersTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""dedicated-worker"", ""owners"": """" }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("DedicatedWorkerRealmInfo 'owners' property must be an array"));
+    }
+
+    [Test]
+    public void TestDeserializingDedicatedWorkerRealmInfoWithInvalidOwnersEntryTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""dedicated-worker"", ""owners"": [ 123 ] }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("All elements of DedicatedWorkerRealmInfo 'owners' property array must be strings"));
+    }
+
+    [Test]
+    public void TestDeserializingDedicatedWorkerRealmInfoWithInvalidOwnersEntryValueThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""dedicated-worker"", ""owners"": [ """" ] }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("All elements of DedicatedWorkerRealmInfo 'owners' property array must be non-null and non-empty strings"));
+    }
+
+    [Test]
+    public void TestDeserializingSharedWorkerRealmInfoWithMissingOwnersThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""shared-worker"" }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("SharedWorkerRealmInfo 'owners' property is required"));
+    }
+
+    [Test]
+    public void TestDeserializingSharedWorkerRealmInfoWithInvalidOwnersTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""shared-worker"", ""owners"": """" }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("SharedWorkerRealmInfo 'owners' property must be an array"));
+    }
+
+    [Test]
+    public void TestDeserializingSharedWorkerRealmInfoWithInvalidOwnersEntryTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""shared-worker"", ""owners"": [ 123 ] }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("All elements of SharedWorkerRealmInfo 'owners' property array must be strings"));
+    }
+
+    [Test]
+    public void TestDeserializingSharedWorkerRealmInfoWithInvalidOwnersEntryValueThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""shared-worker"", ""owners"": [ """" ] }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("All elements of SharedWorkerRealmInfo 'owners' property array must be non-null and non-empty strings"));
+    }
+
+    [Test]
+    public void TestDeserializingServiceWorkerRealmInfoWithMissingOwnersThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""service-worker"" }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("ServiceWorkerRealmInfo 'owners' property is required"));
+    }
+
+    [Test]
+    public void TestDeserializingServiceWorkerRealmInfoWithInvalidOwnersTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""service-worker"", ""owners"": """" }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("ServiceWorkerRealmInfo 'owners' property must be an array"));
+    }
+
+    [Test]
+    public void TestDeserializingServiceWorkerRealmInfoWithInvalidOwnersEntryTypeThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""service-worker"", ""owners"": [ 123 ] }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("All elements of ServiceWorkerRealmInfo 'owners' property array must be strings"));
+    }
+
+    [Test]
+    public void TestDeserializingServiceWorkerRealmInfoWithInvalidOwnersEntryValueThrows()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""service-worker"", ""owners"": [ """" ] }";
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("All elements of ServiceWorkerRealmInfo 'owners' property array must be non-null and non-empty strings"));
+    }
+
+    [Test]
     public void TestDeserializingRealmInfoWithNonObjectThrows()
     {
         string json = @"[ ""invalid realm info"" ]";
         Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>());
+    }
+
+    [Test]
+    public void TestCanCastToProperSubclassTypeOfRealmInfo()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""service-worker"", ""owners"": [ ""ownerRealm""] }";
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
+        Assert.That(info.As<ServiceWorkerRealmInfo>(), Is.Not.Null);
+    }
+
+    [Test]
+    public void TestCannotCastToImproperSubclassTypeOfRealmInfo()
+    {
+        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""service-worker"", ""owners"": [ ""ownerRealm""] }";
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
+        Assert.That(() => info.As<SharedWorkerRealmInfo>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("cannot be cast"));
     }
 
     [Test]

@@ -48,4 +48,21 @@ public class RealmInfo
     [JsonRequired]
     [JsonInclude]
     public RealmType Type { get => this.realmType; internal set => this.realmType = value; }
+
+    /// <summary>
+    /// Gets this instance of a RealmInfo as a type-specific realm info.
+    /// </summary>
+    /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
+    /// <returns>This instance cast to the specified correct type.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if this RealmInfo is not the specified type.</exception>
+    public T As<T>()
+        where T : RealmInfo
+    {
+        if (this is not T castValue)
+        {
+            throw new WebDriverBiDiException($"This RealmInfo cannot be cast to ${typeof(T)}");
+        }
+
+        return castValue;
+    }
 }
