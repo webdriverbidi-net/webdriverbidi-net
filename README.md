@@ -74,7 +74,9 @@ using the [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-do
 from Microsoft. It includes a Roslyn based code server, and enables running tests from within the test pane
 of VS Code.
 
-The project currently uses [Json.NET](https://www.newtonsoft.com/json) for JSON serialization/deserialization.
+The project uses System.Text.Json for JSON serialization/deserialization in the main library, but also
+uses [Json.NET](https://www.newtonsoft.com/json) for some unit tests. It is believed that there is some
+value in testing serialization by deserializing with a different JSON serialization engine.
 
 The project uses [NUnit](https://nunit.org/) for its unit tests.
 
