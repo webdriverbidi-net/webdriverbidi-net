@@ -8,7 +8,6 @@ namespace WebDriverBiDi.Protocol;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing data about a WebDriver Bidi message.
@@ -22,9 +21,7 @@ public class Message
     /// <summary>
     /// Gets the type of message.
     /// </summary>
-    // TODO: Uncomment this attribute when the browser stable channels
-    // have the message type property implemented.
-    // [JsonRequired]
+    [JsonRequired]
     [JsonPropertyName("type")]
     [JsonInclude]
     public string Type { get => this.type; private set => this.type = value; }
