@@ -19,6 +19,7 @@ public class CapabilitiesRequest
     private string? browserVersion;
     private string? platformName;
     private Proxy? proxy;
+    private bool? webSocketUrl;
 
     /// <summary>
     /// Gets or sets a value indicating whether the browser should accept insecure (self-signed) SSL certificates.
@@ -54,6 +55,13 @@ public class CapabilitiesRequest
     [JsonPropertyName("proxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Proxy? Proxy { get => this.proxy; set => this.proxy = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to initiate a WebDriverBiDi based session using a WebSocket.
+    /// </summary>
+    [JsonPropertyName("webSocketUrl")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? WebSocketUrl { get => this.webSocketUrl; set => this.webSocketUrl = value; }
 
     /// <summary>
     /// Gets the dictionary containing additional capabilities to use with this session.

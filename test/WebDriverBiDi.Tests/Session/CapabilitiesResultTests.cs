@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Session;
 
+using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.JsonConverters;
 
@@ -33,6 +34,35 @@ public class CapabilitiesResultTests
             Assert.That(result!.Proxy.ProxyAutoConfigUrl, Is.Null);
             Assert.That(result!.Proxy.NoProxyAddresses, Is.Null);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
+            Assert.That(result.WebSocketUrl, Is.Null);
+            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
+            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeWithWebSocketUrl()
+    {
+        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""webSocketUrl"": ""ws://socket:1234"", ""capName"": ""capValue"" }";
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result!.Proxy, Is.Not.Null);
+            Assert.That(result!.Proxy.Type, Is.Null);
+            Assert.That(result!.Proxy.HttpProxy, Is.EqualTo("http.proxy"));
+            Assert.That(result!.Proxy.SslProxy, Is.Null);
+            Assert.That(result!.Proxy.FtpProxy, Is.Null);
+            Assert.That(result!.Proxy.SocksProxy, Is.Null);
+            Assert.That(result!.Proxy.SocksVersion, Is.Null);
+            Assert.That(result!.Proxy.ProxyAutoConfigUrl, Is.Null);
+            Assert.That(result!.Proxy.NoProxyAddresses, Is.Null);
+            Assert.That(result.SetWindowRect, Is.EqualTo(true));
+            Assert.That(result.WebSocketUrl, Is.EqualTo("ws://socket:1234"));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
         });
@@ -151,6 +181,13 @@ public class CapabilitiesResultTests
     public void TestDeserializingWithMissingSetWindowRectThrows()
     {
         string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""capName"": ""capValue"" }";
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    }
+
+    [Test]
+    public void TestDeserializingWithInvalidWebSocketUrlTypeThrows()
+    {
+        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""webSocketUrl"": 123, ""capName"": ""capValue"" }";
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

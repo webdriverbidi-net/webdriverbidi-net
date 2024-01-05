@@ -106,6 +106,42 @@ public class CapabilitiesRequestTests
     }
 
     [Test]
+    public void TestCanSerializeWithWebSocketUrlTrue()
+    {
+        CapabilitiesRequest capabilities = new()
+        {
+            WebSocketUrl = true
+        };
+        string json = JsonSerializer.Serialize(capabilities);
+        JObject result = JObject.Parse(json);
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Contains.Key("webSocketUrl"));
+            Assert.That(result["webSocketUrl"]!.Type, Is.EqualTo(JTokenType.Boolean));
+            Assert.That(result["webSocketUrl"]!.Value<bool>(), Is.True);
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeWithWebSocketUrlFalse()
+    {
+        CapabilitiesRequest capabilities = new()
+        {
+            WebSocketUrl = false
+        };
+        string json = JsonSerializer.Serialize(capabilities);
+        JObject result = JObject.Parse(json);
+        Assert.That(result, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(result, Contains.Key("webSocketUrl"));
+            Assert.That(result["webSocketUrl"]!.Type, Is.EqualTo(JTokenType.Boolean));
+            Assert.That(result["webSocketUrl"]!.Value<bool>(), Is.False);
+        });
+    }
+
+    [Test]
     public void TestCanSerializeWithEmptyProxy()
     {
         CapabilitiesRequest capabilities = new()

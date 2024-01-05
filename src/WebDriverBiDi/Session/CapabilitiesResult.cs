@@ -22,6 +22,7 @@ public class CapabilitiesResult
     private string platformName = string.Empty;
     private bool setWindowRect = false;
     private ProxyResult? proxyResult;
+    private string? webSocketUrl;
     private Proxy proxy = WebDriverBiDi.Session.Proxy.EmptyProxy;
     private ReceivedDataDictionary additionalCapabilities = ReceivedDataDictionary.EmptyDictionary;
 
@@ -72,6 +73,13 @@ public class CapabilitiesResult
     [JsonRequired]
     [JsonInclude]
     public bool SetWindowRect { get => this.setWindowRect; private set => this.setWindowRect = value; }
+
+    /// <summary>
+    /// Gets a value indicating the WebSocket URL used by this connection.
+    /// </summary>
+    [JsonPropertyName("webSocketUrl")]
+    [JsonInclude]
+    public string? WebSocketUrl { get => this.webSocketUrl; private set => this.webSocketUrl = value; }
 
     /// <summary>
     /// Gets a read-only dictionary of additional capabilities specified by this session.
