@@ -14,6 +14,32 @@ using WebDriverBiDi.Input;
 public class InputBuilder
 {
     private readonly Dictionary<string, SourceActions> sources = new();
+    private KeyInputSource? defaultKeyInputSource;
+    private PointerInputSource? defaultPointerInputSource;
+
+    /// <summary>
+    /// Gets the default key input source for this input builder.
+    /// </summary>
+    public KeyInputSource DefaultKeyInputSource
+    {
+        get
+        {
+            this.defaultKeyInputSource ??= this.CreateKeyInputSource();
+            return this.defaultKeyInputSource;
+        }
+    }
+
+    /// <summary>
+    /// Gets the default pointer input source for this input builder.
+    /// </summary>
+    public PointerInputSource DefaultPointerInputSource
+    {
+        get
+        {
+            this.defaultPointerInputSource ??= this.CreatePointerInputSource(PointerType.Mouse);
+            return this.defaultPointerInputSource;
+        }
+    }
 
     /// <summary>
     /// Creates a key-based input source, like a keyboard, primarily for entering text.
@@ -49,7 +75,9 @@ public class InputBuilder
         };
         source.Actions.AddRange(this.CreatePauseActions());
         this.sources[source.Id] = source;
-        return new PointerInputSource(source.Id, pointerType);
+        PointerInputSource inputSource = new(source.Id, pointerType);
+        this.defaultPointerInputSource ??= inputSource;
+        return inputSource;
     }
 
     /// <summary>
