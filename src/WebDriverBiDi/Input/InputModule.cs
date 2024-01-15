@@ -48,4 +48,14 @@ public sealed class InputModule : Module
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Sets the files on a file upload element. The element must be of type {input type="file"}.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<EmptyResult> SetFilesAsync(SetFilesCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
 }
