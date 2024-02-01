@@ -13,6 +13,7 @@ using WebDriverBiDi.Network;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
+using WebDriverBiDi.Storage;
 
 /// <summary>
 /// Object containing commands to drive a browser using the WebDriver Bidi protocol.
@@ -62,6 +63,7 @@ public class BiDiDriver
         this.RegisterModule(new LogModule(this));
         this.RegisterModule(new InputModule(this));
         this.RegisterModule(new NetworkModule(this));
+        this.RegisterModule(new StorageModule(this));
     }
 
     /// <summary>
@@ -118,6 +120,11 @@ public class BiDiDriver
     /// Gets the network module as described in the WebDriver Bidi protocol.
     /// </summary>
     public NetworkModule Network => this.GetModule<NetworkModule>(NetworkModule.NetworkModuleName);
+
+    /// <summary>
+    /// Gets the storage module as described in the WebDriver Bidi protocol.
+    /// </summary>
+    public StorageModule Storage => this.GetModule<StorageModule>(StorageModule.StorageModuleName);
 
     /// <summary>
     /// Asynchronously starts the communication with the remote end of the WebDriver Bidi protocol.

@@ -10,6 +10,7 @@ using WebDriverBiDi.Network;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
+using WebDriverBiDi.Storage;
 
 [TestFixture]
 public class BiDiDriverTests
@@ -225,6 +226,7 @@ public class BiDiDriverTests
                 Assert.That(driver.Input, Is.InstanceOf<InputModule>());
                 Assert.That(driver.Network, Is.InstanceOf<NetworkModule>());
                 Assert.That(driver.Browser, Is.InstanceOf<BrowserModule>());
+                Assert.That(driver.Storage, Is.InstanceOf<StorageModule>());
             });
         }
         finally
