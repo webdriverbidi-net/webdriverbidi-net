@@ -38,4 +38,34 @@ public sealed class BrowserModule : Module
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Creates a new user context for the browser.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An object describing information about the user context created.</returns>
+    public async Task<CreateUserContextCommandResult> CreateUserContextAsync(CreateUserContextCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<CreateUserContextCommandResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the list of open user contexts for the browser.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>A read-only list of the user contexts open in this browser.</returns>
+    public async Task<GetUserContextsCommandResult> GetUserContextsAsync(GetUserContextsCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<GetUserContextsCommandResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Removes a user context for the browser.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command.</returns>
+    public async Task<EmptyResult> RemoveUserContextAsync(RemoveUserContextCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
 }
