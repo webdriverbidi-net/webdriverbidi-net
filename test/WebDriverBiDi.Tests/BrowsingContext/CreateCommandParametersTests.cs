@@ -65,6 +65,27 @@ public class CreateCommandParametersTests
     }
 
     [Test]
+    public void TestCanSerializeParametersWithUserContext()
+    {
+        CreateCommandParameters properties = new(CreateType.Tab)
+        {
+            UserContextId = "myUserContext"
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("tab"));
+            Assert.That(serialized, Contains.Key("userContext"));
+            Assert.That(serialized["userContext"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
+        });
+    }
+
+    [Test]
     public void TestCanSerializeParametersWithBackgroundTrue()
     {
         CreateCommandParameters properties = new(CreateType.Tab)

@@ -13,8 +13,8 @@ using System.Text.Json.Serialization;
 public class CreateCommandParameters : CommandParameters<CreateCommandResult>
 {
     private CreateType createType;
-
     private string? referenceContextId;
+    private string? userContextId;
     private bool? background;
 
     /// <summary>
@@ -51,4 +51,11 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     [JsonPropertyName("background")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsCreatedInBackground { get => this.background; set => this.background = value; }
+
+    /// <summary>
+    /// Gets or sets the ID of the user context in which to create the new browsing context.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? UserContextId { get => this.userContextId; set => this.userContextId = value; }
 }

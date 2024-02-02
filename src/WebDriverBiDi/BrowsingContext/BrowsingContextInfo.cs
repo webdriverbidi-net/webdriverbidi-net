@@ -14,6 +14,7 @@ public class BrowsingContextInfo
 {
     private string id = string.Empty;
     private string url = string.Empty;
+    private string userContextId = string.Empty;
     private List<BrowsingContextInfo> children = new();
     private string? parentId;
 
@@ -37,6 +38,14 @@ public class BrowsingContextInfo
     [JsonRequired]
     [JsonInclude]
     public string Url { get => this.url; private set => this.url = value; }
+
+    /// <summary>
+    /// Gets the ID of the user context of the browsing context.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonRequired]
+    [JsonInclude]
+    public string UserContextId { get => this.userContextId; private set => this.userContextId = value; }
 
     /// <summary>
     /// Gets the read-only list of child browsing contexts for this browsing context.
