@@ -21,15 +21,4 @@ public class ServiceWorkerRealmInfo : RealmInfo
         : base()
     {
     }
-
-    /// <summary>
-    /// Gets the read-only list of IDs of realms that are owners of this realm.
-    /// </summary>
-    public IList<string> Owners => this.owners.AsReadOnly();
-
-    /// <summary>
-    /// Gets or sets the list of IDs of realms that are owners of this realm for serialization purposes.
-    /// </summary>
-    [JsonPropertyName("owners")]
-    internal List<string> SerializableOwners { get => this.owners; set => this.owners = value; }
 }

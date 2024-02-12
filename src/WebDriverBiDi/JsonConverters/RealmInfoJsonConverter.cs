@@ -65,54 +65,35 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
         // We have already determined the value is a string, and
         // therefore cannot be null.
         RealmType type = typeElement.Deserialize<RealmType>();
-        if (type == RealmType.Window)
+        switch (type)
         {
-            WindowRealmInfo windowRealmInfo = new();
-            if (!rootElement.TryGetProperty("context", out JsonElement contextIdElement))
-            {
-                throw new JsonException("WindowRealmInfo 'context' property is required");
-            }
+            case RealmType.Window:
+                realmInfo = this.ProcessWindowRealmInfo(rootElement);
+                break;
 
-            if (contextIdElement.ValueKind != JsonValueKind.String)
-            {
-                throw new JsonException("WindowRealmInfo 'context' property must be a string");
-            }
+            case RealmType.DedicatedWorker:
+                realmInfo = this.ProcessDedicatedWorkerRealmInfo(rootElement);
+                break;
 
-            // We have already determined the value is a string, and
-            // therefore cannot be null.
-            string contextId = contextIdElement.GetString()!;
-            windowRealmInfo.BrowsingContext = contextId;
+            case RealmType.SharedWorker:
+                realmInfo = new SharedWorkerRealmInfo();
+                break;
 
-            if (rootElement.TryGetProperty("sandbox", out JsonElement sandboxElement))
-            {
-                if (sandboxElement.ValueKind != JsonValueKind.String)
-                {
-                    throw new JsonException("WindowRealmInfo 'sandbox' property must be a string");
-                }
+            case RealmType.ServiceWorker:
+                realmInfo = new ServiceWorkerRealmInfo();
+                break;
 
-                // We have already determined the value is a string, and
-                // therefore cannot be null.
-                string sandbox = sandboxElement.GetString()!;
-                windowRealmInfo.Sandbox = sandbox;
-            }
+            case RealmType.AudioWorklet:
+                realmInfo = new AudioWorkletRealmInfo();
+                break;
 
-            realmInfo = windowRealmInfo;
-        }
-        else if (type == RealmType.DedicatedWorker || type == RealmType.SharedWorker || type == RealmType.ServiceWorker)
-        {
-            realmInfo = this.ProcessWorkerRealmInfo(rootElement, type);
-        }
-        else if (type == RealmType.AudioWorklet)
-        {
-            realmInfo = new AudioWorkletRealmInfo();
-        }
-        else if (type == RealmType.PaintWorklet)
-        {
-            realmInfo = new PaintWorkletRealmInfo();
-        }
-        else
-        {
-            realmInfo = new RealmInfo();
+            case RealmType.PaintWorklet:
+                realmInfo = new PaintWorkletRealmInfo();
+                break;
+
+            default:
+                realmInfo = new RealmInfo();
+                break;
         }
 
         realmInfo.Type = type;
@@ -141,16 +122,50 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
         throw new NotImplementedException();
     }
 
-    private RealmInfo ProcessWorkerRealmInfo(JsonElement rootElement, RealmType type)
+    private RealmInfo ProcessWindowRealmInfo(JsonElement rootElement)
+    {
+        WindowRealmInfo windowRealmInfo = new();
+        if (!rootElement.TryGetProperty("context", out JsonElement contextIdElement))
+        {
+            throw new JsonException("WindowRealmInfo 'context' property is required");
+        }
+
+        if (contextIdElement.ValueKind != JsonValueKind.String)
+        {
+            throw new JsonException("WindowRealmInfo 'context' property must be a string");
+        }
+
+        // We have already determined the value is a string, and
+        // therefore cannot be null.
+        string contextId = contextIdElement.GetString()!;
+        windowRealmInfo.BrowsingContext = contextId;
+
+        if (rootElement.TryGetProperty("sandbox", out JsonElement sandboxElement))
+        {
+            if (sandboxElement.ValueKind != JsonValueKind.String)
+            {
+                throw new JsonException("WindowRealmInfo 'sandbox' property must be a string");
+            }
+
+            // We have already determined the value is a string, and
+            // therefore cannot be null.
+            string sandbox = sandboxElement.GetString()!;
+            windowRealmInfo.Sandbox = sandbox;
+        }
+
+        return windowRealmInfo;
+    }
+
+    private RealmInfo ProcessDedicatedWorkerRealmInfo(JsonElement rootElement)
     {
         if (!rootElement.TryGetProperty("owners", out JsonElement ownersElement))
         {
-            throw new JsonException($"{type}RealmInfo 'owners' property is required");
+            throw new JsonException($"DedicatedWorkerRealmInfo 'owners' property is required");
         }
 
         if (ownersElement.ValueKind != JsonValueKind.Array)
         {
-            throw new JsonException($"{type}RealmInfo 'owners' property must be an array");
+            throw new JsonException($"DedicatedWorkerRealmInfo 'owners' property must be an array");
         }
 
         List<string> owners = new();
@@ -158,36 +173,22 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
         {
             if (ownerElement.ValueKind != JsonValueKind.String)
             {
-                throw new JsonException($"All elements of {type}RealmInfo 'owners' property array must be strings");
+                throw new JsonException($"All elements of DedicatedWorkerRealmInfo 'owners' property array must be strings");
             }
 
             string? ownerId = ownerElement.GetString();
 
             if (string.IsNullOrEmpty(ownerId))
             {
-                throw new JsonException($"All elements of {type}RealmInfo 'owners' property array must be non-null and non-empty strings");
+                throw new JsonException($"All elements of DedicatedWorkerRealmInfo 'owners' property array must be non-null and non-empty strings");
             }
 
             // Can use the null-forgiving operator, since we already checked for null.
             owners.Add(ownerId!);
         }
 
-        switch (type)
-        {
-            case RealmType.DedicatedWorker:
-                DedicatedWorkerRealmInfo dedicatedWorkerRealmInfo = new();
-                dedicatedWorkerRealmInfo.SerializableOwners.AddRange(owners);
-                return dedicatedWorkerRealmInfo;
-
-            case RealmType.SharedWorker:
-                SharedWorkerRealmInfo sharedWorkerRealmInfo = new();
-                sharedWorkerRealmInfo.SerializableOwners.AddRange(owners);
-                return sharedWorkerRealmInfo;
-
-            default:
-                ServiceWorkerRealmInfo servicedWorkerRealmInfo = new();
-                servicedWorkerRealmInfo.SerializableOwners.AddRange(owners);
-                return servicedWorkerRealmInfo;
-        }
+        DedicatedWorkerRealmInfo dedicatedWorkerRealmInfo = new();
+        dedicatedWorkerRealmInfo.SerializableOwners.AddRange(owners);
+        return dedicatedWorkerRealmInfo;
     }
 }
