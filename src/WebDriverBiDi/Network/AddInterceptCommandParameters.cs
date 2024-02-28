@@ -13,6 +13,7 @@ using System.Text.Json.Serialization;
 public class AddInterceptCommandParameters : CommandParameters<AddInterceptCommandResult>
 {
     private readonly List<InterceptPhase> interceptPhases = new();
+    private List<string>? contexts;
     private List<UrlPattern>? urlPatterns;
 
     /// <summary>
@@ -33,6 +34,15 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// </summary>
     [JsonPropertyName("phases")]
     public List<InterceptPhase> Phases { get => this.interceptPhases; }
+
+    /// <summary>
+    /// Gets or sets the list of top-level browsing context ID for which traffic will be intercepted.
+    /// If present, it must contain at least one browsing context ID, and all IDs must represent top-level
+    /// browsing contexts, or an error will be thrown by the remote end.
+    /// </summary>
+    [JsonPropertyName("contexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? BrowsingContextIds { get => this.contexts; set => this.contexts = value; }
 
     /// <summary>
     /// Gets or sets list of URL patterns for which to intercept network traffic.
