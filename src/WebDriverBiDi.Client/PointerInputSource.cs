@@ -65,12 +65,11 @@ public class PointerInputSource : InputSource
     /// Creates a pointer up action for simulating the press of a pointer button.
     /// </summary>
     /// <param name="button">The button to simulate the press of. Defaults to the "left" (primary) button.</param>
-    /// <param name="additionalProperties">Optional additional properties for the pointer up action. Defaults to <see langword="null"/>.</param>
     /// <returns>The <see cref="Action"/> representing the action.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown if the pointer type is a touch pointer, and the button is other than the "left" button.
     /// </exception>
-    public Action CreatePointerUp(PointerButton button = PointerButton.Left, PointerActionProperties? additionalProperties = null)
+    public Action CreatePointerUp(PointerButton button = PointerButton.Left)
     {
         if (this.pointerType == PointerType.Touch && button != PointerButton.Left)
         {
@@ -78,17 +77,6 @@ public class PointerInputSource : InputSource
         }
 
         PointerUpAction action = new((long)button);
-        if (additionalProperties is not null)
-        {
-            action.Width = additionalProperties.Width;
-            action.Height = additionalProperties.Height;
-            action.Pressure = additionalProperties.Pressure;
-            action.TangentialPressure = additionalProperties.TangentialPressure;
-            action.Twist = additionalProperties.Twist;
-            action.AltitudeAngle = additionalProperties.AltitudeAngle;
-            action.AzimuthAngle = additionalProperties.AzimuthAngle;
-        }
-
         return new Action(this.SourceId, action);
     }
 

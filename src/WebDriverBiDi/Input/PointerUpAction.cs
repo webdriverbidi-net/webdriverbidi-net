@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// An action to send a pointer up on a pointer device.
 /// </summary>
-public class PointerUpAction : PointerAction, IPointerSourceAction
+public class PointerUpAction : IPointerSourceAction
 {
     private readonly string actionType = "pointerUp";
     private long button;
