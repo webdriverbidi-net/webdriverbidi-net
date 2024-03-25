@@ -67,64 +67,6 @@ public class LocateNodesCommandParametersTests
     }
 
     [Test]
-    public void TestCanSerializeWithResultOwnership()
-    {
-        LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"))
-        {
-            ResultOwnership = ResultOwnership.Root
-        };
-        string json = JsonSerializer.Serialize(properties);
-        JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("locator"));
-            Assert.That(serialized["locator"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized["locator"]!, Contains.Key("type"));
-            Assert.That(serialized["locator"]!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["type"]!.Value<string>, Is.EqualTo("css"));
-            Assert.That(serialized["locator"]!, Contains.Key("value"));
-            Assert.That(serialized["locator"]!["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["value"]!.Value<string>, Is.EqualTo(".selector"));
-            Assert.That(serialized, Contains.Key("resultOwnership"));
-            Assert.That(serialized["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["resultOwnership"]!.Value<string>(), Is.EqualTo("root"));
-        });
-    }
-
-    [Test]
-    public void TestCanSerializeWithSandbox()
-    {
-        LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"))
-        {
-            Sandbox = "mySandbox"
-        };
-        string json = JsonSerializer.Serialize(properties);
-        JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
-        {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("locator"));
-            Assert.That(serialized["locator"]!.Type, Is.EqualTo(JTokenType.Object));
-            Assert.That(serialized["locator"]!, Contains.Key("type"));
-            Assert.That(serialized["locator"]!["type"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["type"]!.Value<string>, Is.EqualTo("css"));
-            Assert.That(serialized["locator"]!, Contains.Key("value"));
-            Assert.That(serialized["locator"]!["value"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["locator"]!["value"]!.Value<string>, Is.EqualTo(".selector"));
-            Assert.That(serialized, Contains.Key("sandbox"));
-            Assert.That(serialized["sandbox"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["sandbox"]!.Value<string>(), Is.EqualTo("mySandbox"));
-        });
-    }
-
-    [Test]
     public void TestCanSerializeWithSerializationOptions()
     {
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"))

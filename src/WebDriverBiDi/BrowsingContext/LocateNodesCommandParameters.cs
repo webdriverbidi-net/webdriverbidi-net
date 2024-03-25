@@ -17,8 +17,6 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     private string browsingContextId;
     private Locator locator;
     private ulong? maxNodeCount;
-    private ResultOwnership? resultOwnership;
-    private string? sandbox;
     private SerializationOptions? serializationOptions;
 
     /// <summary>
@@ -59,20 +57,6 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     [JsonPropertyName("maxNodeCount")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? MaxNodeCount { get => this.maxNodeCount; set => this.maxNodeCount = value; }
-
-    /// <summary>
-    /// Gets or sets the ownership model to use for references to located nodes.
-    /// </summary>
-    [JsonPropertyName("resultOwnership")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
-
-    /// <summary>
-    /// Gets or sets the sandbox into which references to located nodes will be placed, if any.
-    /// </summary>
-    [JsonPropertyName("sandbox")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing located node references.
