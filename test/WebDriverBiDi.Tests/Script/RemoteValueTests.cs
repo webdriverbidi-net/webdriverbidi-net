@@ -941,21 +941,6 @@ public class RemoteValueTests
     }
 
     [Test]
-    public void TestDeserializingIteratorRemoteValue()
-    {
-        string json = @"{ ""type"": ""iterator"" }";
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
-        Assert.That(remoteValue, Is.Not.Null);
-        Assert.Multiple(() =>
-        {
-            Assert.That(remoteValue!.Type, Is.EqualTo("iterator"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-        });
-    }
-
-    [Test]
     public void TestDeserializingGeneratorRemoteValue()
     {
         string json = @"{ ""type"": ""generator"" }";

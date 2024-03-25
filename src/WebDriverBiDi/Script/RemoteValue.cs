@@ -32,7 +32,6 @@ public class RemoteValue
         "set",
         "weakmap",
         "weakset",
-        "iterator",
         "generator",
         "error",
         "proxy",
