@@ -79,7 +79,7 @@ public class SessionModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""additionalCapName"": ""additionalCapValue"" } } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""additionalCapName"": ""additionalCapValue"" } } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -98,6 +98,7 @@ public class SessionModuleTests
             Assert.That(result.Capabilities.BrowserName, Is.EqualTo("greatBrowser"));
             Assert.That(result.Capabilities.BrowserVersion, Is.EqualTo("101.5b"));
             Assert.That(result.Capabilities.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.Capabilities.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
             Assert.That(result.Capabilities.AcceptInsecureCertificates, Is.True);
             Assert.That(result.Capabilities.SetWindowRect, Is.True);
             Assert.That(result.Capabilities.Proxy, Is.Not.Null);

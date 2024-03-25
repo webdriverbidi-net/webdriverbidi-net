@@ -8,7 +8,6 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing the capabilities returned by a new session.
@@ -21,6 +20,7 @@ public class CapabilitiesResult
     private string browserVersion = string.Empty;
     private string platformName = string.Empty;
     private bool setWindowRect = false;
+    private string userAgent = string.Empty;
     private ProxyResult? proxyResult;
     private string? webSocketUrl;
     private Proxy proxy = WebDriverBiDi.Session.Proxy.EmptyProxy;
@@ -80,6 +80,14 @@ public class CapabilitiesResult
     [JsonPropertyName("webSocketUrl")]
     [JsonInclude]
     public string? WebSocketUrl { get => this.webSocketUrl; private set => this.webSocketUrl = value; }
+
+    /// <summary>
+    /// Gets a value containing the default user agent string for this browser.
+    /// </summary>
+    [JsonPropertyName("userAgent")]
+    [JsonRequired]
+    [JsonInclude]
+    public string UserAgent { get => this.userAgent; private set => this.userAgent = value; }
 
     /// <summary>
     /// Gets a read-only dictionary of additional capabilities specified by this session.
