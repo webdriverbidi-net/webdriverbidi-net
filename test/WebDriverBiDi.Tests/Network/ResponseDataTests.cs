@@ -31,7 +31,7 @@ public class ResponseDataTests
             Assert.That(response.BodySize, Is.EqualTo(300));
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
-            Assert.That(response.AuthChallenge, Is.Null);
+            Assert.That(response.AuthChallenges, Is.Null);
         });
     }
 
@@ -58,7 +58,7 @@ public class ResponseDataTests
             Assert.That(response.BodySize, Is.EqualTo(300));
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
-            Assert.That(response.AuthChallenge, Is.Null);
+            Assert.That(response.AuthChallenges, Is.Null);
         });       
     }
 
@@ -82,7 +82,7 @@ public class ResponseDataTests
             Assert.That(response.BodySize, Is.EqualTo(300));
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
-            Assert.That(response.AuthChallenge, Is.Null);
+            Assert.That(response.AuthChallenges, Is.Null);
         });       
     }
 
@@ -110,9 +110,9 @@ public class ResponseDataTests
     }
 
     [Test]
-    public void TestCanDeserializeResponseDataWithAuthChallenge()
+    public void TestCanDeserializeResponseDataWithAuthChallenges()
     {
-        string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 }, ""authChallenge"": { ""scheme"": ""basic"", ""realm"": ""example.com"" } }";
+        string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 }, ""authChallenges"": [ { ""scheme"": ""basic"", ""realm"": ""example.com"" } ] }";
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
@@ -129,9 +129,10 @@ public class ResponseDataTests
             Assert.That(response.BodySize, Is.EqualTo(300));
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
-            Assert.That(response.AuthChallenge, Is.Not.Null);
-            Assert.That(response.AuthChallenge!.Scheme, Is.EqualTo("basic"));
-            Assert.That(response.AuthChallenge.Realm, Is.EqualTo("example.com"));
+            Assert.That(response.AuthChallenges, Is.Not.Null);
+            Assert.That(response.AuthChallenges, Has.Count.EqualTo(1));
+            Assert.That(response.AuthChallenges![0].Scheme, Is.EqualTo("basic"));
+            Assert.That(response.AuthChallenges[0]!.Realm, Is.EqualTo("example.com"));
         });
     }
 
@@ -210,5 +211,19 @@ public class ResponseDataTests
     {
         string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300 }";
         Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: content"));
+    }
+
+    [Test]
+    public void TestDeserializeWithInvalidAuthChallengesTypeThrows()
+    {
+        string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": [], ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300 , ""authChallenges"": { ""scheme"": ""basic"", ""realm"": ""example.com"" } }";
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON value could not be converted").And.Message.Contains("authChallenges"));
+    }
+
+    [Test]
+    public void TestDeserializeWithInvalidHeadersTypeThrows()
+    {
+        string json = @"{ ""url"": ""requestUrl"", ""protocol"": ""http"", ""status"": 200, ""statusText"": ""OK"", ""fromCache"": false, ""headers"": {}, ""mimeType"": ""text/html"", ""bytesReceived"": 400, ""headersSize"": 100, ""bodySize"": 300, ""content"": { ""size"": 300 } }";
+        Assert.That(() => JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON value could not be converted").And.Message.Contains("headers"));
     }
 }

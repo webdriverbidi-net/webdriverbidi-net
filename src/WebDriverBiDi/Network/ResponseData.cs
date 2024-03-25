@@ -24,7 +24,7 @@ public class ResponseData
     private ulong? headersSize;
     private ulong? bodySize;
     private ResponseContent content = new();
-    private AuthChallenge? authChallenge;
+    private List<AuthChallenge>? authChallenges;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseData"/> class.
@@ -132,11 +132,11 @@ public class ResponseData
     public ResponseContent Content { get => this.content; private set => this.content = value; }
 
     /// <summary>
-    /// Gets the authorization challenge in the response, if any.
+    /// Gets the list of authorization challenges in the response, if any.
     /// </summary>
-    [JsonPropertyName("authChallenge")]
+    [JsonPropertyName("authChallenges")]
     [JsonInclude]
-    public AuthChallenge? AuthChallenge { get => this.authChallenge; private set => this.authChallenge = value; }
+    public List<AuthChallenge>? AuthChallenges { get => this.authChallenges; private set => this.authChallenges = value; }
 
     /// <summary>
     /// Gets or sets the headers of the response for serialization purposes.
