@@ -5,7 +5,9 @@ A .NET client library for the WebDriver BiDi protocol
 [![Coverage Status](https://coveralls.io/repos/github/jimevans/webdriverbidi-net/badge.svg?branch=main&kill_cache=1)](https://coveralls.io/github/jimevans/webdriverbidi-net?branch=main)
 
 This is repository contains a library that is a .NET client for the
-[WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). This spec is in progress,
+[WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). It also includes support for
+other modules implementing support for the WebDriver BiDi protocol, but not included in that specification,
+such as the [Permissions specification](https://www.w3.org/TR/permissions/). This spec is in progress,
 and features are added to the library as the specification changes. It is not yet published as a consumable
 artifact to NuGet, but will be once the specification becomes more stable.
 
