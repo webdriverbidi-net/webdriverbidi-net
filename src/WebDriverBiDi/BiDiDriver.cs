@@ -10,6 +10,7 @@ using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
+using WebDriverBiDi.Permissions;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
@@ -58,11 +59,12 @@ public class BiDiDriver
         this.transport.LogMessage += this.OnTransportLogMessage;
         this.RegisterModule(new BrowserModule(this));
         this.RegisterModule(new BrowsingContextModule(this));
-        this.RegisterModule(new SessionModule(this));
-        this.RegisterModule(new ScriptModule(this));
         this.RegisterModule(new LogModule(this));
         this.RegisterModule(new InputModule(this));
         this.RegisterModule(new NetworkModule(this));
+        this.RegisterModule(new PermissionsModule(this));
+        this.RegisterModule(new SessionModule(this));
+        this.RegisterModule(new ScriptModule(this));
         this.RegisterModule(new StorageModule(this));
     }
 
@@ -120,6 +122,11 @@ public class BiDiDriver
     /// Gets the network module as described in the WebDriver Bidi protocol.
     /// </summary>
     public NetworkModule Network => this.GetModule<NetworkModule>(NetworkModule.NetworkModuleName);
+
+    /// <summary>
+    /// Gets the permissions module as described in the W3C Permissions Specification.
+    /// </summary>
+    public PermissionsModule Permissions => this.GetModule<PermissionsModule>(PermissionsModule.PermissionsModuleName);
 
     /// <summary>
     /// Gets the storage module as described in the WebDriver Bidi protocol.

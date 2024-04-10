@@ -11,6 +11,7 @@ using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Storage;
+using WebDriverBiDi.Permissions;
 
 [TestFixture]
 public class BiDiDriverTests
@@ -219,13 +220,14 @@ public class BiDiDriverTests
         {
             Assert.Multiple(() =>
             {
-                Assert.That(driver.BrowsingContext, Is.InstanceOf<BrowsingContextModule>());
-                Assert.That(driver.Script, Is.InstanceOf<ScriptModule>());
-                Assert.That(driver.Log, Is.InstanceOf<LogModule>());
-                Assert.That(driver.Session, Is.InstanceOf<SessionModule>());
-                Assert.That(driver.Input, Is.InstanceOf<InputModule>());
-                Assert.That(driver.Network, Is.InstanceOf<NetworkModule>());
                 Assert.That(driver.Browser, Is.InstanceOf<BrowserModule>());
+                Assert.That(driver.BrowsingContext, Is.InstanceOf<BrowsingContextModule>());
+                Assert.That(driver.Input, Is.InstanceOf<InputModule>());
+                Assert.That(driver.Log, Is.InstanceOf<LogModule>());
+                Assert.That(driver.Network, Is.InstanceOf<NetworkModule>());
+                Assert.That(driver.Permissions, Is.InstanceOf<PermissionsModule>());
+                Assert.That(driver.Script, Is.InstanceOf<ScriptModule>());
+                Assert.That(driver.Session, Is.InstanceOf<SessionModule>());
                 Assert.That(driver.Storage, Is.InstanceOf<StorageModule>());
             });
         }

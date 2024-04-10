@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
