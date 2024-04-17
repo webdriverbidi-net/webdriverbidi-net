@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.JsonConverters;
 
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 

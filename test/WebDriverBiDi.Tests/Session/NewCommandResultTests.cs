@@ -14,7 +14,7 @@ public class NewCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
+        string json = @"{ ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""manual"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
         NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -26,7 +26,9 @@ public class NewCommandResultTests
             Assert.That(result.Capabilities.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
             Assert.That(result.Capabilities.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.Capabilities.Proxy, Is.Not.Null);
-            Assert.That(result.Capabilities.Proxy.HttpProxy, Is.EqualTo("http.proxy"));
+            ProxyConfigurationResult proxyResult = result.Capabilities.Proxy!;
+            Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.Manual));
+            Assert.That(proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>().HttpProxy, Is.EqualTo("http.proxy"));
             Assert.That(result.Capabilities.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.Capabilities.AdditionalCapabilities, Has.Count.EqualTo(1));
             Assert.That(result.Capabilities.AdditionalCapabilities, Contains.Key("capName"));

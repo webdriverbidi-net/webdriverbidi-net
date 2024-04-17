@@ -18,7 +18,7 @@ public class CapabilitiesRequest
     private string? browserName;
     private string? browserVersion;
     private string? platformName;
-    private Proxy? proxy;
+    private ProxyConfiguration? proxy;
     private bool? webSocketUrl;
 
     /// <summary>
@@ -54,7 +54,7 @@ public class CapabilitiesRequest
     /// </summary>
     [JsonPropertyName("proxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public Proxy? Proxy { get => this.proxy; set => this.proxy = value; }
+    public ProxyConfiguration? Proxy { get => this.proxy; set => this.proxy = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to initiate a WebDriverBiDi based session using a WebSocket.

@@ -1,4 +1,4 @@
-// <copyright file="Proxy.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="ManualProxyConfiguration.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -8,12 +8,10 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object representing a proxy to be used by the browser.
+/// Object representing a manual proxy to be used by the browser.
 /// </summary>
-public class Proxy
+public class ManualProxyConfiguration : ProxyConfiguration
 {
-    private ProxyType? type;
-    private string? proxyAutoConfigUrl;
     private string? httpProxy;
     private string? sslProxy;
     private string? ftpProxy;
@@ -22,23 +20,12 @@ public class Proxy
     private int? socksVersion;
 
     /// <summary>
-    /// Gets an empty proxy with no properties set.
+    /// Initializes a new instance of the <see cref="ManualProxyConfiguration"/> class.
     /// </summary>
-    public static Proxy EmptyProxy => new();
-
-    /// <summary>
-    /// Gets or sets the type of proxy.
-    /// </summary>
-    [JsonPropertyName("proxyType")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ProxyType? Type { get => this.type; set => this.type = value; }
-
-    /// <summary>
-    /// Gets or sets the URL to the proxy autoconfig (PAC) settings.
-    /// </summary>
-    [JsonPropertyName("proxyAutoconfigUrl")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? ProxyAutoConfigUrl { get => this.proxyAutoConfigUrl; set => this.proxyAutoConfigUrl = value; }
+    public ManualProxyConfiguration()
+        : base(ProxyType.Manual)
+    {
+    }
 
     /// <summary>
     /// Gets or sets the address to be used to proxy HTTP commands.

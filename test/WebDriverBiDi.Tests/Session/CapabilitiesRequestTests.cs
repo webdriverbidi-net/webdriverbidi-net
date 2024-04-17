@@ -142,30 +142,11 @@ public class CapabilitiesRequestTests
     }
 
     [Test]
-    public void TestCanSerializeWithEmptyProxy()
-    {
-        CapabilitiesRequest capabilities = new()
-        {
-            Proxy = Proxy.EmptyProxy
-        };
-        string json = JsonSerializer.Serialize(capabilities);
-        JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
-        {
-            Assert.That(result, Contains.Key("proxy"));
-            Assert.That(result["proxy"]!.Type, Is.EqualTo(JTokenType.Object));
-        });
-        JObject? proxyObject = result["proxy"] as JObject;
-        Assert.That(proxyObject, Is.Empty);
-    }
-
-    [Test]
     public void TestCanSerializeWithProxy()
     {
         CapabilitiesRequest capabilities = new()
         {
-            Proxy = new Proxy() { HttpProxy = "http.proxy" }
+            Proxy = new ManualProxyConfiguration() { HttpProxy = "http.proxy" }
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
@@ -178,7 +159,10 @@ public class CapabilitiesRequestTests
         JObject? proxyObject = result["proxy"] as JObject;
         Assert.Multiple(() =>
         {
-            Assert.That(proxyObject, Has.Count.EqualTo(1));
+            Assert.That(proxyObject, Has.Count.EqualTo(2));
+            Assert.That(proxyObject, Contains.Key("proxyType"));
+            Assert.That(proxyObject!["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(proxyObject["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
             Assert.That(proxyObject!, Contains.Key("httpProxy"));
             Assert.That(proxyObject!["httpProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(proxyObject["httpProxy"]!.Value<string>(), Is.EqualTo("http.proxy"));

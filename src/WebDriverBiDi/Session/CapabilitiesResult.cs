@@ -21,9 +21,9 @@ public class CapabilitiesResult
     private string platformName = string.Empty;
     private bool setWindowRect = false;
     private string userAgent = string.Empty;
-    private ProxyResult? proxyResult;
+    private ProxyConfigurationResult? proxyResult;
     private string? webSocketUrl;
-    private Proxy proxy = WebDriverBiDi.Session.Proxy.EmptyProxy;
+    private ProxyConfiguration? proxy;
     private ReceivedDataDictionary additionalCapabilities = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
@@ -110,11 +110,32 @@ public class CapabilitiesResult
     /// Gets the proxy used by this session.
     /// </summary>
     [JsonIgnore]
-    public ProxyResult Proxy
+    public ProxyConfigurationResult? Proxy
     {
         get
         {
-            this.proxyResult ??= new ProxyResult(this.proxy);
+            if (this.proxy is not null)
+            {
+                switch (this.proxy.ProxyType)
+                {
+                    case ProxyType.Direct:
+                        this.proxyResult ??= new DirectProxyConfigurationResult((DirectProxyConfiguration)this.proxy);
+                        break;
+                    case ProxyType.System:
+                        this.proxyResult ??= new SystemProxyConfigurationResult((SystemProxyConfiguration)this.proxy);
+                        break;
+                    case ProxyType.AutoDetect:
+                        this.proxyResult ??= new AutoDetectProxyConfigurationResult((AutoDetectProxyConfiguration)this.proxy);
+                        break;
+                    case ProxyType.ProxyAutoConfig:
+                        this.proxyResult ??= new PacProxyConfigurationResult((PacProxyConfiguration)this.proxy);
+                        break;
+                    case ProxyType.Manual:
+                        this.proxyResult ??= new ManualProxyConfigurationResult((ManualProxyConfiguration)this.proxy);
+                        break;
+                }
+            }
+
             return this.proxyResult;
         }
     }
@@ -123,9 +144,8 @@ public class CapabilitiesResult
     /// Gets or sets the proxy used for this session.
     /// </summary>
     [JsonPropertyName("proxy")]
-    [JsonRequired]
     [JsonInclude]
-    internal Proxy SerializableProxy { get => this.proxy; set => this.proxy = value; }
+    internal ProxyConfiguration? SerializableProxy { get => this.proxy; set => this.proxy = value; }
 
     /// <summary>
     /// Gets or sets the dictionary containing additional, un-enumerated capabilities for deserialization purposes.
