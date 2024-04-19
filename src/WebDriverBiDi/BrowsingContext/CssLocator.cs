@@ -13,14 +13,16 @@ using System.Text.Json.Serialization;
 public class CssLocator : Locator
 {
     private readonly string type = "css";
+    private readonly string value;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CssLocator"/> class.
     /// </summary>
     /// <param name="value">The CSS selector to use in locating nodes.</param>
     public CssLocator(string value)
-        : base(value)
+        : base()
     {
+        this.value = value;
     }
 
     /// <summary>
@@ -28,4 +30,10 @@ public class CssLocator : Locator
     /// </summary>
     [JsonPropertyName("type")]
     public override string Type => this.type;
+
+    /// <summary>
+    /// Gets the CSS selector to use in locating nodes.
+    /// </summary>
+    [JsonPropertyName("value")]
+    public override object Value => this.value;
 }

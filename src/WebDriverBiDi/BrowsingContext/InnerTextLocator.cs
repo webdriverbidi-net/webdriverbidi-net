@@ -14,6 +14,7 @@ using System.Text.Json.Serialization;
 public class InnerTextLocator : Locator
 {
     private readonly string type = "innerText";
+    private readonly string value;
     private bool? ignoreCase;
     private InnerTextMatchType? matchType;
     private ulong? maxDepth;
@@ -23,8 +24,9 @@ public class InnerTextLocator : Locator
     /// </summary>
     /// <param name="value">The text to use in locating nodes.</param>
     public InnerTextLocator(string value)
-        : base(value)
+        : base()
     {
+        this.value = value;
     }
 
     /// <summary>
@@ -34,12 +36,17 @@ public class InnerTextLocator : Locator
     public override string Type => this.type;
 
     /// <summary>
+    /// Gets the text to use to locating nodes.
+    /// </summary>
+    [JsonPropertyName("value")]
+    public override object Value => this.value;
+
+    /// <summary>
     /// Gets or sets a value indicating whether the locator should ignore case when matching.
     /// When omitted or <see langword="null"/>, the match is case-sensitive.
     /// </summary>
     [JsonPropertyName("ignoreCase")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-
     public bool? IgnoreCase { get => this.ignoreCase; set => this.ignoreCase = value; }
 
     /// <summary>

@@ -10,20 +10,17 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Represents a locator for locating nodes.
 /// </summary>
+[JsonDerivedType(typeof(AccessibilityLocator))]
 [JsonDerivedType(typeof(CssLocator))]
 [JsonDerivedType(typeof(InnerTextLocator))]
 [JsonDerivedType(typeof(XPathLocator))]
 public abstract class Locator
 {
-    private string value;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Locator"/> class.
     /// </summary>
-    /// <param name="value">The value to use in locating nodes for the specified locator type.</param>
-    protected Locator(string value)
+    protected Locator()
     {
-        this.value = value;
     }
 
     /// <summary>
@@ -33,8 +30,8 @@ public abstract class Locator
     public abstract string Type { get; }
 
     /// <summary>
-    /// Gets or sets the value of to use in locating nodes.
+    /// Gets the value of to use in locating nodes.
     /// </summary>
     [JsonPropertyName("value")]
-    public string Value { get => this.value; set => this.value = value; }
+    public abstract object Value { get; }
 }
