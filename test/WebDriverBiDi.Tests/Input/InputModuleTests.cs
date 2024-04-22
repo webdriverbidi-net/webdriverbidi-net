@@ -7,7 +7,7 @@ using WebDriverBiDi.TestUtilities;
 public class InputModuleTests
 {
     [Test]
-    public void TestExecutePerformActions()
+    public async Task TestExecutePerformActions()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -17,6 +17,7 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         InputModule module = new(driver);
 
         var task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"));
@@ -27,7 +28,7 @@ public class InputModuleTests
     }
 
     [Test]
-    public void TestExecuteReleaseActions()
+    public async Task TestExecuteReleaseActions()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -37,6 +38,7 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         InputModule module = new(driver);
 
         var task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"));
@@ -47,7 +49,7 @@ public class InputModuleTests
     }
 
     [Test]
-    public void TestExecuteSetFiles()
+    public async Task TestExecuteSetFiles()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -57,6 +59,7 @@ public class InputModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         InputModule module = new(driver);
 
         var element = new SharedReference("mySharedId");

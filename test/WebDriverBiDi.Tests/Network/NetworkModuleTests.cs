@@ -77,7 +77,7 @@ public class NetworkModuleTests
 }";
 
     [Test]
-    public void TestExecuteAddInterceptCommand()
+    public async Task TestExecuteAddInterceptCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -87,6 +87,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         AddInterceptCommandParameters commandParameters = new()
@@ -104,7 +105,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestExecuteContinueRequestCommand()
+    public async Task TestExecuteContinueRequestCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -114,6 +115,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         var task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"));
@@ -125,7 +127,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestExecuteContinueResponseCommand()
+    public async Task TestExecuteContinueResponseCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -135,6 +137,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         var task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"));
@@ -146,7 +149,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestExecuteContinueWithAuthCommand()
+    public async Task TestExecuteContinueWithAuthCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -156,6 +159,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         var task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
@@ -171,7 +175,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestExecuteFailRequestCommand()
+    public async Task TestExecuteFailRequestCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -181,6 +185,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         var task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"));
@@ -192,7 +197,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestExecuteProvideResponseCommand()
+    public async Task TestExecuteProvideResponseCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -202,6 +207,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         var task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"));
@@ -213,7 +219,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestExecuteRemoveInterceptCommand()
+    public async Task TestExecuteRemoveInterceptCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -223,6 +229,7 @@ public class NetworkModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         var task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"));
@@ -234,7 +241,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestCanReceiveAuthRequiredEvent()
+    public async Task TestCanReceiveAuthRequiredEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -242,6 +249,7 @@ public class NetworkModuleTests
 
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -312,7 +320,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestCanReceiveBeforeRequestSendEvent()
+    public async Task TestCanReceiveBeforeRequestSendEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -320,6 +328,7 @@ public class NetworkModuleTests
 
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -379,7 +388,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestCanReceiveFetchErrorEvent()
+    public async Task TestCanReceiveFetchErrorEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -387,6 +396,7 @@ public class NetworkModuleTests
 
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -444,7 +454,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestCanReceiveResponseStartedEvent()
+    public async Task TestCanReceiveResponseStartedEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -452,6 +462,7 @@ public class NetworkModuleTests
 
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -522,7 +533,7 @@ public class NetworkModuleTests
     }
 
     [Test]
-    public void TestCanReceiveResponseCompletedEvent()
+    public async Task TestCanReceiveResponseCompletedEvent()
     {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -530,6 +541,7 @@ public class NetworkModuleTests
 
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);

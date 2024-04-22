@@ -6,7 +6,7 @@ using TestUtilities;
 public class BrowserModuleTests
 {
     [Test]
-    public void TestExecuteCloseCommand()
+    public async Task TestExecuteCloseCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -16,6 +16,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
         var task = module.CloseAsync(new CloseCommandParameters());
@@ -26,7 +27,7 @@ public class BrowserModuleTests
     }
 
     [Test]
-    public void TestExecuteCreateUserContextCommand()
+    public async Task TestExecuteCreateUserContextCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -36,6 +37,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
         var task = module.CreateUserContextAsync(new CreateUserContextCommandParameters());
@@ -47,7 +49,7 @@ public class BrowserModuleTests
     }
 
     [Test]
-    public void TestExecuteGetUserContextsCommand()
+    public async Task TestExecuteGetUserContextsCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -57,6 +59,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
         var task = module.GetUserContextsAsync(new GetUserContextsCommandParameters());
@@ -74,7 +77,7 @@ public class BrowserModuleTests
     }
 
     [Test]
-    public void TestExecuteRemoveUserContextCommand()
+    public async Task TestExecuteRemoveUserContextCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -84,6 +87,7 @@ public class BrowserModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
         var task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"));

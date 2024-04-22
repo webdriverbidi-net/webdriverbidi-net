@@ -238,7 +238,7 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public void TestDriverCanEmitLogMessagesFromProtocol()
+    public async Task TestDriverCanEmitLogMessagesFromProtocol()
     {
         DateTime testStart = DateTime.UtcNow;
         List<LogMessageEventArgs> logs = new();
@@ -249,6 +249,7 @@ public class BiDiDriverTests
         {
             logs.Add(e);
         };
+        await driver.StartAsync("ws:localhost");
         connection.RaiseLogMessageEvent("test log message", WebDriverBiDiLogLevel.Warn);
         Assert.That(logs, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -290,25 +291,27 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public void TestReceivingNullValueFromSendingCommandThrows()
+    public async Task TestReceivingNullValueFromSendingCommandThrows()
     {
         TestTransport transport = new(new TestConnection())
         {
             ReturnCustomValue = true
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
+        await driver.StartAsync("ws:localhost");
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Result and thrown exception for command test.command with id 0 are both null"));
     }
 
     [Test]
-    public void TestExecutingCommandWillThrowWhenTimeout()
+    public async Task TestExecutingCommandWillThrowWhenTimeout()
     {
         BiDiDriver driver = new(TimeSpan.Zero, new Transport(new TestConnection()));
+        await driver.StartAsync("ws://localhost:5555");
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Timed out executing command test.command"));
     }
 
     [Test]
-    public void TestReceivingInvalidErrorValueFromSendingCommandThrows()
+    public async Task TestReceivingInvalidErrorValueFromSendingCommandThrows()
     {
         TestCommandResult result = new();
         result.SetIsErrorValue(true);
@@ -318,11 +321,12 @@ public class BiDiDriverTests
             CustomReturnValue = result
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
+        await driver.StartAsync("ws://localhost:5555");
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert error response from transport for SendCommandAndWait to ErrorResult"));
     }
 
     [Test]
-    public void TestReceivingInvalidResultTypeFromSendingCommandThrows()
+    public async Task TestReceivingInvalidResultTypeFromSendingCommandThrows()
     {
         TestCommandResultInvalid result = new();
         TestTransport transport = new(new TestConnection())
@@ -331,6 +335,7 @@ public class BiDiDriverTests
             CustomReturnValue = result
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
+        await driver.StartAsync("ws://localhost:5555");
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert response from transport for SendCommandAndWait to WebDriverBiDi.TestUtilities.TestCommandResult"));
     }
 
