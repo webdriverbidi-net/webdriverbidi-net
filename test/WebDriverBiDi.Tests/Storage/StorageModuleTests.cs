@@ -8,7 +8,7 @@ using WebDriverBiDi.TestUtilities;
 public class StorageModuleTests()
 {
     [Test]
-    public void TestGetCookiesCommand()
+    public async Task TestGetCookiesCommand()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
@@ -22,6 +22,7 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var task = module.GetCookiesAsync(new GetCookiesCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -47,7 +48,7 @@ public class StorageModuleTests()
     }
 
     [Test]
-    public void TestSetCookieCommand()
+    public async Task TestSetCookieCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -58,6 +59,7 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var task = module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -72,7 +74,7 @@ public class StorageModuleTests()
     }
 
     [Test]
-    public void TestDeleteCookiesCommand()
+    public async Task TestDeleteCookiesCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -83,6 +85,7 @@ public class StorageModuleTests()
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         StorageModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var task = module.DeleteCookiesAsync(new DeleteCookiesCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));

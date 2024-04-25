@@ -6,7 +6,7 @@ using TestUtilities;
 public class BrowsingContextModuleTests
 {
     [Test]
-    public void TestExecuteActivateCommand()
+    public async Task TestExecuteActivateCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -16,6 +16,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
@@ -26,7 +27,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteCaptureScreenshotCommand()
+    public async Task TestExecuteCaptureScreenshotCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -36,6 +37,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.CaptureScreenshotAsync(new CaptureScreenshotCommandParameters("myContextId"));
@@ -47,7 +49,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteCloseCommand()
+    public async Task TestExecuteCloseCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -57,6 +59,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.CloseAsync(new CloseCommandParameters("myContextId"));
@@ -67,7 +70,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteCreateCommand()
+    public async Task TestExecuteCreateCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -77,6 +80,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.CreateAsync(new CreateCommandParameters(CreateType.Tab));
@@ -88,7 +92,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteGetTreeCommand()
+    public async Task TestExecuteGetTreeCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -98,6 +102,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.GetTreeAsync(new GetTreeCommandParameters());
@@ -115,7 +120,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteHandleUserPromptCommand()
+    public async Task TestExecuteHandleUserPromptCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -125,6 +130,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.HandleUserPromptAsync(new HandleUserPromptCommandParameters("myContextId"));
@@ -135,7 +141,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteLocateNodesCommand()
+    public async Task TestExecuteLocateNodesCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -145,6 +151,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.LocateNodesAsync(new LocateNodesCommandParameters("myContextId", new CssLocator(".selector")));
@@ -155,7 +162,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteNavigateCommand()
+    public async Task TestExecuteNavigateCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -165,6 +172,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.NavigateAsync(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
@@ -180,7 +188,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecutePrintCommand()
+    public async Task TestExecutePrintCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -190,6 +198,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.PrintAsync(new PrintCommandParameters("myContextId"));
@@ -201,7 +210,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteReloadCommand()
+    public async Task TestExecuteReloadCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -211,6 +220,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.ReloadAsync(new ReloadCommandParameters("myContext"));
@@ -226,7 +236,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteSetViewportCommand()
+    public async Task TestExecuteSetViewportCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -236,6 +246,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.SetViewportAsync(new SetViewportCommandParameters("myContextId"));
@@ -246,7 +257,7 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestExecuteTraverseHistoryCommand()
+    public async Task TestExecuteTraverseHistoryCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -256,6 +267,7 @@ public class BrowsingContextModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         var task = module.TraverseHistoryAsync(new TraverseHistoryCommandParameters("myContextId", -3));
@@ -266,10 +278,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveContextCreatedEvent()
+    public async Task TestCanReceiveContextCreatedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -291,10 +304,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveContextDestroyedEvent()
+    public async Task TestCanReceiveContextDestroyedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -316,10 +330,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveDomContentLoadedEvent()
+    public async Task TestCanReceiveDomContentLoadedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -343,10 +358,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveDownloadWillBeginEvent()
+    public async Task TestCanReceiveDownloadWillBeginEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -370,10 +386,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveFragmentNavigatedEvent()
+    public async Task TestCanReceiveFragmentNavigatedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -397,10 +414,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveLoadEvent()
+    public async Task TestCanReceiveLoadEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -424,10 +442,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveNavigationAbortedEvent()
+    public async Task TestCanReceiveNavigationAbortedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -451,10 +470,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveNavigationFailedEvent()
+    public async Task TestCanReceiveNavigationFailedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -478,10 +498,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveNavigationStartedEvent()
+    public async Task TestCanReceiveNavigationStartedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -505,10 +526,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveUserPromptClosedEvent()
+    public async Task TestCanReceiveUserPromptClosedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -529,10 +551,11 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
-    public void TestCanReceiveUserPromptOpenedEvent()
+    public async Task TestCanReceiveUserPromptOpenedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);

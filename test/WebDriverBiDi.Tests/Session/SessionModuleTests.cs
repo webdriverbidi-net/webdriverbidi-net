@@ -7,7 +7,7 @@ using WebDriverBiDi.Protocol;
 public class SessionModuleTests
 {
     [Test]
-    public void TestExecuteStatusCommand()
+    public async Task TestExecuteStatusCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -17,7 +17,10 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        var task = driver.Session.StatusAsync(new StatusCommandParameters());
+        SessionModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
+
+        var task = module.StatusAsync(new StatusCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 
@@ -30,7 +33,7 @@ public class SessionModuleTests
     }
 
     [Test]
-    public void TestExecuteSubscribeCommand()
+    public async Task TestExecuteSubscribeCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -41,6 +44,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var subscribeParameters = new SubscribeCommandParameters();
         subscribeParameters.Events.Add("log.entryAdded");
@@ -52,7 +56,7 @@ public class SessionModuleTests
     }
 
     [Test]
-    public void TestExecuteUnsubscribeCommand()
+    public async Task TestExecuteUnsubscribeCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -63,6 +67,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var unsubscribeParameters = new UnsubscribeCommandParameters();
         unsubscribeParameters.Events.Add("log.entryAdded");
@@ -74,7 +79,7 @@ public class SessionModuleTests
     }
 
     [Test]
-    public void TestExecuteNewCommand()
+    public async Task TestExecuteNewCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -85,6 +90,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var newCommandParameters = new NewCommandParameters();
         var task = module.NewSessionAsync(newCommandParameters);
@@ -111,7 +117,7 @@ public class SessionModuleTests
     }
 
     [Test]
-    public void TestExecuteEndCommand()
+    public async Task TestExecuteEndCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -122,6 +128,7 @@ public class SessionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         SessionModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var endParameters = new EndCommandParameters();
         var task = module.EndAsync(endParameters);

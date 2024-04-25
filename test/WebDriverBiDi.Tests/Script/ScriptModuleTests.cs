@@ -7,7 +7,7 @@ using WebDriverBiDi.Protocol;
 public class ScriptModuleTests
 {
     [Test]
-    public void TestExecuteCallFunctionCommand()
+    public async Task TestExecuteCallFunctionCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -18,6 +18,7 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -40,7 +41,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestExecuteCallFunctionCommandReturningError()
+    public async Task TestExecuteCallFunctionCommandReturningError()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -51,6 +52,7 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -76,7 +78,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestExecuteEvaluateCommand()
+    public async Task TestExecuteEvaluateCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -87,6 +89,7 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
         
         var task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -109,7 +112,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestExecuteEvaluateCommandReturningError()
+    public async Task TestExecuteEvaluateCommandReturningError()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -120,6 +123,7 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -145,7 +149,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestExecuteGetRealmsCommand()
+    public async Task TestExecuteGetRealmsCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -156,6 +160,7 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var task = module.GetRealmsAsync(new GetRealmsCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -179,7 +184,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestExecuteDisownCommand()
+    public async Task TestExecuteDisownCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -190,6 +195,7 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         var task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -200,11 +206,12 @@ public class ScriptModuleTests
    }
 
     [Test]
-    public void TestCanReceiveRealmCreatedEvent()
+    public async Task TestCanReceiveRealmCreatedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
         module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
@@ -225,11 +232,12 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestCanReceiveRealmCreatedEventForNonWindowRealm()
+    public async Task TestCanReceiveRealmCreatedEventForNonWindowRealm()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
         module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
@@ -250,11 +258,12 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestCanReceiveRealmDestroyedEvent()
+    public async Task TestCanReceiveRealmDestroyedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
         module.RealmDestroyed += (object? obj, RealmDestroyedEventArgs e) =>
@@ -270,11 +279,12 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestCanReceiveMessageEvent()
+    public async Task TestCanReceiveMessageEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
         module.Message += (object? obj, MessageEventArgs e) => {
@@ -297,7 +307,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestCanAddPreloadScript()
+    public async Task TestCanAddPreloadScript()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -308,6 +318,8 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
+
         var task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"));
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
@@ -318,7 +330,7 @@ public class ScriptModuleTests
     }
 
     [Test]
-    public void TestCanRemovePreloadScript()
+    public async Task TestCanRemovePreloadScript()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -329,6 +341,7 @@ public class ScriptModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
         
         var task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));
         task.Wait(TimeSpan.FromSeconds(1));

@@ -23,11 +23,13 @@ public class Transport
 
     private readonly Connection connection;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
+    private readonly UnhandledErrorCollection unhandledErrors = new();
     private PendingCommandCollection pendingCommands = new();
     private Dispatcher<string> incomingMessageQueue = new();
     private Dispatcher<EventMessage> eventDispatcher = new();
     private long nextCommandId = 0;
     private bool isConnected;
+    private string terminationReason = "Normal shutdown";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Transport"/> class.
@@ -61,7 +63,7 @@ public class Transport
     public event EventHandler<EventReceivedEventArgs>? EventReceived;
 
     /// <summary>
-    /// Occurs when an error is received from the protocol.
+    /// Occurs when an error is received from the protocol that is not the result of a command execution.
     /// </summary>
     public event EventHandler<ErrorReceivedEventArgs>? ErrorEventReceived;
 
@@ -69,6 +71,37 @@ public class Transport
     /// Occurs when an unknown message is received from the protocol.
     /// </summary>
     public event EventHandler<UnknownMessageReceivedEventArgs>? UnknownMessageReceived;
+
+    /// <summary>
+    /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
+    /// unhandled exception in a handler for a defined protocol is encountered. Defaults to
+    /// ignoring exceptions, in which case, those exceptions will never be surfaced to the user.
+    /// </summary>
+    public TransportErrorBehavior EventHandlerExceptionBehavior { get => this.unhandledErrors.EventHandlerExceptionBehavior; set => this.unhandledErrors.EventHandlerExceptionBehavior = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when a
+    /// protocol error is encountered, such as invalid JSON or JSON missing required properties.
+    /// Defaults to ignoring exceptions, in which case, those exceptions will never be surfaced
+    /// to the user.
+    /// </summary>
+    public TransportErrorBehavior ProtocolErrorBehavior { get => this.unhandledErrors.ProtocolErrorBehavior; set => this.unhandledErrors.ProtocolErrorBehavior = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
+    /// unknown message is encountered, such as valid JSON that does not match any protocol data
+    /// structure. Defaults to ignoring exceptions, in which case, those exceptions will never
+    /// be surfaced to the user.
+    /// </summary>
+    public TransportErrorBehavior UnknownMessageBehavior { get => this.unhandledErrors.UnknownMessageBehavior; set => this.unhandledErrors.UnknownMessageBehavior = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
+    /// unexpected error is encountered, meaning an error response received with no corresponding
+    /// command. Defaults to ignoring exceptions, in which case, those exceptions will never be
+    /// surfaced to the user.
+    /// </summary>
+    public TransportErrorBehavior UnexpectedErrorBehavior { get => this.unhandledErrors.UnexpectedErrorBehavior; set => this.unhandledErrors.UnexpectedErrorBehavior = value; }
 
     /// <summary>
     /// Gets the ID of the last command to be added.
@@ -104,6 +137,8 @@ public class Transport
             this.eventDispatcher.ItemDispatched += this.OnEventDispatched;
         }
 
+        this.unhandledErrors.ClearUnhandledErrors();
+
         // Reset the command counter for each connection.
         this.nextCommandId = 0;
         await this.connection.StartAsync(websocketUri).ConfigureAwait(false);
@@ -115,6 +150,53 @@ public class Transport
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task DisconnectAsync()
+    {
+        await this.DisconnectAsync(true);
+    }
+
+    /// <summary>
+    /// Asynchronously sends a command to the remote end.
+    /// </summary>
+    /// <param name="commandData">The command settings object containing all data required to execute the command.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
+    public virtual async Task<Command> SendCommandAsync(CommandParameters commandData)
+    {
+        if (this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate))
+        {
+            await this.DisconnectAsync(false).ConfigureAwait(false);
+            throw this.CreateTerminationException();
+        }
+
+        if (!this.isConnected)
+        {
+            throw new WebDriverBiDiException("Transport must be connected to a remote end to execute commands.");
+        }
+
+        long commandId = Interlocked.Increment(ref this.nextCommandId);
+        Command command = new(commandId, commandData);
+        this.pendingCommands.AddPendingCommand(command);
+        string commandJson = JsonSerializer.Serialize(command);
+        await this.connection.SendDataAsync(commandJson).ConfigureAwait(false);
+        return command;
+    }
+
+    /// <summary>
+    /// Registers an event message to be recognized when received from the connection.
+    /// </summary>
+    /// <typeparam name="T">The type of data to be returned in the event.</typeparam>
+    /// <param name="eventName">The name of the event.</param>
+    public virtual void RegisterEventMessage<T>(string eventName)
+    {
+        this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
+    }
+
+    /// <summary>
+    /// Asynchronously disconnects from the remote end web socket.
+    /// </summary>
+    /// <param name="throwCollectedExceptions"> A value indicating whether to throw the collected exceptions.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    protected virtual async Task DisconnectAsync(bool throwCollectedExceptions)
     {
         // Steps in the disconnect process:
         // 1. Close the pending command collection to further addition of commands.
@@ -134,32 +216,10 @@ public class Transport
         this.eventDispatcher.StopDispatching();
         this.pendingCommands.Clear();
         this.isConnected = false;
-    }
-
-    /// <summary>
-    /// Asynchronously sends a command to the remote end.
-    /// </summary>
-    /// <param name="commandData">The command settings object containing all data required to execute the command.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
-    public virtual async Task<Command> SendCommandAsync(CommandParameters commandData)
-    {
-        long commandId = Interlocked.Increment(ref this.nextCommandId);
-        Command command = new(commandId, commandData);
-        this.pendingCommands.AddPendingCommand(command);
-        string commandJson = JsonSerializer.Serialize(command);
-        await this.connection.SendDataAsync(commandJson).ConfigureAwait(false);
-        return command;
-    }
-
-    /// <summary>
-    /// Registers an event message to be recognized when received from the connection.
-    /// </summary>
-    /// <typeparam name="T">The type of data to be returned in the event.</typeparam>
-    /// <param name="eventName">The name of the event.</param>
-    public virtual void RegisterEventMessage<T>(string eventName)
-    {
-        this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
+        if (throwCollectedExceptions && this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect))
+        {
+            throw this.CreateTerminationException();
+        }
     }
 
     /// <summary>
@@ -182,9 +242,16 @@ public class Transport
     /// <param name="e">The EventArgs containing information about the event.</param>
     protected virtual void OnProtocolEventReceived(object? sender, EventReceivedEventArgs e)
     {
-        if (this.EventReceived is not null)
+        try
         {
-            this.EventReceived(this, e);
+            if (this.EventReceived is not null)
+            {
+                this.EventReceived(this, e);
+            }
+        }
+        catch (Exception ex)
+        {
+            this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for event name ${e.EventName}");
         }
     }
 
@@ -235,6 +302,7 @@ public class Transport
         catch (JsonException e)
         {
             this.Log($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error);
+            this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, e, $"Invalid JSON in protocol message: {messageData}");
         }
 
         if (message is not null)
@@ -263,6 +331,7 @@ public class Transport
         if (!isProcessed)
         {
             this.OnProtocolUnknownMessageReceived(this, new UnknownMessageReceivedEventArgs(messageData));
+            this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {messageData}"), "Unknown message from connection");
         }
     }
 
@@ -303,13 +372,15 @@ public class Transport
             ErrorResponseMessage? errorMessage = message.Deserialize<ErrorResponseMessage>(this.options);
             if (errorMessage is not null)
             {
+                ErrorResult result = errorMessage.GetErrorResponseData();
                 if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command executedCommand))
                 {
-                    executedCommand.Result = errorMessage.GetErrorResponseData();
+                    executedCommand.Result = result;
                 }
                 else
                 {
-                    this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(errorMessage.GetErrorResponseData()));
+                    this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(result));
+                    this.CaptureUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiException($"Received '{result.ErrorType}' error with no command ID: {result.ErrorMessage}"), "Received error with no command ID");
                 }
             }
 
@@ -318,6 +389,7 @@ public class Transport
         catch (Exception ex)
         {
             this.Log($"Unexpected error parsing error JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
+            this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in protocol error response: {message}");
         }
 
         return false;
@@ -343,11 +415,40 @@ public class Transport
                 catch (Exception ex)
                 {
                     this.Log($"Unexpected error parsing event JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
+                    this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in event message: {message}");
                 }
             }
         }
 
         return false;
+    }
+
+    private void CaptureUnhandledError(UnhandledErrorType errorType, Exception ex, string terminalReason)
+    {
+        bool isTerminalError = false;
+        switch (errorType)
+        {
+            case UnhandledErrorType.ProtocolError:
+                isTerminalError = this.ProtocolErrorBehavior == TransportErrorBehavior.Terminate;
+                break;
+            case UnhandledErrorType.UnknownMessage:
+                isTerminalError = this.UnknownMessageBehavior == TransportErrorBehavior.Terminate;
+                break;
+            case UnhandledErrorType.UnexpectedError:
+                isTerminalError = this.UnexpectedErrorBehavior == TransportErrorBehavior.Terminate;
+                break;
+            case UnhandledErrorType.EventHandlerException:
+                isTerminalError = this.EventHandlerExceptionBehavior == TransportErrorBehavior.Terminate;
+                break;
+        }
+
+        // Note carefully that if handling of the error type is "Ignore", adding to the
+        // unhandled errors collection is a no-op.
+        this.unhandledErrors.AddUnhandledError(errorType, ex);
+        if (isTerminalError)
+        {
+            this.terminationReason = terminalReason;
+        }
     }
 
     private void OnEventDispatched(object sender, ItemDispatchedEventArgs<EventMessage> e)
@@ -363,5 +464,16 @@ public class Transport
     private void OnConnectionLogMessage(object? sender, LogMessageEventArgs e)
     {
         this.OnLogMessage(sender, e);
+    }
+
+    private Exception CreateTerminationException()
+    {
+        string message = $"Unhandled exception during transport operations. Transport was terminated with the following reason: {this.terminationReason}";
+        if (this.unhandledErrors.Exceptions.Count == 1)
+        {
+            return new WebDriverBiDiException(message, this.unhandledErrors.Exceptions[0]);
+        }
+
+        return new AggregateException(message, this.unhandledErrors.Exceptions);
     }
 }

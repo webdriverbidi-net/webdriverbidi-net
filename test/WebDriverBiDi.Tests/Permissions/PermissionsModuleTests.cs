@@ -6,7 +6,7 @@ using TestUtilities;
 public class PermissionsModuleTests
 {
     [Test]
-    public void TestExecuteActivateCommand()
+    public async Task TestExecuteActivateCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
@@ -16,6 +16,7 @@ public class PermissionsModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         PermissionsModule module = new(driver);
 
         var task = module.SetPermission(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"));
