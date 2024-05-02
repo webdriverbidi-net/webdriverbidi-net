@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Log;
 
 /// <summary>
-/// The Log module contains functionality and events related to logging.
+/// The Log module contains functionality and events related to writing to the browser's console log.
 /// </summary>
 public sealed class LogModule : Module
 {

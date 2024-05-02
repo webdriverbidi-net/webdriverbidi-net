@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Storage;
 
 /// <summary>
-/// The BrowsingContext module contains commands and events relating to browsing contexts.
+/// The Storage module contains commands and events relating to browser storage such as cookies.
 /// </summary>
 public sealed class StorageModule : Module
 {
