@@ -55,7 +55,7 @@ public static class DemoScenarios
 
                 InputBuilder inputBuilder = new();
                 AddClickOnElementAction(inputBuilder, elementReference);
-                AddSendKeysToElementAction(inputBuilder, elementReference, "Hello WebDriver BiDi" + Keys.Enter);
+                AddSendKeysToActiveElementAction(inputBuilder, "Hello WebDriver BiDi" + Keys.Enter);
 
                 PerformActionsCommandParameters actionsParams = new(contextId);
                 actionsParams.Actions.AddRange(inputBuilder.Build());
@@ -200,7 +200,7 @@ public static class DemoScenarios
     {
         driver.Log.EntryAdded += (object? obj, EntryAddedEventArgs e) =>
         {
-            Console.WriteLine($"This was written to the console at {e.Timestamp:yyyy-MM-dd HH:mm:ss.fff)} UTC: {e.Text}");
+            Console.WriteLine($"This was written to the console at {e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC: {e.Text}");
         };
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("log.entryAdded");
@@ -224,7 +224,7 @@ public static class DemoScenarios
             .AddAction(builder.DefaultPointerInputSource.CreatePointerUp());
     }
 
-    private static void AddSendKeysToElementAction(InputBuilder builder, SharedReference elementReference, string keysToSend)
+    private static void AddSendKeysToActiveElementAction(InputBuilder builder, string keysToSend)
     {
         foreach (char character in keysToSend)
         {

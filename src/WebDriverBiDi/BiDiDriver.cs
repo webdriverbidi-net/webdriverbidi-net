@@ -181,7 +181,7 @@ public class BiDiDriver
         bool commandCompleted = await sentCommand.WaitForCompletionAsync(commandTimeout).ConfigureAwait(false);
         if (!commandCompleted)
         {
-            throw new WebDriverBiDiException($"Timed out executing command {command.MethodName} after ${commandTimeout.TotalMilliseconds} milliseconds");
+            throw new WebDriverBiDiException($"Timed out executing command {command.MethodName} after {commandTimeout.TotalMilliseconds} milliseconds");
         }
 
         if (sentCommand.Result is null)
