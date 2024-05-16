@@ -15,6 +15,7 @@
     <Title>WebDriver BiDirectional Client Library</Title>
     <Description>A .NET client library for the WebDriver BiDi protocol.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
   </PropertyGroup>
 
@@ -30,6 +31,7 @@
 
   <ItemGroup>
     <AdditionalFiles Include=".stylecop.json" />
+    <None Include="README.md" Pack="true" PackagePath="/"/>
   </ItemGroup>
 
 </Project>
