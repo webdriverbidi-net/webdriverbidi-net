@@ -10,8 +10,8 @@ This is repository contains a library that is a .NET client for the
 [WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). It also includes support for
 other modules implementing support for the WebDriver BiDi protocol, but not included in that specification,
 such as the [Permissions specification](https://www.w3.org/TR/permissions/). This spec is in progress,
-and features are added to the library as the specification changes. This package is also [published to NuGet]
-(https://www.nuget.org/packages/WebDriverBiDi).
+and features are added to the library as the specification changes. This package is also 
+[published to NuGet](https://www.nuget.org/packages/WebDriverBiDi).
 
 The library allows a user to automate a browser using WebDriver BiDi, standard protocol developed and maintained
 under the auspices of the World Wide Web Consortium (W3C). The protocol is implemented by browser vendors as part
