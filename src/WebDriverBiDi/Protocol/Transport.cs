@@ -251,7 +251,7 @@ public class Transport
         }
         catch (Exception ex)
         {
-            this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for event name ${e.EventName}");
+            this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for event name {e.EventName}");
         }
     }
 

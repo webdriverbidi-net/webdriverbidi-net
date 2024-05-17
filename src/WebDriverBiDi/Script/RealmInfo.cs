@@ -60,7 +60,7 @@ public class RealmInfo
     {
         if (this is not T castValue)
         {
-            throw new WebDriverBiDiException($"This RealmInfo cannot be cast to ${typeof(T)}");
+            throw new WebDriverBiDiException($"This RealmInfo cannot be cast to {typeof(T)}");
         }
 
         return castValue;
