@@ -22,6 +22,7 @@ public class EntryAddedEventArgsTests
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(eventArgs.Text, Is.Null);
+            Assert.That(eventArgs.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             Assert.That(eventArgs.Type, Is.EqualTo("generic"));
             Assert.That(eventArgs.Method, Is.Null);
@@ -41,6 +42,7 @@ public class EntryAddedEventArgsTests
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(eventArgs.Text,Is.EqualTo("my log message"));
+            Assert.That(eventArgs.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             Assert.That(eventArgs.Type, Is.EqualTo("console"));
             Assert.That(eventArgs.Method, Is.EqualTo("myMethod"));
@@ -60,6 +62,7 @@ public class EntryAddedEventArgsTests
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(eventArgs.Text,Is.EqualTo("my log message"));
+            Assert.That(eventArgs.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             Assert.That(eventArgs.Type, Is.EqualTo("console"));
             Assert.That(eventArgs.Method, Is.EqualTo("myMethod"));

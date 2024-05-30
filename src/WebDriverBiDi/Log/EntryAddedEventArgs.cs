@@ -29,6 +29,11 @@ public class EntryAddedEventArgs : WebDriverBiDiEventArgs
     public string Type => this.entry.Type;
 
     /// <summary>
+    /// Gets the log level of the log entry.
+    /// </summary>
+    public LogLevel Level => this.entry.Level;
+
+    /// <summary>
     /// Gets the source of the log entry.
     /// </summary>
     public Source Source => this.entry.Source;
