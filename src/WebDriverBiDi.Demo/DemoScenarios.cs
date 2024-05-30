@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Demo;
 
+using PinchHitter;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client;
 using WebDriverBiDi.Input;
@@ -215,6 +216,75 @@ public static class DemoScenarios
         };
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
+    }
+
+    public static async Task ExecuteJavaScriptFunctions(BiDiDriver driver, string baseUrl)
+    {
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+
+        string functionDefinition = "(first, second) => first + second";
+        List<ArgumentValue> arguments = new()
+        {
+            LocalValue.Number(3),
+            LocalValue.Number(5),
+        };
+
+        CallFunctionCommandParameters callFunctionParams = new(functionDefinition, new ContextTarget(contextId), true);
+        callFunctionParams.Arguments.AddRange(arguments);
+        EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        if (scriptResult is EvaluateResultSuccess scriptSuccessResultNumber)
+        {
+            Console.WriteLine($"Script result type: {scriptSuccessResultNumber.Result.Type} (.NET type: {scriptSuccessResultNumber.Result.Value!.GetType()})");
+            RemoteValue scriptResultValue = scriptSuccessResultNumber.Result;
+            Console.WriteLine($"Return value of function is {scriptResultValue.ValueAs<long>()}");
+        }
+
+        arguments = new()
+        {
+            LocalValue.String("Hello, "),
+            LocalValue.String("World!"),
+        };
+
+        callFunctionParams = new(functionDefinition, new ContextTarget(contextId), true);
+        callFunctionParams.Arguments.AddRange(arguments);
+        scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        if (scriptResult is EvaluateResultSuccess scriptSuccessResultString)
+        {
+            Console.WriteLine($"Script result type: {scriptSuccessResultString.Result.Type} (.NET type: {scriptSuccessResultString.Result.Value!.GetType()})");
+            RemoteValue scriptResultValue = scriptSuccessResultString.Result;
+            Console.WriteLine($"Return value of function is {scriptResultValue.ValueAs<string>()}");
+        }
+    }
+
+    public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
+    {
+        driver.Network.BeforeRequestSent += async (object? obj, BeforeRequestSentEventArgs e) =>
+        {
+            Console.Write($"Entering BeforeRequestSent event\n");
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            Console.Write($"{e.ToString()}\n");
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        };
+        SubscribeCommandParameters subscribe = new();
+        subscribe.Events.Add("network.beforeRequestSent");
+        await driver.Session.SubscribeAsync(subscribe);
+
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
     }
 
     private static void AddClickOnElementAction(InputBuilder builder, SharedReference elementReference)

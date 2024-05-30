@@ -43,6 +43,8 @@ try
     // await DemoScenarios.WaitForDelayLoadAsync(driver, baseDemoSiteUrl);
     // await DemoScenarios.MonitorNetworkTraffic(driver, baseDemoSiteUrl);
     // await DemoScenarios.MonitorBrowserConsole(driver, baseDemoSiteUrl);
+    // await DemoScenarios.ExecuteJavaScriptFunctions(driver, baseDemoSiteUrl);
+    // await DemoScenarios.InterceptBeforeRequestSentEvent(driver, baseDemoSiteUrl);
 
     Console.WriteLine("Pausing 3 seconds to view results");
     await Task.Delay(TimeSpan.FromSeconds(3));
@@ -58,7 +60,7 @@ finally
 
 BiDiDriver InitializeDriver()
 {
-    BiDiDriver driver = new(TimeSpan.FromSeconds(2));
+    BiDiDriver driver = new(TimeSpan.FromSeconds(10));
     driver.LogMessage += OnDriverLogMessage;
     driver.BrowsingContext.NavigationStarted += (sender, e) =>
     {
