@@ -5,9 +5,13 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Abstract base class for arguments used in scripts.
 /// </summary>
+[JsonDerivedType(typeof(LocalValue))]
+[JsonDerivedType(typeof(RemoteReference))]
 public abstract class ArgumentValue
 {
 }
