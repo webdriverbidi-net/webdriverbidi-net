@@ -265,13 +265,22 @@ public static class DemoScenarios
 
     public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
     {
+        List<Task> beforeRequestSentTasks = new();
         driver.Network.BeforeRequestSent += async (object? obj, BeforeRequestSentEventArgs e) =>
         {
-            Console.Write($"Entering BeforeRequestSent event\n");
+            TaskCompletionSource taskCompletionSource = new();
+            beforeRequestSentTasks.Add(taskCompletionSource.Task);
+            Console.WriteLine($"Entering BeforeRequestSent event");
+
+            // Here we ara creating an artificially long-running event handler
+            // to demonstrate how to handle this in client code.
             await Task.Delay(TimeSpan.FromSeconds(4));
-            Console.Write($"{e.ToString()}\n");
+            Console.WriteLine($"Before request for {e.Request.Url}");
             await Task.Delay(TimeSpan.FromSeconds(1));
+            Console.WriteLine($"Exiting BeforeRequestSent event");
+            taskCompletionSource.SetResult();
         };
+
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("network.beforeRequestSent");
         await driver.Session.SubscribeAsync(subscribe);
@@ -285,6 +294,15 @@ public static class DemoScenarios
             Wait = ReadinessState.Complete
         };
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Navigation command completed");
+
+        // Some explanation of this construct is in order. If your event handler does
+        // not provide anything to wait on, you run the risk of the main thread exiting
+        // (and terminating your pending event handlers) before the event handlers complete
+        // execution. Therefore, you need to wait for the event handlers to begin processing
+        // before you can wait for them to complete.
+        Task.WaitAll(beforeRequestSentTasks.ToArray());
+        Console.WriteLine($"Event handlers complete");
     }
 
     private static void AddClickOnElementAction(InputBuilder builder, SharedReference elementReference)

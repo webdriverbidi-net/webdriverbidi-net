@@ -26,7 +26,6 @@ public class Transport
     private readonly UnhandledErrorCollection unhandledErrors = new();
     private PendingCommandCollection pendingCommands = new();
     private Dispatcher<string> incomingMessageQueue = new();
-    private Dispatcher<EventMessage> eventDispatcher = new();
     private long nextCommandId = 0;
     private bool isConnected;
     private string terminationReason = "Normal shutdown";
@@ -47,7 +46,6 @@ public class Transport
     {
         this.connection = connection;
         this.incomingMessageQueue.ItemDispatched += this.OnIncomingMessageDispatched;
-        this.eventDispatcher.ItemDispatched += this.OnEventDispatched;
         connection.DataReceived += this.OnConnectionDataReceived;
         connection.LogMessage += this.OnConnectionLogMessage;
     }
@@ -131,12 +129,6 @@ public class Transport
             this.incomingMessageQueue.ItemDispatched += this.OnIncomingMessageDispatched;
         }
 
-        if (!this.eventDispatcher.IsDispatching)
-        {
-            this.eventDispatcher = new Dispatcher<EventMessage>();
-            this.eventDispatcher.ItemDispatched += this.OnEventDispatched;
-        }
-
         this.unhandledErrors.ClearUnhandledErrors();
 
         // Reset the command counter for each connection.
@@ -201,19 +193,17 @@ public class Transport
         // Steps in the disconnect process:
         // 1. Close the pending command collection to further addition of commands.
         // 2. Stop the connection from receiving further communication traffic.
-        // 3. Stop dispatching incoming command responses. Note that the dispatcher
-        //    will attempt to dispatch any pending responses already in the queue.
-        //    Dispatching the pending responses in the queue and processing those
-        //    responses  will also remove those commands from the pending command
-        //    collection.
-        // 4. Stop dispatching incoming event messages. Note that the dispatcher will
-        //    attempt to dispatch any pending event messages already in the queue.
-        // 5. Clear the pending command collection. This will also cancel any tasks
+        // 3. Stop dispatching incoming messages. Note that the dispatcher will
+        //    attempt to dispatch any pending messages already in the queue.
+        //    Dispatching pending command responses in the queue and processing those
+        //    responses will also remove those commands from the pending command
+        //    collection. Likewise, incoming event message will be processed by
+        //    their event handlers, if any.
+        // 4. Clear the pending command collection. This will also cancel any tasks
         //    associated with the remaining pending commands.
         this.pendingCommands.Close();
         await this.connection.StopAsync().ConfigureAwait(false);
         this.incomingMessageQueue.StopDispatching();
-        this.eventDispatcher.StopDispatching();
         this.pendingCommands.Clear();
         this.isConnected = false;
         if (throwCollectedExceptions && this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect))
@@ -409,7 +399,7 @@ public class Transport
                     // Deserialize will correctly throw if the type does not match, meaning
                     // the eventMessageData variable can never be null.
                     EventMessage? eventMessageData = message.Deserialize(eventMessageType, this.options) as EventMessage;
-                    this.eventDispatcher.TryDispatch(eventMessageData!);
+                    this.OnProtocolEventReceived(this, new EventReceivedEventArgs(eventMessageData!));
                     return true;
                 }
                 catch (Exception ex)
@@ -449,11 +439,6 @@ public class Transport
         {
             this.terminationReason = terminalReason;
         }
-    }
-
-    private void OnEventDispatched(object sender, ItemDispatchedEventArgs<EventMessage> e)
-    {
-        this.OnProtocolEventReceived(this, new EventReceivedEventArgs(e.DispatchedItem));
     }
 
     private void Log(string message, WebDriverBiDiLogLevel level)
