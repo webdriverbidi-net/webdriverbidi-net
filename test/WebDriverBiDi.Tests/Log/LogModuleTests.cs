@@ -1,15 +1,17 @@
 namespace WebDriverBiDi.Log;
 
+using System.Runtime.CompilerServices;
 using TestUtilities;
 
 [TestFixture]
 public class LogModuleTests
 {
     [Test]
-    public void TestCanReceiveEntryAddedEvent()
+    public async Task TestCanReceiveEntryAddedEvent()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         LogModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
@@ -34,10 +36,11 @@ public class LogModuleTests
     }
 
     [Test]
-    public void TestCanReceiveEntryAddedEventForConsoleLogType()
+    public async Task TestCanReceiveEntryAddedEventForConsoleLogType()
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
         LogModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);

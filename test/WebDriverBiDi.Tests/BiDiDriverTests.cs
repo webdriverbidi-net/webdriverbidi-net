@@ -26,8 +26,8 @@ public class BiDiDriverTests
         };
 
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws://localhost:5555");
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555");
 
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
@@ -45,8 +45,8 @@ public class BiDiDriverTests
         };
 
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws://localhost:5555");
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555");
 
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
@@ -63,8 +63,8 @@ public class BiDiDriverTests
         };
 
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws://localhost:5555");
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555");
 
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
@@ -78,13 +78,13 @@ public class BiDiDriverTests
         ManualResetEvent syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws://localhost:5555");
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.UnexpectedErrorReceived += (object? sender, ErrorReceivedEventArgs e) =>
         {
             response = e.ErrorData;
             syncEvent.Set();
         };
+        await driver.StartAsync("ws://localhost:5555");
 
         connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
@@ -107,7 +107,6 @@ public class BiDiDriverTests
         string eventName = "module.event";
         TestConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws://localhost:5555");
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
         driver.EventReceived += (sender, e) =>
@@ -116,6 +115,7 @@ public class BiDiDriverTests
             receivedData = e.EventData;
             syncEvent.Set();
         };
+        await driver.StartAsync("ws://localhost:5555");
 
         connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
@@ -143,7 +143,6 @@ public class BiDiDriverTests
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        await driver.StartAsync("ws://localhost:5555");
         driver.RegisterEvent<TestEventArgs>(eventName);
         driver.EventReceived += (sender, e) =>
         {
@@ -151,6 +150,7 @@ public class BiDiDriverTests
             receivedData = e.EventData;
             syncEvent.Set();
         };
+        await driver.StartAsync("ws://localhost:5555");
 
         connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         await driver.StopAsync();
@@ -173,13 +173,13 @@ public class BiDiDriverTests
 
         TestConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws://localhost:5555");
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.UnknownMessageReceived += (sender, e) =>
         {
             receivedMessage = e.Message;
             syncEvent.Set();
         };
+        await driver.StartAsync("ws://localhost:5555");
 
         string serialized = @"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }";
         connection.RaiseDataReceivedEvent(serialized);
@@ -195,13 +195,13 @@ public class BiDiDriverTests
 
         TestConnection connection = new();
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws://localhost:5555");
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.UnknownMessageReceived += (sender, e) =>
         {
             receivedMessage = e.Message;
             syncEvent.Set();
         };
+        await driver.StartAsync("ws://localhost:5555");
 
         string serialized = @"{ ""someProperty"": ""someValue"", ""params"": { ""thisMessage"": ""matches no protocol message"" } }";
         connection.RaiseDataReceivedEvent(serialized);
