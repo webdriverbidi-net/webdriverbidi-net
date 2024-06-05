@@ -45,6 +45,7 @@ try
     // await DemoScenarios.MonitorBrowserConsole(driver, baseDemoSiteUrl);
     // await DemoScenarios.ExecuteJavaScriptFunctions(driver, baseDemoSiteUrl);
     // await DemoScenarios.InterceptBeforeRequestSentEvent(driver, baseDemoSiteUrl);
+    // await DemoScenarios.InterceptAndReplaceNetworkData(driver, baseDemoSiteUrl);
 
     Console.WriteLine("Pausing 3 seconds to view results");
     await Task.Delay(TimeSpan.FromSeconds(3));

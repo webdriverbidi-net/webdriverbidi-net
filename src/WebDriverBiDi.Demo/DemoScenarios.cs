@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Demo;
 
+using System.ComponentModel;
 using PinchHitter;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client;
@@ -303,6 +304,47 @@ public static class DemoScenarios
         // before you can wait for them to complete.
         Task.WaitAll(beforeRequestSentTasks.ToArray());
         Console.WriteLine($"Event handlers complete");
+    }
+
+    public static async Task InterceptAndReplaceNetworkData(BiDiDriver driver, string baseUrl)
+    {
+        SubscribeCommandParameters subscribe = new();
+        subscribe.Events.Add("network.beforeRequestSent");
+        await driver.Session.SubscribeAsync(subscribe);
+
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        AddInterceptCommandParameters addIntercept = new();
+        addIntercept.BrowsingContextIds = new List<string>() { contextId };
+        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
+        addIntercept.UrlPatterns = new List<UrlPattern>() { new UrlPatternPattern() { PathName = "simpleContent.html" } };
+        await driver.Network.AddInterceptAsync(addIntercept);
+
+        Task? substituteTask = null;
+        driver.Network.BeforeRequestSent += (sender, e) =>
+        {
+            if (e.IsBlocked)
+            {
+                ProvideResponseCommandParameters provideResponse = new(e.Request.RequestId)
+                {
+                    StatusCode = 200,
+                    ReasonPhrase = "OK",
+                    Body = BytesValue.FromString($"<html><body><h1>Request to {e.Request.Url} has been hijacked!</h1></body></html>")
+                };
+                substituteTask = driver.Network.ProvideResponseAsync(provideResponse);
+            }
+        };
+
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+
+        await substituteTask!;
+        Console.WriteLine($"Navigation command completed");
     }
 
     private static void AddClickOnElementAction(InputBuilder builder, SharedReference elementReference)
