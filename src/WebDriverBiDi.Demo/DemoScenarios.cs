@@ -272,7 +272,7 @@ public static class DemoScenarios
     public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
     {
         List<Task> beforeRequestSentTasks = new();
-        driver.Network.OnBeforeRequestSent.AddHandler(async (BeforeRequestSentEventArgs e) =>
+        EventObserver<BeforeRequestSentEventArgs> handler = driver.Network.OnBeforeRequestSent.AddHandler(async (BeforeRequestSentEventArgs e) =>
         {
             TaskCompletionSource taskCompletionSource = new();
             beforeRequestSentTasks.Add(taskCompletionSource.Task);
@@ -285,7 +285,7 @@ public static class DemoScenarios
             await Task.Delay(TimeSpan.FromSeconds(1));
             Console.WriteLine($"Exiting BeforeRequestSent event");
             taskCompletionSource.SetResult();
-        });
+        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("network.beforeRequestSent");
@@ -309,6 +309,13 @@ public static class DemoScenarios
         // before you can wait for them to complete.
         Task.WaitAll(beforeRequestSentTasks.ToArray());
         Console.WriteLine($"Event handlers complete");
+
+        Console.WriteLine("Removing event handler");
+        handler.Unobserve();
+
+        navigateParams.Url = $"{baseUrl}/inputForm.html";
+        Console.WriteLine($"Navigating again to {navigateParams.Url} show no event handlers fired");
+        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
     }
 
     public static async Task InterceptAndReplaceNetworkData(BiDiDriver driver, string baseUrl)
@@ -328,7 +335,7 @@ public static class DemoScenarios
         await driver.Network.AddInterceptAsync(addIntercept);
 
         Task? substituteTask = null;
-        driver.Network.OnBeforeRequestSent.AddHandler((e) =>
+        EventObserver<BeforeRequestSentEventArgs> handler = driver.Network.OnBeforeRequestSent.AddHandler((e) =>
         {
             if (e.IsBlocked)
             {
@@ -338,19 +345,19 @@ public static class DemoScenarios
                     ReasonPhrase = "OK",
                     Body = BytesValue.FromString($"<html><body><h1>Request to {e.Request.Url} has been hijacked!</h1></body></html>")
                 };
-                return driver.Network.ProvideResponseAsync(provideResponse);
+                substituteTask = driver.Network.ProvideResponseAsync(provideResponse);
             }
 
             return Task.CompletedTask;
-        });
+        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
         };
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
-
         await substituteTask!;
+        
         Console.WriteLine($"Navigation command completed");
     }
 

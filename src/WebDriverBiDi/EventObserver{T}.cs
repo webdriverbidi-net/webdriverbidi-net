@@ -13,17 +13,17 @@ public class EventObserver<T>
     where T : EventArgs
 {
     private readonly ObservableEvent<T> observableEvent;
-    private readonly Func<T, Task> handler;
+    private readonly string handlerId;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EventObserver{T}"/> class.
     /// </summary>
     /// <param name="observableEvent">The observable event being observed.</param>
-    /// <param name="handler">The handler for the observable event.</param>
-    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler)
+    /// <param name="handlerId">The ID of the handler for the observable event.</param>
+    internal EventObserver(ObservableEvent<T> observableEvent, string handlerId)
     {
         this.observableEvent = observableEvent;
-        this.handler = handler;
+        this.handlerId = handlerId;
     }
 
     /// <summary>
@@ -31,6 +31,6 @@ public class EventObserver<T>
     /// </summary>
     public void Unobserve()
     {
-        this.observableEvent.RemoveHandler(this.handler);
+        this.observableEvent.RemoveHandler(this.handlerId);
     }
 }
