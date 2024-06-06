@@ -10,6 +10,7 @@ namespace WebDriverBiDi;
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
 public class EventObserver<T>
+    where T : EventArgs
 {
     private readonly ObservableEvent<T> observableEvent;
     private readonly Func<T, Task> handler;

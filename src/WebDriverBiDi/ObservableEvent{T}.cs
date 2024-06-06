@@ -11,6 +11,7 @@ namespace WebDriverBiDi;
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
 public class ObservableEvent<T>
+    where T : EventArgs
 {
     private readonly List<Func<T, Task>> handlers = new();
     private readonly int maxHandlerCount;
@@ -37,24 +38,6 @@ public class ObservableEvent<T>
     /// A value of zero (0) indicates an unlimited number of handlers.
     /// </summary>
     public int MaxHandlerCount => this.maxHandlerCount;
-
-    /// <summary>
-    /// Adds a function taking an argument of type T and returning void that handles observable event.
-    /// This function will be wrapped in a function that returns a Task.
-    /// </summary>
-    /// <param name="handler">A function taking an argument of type T returning void that handles the event.</param>
-    /// <returns>An observer for this observable event.</returns>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown when the user attempts to add more observers than this event allows.
-    /// </exception>
-    public EventObserver<T> AddHandler(Action<T> handler)
-    {
-        return this.AddHandler((T e) =>
-        {
-            handler(e);
-            return Task.CompletedTask;
-        });
-    }
 
     /// <summary>
     /// Adds a function taking an argument of type T and returning a Task that handles observable event.

@@ -7,7 +7,7 @@ using WebDriverBiDi.Protocol;
 public class ModuleTests
 {
     [Test]
-    public async Task TestContextCreatedEventWithInvalidEventArgsThrows()
+    public async Task TestEventWithInvalidEventArgsThrows()
     {
         TestConnection connection = new();
         Transport transport = new(connection);
@@ -20,24 +20,28 @@ public class ModuleTests
 
         ManualResetEvent syncEvent = new(false);
         List<string> driverLog = new();
-        transport.LogMessage += (sender, e) =>
+        transport.OnLogMessage.AddHandler((e) =>
         {
             if (e.Level >= WebDriverBiDiLogLevel.Error)
             {
                 driverLog.Add(e.Message);
             }
-        };
+
+            return Task.CompletedTask;
+        });
 
         string unknownMessage = string.Empty;
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((e) =>
         {
             unknownMessage = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
+        await driver.StartAsync("ws:localhost");
         string eventJson = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        syncEvent.WaitOne(TimeSpan.FromSeconds(10));
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.Multiple(() =>
         {
             Assert.That(driverLog, Has.Count.EqualTo(1));

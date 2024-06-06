@@ -53,10 +53,10 @@ public class BiDiDriver
     {
         this.defaultCommandWaitTimeout = defaultCommandWaitTimeout;
         this.transport = transport;
-        this.transport.EventReceived += this.OnTransportEventReceived;
-        this.transport.ErrorEventReceived += this.OnTransportErrorEventReceived;
-        this.transport.UnknownMessageReceived += this.OnTransportUnknownMessageReceived;
-        this.transport.LogMessage += this.OnTransportLogMessage;
+        this.transport.OnEventReceived.AddHandler(this.OnTransportEventReceived);
+        this.transport.OnErrorEventReceived.AddHandler(this.OnTransportErrorEventReceived);
+        this.transport.OnUnknownMessageReceived.AddHandler(this.OnTransportUnknownMessageReceived);
+        this.transport.OnLogMessage.AddHandler(this.OnTransportLogMessage);
         this.RegisterModule(new BrowserModule(this));
         this.RegisterModule(new BrowsingContextModule(this));
         this.RegisterModule(new LogModule(this));
@@ -303,23 +303,27 @@ public class BiDiDriver
         }
     }
 
-    private void OnTransportEventReceived(object? sender, EventReceivedEventArgs e)
+    private Task OnTransportEventReceived(EventReceivedEventArgs e)
     {
         this.OnEventReceived(e);
+        return Task.CompletedTask;
     }
 
-    private void OnTransportErrorEventReceived(object? sender, ErrorReceivedEventArgs e)
+    private Task OnTransportErrorEventReceived(ErrorReceivedEventArgs e)
     {
         this.OnUnexpectedError(e);
+        return Task.CompletedTask;
     }
 
-    private void OnTransportUnknownMessageReceived(object? sender, UnknownMessageReceivedEventArgs e)
+    private Task OnTransportUnknownMessageReceived(UnknownMessageReceivedEventArgs e)
     {
         this.OnUnknownMessageReceived(e);
+        return Task.CompletedTask;
     }
 
-    private void OnTransportLogMessage(object? sender, LogMessageEventArgs e)
+    private Task OnTransportLogMessage(LogMessageEventArgs e)
     {
         this.OnLogMessage(e);
+        return Task.CompletedTask;
     }
 }

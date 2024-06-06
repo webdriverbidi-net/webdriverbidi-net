@@ -159,6 +159,8 @@ public class ConnectionTests
             {
                 logValues.Add(e);
             }
+
+            return Task.CompletedTask;
         });
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -256,7 +258,6 @@ public class ConnectionTests
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.IsActive, Is.True);
-        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
 
         // Send data to the connection, which should force the receive data
         // task to enter a waiting state after receiving the first message.
@@ -279,6 +280,7 @@ public class ConnectionTests
         connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
+            return Task.CompletedTask;
         });
         connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
@@ -329,6 +331,7 @@ public class ConnectionTests
         connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
+            return Task.CompletedTask;
         });
         connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
@@ -364,6 +367,7 @@ public class ConnectionTests
         connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
+            return Task.CompletedTask;
         });
 
         IList<string> serverLog = this.server.Log;
@@ -412,6 +416,7 @@ public class ConnectionTests
         connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
+            return Task.CompletedTask;
         });
 
         IList<string> serverLog = this.server.Log;
@@ -557,6 +562,7 @@ public class ConnectionTests
         connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
+            return Task.CompletedTask;
         });
 
         IList<string> serverLog = this.server.Log;
