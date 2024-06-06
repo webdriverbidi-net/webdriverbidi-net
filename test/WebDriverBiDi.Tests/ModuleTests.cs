@@ -7,7 +7,7 @@ using WebDriverBiDi.Protocol;
 public class ModuleTests
 {
     [Test]
-    public void TestContextCreatedEventWithInvalidEventArgsThrows()
+    public async Task TestContextCreatedEventWithInvalidEventArgsThrows()
     {
         TestConnection connection = new();
         Transport transport = new(connection);
@@ -36,7 +36,7 @@ public class ModuleTests
         };
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         syncEvent.WaitOne(TimeSpan.FromSeconds(10));
         Assert.Multiple(() =>
         {

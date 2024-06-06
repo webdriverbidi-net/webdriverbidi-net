@@ -10,10 +10,10 @@ public class ScriptModuleTests
     public async Task TestExecuteCallFunctionCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -44,10 +44,10 @@ public class ScriptModuleTests
     public async Task TestExecuteCallFunctionCommandReturningError()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stackTrace"": { ""callFrames"": [] } } } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -81,10 +81,10 @@ public class ScriptModuleTests
     public async Task TestExecuteEvaluateCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""success"", ""realm"": ""myRealmId"", ""result"": { ""type"": ""string"", ""value"": ""myStringValue"" } } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -115,10 +115,10 @@ public class ScriptModuleTests
     public async Task TestExecuteEvaluateCommandReturningError()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""type"": ""exception"", ""realm"": ""myRealmId"", ""exceptionDetails"": { ""text"": ""error received from script"", ""lineNumber"": 2, ""columnNumber"": 5, ""exception"": { ""type"": ""string"", ""value"": ""myStringValue"" }, ""stackTrace"": { ""callFrames"": [] } } } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -152,10 +152,10 @@ public class ScriptModuleTests
     public async Task TestExecuteGetRealmsCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""realms"": [ { ""realm"": ""myRealmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContextId"" } ] } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -187,10 +187,10 @@ public class ScriptModuleTests
     public async Task TestExecuteDisownCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -226,7 +226,7 @@ public class ScriptModuleTests
         };
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""window"", ""context"": ""myContext"", ""origin"": ""myOrigin"" } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -252,7 +252,7 @@ public class ScriptModuleTests
         };
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": ""myOrigin"" } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -273,7 +273,7 @@ public class ScriptModuleTests
         };
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmDestroyed"", ""params"": { ""realm"": ""myRealm"" } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -301,7 +301,7 @@ public class ScriptModuleTests
         };
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""script.message"", ""params"": { ""channel"": ""myChannel"", ""data"": { ""type"": ""string"", ""value"": ""myChannelValue"" }, ""source"": { ""realm"": ""myRealm"" } } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -310,10 +310,10 @@ public class ScriptModuleTests
     public async Task TestCanAddPreloadScript()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""script"": ""loadScriptId"" } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -333,10 +333,10 @@ public class ScriptModuleTests
     public async Task TestCanRemovePreloadScript()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete +=  async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));

@@ -9,10 +9,10 @@ public class PermissionsModuleTests
     public async Task TestExecuteActivateCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));

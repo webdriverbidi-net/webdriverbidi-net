@@ -46,8 +46,8 @@ public class Transport
     {
         this.connection = connection;
         this.incomingMessageQueue.ItemDispatched += this.OnIncomingMessageDispatched;
-        connection.DataReceived += this.OnConnectionDataReceived;
-        connection.LogMessage += this.OnConnectionLogMessage;
+        connection.OnDataReceived.AddHandler(this.OnConnectionDataReceivedAsync);
+        connection.OnLogMessage.AddHandler(this.OnConnectionLogMessageAsync);
     }
 
     /// <summary>
@@ -271,9 +271,10 @@ public class Transport
         }
     }
 
-    private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
+    private Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
         this.incomingMessageQueue.TryDispatch(e.Data);
+        return Task.CompletedTask;
     }
 
     private void OnIncomingMessageDispatched(object sender, ItemDispatchedEventArgs<string> e)
@@ -446,9 +447,10 @@ public class Transport
         this.OnLogMessage(this, new LogMessageEventArgs(message, level, "Transport"));
     }
 
-    private void OnConnectionLogMessage(object? sender, LogMessageEventArgs e)
+    private Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
     {
-        this.OnLogMessage(sender, e);
+        this.OnLogMessage(this.connection, e);
+        return Task.CompletedTask;
     }
 
     private Exception CreateTerminationException()

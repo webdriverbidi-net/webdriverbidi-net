@@ -30,7 +30,7 @@ public class LogModuleTests
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string eventJson = @"{ ""type"": ""event"", ""method"": ""log.entryAdded"", ""params"": { ""type"": ""javascript"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""stackTrace"": { ""callFrames"": [] } } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -61,7 +61,7 @@ public class LogModuleTests
         };
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""log.entryAdded"", ""params"": { ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }

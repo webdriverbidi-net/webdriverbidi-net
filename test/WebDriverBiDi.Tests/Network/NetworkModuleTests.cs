@@ -80,10 +80,10 @@ public class NetworkModuleTests
     public async Task TestExecuteAddInterceptCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""intercept"": ""myInterceptId"" } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -108,10 +108,10 @@ public class NetworkModuleTests
     public async Task TestExecuteContinueRequestCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -130,10 +130,10 @@ public class NetworkModuleTests
     public async Task TestExecuteContinueResponseCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -152,10 +152,10 @@ public class NetworkModuleTests
     public async Task TestExecuteContinueWithAuthCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -178,10 +178,10 @@ public class NetworkModuleTests
     public async Task TestExecuteFailRequestCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -200,10 +200,10 @@ public class NetworkModuleTests
     public async Task TestExecuteProvideResponseCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -222,10 +222,10 @@ public class NetworkModuleTests
     public async Task TestExecuteRemoveInterceptCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -314,7 +314,7 @@ public class NetworkModuleTests
         ""response"": {responseDataJson}
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -382,7 +382,7 @@ public class NetworkModuleTests
         }}
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -448,7 +448,7 @@ public class NetworkModuleTests
         ""errorText"": ""An error occurred""
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -527,7 +527,7 @@ public class NetworkModuleTests
         ""response"": {responseDataJson}
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -605,7 +605,7 @@ public class NetworkModuleTests
         ""response"": {responseDataJson}
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }

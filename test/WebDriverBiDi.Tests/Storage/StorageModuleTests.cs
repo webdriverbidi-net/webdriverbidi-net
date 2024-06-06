@@ -14,10 +14,10 @@ public class StorageModuleTests()
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""cookies"": [ { ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""cookiePath"", ""size"": 123, ""httpOnly"": false, ""secure"": true, ""sameSite"": ""lax"", ""expiry"": " + milliseconds + @" } ], ""partition"": { ""userContext"": ""myUserContext"", ""sourceOrigin"": ""mySourceOrigin"" } } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -51,10 +51,10 @@ public class StorageModuleTests()
     public async Task TestSetCookieCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""partition"": { ""userContext"": ""myUserContext"", ""sourceOrigin"": ""mySourceOrigin"" } } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
@@ -77,10 +77,10 @@ public class StorageModuleTests()
     public async Task TestDeleteCookiesCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""partition"": { ""userContext"": ""myUserContext"", ""sourceOrigin"": ""mySourceOrigin"" } } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
