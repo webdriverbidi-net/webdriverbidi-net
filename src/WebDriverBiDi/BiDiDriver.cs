@@ -25,6 +25,11 @@ public class BiDiDriver
     private readonly Transport transport;
     private readonly Dictionary<string, Module> modules = new();
 
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
+    private readonly ObservableEvent<UnknownMessageReceivedEventArgs> onUnknownMessageReceivedEvent = new();
+    private readonly ObservableEvent<ErrorReceivedEventArgs> onUnexpectedErrorReceivedEvent = new();
+    private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.
     /// </summary>
@@ -54,9 +59,9 @@ public class BiDiDriver
         this.defaultCommandWaitTimeout = defaultCommandWaitTimeout;
         this.transport = transport;
         this.transport.OnEventReceived.AddHandler(this.OnTransportEventReceived);
-        this.transport.OnErrorEventReceived.AddHandler(this.OnTransportErrorEventReceived);
-        this.transport.OnUnknownMessageReceived.AddHandler(this.OnTransportUnknownMessageReceived);
-        this.transport.OnLogMessage.AddHandler(this.OnTransportLogMessage);
+        this.transport.OnErrorEventReceived.AddHandler(this.OnTransportErrorEventReceivedAsync);
+        this.transport.OnUnknownMessageReceived.AddHandler(this.OnTransportUnknownMessageReceivedAsync);
+        this.transport.OnLogMessage.AddHandler(this.OnTransportLogMessageAsync);
         this.RegisterModule(new BrowserModule(this));
         this.RegisterModule(new BrowsingContextModule(this));
         this.RegisterModule(new LogModule(this));
@@ -69,24 +74,24 @@ public class BiDiDriver
     }
 
     /// <summary>
-    /// Raised when a protocol event is received from protocol transport.
+    /// Gets an observable event that notifies when a protocol event is received from protocol transport.
     /// </summary>
-    public event EventHandler<EventReceivedEventArgs>? EventReceived;
+    public ObservableEvent<EventReceivedEventArgs> OnEventReceived => this.onEventReceivedEvent;
 
     /// <summary>
-    /// Raised when a protocol error is received from protocol transport.
+    /// Gets an observable event that notifies when a protocol error is received from protocol transport.
     /// </summary>
-    public event EventHandler<ErrorReceivedEventArgs>? UnexpectedErrorReceived;
+    public ObservableEvent<ErrorReceivedEventArgs> OnUnexpectedErrorReceived => this.onUnexpectedErrorReceivedEvent;
 
     /// <summary>
-    /// Raised when an unknown message is received from protocol transport.
+    /// Gets an observable event that notifies when an unknown message is received from protocol transport.
     /// </summary>
-    public event EventHandler<UnknownMessageReceivedEventArgs>? UnknownMessageReceived;
+    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived => this.onUnknownMessageReceivedEvent;
 
     /// <summary>
-    /// Raised when a log message is emitted by this driver.
+    /// Gets an observable event that notifies when a log message is emitted by this driver.
     /// </summary>
-    public event EventHandler<LogMessageEventArgs>? LogMessage;
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
 
     /// <summary>
     /// Gets the browser module as described in the WebDriver Bidi protocol.
@@ -255,75 +260,23 @@ public class BiDiDriver
         this.transport.RegisterEventMessage<T>(eventName);
     }
 
-    /// <summary>
-    /// Raises the UnexpectedErrorReceived event.
-    /// </summary>
-    /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnUnexpectedError(ErrorReceivedEventArgs e)
+    private async Task OnTransportEventReceived(EventReceivedEventArgs e)
     {
-        if (this.UnexpectedErrorReceived is not null)
-        {
-            this.UnexpectedErrorReceived(this, e);
-        }
+        await this.onEventReceivedEvent.NotifyObserversAsync(e);
     }
 
-    /// <summary>
-    /// Raises the EventReceived event.
-    /// </summary>
-    /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnEventReceived(EventReceivedEventArgs e)
+    private async Task OnTransportErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        if (this.EventReceived is not null)
-        {
-            this.EventReceived(this, e);
-        }
+        await this.onUnexpectedErrorReceivedEvent.NotifyObserversAsync(e);
     }
 
-    /// <summary>
-    /// Raises the UnknownMessageReceived event.
-    /// </summary>
-    /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnUnknownMessageReceived(UnknownMessageReceivedEventArgs e)
+    private async Task OnTransportUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
-        if (this.UnknownMessageReceived is not null)
-        {
-            this.UnknownMessageReceived(this, e);
-        }
+        await this.onUnknownMessageReceivedEvent.NotifyObserversAsync(e);
     }
 
-    /// <summary>
-    /// Raises the LogMessage event.
-    /// </summary>
-    /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnLogMessage(LogMessageEventArgs e)
+    private async Task OnTransportLogMessageAsync(LogMessageEventArgs e)
     {
-        if (this.LogMessage is not null)
-        {
-            this.LogMessage(this, e);
-        }
-    }
-
-    private Task OnTransportEventReceived(EventReceivedEventArgs e)
-    {
-        this.OnEventReceived(e);
-        return Task.CompletedTask;
-    }
-
-    private Task OnTransportErrorEventReceived(ErrorReceivedEventArgs e)
-    {
-        this.OnUnexpectedError(e);
-        return Task.CompletedTask;
-    }
-
-    private Task OnTransportUnknownMessageReceived(UnknownMessageReceivedEventArgs e)
-    {
-        this.OnUnknownMessageReceived(e);
-        return Task.CompletedTask;
-    }
-
-    private Task OnTransportLogMessage(LogMessageEventArgs e)
-    {
-        this.OnLogMessage(e);
-        return Task.CompletedTask;
+        await this.onLogMessageEvent.NotifyObserversAsync(e);
     }
 }

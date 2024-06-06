@@ -22,7 +22,7 @@ public abstract class Module
     protected Module(BiDiDriver driver)
     {
         this.driver = driver;
-        this.driver.EventReceived += this.OnDriverEventReceived;
+        this.driver.OnEventReceived.AddHandler(this.OnDriverEventReceived);
     }
 
     /// <summary>
@@ -47,12 +47,14 @@ public abstract class Module
         this.driver.RegisterEvent<T>(eventName);
     }
 
-    private void OnDriverEventReceived(object? sender, EventReceivedEventArgs e)
+    private Task OnDriverEventReceived(EventReceivedEventArgs e)
     {
         if (this.eventInvokers.ContainsKey(e.EventName))
         {
             EventInvoker eventInvoker = this.eventInvokers[e.EventName];
             eventInvoker.InvokeEvent(e.EventData!, e.AdditionalData);
         }
+
+        return Task.CompletedTask;
     }
 }

@@ -27,7 +27,7 @@ BrowserType testBrowserType = BrowserType.Chrome;
 string browserExecutableLocation = string.Empty;
 
 BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation);
-launcher.LogMessage += OnDriverLogMessage;
+launcher.OnLogMessage.AddHandler(OnLogMessage);
 try
 {
     demoSiteServer.Launch();
@@ -62,7 +62,7 @@ finally
 BiDiDriver InitializeDriver()
 {
     BiDiDriver driver = new(TimeSpan.FromSeconds(10));
-    driver.LogMessage += OnDriverLogMessage;
+    driver.OnLogMessage.AddHandler(OnLogMessage);
     driver.BrowsingContext.NavigationStarted += (sender, e) =>
     {
         Console.WriteLine($"Navigation to {e.Url} started");
@@ -76,10 +76,12 @@ BiDiDriver InitializeDriver()
     return driver;
 }
 
-void OnDriverLogMessage(object? sender, LogMessageEventArgs e)
+Task OnLogMessage(LogMessageEventArgs e)
 {
     if (e.Level >= logReportingLevel)
     {
         Console.WriteLine($"Log message: {e.Message}");
     }
+
+    return Task.CompletedTask;
 }

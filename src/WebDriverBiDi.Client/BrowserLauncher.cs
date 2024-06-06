@@ -22,6 +22,11 @@ public abstract class BrowserLauncher
     private readonly string launcherExecutableName;
     private readonly string browserExecutableLocation;
     private readonly HttpClient httpClient = new();
+
+    private readonly ObservableEvent<BrowserLauncherProcessStartingEventArgs> onLauncherProcessStartingEvent = new();
+    private readonly ObservableEvent<BrowserLauncherProcessStartedEventArgs> onLauncherProcessStartedEvent = new();
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
+
     private string launcherHostName = "localhost";
     private int launcherPort;
     private bool hideCommandPromptWindow;
@@ -48,19 +53,19 @@ public abstract class BrowserLauncher
     }
 
     /// <summary>
-    /// Occurs when the launcher process is starting.
+    /// Gets an observable event that notifies when the launcher process is starting.
     /// </summary>
-    public event EventHandler<BrowserLauncherProcessStartingEventArgs>? LauncherProcessStarting;
+    public ObservableEvent<BrowserLauncherProcessStartingEventArgs> OnLauncherProcessStarting => this.onLauncherProcessStartingEvent;
 
     /// <summary>
-    /// Occurs when the launcher process has completely started.
+    /// Gets an observable event that notifies when the launcher process has completely started.
     /// </summary>
-    public event EventHandler<BrowserLauncherProcessStartedEventArgs>? LauncherProcessStarted;
+    public ObservableEvent<BrowserLauncherProcessStartedEventArgs> OnLauncherProcessStarted => this.onLauncherProcessStartedEvent;
 
     /// <summary>
-    /// Occurs when a log message is emitted by the browser launcher.
+    /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
     /// </summary>
-    public event EventHandler<LogMessageEventArgs>? LogMessage;
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
 
     /// <summary>
     /// Gets or sets the host name of the launcher. Defaults to "localhost".
@@ -221,15 +226,15 @@ public abstract class BrowserLauncher
             this.launcherProcess.StartInfo.RedirectStandardError = this.captureBrowserLauncherOutput;
 
             BrowserLauncherProcessStartingEventArgs eventArgs = new(this.launcherProcess.StartInfo);
-            this.OnLauncherProcessStarting(eventArgs);
-            this.Log("Starting browser launcher", WebDriverBiDiLogLevel.Info);
+            await this.OnLauncherProcessStartingAsync(eventArgs);
+            await this.LogAsync("Starting browser launcher", WebDriverBiDiLogLevel.Info);
 
             this.launcherProcess.Start();
             this.StartLoggingProcessOutput();
             launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
             BrowserLauncherProcessStartedEventArgs processStartedEventArgs = new(this.launcherProcess);
-            this.OnLauncherProcessStarted(processStartedEventArgs);
-            this.Log("Browser launcher started", WebDriverBiDiLogLevel.Info);
+            await this.OnLauncherProcessStartedAsync(processStartedEventArgs);
+            await this.LogAsync("Browser launcher started", WebDriverBiDiLogLevel.Info);
         }
         finally
         {
@@ -251,7 +256,7 @@ public abstract class BrowserLauncher
     {
         if (this.IsRunning)
         {
-            this.Log("Shutting down browser launcher", WebDriverBiDiLogLevel.Info);
+            await this.LogAsync("Shutting down browser launcher", WebDriverBiDiLogLevel.Info);
             if (this.HasShutdownApi)
             {
                 DateTime timeout = DateTime.Now.Add(this.TerminationTimeout);
@@ -288,7 +293,7 @@ public abstract class BrowserLauncher
             this.StopLoggingProcessOutput();
             this.launcherProcess!.Dispose();
             this.launcherProcess = null;
-            this.Log("Browser launcher exited", WebDriverBiDiLogLevel.Info);
+            await this.LogAsync("Browser launcher exited", WebDriverBiDiLogLevel.Info);
         }
     }
 
@@ -310,8 +315,8 @@ public abstract class BrowserLauncher
             },
         };
         string json = JsonSerializer.Serialize(classicCapabilities);
-        this.Log("Launching browser", WebDriverBiDiLogLevel.Info);
-        this.Log($"Sending classic new session command. JSON:\n{json}", WebDriverBiDiLogLevel.Debug);
+        await this.LogAsync("Launching browser", WebDriverBiDiLogLevel.Info);
+        await this.LogAsync($"Sending classic new session command. JSON:\n{json}", WebDriverBiDiLogLevel.Debug);
         StringContent content = new(json, Encoding.UTF8, "application/json");
         using HttpResponseMessage response = await this.httpClient.PostAsync($"{this.ServiceUrl}/session", content).ConfigureAwait(false);
         string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
@@ -320,7 +325,7 @@ public abstract class BrowserLauncher
             throw new BrowserNotLaunchedException($"Unable to launch browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
         }
 
-        this.Log($"Received classic new session response. JSON:\n{responseJson}", WebDriverBiDiLogLevel.Debug);
+        await this.LogAsync($"Received classic new session response. JSON:\n{responseJson}", WebDriverBiDiLogLevel.Debug);
         using (JsonDocument returned = JsonDocument.Parse(responseJson))
         {
             JsonElement rootElement = returned.RootElement;
@@ -361,7 +366,7 @@ public abstract class BrowserLauncher
     {
         if (!string.IsNullOrEmpty(this.sessionId))
         {
-            this.Log($"Quitting browser", WebDriverBiDiLogLevel.Info);
+            await this.LogAsync($"Quitting browser", WebDriverBiDiLogLevel.Info);
             using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}").ConfigureAwait(false);
             string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
@@ -376,42 +381,6 @@ public abstract class BrowserLauncher
     /// </summary>
     /// <returns>A dictionary containing the capabilities.</returns>
     protected abstract Dictionary<string, object> CreateBrowserLaunchCapabilities();
-
-    /// <summary>
-    /// Raises the <see cref="LauncherProcessStarting"/> event.
-    /// </summary>
-    /// <param name="eventArgs">A <see cref="BrowserLauncherProcessStartingEventArgs"/> that contains the event data.</param>
-    protected void OnLauncherProcessStarting(BrowserLauncherProcessStartingEventArgs eventArgs)
-    {
-        if (this.LauncherProcessStarting is not null)
-        {
-            this.LauncherProcessStarting(this, eventArgs);
-        }
-    }
-
-    /// <summary>
-    /// Raises the <see cref="LauncherProcessStarted"/> event.
-    /// </summary>
-    /// <param name="eventArgs">A <see cref="BrowserLauncherProcessStartedEventArgs"/> that contains the event data.</param>
-    protected void OnLauncherProcessStarted(BrowserLauncherProcessStartedEventArgs eventArgs)
-    {
-        if (this.LauncherProcessStarted is not null)
-        {
-            this.LauncherProcessStarted(this, eventArgs);
-        }
-    }
-
-    /// <summary>
-    /// Raises the <see cref="LogMessage"/> event.
-    /// </summary>
-    /// <param name="eventArgs">A <see cref="LogMessageEventArgs"/> that contains the event data.</param>
-    protected virtual void OnLogMessage(LogMessageEventArgs eventArgs)
-    {
-        if (this.LogMessage is not null)
-        {
-            this.LogMessage(this, eventArgs);
-        }
-    }
 
     /// <summary>
     /// Finds a random, free port to be listened on.
@@ -479,9 +448,24 @@ public abstract class BrowserLauncher
         return isInitialized;
     }
 
-    private void Log(string message, WebDriverBiDiLogLevel level, string component = "Browser Launcher")
+    private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
     {
-        this.OnLogMessage(new LogMessageEventArgs(message, level, component));
+        await this.onLauncherProcessStartingEvent.NotifyObserversAsync(eventArgs);
+    }
+
+    private async Task OnLauncherProcessStartedAsync(BrowserLauncherProcessStartedEventArgs eventArgs)
+    {
+        await this.onLauncherProcessStartedEvent.NotifyObserversAsync(eventArgs);
+    }
+
+    private async Task OnLogMessageAsync(LogMessageEventArgs eventArgs)
+    {
+        await this.onLogMessageEvent.NotifyObserversAsync(eventArgs);
+    }
+
+    private async Task LogAsync(string message, WebDriverBiDiLogLevel level, string component = "Browser Launcher")
+    {
+        await this.OnLogMessageAsync(new LogMessageEventArgs(message, level, component));
     }
 
     private void StartLoggingProcessOutput()
@@ -499,19 +483,19 @@ public abstract class BrowserLauncher
         this.isLoggingLauncherProcessOutput = false;
     }
 
-    private void ReadStandardOutput()
+    private async void ReadStandardOutput()
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {
-            this.Log(this.launcherProcess.StandardOutput.ReadLine(), WebDriverBiDiLogLevel.Debug, this.launcherExecutableName);
+            await this.LogAsync(this.launcherProcess.StandardOutput.ReadLine(), WebDriverBiDiLogLevel.Debug, this.launcherExecutableName);
         }
     }
 
-    private void ReadStandardError()
+    private async void ReadStandardError()
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {
-            this.Log(this.launcherProcess!.StandardError.ReadLine(), WebDriverBiDiLogLevel.Debug, this.launcherExecutableName);
+            await this.LogAsync(this.launcherProcess!.StandardError.ReadLine(), WebDriverBiDiLogLevel.Debug, this.launcherExecutableName);
         }
     }
 }
