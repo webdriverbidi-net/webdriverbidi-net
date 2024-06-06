@@ -1,7 +1,5 @@
 namespace WebDriverBiDi.Demo;
 
-using System.ComponentModel;
-using PinchHitter;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client;
 using WebDriverBiDi.Input;
