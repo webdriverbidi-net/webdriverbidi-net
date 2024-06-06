@@ -15,7 +15,8 @@ public class LogModuleTests
         LogModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.EntryAdded += (object? obj, EntryAddedEventArgs e) => {
+        module.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
+        {
             Assert.Multiple(() =>
             {
                 Assert.That(e.Type, Is.EqualTo("javascript"));
@@ -26,7 +27,8 @@ public class LogModuleTests
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string eventJson = @"{ ""type"": ""event"", ""method"": ""log.entryAdded"", ""params"": { ""type"": ""javascript"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""stackTrace"": { ""callFrames"": [] } } }";
@@ -45,7 +47,8 @@ public class LogModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.EntryAdded += (object? obj, EntryAddedEventArgs e) => {
+        module.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
+        {
             Assert.Multiple(() =>
             {
                 Assert.That(e.Type, Is.EqualTo("console"));
@@ -58,7 +61,8 @@ public class LogModuleTests
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""log.entryAdded"", ""params"": { ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } } }";
         await connection.RaiseDataReceivedEventAsync(eventJson);

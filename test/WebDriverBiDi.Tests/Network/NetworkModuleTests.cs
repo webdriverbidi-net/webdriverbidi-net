@@ -253,7 +253,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.AuthRequired += (object? obj, AuthRequiredEventArgs e) =>
+        module.OnAuthRequired.AddHandler((AuthRequiredEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -299,7 +299,8 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
              });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"",
@@ -332,7 +333,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.BeforeRequestSent += (object? obj, BeforeRequestSentEventArgs e) =>
+        module.OnBeforeRequestSent.AddHandler((BeforeRequestSentEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -365,7 +366,8 @@ public class NetworkModuleTests
                 Assert.That(e.Initiator.Type, Is.EqualTo(InitiatorType.Parser));
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"", 
@@ -400,7 +402,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.FetchError += (object? obj, FetchErrorEventArgs e) =>
+        module.OnFetchError.AddHandler((FetchErrorEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -433,7 +435,8 @@ public class NetworkModuleTests
                 Assert.That(e.ErrorText, Is.EqualTo("An error occurred"));
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"", 
@@ -466,7 +469,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.ResponseStarted += (object? obj, ResponseStartedEventArgs e) =>
+        module.OnResponseStarted.AddHandler((ResponseStartedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -512,7 +515,8 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"", 
@@ -545,7 +549,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.ResponseCompleted += (object? obj, ResponseCompletedEventArgs e) =>
+        module.OnResponseCompleted.AddHandler((ResponseCompletedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -591,7 +595,8 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"", 

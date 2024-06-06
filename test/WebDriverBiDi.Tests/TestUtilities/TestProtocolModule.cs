@@ -9,14 +9,14 @@ public sealed class TestProtocolModule : Module
     public TestProtocolModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker<TestEventArgs>("protocol.event", this.OnEventInvoked);
+        this.RegisterAsyncEventInvoker<TestEventArgs>("protocol.event", this.OnEventInvoked);
     }
 
     public event EventHandler<TestEventArgs>? EventInvoked;
 
     public override string ModuleName => "protocol";
 
-    private void OnEventInvoked(EventInfo<TestEventArgs> eventData)
+    private Task OnEventInvoked(EventInfo<TestEventArgs> eventData)
     {
         if (this.EventInvoked is not null)
         {
@@ -24,5 +24,7 @@ public sealed class TestProtocolModule : Module
             eventArgs.AdditionalData = eventData.AdditionalData;
             this.EventInvoked(this, eventArgs);
         }
+
+        return Task.CompletedTask;
     }
 }

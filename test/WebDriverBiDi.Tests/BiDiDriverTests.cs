@@ -447,9 +447,10 @@ public class BiDiDriverTests
             await driver.StartAsync($"ws://localhost:{server.Port}");
             connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
-            driver.BrowsingContext.Load += (sender, e) =>
+            driver.BrowsingContext.OnLoad.AddHandler((e) =>
             {
-            };
+                return Task.CompletedTask;
+            });
 
             ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();

@@ -15,6 +15,10 @@ public sealed class ScriptModule : Module
     /// </summary>
     public const string ScriptModuleName = "script";
 
+    private ObservableEvent<RealmCreatedEventArgs> onRealmCreatedEvent = new();
+    private ObservableEvent<RealmDestroyedEventArgs> onRealmDestroyedEvent = new();
+    private ObservableEvent<MessageEventArgs> onMessageEvent = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ScriptModule"/> class.
     /// </summary>
@@ -22,25 +26,25 @@ public sealed class ScriptModule : Module
     public ScriptModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker<RealmInfo>("script.realmCreated", this.OnRealmCreated);
-        this.RegisterEventInvoker<RealmDestroyedEventArgs>("script.realmDestroyed", this.OnRealmDestroyed);
-        this.RegisterEventInvoker<MessageEventArgs>("script.message", this.OnMessage);
+        this.RegisterAsyncEventInvoker<RealmInfo>("script.realmCreated", this.OnRealmCreatedAsync);
+        this.RegisterAsyncEventInvoker<RealmDestroyedEventArgs>("script.realmDestroyed", this.OnRealmDestroyedAsync);
+        this.RegisterAsyncEventInvoker<MessageEventArgs>("script.message", this.OnMessageAsync);
     }
 
     /// <summary>
-    /// Occurs when a new script realm is created.
+    /// Gets an observable event that notifies when a new script realm is created.
     /// </summary>
-    public event EventHandler<RealmCreatedEventArgs>? RealmCreated;
+    public ObservableEvent<RealmCreatedEventArgs> OnRealmCreated => this.onRealmCreatedEvent;
 
     /// <summary>
-    /// Occurs with a script realm is destroyed.
+    /// Gets an observable event that notifies with a script realm is destroyed.
     /// </summary>
-    public event EventHandler<RealmDestroyedEventArgs>? RealmDestroyed;
+    public ObservableEvent<RealmDestroyedEventArgs> OnRealmDestroyed => this.onRealmDestroyedEvent;
 
     /// <summary>
-    /// Occurs when a preload script sends data to the client.
+    /// Gets an observable event that notifies when a preload script sends data to the client.
     /// </summary>
-    public event EventHandler<MessageEventArgs>? Message;
+    public ObservableEvent<MessageEventArgs> OnMessage => this.onMessageEvent;
 
     /// <summary>
     /// Gets the module name.
@@ -107,35 +111,26 @@ public sealed class ScriptModule : Module
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
-    private void OnRealmCreated(EventInfo<RealmInfo> eventData)
+    private async Task OnRealmCreatedAsync(EventInfo<RealmInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a RealmInfo object, so rather than duplicate
         // the properties to directly deserialize the RealmCreatedEventArgs
         // instance, the protocol transport will deserialize to a RealmInfo,
         // then use that here to create the appropriate EventArgs instance.
-        if (this.RealmCreated is not null)
-        {
-            RealmCreatedEventArgs eventArgs = eventData.ToEventArgs<RealmCreatedEventArgs>();
-            this.RealmCreated(this, eventArgs);
-        }
+        RealmCreatedEventArgs eventArgs = eventData.ToEventArgs<RealmCreatedEventArgs>();
+        await this.onRealmCreatedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnRealmDestroyed(EventInfo<RealmDestroyedEventArgs> eventData)
+    private async Task OnRealmDestroyedAsync(EventInfo<RealmDestroyedEventArgs> eventData)
     {
-        if (this.RealmDestroyed is not null)
-        {
-            RealmDestroyedEventArgs eventArgs = eventData.ToEventArgs<RealmDestroyedEventArgs>();
-            this.RealmDestroyed(this, eventArgs);
-        }
+        RealmDestroyedEventArgs eventArgs = eventData.ToEventArgs<RealmDestroyedEventArgs>();
+        await this.onRealmDestroyedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnMessage(EventInfo<MessageEventArgs> eventData)
+    private async Task OnMessageAsync(EventInfo<MessageEventArgs> eventData)
     {
-        if (this.Message is not null)
-        {
-            MessageEventArgs eventArgs = eventData.ToEventArgs<MessageEventArgs>();
-            this.Message(this, eventArgs);
-        }
+        MessageEventArgs eventArgs = eventData.ToEventArgs<MessageEventArgs>();
+        await this.onMessageEvent.NotifyObserversAsync(eventArgs);
     }
 }

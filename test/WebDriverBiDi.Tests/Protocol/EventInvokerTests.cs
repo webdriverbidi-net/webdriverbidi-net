@@ -6,20 +6,26 @@ using TestUtilities;
 public class EventInvokerTests
 {
     [Test]
-    public void TestCanInvokeEvent()
+    public async Task TestCanInvokeEvent()
     {
         bool eventInvoked = false;
-        void action(EventInfo<TestEventArgs> info) { eventInvoked = true; }
+        Task action(EventInfo<TestEventArgs> info) {
+            eventInvoked = true;
+            return Task.CompletedTask;
+        }
         EventInvoker<TestEventArgs> invoker = new(action);
-        invoker.InvokeEvent(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
+        await invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
         Assert.That(eventInvoked, Is.True);
     }
 
     [Test]
     public void TestInvokeEventWithInvalidObjectTypeThrows()
     {
-        static void action(EventInfo<TestEventArgs> info) { }
+        static Task action(EventInfo<TestEventArgs> info)
+        {
+            return Task.CompletedTask;
+        }
         EventInvoker<TestEventArgs> invoker = new(action);
-        Assert.That(() => invoker.InvokeEvent("this is an invalid object", ReceivedDataDictionary.EmptyDictionary), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(async () => await invoker.InvokeEventAsync("this is an invalid object", ReceivedDataDictionary.EmptyDictionary), Throws.InstanceOf<WebDriverBiDiException>());
     }
 }

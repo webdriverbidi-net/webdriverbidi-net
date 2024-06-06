@@ -84,14 +84,16 @@ public static class DemoScenarios
     public static async Task WaitForDelayLoadAsync(BiDiDriver driver, string baseUrl)
     {
         ManualResetEventSlim syncEvent = new(false);
-        driver.Script.Message += (object? obj, MessageEventArgs e) =>
+        driver.Script.OnMessage.AddHandler(( MessageEventArgs e) =>
         {
             if (e.ChannelId == "delayLoadChannel")
             {
                 Console.WriteLine("Received event from preload script");
                 syncEvent.Set();
             }
-        };
+
+            return Task.CompletedTask;
+        });
 
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("browsingContext.navigationStarted");
@@ -152,7 +154,7 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task MonitorNetworkTraffic(BiDiDriver driver, string baseUrl)
     {
-        driver.Network.ResponseCompleted += (object? obj, ResponseCompletedEventArgs e) =>
+        driver.Network.OnResponseCompleted.AddHandler((ResponseCompletedEventArgs e) =>
         {
             if (e.Response.Url.Contains(".html") || e.Request.Url.EndsWith('/'))
             {
@@ -165,7 +167,9 @@ public static class DemoScenarios
                     Console.WriteLine($"Response code for {e.Response.Url}: {e.Response.Status}");
                 }
             }
-        };
+
+            return Task.CompletedTask;
+        });
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("network.responseCompleted");
         await driver.Session.SubscribeAsync(subscribe);
@@ -200,10 +204,11 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task MonitorBrowserConsole(BiDiDriver driver, string baseUrl)
     {
-        driver.Log.EntryAdded += (object? obj, EntryAddedEventArgs e) =>
+        driver.Log.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
         {
             Console.WriteLine($"This was written to the console at {e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC: {e.Text}");
-        };
+            return Task.CompletedTask;
+        });
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("log.entryAdded");
         await driver.Session.SubscribeAsync(subscribe);
@@ -267,7 +272,7 @@ public static class DemoScenarios
     public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
     {
         List<Task> beforeRequestSentTasks = new();
-        driver.Network.BeforeRequestSent += async (object? obj, BeforeRequestSentEventArgs e) =>
+        driver.Network.OnBeforeRequestSent.AddHandler(async (BeforeRequestSentEventArgs e) =>
         {
             TaskCompletionSource taskCompletionSource = new();
             beforeRequestSentTasks.Add(taskCompletionSource.Task);
@@ -280,7 +285,7 @@ public static class DemoScenarios
             await Task.Delay(TimeSpan.FromSeconds(1));
             Console.WriteLine($"Exiting BeforeRequestSent event");
             taskCompletionSource.SetResult();
-        };
+        });
 
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("network.beforeRequestSent");
@@ -323,7 +328,7 @@ public static class DemoScenarios
         await driver.Network.AddInterceptAsync(addIntercept);
 
         Task? substituteTask = null;
-        driver.Network.BeforeRequestSent += (sender, e) =>
+        driver.Network.OnBeforeRequestSent.AddHandler((e) =>
         {
             if (e.IsBlocked)
             {
@@ -333,9 +338,11 @@ public static class DemoScenarios
                     ReasonPhrase = "OK",
                     Body = BytesValue.FromString($"<html><body><h1>Request to {e.Request.Url} has been hijacked!</h1></body></html>")
                 };
-                substituteTask = driver.Network.ProvideResponseAsync(provideResponse);
+                return driver.Network.ProvideResponseAsync(provideResponse);
             }
-        };
+
+            return Task.CompletedTask;
+        });
 
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {

@@ -15,6 +15,18 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     public const string BrowsingContextModuleName = "browsingContext";
 
+    private readonly ObservableEvent<BrowsingContextEventArgs> onContextCreatedEvent = new();
+    private readonly ObservableEvent<BrowsingContextEventArgs> onContextDestroyedEvent = new();
+    private readonly ObservableEvent<NavigationEventArgs> onNavigationStartedEvent = new();
+    private readonly ObservableEvent<NavigationEventArgs> onFragmentNavigatedEvent = new();
+    private readonly ObservableEvent<NavigationEventArgs> onDomContentLoadedEvent = new();
+    private readonly ObservableEvent<NavigationEventArgs> onLoadEvent = new();
+    private readonly ObservableEvent<NavigationEventArgs> onDownloadWillBeginEvent = new();
+    private readonly ObservableEvent<NavigationEventArgs> onNavigationAbortedEvent = new();
+    private readonly ObservableEvent<NavigationEventArgs> onNavigationFailedEvent = new();
+    private readonly ObservableEvent<UserPromptClosedEventArgs> onUserPromptClosedEvent = new();
+    private readonly ObservableEvent<UserPromptOpenedEventArgs> onUserPromptOpenedEvent = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowsingContextModule"/> class.
     /// </summary>
@@ -22,73 +34,73 @@ public sealed class BrowsingContextModule : Module
     public BrowsingContextModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker<BrowsingContextInfo>("browsingContext.contextCreated", this.OnContextCreated);
-        this.RegisterEventInvoker<BrowsingContextInfo>("browsingContext.contextDestroyed", this.OnContextDestroyed);
-        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.navigationStarted", this.OnNavigationStarted);
-        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.fragmentNavigated", this.OnFragmentNavigated);
-        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.domContentLoaded", this.OnDomContentLoaded);
-        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.load", this.OnLoad);
-        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.downloadWillBegin", this.OnDownloadWillBegin);
-        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.navigationAborted", this.OnNavigationAborted);
-        this.RegisterEventInvoker<NavigationEventArgs>("browsingContext.navigationFailed", this.OnNavigationFailed);
-        this.RegisterEventInvoker<UserPromptClosedEventArgs>("browsingContext.userPromptClosed", this.OnUserPromptClosed);
-        this.RegisterEventInvoker<UserPromptOpenedEventArgs>("browsingContext.userPromptOpened", this.OnUserPromptOpened);
+        this.RegisterAsyncEventInvoker<BrowsingContextInfo>("browsingContext.contextCreated", this.OnContextCreatedAsync);
+        this.RegisterAsyncEventInvoker<BrowsingContextInfo>("browsingContext.contextDestroyed", this.OnContextDestroyedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationStarted", this.OnNavigationStartedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.fragmentNavigated", this.OnFragmentNavigatedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.domContentLoaded", this.OnDomContentLoadedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.load", this.OnLoadAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.downloadWillBegin", this.OnDownloadWillBeginAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationAborted", this.OnNavigationAbortedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationFailed", this.OnNavigationFailedAsync);
+        this.RegisterAsyncEventInvoker<UserPromptClosedEventArgs>("browsingContext.userPromptClosed", this.OnUserPromptClosedAsync);
+        this.RegisterAsyncEventInvoker<UserPromptOpenedEventArgs>("browsingContext.userPromptOpened", this.OnUserPromptOpenedAsync);
     }
 
     /// <summary>
-    /// Occurs when a browsing context is created.
+    /// Gets an observable event that notifies when a browsing context is created.
     /// </summary>
-    public event EventHandler<BrowsingContextEventArgs>? ContextCreated;
+    public ObservableEvent<BrowsingContextEventArgs> OnContextCreated => this.onContextCreatedEvent;
 
     /// <summary>
-    /// Occurs when a browsing context is destroyed.
+    /// Gets an observable event that notifies when a browsing context is destroyed.
     /// </summary>
-    public event EventHandler<BrowsingContextEventArgs>? ContextDestroyed;
+    public ObservableEvent<BrowsingContextEventArgs> OnContextDestroyed => this.onContextDestroyedEvent;
 
     /// <summary>
-    /// Occurs when a browsing context navigation is started.
+    /// Gets an observable event that notifies when a browsing context navigation is started.
     /// </summary>
-    public event EventHandler<NavigationEventArgs>? NavigationStarted;
+    public ObservableEvent<NavigationEventArgs> OnNavigationStarted => this.onNavigationStartedEvent;
 
     /// <summary>
-    /// Occurs when a browsing context fragment is navigated.
+    /// Gets an observable event that notifies when a browsing context fragment is navigated.
     /// </summary>
-    public event EventHandler<NavigationEventArgs>? FragmentNavigated;
+    public ObservableEvent<NavigationEventArgs> OnFragmentNavigated => this.onFragmentNavigatedEvent;
 
     /// <summary>
-    /// Occurs when the DOM content in a browsing context is loaded.
+    /// Gets an observable event that notifies when the DOM content in a browsing context is loaded.
     /// </summary>
-    public event EventHandler<NavigationEventArgs>? DomContentLoaded;
+    public ObservableEvent<NavigationEventArgs> OnDomContentLoaded => this.onDomContentLoadedEvent;
 
     /// <summary>
-    /// Occurs when a download in a browsing context is about to begin.
+    /// Gets an observable event that notifies when a download in a browsing context is about to begin.
     /// </summary>
-    public event EventHandler<NavigationEventArgs>? DownloadWillBegin;
+    public ObservableEvent<NavigationEventArgs> OnDownloadWillBegin => this.onDownloadWillBeginEvent;
 
     /// <summary>
-    /// Occurs when the content in a browsing context is loaded.
+    /// Gets an observable event that notifies when the content in a browsing context is loaded.
     /// </summary>
-    public event EventHandler<NavigationEventArgs>? Load;
+    public ObservableEvent<NavigationEventArgs> OnLoad => this.onLoadEvent;
 
     /// <summary>
-    /// Occurs when a browsing context navigation is aborted.
+    /// Gets an observable event that notifies when a browsing context navigation is aborted.
     /// </summary>
-    public event EventHandler<NavigationEventArgs>? NavigationAborted;
+    public ObservableEvent<NavigationEventArgs> OnNavigationAborted => this.onNavigationAbortedEvent;
 
     /// <summary>
-    /// Occurs when a browsing context navigation fails.
+    /// Gets an observable event that notifies when a browsing context navigation fails.
     /// </summary>
-    public event EventHandler<NavigationEventArgs>? NavigationFailed;
+    public ObservableEvent<NavigationEventArgs> OnNavigationFailed => this.onNavigationFailedEvent;
 
     /// <summary>
-    /// Occurs when a user prompt is opened.
+    /// Gets an observable event that notifies when a user prompt is opened.
     /// </summary>
-    public event EventHandler<UserPromptOpenedEventArgs>? UserPromptOpened;
+    public ObservableEvent<UserPromptOpenedEventArgs> OnUserPromptOpened => this.onUserPromptOpenedEvent;
 
     /// <summary>
-    /// Occurs when a user prompt is closed.
+    /// Gets an observable event that notifies when a user prompt is closed.
     /// </summary>
-    public event EventHandler<UserPromptClosedEventArgs>? UserPromptClosed;
+    public ObservableEvent<UserPromptClosedEventArgs> OnUserPromptClosed => this.onUserPromptClosedEvent;
 
     /// <summary>
     /// Gets the module name.
@@ -215,7 +227,7 @@ public sealed class BrowsingContextModule : Module
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
-    private void OnContextCreated(EventInfo<BrowsingContextInfo> eventData)
+    private async Task OnContextCreatedAsync(EventInfo<BrowsingContextInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a BrowsingContextInfo object, so rather than
@@ -225,14 +237,11 @@ public sealed class BrowsingContextModule : Module
         // the appropriate EventArgs instance.
         // Note that the base class for a protocol module should not allow
         // eventData to be any other type than the expected type.
-        if (this.ContextCreated is not null)
-        {
-            BrowsingContextEventArgs eventArgs = eventData.ToEventArgs<BrowsingContextEventArgs>();
-            this.ContextCreated(this, eventArgs);
-        }
+        BrowsingContextEventArgs eventArgs = eventData.ToEventArgs<BrowsingContextEventArgs>();
+        await this.onContextCreatedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnContextDestroyed(EventInfo<BrowsingContextInfo> eventData)
+    private async Task OnContextDestroyedAsync(EventInfo<BrowsingContextInfo> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a BrowsingContextInfo object, so rather than
@@ -240,91 +249,61 @@ public sealed class BrowsingContextModule : Module
         // BrowsingContextEventArgs instance, the protocol transport will
         // deserialize to a BrowsingContextInfo, then use that here to create
         // the appropriate EventArgs instance.
-        if (this.ContextDestroyed is not null)
-        {
-            BrowsingContextEventArgs eventArgs = eventData.ToEventArgs<BrowsingContextEventArgs>();
-            this.ContextDestroyed(this, eventArgs);
-        }
+        BrowsingContextEventArgs eventArgs = eventData.ToEventArgs<BrowsingContextEventArgs>();
+        await this.onContextDestroyedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnNavigationStarted(EventInfo<NavigationEventArgs> eventData)
+    private async Task OnNavigationStartedAsync(EventInfo<NavigationEventArgs> eventData)
     {
-        if (this.NavigationStarted is not null)
-        {
-            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-            this.NavigationStarted(this, eventArgs);
-        }
+        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        await this.onNavigationStartedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnFragmentNavigated(EventInfo<NavigationEventArgs> eventData)
+    private async Task OnFragmentNavigatedAsync(EventInfo<NavigationEventArgs> eventData)
     {
-        if (this.FragmentNavigated is not null)
-        {
-            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-            this.FragmentNavigated(this, eventArgs);
-        }
+        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        await this.onFragmentNavigatedEvent.NotifyObserversAsync(eventArgs);
      }
 
-    private void OnDomContentLoaded(EventInfo<NavigationEventArgs> eventData)
+    private async Task OnDomContentLoadedAsync(EventInfo<NavigationEventArgs> eventData)
     {
-        if (this.DomContentLoaded is not null)
-        {
-            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-            this.DomContentLoaded(this, eventArgs);
-        }
+        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        await this.onDomContentLoadedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnLoad(EventInfo<NavigationEventArgs> eventData)
+    private async Task OnLoadAsync(EventInfo<NavigationEventArgs> eventData)
     {
-        if (this.Load is not null)
-        {
-            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-            this.Load(this, eventArgs);
-        }
+        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        await this.onLoadEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnDownloadWillBegin(EventInfo<NavigationEventArgs> eventData)
+    private async Task OnDownloadWillBeginAsync(EventInfo<NavigationEventArgs> eventData)
     {
-        if (this.DownloadWillBegin is not null)
-        {
-            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-            this.DownloadWillBegin(this, eventArgs);
-        }
+        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        await this.onDownloadWillBeginEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnNavigationAborted(EventInfo<NavigationEventArgs> eventData)
+    private async Task OnNavigationAbortedAsync(EventInfo<NavigationEventArgs> eventData)
     {
-        if (this.NavigationAborted is not null)
-        {
-            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-            this.NavigationAborted(this, eventArgs);
-        }
+        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        await this.onNavigationAbortedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnNavigationFailed(EventInfo<NavigationEventArgs> eventData)
+    private async Task OnNavigationFailedAsync(EventInfo<NavigationEventArgs> eventData)
     {
-        if (this.NavigationFailed is not null)
-        {
-            NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-            this.NavigationFailed(this, eventArgs);
-        }
+        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        await this.onNavigationFailedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnUserPromptClosed(EventInfo<UserPromptClosedEventArgs> eventData)
+    private async Task OnUserPromptClosedAsync(EventInfo<UserPromptClosedEventArgs> eventData)
     {
-        if (this.UserPromptClosed is not null)
-        {
-            UserPromptClosedEventArgs eventArgs = eventData.ToEventArgs<UserPromptClosedEventArgs>();
-            this.UserPromptClosed(this, eventArgs);
-        }
+        UserPromptClosedEventArgs eventArgs = eventData.ToEventArgs<UserPromptClosedEventArgs>();
+        await this.onUserPromptClosedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnUserPromptOpened(EventInfo<UserPromptOpenedEventArgs> eventData)
+    private async Task OnUserPromptOpenedAsync(EventInfo<UserPromptOpenedEventArgs> eventData)
     {
-        if (this.UserPromptOpened is not null)
-        {
-            UserPromptOpenedEventArgs eventArgs = eventData.ToEventArgs<UserPromptOpenedEventArgs>();
-            this.UserPromptOpened(this, eventArgs);
-        }
+        UserPromptOpenedEventArgs eventArgs = eventData.ToEventArgs<UserPromptOpenedEventArgs>();
+        await this.onUserPromptOpenedEvent.NotifyObserversAsync(eventArgs);
     }
 }

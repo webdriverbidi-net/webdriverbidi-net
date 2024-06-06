@@ -214,7 +214,7 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
+        module.OnRealmCreated.AddHandler((RealmCreatedEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
@@ -223,7 +223,8 @@ public class ScriptModuleTests
                 Assert.That(e.BrowsingContext, Is.EqualTo("myContext"));
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""window"", ""context"": ""myContext"", ""origin"": ""myOrigin"" } }";
         await connection.RaiseDataReceivedEventAsync(eventJson);
@@ -240,7 +241,8 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.RealmCreated += (object? obj, RealmCreatedEventArgs e) => {
+        module.OnRealmCreated.AddHandler((RealmCreatedEventArgs e) =>
+        {
             Assert.Multiple(() =>
             {
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
@@ -249,7 +251,8 @@ public class ScriptModuleTests
                 Assert.That(e.BrowsingContext, Is.Null);
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmCreated"", ""params"": { ""realm"": ""myRealm"", ""type"": ""worker"", ""origin"": ""myOrigin"" } }";
         await connection.RaiseDataReceivedEventAsync(eventJson);
@@ -266,11 +269,12 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.RealmDestroyed += (object? obj, RealmDestroyedEventArgs e) =>
+        module.OnRealmDestroyed.AddHandler((RealmDestroyedEventArgs e) =>
         {
             Assert.That(e.RealmId, Is.EqualTo("myRealm"));
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""script.realmDestroyed"", ""params"": { ""realm"": ""myRealm"" } }";
         await connection.RaiseDataReceivedEventAsync(eventJson);
@@ -287,7 +291,7 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.Message += (object? obj, MessageEventArgs e) => {
+        module.OnMessage.AddHandler((MessageEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.ChannelId, Is.EqualTo("myChannel"));
@@ -298,7 +302,8 @@ public class ScriptModuleTests
                 Assert.That(e.Source.RealmId, Is.EqualTo("myRealm"));
             });
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""script.message"", ""params"": { ""channel"": ""myChannel"", ""data"": { ""type"": ""string"", ""value"": ""myChannelValue"" }, ""source"": { ""realm"": ""myRealm"" } } }";
         await connection.RaiseDataReceivedEventAsync(eventJson);

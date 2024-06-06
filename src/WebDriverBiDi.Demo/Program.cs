@@ -63,15 +63,17 @@ BiDiDriver InitializeDriver()
 {
     BiDiDriver driver = new(TimeSpan.FromSeconds(10));
     driver.OnLogMessage.AddHandler(OnLogMessage);
-    driver.BrowsingContext.NavigationStarted += (sender, e) =>
+    driver.BrowsingContext.OnNavigationStarted.AddHandler((e) =>
     {
         Console.WriteLine($"Navigation to {e.Url} started");
-    };
+        return Task.CompletedTask;
+    });
 
-    driver.BrowsingContext.Load += (sender, e) =>
+    driver.BrowsingContext.OnLoad.AddHandler((e) =>
     {
         Console.WriteLine($"Load of {e.Url} complete!");
-    };
+        return Task.CompletedTask;
+    });
 
     return driver;
 }

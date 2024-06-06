@@ -13,7 +13,7 @@ using WebDriverBiDi.Protocol;
 public abstract class Module
 {
     private readonly BiDiDriver driver;
-    private readonly Dictionary<string, EventInvoker> eventInvokers = new();
+    private readonly Dictionary<string, EventInvoker> asyncEventInvokers = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Module"/> class.
@@ -41,20 +41,18 @@ public abstract class Module
     /// <typeparam name="T">The type of data used in the event.</typeparam>
     /// <param name="eventName">The name of the event.</param>
     /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
-    protected virtual void RegisterEventInvoker<T>(string eventName, Action<EventInfo<T>> eventInvoker)
+    protected virtual void RegisterAsyncEventInvoker<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
-        this.eventInvokers[eventName] = new EventInvoker<T>(eventInvoker);
+        this.asyncEventInvokers[eventName] = new EventInvoker<T>(eventInvoker);
         this.driver.RegisterEvent<T>(eventName);
     }
 
-    private Task OnDriverEventReceived(EventReceivedEventArgs e)
+    private async Task OnDriverEventReceived(EventReceivedEventArgs e)
     {
-        if (this.eventInvokers.ContainsKey(e.EventName))
+        if (this.asyncEventInvokers.ContainsKey(e.EventName))
         {
-            EventInvoker eventInvoker = this.eventInvokers[e.EventName];
-            eventInvoker.InvokeEvent(e.EventData!, e.AdditionalData);
+            EventInvoker eventInvoker = this.asyncEventInvokers[e.EventName];
+            await eventInvoker.InvokeEventAsync(e.EventData!, e.AdditionalData);
         }
-
-        return Task.CompletedTask;
     }
 }
