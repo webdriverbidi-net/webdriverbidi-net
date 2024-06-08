@@ -89,8 +89,6 @@ public static class DemoScenarios
                 Console.WriteLine("Received event from preload script");
                 syncEvent.Set();
             }
-
-            return Task.CompletedTask;
         });
 
         SubscribeCommandParameters subscribe = new();
@@ -165,8 +163,6 @@ public static class DemoScenarios
                     Console.WriteLine($"Response code for {e.Response.Url}: {e.Response.Status}");
                 }
             }
-
-            return Task.CompletedTask;
         });
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("network.responseCompleted");
@@ -205,7 +201,6 @@ public static class DemoScenarios
         driver.Log.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
         {
             Console.WriteLine($"This was written to the console at {e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC: {e.Text}");
-            return Task.CompletedTask;
         });
         SubscribeCommandParameters subscribe = new();
         subscribe.Events.Add("log.entryAdded");
@@ -300,14 +295,22 @@ public static class DemoScenarios
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Navigation command completed");
 
-        // Some explanation of this construct is in order. If your event handler does
-        // not provide anything to wait on, you run the risk of the main thread exiting
-        // (and terminating your pending event handlers) before the event handlers complete
-        // execution. Therefore, you need to wait for the event handlers to begin processing
-        // before you can wait for them to complete.
+        // Some explanation of this construct is in order. The long-running event handlers
+        // included here will exceed the allowable time for the navigation to complete.
+        // Therefore, you need to run the handlers asynchronously, with some sort of
+        // external synchronization mechanism. Otherwise, either the navigation command
+        // will fail with a timeout, or the main thread will complete and exit before the
+        // event handlers complete their execution. Note carefully that this also implies
+        // that the event handlers will run in parallel. In this case, we've chosen to use
+        // Tasks as the synchronization mechanism, so that we can wait for all of them to
+        // complete before continuing.
         Task.WaitAll(beforeRequestSentTasks.ToArray());
         Console.WriteLine($"Event handlers complete");
 
+        // Demonstrate the ability to remove the event handler, and that the event handler
+        // does not get called, even though the driver is still receiving the event data
+        // from the browser. The traffic from the browser can be seen by setting the log
+        // level to Debug instead of its default of Info.
         Console.WriteLine("Removing event handler");
         handler.Unobserve();
 
@@ -326,12 +329,21 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
-        AddInterceptCommandParameters addIntercept = new();
-        addIntercept.BrowsingContextIds = new List<string>() { contextId };
+        AddInterceptCommandParameters addIntercept = new()
+        {
+            BrowsingContextIds = new List<string>() { contextId }
+        };
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
         addIntercept.UrlPatterns = new List<UrlPattern>() { new UrlPatternPattern() { PathName = "simpleContent.html" } };
         await driver.Network.AddInterceptAsync(addIntercept);
 
+        // Calling a command within an event handler must be done asynchronously.
+        // This is because the driver transport processes incoming messages one
+        // at a time. Sending the command involves receiving the command result
+        // message, which cannot be processed until processing of this event
+        // message is completed. To ensure that we can wait for the command
+        // response to be completely processed, capture the Task returned by the
+        // command execution, and await its completion later.
         Task? substituteTask = null;
         EventObserver<BeforeRequestSentEventArgs> handler = driver.Network.OnBeforeRequestSent.AddHandler((e) =>
         {
@@ -345,8 +357,6 @@ public static class DemoScenarios
                 };
                 substituteTask = driver.Network.ProvideResponseAsync(provideResponse);
             }
-
-            return Task.CompletedTask;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")

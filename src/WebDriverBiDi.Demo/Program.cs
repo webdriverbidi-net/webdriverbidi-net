@@ -66,24 +66,20 @@ BiDiDriver InitializeDriver()
     driver.BrowsingContext.OnNavigationStarted.AddHandler((e) =>
     {
         Console.WriteLine($"Navigation to {e.Url} started");
-        return Task.CompletedTask;
     });
 
     driver.BrowsingContext.OnLoad.AddHandler((e) =>
     {
         Console.WriteLine($"Load of {e.Url} complete!");
-        return Task.CompletedTask;
     });
 
     return driver;
 }
 
-Task OnLogMessage(LogMessageEventArgs e)
+void OnLogMessage(LogMessageEventArgs e)
 {
     if (e.Level >= logReportingLevel)
     {
         Console.WriteLine($"Log message: {e.Message}");
     }
-
-    return Task.CompletedTask;
 }
