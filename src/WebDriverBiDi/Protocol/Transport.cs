@@ -38,6 +38,7 @@ public class Transport
     });
 
     private PendingCommandCollection pendingCommands = new();
+    private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
     private bool isConnected;
     private string terminationReason = "Normal shutdown";
@@ -145,7 +146,7 @@ public class Transport
 
         // Reset the command counter for each connection.
         this.nextCommandId = 0;
-        _ = Task.Run(() => this.ReadIncomingMessages()).ConfigureAwait(false);
+        this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
         await this.connection.StartAsync(websocketUri).ConfigureAwait(false);
         this.isConnected = true;
     }
@@ -203,21 +204,33 @@ public class Transport
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected virtual async Task DisconnectAsync(bool throwCollectedExceptions)
     {
-        // Steps in the disconnect process:
-        // 1. Close the pending command collection to further addition of commands.
-        // 2. Stop the connection from receiving further communication traffic.
-        // 3. Mark the incoming message queue as complete for writing, indicating
-        //    no further messages will be written to the queue. Existing messages
-        //    currently in the queue, however should still be processed.
-        // 4. Wait for the incoming message queue to consume the remaining messages
-        //    already in the queue.
-        // 5. Clear the pending command collection. This will also cancel any tasks
-        //    associated with the remaining pending commands.
+        // Close the pending command collection to further addition of commands,
+        // and stop the connection from receiving further communication traffic.
         this.pendingCommands.Close();
         await this.connection.StopAsync().ConfigureAwait(false);
+
+        // Mark the incoming message queue as complete for writing, indicating
+        // no further messages will be written to the queue. Existing messages
+        // currently in the queue, however should still be processed. Then,
+        // wait for the incoming message queue to consume the remaining messages
+        // already in the queue. Note that having all items consumed from the
+        // queue does not imply that processing of all items has completed; that
+        // must be awaited separately.
         this.queue.Writer.Complete();
         await this.queue.Reader.Completion;
+
+        // Clear the pending command collection. This will also cancel any tasks
+        // associated with the remaining pending commands. Then wait for the
+        // message processor to complete processing of the messages received from
+        // the message queue.
+        // CONSIDER: This may introduce a hang during shutdown, if an in-process
+        // event handler hangs. It might be worthwhile to introduce a timeout
+        // for this use case if it becomes a problem reported by users.
         this.pendingCommands.Clear();
+        await this.messageQueueProcessingTask;
+
+        // Finally, mark the transport as disconnected, and throw collected
+        // exceptions if the user has specified that behavior.
         this.isConnected = false;
         if (throwCollectedExceptions && this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect))
         {
