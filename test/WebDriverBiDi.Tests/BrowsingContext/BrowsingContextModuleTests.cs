@@ -307,7 +307,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Parent, Is.Null);
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.contextCreated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""userContext"": ""default"", ""children"": [] } }";
@@ -334,7 +333,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Parent, Is.Null);
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.contextDestroyed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""userContext"": ""default"", ""children"": [] } }";
@@ -363,7 +361,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.domContentLoaded"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
@@ -392,7 +389,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.downloadWillBegin"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
@@ -421,7 +417,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.fragmentNavigated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
@@ -451,7 +446,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
@@ -480,7 +474,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.navigationAborted"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
@@ -509,12 +502,10 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.navigationFailed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        //connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -539,7 +530,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.navigationStarted"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""timestamp"": " + epochTimestamp +  @", ""navigation"": ""myNavigationId"" } }";
@@ -565,7 +555,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.UserText, Is.EqualTo("my prompt text"));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.userPromptClosed"", ""params"": { ""context"": ""myContext"", ""accepted"": true, ""userText"": ""my prompt text"" } }";
@@ -591,7 +580,6 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Message, Is.EqualTo("my message text"));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.userPromptOpened"", ""params"": { ""context"": ""myContext"", ""type"": ""confirm"", ""message"": ""my message text"" } }";

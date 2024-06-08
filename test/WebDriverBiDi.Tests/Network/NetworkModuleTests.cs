@@ -299,7 +299,6 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
              });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = $@"{{
@@ -366,7 +365,6 @@ public class NetworkModuleTests
                 Assert.That(e.Initiator.Type, Is.EqualTo(InitiatorType.Parser));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = $@"{{
@@ -435,7 +433,6 @@ public class NetworkModuleTests
                 Assert.That(e.ErrorText, Is.EqualTo("An error occurred"));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = $@"{{
@@ -515,7 +512,6 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = $@"{{
@@ -595,7 +591,6 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = $@"{{

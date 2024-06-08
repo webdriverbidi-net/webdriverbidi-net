@@ -83,7 +83,6 @@ public class BiDiDriverTests
         {
             response = e.ErrorData;
             syncEvent.Set();
-            return Task.CompletedTask;
         });
         await driver.StartAsync("ws://localhost:5555");
 
@@ -115,7 +114,6 @@ public class BiDiDriverTests
             receivedEvent = e.EventName;
             receivedData = e.EventData;
             syncEvent.Set();
-            return Task.CompletedTask;
         });
         await driver.StartAsync("ws://localhost:5555");
 
@@ -151,7 +149,6 @@ public class BiDiDriverTests
             receivedEvent = e.EventName;
             receivedData = e.EventData;
             syncEvent.Set();
-            return Task.CompletedTask;
         });
         await driver.StartAsync("ws://localhost:5555");
 
@@ -181,7 +178,6 @@ public class BiDiDriverTests
         {
             receivedMessage = e.Message;
             syncEvent.Set();
-            return Task.CompletedTask;
         });
         await driver.StartAsync("ws://localhost:5555");
 
@@ -204,7 +200,6 @@ public class BiDiDriverTests
         {
             receivedMessage = e.Message;
             syncEvent.Set();
-            return Task.CompletedTask;
         });
         await driver.StartAsync("ws://localhost:5555");
 
@@ -253,7 +248,6 @@ public class BiDiDriverTests
         driver.OnLogMessage.AddHandler((e) =>
         {
             logs.Add(e);
-            return Task.CompletedTask;
         });
         await driver.StartAsync("ws:localhost");
         await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
@@ -395,7 +389,6 @@ public class BiDiDriverTests
                     driverLog.Add(e.Message);
                     logSyncEvent.Set();
                 }
-                return Task.CompletedTask;
             });
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
@@ -404,7 +397,6 @@ public class BiDiDriverTests
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();
-                return Task.CompletedTask;
             });
 
             // This payload omits the required "timestamp" field, which should cause an exception
@@ -449,7 +441,6 @@ public class BiDiDriverTests
 
             driver.BrowsingContext.OnLoad.AddHandler((e) =>
             {
-                return Task.CompletedTask;
             });
 
             ManualResetEvent logSyncEvent = new(false);
@@ -461,8 +452,6 @@ public class BiDiDriverTests
                     driverLog.Add(e.Message);
                     logSyncEvent.Set();
                 }
-                
-                return Task.CompletedTask;
             });
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
@@ -471,7 +460,6 @@ public class BiDiDriverTests
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();
-                return Task.CompletedTask;
             });
 
             // This payload uses an object for the error field, which should cause an exception
@@ -523,8 +511,6 @@ public class BiDiDriverTests
                     driverLog.Add(e.Message);
                     logSyncEvent.Set();
                 }
-
-                return Task.CompletedTask;
             });
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
@@ -533,7 +519,6 @@ public class BiDiDriverTests
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();
-                return Task.CompletedTask;
             });
 
             // This payload uses unparsable JSON, which should cause an exception

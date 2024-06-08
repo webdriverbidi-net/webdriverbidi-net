@@ -27,7 +27,6 @@ public class LogModuleTests
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -61,7 +60,6 @@ public class LogModuleTests
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
             });
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""log.entryAdded"", ""params"": { ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } } }";

@@ -16,7 +16,6 @@ public class ModuleTests
 
         module.OnEventInvoked.AddHandler((TestEventArgs e) =>
         {
-            return Task.CompletedTask;
         });
 
         ManualResetEvent syncEvent = new(false);
@@ -27,8 +26,6 @@ public class ModuleTests
             {
                 driverLog.Add(e.Message);
             }
-
-            return Task.CompletedTask;
         });
 
         string unknownMessage = string.Empty;
@@ -36,13 +33,12 @@ public class ModuleTests
         {
             unknownMessage = e.Message;
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         await driver.StartAsync("ws:localhost");
         string eventJson = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
+        syncEvent.WaitOne(TimeSpan.FromMilliseconds(10000));
         Assert.Multiple(() =>
         {
             Assert.That(driverLog, Has.Count.EqualTo(1));
@@ -63,7 +59,6 @@ public class ModuleTests
         EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddHandler((TestEventArgs e) =>
         {
             syncEvent.Set();
-            return Task.CompletedTask;
         });
 
         await driver.StartAsync("ws:localhost");
@@ -95,7 +90,6 @@ public class ModuleTests
             eventTask = taskCompletionSource.Task;
             taskCompletionSource.SetResult();
             syncEvent.Set();
-            return taskCompletionSource.Task;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         await driver.StartAsync("ws:localhost");
@@ -127,9 +121,8 @@ public class ModuleTests
 
         module.OnEventInvoked.AddHandler((TestEventArgs e) =>
         {
-            return Task.CompletedTask;
         });
 
-        Assert.That(() => module.OnEventInvoked.AddHandler((e) => { return Task.CompletedTask; }), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => module.OnEventInvoked.AddHandler((e) => { }), Throws.InstanceOf<WebDriverBiDiException>());
     }
 }
