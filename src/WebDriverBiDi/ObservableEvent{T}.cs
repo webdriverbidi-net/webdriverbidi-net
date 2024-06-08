@@ -40,7 +40,37 @@ public class ObservableEvent<T>
     public int MaxObserverCount => this.maxObserverCount;
 
     /// <summary>
-    /// Adds a function taking an argument of type T and returning a Task that handles observable event.
+    /// Adds a function to observe the event that takes an argument of type T and returns void.
+    /// It will be wrapped in a Task so that it can be awaited.
+    /// </summary>
+    /// <param name="handler">A function returning a Task that handles the event.</param>
+    /// <param name="handlerOptions">
+    /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
+    /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
+    /// </param>
+    /// <returns>An observer for this observable event.</returns>
+    /// <exception cref="WebDriverBiDiException">
+    /// Thrown when the user attempts to add more observers than this event allows.
+    /// </exception>
+    public EventObserver<T> AddHandler(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None)
+    {
+        Func<T, Task> wrappedHandler = (T args) =>
+        {
+            // Note that if an exception is thrown during the execution of
+            // the handler, it will bubble up when NotifyObserversAsync is
+            // called, and the Task will be set to Faulted, so no need to
+            // add code for that here.
+            TaskCompletionSource<bool> taskCompletionSource = new();
+            handler(args);
+            taskCompletionSource.SetResult(true);
+            return taskCompletionSource.Task;
+        };
+
+        return this.AddHandler(wrappedHandler, handlerOptions);
+    }
+
+    /// <summary>
+    /// Adds a function to observe the event that takes an argument of type T and returns a Task.
     /// </summary>
     /// <param name="handler">A function returning a Task that handles the event.</param>
     /// <param name="handlerOptions">
