@@ -97,7 +97,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""contexts"": [ { ""context"": ""myContext"", ""url"": ""https://example.com"", ""userContext"": ""default"", ""children"": [] } ] } }";
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""contexts"": [ { ""context"": ""myContext"", ""url"": ""https://example.com"", ""originalOpener"": null, ""userContext"": ""default"", ""children"": [] } ] } }";
             connection.RaiseDataReceivedEvent(responseJson);
         };
 
@@ -297,7 +297,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.contextCreated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""userContext"": ""default"", ""children"": [] } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.contextCreated"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""originalOpener"": ""openerContext"", ""userContext"": ""default"", ""children"": [] } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -323,7 +323,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.contextDestroyed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""userContext"": ""default"", ""children"": [] } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.contextDestroyed"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""originalOpener"": ""openerContext"", ""userContext"": ""default"", ""children"": [] } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);

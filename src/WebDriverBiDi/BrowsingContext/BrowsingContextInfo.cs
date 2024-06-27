@@ -15,6 +15,7 @@ public class BrowsingContextInfo
     private string id = string.Empty;
     private string url = string.Empty;
     private string userContextId = string.Empty;
+    private string? originalOpener = null;
     private List<BrowsingContextInfo> children = new();
     private string? parentId;
 
@@ -30,6 +31,14 @@ public class BrowsingContextInfo
     [JsonRequired]
     [JsonInclude]
     public string BrowsingContextId { get => this.id; private set => this.id = value; }
+
+    /// <summary>
+    /// Gets the browsing context ID of the original opener of this browsing context.
+    /// </summary>
+    [JsonPropertyName("originalOpener")]
+    [JsonRequired]
+    [JsonInclude]
+    public string? OriginalOpener { get => this.originalOpener; private set => this.originalOpener = value; }
 
     /// <summary>
     /// Gets the URL of the browsing context.
