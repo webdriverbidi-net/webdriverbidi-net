@@ -253,7 +253,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnAuthRequired.AddHandler((AuthRequiredEventArgs e) =>
+        module.OnAuthRequired.AddObserver((AuthRequiredEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -332,7 +332,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnBeforeRequestSent.AddHandler((BeforeRequestSentEventArgs e) =>
+        module.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -400,7 +400,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnFetchError.AddHandler((FetchErrorEventArgs e) =>
+        module.OnFetchError.AddObserver((FetchErrorEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -466,7 +466,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnResponseStarted.AddHandler((ResponseStartedEventArgs e) =>
+        module.OnResponseStarted.AddObserver((ResponseStartedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -545,7 +545,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnResponseCompleted.AddHandler((ResponseCompletedEventArgs e) =>
+        module.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {

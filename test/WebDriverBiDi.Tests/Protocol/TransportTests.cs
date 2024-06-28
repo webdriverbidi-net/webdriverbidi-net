@@ -178,7 +178,7 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
         {
             receivedName = e.EventName;
             receivedData = e.EventData;
@@ -205,7 +205,7 @@ public class TransportTests
 
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnErrorEventReceived.AddHandler((ErrorReceivedEventArgs e) => {
+        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) => {
             receivedData = e.ErrorData;
             syncEvent.Set();
             return Task.CompletedTask;
@@ -231,13 +231,13 @@ public class TransportTests
 
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             receivedData = e.Message;
             syncEvent.Set();
             return Task.CompletedTask;
         });
-        transport.OnErrorEventReceived.AddHandler((ErrorReceivedEventArgs e) =>
+        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
         {
             return Task.CompletedTask;
         });
@@ -253,7 +253,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnLogMessage.AddHandler((e) =>
+        transport.OnLogMessage.AddObserver((e) =>
         {
             logs.Add(e);
             return Task.CompletedTask;
@@ -275,7 +275,7 @@ public class TransportTests
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnLogMessage.AddHandler((e) =>
+        transport.OnLogMessage.AddObserver((e) =>
         {
             if (e.ComponentName == "Transport")
             {
@@ -305,7 +305,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
@@ -329,7 +329,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
@@ -353,7 +353,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
@@ -377,7 +377,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
@@ -401,7 +401,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
@@ -426,13 +426,13 @@ public class TransportTests
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             signaler.Signal();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddHandler((e) =>
+        transport.OnLogMessage.AddObserver((e) =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -464,13 +464,13 @@ public class TransportTests
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             signaler.Signal();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddHandler((e) =>
+        transport.OnLogMessage.AddObserver((e) =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -502,13 +502,13 @@ public class TransportTests
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             signaler.Signal();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddHandler((e) =>
+        transport.OnLogMessage.AddObserver((e) =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -539,7 +539,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
@@ -563,7 +563,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
@@ -587,7 +587,7 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
@@ -613,13 +613,13 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             signaler.Signal();
             return Task.CompletedTask;
         });
-        transport.OnLogMessage.AddHandler((e) =>
+        transport.OnLogMessage.AddObserver((e) =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -685,7 +685,7 @@ public class TransportTests
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
         {
             receivedName = e.EventName;
             receivedData = e.EventData;
@@ -752,7 +752,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
         {
             syncEvent.Set();
             throw new WebDriverBiDiException("This is an unexpected exception");
@@ -775,7 +775,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
         {
             try
             {
@@ -807,7 +807,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
         {
             try
             {
@@ -837,7 +837,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
         {
             return Task.FromException(new WebDriverBiDiException("This is an unexpected exception"));
         });

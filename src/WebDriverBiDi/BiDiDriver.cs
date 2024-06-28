@@ -58,10 +58,10 @@ public class BiDiDriver
     {
         this.defaultCommandWaitTimeout = defaultCommandWaitTimeout;
         this.transport = transport;
-        this.transport.OnEventReceived.AddHandler(this.OnTransportEventReceived);
-        this.transport.OnErrorEventReceived.AddHandler(this.OnTransportErrorEventReceivedAsync);
-        this.transport.OnUnknownMessageReceived.AddHandler(this.OnTransportUnknownMessageReceivedAsync);
-        this.transport.OnLogMessage.AddHandler(this.OnTransportLogMessageAsync);
+        this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceived);
+        this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
+        this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
+        this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
         this.RegisterModule(new BrowserModule(this));
         this.RegisterModule(new BrowsingContextModule(this));
         this.RegisterModule(new LogModule(this));

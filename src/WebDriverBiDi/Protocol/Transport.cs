@@ -58,8 +58,8 @@ public class Transport
     public Transport(Connection connection)
     {
         this.connection = connection;
-        connection.OnDataReceived.AddHandler(this.OnConnectionDataReceivedAsync);
-        connection.OnLogMessage.AddHandler(this.OnConnectionLogMessageAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+        connection.OnLogMessage.AddObserver(this.OnConnectionLogMessageAsync);
     }
 
     /// <summary>

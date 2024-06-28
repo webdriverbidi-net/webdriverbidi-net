@@ -14,13 +14,13 @@ public class ModuleTests
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
 
-        module.OnEventInvoked.AddHandler((TestEventArgs e) =>
+        module.OnEventInvoked.AddObserver((TestEventArgs e) =>
         {
         });
 
         ManualResetEvent syncEvent = new(false);
         List<string> driverLog = new();
-        transport.OnLogMessage.AddHandler((e) =>
+        transport.OnLogMessage.AddObserver((e) =>
         {
             if (e.Level >= WebDriverBiDiLogLevel.Error)
             {
@@ -29,7 +29,7 @@ public class ModuleTests
         });
 
         string unknownMessage = string.Empty;
-        transport.OnUnknownMessageReceived.AddHandler((e) =>
+        transport.OnUnknownMessageReceived.AddObserver((e) =>
         {
             unknownMessage = e.Message;
             syncEvent.Set();
@@ -56,7 +56,7 @@ public class ModuleTests
         TestProtocolModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddHandler((TestEventArgs e) =>
+        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver((TestEventArgs e) =>
         {
             syncEvent.Set();
         });
@@ -84,7 +84,7 @@ public class ModuleTests
 
         Task? eventTask = null;
         ManualResetEvent syncEvent = new(false);
-        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddHandler((TestEventArgs e) =>
+        EventObserver<TestEventArgs> handler = module.OnEventInvoked.AddObserver((TestEventArgs e) =>
         {
             TaskCompletionSource taskCompletionSource = new();
             eventTask = taskCompletionSource.Task;
@@ -119,10 +119,10 @@ public class ModuleTests
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver, 1);
 
-        module.OnEventInvoked.AddHandler((TestEventArgs e) =>
+        module.OnEventInvoked.AddObserver((TestEventArgs e) =>
         {
         });
 
-        Assert.That(() => module.OnEventInvoked.AddHandler((e) => { }), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => module.OnEventInvoked.AddObserver((e) => { }), Throws.InstanceOf<WebDriverBiDiException>());
     }
 }

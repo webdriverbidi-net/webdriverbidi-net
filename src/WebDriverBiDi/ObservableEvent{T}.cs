@@ -13,7 +13,7 @@ namespace WebDriverBiDi;
 public class ObservableEvent<T>
     where T : EventArgs
 {
-    private readonly Dictionary<string, ObservableEventHandler<T>> eventHandlers = new();
+    private readonly Dictionary<string, ObservableEventHandler<T>> observers = new();
     private readonly int maxObserverCount;
 
     /// <summary>
@@ -43,7 +43,7 @@ public class ObservableEvent<T>
     /// Adds a function to observe the event that takes an argument of type T and returns void.
     /// It will be wrapped in a Task so that it can be awaited.
     /// </summary>
-    /// <param name="handler">A function returning a Task that handles the event.</param>
+    /// <param name="handler">An action that handles the observed event.</param>
     /// <param name="handlerOptions">
     /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
     /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
@@ -52,7 +52,7 @@ public class ObservableEvent<T>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the user attempts to add more observers than this event allows.
     /// </exception>
-    public EventObserver<T> AddHandler(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None)
+    public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None)
     {
         Func<T, Task> wrappedHandler = (T args) =>
         {
@@ -66,13 +66,13 @@ public class ObservableEvent<T>
             return taskCompletionSource.Task;
         };
 
-        return this.AddHandler(wrappedHandler, handlerOptions);
+        return this.AddObserver(wrappedHandler, handlerOptions);
     }
 
     /// <summary>
     /// Adds a function to observe the event that takes an argument of type T and returns a Task.
     /// </summary>
-    /// <param name="handler">A function returning a Task that handles the event.</param>
+    /// <param name="handler">A function returning a Task that handles the observed event.</param>
     /// <param name="handlerOptions">
     /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
     /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
@@ -81,27 +81,27 @@ public class ObservableEvent<T>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the user attempts to add more observers than this event allows.
     /// </exception>
-    public EventObserver<T> AddHandler(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None)
+    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None)
     {
-        if (this.maxObserverCount > 0 && this.eventHandlers.Count == this.maxObserverCount)
+        if (this.maxObserverCount > 0 && this.observers.Count == this.maxObserverCount)
         {
             throw new WebDriverBiDiException($"This observable event only allows {this.maxObserverCount} handlers.");
         }
 
-        string handlerId = Guid.NewGuid().ToString();
-        this.eventHandlers.Add(handlerId, new ObservableEventHandler<T>(handler, handlerOptions));
-        return new EventObserver<T>(this, handlerId);
+        string observerId = Guid.NewGuid().ToString();
+        this.observers.Add(observerId, new ObservableEventHandler<T>(handler, handlerOptions));
+        return new EventObserver<T>(this, observerId);
     }
 
     /// <summary>
     /// Removes a handler for this observable event.
     /// </summary>
-    /// <param name="handlerId">The ID of the handler handling the event.</param>
-    public void RemoveHandler(string handlerId)
+    /// <param name="observerId">The ID of the handler handling the event.</param>
+    public void RemoveObserver(string observerId)
     {
-        if (this.eventHandlers.ContainsKey(handlerId))
+        if (this.observers.ContainsKey(observerId))
         {
-            this.eventHandlers.Remove(handlerId);
+            this.observers.Remove(observerId);
         }
     }
 
@@ -112,15 +112,15 @@ public class ObservableEvent<T>
     /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task NotifyObserversAsync(T notifyData)
     {
-        foreach (ObservableEventHandler<T> handler in this.eventHandlers.Values)
+        foreach (ObservableEventHandler<T> observer in this.observers.Values)
         {
-            if ((handler.Options & ObservableEventHandlerOptions.RunHandlerAsynchronously) == ObservableEventHandlerOptions.RunHandlerAsynchronously)
+            if ((observer.Options & ObservableEventHandlerOptions.RunHandlerAsynchronously) == ObservableEventHandlerOptions.RunHandlerAsynchronously)
             {
-                _ = Task.Run(() => handler.Handler(notifyData)).ConfigureAwait(false);
+                _ = Task.Run(() => observer.HandleObservedEvent(notifyData)).ConfigureAwait(false);
             }
             else
             {
-                await handler.Handler(notifyData).ConfigureAwait(false);
+                await observer.HandleObservedEvent(notifyData).ConfigureAwait(false);
             }
         }
     }
@@ -136,7 +136,7 @@ public class ObservableEvent<T>
             this.handlerOptions = handlerOptions;
         }
 
-        public Func<TEventArgs, Task> Handler => this.handler;
+        public Func<TEventArgs, Task> HandleObservedEvent => this.handler;
 
         public ObservableEventHandlerOptions Options => this.handlerOptions;
     }

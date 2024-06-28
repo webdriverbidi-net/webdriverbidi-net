@@ -79,7 +79,7 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.OnUnexpectedErrorReceived.AddHandler((ErrorReceivedEventArgs e) =>
+        driver.OnUnexpectedErrorReceived.AddObserver((ErrorReceivedEventArgs e) =>
         {
             response = e.ErrorData;
             syncEvent.Set();
@@ -109,7 +109,7 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
-        driver.OnEventReceived.AddHandler((e) =>
+        driver.OnEventReceived.AddObserver((e) =>
         {
             receivedEvent = e.EventName;
             receivedData = e.EventData;
@@ -144,7 +144,7 @@ public class BiDiDriverTests
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
-        driver.OnEventReceived.AddHandler((e) =>
+        driver.OnEventReceived.AddObserver((e) =>
         {
             receivedEvent = e.EventName;
             receivedData = e.EventData;
@@ -174,7 +174,7 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.OnUnknownMessageReceived.AddHandler((e) =>
+        driver.OnUnknownMessageReceived.AddObserver((e) =>
         {
             receivedMessage = e.Message;
             syncEvent.Set();
@@ -196,7 +196,7 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.OnUnknownMessageReceived.AddHandler((e) =>
+        driver.OnUnknownMessageReceived.AddObserver((e) =>
         {
             receivedMessage = e.Message;
             syncEvent.Set();
@@ -245,7 +245,7 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(100), transport);
-        driver.OnLogMessage.AddHandler((e) =>
+        driver.OnLogMessage.AddObserver((e) =>
         {
             logs.Add(e);
         });
@@ -382,7 +382,7 @@ public class BiDiDriverTests
             connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
             ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
-            driver.OnLogMessage.AddHandler((e) =>
+            driver.OnLogMessage.AddObserver((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)
                 {
@@ -393,7 +393,7 @@ public class BiDiDriverTests
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
-            driver.OnUnknownMessageReceived.AddHandler((e) =>
+            driver.OnUnknownMessageReceived.AddObserver((e) =>
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();
@@ -439,13 +439,13 @@ public class BiDiDriverTests
             await driver.StartAsync($"ws://localhost:{server.Port}");
             connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
-            driver.BrowsingContext.OnLoad.AddHandler((e) =>
+            driver.BrowsingContext.OnLoad.AddObserver((e) =>
             {
             });
 
             ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
-            driver.OnLogMessage.AddHandler((e) =>
+            driver.OnLogMessage.AddObserver((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)
                 {
@@ -456,7 +456,7 @@ public class BiDiDriverTests
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
-            driver.OnUnknownMessageReceived.AddHandler((e) =>
+            driver.OnUnknownMessageReceived.AddObserver((e) =>
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();
@@ -504,7 +504,7 @@ public class BiDiDriverTests
 
             ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
-            driver.OnLogMessage.AddHandler((e) =>
+            driver.OnLogMessage.AddObserver((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)
                 {
@@ -515,7 +515,7 @@ public class BiDiDriverTests
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
-            driver.OnUnknownMessageReceived.AddHandler((e) =>
+            driver.OnUnknownMessageReceived.AddObserver((e) =>
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();

@@ -22,7 +22,7 @@ public abstract class Module
     protected Module(BiDiDriver driver)
     {
         this.driver = driver;
-        this.driver.OnEventReceived.AddHandler(this.OnDriverEventReceived);
+        this.driver.OnEventReceived.AddObserver(this.OnDriverEventReceived);
     }
 
     /// <summary>

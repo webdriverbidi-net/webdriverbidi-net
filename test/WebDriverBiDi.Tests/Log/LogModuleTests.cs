@@ -15,7 +15,7 @@ public class LogModuleTests
         LogModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
+        module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -46,7 +46,7 @@ public class LogModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
+        module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {

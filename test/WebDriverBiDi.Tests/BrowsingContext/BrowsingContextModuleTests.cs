@@ -286,7 +286,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnContextCreated.AddHandler((BrowsingContextEventArgs e) => {
+        module.OnContextCreated.AddObserver((BrowsingContextEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -312,7 +312,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnContextDestroyed.AddHandler((BrowsingContextEventArgs e) => {
+        module.OnContextDestroyed.AddObserver((BrowsingContextEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -339,7 +339,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDomContentLoaded.AddHandler((NavigationEventArgs e) => {
+        module.OnDomContentLoaded.AddObserver((NavigationEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -367,7 +367,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDownloadWillBegin.AddHandler((NavigationEventArgs e) => {
+        module.OnDownloadWillBegin.AddObserver((NavigationEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -395,7 +395,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnFragmentNavigated.AddHandler((NavigationEventArgs e) => {
+        module.OnFragmentNavigated.AddObserver((NavigationEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -424,7 +424,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnLoad.AddHandler((NavigationEventArgs e) => {
+        module.OnLoad.AddObserver((NavigationEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -452,7 +452,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationAborted.AddHandler((NavigationEventArgs e) => {
+        module.OnNavigationAborted.AddObserver((NavigationEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -480,7 +480,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationFailed.AddHandler((NavigationEventArgs e) => {
+        module.OnNavigationFailed.AddObserver((NavigationEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -508,7 +508,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationStarted.AddHandler((NavigationEventArgs e) => {
+        module.OnNavigationStarted.AddObserver((NavigationEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -535,7 +535,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnUserPromptClosed.AddHandler((UserPromptClosedEventArgs e) => {
+        module.OnUserPromptClosed.AddObserver((UserPromptClosedEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -560,7 +560,7 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.OnUserPromptOpened.AddHandler((UserPromptOpenedEventArgs e) => {
+        module.OnUserPromptOpened.AddObserver((UserPromptOpenedEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));

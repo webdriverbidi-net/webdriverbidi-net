@@ -82,7 +82,7 @@ public static class DemoScenarios
     public static async Task WaitForDelayLoadAsync(BiDiDriver driver, string baseUrl)
     {
         ManualResetEventSlim syncEvent = new(false);
-        driver.Script.OnMessage.AddHandler(( MessageEventArgs e) =>
+        driver.Script.OnMessage.AddObserver(( MessageEventArgs e) =>
         {
             if (e.ChannelId == "delayLoadChannel")
             {
@@ -150,7 +150,7 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task MonitorNetworkTraffic(BiDiDriver driver, string baseUrl)
     {
-        driver.Network.OnResponseCompleted.AddHandler((ResponseCompletedEventArgs e) =>
+        driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
             if (e.Response.Url.Contains(".html") || e.Request.Url.EndsWith('/'))
             {
@@ -198,7 +198,7 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task MonitorBrowserConsole(BiDiDriver driver, string baseUrl)
     {
-        driver.Log.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
+        driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             Console.WriteLine($"This was written to the console at {e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC: {e.Text}");
         });
@@ -265,7 +265,7 @@ public static class DemoScenarios
     public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
     {
         List<Task> beforeRequestSentTasks = new();
-        EventObserver<BeforeRequestSentEventArgs> handler = driver.Network.OnBeforeRequestSent.AddHandler(async (BeforeRequestSentEventArgs e) =>
+        EventObserver<BeforeRequestSentEventArgs> observer = driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs e) =>
         {
             TaskCompletionSource taskCompletionSource = new();
             beforeRequestSentTasks.Add(taskCompletionSource.Task);
@@ -312,7 +312,7 @@ public static class DemoScenarios
         // from the browser. The traffic from the browser can be seen by setting the log
         // level to Debug instead of its default of Info.
         Console.WriteLine("Removing event handler");
-        handler.Unobserve();
+        observer.Unobserve();
 
         navigateParams.Url = $"{baseUrl}/inputForm.html";
         Console.WriteLine($"Navigating again to {navigateParams.Url} show no event handlers fired");
@@ -337,7 +337,7 @@ public static class DemoScenarios
         addIntercept.UrlPatterns = new List<UrlPattern>() { new UrlPatternPattern() { PathName = "simpleContent.html" } };
         await driver.Network.AddInterceptAsync(addIntercept);
 
-        // Calling a command within an event handler must be done asynchronously.
+        // Calling a command within an event observer must be done asynchronously.
         // This is because the driver transport processes incoming messages one
         // at a time. Sending the command involves receiving the command result
         // message, which cannot be processed until processing of this event
@@ -345,7 +345,7 @@ public static class DemoScenarios
         // response to be completely processed, capture the Task returned by the
         // command execution, and await its completion later.
         Task? substituteTask = null;
-        EventObserver<BeforeRequestSentEventArgs> handler = driver.Network.OnBeforeRequestSent.AddHandler((e) =>
+        EventObserver<BeforeRequestSentEventArgs> observer = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
             if (e.IsBlocked)
             {

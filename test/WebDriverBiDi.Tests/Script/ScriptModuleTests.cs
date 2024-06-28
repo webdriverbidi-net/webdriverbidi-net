@@ -214,7 +214,7 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.OnRealmCreated.AddHandler((RealmCreatedEventArgs e) => {
+        module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
@@ -241,7 +241,7 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.OnRealmCreated.AddHandler((RealmCreatedEventArgs e) =>
+        module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -269,7 +269,7 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.OnRealmDestroyed.AddHandler((RealmDestroyedEventArgs e) =>
+        module.OnRealmDestroyed.AddObserver((RealmDestroyedEventArgs e) =>
         {
             Assert.That(e.RealmId, Is.EqualTo("myRealm"));
             syncEvent.Set();
@@ -291,7 +291,7 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.OnMessage.AddHandler((MessageEventArgs e) => {
+        module.OnMessage.AddObserver((MessageEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.ChannelId, Is.EqualTo("myChannel"));
