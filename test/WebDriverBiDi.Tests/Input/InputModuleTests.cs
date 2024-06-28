@@ -10,10 +10,10 @@ public class InputModuleTests
     public async Task TestExecutePerformActions()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -31,10 +31,10 @@ public class InputModuleTests
     public async Task TestExecuteReleaseActions()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -52,10 +52,10 @@ public class InputModuleTests
     public async Task TestExecuteSetFiles()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));

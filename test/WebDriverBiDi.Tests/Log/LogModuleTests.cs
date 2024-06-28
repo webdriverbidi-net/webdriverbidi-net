@@ -15,7 +15,8 @@ public class LogModuleTests
         LogModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.EntryAdded += (object? obj, EntryAddedEventArgs e) => {
+        module.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
+        {
             Assert.Multiple(() =>
             {
                 Assert.That(e.Type, Is.EqualTo("javascript"));
@@ -26,11 +27,11 @@ public class LogModuleTests
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
             });
             syncEvent.Set();
-        };
+        });
 
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         string eventJson = @"{ ""type"": ""event"", ""method"": ""log.entryAdded"", ""params"": { ""type"": ""javascript"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""stackTrace"": { ""callFrames"": [] } } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -45,7 +46,8 @@ public class LogModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.EntryAdded += (object? obj, EntryAddedEventArgs e) => {
+        module.OnEntryAdded.AddHandler((EntryAddedEventArgs e) =>
+        {
             Assert.Multiple(() =>
             {
                 Assert.That(e.Type, Is.EqualTo("console"));
@@ -58,10 +60,10 @@ public class LogModuleTests
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
             });
             syncEvent.Set();
-        };
+        });
 
         string eventJson = @"{ ""type"": ""event"", ""method"": ""log.entryAdded"", ""params"": { ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""myRealmId"", ""context"": ""browsingContextId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } } }";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }

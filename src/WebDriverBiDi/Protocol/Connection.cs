@@ -16,6 +16,8 @@ public class Connection
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
     private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
     private readonly int bufferSize = 4096;
+    private readonly ObservableEvent<ConnectionDataReceivedEventArgs> onDataReceivedEvent = new();
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
     private TimeSpan startupTimeout = DefaultTimeout;
     private TimeSpan shutdownTimeout = DefaultTimeout;
     private TimeSpan socketTimeout = DefaultTimeout;
@@ -30,16 +32,6 @@ public class Connection
     public Connection()
     {
     }
-
-    /// <summary>
-    /// Occurs when data is received from this connection.
-    /// </summary>
-    public event EventHandler<ConnectionDataReceivedEventArgs>? DataReceived;
-
-    /// <summary>
-    /// Occurs when a log message is emitted from this connection.
-    /// </summary>
-    public event EventHandler<LogMessageEventArgs>? LogMessage;
 
     /// <summary>
     /// Gets a value indicating whether this connection is active.
@@ -72,6 +64,16 @@ public class Connection
     public TimeSpan DataTimeout { get => this.socketTimeout; set => this.socketTimeout = value; }
 
     /// <summary>
+    /// Gets an observable event that notifies when data is received from this connection.
+    /// </summary>
+    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived => this.onDataReceivedEvent;
+
+    /// <summary>
+    /// Gets an observable event that notifies when a log message is written.
+    /// </summary>
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
+
+    /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
     /// </summary>
     /// <param name="url">The URL used to connect to the remote end.</param>
@@ -96,7 +98,7 @@ public class Connection
             throw new WebDriverBiDiException($"The WebSocket is already connected to {this.url}; call the Stop method to disconnect before calling Start");
         }
 
-        this.Log($"Opening connection to URL {url}", WebDriverBiDiLogLevel.Info);
+        await this.LogAsync($"Opening connection to URL {url}");
         bool connected = false;
         DateTime timeout = DateTime.Now.Add(this.startupTimeout);
         while (!connected && DateTime.Now <= timeout)
@@ -122,7 +124,7 @@ public class Connection
         }
 
         this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync().ConfigureAwait(false));
-        this.Log($"Connection opened", WebDriverBiDiLogLevel.Info);
+        await this.LogAsync($"Connection opened");
     }
 
     /// <summary>
@@ -131,10 +133,10 @@ public class Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task StopAsync()
     {
-        this.Log($"Closing connection", WebDriverBiDiLogLevel.Info);
+        await this.LogAsync($"Closing connection");
         if (this.client.State != WebSocketState.Open)
         {
-            this.Log($"Socket already closed (Socket state: {this.client.State})");
+            await this.LogAsync($"Socket already closed (Socket state: {this.client.State})");
         }
         else
         {
@@ -169,7 +171,7 @@ public class Connection
         }
 
         ArraySegment<byte> messageBuffer = new(Encoding.UTF8.GetBytes(data));
-        this.Log($"SEND >>> {data}");
+        await this.LogAsync($"SEND >>> {data}", WebDriverBiDiLogLevel.Debug);
         await this.SendWebSocketDataAsync(messageBuffer).ConfigureAwait(false);
         this.dataSendSemaphore.Release();
     }
@@ -204,35 +206,11 @@ public class Connection
                 await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
             }
 
-            this.Log($"Client state is {this.client.State}", WebDriverBiDiLogLevel.Info);
+            await this.LogAsync($"Client state is {this.client.State}");
         }
         catch (OperationCanceledException)
         {
             // An OperationCanceledException is normal upon task/token cancellation, so disregard it
-        }
-    }
-
-    /// <summary>
-    /// Raises the DataReceived event.
-    /// </summary>
-    /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnDataReceived(ConnectionDataReceivedEventArgs e)
-    {
-        if (this.DataReceived is not null)
-        {
-            this.DataReceived(this, e);
-        }
-    }
-
-    /// <summary>
-    /// Raises the LogMessage event.
-    /// </summary>
-    /// <param name="e">The event args used when raising the event.</param>
-    protected virtual void OnLogMessage(LogMessageEventArgs e)
-    {
-        if (this.LogMessage is not null)
-        {
-            this.LogMessage(this, e);
         }
     }
 
@@ -260,7 +238,7 @@ public class Connection
                     // not initiate the close; send acknowledgement
                     if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
                     {
-                        this.Log($"Acknowledging Close frame received from server (client state: {this.client.State})", WebDriverBiDiLogLevel.Info);
+                        await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})");
                         await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None).ConfigureAwait(false);
                     }
 
@@ -277,15 +255,15 @@ public class Connection
                             messageBuilder = new StringBuilder();
                             if (message.Length > 0)
                             {
-                                this.Log($"RECV <<< {message}");
-                                this.OnDataReceived(new ConnectionDataReceivedEventArgs(message));
+                                await this.LogAsync($"RECV <<< {message}", WebDriverBiDiLogLevel.Debug);
+                                await this.onDataReceivedEvent.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(message));
                             }
                         }
                     }
                 }
             }
 
-            this.Log($"Ending processing loop in state {this.client.State}", WebDriverBiDiLogLevel.Info);
+            await this.LogAsync($"Ending processing loop in state {this.client.State}");
         }
         catch (OperationCanceledException)
         {
@@ -293,7 +271,7 @@ public class Connection
         }
         catch (WebSocketException e)
         {
-            this.Log($"Unexpected error during receive of data: {e.Message}", WebDriverBiDiLogLevel.Warn);
+            await this.LogAsync($"Unexpected error during receive of data: {e.Message}");
         }
         finally
         {
@@ -301,13 +279,13 @@ public class Connection
         }
     }
 
-    private void Log(string message)
+    private async Task LogAsync(string message)
     {
-        this.Log(message, WebDriverBiDiLogLevel.Debug);
+        await this.LogAsync(message, WebDriverBiDiLogLevel.Info);
     }
 
-    private void Log(string message, WebDriverBiDiLogLevel level)
+    private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        this.OnLogMessage(new LogMessageEventArgs(message, level, "Connection"));
+        await this.onLogMessageEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Connection"));
     }
 }

@@ -89,7 +89,7 @@ public class ConnectionTests
         Connection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        connection.DataReceived += OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
 
         await this.server.SendData(registeredConnectionId, "Hello back");
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
@@ -109,7 +109,7 @@ public class ConnectionTests
         Connection connection = new();
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        connection.DataReceived += OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
 
         // Create a message on an exact boundary of the buffer
         string data = new('a', 2 * connection.BufferSize);
@@ -131,7 +131,7 @@ public class ConnectionTests
         Connection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        connection.DataReceived += OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
 
         // Create a message on an exact boundary of the buffer
         string data = new('a', 70000);
@@ -152,14 +152,16 @@ public class ConnectionTests
 
         List<LogMessageEventArgs> logValues = new();
         Connection connection = new();
-        connection.DataReceived += OnConnectionDataReceived;
-        connection.LogMessage += (object? sender, LogMessageEventArgs e) => 
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
+        connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             if (e.Level >= WebDriverBiDiLogLevel.Info)
             {
                 logValues.Add(e);
             }
-        };
+
+            return Task.CompletedTask;
+        });
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += OnSocketDataReceived;
@@ -197,7 +199,7 @@ public class ConnectionTests
 
         Connection connection = new();
         Assert.That(connection.IsActive, Is.False);
-        connection.DataReceived += OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.IsActive, Is.True);
@@ -216,7 +218,7 @@ public class ConnectionTests
         string serverWebSocketUrl = $"ws://localhost:{this.server.Port}";
         Connection connection = new();
         Assert.That(connection.ConnectedUrl, Is.EqualTo(string.Empty));
-        connection.DataReceived += OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
         await connection.StartAsync(serverWebSocketUrl);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.ConnectedUrl, Is.EqualTo(serverWebSocketUrl));
@@ -252,11 +254,10 @@ public class ConnectionTests
             BypassStop = false
         };
         Assert.That(connection.IsActive, Is.False);
-        connection.DataReceived += OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.IsActive, Is.True);
-        connection.DataReceived += OnConnectionDataReceived;
 
         // Send data to the connection, which should force the receive data
         // task to enter a waiting state after receiving the first message.
@@ -276,11 +277,12 @@ public class ConnectionTests
 
         List<string> connectionLog = new();
         Connection connection = new();
-        connection.LogMessage += (sender, e) =>
+        connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
-        };
-        connection.DataReceived += OnConnectionDataReceived;
+            return Task.CompletedTask;
+        });
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.StopAsync();
@@ -300,7 +302,7 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.DataReceived += OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.Stop();
@@ -326,11 +328,12 @@ public class ConnectionTests
 
         List<string> connectionLog = new();
         Connection connection = new();
-        connection.LogMessage += (sender, e) =>
+        connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
-        };
-        connection.DataReceived += OnConnectionDataReceived;
+            return Task.CompletedTask;
+        });
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.StopAsync();
@@ -361,10 +364,11 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.LogMessage += (sender, e) =>
+        connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
-        };
+            return Task.CompletedTask;
+        });
 
         IList<string> serverLog = this.server.Log;
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
@@ -409,10 +413,11 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.LogMessage += (sender, e) =>
+        connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
-        };
+            return Task.CompletedTask;
+        });
 
         IList<string> serverLog = this.server.Log;
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
@@ -435,7 +440,7 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.DataReceived += this.OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -479,7 +484,7 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.DataReceived += this.OnConnectionDataReceived;
+        connection.OnDataReceived.AddHandler(OnConnectionDataReceivedAsync);
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -554,10 +559,11 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.Zero,
         };
-        connection.LogMessage += (sender, e) =>
+        connection.OnLogMessage.AddHandler((LogMessageEventArgs e) => 
         {
             connectionLog.Add(e.Message);
-        };
+            return Task.CompletedTask;
+        });
 
         IList<string> serverLog = this.server.Log;
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
@@ -603,10 +609,11 @@ public class ConnectionTests
         this.serverReceiveSyncEvent.Set();
     }
 
-    private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
+    private Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
         this.lastConnectionReceivedData = e.Data;
         this.connectionReceiveSyncEvent.Set();
+        return Task.CompletedTask;
     }
 
     private void OnClientConnected(object? sender, ClientConnectionEventArgs e)

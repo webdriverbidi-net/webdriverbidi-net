@@ -15,6 +15,8 @@ public sealed class LogModule : Module
     /// </summary>
     public const string LogModuleName = "log";
 
+    private ObservableEvent<EntryAddedEventArgs> onEntryAddedEvent = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="LogModule"/> class.
     /// </summary>
@@ -22,30 +24,27 @@ public sealed class LogModule : Module
     public LogModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker<LogEntry>("log.entryAdded", this.OnEntryAdded);
+        this.RegisterAsyncEventInvoker<LogEntry>("log.entryAdded", this.OnEntryAddedAsync);
     }
 
     /// <summary>
-    /// Occurs when an entry is added to the log.
+    /// Gets an observable event that notifies when an entry is added to the log.
     /// </summary>
-    public event EventHandler<EntryAddedEventArgs>? EntryAdded;
+    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded => this.onEntryAddedEvent;
 
     /// <summary>
     /// Gets the module name.
     /// </summary>
     public override string ModuleName => LogModuleName;
 
-    private void OnEntryAdded(EventInfo<LogEntry> eventData)
+    private async Task OnEntryAddedAsync(EventInfo<LogEntry> eventData)
     {
         // Special case here. The specification indicates that the parameters
         // for this event are a LogEntry object, so rather than duplicate the
         // properties to directly deserialize the EntryAddedEventArgs instance,
         // the protocol transport will deserialize to a LogEntry, then use that
         // here to create the appropriate EventArgs instance.
-        if (this.EntryAdded is not null)
-        {
-            EntryAddedEventArgs eventArgs = eventData.ToEventArgs<EntryAddedEventArgs>();
-            this.EntryAdded(this, eventArgs);
-        }
+        EntryAddedEventArgs eventArgs = eventData.ToEventArgs<EntryAddedEventArgs>();
+        await this.onEntryAddedEvent.NotifyObserversAsync(eventArgs);
     }
 }

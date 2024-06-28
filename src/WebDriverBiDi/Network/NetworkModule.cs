@@ -15,6 +15,12 @@ public sealed class NetworkModule : Module
     /// </summary>
     public const string NetworkModuleName = "network";
 
+    private ObservableEvent<AuthRequiredEventArgs> onAuthRequiredEvent = new();
+    private ObservableEvent<BeforeRequestSentEventArgs> onBeforeRequestSentEvent = new();
+    private ObservableEvent<FetchErrorEventArgs> onFetchErrorEvent = new();
+    private ObservableEvent<ResponseStartedEventArgs> onResponseStartedEvent = new();
+    private ObservableEvent<ResponseCompletedEventArgs> onResponseCompletedEvent = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="NetworkModule"/> class.
     /// </summary>
@@ -22,37 +28,37 @@ public sealed class NetworkModule : Module
     public NetworkModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterEventInvoker<AuthRequiredEventArgs>("network.authRequired", this.OnAuthRequired);
-        this.RegisterEventInvoker<BeforeRequestSentEventArgs>("network.beforeRequestSent", this.OnBeforeRequestSent);
-        this.RegisterEventInvoker<FetchErrorEventArgs>("network.fetchError", this.OnFetchError);
-        this.RegisterEventInvoker<ResponseStartedEventArgs>("network.responseStarted", this.OnResponseStarted);
-        this.RegisterEventInvoker<ResponseCompletedEventArgs>("network.responseCompleted", this.OnResponseCompleted);
+        this.RegisterAsyncEventInvoker<AuthRequiredEventArgs>("network.authRequired", this.OnAuthRequiredAsync);
+        this.RegisterAsyncEventInvoker<BeforeRequestSentEventArgs>("network.beforeRequestSent", this.OnBeforeRequestSentAsync);
+        this.RegisterAsyncEventInvoker<FetchErrorEventArgs>("network.fetchError", this.OnFetchErrorAsync);
+        this.RegisterAsyncEventInvoker<ResponseStartedEventArgs>("network.responseStarted", this.OnResponseStartedAsync);
+        this.RegisterAsyncEventInvoker<ResponseCompletedEventArgs>("network.responseCompleted", this.OnResponseCompletedAsync);
     }
 
     /// <summary>
-    /// Occurs when an authorization required response is received.
+    /// Gets an observable event that notifies when an authorization required response is received.
     /// </summary>
-    public event EventHandler<AuthRequiredEventArgs>? AuthRequired;
+    public ObservableEvent<AuthRequiredEventArgs> OnAuthRequired => this.onAuthRequiredEvent;
 
     /// <summary>
-    /// Occurs before a network request is sent.
+    /// Gets an observable event that notifies before a network request is sent.
     /// </summary>
-    public event EventHandler<BeforeRequestSentEventArgs>? BeforeRequestSent;
+    public ObservableEvent<BeforeRequestSentEventArgs> OnBeforeRequestSent => this.onBeforeRequestSentEvent;
 
     /// <summary>
-    /// Occurs when an error is encountered fetching data.
+    /// Gets an observable event that notifies when an error is encountered fetching data.
     /// </summary>
-    public event EventHandler<FetchErrorEventArgs>? FetchError;
+    public ObservableEvent<FetchErrorEventArgs> OnFetchError => this.onFetchErrorEvent;
 
     /// <summary>
-    /// Occurs when network response has started.
+    /// Gets an observable event that notifies when network response has started.
     /// </summary>
-    public event EventHandler<ResponseStartedEventArgs>? ResponseStarted;
+    public ObservableEvent<ResponseStartedEventArgs> OnResponseStarted => this.onResponseStartedEvent;
 
     /// <summary>
-    /// Occurs when network response has completed.
+    /// Gets an observable event that notifies when network response has completed.
     /// </summary>
-    public event EventHandler<ResponseCompletedEventArgs>? ResponseCompleted;
+    public ObservableEvent<ResponseCompletedEventArgs> OnResponseCompleted => this.onResponseCompletedEvent;
 
     /// <summary>
     /// Gets the module name.
@@ -130,48 +136,33 @@ public sealed class NetworkModule : Module
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
-    private void OnAuthRequired(EventInfo<AuthRequiredEventArgs> eventData)
+    private async Task OnAuthRequiredAsync(EventInfo<AuthRequiredEventArgs> eventData)
     {
-        if (this.AuthRequired is not null)
-        {
-            AuthRequiredEventArgs eventArgs = eventData.ToEventArgs<AuthRequiredEventArgs>();
-            this.AuthRequired(this, eventArgs);
-        }
+        AuthRequiredEventArgs eventArgs = eventData.ToEventArgs<AuthRequiredEventArgs>();
+        await this.onAuthRequiredEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnBeforeRequestSent(EventInfo<BeforeRequestSentEventArgs> eventData)
+    private async Task OnBeforeRequestSentAsync(EventInfo<BeforeRequestSentEventArgs> eventData)
     {
-        if (this.BeforeRequestSent is not null)
-        {
-            BeforeRequestSentEventArgs eventArgs = eventData.ToEventArgs<BeforeRequestSentEventArgs>();
-            this.BeforeRequestSent(this, eventArgs);
-        }
+        BeforeRequestSentEventArgs eventArgs = eventData.ToEventArgs<BeforeRequestSentEventArgs>();
+        await this.onBeforeRequestSentEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnFetchError(EventInfo<FetchErrorEventArgs> eventData)
+    private async Task OnFetchErrorAsync(EventInfo<FetchErrorEventArgs> eventData)
     {
-        if (this.FetchError is not null)
-        {
-            FetchErrorEventArgs eventArgs = eventData.ToEventArgs<FetchErrorEventArgs>();
-            this.FetchError(this, eventArgs);
-        }
+        FetchErrorEventArgs eventArgs = eventData.ToEventArgs<FetchErrorEventArgs>();
+        await this.onFetchErrorEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnResponseStarted(EventInfo<ResponseStartedEventArgs> eventData)
+    private async Task OnResponseStartedAsync(EventInfo<ResponseStartedEventArgs> eventData)
     {
-        if (this.ResponseStarted is not null)
-        {
-            ResponseStartedEventArgs eventArgs = eventData.ToEventArgs<ResponseStartedEventArgs>();
-            this.ResponseStarted(this, eventArgs);
-        }
+        ResponseStartedEventArgs eventArgs = eventData.ToEventArgs<ResponseStartedEventArgs>();
+        await this.onResponseStartedEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private void OnResponseCompleted(EventInfo<ResponseCompletedEventArgs> eventData)
+    private async Task OnResponseCompletedAsync(EventInfo<ResponseCompletedEventArgs> eventData)
     {
-        if (this.ResponseCompleted is not null)
-        {
-            ResponseCompletedEventArgs eventArgs = eventData.ToEventArgs<ResponseCompletedEventArgs>();
-            this.ResponseCompleted(this, eventArgs);
-        }
+        ResponseCompletedEventArgs eventArgs = eventData.ToEventArgs<ResponseCompletedEventArgs>();
+        await this.onResponseCompletedEvent.NotifyObserversAsync(eventArgs);
     }
 }

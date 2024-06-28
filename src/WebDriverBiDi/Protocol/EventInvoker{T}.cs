@@ -11,26 +11,27 @@ namespace WebDriverBiDi.Protocol;
 /// <typeparam name="T">The type of the data for the event.</typeparam>
 public class EventInvoker<T> : EventInvoker
 {
-    private readonly Action<EventInfo<T>> invokerDelegate;
+    private readonly Func<EventInfo<T>, Task> asyncInvokerDelegate;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EventInvoker{T}"/> class.
     /// </summary>
-    /// <param name="invokerDelegate">The delegate to use when invoking the event.</param>
-    public EventInvoker(Action<EventInfo<T>> invokerDelegate)
+    /// <param name="asyncInvokerDelegate">The asynchronous delegate to use when invoking the event.</param>
+    public EventInvoker(Func<EventInfo<T>, Task> asyncInvokerDelegate)
     {
-        this.invokerDelegate = invokerDelegate;
+        this.asyncInvokerDelegate = asyncInvokerDelegate;
     }
 
     /// <summary>
-    /// Invokes the event.
+    /// Asynchronously invokes the event.
     /// </summary>
     /// <param name="eventData">The data to use when invoking the event.</param>
     /// <param name="additionalData">Additional data passed to the event for invocation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the type of the event data is not the type associated with this event data class.
     /// </exception>
-    public override void InvokeEvent(object eventData, ReceivedDataDictionary additionalData)
+    public override async Task InvokeEventAsync(object eventData, ReceivedDataDictionary additionalData)
     {
         if (eventData is not T typedEventData)
         {
@@ -38,6 +39,6 @@ public class EventInvoker<T> : EventInvoker
         }
 
         EventInfo<T> invocationData = new(typedEventData, additionalData);
-        this.invokerDelegate(invocationData);
+        await this.asyncInvokerDelegate(invocationData);
     }
 }

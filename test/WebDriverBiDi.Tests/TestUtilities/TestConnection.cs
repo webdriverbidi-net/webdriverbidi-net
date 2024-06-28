@@ -19,14 +19,14 @@ public class TestConnection : Connection
 
     public event EventHandler<TestConnectionDataSentEventArgs>? DataSendComplete;
 
-    public void RaiseDataReceivedEvent(string data)
+    public async Task RaiseDataReceivedEventAsync(string data)
     {
-        this.OnDataReceived(new ConnectionDataReceivedEventArgs(data));
+        await this.OnDataReceived.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(data));
     }
 
-    public void RaiseLogMessageEvent(string message, WebDriverBiDiLogLevel level)
+    public async Task RaiseLogMessageEventAsync(string message, WebDriverBiDiLogLevel level)
     {
-        this.OnLogMessage(new LogMessageEventArgs(message, level, "TestConnection"));
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "TestConnection"));
     }
 
     public override Task StartAsync(string url)

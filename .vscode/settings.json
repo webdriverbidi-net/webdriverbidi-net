@@ -14,6 +14,7 @@
         "prefs",
         "stylesheet",
         "typedarray",
+        "unobserve",
         "weakmap",
         "weakset",
         "webdriverbidi",

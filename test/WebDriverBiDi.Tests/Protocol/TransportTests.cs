@@ -43,10 +43,10 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(() => 
+        _ = Task.Run(async () => 
         {
-            Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
         });
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
         var actualResult = command.Result;
@@ -69,10 +69,10 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(() => 
+        _ = Task.Run(async () => 
         {
-            Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" }, ""extraDataName"": ""extraDataValue"" }");
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" }, ""extraDataName"": ""extraDataValue"" }");
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         var actualResult = command.Result;
@@ -100,10 +100,10 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(() => 
+        _ = Task.Run(async () => 
         {
-            Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         var actualResult = command.Result;
@@ -131,10 +131,10 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(() => 
+        _ = Task.Run(async () => 
         {
-            Task.Delay(TimeSpan.FromMilliseconds(50));
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
@@ -178,13 +178,15 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.EventReceived += (object? sender, EventReceivedEventArgs e) => {
+        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        {
             receivedName = e.EventName;
             receivedData = e.EventData;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.Multiple(() =>
         {
@@ -203,12 +205,13 @@ public class TransportTests
 
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.ErrorEventReceived += (object? sender, ErrorReceivedEventArgs e) => {
+        transport.OnErrorEventReceived.AddHandler((ErrorReceivedEventArgs e) => {
             receivedData = e.ErrorData;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }");
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
         Assert.That(receivedData, Is.TypeOf<ErrorResult>());
@@ -228,16 +231,18 @@ public class TransportTests
 
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (object? sender, UnknownMessageReceivedEventArgs e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             receivedData = e.Message;
             syncEvent.Set();
-        };
-        transport.ErrorEventReceived += (object? sender, ErrorReceivedEventArgs e) =>
+            return Task.CompletedTask;
+        });
+        transport.OnErrorEventReceived.AddHandler((ErrorReceivedEventArgs e) =>
         {
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": null }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": null }");
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -248,12 +253,13 @@ public class TransportTests
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.LogMessage += (sender, e) =>
+        transport.OnLogMessage.AddHandler((e) =>
         {
             logs.Add(e);
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseLogMessageEvent("test log message", WebDriverBiDiLogLevel.Warn);
+        await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
         Assert.That(logs, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
@@ -269,13 +275,18 @@ public class TransportTests
         List<LogMessageEventArgs> logs = new();
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.LogMessage += (sender, e) =>
+        transport.OnLogMessage.AddHandler((e) =>
         {
-            logs.Add(e);
-            syncEvent.Set();
-        };
+            if (e.ComponentName == "Transport")
+            {
+                logs.Add(e);
+                syncEvent.Set();
+            }
+
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent("{ { }");
+        await connection.RaiseDataReceivedEventAsync("{ { }");
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -294,13 +305,14 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -317,13 +329,14 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -340,13 +353,14 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -363,13 +377,14 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -386,13 +401,14 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -410,12 +426,13 @@ public class TransportTests
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             signaler.Signal();
-        };
-        transport.LogMessage += (sender, e) =>
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddHandler((e) =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -423,9 +440,10 @@ public class TransportTests
             }
 
             signaler.Signal();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -446,12 +464,13 @@ public class TransportTests
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             signaler.Signal();
-        };
-        transport.LogMessage += (sender, e) =>
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddHandler((e) =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -459,9 +478,10 @@ public class TransportTests
             }
 
             signaler.Signal();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -482,12 +502,13 @@ public class TransportTests
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             signaler.Signal();
-        };
-        transport.LogMessage += (sender, e) =>
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddHandler((e) =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -495,9 +516,10 @@ public class TransportTests
             }
 
             signaler.Signal();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -517,13 +539,14 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -540,13 +563,14 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -563,13 +587,14 @@ public class TransportTests
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
         Transport transport = new(connection);
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -588,12 +613,13 @@ public class TransportTests
         TestConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.UnknownMessageReceived += (sender, e) =>
+        transport.OnUnknownMessageReceived.AddHandler((UnknownMessageReceivedEventArgs e) =>
         {
             loggedEvent = e.Message;
             signaler.Signal();
-        };
-        transport.LogMessage += (sender, e) =>
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddHandler((e) =>
         {
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
@@ -601,9 +627,10 @@ public class TransportTests
             }
 
             signaler.Signal();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(json);
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -658,13 +685,15 @@ public class TransportTests
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.EventReceived += (object? sender, EventReceivedEventArgs e) => {
+        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        {
             receivedName = e.EventName;
             receivedData = e.EventData;
             syncEvent.Set();
-        };
+            return Task.CompletedTask;
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         await transport.DisconnectAsync();
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
@@ -723,12 +752,13 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.EventReceived += (object? sender, EventReceivedEventArgs e) => {
+        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        {
             syncEvent.Set();
             throw new WebDriverBiDiException("This is an unexpected exception");
-        };
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("This is an unexpected exception"));
     }
@@ -745,7 +775,8 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.EventReceived += (object? sender, EventReceivedEventArgs e) => {
+        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
+        {
             try
             {
                 throw new WebDriverBiDiException("This is an unexpected exception");
@@ -754,12 +785,12 @@ public class TransportTests
             {
                 syncEvent.Set();
             }
-        };
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         syncEvent.Reset();
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<AggregateException>().With.Message.Contains("Normal shutdown").And.Property("InnerExceptions").Count.EqualTo(2).And.Property("InnerExceptions").All.InstanceOf<WebDriverBiDiException>().And.Message.Contains("This is an unexpected exception"));
     }
@@ -776,7 +807,7 @@ public class TransportTests
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.EventReceived += (object? sender, EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
         {
             try
             {
@@ -786,9 +817,9 @@ public class TransportTests
             {
                 syncEvent.Set();
             }
-        };
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
         string commandName = "module.command";
@@ -800,28 +831,18 @@ public class TransportTests
     public async Task TestCapturedExceptionsCanBeReset()
     {
         string receivedName = string.Empty;
-        ManualResetEvent syncEvent = new(false);
-
         TestConnection connection = new();
         Transport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
         };
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
-        transport.EventReceived += (object? sender, EventReceivedEventArgs e) =>
+        transport.OnEventReceived.AddHandler((EventReceivedEventArgs e) =>
         {
-            try
-            {
-                throw new WebDriverBiDiException("This is an unexpected exception");
-            }
-            finally
-            {
-                syncEvent.Set();
-            }
-        };
+            return Task.FromException(new WebDriverBiDiException("This is an unexpected exception"));
+        });
         await transport.ConnectAsync("ws:localhost");
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
-        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         await transport.DisconnectAsync();
 
         await transport.ConnectAsync("ws:localhost");

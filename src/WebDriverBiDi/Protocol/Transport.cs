@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Text.Json;
+using System.Threading.Channels;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
@@ -24,8 +25,20 @@ public class Transport
     private readonly Connection connection;
     private readonly Dictionary<string, Type> eventMessageTypes = new();
     private readonly UnhandledErrorCollection unhandledErrors = new();
+
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
+    private readonly ObservableEvent<UnknownMessageReceivedEventArgs> onUnknownMessageReceivedEvent = new();
+    private readonly ObservableEvent<ErrorReceivedEventArgs> onErrorReceivedEvent = new();
+    private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new();
+
+    private Channel<string> queue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions()
+    {
+        SingleReader = true,
+        SingleWriter = true,
+    });
+
     private PendingCommandCollection pendingCommands = new();
-    private Dispatcher<string> incomingMessageQueue = new();
+    private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
     private bool isConnected;
     private string terminationReason = "Normal shutdown";
@@ -45,30 +58,30 @@ public class Transport
     public Transport(Connection connection)
     {
         this.connection = connection;
-        this.incomingMessageQueue.ItemDispatched += this.OnIncomingMessageDispatched;
-        connection.DataReceived += this.OnConnectionDataReceived;
-        connection.LogMessage += this.OnConnectionLogMessage;
+        connection.OnDataReceived.AddHandler(this.OnConnectionDataReceivedAsync);
+        connection.OnLogMessage.AddHandler(this.OnConnectionLogMessageAsync);
     }
 
     /// <summary>
-    /// Occurs when a message is logged.
+    /// Gets an observable event that notifies when an event is received from the protocol.
     /// </summary>
-    public event EventHandler<LogMessageEventArgs>? LogMessage;
+    public ObservableEvent<EventReceivedEventArgs> OnEventReceived => this.onEventReceivedEvent;
 
     /// <summary>
-    /// Occurs when an event is received from the protocol.
+    /// Gets an observable event that notifies when an error is received from the protocol
+    /// that is not the result of a command execution.
     /// </summary>
-    public event EventHandler<EventReceivedEventArgs>? EventReceived;
+    public ObservableEvent<ErrorReceivedEventArgs> OnErrorEventReceived => this.onErrorReceivedEvent;
 
     /// <summary>
-    /// Occurs when an error is received from the protocol that is not the result of a command execution.
+    /// Gets an observable event that notifies when an unknown message is received from the protocol.
     /// </summary>
-    public event EventHandler<ErrorReceivedEventArgs>? ErrorEventReceived;
+    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived => this.onUnknownMessageReceivedEvent;
 
     /// <summary>
-    /// Occurs when an unknown message is received from the protocol.
+    /// Gets an observable event that notifies when a log message is written.
     /// </summary>
-    public event EventHandler<UnknownMessageReceivedEventArgs>? UnknownMessageReceived;
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
@@ -123,16 +136,17 @@ public class Transport
             this.pendingCommands = new PendingCommandCollection();
         }
 
-        if (!this.incomingMessageQueue.IsDispatching)
+        this.queue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions()
         {
-            this.incomingMessageQueue = new Dispatcher<string>();
-            this.incomingMessageQueue.ItemDispatched += this.OnIncomingMessageDispatched;
-        }
+            SingleReader = true,
+            SingleWriter = true,
+        });
 
         this.unhandledErrors.ClearUnhandledErrors();
 
         // Reset the command counter for each connection.
         this.nextCommandId = 0;
+        this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
         await this.connection.StartAsync(websocketUri).ConfigureAwait(false);
         this.isConnected = true;
     }
@@ -190,21 +204,33 @@ public class Transport
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected virtual async Task DisconnectAsync(bool throwCollectedExceptions)
     {
-        // Steps in the disconnect process:
-        // 1. Close the pending command collection to further addition of commands.
-        // 2. Stop the connection from receiving further communication traffic.
-        // 3. Stop dispatching incoming messages. Note that the dispatcher will
-        //    attempt to dispatch any pending messages already in the queue.
-        //    Dispatching pending command responses in the queue and processing those
-        //    responses will also remove those commands from the pending command
-        //    collection. Likewise, incoming event message will be processed by
-        //    their event handlers, if any.
-        // 4. Clear the pending command collection. This will also cancel any tasks
-        //    associated with the remaining pending commands.
+        // Close the pending command collection to further addition of commands,
+        // and stop the connection from receiving further communication traffic.
         this.pendingCommands.Close();
         await this.connection.StopAsync().ConfigureAwait(false);
-        this.incomingMessageQueue.StopDispatching();
+
+        // Mark the incoming message queue as complete for writing, indicating
+        // no further messages will be written to the queue. Existing messages
+        // currently in the queue, however should still be processed. Then,
+        // wait for the incoming message queue to consume the remaining messages
+        // already in the queue. Note that having all items consumed from the
+        // queue does not imply that processing of all items has completed; that
+        // must be awaited separately.
+        this.queue.Writer.Complete();
+        await this.queue.Reader.Completion;
+
+        // Clear the pending command collection. This will also cancel any tasks
+        // associated with the remaining pending commands. Then wait for the
+        // message processor to complete processing of the messages received from
+        // the message queue.
+        // CONSIDER: This may introduce a hang during shutdown, if an in-process
+        // event handler hangs. It might be worthwhile to introduce a timeout
+        // for this use case if it becomes a problem reported by users.
         this.pendingCommands.Clear();
+        await this.messageQueueProcessingTask;
+
+        // Finally, mark the transport as disconnected, and throw collected
+        // exceptions if the user has specified that behavior.
         this.isConnected = false;
         if (throwCollectedExceptions && this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect))
         {
@@ -212,32 +238,11 @@ public class Transport
         }
     }
 
-    /// <summary>
-    /// Raises the LogMessage event.
-    /// </summary>
-    /// <param name="sender">The object raising the event.</param>
-    /// <param name="e">The EventArgs containing information about the event.</param>
-    protected virtual void OnLogMessage(object? sender, LogMessageEventArgs e)
-    {
-        if (this.LogMessage is not null)
-        {
-            this.LogMessage(this, e);
-        }
-    }
-
-    /// <summary>
-    /// Raises the EventReceived event.
-    /// </summary>
-    /// <param name="sender">The object raising the event.</param>
-    /// <param name="e">The EventArgs containing information about the event.</param>
-    protected virtual void OnProtocolEventReceived(object? sender, EventReceivedEventArgs e)
+    private async Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)
     {
         try
         {
-            if (this.EventReceived is not null)
-            {
-                this.EventReceived(this, e);
-            }
+            await this.onEventReceivedEvent.NotifyObserversAsync(e);
         }
         catch (Exception ex)
         {
@@ -245,43 +250,38 @@ public class Transport
         }
     }
 
-    /// <summary>
-    /// Raises the ErrorEventReceived event.
-    /// </summary>
-    /// <param name="sender">The object raising the event.</param>
-    /// <param name="e">The EventArgs containing information about the event.</param>
-    protected virtual void OnProtocolErrorEventReceived(object? sender, ErrorReceivedEventArgs e)
+    private async Task OnProtocolErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        if (this.ErrorEventReceived is not null)
+        await this.onErrorReceivedEvent.NotifyObserversAsync(e);
+    }
+
+    private async Task OnProtocolUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
+    {
+        await this.onUnknownMessageReceivedEvent.NotifyObserversAsync(e);
+    }
+
+    private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
+    {
+        await this.queue.Writer.WriteAsync(e.Data);
+    }
+
+    private async Task ReadIncomingMessages()
+    {
+        // In theory, we could accomplish this with an `await foreach` using
+        // IAsyncEnumerable, but this would require additional dependencies,
+        // which is challenging. Initial experiments has shown that simply
+        // adding a reference to the Microsoft.Bcl.AsyncInterfaces assembly
+        // is not enough by itself to enable compilation using that construct.
+        while (await this.queue.Reader.WaitToReadAsync().ConfigureAwait(false))
         {
-            this.ErrorEventReceived(this, e);
+            while (this.queue.Reader.TryRead(out string? incomingMessage))
+            {
+                await this.ProcessMessageAsync(incomingMessage);
+            }
         }
     }
 
-    /// <summary>
-    /// Raises the UnknownMessageReceived event.
-    /// </summary>
-    /// <param name="sender">The object raising the event.</param>
-    /// <param name="e">The EventArgs containing information about the event.</param>
-    protected virtual void OnProtocolUnknownMessageReceived(object? sender, UnknownMessageReceivedEventArgs e)
-    {
-        if (this.UnknownMessageReceived is not null)
-        {
-            this.UnknownMessageReceived(this, e);
-        }
-    }
-
-    private void OnConnectionDataReceived(object? sender, ConnectionDataReceivedEventArgs e)
-    {
-        this.incomingMessageQueue.TryDispatch(e.Data);
-    }
-
-    private void OnIncomingMessageDispatched(object sender, ItemDispatchedEventArgs<string> e)
-    {
-        this.ProcessMessage(e.DispatchedItem);
-    }
-
-    private void ProcessMessage(string messageData)
+    private async Task ProcessMessageAsync(string messageData)
     {
         bool isProcessed = false;
         JsonDocument? message = null;
@@ -291,7 +291,7 @@ public class Transport
         }
         catch (JsonException e)
         {
-            this.Log($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error);
+            await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error);
             this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, e, $"Invalid JSON in protocol message: {messageData}");
         }
 
@@ -303,24 +303,24 @@ public class Transport
                 if (messageType == "success")
                 {
                     isProcessed = this.ProcessCommandResponseMessage(message.RootElement);
-                    this.Log($"Command response message processed {message}", WebDriverBiDiLogLevel.Trace);
+                    await this.LogAsync($"Command response message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
                 else if (messageType == "error")
                 {
-                    isProcessed = this.ProcessErrorMessage(message.RootElement);
-                    this.Log($"Error response message processed {message}", WebDriverBiDiLogLevel.Trace);
+                    isProcessed = await this.ProcessErrorMessageAsync(message.RootElement);
+                    await this.LogAsync($"Error response message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
                 else if (messageType == "event")
                 {
-                    isProcessed = this.ProcessEventMessage(message.RootElement);
-                    this.Log($"Event message processed {message}", WebDriverBiDiLogLevel.Trace);
+                    isProcessed = await this.ProcessEventMessageAsync(message.RootElement);
+                    await this.LogAsync($"Event message processed {message}", WebDriverBiDiLogLevel.Trace);
                 }
             }
         }
 
         if (!isProcessed)
         {
-            this.OnProtocolUnknownMessageReceived(this, new UnknownMessageReceivedEventArgs(messageData));
+            await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(messageData));
             this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {messageData}"), "Unknown message from connection");
         }
     }
@@ -352,7 +352,7 @@ public class Transport
         return false;
     }
 
-    private bool ProcessErrorMessage(JsonElement message)
+    private async Task<bool> ProcessErrorMessageAsync(JsonElement message)
     {
         try
         {
@@ -369,7 +369,7 @@ public class Transport
                 }
                 else
                 {
-                    this.OnProtocolErrorEventReceived(this, new ErrorReceivedEventArgs(result));
+                    await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result));
                     this.CaptureUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiException($"Received '{result.ErrorType}' error with no command ID: {result.ErrorMessage}"), "Received error with no command ID");
                 }
             }
@@ -378,14 +378,14 @@ public class Transport
         }
         catch (Exception ex)
         {
-            this.Log($"Unexpected error parsing error JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
+            await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
             this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in protocol error response: {message}");
         }
 
         return false;
     }
 
-    private bool ProcessEventMessage(JsonElement message)
+    private async Task<bool> ProcessEventMessageAsync(JsonElement message)
     {
         if (message.TryGetProperty("method", out JsonElement eventNameToken) && eventNameToken.ValueKind == JsonValueKind.String)
         {
@@ -399,12 +399,12 @@ public class Transport
                     // Deserialize will correctly throw if the type does not match, meaning
                     // the eventMessageData variable can never be null.
                     EventMessage? eventMessageData = message.Deserialize(eventMessageType, this.options) as EventMessage;
-                    this.OnProtocolEventReceived(this, new EventReceivedEventArgs(eventMessageData!));
+                    await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData!));
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    this.Log($"Unexpected error parsing event JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
+                    await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
                     this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in event message: {message}");
                 }
             }
@@ -441,14 +441,14 @@ public class Transport
         }
     }
 
-    private void Log(string message, WebDriverBiDiLogLevel level)
+    private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        this.OnLogMessage(this, new LogMessageEventArgs(message, level, "Transport"));
+        await this.onLogMessageEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Transport"));
     }
 
-    private void OnConnectionLogMessage(object? sender, LogMessageEventArgs e)
+    private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
     {
-        this.OnLogMessage(sender, e);
+        await this.onLogMessageEvent.NotifyObserversAsync(e);
     }
 
     private Exception CreateTerminationException()

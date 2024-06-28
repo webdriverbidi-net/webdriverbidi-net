@@ -80,10 +80,10 @@ public class NetworkModuleTests
     public async Task TestExecuteAddInterceptCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""intercept"": ""myInterceptId"" } }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -108,10 +108,10 @@ public class NetworkModuleTests
     public async Task TestExecuteContinueRequestCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -130,10 +130,10 @@ public class NetworkModuleTests
     public async Task TestExecuteContinueResponseCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -152,10 +152,10 @@ public class NetworkModuleTests
     public async Task TestExecuteContinueWithAuthCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -178,10 +178,10 @@ public class NetworkModuleTests
     public async Task TestExecuteFailRequestCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -200,10 +200,10 @@ public class NetworkModuleTests
     public async Task TestExecuteProvideResponseCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -222,10 +222,10 @@ public class NetworkModuleTests
     public async Task TestExecuteRemoveInterceptCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
-            connection.RaiseDataReceivedEvent(responseJson);
+            await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -253,7 +253,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.AuthRequired += (object? obj, AuthRequiredEventArgs e) =>
+        module.OnAuthRequired.AddHandler((AuthRequiredEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -299,7 +299,7 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
              });
             syncEvent.Set();
-        };
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"",
@@ -314,7 +314,7 @@ public class NetworkModuleTests
         ""response"": {responseDataJson}
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -332,7 +332,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.BeforeRequestSent += (object? obj, BeforeRequestSentEventArgs e) =>
+        module.OnBeforeRequestSent.AddHandler((BeforeRequestSentEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -365,7 +365,7 @@ public class NetworkModuleTests
                 Assert.That(e.Initiator.Type, Is.EqualTo(InitiatorType.Parser));
             });
             syncEvent.Set();
-        };
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"", 
@@ -382,7 +382,7 @@ public class NetworkModuleTests
         }}
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -400,7 +400,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.FetchError += (object? obj, FetchErrorEventArgs e) =>
+        module.OnFetchError.AddHandler((FetchErrorEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -433,7 +433,7 @@ public class NetworkModuleTests
                 Assert.That(e.ErrorText, Is.EqualTo("An error occurred"));
             });
             syncEvent.Set();
-        };
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"", 
@@ -448,7 +448,7 @@ public class NetworkModuleTests
         ""errorText"": ""An error occurred""
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -466,7 +466,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.ResponseStarted += (object? obj, ResponseStartedEventArgs e) =>
+        module.OnResponseStarted.AddHandler((ResponseStartedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -512,7 +512,7 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
             });
             syncEvent.Set();
-        };
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"", 
@@ -527,7 +527,7 @@ public class NetworkModuleTests
         ""response"": {responseDataJson}
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }
@@ -545,7 +545,7 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         ManualResetEvent syncEvent = new(false);
-        module.ResponseCompleted += (object? obj, ResponseCompletedEventArgs e) =>
+        module.OnResponseCompleted.AddHandler((ResponseCompletedEventArgs e) =>
         {
             Assert.Multiple(() =>
             {
@@ -591,7 +591,7 @@ public class NetworkModuleTests
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
             });
             syncEvent.Set();
-        };
+        });
 
         string eventJson = $@"{{
     ""type"": ""event"", 
@@ -605,7 +605,7 @@ public class NetworkModuleTests
         ""response"": {responseDataJson}
     }}
 }}";
-        connection.RaiseDataReceivedEvent(eventJson);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
     }

@@ -20,9 +20,9 @@ public class BiDiDriverTests
     public async Task CanExecuteCommand()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
+        connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""command result value"" } }");
+            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""command result value"" } }");
         };
 
         Transport transport = new(connection);
@@ -39,9 +39,9 @@ public class BiDiDriverTests
     public async Task CanExecuteCommandWithError()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
+        connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         };
 
         Transport transport = new(connection);
@@ -57,9 +57,9 @@ public class BiDiDriverTests
     public async Task CanExecuteCommandThatReturnsThrownExceptionThrows()
     {
         TestConnection connection = new();
-        connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
+        connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            connection.RaiseDataReceivedEvent(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
+            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
         };
 
         Transport transport = new(connection);
@@ -79,14 +79,14 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.UnexpectedErrorReceived += (object? sender, ErrorReceivedEventArgs e) =>
+        driver.OnUnexpectedErrorReceived.AddHandler((ErrorReceivedEventArgs e) =>
         {
             response = e.ErrorData;
             syncEvent.Set();
-        };
+        });
         await driver.StartAsync("ws://localhost:5555");
 
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
 
         Assert.That(response, Is.Not.Null);
@@ -109,15 +109,15 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
-        driver.EventReceived += (sender, e) =>
+        driver.OnEventReceived.AddHandler((e) =>
         {
             receivedEvent = e.EventName;
             receivedData = e.EventData;
             syncEvent.Set();
-        };
+        });
         await driver.StartAsync("ws://localhost:5555");
 
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -144,15 +144,15 @@ public class BiDiDriverTests
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
-        driver.EventReceived += (sender, e) =>
+        driver.OnEventReceived.AddHandler((e) =>
         {
             receivedEvent = e.EventName;
             receivedData = e.EventData;
             syncEvent.Set();
-        };
+        });
         await driver.StartAsync("ws://localhost:5555");
 
-        connection.RaiseDataReceivedEvent(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
         await driver.StopAsync();
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
@@ -174,15 +174,15 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.UnknownMessageReceived += (sender, e) =>
+        driver.OnUnknownMessageReceived.AddHandler((e) =>
         {
             receivedMessage = e.Message;
             syncEvent.Set();
-        };
+        });
         await driver.StartAsync("ws://localhost:5555");
 
         string serialized = @"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }";
-        connection.RaiseDataReceivedEvent(serialized);
+        await connection.RaiseDataReceivedEventAsync(serialized);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.That(receivedMessage, Is.EqualTo(serialized));
     }
@@ -196,15 +196,15 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.UnknownMessageReceived += (sender, e) =>
+        driver.OnUnknownMessageReceived.AddHandler((e) =>
         {
             receivedMessage = e.Message;
             syncEvent.Set();
-        };
+        });
         await driver.StartAsync("ws://localhost:5555");
 
         string serialized = @"{ ""someProperty"": ""someValue"", ""params"": { ""thisMessage"": ""matches no protocol message"" } }";
-        connection.RaiseDataReceivedEvent(serialized);
+        await connection.RaiseDataReceivedEventAsync(serialized);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.That(receivedMessage, Is.EqualTo(serialized));
     }
@@ -245,12 +245,12 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(100), transport);
-        driver.LogMessage += (sender, e) =>
+        driver.OnLogMessage.AddHandler((e) =>
         {
             logs.Add(e);
-        };
+        });
         await driver.StartAsync("ws:localhost");
-        connection.RaiseLogMessageEvent("test log message", WebDriverBiDiLogLevel.Warn);
+        await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
         Assert.That(logs, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
@@ -382,22 +382,22 @@ public class BiDiDriverTests
             connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
             ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
-            driver.LogMessage += (sender, e) =>
+            driver.OnLogMessage.AddHandler((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)
                 {
                     driverLog.Add(e.Message);
                     logSyncEvent.Set();
                 }
-            };
+            });
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
-            driver.UnknownMessageReceived += (sender, e) =>
+            driver.OnUnknownMessageReceived.AddHandler((e) =>
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();
-            };
+            });
 
             // This payload omits the required "timestamp" field, which should cause an exception
             // in parsing.
@@ -439,28 +439,28 @@ public class BiDiDriverTests
             await driver.StartAsync($"ws://localhost:{server.Port}");
             connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
-            driver.BrowsingContext.Load += (sender, e) =>
+            driver.BrowsingContext.OnLoad.AddHandler((e) =>
             {
-            };
+            });
 
             ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
-            driver.LogMessage += (sender, e) =>
+            driver.OnLogMessage.AddHandler((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)
                 {
                     driverLog.Add(e.Message);
                     logSyncEvent.Set();
                 }
-            };
+            });
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
-            driver.UnknownMessageReceived += (sender, e) =>
+            driver.OnUnknownMessageReceived.AddHandler((e) =>
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();
-            };
+            });
 
             // This payload uses an object for the error field, which should cause an exception
             // in parsing.
@@ -504,22 +504,22 @@ public class BiDiDriverTests
 
             ManualResetEvent logSyncEvent = new(false);
             List<string> driverLog = new();
-            driver.LogMessage += (sender, e) =>
+            driver.OnLogMessage.AddHandler((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)
                 {
                     driverLog.Add(e.Message);
                     logSyncEvent.Set();
                 }
-            };
+            });
 
             ManualResetEvent unknownMessageSyncEvent = new(false);
             string unknownMessage = string.Empty;
-            driver.UnknownMessageReceived += (sender, e) =>
+            driver.OnUnknownMessageReceived.AddHandler((e) =>
             {
                 unknownMessage = e.Message;
                 unknownMessageSyncEvent.Set();
-            };
+            });
 
             // This payload uses unparsable JSON, which should cause an exception
             // in parsing.
@@ -546,7 +546,7 @@ public class BiDiDriverTests
         TestConnection connection = new();
         connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 DateTime start = DateTime.Now;
                 if (e.SentCommandName!.Contains("delay"))
@@ -555,7 +555,7 @@ public class BiDiDriverTests
                 }
 
                 TimeSpan elapsed = DateTime.Now - start;
-                connection.RaiseDataReceivedEvent(@$"{{ ""type"": ""success"", ""id"": {e.SentCommandId}, ""result"": {{ ""value"": ""command result value for {e.SentCommandName}"", ""elapsed"": {elapsed.TotalMilliseconds} }} }}");
+                await connection.RaiseDataReceivedEventAsync(@$"{{ ""type"": ""success"", ""id"": {e.SentCommandId}, ""result"": {{ ""value"": ""command result value for {e.SentCommandName}"", ""elapsed"": {elapsed.TotalMilliseconds} }} }}");
             });
        };
 
