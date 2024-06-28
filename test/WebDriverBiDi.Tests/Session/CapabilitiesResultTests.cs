@@ -246,6 +246,30 @@ public class CapabilitiesResultTests
     }
 
     [Test]
+    public void TestCanDeserializeWithNoUnhandledPromptBehavior()
+    {
+        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""setWindowRect"": true, ""unhandledPromptBehavior"": { } }";
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result!.UnhandledPromptBehavior, Is.Not.Null);
+            UserPromptHandlerResult userPromptHandler = result!.UnhandledPromptBehavior!;
+            Assert.That(userPromptHandler.Default, Is.Null);
+            Assert.That(userPromptHandler.Alert, Is.Null);
+            Assert.That(userPromptHandler.Confirm, Is.Null);
+            Assert.That(userPromptHandler.Prompt, Is.Null);
+            Assert.That(userPromptHandler.BeforeUnload, Is.Null);
+            Assert.That(result.SetWindowRect, Is.EqualTo(true));
+        });
+    }
+
+    [Test]
     public void TestCanDeserializeWithPartialUnhandledPromptBehavior()
     {
         string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""setWindowRect"": true, ""unhandledPromptBehavior"": { ""default"": ""accept"" } }";

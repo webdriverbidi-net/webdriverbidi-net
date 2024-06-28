@@ -10,13 +10,13 @@ namespace WebDriverBiDi.Session;
 /// </summary>
 public class UserPromptHandlerResult
 {
-    private UserPromptHandler? userPromptHandler;
+    private UserPromptHandler userPromptHandler;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserPromptHandlerResult"/> class.
     /// </summary>
     /// <param name="userPromptHandler">The <see cref="UserPromptHandler"/> to use in the result.</param>
-    internal UserPromptHandlerResult(UserPromptHandler? userPromptHandler)
+    internal UserPromptHandlerResult(UserPromptHandler userPromptHandler)
     {
         this.userPromptHandler = userPromptHandler;
     }
@@ -24,25 +24,25 @@ public class UserPromptHandlerResult
     /// <summary>
     /// Gets the type of prompt handler for user prompts for which a handler type has not been explicitly set.
     /// </summary>
-    public UserPromptHandlerType? Default { get => this.userPromptHandler?.Default; }
+    public UserPromptHandlerType? Default { get => this.userPromptHandler.Default; }
 
     /// <summary>
     /// Gets the type of prompt handler for alert user prompts.
     /// </summary>
-    public UserPromptHandlerType? Alert { get => this.userPromptHandler?.Alert; }
+    public UserPromptHandlerType? Alert { get => this.userPromptHandler.Alert; }
 
     /// <summary>
     /// Gets the type of prompt handler for confirm user prompts.
     /// </summary>
-    public UserPromptHandlerType? Confirm { get => this.userPromptHandler?.Confirm; }
+    public UserPromptHandlerType? Confirm { get => this.userPromptHandler.Confirm; }
 
     /// <summary>
     /// Gets the type of prompt handler for prompt user prompts.
     /// </summary>
-    public UserPromptHandlerType? Prompt { get => this.userPromptHandler?.Prompt; }
+    public UserPromptHandlerType? Prompt { get => this.userPromptHandler.Prompt; }
 
     /// <summary>
     /// Gets the type of prompt handler for beforeUnload user prompts.
     /// </summary>
-    public UserPromptHandlerType? BeforeUnload { get => this.userPromptHandler?.BeforeUnload; }
+    public UserPromptHandlerType? BeforeUnload { get => this.userPromptHandler.BeforeUnload; }
 }
