@@ -13,7 +13,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -35,7 +34,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""data"": ""encodedScreenshotData"" } }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -58,7 +56,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -80,7 +77,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""context"": ""myContext"" } }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -131,7 +127,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -153,7 +148,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""nodes"": [{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }] } }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -175,7 +169,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -202,7 +195,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""data"": ""encodedPdf"" } }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -225,7 +217,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""navigation"": ""myNavigationId"", ""url"": ""https://example.com"" } }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -252,7 +243,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
@@ -274,7 +264,6 @@ public class BrowsingContextModuleTests
         {
             string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
             await connection.RaiseDataReceivedEventAsync(responseJson);
-            //connection.RaiseDataReceivedEvent(responseJson);
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
