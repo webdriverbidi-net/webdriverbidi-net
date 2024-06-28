@@ -14,7 +14,7 @@ public class GetTreeCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""contexts"": [{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""userContext"": ""default"", ""children"": [] }] }";
+        string json = @"{ ""contexts"": [{ ""context"": ""myContextId"", ""url"": ""http://example.com"", ""originalOpener"": ""openerContext"", ""userContext"": ""default"", ""children"": [] }] }";
         GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.ContextTree, Has.Count.EqualTo(1));
