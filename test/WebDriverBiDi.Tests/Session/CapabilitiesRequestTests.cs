@@ -106,38 +106,30 @@ public class CapabilitiesRequestTests
     }
 
     [Test]
-    public void TestCanSerializeWithWebSocketUrlTrue()
+    public void TestCanSerializeWithUnhandledPromptBehavior()
     {
         CapabilitiesRequest capabilities = new()
         {
-            WebSocketUrl = true
+            UnhandledPromptBehavior = new UserPromptHandler()
+            {
+                Alert = UserPromptHandlerType.Accept
+            }
         };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(result, Contains.Key("webSocketUrl"));
-            Assert.That(result["webSocketUrl"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(result["webSocketUrl"]!.Value<bool>(), Is.True);
+            Assert.That(result, Contains.Key("unhandledPromptBehavior"));
+            Assert.That(result["unhandledPromptBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
         });
-    }
-
-    [Test]
-    public void TestCanSerializeWithWebSocketUrlFalse()
-    {
-        CapabilitiesRequest capabilities = new()
-        {
-            WebSocketUrl = false
-        };
-        string json = JsonSerializer.Serialize(capabilities);
-        JObject result = JObject.Parse(json);
-        Assert.That(result, Has.Count.EqualTo(1));
+        JObject? proxyObject = result["unhandledPromptBehavior"] as JObject;
         Assert.Multiple(() =>
         {
-            Assert.That(result, Contains.Key("webSocketUrl"));
-            Assert.That(result["webSocketUrl"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(result["webSocketUrl"]!.Value<bool>(), Is.False);
+            Assert.That(proxyObject, Has.Count.EqualTo(1));
+            Assert.That(proxyObject, Contains.Key("alert"));
+            Assert.That(proxyObject!["alert"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(proxyObject["alert"]!.Value<string>(), Is.EqualTo("accept"));
         });
     }
 

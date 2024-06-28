@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Session;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Object containing capabilities requested when starting a new session.
@@ -18,8 +17,8 @@ public class CapabilitiesRequest
     private string? browserName;
     private string? browserVersion;
     private string? platformName;
+    private UserPromptHandler? unhandledPromptBehavior;
     private ProxyConfiguration? proxy;
-    private bool? webSocketUrl;
 
     /// <summary>
     /// Gets or sets a value indicating whether the browser should accept insecure (self-signed) SSL certificates.
@@ -57,11 +56,11 @@ public class CapabilitiesRequest
     public ProxyConfiguration? Proxy { get => this.proxy; set => this.proxy = value; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether to initiate a WebDriverBiDi based session using a WebSocket.
+    /// Gets or sets the behavior of the session for handling user prompts.
     /// </summary>
-    [JsonPropertyName("webSocketUrl")]
+    [JsonPropertyName("unhandledPromptBehavior")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? WebSocketUrl { get => this.webSocketUrl; set => this.webSocketUrl = value; }
+    public UserPromptHandler? UnhandledPromptBehavior { get => this.unhandledPromptBehavior; set => this.unhandledPromptBehavior = value; }
 
     /// <summary>
     /// Gets the dictionary containing additional capabilities to use with this session.

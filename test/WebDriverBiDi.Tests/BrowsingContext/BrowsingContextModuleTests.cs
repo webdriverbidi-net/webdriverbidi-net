@@ -569,7 +569,7 @@ public class BrowsingContextModuleTests
             syncEvent.Set();
         };
 
-        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.userPromptOpened"", ""params"": { ""context"": ""myContext"", ""type"": ""confirm"", ""message"": ""my message text"" } }";
+        string eventJson = @"{ ""type"": ""event"", ""method"": ""browsingContext.userPromptOpened"", ""params"": { ""context"": ""myContext"", ""type"": ""confirm"", ""handler"": ""accept"", ""message"": ""my message text"" } }";
         connection.RaiseDataReceivedEvent(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
