@@ -21,9 +21,11 @@ public class CapabilitiesResult
     private string platformName = string.Empty;
     private bool setWindowRect = false;
     private string userAgent = string.Empty;
+    private UserPromptHandlerResult? unhandledPromptHandlerResult;
     private ProxyConfigurationResult? proxyResult;
     private string? webSocketUrl;
     private ProxyConfiguration? proxy;
+    private UserPromptHandler? unhandledPromptBehavior;
     private ReceivedDataDictionary additionalCapabilities = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
@@ -107,6 +109,23 @@ public class CapabilitiesResult
     }
 
     /// <summary>
+    /// Gets the behavior of the session for unhandled user prompts.
+    /// </summary>
+    [JsonIgnore]
+    public UserPromptHandlerResult? UnhandledPromptBehavior
+    {
+        get
+        {
+            if (this.unhandledPromptBehavior is not null && this.unhandledPromptHandlerResult is null)
+            {
+                this.unhandledPromptHandlerResult = new UserPromptHandlerResult(this.unhandledPromptBehavior);
+            }
+
+            return this.unhandledPromptHandlerResult;
+        }
+    }
+
+    /// <summary>
     /// Gets the proxy used by this session.
     /// </summary>
     [JsonIgnore]
@@ -114,7 +133,7 @@ public class CapabilitiesResult
     {
         get
         {
-            if (this.proxy is not null)
+            if (this.proxy is not null && this.proxyResult is null)
             {
                 switch (this.proxy.ProxyType)
                 {
@@ -146,6 +165,13 @@ public class CapabilitiesResult
     [JsonPropertyName("proxy")]
     [JsonInclude]
     internal ProxyConfiguration? SerializableProxy { get => this.proxy; set => this.proxy = value; }
+
+    /// <summary>
+    /// Gets or sets the behavior of the session for unhandled user prompts.
+    /// </summary>
+    [JsonPropertyName("unhandledPromptBehavior")]
+    [JsonInclude]
+    internal UserPromptHandler? SerializableUnhandledPromptBehavior { get => this.unhandledPromptBehavior; set => this.unhandledPromptBehavior = value; }
 
     /// <summary>
     /// Gets or sets the dictionary containing additional, un-enumerated capabilities for deserialization purposes.
