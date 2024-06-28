@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Object containing event data for the event raised when a user prompt opens.
@@ -13,6 +14,7 @@ using System.Text.Json.Serialization;
 public class UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId;
+    private UserPromptHandlerType handler;
     private UserPromptType promptType;
     private string message;
     private string? defaultValue;
@@ -38,6 +40,14 @@ public class UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonRequired]
     [JsonInclude]
     public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
+
+    /// <summary>
+    /// Gets the prompt handler type for this event.
+    /// </summary>
+    [JsonPropertyName("handler")]
+    [JsonRequired]
+    [JsonInclude]
+    public UserPromptHandlerType Handler { get => this.handler;  private set => this.handler = value; }
 
     /// <summary>
     /// Gets the type of user prompt opened.
