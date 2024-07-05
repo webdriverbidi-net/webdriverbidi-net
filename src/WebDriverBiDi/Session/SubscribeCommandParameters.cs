@@ -12,9 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SubscribeCommandParameters : CommandParameters<EmptyResult>
 {
-    private readonly List<string> eventList = new();
+    private readonly List<string> eventList = [];
 
-    private readonly List<string> contextList = new();
+    private readonly List<string> contextList = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class.
