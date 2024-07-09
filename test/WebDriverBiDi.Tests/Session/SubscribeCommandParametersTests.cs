@@ -65,4 +65,17 @@ public class SubscribeCommandParametersTests
             Assert.That(serialized["contexts"]![0]!.Value<string>(), Is.EqualTo("myContext"));
         });
     }
+    
+    [Test]
+    public void TestInitializeUsingConstructor()
+    {
+        SubscribeCommandParameters properties = new(["someEvent"], ["someContext"]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(properties.Events, Has.Count.EqualTo(1));
+            Assert.That(properties.Events, Contains.Item("someEvent"));
+            Assert.That(properties.Contexts, Has.Count.EqualTo(1));
+            Assert.That(properties.Contexts, Contains.Item("someContext"));
+        });
+    }
 }

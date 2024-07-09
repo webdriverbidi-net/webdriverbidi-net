@@ -12,15 +12,26 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SubscribeCommandParameters : CommandParameters<EmptyResult>
 {
-    private readonly List<string> eventList = new();
+    private readonly List<string> eventList = [];
 
-    private readonly List<string> contextList = new();
+    private readonly List<string> contextList = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class.
     /// </summary>
     public SubscribeCommandParameters()
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class.
+    /// </summary>
+    /// <param name="events">The list of events to which to subscribe or unsubscribe.</param>
+    /// <param name="contexts">The list of browsing context IDs for which to subscribe to or unsubscribe from the specified events.</param>
+    public SubscribeCommandParameters(IList<string> events, IList<string> contexts)
+    {
+        this.eventList.AddRange(events);
+        this.contextList.AddRange(contexts);
     }
 
     /// <summary>
