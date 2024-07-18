@@ -136,6 +136,16 @@ public sealed class NetworkModule : Module
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Sets the cache behavior of the browser.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command.</returns>
+    public async Task<EmptyResult> SetCacheBehaviorAsync(SetCacheBehaviorCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
     private async Task OnAuthRequiredAsync(EventInfo<AuthRequiredEventArgs> eventData)
     {
         AuthRequiredEventArgs eventArgs = eventData.ToEventArgs<AuthRequiredEventArgs>();
