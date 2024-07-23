@@ -27,17 +27,22 @@ public class NewCommandParametersTests
     {
         NewCommandParameters properties = new()
         {
-            AlwaysMatch = new CapabilitiesRequest() { BrowserName = "greatBrowser" }
+            Capabilities =
+            {
+                AlwaysMatch = new CapabilitiesRequestInfo() { BrowserName = "greatBrowser" }
+            }
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized, Contains.Key("alwaysMatch"));
-            Assert.That(serialized["alwaysMatch"]!.Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(serialized, Contains.Key("capabilities"));
+            
+            Assert.That(serialized["capabilities"], Contains.Key("alwaysMatch"));
+            Assert.That(serialized["capabilities"]!["alwaysMatch"]!.Type, Is.EqualTo(JTokenType.Object));
         });
-        JObject? alwaysMatch = serialized["alwaysMatch"] as JObject;
+        JObject? alwaysMatch = serialized["capabilities"]["alwaysMatch"] as JObject;
         Assert.That(alwaysMatch, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
@@ -50,16 +55,17 @@ public class NewCommandParametersTests
     public void TestCanSerializeWithFirstMatch()
     {
         NewCommandParameters properties = new();
-        properties.FirstMatch.Add(new CapabilitiesRequest() { BrowserName = "greatBrowser" });
+        properties.Capabilities.FirstMatch.Add(new CapabilitiesRequestInfo() { BrowserName = "greatBrowser" });
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized, Contains.Key("firstMatch"));
-            Assert.That(serialized["firstMatch"]!.Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(serialized, Contains.Key("capabilities"));
+            Assert.That(serialized["capabilities"], Contains.Key("firstMatch"));
+            Assert.That(serialized["capabilities"]!["firstMatch"]!.Type, Is.EqualTo(JTokenType.Array));
         });
-        JArray? firstMatch = serialized["firstMatch"] as JArray;
+        JArray? firstMatch = serialized["capabilities"]["firstMatch"] as JArray;
         Assert.That(firstMatch, Is.Not.Null);
         Assert.That(firstMatch, Has.Count.EqualTo(1));
         Assert.That(firstMatch![0].Type, Is.EqualTo(JTokenType.Object));
