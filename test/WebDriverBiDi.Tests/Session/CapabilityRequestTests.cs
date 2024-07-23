@@ -4,12 +4,12 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class CapabilitiesRequestInfoTests
+public class CapabilityRequestTests
 {
     [Test]
     public void TestCanSerialize()
     {
-        CapabilitiesRequestInfo capabilities = new();
+        CapabilityRequest capabilities = new();
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Is.Empty);
@@ -18,7 +18,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithBrowserName()
     {
-        CapabilitiesRequestInfo capabilities = new()
+        CapabilityRequest capabilities = new()
         {
             BrowserName = "greatBrowser"
         };
@@ -36,7 +36,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithBrowserVersion()
     {
-        CapabilitiesRequestInfo capabilities = new()
+        CapabilityRequest capabilities = new()
         {
             BrowserVersion = "101.5b"
         };
@@ -54,7 +54,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithPlatformName()
     {
-        CapabilitiesRequestInfo capabilities = new()
+        CapabilityRequest capabilities = new()
         {
             PlatformName = "oddOS"
         };
@@ -72,7 +72,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithAcceptInsecureCertificatesTrue()
     {
-        CapabilitiesRequestInfo capabilities = new()
+        CapabilityRequest capabilities = new()
         {
             AcceptInsecureCertificates = true
         };
@@ -90,7 +90,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithAcceptInsecureCertificatesFalse()
     {
-        CapabilitiesRequestInfo capabilities = new()
+        CapabilityRequest capabilities = new()
         {
             AcceptInsecureCertificates = false
         };
@@ -108,7 +108,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithUnhandledPromptBehavior()
     {
-        CapabilitiesRequestInfo capabilities = new()
+        CapabilityRequest capabilities = new()
         {
             UnhandledPromptBehavior = new UserPromptHandler()
             {
@@ -136,7 +136,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithProxy()
     {
-        CapabilitiesRequestInfo capabilities = new()
+        CapabilityRequest capabilities = new()
         {
             Proxy = new ManualProxyConfiguration() { HttpProxy = "http.proxy" }
         };
@@ -164,7 +164,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithAdditionalCapabilities()
     {
-        CapabilitiesRequestInfo capabilities = new();
+        CapabilityRequest capabilities = new();
         capabilities.AdditionalCapabilities["capName"] = "capValue";
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
@@ -180,7 +180,7 @@ public class CapabilitiesRequestInfoTests
     [Test]
     public void TestCanSerializeWithAdditionalCapabilitiesObject()
     {
-        CapabilitiesRequestInfo capabilities = new();
+        CapabilityRequest capabilities = new();
         capabilities.AdditionalCapabilities["additional"] = new Dictionary<string, object?>() { { "capName", "capValue" } };
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
