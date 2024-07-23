@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public class CapabilitiesRequest
 {
     private CapabilityRequest? alwaysMatch;
-    private readonly List<CapabilityRequest> firstMatch = [];
+    private readonly List<CapabilityRequest> firstMatch;
 
     /// <summary>
     /// Gets or sets the set of capabilities that must be matched to create a new session.
