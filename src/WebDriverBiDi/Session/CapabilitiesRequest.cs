@@ -12,7 +12,8 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class CapabilitiesRequest
 {
-    private readonly List<CapabilitiesRequestInfo> firstMatch = [];
+    private CapabilityRequest? alwaysMatch;
+    private readonly List<CapabilityRequest> firstMatch = [];
 
     /// <summary>
     /// Gets or sets the set of capabilities that must be matched to create a new session.
@@ -20,30 +21,13 @@ public class CapabilitiesRequest
     [JsonPropertyName("alwaysMatch")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public CapabilitiesRequestInfo? AlwaysMatch { get; set; }
+    public CapabilityRequest? AlwaysMatch { get => this.alwaysMatch; set => this.alwaysMatch = value; }
 
     /// <summary>
     /// Gets the list of sets of capabilities any of which may be matched to create a new session.
     /// </summary>
-    [JsonIgnore]
-    public List<CapabilitiesRequestInfo> FirstMatch => this.firstMatch;
-
-    /// <summary>
-    /// Gets the list of sets of capabilities any of which may be matched to create a new session for serialization purposes.
-    /// </summary>
     [JsonPropertyName("firstMatch")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal IList<CapabilitiesRequestInfo>? SerializableFirstMatch
-    {
-        get
-        {
-            if (this.firstMatch.Count == 0)
-            {
-                return null;
-            }
-
-            return this.firstMatch.AsReadOnly();
-        }
-    }
+    public List<CapabilityRequest> FirstMatch => this.firstMatch;
 }

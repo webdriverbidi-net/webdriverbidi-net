@@ -30,7 +30,7 @@ public class NewCommandParametersTests
         {
             Capabilities =
             {
-                AlwaysMatch = new CapabilitiesRequestInfo() { BrowserName = "greatBrowser" }
+                AlwaysMatch = new CapabilityRequest() { BrowserName = "greatBrowser" }
             }
         };
         string json = JsonSerializer.Serialize(properties);
@@ -56,7 +56,7 @@ public class NewCommandParametersTests
     public void TestCanSerializeWithFirstMatch()
     {
         NewCommandParameters properties = new();
-        properties.Capabilities.FirstMatch.Add(new CapabilitiesRequestInfo() { BrowserName = "greatBrowser" });
+        properties.Capabilities.FirstMatch.Add(new CapabilityRequest() { BrowserName = "greatBrowser" });
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));

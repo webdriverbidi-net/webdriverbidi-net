@@ -1,4 +1,4 @@
-// <copyright file="CapabilitiesRequest.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="CapabilityRequest.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing capabilities requested when starting a new session.
 /// </summary>
-public class CapabilitiesRequestInfo
+public class CapabilityRequest
 {
     private readonly Dictionary<string, object?> additionalCapabilities = new();
     private bool? acceptInsecureCertificates;
