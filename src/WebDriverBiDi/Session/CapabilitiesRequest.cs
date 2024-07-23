@@ -29,5 +29,5 @@ public class CapabilitiesRequest
     [JsonPropertyName("firstMatch")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public List<CapabilityRequest> FirstMatch { get => this.firstMatch; set => this.firstMatch = value; }
+    public List<CapabilityRequest>? FirstMatch { get => this.firstMatch; set => this.firstMatch = value; }
 }
