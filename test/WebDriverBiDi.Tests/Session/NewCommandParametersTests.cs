@@ -19,7 +19,8 @@ public class NewCommandParametersTests
         NewCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Is.Empty);
+        Assert.That(serialized, Contains.Key("capabilities"));
+        Assert.That(serialized["capabilities"], Is.Empty);
     }
 
     [Test]
