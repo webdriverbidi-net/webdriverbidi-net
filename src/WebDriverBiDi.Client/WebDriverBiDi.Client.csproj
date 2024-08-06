@@ -25,4 +25,10 @@
     <AdditionalFiles Include=".stylecop.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="$(ProjectDir)../../third_party/chromium-bidi-mapper/mapperTab.js">
+      <Visible>False</Visible>
+      <LogicalName>chromium-bidi-mapper</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

@@ -34,4 +34,9 @@ public class TestTransport : Transport
 
         return await base.SendCommandAsync(commandParameters);
     }
+
+    public Connection GetConnection()
+    {
+        return this.Connection;
+    }
 }

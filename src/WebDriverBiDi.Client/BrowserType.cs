@@ -11,12 +11,22 @@ namespace WebDriverBiDi.Client;
 public enum BrowserType
 {
     /// <summary>
-    /// The Chrome browser.
+    /// The Chrome browser, using only the browser executable.
     /// </summary>
     Chrome,
 
     /// <summary>
-    /// The Firefox browser.
+    /// The Firefox browser, using only the browser executable.
     /// </summary>
     Firefox,
+
+    /// <summary>
+    /// The Chrome browser, using the chromedriver executable.
+    /// </summary>
+    ChromeDriver,
+
+    /// <summary>
+    /// The Firefox browser, using the geckodriver executable.
+    /// </summary>
+    GeckoDriver,
 }

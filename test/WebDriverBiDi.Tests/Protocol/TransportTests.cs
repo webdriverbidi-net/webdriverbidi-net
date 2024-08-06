@@ -3,6 +3,7 @@ namespace WebDriverBiDi.Protocol;
 using Newtonsoft.Json.Linq;
 using TestUtilities;
 using PinchHitter;
+using System.Runtime;
 
 [TestFixture]
 public class TransportTests
@@ -862,5 +863,14 @@ public class TransportTests
 
         var dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
         Assert.That(dataValue, Is.EquivalentTo(expected));
+    }
+
+    [Test]
+    public void TestTransportSubclassesCanAccessConnection()
+    {
+        string receivedName = string.Empty;
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        Assert.That(transport.GetConnection(), Is.EqualTo(connection));
     }
 }

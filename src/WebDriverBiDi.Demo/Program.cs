@@ -2,6 +2,9 @@
 using WebDriverBiDi.Client;
 using WebDriverBiDi.DemoWebSite;
 using WebDriverBiDi.Demo;
+using WebDriverBiDi.Protocol;
+using WebDriverBiDi.Session;
+using WebDriverBiDi.Browser;
 
 DemoWebSiteServer demoSiteServer = new();
 
@@ -36,8 +39,16 @@ try
     await launcher.StartAsync();
     await launcher.LaunchBrowserAsync();
 
-    BiDiDriver driver = InitializeDriver();
+    BiDiDriver driver = InitializeDriver(launcher.CreateTransport());
     await driver.StartAsync(launcher.WebSocketUrl);
+
+    if (testBrowserType == BrowserType.Chrome || testBrowserType == BrowserType.Firefox)
+    {
+        // Using a classic WebDriver browser driver to launch the browser
+        // automatically gives you a WebDriver BiDi session. Without the
+        // driver executable, you must start your own session.
+        await driver.Session.NewSessionAsync(new NewCommandParameters());
+    }
 
     await DemoScenarios.SubmitFormAsync(driver, baseDemoSiteUrl);
     // await DemoScenarios.WaitForDelayLoadAsync(driver, baseDemoSiteUrl);
@@ -50,6 +61,7 @@ try
     Console.WriteLine("Pausing 3 seconds to view results");
     await Task.Delay(TimeSpan.FromSeconds(3));
 
+    await driver.Browser.CloseAsync(new CloseCommandParameters());
     await driver.StopAsync();
 }
 finally
@@ -59,9 +71,10 @@ finally
     demoSiteServer.Shutdown();
 }
 
-BiDiDriver InitializeDriver()
+
+BiDiDriver InitializeDriver(Transport transport)
 {
-    BiDiDriver driver = new(TimeSpan.FromSeconds(10));
+    BiDiDriver driver = new(TimeSpan.FromSeconds(10), transport);
     driver.OnLogMessage.AddObserver(OnLogMessage);
     driver.BrowsingContext.OnNavigationStarted.AddObserver((e) =>
     {

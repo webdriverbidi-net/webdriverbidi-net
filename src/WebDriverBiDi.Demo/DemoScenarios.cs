@@ -82,7 +82,7 @@ public static class DemoScenarios
     public static async Task WaitForDelayLoadAsync(BiDiDriver driver, string baseUrl)
     {
         ManualResetEventSlim syncEvent = new(false);
-        driver.Script.OnMessage.AddObserver(( MessageEventArgs e) =>
+        driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
             if (e.ChannelId == "delayLoadChannel")
             {

@@ -120,6 +120,11 @@ public class Transport
     protected long LastCommandId => this.nextCommandId;
 
     /// <summary>
+    /// Gets the connection used to communicate with the browser.
+    /// </summary>
+    protected Connection Connection => this.connection;
+
+    /// <summary>
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
@@ -147,7 +152,12 @@ public class Transport
         // Reset the command counter for each connection.
         this.nextCommandId = 0;
         this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
-        await this.connection.StartAsync(websocketUri).ConfigureAwait(false);
+        if (!this.connection.IsActive)
+        {
+            // Allow for the possibility of the connection to already being opened.
+            await this.connection.StartAsync(websocketUri).ConfigureAwait(false);
+        }
+
         this.isConnected = true;
     }
 
@@ -179,10 +189,10 @@ public class Transport
             throw new WebDriverBiDiException("Transport must be connected to a remote end to execute commands.");
         }
 
-        long commandId = Interlocked.Increment(ref this.nextCommandId);
+        long commandId = this.GetNextCommandId();
         Command command = new(commandId, commandData);
         this.pendingCommands.AddPendingCommand(command);
-        string commandJson = JsonSerializer.Serialize(command);
+        string commandJson = this.SerializeCommand(command);
         await this.connection.SendDataAsync(commandJson).ConfigureAwait(false);
         return command;
     }
@@ -195,6 +205,46 @@ public class Transport
     public virtual void RegisterEventMessage<T>(string eventName)
     {
         this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
+    }
+
+    /// <summary>
+    /// Increments the command ID for the command to be sent.
+    /// </summary>
+    /// <returns>The command ID for the command to be sent.</returns>
+    protected long GetNextCommandId()
+    {
+        return Interlocked.Increment(ref this.nextCommandId);
+    }
+
+    /// <summary>
+    /// Serializes a command for transmission across the WebSocket connection.
+    /// </summary>
+    /// <param name="command">The command to serialize.</param>
+    /// <returns>The serialized JSON string representing the command.</returns>
+    protected virtual string SerializeCommand(Command command)
+    {
+        return JsonSerializer.Serialize(command);
+    }
+
+    /// <summary>
+    /// Deserializes an incoming message from the WebSocket connection.
+    /// </summary>
+    /// <param name="messageData">The message data to deserialize.</param>
+    /// <returns>A JsonElement representing the parsed message.</returns>
+    /// <exception cref="JsonException">
+    /// Thrown when there is a syntax error in the incoming JSON.
+    /// </exception>
+    protected virtual JsonElement DeserializeMessage(string messageData)
+    {
+        try
+        {
+            JsonDocument document = JsonDocument.Parse(messageData);
+            return document.RootElement;
+        }
+        catch
+        {
+            throw;
+        }
     }
 
     /// <summary>
@@ -284,10 +334,10 @@ public class Transport
     private async Task ProcessMessageAsync(string messageData)
     {
         bool isProcessed = false;
-        JsonDocument? message = null;
+        JsonElement messageRootElement = default;
         try
         {
-            message = JsonDocument.Parse(messageData);
+            messageRootElement = this.DeserializeMessage(messageData);
         }
         catch (JsonException e)
         {
@@ -295,25 +345,25 @@ public class Transport
             this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, e, $"Invalid JSON in protocol message: {messageData}");
         }
 
-        if (message is not null)
+        if (messageRootElement.ValueKind != JsonValueKind.Undefined)
         {
-            if (message.RootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
+            if (messageRootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
             {
                 string messageType = messageTypeToken.GetString()!;
                 if (messageType == "success")
                 {
-                    isProcessed = this.ProcessCommandResponseMessage(message.RootElement);
-                    await this.LogAsync($"Command response message processed {message}", WebDriverBiDiLogLevel.Trace);
+                    isProcessed = this.ProcessCommandResponseMessage(messageRootElement);
+                    await this.LogAsync($"Command response message processed {messageData}", WebDriverBiDiLogLevel.Trace);
                 }
                 else if (messageType == "error")
                 {
-                    isProcessed = await this.ProcessErrorMessageAsync(message.RootElement);
-                    await this.LogAsync($"Error response message processed {message}", WebDriverBiDiLogLevel.Trace);
+                    isProcessed = await this.ProcessErrorMessageAsync(messageRootElement);
+                    await this.LogAsync($"Error response message processed {messageData}", WebDriverBiDiLogLevel.Trace);
                 }
                 else if (messageType == "event")
                 {
-                    isProcessed = await this.ProcessEventMessageAsync(message.RootElement);
-                    await this.LogAsync($"Event message processed {message}", WebDriverBiDiLogLevel.Trace);
+                    isProcessed = await this.ProcessEventMessageAsync(messageRootElement);
+                    await this.LogAsync($"Event message processed {messageData}", WebDriverBiDiLogLevel.Trace);
                 }
             }
         }
