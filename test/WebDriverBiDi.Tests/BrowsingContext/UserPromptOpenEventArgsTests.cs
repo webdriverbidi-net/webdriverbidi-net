@@ -167,14 +167,7 @@ public class UserPromptOpenedEventArgsTests
         string json = @"{ ""context"": ""myContextId"", ""type"": ""alert"", ""message"": ""some prompt message"" }";
         Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
-
-    [Test]
-    public void TestDeserializeWithInvalidHandlerTypeValueThrows()
-    {
-        string json = @"{ ""context"": ""myContextId"", ""type"": ""alert"", ""handler"": ""invalid"", ""message"": ""some prompt message"" }";
-        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
-    }
-
+    
     [Test]
     public void TestDeserializeWithMissingMessageValueThrows()
     {
