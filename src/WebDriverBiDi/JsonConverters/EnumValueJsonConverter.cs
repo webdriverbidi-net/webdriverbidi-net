@@ -25,8 +25,9 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     /// <summary>
     /// Initializes a new instance of the <see cref="EnumValueJsonConverter{T}"/> class.
     /// </summary>
-    /// <param name="defaultValue">Default enum value if the parsing fails</param>
-    public EnumValueJsonConverter(T? defaultValue) : this()
+    /// <param name="defaultValue">Default enum value if the parsing fails.</param>
+    public EnumValueJsonConverter(T? defaultValue)
+        : this()
     {
         this.defaultEnumValue = defaultValue;
     }
