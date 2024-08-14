@@ -11,9 +11,14 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// The types of user prompts.
 /// </summary>
-[JsonConverter(typeof(EnumValueJsonConverter<UserPromptHandlerType>))]
+[JsonConverterWithArgs(typeof(EnumValueJsonConverter<UserPromptHandlerType>), Unknown)]
 public enum UserPromptHandlerType
 {
+    /// <summary>
+    /// The handler type is unknown.
+    /// </summary>
+    Unknown,
+
     /// <summary>
     /// Handler accepts the user prompt.
     /// </summary>

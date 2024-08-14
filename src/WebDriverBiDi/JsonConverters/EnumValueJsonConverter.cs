@@ -20,6 +20,17 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     private readonly Dictionary<T, string> enumValuesToStrings = new();
     private readonly Dictionary<string, T> stringToEnumValues = new();
 
+    private readonly T? defaultEnumValue;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EnumValueJsonConverter{T}"/> class.
+    /// </summary>
+    /// <param name="defaultValue">Default enum value if the parsing fails</param>
+    public EnumValueJsonConverter(T? defaultValue) : this()
+    {
+        this.defaultEnumValue = defaultValue;
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="EnumValueJsonConverter{T}"/> class.
     /// </summary>
@@ -63,6 +74,11 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
         if (this.stringToEnumValues.TryGetValue(stringValue, out T enumValue))
         {
             return enumValue;
+        }
+
+        if (this.defaultEnumValue.HasValue)
+        {
+            return this.defaultEnumValue.Value;
         }
 
         throw new WebDriverBiDiException($"Deserialization error: value '{stringValue}' is not valid for enum type {typeof(T)}");

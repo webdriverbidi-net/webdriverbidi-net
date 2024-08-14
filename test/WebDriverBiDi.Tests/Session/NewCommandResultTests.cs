@@ -14,7 +14,7 @@ public class NewCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""manual"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
+        string json = @"{ ""sessionId"": ""mySession"", ""capabilities"": { ""unhandledPromptBehavior"": { ""alert"" : ""dismiss""}, ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""manual"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
         NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -23,6 +23,7 @@ public class NewCommandResultTests
             Assert.That(result.Capabilities.BrowserName, Is.EqualTo("greatBrowser"));
             Assert.That(result.Capabilities.BrowserVersion, Is.EqualTo("101.5b"));
             Assert.That(result.Capabilities.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.Capabilities.UnhandledPromptBehavior!.Alert, Is.EqualTo(UserPromptHandlerType.Dismiss));
             Assert.That(result.Capabilities.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
             Assert.That(result.Capabilities.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.Capabilities.Proxy, Is.Not.Null);
@@ -34,6 +35,18 @@ public class NewCommandResultTests
             Assert.That(result.Capabilities.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.Not.Null);
             Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
+        });
+    }
+    
+    [Test]
+    public void TestSupportsUnknownUnhandledPromptBehavior()
+    {
+        string json = @"{ ""sessionId"": ""mySession"", ""capabilities"": { ""unhandledPromptBehavior"": { ""alert"" : ""something invalid""}, ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""manual"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
+        NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Capabilities.UnhandledPromptBehavior!.Alert, Is.EqualTo(UserPromptHandlerType.Unknown));
         });
     }
 
