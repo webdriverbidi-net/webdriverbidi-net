@@ -211,14 +211,7 @@ public class CapabilitiesResultTests
         // Disable spell checker for specifically disallowed value proxyautocomplete
         string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""proxyautoconfig"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'proxyautoconfig' is not valid for enum type"));
-        // spell-checker: ensable
-    }
-
-    [Test]
-    public void TestCannotDeserializeWithEmptyProxy()
-    {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'proxyType' property"));
+        // spell-checker: enable
     }
 
     [Test]
@@ -380,5 +373,14 @@ public class CapabilitiesResultTests
     {
         string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""webSocketUrl"": 123, ""capName"": ""capValue"" }";
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    }
+    
+    [Test]
+    public void TestProxyTypeIsOptional()
+    {
+        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": {}, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Proxy, Is.Null);
     }
 }

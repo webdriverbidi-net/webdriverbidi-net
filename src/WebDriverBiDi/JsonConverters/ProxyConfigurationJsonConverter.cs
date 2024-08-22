@@ -31,6 +31,12 @@ public class ProxyConfigurationJsonConverter : JsonConverter<ProxyConfiguration>
             throw new JsonException($"Proxy JSON must be an object, but was {rootElement.ValueKind}");
         }
 
+        // If the object is empty, return null.
+        if (!rootElement.EnumerateObject().Any())
+        {
+            return null;
+        }
+
         if (!rootElement.TryGetProperty("proxyType", out JsonElement typeElement))
         {
             throw new JsonException("Proxy response must contain a 'proxyType' property");
