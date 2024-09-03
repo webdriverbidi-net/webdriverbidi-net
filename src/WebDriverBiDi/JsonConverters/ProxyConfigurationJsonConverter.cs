@@ -33,7 +33,9 @@ public class ProxyConfigurationJsonConverter : JsonConverter<ProxyConfiguration>
 
         if (!rootElement.TryGetProperty("proxyType", out JsonElement typeElement))
         {
-            throw new JsonException("Proxy response must contain a 'proxyType' property");
+            // TODO: Uncomment the throw statement and remove the return statement
+            // once https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
+            return ProxyConfiguration.UnsetProxy;
         }
 
         if (typeElement.ValueKind != JsonValueKind.String)
