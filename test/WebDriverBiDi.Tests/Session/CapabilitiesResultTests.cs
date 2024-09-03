@@ -214,7 +214,8 @@ public class CapabilitiesResultTests
         // spell-checker: ensable
     }
 
-    [Test]
+    // [Test]
+    // TODO: Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
     public void TestCannotDeserializeWithEmptyProxy()
     {
         string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
@@ -354,7 +355,8 @@ public class CapabilitiesResultTests
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
-    [Test]
+    // [Test]
+    // TODO: Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 is fixed.
     public void TestDeserializingWithMissingSetWindowRectThrows()
     {
         string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""capName"": ""capValue"" }";

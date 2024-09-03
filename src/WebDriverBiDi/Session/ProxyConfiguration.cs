@@ -14,6 +14,12 @@ using WebDriverBiDi.JsonConverters;
 [JsonConverter(typeof(ProxyConfigurationJsonConverter))]
 public class ProxyConfiguration
 {
+    /// <summary>
+    /// Represents a proxy value that is unset in the remote end.
+    /// TODO: Remove this static property once https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
+    /// </summary>
+    public static readonly ProxyConfiguration UnsetProxy = new(ProxyType.Unset);
+
     private readonly Dictionary<string, object> additionalData = new();
     private ProxyType proxyType;
 

@@ -6,6 +6,7 @@
         "beforeunload",
         "Bidi",
         "chromedriver",
+        "firstvalue",
         "geckodriver",
         "Hankaku",
         "htmlcollection",
