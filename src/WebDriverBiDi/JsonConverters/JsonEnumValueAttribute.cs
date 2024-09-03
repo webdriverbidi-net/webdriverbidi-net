@@ -9,7 +9,7 @@ namespace WebDriverBiDi.JsonConverters;
 /// Marks a specific enumerated value with its string representation.
 /// </summary>
 [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
-public class JsonEnumValueAttribute : Attribute
+public sealed class JsonEnumValueAttribute : Attribute
 {
     private readonly string enumValue;
 

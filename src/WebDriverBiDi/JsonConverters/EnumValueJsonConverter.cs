@@ -17,6 +17,7 @@ using System.Text.Json.Serialization;
 public class EnumValueJsonConverter<T> : JsonConverter<T>
     where T : struct, Enum
 {
+    private readonly T? defaultValue;
     private readonly Dictionary<T, string> enumValuesToStrings = new();
     private readonly Dictionary<string, T> stringToEnumValues = new();
 
@@ -26,6 +27,12 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     public EnumValueJsonConverter()
     {
         Type enumType = typeof(T);
+        JsonEnumUnmatchedValueAttribute<T>? unmatchedValueAttribute = enumType.GetCustomAttribute<JsonEnumUnmatchedValueAttribute<T>>();
+        if (unmatchedValueAttribute is not null)
+        {
+            this.defaultValue = unmatchedValueAttribute.UnmatchedValue;
+        }
+
         T[] values = (T[])Enum.GetValues(typeof(T));
 
         foreach (T value in values)
@@ -65,6 +72,16 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
             return enumValue;
         }
 
+        // No match for the string value was found. If the enum has been
+        // marked with the JsonEnumUnmatchedValueAttribute, assign the
+        // specified value for unmatched strings.
+        if (this.defaultValue.HasValue)
+        {
+            return this.defaultValue.Value;
+        }
+
+        // There is no match, and no default value for unmatched
+        // strings is provided. Throw an exception.
         throw new WebDriverBiDiException($"Deserialization error: value '{stringValue}' is not valid for enum type {typeof(T)}");
     }
 
