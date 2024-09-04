@@ -91,7 +91,7 @@ public class ConnectionTests
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
 
-        await this.server.SendData(registeredConnectionId, "Hello back");
+        await this.server.SendDataAsync(registeredConnectionId, "Hello back");
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.That(dataReceivedByConnection, Is.EqualTo("Hello back"));
@@ -113,7 +113,7 @@ public class ConnectionTests
 
         // Create a message on an exact boundary of the buffer
         string data = new('a', 2 * connection.BufferSize);
-        await this.server.SendData(registeredConnectionId, data);
+        await this.server.SendDataAsync(registeredConnectionId, data);
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.That(dataReceivedByConnection, Is.EqualTo(data));
@@ -135,7 +135,7 @@ public class ConnectionTests
 
         // Create a message on an exact boundary of the buffer
         string data = new('a', 70000);
-        await this.server.SendData(registeredConnectionId, data);
+        await this.server.SendDataAsync(registeredConnectionId, data);
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.That(dataReceivedByConnection, Is.EqualTo(data));
@@ -168,7 +168,7 @@ public class ConnectionTests
         await connection.SendDataAsync("Hello world");
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
 
-        await this.server.SendData(registeredConnectionId, "Hello back");
+        await this.server.SendDataAsync(registeredConnectionId, "Hello back");
         this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(4));
         await connection.StopAsync();
 
@@ -261,7 +261,7 @@ public class ConnectionTests
 
         // Send data to the connection, which should force the receive data
         // task to enter a waiting state after receiving the first message.
-        await this.server.SendData(registeredConnectionId, "Hello back");
+        await this.server.SendDataAsync(registeredConnectionId, "Hello back");
         string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.StopAsync();
         Assert.That(connection.IsActive, Is.False);
@@ -384,7 +384,7 @@ public class ConnectionTests
     
         // Server initiated disconnection requires waiting for the
         // close websocket message to be received by the client.
-        await this.server.Disconnect(registeredConnectionId);
+        await this.server.DisconnectAsync(registeredConnectionId);
         disconnectEvent.WaitOne(TimeSpan.FromSeconds(1));
         await connection.StopAsync();
         Assert.That(connectionLog, Is.EquivalentTo(expectedLogEntries));
@@ -451,7 +451,7 @@ public class ConnectionTests
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
 
-        await this.server.SendData(registeredConnectionId, "First connection acknowledged");
+        await this.server.SendDataAsync(registeredConnectionId, "First connection acknowledged");
         string receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         await connection.StopAsync();
         Assert.That(receivedData, Is.EqualTo("First connection acknowledged"));
@@ -465,7 +465,7 @@ public class ConnectionTests
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
 
-        await this.server.SendData(registeredConnectionId, "Second connection acknowledged");
+        await this.server.SendDataAsync(registeredConnectionId, "Second connection acknowledged");
         receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         await connection.StopAsync();
         Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"));
@@ -495,7 +495,7 @@ public class ConnectionTests
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
 
-        await this.server.SendData(registeredConnectionId, "First connection acknowledged");
+        await this.server.SendDataAsync(registeredConnectionId, "First connection acknowledged");
         string receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.StopAsync();
@@ -510,7 +510,7 @@ public class ConnectionTests
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
 
-        await this.server.SendData(registeredConnectionId, "Second connection acknowledged");
+        await this.server.SendDataAsync(registeredConnectionId, "Second connection acknowledged");
         receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         await connection.StopAsync();
         Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"));

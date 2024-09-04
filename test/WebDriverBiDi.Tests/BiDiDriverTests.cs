@@ -401,7 +401,7 @@ public class BiDiDriverTests
 
             // This payload omits the required "timestamp" field, which should cause an exception
             // in parsing.
-            await server.SendData(connectionId, @"{ ""type"": ""event"", ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
+            await server.SendDataAsync(connectionId, @"{ ""type"": ""event"", ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.Multiple(() =>
             {
@@ -464,7 +464,7 @@ public class BiDiDriverTests
 
             // This payload uses an object for the error field, which should cause an exception
             // in parsing.
-            await server.SendData(connectionId, @"{ ""type"": ""error"", ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
+            await server.SendDataAsync(connectionId, @"{ ""type"": ""error"", ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
@@ -523,7 +523,7 @@ public class BiDiDriverTests
 
             // This payload uses unparsable JSON, which should cause an exception
             // in parsing.
-            await server.SendData(connectionId, @"{ ""type"": ""error"", ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
+            await server.SendDataAsync(connectionId, @"{ ""type"": ""error"", ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
