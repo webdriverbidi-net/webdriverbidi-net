@@ -192,25 +192,19 @@ public class ChromeLauncher : BrowserLauncher
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
-    public override async Task QuitBrowserAsync()
+    public override Task QuitBrowserAsync()
     {
-        if (this.IsRunning)
+        if (this.browserProcess is not null)
         {
-            // Use CDP to close browser, if it's still running.
-            await this.CloseBrowser();
-        }
-
-        if (this.IsRunning)
-        {
-            // IsRunning contains a null check for the process.
-            this.browserProcess!.WaitForExit(5000);
             if (!this.browserProcess.HasExited)
             {
                 this.browserProcess.Kill();
             }
+
+            this.browserProcess = null;
         }
 
-        this.browserProcess = null;
+        return Task.CompletedTask;
     }
 
     /// <summary>
