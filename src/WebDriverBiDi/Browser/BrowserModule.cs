@@ -34,9 +34,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> CloseAsync(CloseCommandParameters commandProperties)
+    public async Task<EmptyResult> CloseAsync(CloseCommandParameters? commandProperties = null)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties ?? new()).ConfigureAwait(false);
     }
 
     /// <summary>
