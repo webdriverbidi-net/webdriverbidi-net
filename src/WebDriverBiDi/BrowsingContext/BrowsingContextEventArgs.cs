@@ -27,6 +27,11 @@ public class BrowsingContextEventArgs : WebDriverBiDiEventArgs
     public string BrowsingContextId => this.info.BrowsingContextId;
 
     /// <summary>
+    /// Gets the user context ID of the browsing context.
+    /// </summary>
+    public string UserContextId => this.info.UserContextId;
+
+    /// <summary>
     /// Gets the current URL of the browsing context.
     /// </summary>
     public string Url => this.info.Url;
