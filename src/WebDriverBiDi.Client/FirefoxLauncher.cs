@@ -10,7 +10,6 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using WebDriverBiDi;
@@ -174,6 +173,7 @@ public class FirefoxLauncher : BrowserLauncher
             }
 
             this.browserProcess = null;
+            this.RemoveUserDataDirectory();
         }
 
         return Task.CompletedTask;
@@ -527,6 +527,24 @@ public class FirefoxLauncher : BrowserLauncher
         this.userDataDirectory = info.FullName;
     }
 
+    private void RemoveUserDataDirectory()
+    {
+        // NOTE: This is a naive algorithm for demonstration purposes only.
+        // Production code might do something like allow the user to keep
+        // the profile directory around for examination after shutting the
+        // browser down.
+        if (!string.IsNullOrEmpty(this.userDataDirectory) && Directory.Exists(this.userDataDirectory))
+        {
+            try
+            {
+                Directory.Delete(this.userDataDirectory, true);
+            }
+            catch (IOException)
+            {
+            }
+        }
+    }
+
     private void ReadStandardError(object sender, DataReceivedEventArgs e)
     {
         Regex websocketUrlMatcher = new(@"DevTools listening on (ws:\/\/.*)$", RegexOptions.IgnoreCase);
@@ -555,6 +573,7 @@ public class FirefoxLauncher : BrowserLauncher
 
     private string GetDefaultBrowserExecutableLocation()
     {
+        // NOTE: This is a naive algorithm for demonstration purposes only.
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             return "/Applications/Firefox.app/Contents/MacOS/firefox";

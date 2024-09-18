@@ -202,6 +202,7 @@ public class ChromeLauncher : BrowserLauncher
             }
 
             this.browserProcess = null;
+            this.RemoveUserDataDirectory();
         }
 
         return Task.CompletedTask;
@@ -285,21 +286,30 @@ public class ChromeLauncher : BrowserLauncher
         return isInitialized;
     }
 
-    private async Task CloseBrowser()
-    {
-        // Fire and forget the close browser command.
-        Connection connection = new();
-        await connection.StartAsync(this.WebSocketUrl);
-        await connection.SendDataAsync(@"{ ""id"": 0, ""method"": ""Browser.close"", ""params"": {} }");
-        await connection.StopAsync();
-    }
-
     private void CreateUserDataDirectory()
     {
         string tempPath = Path.GetTempPath();
         string directoryName = Path.Combine(tempPath, $"webdriverbidi-net-chrome-data-{Guid.NewGuid()}");
         DirectoryInfo info = Directory.CreateDirectory(directoryName);
         this.userDataDirectory = info.FullName;
+    }
+
+    private void RemoveUserDataDirectory()
+    {
+        // NOTE: This is a naive algorithm for demonstration purposes only.
+        // Production code might do something like allow the user to keep
+        // the profile directory around for examination after shutting the
+        // browser down.
+        if (!string.IsNullOrEmpty(this.userDataDirectory) && Directory.Exists(this.userDataDirectory))
+        {
+            try
+            {
+                Directory.Delete(this.userDataDirectory, true);
+            }
+            catch (IOException)
+            {
+            }
+        }
     }
 
     private void ReadStandardError(object sender, DataReceivedEventArgs e)
