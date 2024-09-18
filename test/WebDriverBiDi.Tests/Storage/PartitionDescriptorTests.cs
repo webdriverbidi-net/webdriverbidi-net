@@ -11,7 +11,7 @@ public class PartitionDescriptorTests
     {
         BrowsingContextPartitionDescriptor properties = new("myBrowsingContext");
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
@@ -29,7 +29,7 @@ public class PartitionDescriptorTests
     {
         StorageKeyPartitionDescriptor properties = new();
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -47,7 +47,7 @@ public class PartitionDescriptorTests
             UserContextId = "myUserContext"
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
@@ -68,7 +68,7 @@ public class PartitionDescriptorTests
             SourceOrigin = "mySourceOrigin"
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
@@ -90,7 +90,7 @@ public class PartitionDescriptorTests
             SourceOrigin = "mySourceOrigin"
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(3));

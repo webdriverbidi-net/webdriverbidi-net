@@ -11,7 +11,7 @@ public class ChannelPropertiesTests
     {
         ChannelProperties properties = new("myChannel");
         string json = JsonSerializer.Serialize(properties);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(1));
@@ -28,7 +28,7 @@ public class ChannelPropertiesTests
             ResultOwnership = ResultOwnership.Root
         };
         string json = JsonSerializer.Serialize(properties);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -50,7 +50,7 @@ public class ChannelPropertiesTests
             SerializationOptions = new()
         };
         string json = JsonSerializer.Serialize(properties);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         { 
             Assert.That(parsed, Has.Count.EqualTo(2));

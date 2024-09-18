@@ -12,7 +12,7 @@ public class PartialCookieTests
     {
         PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain");
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
@@ -43,7 +43,7 @@ public class PartialCookieTests
             Path = "myCookiePath"
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -77,7 +77,7 @@ public class PartialCookieTests
             Size = 123
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -111,7 +111,7 @@ public class PartialCookieTests
             HttpOnly = true
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -145,7 +145,7 @@ public class PartialCookieTests
             HttpOnly = false
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -179,7 +179,7 @@ public class PartialCookieTests
             Secure = true
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -213,7 +213,7 @@ public class PartialCookieTests
             Secure = false
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -247,7 +247,7 @@ public class PartialCookieTests
             SameSite = CookieSameSiteValue.None
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -281,7 +281,7 @@ public class PartialCookieTests
             SameSite = CookieSameSiteValue.Lax
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -315,7 +315,7 @@ public class PartialCookieTests
             SameSite = CookieSameSiteValue.Strict
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -352,7 +352,7 @@ public class PartialCookieTests
             Expires = expirationDate
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
@@ -389,7 +389,7 @@ public class PartialCookieTests
             Expires = null
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(3));

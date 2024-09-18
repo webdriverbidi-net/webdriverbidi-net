@@ -466,7 +466,7 @@ public class FirefoxLauncher : BrowserLauncher
 
         if (preferences != null)
         {
-            foreach (var kv in preferences)
+            foreach (KeyValuePair<string, object> kv in preferences)
             {
                 prefs[kv.Key] = kv.Value;
             }

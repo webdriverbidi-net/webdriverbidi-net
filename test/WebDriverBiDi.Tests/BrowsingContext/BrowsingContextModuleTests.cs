@@ -19,9 +19,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
+        Task<EmptyResult> task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -40,9 +40,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.CaptureScreenshotAsync(new CaptureScreenshotCommandParameters("myContextId"));
+        Task<CaptureScreenshotCommandResult> task = module.CaptureScreenshotAsync(new CaptureScreenshotCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        CaptureScreenshotCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Data, Is.EqualTo("encodedScreenshotData"));
@@ -62,9 +62,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.CloseAsync(new CloseCommandParameters("myContextId"));
+        Task<EmptyResult> task = module.CloseAsync(new CloseCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -83,9 +83,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.CreateAsync(new CreateCommandParameters(CreateType.Tab));
+        Task<CreateCommandResult> task = module.CreateAsync(new CreateCommandParameters(CreateType.Tab));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        CreateCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.BrowsingContextId, Is.EqualTo("myContext"));
@@ -105,9 +105,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.GetTreeAsync(new GetTreeCommandParameters());
+        Task<GetTreeCommandResult> task = module.GetTreeAsync(new GetTreeCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        GetTreeCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.ContextTree, Has.Count.EqualTo(1));
@@ -133,9 +133,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.HandleUserPromptAsync(new HandleUserPromptCommandParameters("myContextId"));
+        Task<EmptyResult> task = module.HandleUserPromptAsync(new HandleUserPromptCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -154,9 +154,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.LocateNodesAsync(new LocateNodesCommandParameters("myContextId", new CssLocator(".selector")));
+        Task<LocateNodesCommandResult> task = module.LocateNodesAsync(new LocateNodesCommandParameters("myContextId", new CssLocator(".selector")));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        LocateNodesCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -175,9 +175,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.NavigateAsync(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
+        Task<NavigationResult> task = module.NavigateAsync(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        NavigationResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -201,9 +201,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.PrintAsync(new PrintCommandParameters("myContextId"));
+        Task<PrintCommandResult> task = module.PrintAsync(new PrintCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        PrintCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Data, Is.EqualTo("encodedPdf"));
@@ -223,9 +223,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.ReloadAsync(new ReloadCommandParameters("myContext"));
+        Task<NavigationResult> task = module.ReloadAsync(new ReloadCommandParameters("myContext"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        NavigationResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -249,9 +249,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.SetViewportAsync(new SetViewportCommandParameters("myContextId"));
+        Task<EmptyResult> task = module.SetViewportAsync(new SetViewportCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -270,9 +270,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        var task = module.TraverseHistoryAsync(new TraverseHistoryCommandParameters("myContextId", -3));
+        Task<EmptyResult> task = module.TraverseHistoryAsync(new TraverseHistoryCommandParameters("myContextId", -3));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

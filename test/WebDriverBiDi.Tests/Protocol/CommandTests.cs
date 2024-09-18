@@ -28,7 +28,7 @@ public class CommandTests
 
         Command command = new(1, commandParams);
         string json = JsonSerializer.Serialize(command);
-        var dataValue = JObject.Parse(json).ToParsedDictionary();       
+        Dictionary<string, object?> dataValue = JObject.Parse(json).ToParsedDictionary();       
         Assert.That(dataValue, Is.EquivalentTo(expected));
     }
 

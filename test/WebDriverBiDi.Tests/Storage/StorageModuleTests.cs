@@ -24,9 +24,9 @@ public class StorageModuleTests()
         StorageModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.GetCookiesAsync(new GetCookiesCommandParameters());
+        Task<GetCookiesCommandResult> task = module.GetCookiesAsync(new GetCookiesCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        GetCookiesCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -61,9 +61,9 @@ public class StorageModuleTests()
         StorageModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")));
+        Task<SetCookieCommandResult> task = module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        SetCookieCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -87,9 +87,9 @@ public class StorageModuleTests()
         StorageModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.DeleteCookiesAsync(new DeleteCookiesCommandParameters());
+        Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(new DeleteCookiesCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        DeleteCookiesCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>

@@ -46,7 +46,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
             Assert.That(serialized, Contains.Key("clip"));
             Assert.That(serialized["clip"]!.Type, Is.EqualTo(JTokenType.Object));
-            var clipObject = serialized["clip"]!.Value<JObject>();
+            JObject? clipObject = serialized["clip"]!.Value<JObject>();
             Assert.That(clipObject, Has.Count.EqualTo(5));
             Assert.That(clipObject, Contains.Key("type"));
             Assert.That(clipObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -89,7 +89,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
             Assert.That(serialized, Contains.Key("clip"));
             Assert.That(serialized["clip"]!.Type, Is.EqualTo(JTokenType.Object));
-            var clipObject = serialized["clip"]!.Value<JObject>();
+            JObject? clipObject = serialized["clip"]!.Value<JObject>();
             Assert.That(clipObject, Has.Count.EqualTo(5));
             Assert.That(clipObject, Contains.Key("type"));
             Assert.That(clipObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -126,14 +126,14 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
             Assert.That(serialized, Contains.Key("clip"));
             Assert.That(serialized["clip"]!.Type, Is.EqualTo(JTokenType.Object));
-            var clipObject = serialized["clip"]!.Value<JObject>();
+            JObject? clipObject = serialized["clip"]!.Value<JObject>();
             Assert.That(clipObject, Has.Count.EqualTo(2));
             Assert.That(clipObject, Contains.Key("type"));
             Assert.That(clipObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(clipObject["type"]!.Value<string>(), Is.EqualTo("element"));
             Assert.That(clipObject, Contains.Key("element"));
             Assert.That(clipObject!["element"]!.Type, Is.EqualTo(JTokenType.Object));
-            var sharedReferenceObject = clipObject["element"]!.Value<JObject>();
+            JObject? sharedReferenceObject = clipObject["element"]!.Value<JObject>();
             Assert.That(sharedReferenceObject, Contains.Key("sharedId"));
             Assert.That(sharedReferenceObject!["sharedId"]!.Value<string>(), Is.EqualTo("myElementSharedId"));
         });
@@ -156,7 +156,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
             Assert.That(serialized, Contains.Key("format"));
             Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
-            var formatObject = serialized["format"]!.Value<JObject>();
+            JObject? formatObject = serialized["format"]!.Value<JObject>();
             Assert.That(formatObject, Has.Count.EqualTo(1));
             Assert.That(formatObject, Contains.Key("type"));
             Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -184,7 +184,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
             Assert.That(serialized, Contains.Key("format"));
             Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
-            var formatObject = serialized["format"]!.Value<JObject>();
+            JObject? formatObject = serialized["format"]!.Value<JObject>();
             Assert.That(formatObject, Has.Count.EqualTo(1));
             Assert.That(formatObject, Contains.Key("type"));
             Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -213,7 +213,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
             Assert.That(serialized, Contains.Key("format"));
             Assert.That(serialized["format"]!.Type, Is.EqualTo(JTokenType.Object));
-            var formatObject = serialized["format"]!.Value<JObject>();
+            JObject? formatObject = serialized["format"]!.Value<JObject>();
             Assert.That(formatObject, Has.Count.EqualTo(2));
             Assert.That(formatObject, Contains.Key("type"));
             Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));

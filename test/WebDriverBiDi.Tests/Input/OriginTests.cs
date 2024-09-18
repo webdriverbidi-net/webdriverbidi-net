@@ -18,7 +18,7 @@ public class OriginTests
     {
         Origin origin = Origin.Viewport;
         string json = JsonSerializer.Serialize(origin.Value);
-        var parsed = JsonSerializer.Deserialize<string>(json, deserializationOptions);
+        string? parsed = JsonSerializer.Deserialize<string>(json, deserializationOptions);
         Assert.That(parsed, Is.InstanceOf<string>());
         Assert.That(parsed, Is.EqualTo("viewport"));
     }
@@ -28,7 +28,7 @@ public class OriginTests
     {
         Origin origin = Origin.Pointer;
         string json = JsonSerializer.Serialize(origin.Value);
-        var parsed = JsonSerializer.Deserialize<string>(json, deserializationOptions);
+        string? parsed = JsonSerializer.Deserialize<string>(json, deserializationOptions);
         Assert.That(parsed, Is.InstanceOf<string>());
         Assert.That(parsed, Is.EqualTo("pointer"));
     }

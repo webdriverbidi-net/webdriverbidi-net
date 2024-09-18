@@ -11,7 +11,7 @@ public class LocatorTests
     {
         CssLocator value = new(".selector");
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -29,7 +29,7 @@ public class LocatorTests
     {
         XPathLocator value = new("//selector");
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -47,7 +47,7 @@ public class LocatorTests
     {
         InnerTextLocator value = new("text to locate");
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -68,7 +68,7 @@ public class LocatorTests
             MaxDepth = 0
         };
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
@@ -92,7 +92,7 @@ public class LocatorTests
             MaxDepth = 10
         };
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
@@ -116,7 +116,7 @@ public class LocatorTests
             IgnoreCase = true
         };
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
@@ -140,7 +140,7 @@ public class LocatorTests
             IgnoreCase = false
         };
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
@@ -164,7 +164,7 @@ public class LocatorTests
             MatchType = InnerTextMatchType.Full
         };
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
@@ -188,7 +188,7 @@ public class LocatorTests
             MatchType = InnerTextMatchType.Partial
         };
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
@@ -215,7 +215,7 @@ public class LocatorTests
         });
 
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -244,7 +244,7 @@ public class LocatorTests
         });
 
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -279,7 +279,7 @@ public class LocatorTests
         });
 
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -311,7 +311,7 @@ public class LocatorTests
         });
 
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -339,7 +339,7 @@ public class LocatorTests
         };
         value.Name = null;
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -367,7 +367,7 @@ public class LocatorTests
         };
         value.Role = null;
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
@@ -396,7 +396,7 @@ public class LocatorTests
         value.Name = null;
         value.Role = null;
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));

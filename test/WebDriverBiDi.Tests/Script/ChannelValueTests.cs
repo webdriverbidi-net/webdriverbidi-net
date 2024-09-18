@@ -12,7 +12,7 @@ public class ChannelValueTests
         // Note that serialization of ChannelProperties (value property) is tested elsewhere.
         ChannelValue value = new(new ChannelProperties("myChannel"));
         string json = JsonSerializer.Serialize(value);
-        var parsed = JObject.Parse(json);
+        JObject parsed = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(parsed, Has.Count.EqualTo(2));

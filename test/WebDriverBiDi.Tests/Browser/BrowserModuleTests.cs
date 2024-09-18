@@ -19,9 +19,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        var task = module.CloseAsync(new CloseCommandParameters());
+        Task<EmptyResult> task = module.CloseAsync(new CloseCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -40,9 +40,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        var task = module.CloseAsync();
+        Task<EmptyResult> task = module.CloseAsync();
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -61,9 +61,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        var task = module.CreateUserContextAsync(new CreateUserContextCommandParameters());
+        Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(new CreateUserContextCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        CreateUserContextCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.UserContextId, Is.EqualTo("myUserContextId"));
@@ -83,9 +83,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        var task = module.CreateUserContextAsync();
+        Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync();
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        CreateUserContextCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.UserContextId, Is.EqualTo("myUserContextId"));
@@ -105,9 +105,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        var task = module.GetUserContextsAsync(new GetUserContextsCommandParameters());
+        Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(new GetUserContextsCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        GetUserContextsCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -133,9 +133,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        var task = module.GetUserContextsAsync();
+        Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync();
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        GetUserContextsCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -161,9 +161,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        var task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"));
+        Task<EmptyResult> task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

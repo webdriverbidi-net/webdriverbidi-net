@@ -20,9 +20,9 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.StatusAsync(new StatusCommandParameters());
+        Task<StatusCommandResult> task = module.StatusAsync(new StatusCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        StatusCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -46,9 +46,9 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.StatusAsync();
+        Task<StatusCommandResult> task = module.StatusAsync();
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        StatusCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -72,11 +72,11 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var subscribeParameters = new SubscribeCommandParameters();
+        SubscribeCommandParameters subscribeParameters = new();
         subscribeParameters.Events.Add("log.entryAdded");
-        var task = module.SubscribeAsync(subscribeParameters);
+        Task<EmptyResult> task = module.SubscribeAsync(subscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -95,11 +95,11 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var unsubscribeParameters = new UnsubscribeCommandParameters();
+        UnsubscribeCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.Events.Add("log.entryAdded");
-        var task = module.UnsubscribeAsync(unsubscribeParameters);
+        Task<EmptyResult> task = module.UnsubscribeAsync(unsubscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -118,10 +118,10 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var newCommandParameters = new NewCommandParameters();
-        var task = module.NewSessionAsync(newCommandParameters);
+        NewCommandParameters newCommandParameters = new();
+        Task<NewCommandResult> task = module.NewSessionAsync(newCommandParameters);
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        NewCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -156,10 +156,10 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var endParameters = new EndCommandParameters();
-        var task = module.EndAsync(endParameters);
+        EndCommandParameters endParameters = new();
+        Task<EmptyResult> task = module.EndAsync(endParameters);
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -178,9 +178,9 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.EndAsync();
+        Task<EmptyResult> task = module.EndAsync();
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

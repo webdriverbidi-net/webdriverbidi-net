@@ -20,9 +20,9 @@ public class InputModuleTests
         await driver.StartAsync("ws:localhost");
         InputModule module = new(driver);
 
-        var task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"));
+        Task<EmptyResult> task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -41,9 +41,9 @@ public class InputModuleTests
         await driver.StartAsync("ws:localhost");
         InputModule module = new(driver);
 
-        var task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"));
+        Task<EmptyResult> task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -62,10 +62,10 @@ public class InputModuleTests
         await driver.StartAsync("ws:localhost");
         InputModule module = new(driver);
 
-        var element = new SharedReference("mySharedId");
-        var task = module.SetFilesAsync(new SetFilesCommandParameters("myContextId", element));
+        SharedReference element = new("mySharedId");
+        Task<EmptyResult> task = module.SetFilesAsync(new SetFilesCommandParameters("myContextId", element));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }

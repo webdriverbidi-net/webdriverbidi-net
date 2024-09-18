@@ -20,13 +20,13 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
+        Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EvaluateResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.TypeOf<EvaluateResultSuccess>());
-        var successResult = result as EvaluateResultSuccess;
+        EvaluateResultSuccess? successResult = result as EvaluateResultSuccess;
         Assert.That(successResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -54,13 +54,13 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
+        Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EvaluateResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.TypeOf<EvaluateResultException>());
-        var exceptionResult = result as EvaluateResultException;
+        EvaluateResultException? exceptionResult = result as EvaluateResultException;
         Assert.That(exceptionResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -91,13 +91,13 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
         
-        var task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
+        Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EvaluateResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.TypeOf<EvaluateResultSuccess>());
-        var successResult = result as EvaluateResultSuccess;
+        EvaluateResultSuccess? successResult = result as EvaluateResultSuccess;
         Assert.That(successResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -125,13 +125,13 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
+        Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EvaluateResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.TypeOf<EvaluateResultException>());
-        var exceptionResult = result as EvaluateResultException;
+        EvaluateResultException? exceptionResult = result as EvaluateResultException;
         Assert.That(exceptionResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -162,9 +162,9 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.GetRealmsAsync(new GetRealmsCommandParameters());
+        Task<GetRealmsCommandResult> task = module.GetRealmsAsync(new GetRealmsCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        GetRealmsCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Realms, Has.Count.EqualTo(1));
@@ -197,9 +197,9 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
+        Task<EmptyResult> task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.TypeOf<EmptyResult>());
@@ -325,9 +325,9 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        var task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"));
+        Task<AddPreloadScriptCommandResult> task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        AddPreloadScriptCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.TypeOf<AddPreloadScriptCommandResult>());
@@ -348,11 +348,10 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
         
-        var task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));
+        Task<EmptyResult> task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<EmptyResult>());
     }
 }

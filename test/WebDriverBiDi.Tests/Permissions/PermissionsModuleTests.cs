@@ -19,9 +19,9 @@ public class PermissionsModuleTests
         await driver.StartAsync("ws:localhost");
         PermissionsModule module = new(driver);
 
-        var task = module.SetPermission(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"));
+        Task<EmptyResult> task = module.SetPermission(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"));
         task.Wait(TimeSpan.FromSeconds(1));
-        var result = task.Result;
+        EmptyResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

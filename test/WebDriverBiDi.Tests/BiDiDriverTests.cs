@@ -31,7 +31,7 @@ public class BiDiDriverTests
 
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
-        var result = await driver.ExecuteCommandAsync<TestCommandResult>(command);
+        TestCommandResult result = await driver.ExecuteCommandAsync<TestCommandResult>(command);
         Assert.That(result.Value, Is.EqualTo("command result value"));
     }
 

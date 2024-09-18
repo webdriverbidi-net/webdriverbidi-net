@@ -15,7 +15,7 @@ public class CookieFilterTests
             Name = "myCookieName"
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -33,7 +33,7 @@ public class CookieFilterTests
             Value = BytesValue.FromString("myCookieValue")
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -58,7 +58,7 @@ public class CookieFilterTests
             Domain = "myCookieDomain"
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -76,7 +76,7 @@ public class CookieFilterTests
             Path = "myCookiePath"
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -94,7 +94,7 @@ public class CookieFilterTests
             Size = 3
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -112,7 +112,7 @@ public class CookieFilterTests
             HttpOnly = true
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -130,7 +130,7 @@ public class CookieFilterTests
             HttpOnly = false
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -148,7 +148,7 @@ public class CookieFilterTests
             Secure = true
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -166,7 +166,7 @@ public class CookieFilterTests
             Secure = false
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -184,7 +184,7 @@ public class CookieFilterTests
             SameSite = CookieSameSiteValue.Strict
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
@@ -205,7 +205,7 @@ public class CookieFilterTests
             Expires = expirationDate
         };
         string json = JsonSerializer.Serialize(properties);
-        var serialized = JObject.Parse(json);
+        JObject serialized = JObject.Parse(json);
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
