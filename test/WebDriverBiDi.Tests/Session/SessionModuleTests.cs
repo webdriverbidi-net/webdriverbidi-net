@@ -33,6 +33,32 @@ public class SessionModuleTests
     }
 
     [Test]
+    public async Task TestExecuteStatusCommandWithNoArgument()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""ready"": true, ""message"": ""ready for connection"" } }";
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        SessionModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
+
+        var task = module.StatusAsync();
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsReady, Is.True);
+            Assert.That(result.Message, Is.EqualTo("ready for connection"));
+        });
+    }
+
+    [Test]
     public async Task TestExecuteSubscribeCommand()
     {
         TestConnection connection = new();
@@ -132,6 +158,27 @@ public class SessionModuleTests
 
         var endParameters = new EndCommandParameters();
         var task = module.EndAsync(endParameters);
+        task.Wait(TimeSpan.FromSeconds(1));
+        var result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task TestExecuteEndCommandWithNoArgument()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        SessionModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
+
+        var task = module.EndAsync();
         task.Wait(TimeSpan.FromSeconds(1));
         var result = task.Result;
 

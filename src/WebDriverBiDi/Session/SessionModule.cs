@@ -34,9 +34,9 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing the information about the remote end status.</returns>
-    public async Task<StatusCommandResult> StatusAsync(StatusCommandParameters commandProperties)
+    public async Task<StatusCommandResult> StatusAsync(StatusCommandParameters? commandProperties = null)
     {
-        return await this.Driver.ExecuteCommandAsync<StatusCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<StatusCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -74,8 +74,8 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> EndAsync(EndCommandParameters commandProperties)
+    public async Task<EmptyResult> EndAsync(EndCommandParameters? commandProperties = null)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties ?? new()).ConfigureAwait(false);
     }
 }

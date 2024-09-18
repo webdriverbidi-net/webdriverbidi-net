@@ -44,9 +44,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An object describing information about the user context created.</returns>
-    public async Task<CreateUserContextCommandResult> CreateUserContextAsync(CreateUserContextCommandParameters commandProperties)
+    public async Task<CreateUserContextCommandResult> CreateUserContextAsync(CreateUserContextCommandParameters? commandProperties = null)
     {
-        return await this.Driver.ExecuteCommandAsync<CreateUserContextCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<CreateUserContextCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -54,9 +54,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>A read-only list of the user contexts open in this browser.</returns>
-    public async Task<GetUserContextsCommandResult> GetUserContextsAsync(GetUserContextsCommandParameters commandProperties)
+    public async Task<GetUserContextsCommandResult> GetUserContextsAsync(GetUserContextsCommandParameters? commandProperties = null)
     {
-        return await this.Driver.ExecuteCommandAsync<GetUserContextsCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<GetUserContextsCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
     }
 
     /// <summary>
