@@ -38,13 +38,14 @@ it is the user's responsibility to know what the URL of the websocket connection
 
 To use the library, you can create and start a WebDriver BiDi session using code similar to the following:
 
-> using WebDriverBiDi;
-> 
-> // Assumes the browser is running with a WebSocket listening for
-> // WebDriver BiDi traffic. Note that your URL will be different here.
-> string webSocketUrl = "ws://localhost:5555";
-> 
-> // Set a timeout of 10 seconds for command responses.
-> BiDiDriver driver = new(TimeSpan.FromSeconds(10));
-> await driver.StartAsync(webSocketUrl);
-
+```csharp
+using WebDriverBiDi;
+ 
+// Assumes the browser is running with a WebSocket listening for
+// WebDriver BiDi traffic. Note that your URL will be different here.
+string webSocketUrl = "ws://localhost:5555";
+ 
+// Set a timeout of 10 seconds for command responses.
+BiDiDriver driver = new(TimeSpan.FromSeconds(10));
+await driver.StartAsync(webSocketUrl);
+```
