@@ -13,6 +13,7 @@ using System.Text.Json.Serialization;
 public class BrowsingContextInfo
 {
     private string id = string.Empty;
+    private string clientWindowId = string.Empty;
     private string url = string.Empty;
     private string userContextId = string.Empty;
     private string? originalOpener = null;
@@ -31,6 +32,14 @@ public class BrowsingContextInfo
     [JsonRequired]
     [JsonInclude]
     public string BrowsingContextId { get => this.id; private set => this.id = value; }
+
+    /// <summary>
+    /// Gets the ID of the client window that contains this browsing context.
+    /// </summary>
+    [JsonPropertyName("clientWindow")]
+    [JsonRequired]
+    [JsonInclude]
+    public string ClientWindowId { get => this.clientWindowId; private set => this.clientWindowId = value; }
 
     /// <summary>
     /// Gets the browsing context ID of the original opener of this browsing context.
