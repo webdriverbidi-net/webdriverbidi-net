@@ -50,6 +50,16 @@ public sealed class BrowserModule : Module
     }
 
     /// <summary>
+    /// Gets the list of information about the client windows for the current browser.
+    /// </summary>
+    /// <param name="commandProperties">THe parameters for the command.</param>
+    /// <returns>An read-only list of the client windows open in this browser.</returns>
+    public async Task<GetClientWindowsCommandResult> GetClientWindowsAsync(GetClientWindowsCommandParameters? commandProperties = null)
+    {
+        return await this.Driver.ExecuteCommandAsync<GetClientWindowsCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Gets the list of open user contexts for the browser.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
@@ -67,5 +77,17 @@ public sealed class BrowserModule : Module
     public async Task<EmptyResult> RemoveUserContextAsync(RemoveUserContextCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sets the state of a client window, including size and position. Note that the remote
+    /// end may not be capable of setting the window to the requested state, and this may
+    /// not necessarily return an error.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The actual state of the window after setting the state.</returns>
+    public async Task<SetClientWindowStateCommandResult> SetClientWindowStateAsync(SetClientWindowStateCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<SetClientWindowStateCommandResult>(commandProperties).ConfigureAwait(false);
     }
 }
