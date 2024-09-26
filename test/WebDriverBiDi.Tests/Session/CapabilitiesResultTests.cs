@@ -15,7 +15,17 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -37,7 +47,18 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeWithWebSocketUrl()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""setWindowRect"": true, ""webSocketUrl"": ""ws://socket:1234"", ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "webSocketUrl": "ws://socket:1234",
+                        "capName": "capValue"
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -59,7 +80,26 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeManualWithFullProxyProperties()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""manual"", ""httpProxy"": ""http.proxy"", ""sslProxy"": ""ssl.proxy"", ""ftpProxy"": ""ftp.proxy"", ""socksProxy"": ""socks.proxy"", ""socksVersion"": 5, ""noProxy"": [ ""example.com"" ] }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "manual",
+                          "httpProxy": "http.proxy",
+                          "sslProxy": "ssl.proxy",
+                          "ftpProxy": "ftp.proxy",
+                          "socksProxy": "socks.proxy",
+                          "socksVersion": 5,
+                          "noProxy": [ "example.com" ]
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -88,7 +128,21 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeProxyAutoConfigWithFullProxyProperties()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""pac"", ""proxyAutoconfigUrl"": ""proxy.autoconfig.url"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "pac",
+                          "proxyAutoconfigUrl": "proxy.autoconfig.url"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -112,7 +166,20 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeAutoDetectWithFullProxyProperties()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""autodetect"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "autodetect"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -135,7 +202,20 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeSystemWithFullProxyProperties()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""system"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "system"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -158,7 +238,20 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeDirectWithFullProxyProperties()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""direct"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "direct"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -181,7 +274,21 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeWithProxyContainingAdditionalData()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""system"", ""additionalName"": ""additionalValue"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "system",
+                          "additionalName": "additionalValue"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -209,7 +316,21 @@ public class CapabilitiesResultTests
     {
         // spell-checker: disable
         // Disable spell checker for specifically disallowed value proxyautocomplete
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""proxyautoconfig"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "proxyautoconfig",
+                          "httpProxy": "http.proxy"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'proxyautoconfig' is not valid for enum type"));
         // spell-checker: ensable
     }
@@ -218,14 +339,41 @@ public class CapabilitiesResultTests
     // TODO: Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
     public void TestCannotDeserializeWithEmptyProxy()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {},
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'proxyType' property"));
     }
 
     [Test]
     public void TestCanDeserializeWithFullUnhandledPromptBehavior()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""setWindowRect"": true, ""unhandledPromptBehavior"": { ""default"": ""accept"", ""alert"": ""accept"", ""confirm"": ""dismiss"", ""prompt"": ""dismiss"", ""beforeunload"": ""ignore"" } }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "unhandledPromptBehavior": {
+                          "default": "accept",
+                          "alert": "accept",
+                          "confirm": "dismiss",
+                          "prompt": "dismiss",
+                          "beforeunload": "ignore"
+                        }
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -249,7 +397,17 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeWithNoUnhandledPromptBehavior()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""setWindowRect"": true, ""unhandledPromptBehavior"": { } }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "unhandledPromptBehavior": {}
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -273,7 +431,19 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializeWithPartialUnhandledPromptBehavior()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""setWindowRect"": true, ""unhandledPromptBehavior"": { ""default"": ""accept"" } }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "unhandledPromptBehavior": {
+                          "default": "accept"
+                        }
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -297,14 +467,36 @@ public class CapabilitiesResultTests
     [Test]
     public void TestCanDeserializingWithInvalidUnhandledPromptBehaviorThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""setWindowRect"": true, ""unhandledPromptBehavior"": ""accept"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "unhandledPromptBehavior": "accept"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithNoAdditionalProperties()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""system"" }, ""setWindowRect"": true }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "proxy": {
+                          "proxyType": "system"
+                        }
+                      }
+                      """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -323,35 +515,95 @@ public class CapabilitiesResultTests
     [Test]
     public void TestDeserializingWithMissingBrowserNameThrows()
     {
-        string json = @"{ ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "httpProxy": "http.proxy"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithMissingBrowserVersionThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "httpProxy": "http.proxy"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithMissingPlatformNameThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "httpProxy": "http.proxy"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithMissingUserAgentThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "httpProxy": "http.proxy"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithMissingAcceptInsecureCertificatesThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "proxy": {
+                          "httpProxy": "http.proxy"
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
@@ -359,28 +611,76 @@ public class CapabilitiesResultTests
     // TODO: Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 is fixed.
     public void TestDeserializingWithMissingSetWindowRectThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "httpProxy": "http.proxy"
+                        },
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidProxyTypeThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": ""invalidProxyType"", ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": "invalidProxyType",
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidUnhandledPromptTypeThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""unhandledPromptBehavior"": ""invalidProxyType"", ""setWindowRect"": true, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "unhandledPromptBehavior": "invalidPromptBehavior",
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidWebSocketUrlTypeThrows()
     {
-        string json = @"{ ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""webSocketUrl"": 123, ""capName"": ""capValue"" }";
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "proxy": {
+                          "proxyType": "system"
+                        },
+                        "webSocketUrl": 123,
+                        "capName": "capValue"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

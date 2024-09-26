@@ -16,7 +16,34 @@ public class StorageModuleTests()
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""cookies"": [ { ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""cookiePath"", ""size"": 123, ""httpOnly"": false, ""secure"": true, ""sameSite"": ""lax"", ""expiry"": " + milliseconds + @" } ], ""partition"": { ""userContext"": ""myUserContext"", ""sourceOrigin"": ""mySourceOrigin"" } } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "cookies": [
+                                        {
+                                          "name": "cookieName",
+                                          "value": {
+                                            "type": "string",
+                                            "value": "cookieValue"
+                                          },
+                                          "domain": "cookieDomain",
+                                          "path": "cookiePath",
+                                          "size": 123,
+                                          "httpOnly": false,
+                                          "secure": true,
+                                          "sameSite": "lax",
+                                          "expiry": {{milliseconds}}
+                                        }
+                                      ],
+                                      "partition": {
+                                        "userContext": "myUserContext",
+                                        "sourceOrigin": "mySourceOrigin"
+                                      }
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -53,7 +80,18 @@ public class StorageModuleTests()
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""partition"": { ""userContext"": ""myUserContext"", ""sourceOrigin"": ""mySourceOrigin"" } } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "partition": {
+                                        "userContext": "myUserContext",
+                                        "sourceOrigin": "mySourceOrigin" 
+                                      }
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -79,7 +117,18 @@ public class StorageModuleTests()
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""partition"": { ""userContext"": ""myUserContext"", ""sourceOrigin"": ""mySourceOrigin"" } } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "partition": {
+                                        "userContext": "myUserContext",
+                                        "sourceOrigin": "mySourceOrigin"
+                                      }
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 

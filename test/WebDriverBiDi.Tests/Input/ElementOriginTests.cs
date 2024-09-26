@@ -16,7 +16,16 @@ public class ElementOriginTests
             TypeInfoResolver = new PrivateConstructorContractResolver(),
         };
 
-        string nodeJson = @"{ ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 }, ""sharedId"": ""testSharedId"" }";
+        string nodeJson = """
+                          {
+                            "type": "node",
+                            "value": {
+                              "nodeType": 1,
+                              "childNodeCount": 0
+                            },
+                            "sharedId": "testSharedId"
+                          }
+                          """;
         SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson, deserializationOptions)!.ToSharedReference();
         ElementOrigin origin = new(node);
         string json = JsonSerializer.Serialize(origin);

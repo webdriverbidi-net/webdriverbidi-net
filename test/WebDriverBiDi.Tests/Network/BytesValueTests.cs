@@ -75,7 +75,12 @@ public class BytesValueTests
     {
         string stringValue = "this is my string";
         byte[] valueArray = Encoding.UTF8.GetBytes(stringValue);
-        string json = $@"{{ ""type"": ""string"", ""value"": ""{stringValue}"" }}";
+        string json = $$"""
+                      {
+                        "type": "string",
+                        "value": "{{stringValue}}"
+                      }
+                      """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
         Assert.Multiple(() =>
         {
@@ -93,7 +98,12 @@ public class BytesValueTests
         // cspell: disable-next
         string base64Value = "dGhpcyBpcyBteSBzdHJpbmc=";
         byte[] valueArray = Convert.FromBase64String(base64Value);
-        string json = $@"{{ ""type"": ""base64"", ""value"": ""{base64Value}"" }}";
+        string json = $$"""
+                      {
+                        "type": "base64",
+                        "value": "{{base64Value}}"
+                      }
+                      """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
         Assert.Multiple(() =>
         {
@@ -110,35 +120,58 @@ public class BytesValueTests
     [Test]
     public void TestDeserializeWithMissingTypeThrows()
     {
-        string json = $@"{{ ""value"": ""this is my string"" }}";
+        string json = """
+                      {
+                        "value": "this is my string"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidTypeValueThrows()
     {
-        string json = $@"{{ ""type"": ""invalid"", ""value"": ""this is my string"" }}";
+        string json = $$"""
+                      {
+                        "type": "invalid",
+                        "value": "this is my string"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidTypeThrows()
     {
-        string json = $@"{{ ""type"": [], ""value"": ""this is my string"" }}";
+        string json = $$"""
+                      {
+                        "type": [],
+                        "value": "this is my string"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingValueThrows()
     {
-        string json = $@"{{ ""type"": ""string"" }}";
+        string json = $$"""
+                      {
+                        "type": "string"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidValueThrows()
     {
-        string json = $@"{{ ""type"": ""base64"", ""value"": [] }}";
+        string json = $$"""
+                      {
+                        "type": "base64",
+                        "value": []
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

@@ -9,7 +9,15 @@ public class MessageTests
     [Test]
     public void TestCanDeserializeCommandResponseMessage()
     {
-        string json = @"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }";
+        string json = """
+                      {
+                        "type": "success",
+                        "id": 1,
+                        "result": {
+                          "value": "response value"
+                        }
+                      }
+                      """;
         CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
         Assert.Multiple(() =>
         {
@@ -22,7 +30,15 @@ public class MessageTests
     [Test]
     public void TestCanDeserializeEventMessage()
     {
-        string json = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         EventMessage<TestEventArgs>? result = JsonSerializer.Deserialize<EventMessage<TestEventArgs>>(json);
         Assert.Multiple(() =>
         {
@@ -36,7 +52,14 @@ public class MessageTests
     [Test]
     public void TestCanDeserializeCommandErrorMessage()
     {
-        string json = @"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }";
+        string json = """
+                      {
+                        "type": "error",
+                        "id": 1,
+                        "error": "unknown error",
+                        "message": "This is a test error message"
+                      }
+                      """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
         Assert.Multiple(() =>
         {
@@ -50,7 +73,14 @@ public class MessageTests
     [Test]
     public void TestCanDeserializeNonCommandErrorMessage()
     {
-        string json = @"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }";
+        string json = """
+                      {
+                        "type": "error",
+                        "id": null,
+                        "error": "unknown error",
+                        "message": "This is a test error message"
+                      }
+                      """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
         Assert.Multiple(() =>
         {

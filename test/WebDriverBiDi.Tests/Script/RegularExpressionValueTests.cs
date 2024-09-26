@@ -9,7 +9,11 @@ public class RegularExpressionValueTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""pattern"": ""myPattern"" }";
+        string json = """
+                      {
+                        "pattern": "myPattern"
+                      }
+                      """;
         RegularExpressionValue? regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(regexProperties, Is.Not.Null);
         Assert.Multiple(() =>
@@ -22,21 +26,30 @@ public class RegularExpressionValueTests
     [Test]
     public void TestDeserializeWithMissingPatternThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<RegularExpressionValue>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidPatternTypeThrows()
     {
-        string json = @"{ ""pattern"": {} }";
+        string json = """
+                      {
+                        "pattern": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RegularExpressionValue>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalFlags()
     {
-        string json = @"{ ""pattern"": ""myPattern"", ""flags"": ""gi"" }";
+        string json = """
+                      {
+                        "pattern": "myPattern",
+                        "flags": "gi"
+                      }
+                      """;
         RegularExpressionValue? regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(regexProperties, Is.Not.Null);
         Assert.Multiple(() =>
@@ -50,7 +63,12 @@ public class RegularExpressionValueTests
     [Test]
     public void TestDeserializeWithInvalidFlagsTypeThrows()
     {
-        string json = @"{ ""pattern"": ""myPattern"", ""flags"": {} }";
+        string json = """
+                      {
+                        "pattern": "myPattern",
+                        "flags": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RegularExpressionValue>(json), Throws.InstanceOf<JsonException>());
     }
 
@@ -59,7 +77,12 @@ public class RegularExpressionValueTests
     {
         RegularExpressionValue expectedRegexValue = new("myPattern", "gi");
 
-        string json = @"{ ""pattern"": ""myPattern"", ""flags"": ""gi"" }";
+        string json = """
+                      {
+                        "pattern": "myPattern",
+                        "flags": "gi"
+                      }
+                      """;
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue, Is.EqualTo(expectedRegexValue));
     }
@@ -69,7 +92,12 @@ public class RegularExpressionValueTests
     {
         RegularExpressionValue expectedRegexValue = new("myPattern", "gi");
 
-        string json = @"{ ""pattern"": ""notMyPattern"", ""flags"": ""gi"" }";
+        string json = """
+                      {
+                        "pattern": "notMyPattern",
+                        "flags": "gi"
+                      }
+                      """;
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue, Is.Not.EqualTo(expectedRegexValue));
     }
@@ -79,7 +107,11 @@ public class RegularExpressionValueTests
     {
         RegularExpressionValue expectedRegexValue = new("myPattern");
 
-        string json = @"{ ""pattern"": ""notMyPattern"" }";
+        string json = """
+                      {
+                        "pattern": "notMyPattern"
+                      }
+                      """;
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue, Is.Not.EqualTo(expectedRegexValue));
     }
@@ -89,7 +121,12 @@ public class RegularExpressionValueTests
     {
         RegularExpressionValue expectedRegexValue = new("myPattern", "g");
 
-        string json = @"{ ""pattern"": ""myPattern"", ""flags"": ""gi"" }";
+        string json = """
+                      {
+                        "pattern": "myPattern",
+                        "flags": "gi"
+                      }
+                      """;
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue, Is.Not.EqualTo(expectedRegexValue));
     }
@@ -98,7 +135,12 @@ public class RegularExpressionValueTests
     [SuppressMessage("Assertion", "NUnit2010")]
     public void TestInequalityWithNull()
     {
-        string json = @"{ ""pattern"": ""myPattern"", ""flags"": ""gi"" }";
+        string json = """
+                      {
+                        "pattern": "myPattern",
+                        "flags": "gi"
+                      }
+                      """;
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue!.Equals(null), Is.False);
     }
@@ -107,7 +149,12 @@ public class RegularExpressionValueTests
     [SuppressMessage("Assertion", "NUnit2010")]
     public void TestInequalityWithInvalidObjectType()
     {
-        string json = @"{ ""pattern"": ""myPattern"", ""flags"": ""gi"" }";
+         string json = """
+                      {
+                        "pattern": "myPattern",
+                        "flags": "gi"
+                      }
+                      """;
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue!.Equals("invalid"), Is.False);
     }

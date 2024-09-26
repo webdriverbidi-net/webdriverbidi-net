@@ -5,76 +5,80 @@ using WebDriverBiDi.TestUtilities;
 [TestFixture]
 public class NetworkModuleTests
 {
-    private readonly string requestDataJson = @"{
-    ""request"": ""myRequestId"",
-    ""url"": ""https://example.com"",
-    ""method"": ""get"",
-    ""headers"": [
-        {
-            ""name"": ""headerName"",
-            ""value"": {
-                ""type"": ""string"",
-                ""value"": ""headerValue""
-            }
-        }
-    ],
-    ""cookies"": [
-        {
-            ""name"": ""cookieName"",
-            ""value"": {
-                ""type"": ""string"",
-                ""value"": ""cookieValue""
-            },
-            ""domain"": ""cookieDomain"",
-            ""path"": ""/cookiePath"",
-            ""sameSite"": ""strict"",
-            ""httpOnly"": true,
-            ""secure"": false,
-            ""size"": 10
-        }
-    ],
-    ""headersSize"": 100,
-    ""bodySize"": 300,
-    ""timings"": {
-        ""timeOrigin"": 1,
-        ""requestTime"": 2,
-        ""redirectStart"": 3,
-        ""redirectEnd"": 4,
-        ""fetchStart"": 5,
-        ""dnsStart"": 6,
-        ""dnsEnd"": 7,
-        ""connectStart"": 8,
-        ""connectEnd"": 9,
-        ""tlsStart"": 10,
-        ""requestStart"": 11,
-        ""responseStart"": 12,
-        ""responseEnd"": 13
-    }
-}";
+    private readonly string requestDataJson = """
+                                              {
+                                                "request": "myRequestId",
+                                                "url": "https://example.com",
+                                                "method": "get",
+                                                "headers": [
+                                                  {
+                                                    "name": "headerName",
+                                                    "value": {
+                                                      "type": "string",
+                                                      "value": "headerValue"
+                                                    }
+                                                  }
+                                                ],
+                                                "cookies": [
+                                                  {
+                                                    "name": "cookieName",
+                                                    "value": {
+                                                      "type": "string",
+                                                      "value": "cookieValue"
+                                                    },
+                                                    "domain": "cookieDomain",
+                                                    "path": "/cookiePath",
+                                                    "sameSite": "strict",
+                                                    "httpOnly": true,
+                                                    "secure": false,
+                                                    "size": 10
+                                                  }
+                                                ],
+                                                "headersSize": 100,
+                                                "bodySize": 300,
+                                                "timings": {
+                                                  "timeOrigin": 1,
+                                                  "requestTime": 2,
+                                                  "redirectStart": 3,
+                                                  "redirectEnd": 4,
+                                                  "fetchStart": 5,
+                                                  "dnsStart": 6,
+                                                  "dnsEnd": 7,
+                                                  "connectStart": 8,
+                                                  "connectEnd": 9,
+                                                  "tlsStart": 10,
+                                                  "requestStart": 11,
+                                                  "responseStart": 12,
+                                                  "responseEnd": 13
+                                                }
+                                              }
+                                              """;
 
-    private readonly string responseDataJson = @"{
-    ""url"": ""https://example.com"",
-    ""protocol"": ""https"",
-    ""status"": 200,
-    ""statusText"": ""OK"",
-    ""fromCache"": false,
-    ""headers"": [
-        {
-            ""name"": ""headerName"",
-            ""value"": {
-                ""type"": ""string"",
-                ""value"": ""headerValue""
-            }
-        }
-    ],
-    ""mimeType"": ""text/html"",
-    ""bytesReceived"": 400,
-    ""headersSize"": 100,
-    ""bodySize"": 300,
-    ""content"": {
-        ""size"": 300
-    }
-}";
+    private readonly string responseDataJson = """
+                                               {
+                                                 "url": "https://example.com",
+                                                 "protocol": "https",
+                                                 "status": 200,
+                                                 "statusText": "OK",
+                                                 "fromCache": false,
+                                                 "headers": [
+                                                  {
+                                                    "name": "headerName",
+                                                    "value": {
+                                                      "type": "string",
+                                                      "value": "headerValue"
+                                                    }
+                                                  }
+                                                ],
+                                                "mimeType": "text/html",
+                                                "bytesReceived": 400,
+                                                "headersSize": 100,
+                                                "bodySize": 300,
+                                                "content": {
+                                                  "size": 300
+                                                }
+                                               }
+                                               """;
 
     [Test]
     public async Task TestExecuteAddInterceptCommand()
@@ -82,7 +86,15 @@ public class NetworkModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""intercept"": ""myInterceptId"" } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "intercept": "myInterceptId"
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -110,7 +122,13 @@ public class NetworkModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -132,7 +150,13 @@ public class NetworkModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -154,7 +178,13 @@ public class NetworkModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -180,7 +210,13 @@ public class NetworkModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -202,7 +238,13 @@ public class NetworkModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -224,7 +266,13 @@ public class NetworkModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -246,7 +294,13 @@ public class NetworkModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -323,19 +377,21 @@ public class NetworkModuleTests
             syncEvent.Set();
         });
 
-        string eventJson = $@"{{
-    ""type"": ""event"",
-    ""method"": ""network.authRequired"",
-    ""params"": {{
-        ""context"": ""myContext"",
-        ""navigation"": ""myNavigationId"",
-        ""isBlocked"": false,
-        ""redirectCount"": 0,
-        ""timestamp"": {milliseconds},
-        ""request"": {requestDataJson},
-        ""response"": {responseDataJson}
-    }}
-}}";
+        string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "network.authRequired",
+                             "params": {
+                               "context": "myContext",
+                               "navigation": "myNavigationId",
+                               "isBlocked": false,
+                               "redirectCount": 0,
+                               "timestamp": {{milliseconds}},
+                               "request": {{requestDataJson}},
+                               "response": {{responseDataJson}}
+                            }
+                           }
+                           """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -389,21 +445,23 @@ public class NetworkModuleTests
             syncEvent.Set();
         });
 
-        string eventJson = $@"{{
-    ""type"": ""event"", 
-    ""method"": ""network.beforeRequestSent"",
-    ""params"": {{
-        ""context"": ""myContext"",
-        ""navigation"": ""myNavigationId"",
-        ""isBlocked"": false,
-        ""redirectCount"": 0,
-        ""timestamp"": {milliseconds},
-        ""request"": {requestDataJson},
-        ""initiator"": {{
-            ""type"": ""parser""
-        }}
-    }}
-}}";
+        string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "network.beforeRequestSent",
+                             "params": {
+                               "context": "myContext",
+                               "navigation": "myNavigationId",
+                               "isBlocked": false,
+                               "redirectCount": 0,
+                               "timestamp": {{milliseconds}},
+                               "request": {{requestDataJson}},
+                               "initiator": {
+                                 "type": "parser"
+                               }
+                            }
+                           }
+                           """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -457,19 +515,21 @@ public class NetworkModuleTests
             syncEvent.Set();
         });
 
-        string eventJson = $@"{{
-    ""type"": ""event"", 
-    ""method"": ""network.fetchError"",
-    ""params"": {{
-        ""context"": ""myContext"",
-        ""navigation"": ""myNavigationId"",
-        ""isBlocked"": false,
-        ""redirectCount"": 0,
-        ""timestamp"": {milliseconds},
-        ""request"": {requestDataJson},
-        ""errorText"": ""An error occurred""
-    }}
-}}";
+        string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "network.fetchError",
+                             "params": {
+                               "context": "myContext",
+                               "navigation": "myNavigationId",
+                               "isBlocked": false,
+                               "redirectCount": 0,
+                               "timestamp": {{milliseconds}},
+                               "request": {{requestDataJson}},
+                               "errorText": "An error occurred"
+                            }
+                           }
+                           """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -536,19 +596,21 @@ public class NetworkModuleTests
             syncEvent.Set();
         });
 
-        string eventJson = $@"{{
-    ""type"": ""event"", 
-    ""method"": ""network.responseStarted"",
-    ""params"": {{
-        ""context"": ""myContext"",
-        ""navigation"": ""myNavigationId"",
-        ""isBlocked"": false,
-        ""redirectCount"": 0,
-        ""timestamp"":{milliseconds},
-        ""request"": {requestDataJson},
-        ""response"": {responseDataJson}
-    }}
-}}";
+        string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "network.responseStarted",
+                             "params": {
+                               "context": "myContext",
+                               "navigation": "myNavigationId",
+                               "isBlocked": false,
+                               "redirectCount": 0,
+                               "timestamp": {{milliseconds}},
+                               "request": {{requestDataJson}},
+                               "response": {{responseDataJson}}
+                            }
+                           }
+                           """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);
@@ -615,18 +677,21 @@ public class NetworkModuleTests
             syncEvent.Set();
         });
 
-        string eventJson = $@"{{
-    ""type"": ""event"", 
-    ""method"": ""network.responseCompleted"",
-    ""params"": {{""context"": ""myContext"",
-        ""navigation"": ""myNavigationId"",
-        ""isBlocked"": false,
-        ""redirectCount"": 0,
-        ""timestamp"": {milliseconds},
-        ""request"": {requestDataJson},
-        ""response"": {responseDataJson}
-    }}
-}}";
+        string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "network.responseCompleted",
+                             "params": {
+                               "context": "myContext",
+                               "navigation": "myNavigationId",
+                               "isBlocked": false,
+                               "redirectCount": 0,
+                               "timestamp": {{milliseconds}},
+                               "request": {{requestDataJson}},
+                               "response": {{responseDataJson}}
+                            }
+                           }
+                           """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
         Assert.That(eventRaised, Is.True);

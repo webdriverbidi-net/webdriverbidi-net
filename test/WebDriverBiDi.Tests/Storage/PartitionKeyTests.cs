@@ -8,7 +8,7 @@ public class PartitionKeyTests
     [Test]
     public void TestCanDeserializePartitionKey()
     {
-        string json = @"{ }";
+        string json = "{}";
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
         Assert.Multiple(() =>
         {
@@ -21,7 +21,11 @@ public class PartitionKeyTests
     [Test]
     public void TestCanDeserializePartitionKeyWithUserContext()
     {
-        string json = @"{ ""userContext"": ""myUserContext"" }";
+        string json = """
+                      {
+                        "userContext": "myUserContext"
+                      }
+                      """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
         Assert.Multiple(() =>
         {
@@ -34,7 +38,11 @@ public class PartitionKeyTests
     [Test]
     public void TestCanDeserializePartitionKeyWithSourceOrigin()
     {
-        string json = @"{ ""sourceOrigin"": ""mySourceOrigin"" }";
+        string json = """
+                      {
+                        "sourceOrigin": "mySourceOrigin"
+                      }
+                      """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
         Assert.Multiple(() =>
         {
@@ -47,7 +55,11 @@ public class PartitionKeyTests
     [Test]
     public void TestCanDeserializePartitionKeyWithAdditionalData()
     {
-        string json = @"{ ""extraData"": ""myExtraData"" }";
+        string json = """
+                      {
+                        "extraData": "myExtraData"
+                      }
+                      """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
         Assert.Multiple(() =>
         {

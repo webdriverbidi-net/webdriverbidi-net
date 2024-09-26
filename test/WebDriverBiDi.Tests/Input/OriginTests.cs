@@ -36,7 +36,16 @@ public class OriginTests
     [Test]
     public void TestCanSerializeElementOrigin()
     {
-        string nodeJson = @"{ ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 }, ""sharedId"": ""testSharedId"" }";
+        string nodeJson = """
+                          {
+                            "type": "node",
+                            "value": {
+                              "nodeType": 1,
+                              "childNodeCount": 0 
+                            },
+                            "sharedId": "testSharedId"
+                          }
+                          """;
         SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson, deserializationOptions)!.ToSharedReference();
         
         ElementOrigin elementOrigin = new(node);
@@ -66,7 +75,16 @@ public class OriginTests
     [Test]
     public void TestCanSerializeElementOriginFromSharedReference()
     {
-        string nodeJson = @"{ ""type"": ""node"", ""value"": { ""nodeType"": 1, ""childNodeCount"": 0 }, ""sharedId"": ""testSharedId"" }";
+        string nodeJson = """
+                          {
+                            "type": "node",
+                            "value": {
+                              "nodeType": 1,
+                              "childNodeCount": 0 
+                            },
+                            "sharedId": "testSharedId"
+                          }
+                          """;
         SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson, deserializationOptions)!.ToSharedReference();
         
         Origin origin = Origin.Element(node);

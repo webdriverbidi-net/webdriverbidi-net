@@ -14,7 +14,11 @@ public class SourceTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""realm"": ""realmId"" }";
+        string json = """
+                      {
+                        "realm": "realmId"
+                      }
+                      """;
         Source? source = JsonSerializer.Deserialize<Source>(json, deserializationOptions);
         Assert.That(source, Is.Not.Null);
         Assert.Multiple(() =>
@@ -27,21 +31,30 @@ public class SourceTests
     [Test]
     public void TestDeserializeWithMissingRealmThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidRealmTypeThrows()
     {
-        string json = @"{ ""realm"": {} }";
+        string json = """
+                      {
+                        "realm": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestCanDeserializeWithOptionalContext()
     {
-        string json = @"{ ""realm"": ""realmId"", ""context"": ""contextId"" }";
+        string json = """
+                      {
+                        "realm": "realmId",
+                        "context": "contextId"
+                      }
+                      """;
         Source? source = JsonSerializer.Deserialize<Source>(json, deserializationOptions);
         Assert.That(source, Is.Not.Null);
         Assert.Multiple(() =>
@@ -55,7 +68,12 @@ public class SourceTests
     [Test]
     public void TestDeserializeWithInvalidFlagsTypeThrows()
     {
-        string json = @"{ ""realm"": ""realmId"", ""context"": {} }";
+        string json = """
+                      {
+                        "realm": "realmId",
+                        "context": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

@@ -260,7 +260,11 @@ public class ProxyConfigurationTests
     [Test]
     public void TestCanDeserializeWithProxyTypeManual()
     {
-        string json = @"{ ""proxyType"": ""manual"" }";
+        string json = """
+                      {
+                        "proxyType": "manual"
+                      }
+                      """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
@@ -279,7 +283,11 @@ public class ProxyConfigurationTests
     [Test]
     public void TestCanDeserializeWithProxyTypeSystem()
     {
-        string json = @"{ ""proxyType"": ""system"" }";
+        string json = """
+                      {
+                        "proxyType": "system"
+                      }
+                      """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
@@ -292,7 +300,11 @@ public class ProxyConfigurationTests
     [Test]
     public void TestCanDeserializeWithProxyTypeAutoDetect()
     {
-        string json = @"{ ""proxyType"": ""autodetect"" }";
+        string json = """
+                      {
+                        "proxyType": "autodetect"
+                      }
+                      """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
@@ -305,7 +317,12 @@ public class ProxyConfigurationTests
     [Test]
     public void TestCanDeserializeWithProxyTypeProxyAutoconfig()
     {
-        string json = @"{ ""proxyType"": ""pac"", ""proxyAutoconfigUrl"": ""proxy.autoconfig.url"" }";
+        string json = """
+                      {
+                        "proxyType": "pac",
+                        "proxyAutoconfigUrl": "proxy.autoconfig.url"
+                      }
+                      """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
@@ -320,7 +337,11 @@ public class ProxyConfigurationTests
     [Test]
     public void TestCanDeserializeWithProxyTypeDirect()
     {
-        string json = @"{ ""proxyType"": ""direct"" }";
+        string json = """
+                      {
+                        "proxyType": "direct"
+                      }
+                      """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
@@ -333,7 +354,12 @@ public class ProxyConfigurationTests
     [Test]
     public void TestCanDeserializeWithAdditionalData()
     {
-        string json = @"{ ""proxyType"": ""direct"", ""additionalName"": ""additionalValue"" }";
+        string json = """
+                      {
+                        "proxyType": "direct",
+                        "additionalName": "additionalValue"
+                      }
+                      """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
         Assert.Multiple(() =>
@@ -354,21 +380,33 @@ public class ProxyConfigurationTests
     [Test]
     public void TestDeserializeWithProxyTypeProxyAutoconfigWithMissingUrlThrows()
     {
-        string json = @"{ ""proxyType"": ""pac"" }";
+        string json = """
+                      {
+                        "proxyType": "pac"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("proxyAutoconfigUrl"));
     }
 
     [Test]
     public void TestDeserializeWithInvalidProxyTypeThrows()
     {
-        string json = @"{ ""proxyType"": ""invalid"" }";
+        string json = """
+                      {
+                        "proxyType": "invalid"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
     }
 
     [Test]
     public void TestDeserializeWithNonStringProxyTypeThrows()
     {
-        string json = @"{ ""proxyType"": {} }";
+        string json = """
+                      {
+                        "proxyType": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must be a string"));
     }
 }

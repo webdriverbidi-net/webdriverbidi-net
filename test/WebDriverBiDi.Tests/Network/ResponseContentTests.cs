@@ -14,7 +14,11 @@ public class ResponseContentTests
     [Test]
     public void TestCanDeserializeResponseContent()
     {
-        string json = @"{ ""size"": 300 }";
+        string json = """
+                      {
+                        "size": 300
+                      }
+                      """;
         ResponseContent? responseContent = JsonSerializer.Deserialize<ResponseContent>(json, deserializationOptions);
         Assert.That(responseContent, Is.Not.Null);
         Assert.Multiple(() =>
@@ -26,7 +30,7 @@ public class ResponseContentTests
     [Test]
     public void TestDeserializeWithMissingSizeThrows()
     {
-        string json = @"{ }";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<ResponseContent>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: size"));
     }
 }

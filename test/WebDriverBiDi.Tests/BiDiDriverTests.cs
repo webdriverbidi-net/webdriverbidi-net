@@ -22,7 +22,16 @@ public class BiDiDriverTests
         TestConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""command result value"" } }");
+            string eventJson = """
+                               {
+                                 "type": "success",
+                                 "id": 1,
+                                 "result": {
+                                   "value": "command result value"
+                                 }
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(eventJson);
         };
 
         Transport transport = new(connection);
@@ -41,7 +50,15 @@ public class BiDiDriverTests
         TestConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+            string errorJson = """
+                               {
+                                 "type": "error",
+                                 "id": 1,
+                                 "error": "unknown command", 
+                                 "message": "This is a test error message"
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(errorJson);
         };
 
         Transport transport = new(connection);
@@ -59,7 +76,17 @@ public class BiDiDriverTests
         TestConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
-            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
+            string exceptionJson = """
+                                   {
+                                     "type": "success",
+                                     "id": 1, 
+                                     "noResult": {
+                                       "invalid": "unknown command",
+                                       "message": "This is a test error message"
+                                     }
+                                   }
+                                   """;
+            await connection.RaiseDataReceivedEventAsync(exceptionJson);
         };
 
         Transport transport = new(connection);
@@ -86,7 +113,15 @@ public class BiDiDriverTests
         });
         await driver.StartAsync("ws://localhost:5555");
 
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+        string errorJson = """
+                           {
+                             "type": "error",
+                             "id": null,
+                             "error": "unknown command",
+                             "message": "This is a test error message"
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(errorJson);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
 
         Assert.That(response, Is.Not.Null);
@@ -117,7 +152,16 @@ public class BiDiDriverTests
         });
         await driver.StartAsync("ws://localhost:5555");
 
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        string eventJson = """
+                           {
+                             "type": "event",
+                             "method": "module.event",
+                             "params": {
+                               "paramName": "paramValue" 
+                             } 
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
         {
@@ -152,7 +196,16 @@ public class BiDiDriverTests
         });
         await driver.StartAsync("ws://localhost:5555");
 
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        string eventJson = """
+                           {
+                             "type": "event",
+                             "method": "module.event",
+                             "params": {
+                               "paramName": "paramValue"
+                             }
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(eventJson);
         await driver.StopAsync();
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.Multiple(() =>
@@ -181,7 +234,15 @@ public class BiDiDriverTests
         });
         await driver.StartAsync("ws://localhost:5555");
 
-        string serialized = @"{ ""type"": ""event"", ""method"": ""module.event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string serialized = """
+                            {
+                              "type": "event",
+                              "method": "module.event",
+                              "params": {
+                                "paramName": "paramValue"
+                              }
+                            }
+                            """;
         await connection.RaiseDataReceivedEventAsync(serialized);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.That(receivedMessage, Is.EqualTo(serialized));
@@ -203,7 +264,14 @@ public class BiDiDriverTests
         });
         await driver.StartAsync("ws://localhost:5555");
 
-        string serialized = @"{ ""someProperty"": ""someValue"", ""params"": { ""thisMessage"": ""matches no protocol message"" } }";
+        string serialized = """
+                            {
+                              "someProperty": "someValue",
+                              "params": {
+                                "thisMessage": "matches no protocol message"
+                              }
+                            }
+                            """;
         await connection.RaiseDataReceivedEventAsync(serialized);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.That(receivedMessage, Is.EqualTo(serialized));
@@ -401,7 +469,18 @@ public class BiDiDriverTests
 
             // This payload omits the required "timestamp" field, which should cause an exception
             // in parsing.
-            await server.SendDataAsync(connectionId, @"{ ""type"": ""event"", ""method"": ""browsingContext.load"", ""params"": { ""context"": ""myContext"", ""url"": ""https://example.com"", ""navigation"": ""myNavigationId"" } }");
+            string eventJson = """
+                               {
+                                 "type": "event",
+                                 "method": "browsingContext.load",
+                                 "params": {
+                                   "context": "myContext",
+                                   "url": "https://example.com",
+                                   "navigation": "myNavigationId"
+                                 }
+                               }
+                               """;
+            await server.SendDataAsync(connectionId, eventJson);
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.Multiple(() =>
             {
@@ -464,7 +543,17 @@ public class BiDiDriverTests
 
             // This payload uses an object for the error field, which should cause an exception
             // in parsing.
-            await server.SendDataAsync(connectionId, @"{ ""type"": ""error"", ""id"": null, ""error"": { ""code"": ""unknown error"" }, ""message"": ""This is a test error message"" }");
+            string json = """
+                          {
+                            "type": "error",
+                            "id": null,
+                            "error": {
+                              "code": "unknown error"
+                            },
+                            "message": "This is a test error message"
+                          }
+                          """;
+            await server.SendDataAsync(connectionId, json);
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
@@ -523,7 +612,15 @@ public class BiDiDriverTests
 
             // This payload uses unparsable JSON, which should cause an exception
             // in parsing.
-            await server.SendDataAsync(connectionId, @"{ ""type"": ""error"", ""id"": null, { ""errorMessage"" }, ""message"": ""This is a test error message"" }");
+            string unparsableJson = """
+                               {
+                                 "type": "error",
+                                 "id": null,
+                                 { "errorMessage" },
+                                 "message": "This is a test error message"
+                               }
+                               """;
+            await server.SendDataAsync(connectionId, unparsableJson);
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             Assert.Multiple(() =>
@@ -555,7 +652,17 @@ public class BiDiDriverTests
                 }
 
                 TimeSpan elapsed = DateTime.Now - start;
-                await connection.RaiseDataReceivedEventAsync(@$"{{ ""type"": ""success"", ""id"": {e.SentCommandId}, ""result"": {{ ""value"": ""command result value for {e.SentCommandName}"", ""elapsed"": {elapsed.TotalMilliseconds} }} }}");
+                string eventJson = $$"""
+                                   {
+                                     "type": "success",
+                                     "id": {{e.SentCommandId}},
+                                     "result": {
+                                       "value": "command result value for {{e.SentCommandName}}",
+                                       "elapsed": {{elapsed.TotalMilliseconds}}
+                                     }
+                                   }
+                                   """;
+                await connection.RaiseDataReceivedEventAsync(eventJson);
             });
        };
 

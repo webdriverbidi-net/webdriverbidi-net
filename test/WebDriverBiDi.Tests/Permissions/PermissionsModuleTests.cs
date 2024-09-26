@@ -11,7 +11,13 @@ public class PermissionsModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": {} }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 

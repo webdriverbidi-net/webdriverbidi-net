@@ -14,7 +14,24 @@ public class NewCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""sessionId"": ""mySession"", ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""userAgent"": ""WebDriverBidi.NET/1.0"", ""acceptInsecureCerts"": true, ""proxy"": { ""proxyType"": ""manual"", ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
+        string json = """
+                      {
+                        "sessionId": "mySession",
+                        "capabilities": {
+                          "browserName": "greatBrowser",
+                          "browserVersion": "101.5b",
+                          "platformName": "otherOS",
+                          "userAgent": "WebDriverBidi.NET/1.0",
+                          "acceptInsecureCerts": true,
+                          "proxy": {
+                            "proxyType": "manual",
+                            "httpProxy": "http.proxy"
+                          },
+                          "setWindowRect": true,
+                          "capName": "capValue"
+                        }
+                      }
+                      """;
         NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -40,14 +57,34 @@ public class NewCommandResultTests
     [Test]
     public void TestDeserializingWithMissingSessionIdThrows()
     {
-        string json = @"{ ""capabilities"": { ""browserName"": ""greatBrowser"", ""browserVersion"": ""101.5b"", ""platformName"": ""otherOS"", ""acceptInsecureCerts"": true, ""proxy"": { ""httpProxy"": ""http.proxy"" }, ""setWindowRect"": true, ""capName"": ""capValue"" } }";
+        string json = """
+                      {
+                        "capabilities": {
+                          "browserName": "greatBrowser",
+                          "browserVersion": "101.5b",
+                          "platformName": "otherOS",
+                          "userAgent": "WebDriverBidi.NET/1.0",
+                          "acceptInsecureCerts": true,
+                          "proxy": {
+                            "proxyType": "manual",
+                            "httpProxy": "http.proxy"
+                          },
+                          "setWindowRect": true,
+                          "capName": "capValue"
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithMissingCapabilitiesThrows()
     {
-        string json = @"{ ""sessionId"": ""mySession"" }";
+        string json = """
+                      {
+                        "sessionId": "mySession"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

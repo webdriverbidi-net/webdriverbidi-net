@@ -14,7 +14,21 @@ public class GetClientWindowsCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""clientWindows"": [ { ""clientWindow"": ""myClientWindow"", ""active"": true, ""state"": ""normal"", ""x"": 100, ""y"": 200, ""width"": 300, ""height"": 400 } ] }";
+        string json = """
+                      {
+                        "clientWindows": [
+                          {
+                            "clientWindow": "myClientWindow",
+                            "active": true,
+                            "state": "normal",
+                            "x": 100,
+                            "y": 200,
+                            "width": 300,
+                            "height": 400
+                          }
+                        ]
+                      }
+                      """;
         GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -33,7 +47,11 @@ public class GetClientWindowsCommandResultTests
     [Test]
     public void TestCanDeserializeWithEmptyList()
     {
-        string json = @"{ ""clientWindows"": [ ] }";
+        string json = """
+                      {
+                        "clientWindows": []
+                      }
+                      """;
         GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.ClientWindows, Is.Empty);

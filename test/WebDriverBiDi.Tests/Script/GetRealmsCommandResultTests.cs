@@ -14,7 +14,11 @@ public class GetRealmsCommandResultTests
     [Test]
     public void TestCanDeserializeGetRealmsCommandResult()
     {
-        string json = @"{ ""realms"": [] }";
+        string json = """
+                      {
+                        "realms": []
+                      }
+                      """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Realms, Is.Empty);
@@ -23,7 +27,18 @@ public class GetRealmsCommandResultTests
     [Test]
     public void TestCanDeserializeGetRealmsCommandResultWithWindowRealmInfo()
     {
-        string json = @"{ ""realms"": [ { ""realm"": ""realmId"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""contextId"" } ] }";
+        string json = """
+                      {
+                        "realms": [
+                          {
+                            "realm": "realmId",
+                            "origin": "myOrigin",
+                            "type": "window",
+                            "context": "contextId"
+                          }
+                        ]
+                      }
+                      """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Realms, Has.Count.EqualTo(1));
@@ -40,7 +55,17 @@ public class GetRealmsCommandResultTests
     [Test]
     public void TestCanDeserializeGetRealmsCommandResultWithNonWindowRealmInfo()
     {
-        string json = @"{ ""realms"": [ { ""realm"": ""realmId"", ""origin"": ""myOrigin"", ""type"": ""worker"" } ] }";
+        string json = """
+                      {
+                        "realms": [
+                          {
+                            "realm": "realmId",
+                            "origin": "myOrigin",
+                            "type": "worker"
+                          }
+                        ]
+                      }
+                      """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Realms, Has.Count.EqualTo(1));

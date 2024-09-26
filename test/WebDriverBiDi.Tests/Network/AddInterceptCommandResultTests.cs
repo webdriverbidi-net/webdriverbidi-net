@@ -14,7 +14,11 @@ public class AddInterceptCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""intercept"": ""myInterceptId"" }";
+        string json = """
+                      {
+                        "intercept": "myInterceptId"
+                      }
+                      """;
         AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.InterceptId, Is.EqualTo("myInterceptId"));
@@ -23,14 +27,18 @@ public class AddInterceptCommandResultTests
     [Test]
     public void TestDeserializingWithMissingDataThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
-        string json = @"{ ""intercept"": {} }";
+        string json = """
+                      {
+                        "intercept": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<AddInterceptCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

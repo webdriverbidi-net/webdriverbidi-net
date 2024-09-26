@@ -11,7 +11,13 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -32,7 +38,13 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -53,7 +65,15 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""userContext"": ""myUserContextId"" } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "userContext": "myUserContextId"
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -75,7 +95,15 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""userContext"": ""myUserContextId"" } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "userContext": "myUserContextId" 
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -97,7 +125,34 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""clientWindows"": [ { ""clientWindow"": ""myClientWindow"", ""active"": true, ""state"": ""normal"", ""x"": 100, ""y"": 200, ""width"": 640, ""height"": 480 }, { ""clientWindow"": ""yourClientWindow"", ""active"": false, ""state"": ""normal"", ""x"": 50, ""y"": 75, ""width"": 960, ""height"": 720 } ] } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "clientWindows": [
+                                        {
+                                          "clientWindow": "myClientWindow",
+                                          "active": true,
+                                          "state": "normal",
+                                          "x": 100,
+                                          "y": 200,
+                                          "width": 640,
+                                          "height": 480
+                                        },
+                                        {
+                                          "clientWindow": "yourClientWindow",
+                                          "active": false,
+                                          "state": "normal",
+                                          "x": 50,
+                                          "y": 75,
+                                          "width": 960,
+                                          "height": 720
+                                        }
+                                      ]
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -136,7 +191,34 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""clientWindows"": [ { ""clientWindow"": ""myClientWindow"", ""active"": true, ""state"": ""normal"", ""x"": 100, ""y"": 200, ""width"": 640, ""height"": 480 }, { ""clientWindow"": ""yourClientWindow"", ""active"": false, ""state"": ""normal"", ""x"": 50, ""y"": 75, ""width"": 960, ""height"": 720 } ] } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "clientWindows": [
+                                        {
+                                          "clientWindow": "myClientWindow",
+                                          "active": true,
+                                          "state": "normal",
+                                          "x": 100,
+                                          "y": 200,
+                                          "width": 640,
+                                          "height": 480
+                                        },
+                                        {
+                                          "clientWindow": "yourClientWindow",
+                                          "active": false,
+                                          "state": "normal",
+                                          "x": 50,
+                                          "y": 75,
+                                          "width": 960,
+                                          "height": 720
+                                        }
+                                      ]
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -175,7 +257,22 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""userContexts"": [ { ""userContext"": ""default"" }, { ""userContext"": ""myUserContextId"" } ] } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "userContexts": [
+                                        {
+                                          "userContext": "default"
+                                        },
+                                        {
+                                          "userContext": "myUserContextId"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -203,7 +300,22 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""userContexts"": [ { ""userContext"": ""default"" }, { ""userContext"": ""myUserContextId"" } ] } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "userContexts": [
+                                        {
+                                          "userContext": "default"
+                                        },
+                                        {
+                                          "userContext": "myUserContextId"
+                                        }
+                                      ] 
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -230,7 +342,13 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 
@@ -251,7 +369,21 @@ public class BrowserModuleTests
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-            string responseJson = @"{ ""type"": ""success"", ""id"": " + e.SentCommandId + @", ""result"": { ""clientWindow"": ""myClientWindow"", ""active"": true, ""state"": ""normal"", ""x"": 100, ""y"": 200, ""width"": 640, ""height"": 480 } }";
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "clientWindow": "myClientWindow",
+                                      "active": true,
+                                      "state": "normal",
+                                      "x": 100,
+                                      "y": 200,
+                                      "width": 640,
+                                      "height": 480
+                                    }
+                                  }
+                                  """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
         };
 

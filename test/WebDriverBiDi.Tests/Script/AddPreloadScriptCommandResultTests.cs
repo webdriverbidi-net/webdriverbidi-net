@@ -14,7 +14,11 @@ public class AddPreloadScriptCommandResultTests
     [Test]
     public void TestCanDeserializeAddLoadScriptCommandResult()
     {
-        string json = @"{ ""script"": ""myLoadScript"" }";
+        string json = """
+                      {
+                        "script": "myLoadScript"
+                      }
+                      """;
         AddPreloadScriptCommandResult? result = JsonSerializer.Deserialize<AddPreloadScriptCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.PreloadScriptId, Is.EqualTo("myLoadScript"));

@@ -14,7 +14,18 @@ public class StackTraceTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""callFrames"": [ { ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" } ] }";
+        string json = """
+                      {
+                        "callFrames": [
+                          {
+                            "functionName": "myFunction",
+                            "lineNumber": 1,
+                            "columnNumber": 5,
+                            "url": "http://some.url/file.js"
+                          }
+                        ]
+                      }
+                      """;
         StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions);
         Assert.That(stacktrace, Is.Not.Null);
         Assert.Multiple(() =>
@@ -28,14 +39,25 @@ public class StackTraceTests
     [Test]
     public void TestDeserializeWithMissingCallFramesThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidCallFramesTypeThrows()
     {
-        string json = @"{ ""callFrames"": { ""frame"": { ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" } } }";
+        string json = """
+                      {
+                        "callFrames": {
+                          "frame": {
+                            "functionName": "myFunction",
+                            "lineNumber": 1,
+                            "columnNumber": 5,
+                            "url": "http://some.url/file.js"
+                          }
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

@@ -10,7 +10,21 @@ public class LocateNodesCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""nodes"": [{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }] }";
+        string json = """
+                      {
+                        "nodes": [
+                          {
+                            "type": "node", 
+                            "sharedId": "mySharedId",
+                            "value": {
+                              "nodeType": 1,
+                              "nodeValue": "",
+                              "childNodeCount": 0
+                            }
+                          }
+                        ]
+                      }
+                      """;
         LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Nodes, Has.Count.EqualTo(1));
@@ -20,7 +34,11 @@ public class LocateNodesCommandResultTests
     [Test]
     public void TestCanDeserializeWithEmptyResult()
     {
-        string json = @"{ ""nodes"": [] }";
+        string json = """
+                      {
+                        "nodes": []
+                      }
+                      """;
         LocateNodesCommandResult? result = JsonSerializer.Deserialize<LocateNodesCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Nodes, Has.Count.EqualTo(0));
@@ -29,14 +47,18 @@ public class LocateNodesCommandResultTests
     [Test]
     public void TestDeserializingWithMissingDataThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
-        string json = @"{ ""nodes"": {} }";
+        string json = """
+                      {
+                        ""nodes"": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<LocateNodesCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

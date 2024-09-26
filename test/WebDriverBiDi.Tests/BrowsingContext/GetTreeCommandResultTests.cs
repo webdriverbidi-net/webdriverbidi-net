@@ -14,7 +14,20 @@ public class GetTreeCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""contexts"": [{ ""context"": ""myContextId"", ""clientWindow"": ""myClientWindow"", ""url"": ""http://example.com"", ""originalOpener"": ""openerContext"", ""userContext"": ""default"", ""children"": [] }] }";
+        string json = """
+                      {
+                        "contexts": [
+                          {
+                            "context": "myContextId",
+                            "clientWindow": "myClientWindow",
+                            "url": "http://example.com",
+                            "originalOpener": "openerContext",
+                            "userContext": "default",
+                            "children": []
+                          }
+                        ]
+                      }
+                      """;
         GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.ContextTree, Has.Count.EqualTo(1));
@@ -23,7 +36,11 @@ public class GetTreeCommandResultTests
     [Test]
     public void TestCanDeserializeWithNoContexts()
     {
-        string json = @"{ ""contexts"": [] }";
+        string json = """
+                      {
+                        "contexts": []
+                      }
+                      """;
         GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.ContextTree, Is.Empty);
@@ -32,21 +49,29 @@ public class GetTreeCommandResultTests
     [Test]
     public void TestDeserializingWithMissingContextsThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidContextsTypeThrows()
     {
-        string json = @"{ ""contexts"": ""invalid"" }";
+        string json = """
+                      {
+                        "contexts": "invalid"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidContextValueTypeThrows()
     {
-        string json = @"{ ""contexts"": [""invalid""] }";
+        string json = """
+                      {
+                        "contexts": [ "invalid" ]
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

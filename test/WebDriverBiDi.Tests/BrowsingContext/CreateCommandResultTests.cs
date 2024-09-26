@@ -14,7 +14,11 @@ public class CreateCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""context"": ""myContextId"" }";
+        string json = """
+                      {
+                        "context": "myContextId"
+                      }
+                      """;
         CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.BrowsingContextId, Is.EqualTo("myContextId"));
@@ -23,14 +27,18 @@ public class CreateCommandResultTests
     [Test]
     public void TestDeserializingWithMissingContextThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidContextTypeThrows()
     {
-        string json = @"{ ""context"": {} }";
+        string json = """
+                      {
+                        "context": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

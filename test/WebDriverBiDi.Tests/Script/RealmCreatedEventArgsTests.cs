@@ -8,7 +8,14 @@ public class RealmCreatedEventArgsTests
     [Test]
     public void TestCanCreateWithWindowRealmInfo()
     {
-        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""window"", ""context"": ""myContext"" }";
+        string json = """
+                      {
+                        "realm": "myRealm",
+                        "origin": "myOrigin",
+                        "type": "window",
+                        "context": "myContext"
+                      }
+                      """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         RealmCreatedEventArgs eventArgs = new(info!);
         Assert.Multiple(() =>
@@ -23,7 +30,13 @@ public class RealmCreatedEventArgsTests
     [Test]
     public void TestCanCreateWithNonWindowRealmInfo()
     {
-        string json = @"{ ""realm"": ""myRealm"", ""origin"": ""myOrigin"", ""type"": ""worker"" }";
+        string json = """
+                      {
+                        "realm": "myRealm",
+                        "origin": "myOrigin",
+                        "type": "worker"
+                      }
+                      """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         RealmCreatedEventArgs eventArgs = new(info!);
         Assert.Multiple(() =>

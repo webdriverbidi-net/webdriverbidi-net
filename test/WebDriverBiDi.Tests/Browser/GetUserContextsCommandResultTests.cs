@@ -14,7 +14,18 @@ public class GetUserContextsCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""userContexts"": [ { ""userContext"": ""default"" }, { ""userContext"": ""myUserContext"" } ] }";
+        string json = """
+                      {
+                        "userContexts": [
+                          {
+                            "userContext": "default"
+                          },
+                          {
+                            "userContext": "myUserContext"
+                          }
+                        ]
+                      }
+                      """;
         GetUserContextsCommandResult? result = JsonSerializer.Deserialize<GetUserContextsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -29,14 +40,18 @@ public class GetUserContextsCommandResultTests
     [Test]
     public void TestDeserializingWithMissingDataThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
-        string json = @"{ ""userContexts"": {} }";
+        string json = """
+                      {
+                        "userContexts": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

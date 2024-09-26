@@ -14,7 +14,16 @@ public class EvaluateResultTests
     [Test]
     public void TestCanDeserializeScriptEvaluateResultSuccess()
     {
-        string json = @"{ ""type"": ""success"", ""realm"": ""myRealm"", ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": "myRealm",
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<EvaluateResultSuccess>());
@@ -31,7 +40,24 @@ public class EvaluateResultTests
     [Test]
     public void TestCanDeserializeScriptEvaluateResultException()
     {
-        string json = @"{ ""type"": ""exception"", ""realm"": ""myRealm"", ""exceptionDetails"": { ""text"": ""exception thrown"", ""lineNumber"": 1, ""columnNumber"": 5, ""stackTrace"": { ""callFrames"": [] }, ""exception"": { ""type"": ""string"", ""value"": ""exception value"" } } }";
+        string json = """
+                      {
+                        "type": "exception",
+                        "realm": "myRealm",
+                        "exceptionDetails": {
+                          "text": "exception thrown",
+                          "lineNumber": 1,
+                          "columnNumber": 5,
+                          "stackTrace": {
+                            "callFrames": [] 
+                          },
+                          "exception": {
+                            "type": "string",
+                            "value": "exception value"
+                          }
+                        }
+                      }
+                      """;
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<EvaluateResultException>());
@@ -50,35 +76,73 @@ public class EvaluateResultTests
     [Test]
     public void TestDeserializeScriptEvaluateResultWithInvalidTypePropertyValueThrows()
     {
-        string json = @"{ ""type"": ""invalid"", ""realm"": ""myRealm"", ""noWoman"": ""noCry"" }";
+        string json = """
+                     {
+                       "type": "invalid",
+                       "realm": "myRealm",
+                       "noWoman": "noCry"
+                     }
+                     """;
         Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("unknown type 'invalid' for script result"));
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithMissingTypePropertyThrows()
     {
-        string json = @"{ ""realm"": ""myRealm"", ""noWoman"": ""noCry"" }";
+        string json = """
+                     {
+                       "realm": "myRealm",
+                       "noWoman": "noCry"
+                     }
+                     """;
         Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("Script response must contain a 'type' property"));
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithInvalidTypePropertyObjectThrows()
     {
-        string json = @"{ ""type"": { ""noWoman"": ""noCry"" }, ""realm"": ""myRealm"", ""noWoman"": ""noCry"" }";
+        string json = """
+                     {
+                       "type": {
+                         "noWoman": "noCry"
+                       },
+                       "realm": "myRealm",
+                       "noWoman": "noCry"
+                     }
+                     """;
         Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("Script response 'type' property must be a string"));
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithMissingRealmValueThrows()
     {
-        string json = @"{ ""type"": ""success"", ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
+        string json = """
+                      {
+                        "type": "success",
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeScriptEvaluateResultWithInvalidRealmValueTypeThrows()
     {
-        string json = @"{ ""type"": ""success"", ""realm"": { ""noWoman"": ""noCry"" }, ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": {
+                          "noWoman": "noCry"
+                        },
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
@@ -94,7 +158,16 @@ public class EvaluateResultTests
     {
         // NOTE: ScriptEvaluateResult and subclasses do not provide a way to instantiate
         // one directly using a constructor, so we will deserialize one from JSON.
-        string json = @"{ ""type"": ""success"", ""realm"": ""myRealm"", ""result"": { ""type"": ""string"", ""value"": ""myResult"" } }";
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": "myRealm",
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions);
         Assert.That(() => JsonSerializer.Serialize(result), Throws.InstanceOf<NotImplementedException>());
     }

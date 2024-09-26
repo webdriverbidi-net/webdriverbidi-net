@@ -14,7 +14,11 @@ public class NavigationResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""url"": ""http://example.com"" }";
+        string json = """
+                      {
+                        "url": "http://example.com"
+                      }
+                      """;
         NavigationResult? result = JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -27,7 +31,12 @@ public class NavigationResultTests
     [Test]
     public void TestCanDeserializeWithNavigationId()
     {
-        string json = @"{ ""url"": ""http://example.com"", ""navigation"": ""myNavigationId"" }";
+        string json = """
+                      {
+                        "url": "http://example.com",
+                        "navigation": "myNavigationId"
+                      }
+                      """;
         NavigationResult? result = JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -40,21 +49,30 @@ public class NavigationResultTests
     [Test]
     public void TestDeserializingWithMissingUrlThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidUrlTypeThrows()
     {
-        string json = @"{ ""url"": {} }";
+        string json = """
+                      {
+                        "url": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidNavigationIdTypeThrows()
     {
-        string json = @"{ ""url"": ""http://example.com"", ""navigation"": {} }";
+        string json = """
+                      {
+                        "url": "http://example.co",
+                        "navigation": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

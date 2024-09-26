@@ -14,7 +14,11 @@ public class WindowProxyPropertiesTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""context"": ""myContextId"" }";
+        string json = """
+                      {
+                        "context": "myContextId"
+                      }
+                      """;
         WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions);
         Assert.That(windowProxyProperties, Is.Not.Null);
         Assert.That(windowProxyProperties!.Context, Is.EqualTo("myContextId"));
@@ -23,14 +27,22 @@ public class WindowProxyPropertiesTests
     [Test]
     public void TestDeserializeWithInvalidContextTypeThrows()
     {
-        string json = @"{ ""context"": {} }";
+        string json = """
+                      {
+                        "context": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingContextThrows()
     {
-        string json = @"{ ""nodeType"": 1 }";
+        string json = """
+                      {
+                        "nodeType": 1
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

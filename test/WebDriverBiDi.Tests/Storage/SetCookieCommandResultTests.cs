@@ -14,7 +14,15 @@ public class SetCookieCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""partition"": { ""userContext"": ""myUserContext"", ""sourceOrigin"": ""mySourceOrigin"", ""extraPropertyName"": ""extraPropertyValue"" } }";
+        string json = """
+                      {
+                        "partition": {
+                          "userContext": "myUserContext",
+                          "sourceOrigin": "mySourceOrigin",
+                          "extraPropertyName": "extraPropertyValue"
+                        }
+                      }
+                      """;
         SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions);
         Assert.Multiple(() =>
         {
@@ -31,7 +39,11 @@ public class SetCookieCommandResultTests
     [Test]
     public void TestCanDeserializeWithMissingData()
     {
-        string json = @"{ ""partition"": {} }";
+        string json = """
+                      {
+                        "partition": {} 
+                      }
+                      """;
         SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions);
         Assert.Multiple(() =>
         {
@@ -46,14 +58,18 @@ public class SetCookieCommandResultTests
     [Test]
     public void TestCanDeserializingWithMissingPartition()
     {
-        string json = @"{ }";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidPartitionDataTypeThrows()
     {
-        string json = @"{ ""partition"": ""invalidPartitionType"" }";
+        string json = """
+                      {
+                        "partition": "invalidPartitionType"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

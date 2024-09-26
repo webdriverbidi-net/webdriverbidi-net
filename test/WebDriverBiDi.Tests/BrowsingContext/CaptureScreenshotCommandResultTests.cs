@@ -14,7 +14,11 @@ public class CaptureScreenshotCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""data"": ""some screenshot data"" }";
+        string json = """
+                      {
+                        "data": "some screenshot data"
+                      }
+                      """;
         CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Data, Is.EqualTo("some screenshot data"));
@@ -23,14 +27,18 @@ public class CaptureScreenshotCommandResultTests
     [Test]
     public void TestDeserializingWithMissingDataThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
-        string json = @"{ ""data"": {} }";
+        string json = """
+                      {
+                        "data": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

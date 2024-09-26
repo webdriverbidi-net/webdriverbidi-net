@@ -15,7 +15,17 @@ public class EntryAddedEventArgsTests
     public void TestCanDeserializeWithNullText()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""type"": ""generic"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": null, ""timestamp"": " + epochTimestamp + @" }";
+        string json = $$"""
+                      {
+                        "type": "generic",
+                        "level": "debug",
+                        "source": {
+                          "realm": "realmId"
+                        },
+                        "text": null,
+                        "timestamp": {{epochTimestamp}}
+                      }
+                      """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         EntryAddedEventArgs eventArgs = new(entry!);
         Assert.Multiple(() =>
@@ -35,7 +45,22 @@ public class EntryAddedEventArgsTests
     public void TestCanDeserializeConsoleLogEntry()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [], ""stackTrace"": { ""callFrames"": [] } }";
+        string json = $$"""
+                      {
+                        "type": "console",
+                        "level": "debug",
+                        "source": {
+                          "realm": "realmId" 
+                        },
+                        "text": "my log message",
+                        "timestamp": {{epochTimestamp}},
+                        "method": "myMethod",
+                        "args": [],
+                        "stackTrace": {
+                          "callFrames": []
+                        }
+                      }
+                      """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         EntryAddedEventArgs eventArgs = new(entry!);
         Assert.Multiple(() =>
@@ -55,7 +80,26 @@ public class EntryAddedEventArgsTests
     public void TestCanDeserializeConsoleLogEntryWithArgs()
     {
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""type"": ""console"", ""level"": ""debug"", ""source"": { ""realm"": ""realmId"" }, ""text"": ""my log message"", ""timestamp"": " + epochTimestamp + @", ""method"": ""myMethod"", ""args"": [{ ""type"": ""string"", ""value"": ""argValue"" }], ""stackTrace"": { ""callFrames"": [] } }";
+        string json = $$"""
+                      {
+                        "type": "console",
+                        "level": "debug",
+                        "source": {
+                          "realm": "realmId"
+                        },
+                        "text": "my log message",
+                        "timestamp": {{epochTimestamp}},
+                        "method": "myMethod",
+                        "args": [
+                          {
+                            "type": "string",
+                            "value": "argValue" 
+                          }
+                        ], "stackTrace": {
+                          "callFrames": []
+                        }
+                      }
+                      """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         EntryAddedEventArgs eventArgs = new(entry!);
         Assert.Multiple(() =>

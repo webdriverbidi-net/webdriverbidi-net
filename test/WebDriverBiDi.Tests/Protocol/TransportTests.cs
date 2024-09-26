@@ -3,7 +3,6 @@ namespace WebDriverBiDi.Protocol;
 using Newtonsoft.Json.Linq;
 using TestUtilities;
 using PinchHitter;
-using System.Runtime;
 
 [TestFixture]
 public class TransportTests
@@ -46,8 +45,17 @@ public class TransportTests
         Command command = await transport.SendCommandAsync(commandParameters);
         _ = Task.Run(async () => 
         {
+            string json = """
+                          {
+                            "type": "success",
+                            "id": 1,
+                            "result": {
+                              "value": "response value"
+                            }
+                          }
+                          """;
             await Task.Delay(TimeSpan.FromMilliseconds(50));
-            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }");
+            await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
         CommandResult? actualResult = command.Result;
@@ -72,8 +80,18 @@ public class TransportTests
         Command command = await transport.SendCommandAsync(commandParameters);
         _ = Task.Run(async () => 
         {
+            string json = """
+                          {
+                            "type": "success",
+                            "id": 1,
+                            "result": {
+                              "value": "response value" 
+                            },
+                            "extraDataName": "extraDataValue"
+                          }
+                          """;
             await Task.Delay(TimeSpan.FromMilliseconds(50));
-            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" }, ""extraDataName"": ""extraDataValue"" }");
+            await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         CommandResult? actualResult = command.Result;
@@ -103,8 +121,16 @@ public class TransportTests
         Command command = await transport.SendCommandAsync(commandParameters);
         _ = Task.Run(async () => 
         {
+            string json = """
+                          {
+                            "type": "error",
+                            "id": 1,
+                            "error": "unknown command",
+                            "message": "This is a test error message"
+                          }
+                          """;
             await Task.Delay(TimeSpan.FromMilliseconds(50));
-            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""error"", ""id"": 1, ""error"": ""unknown command"", ""message"": ""This is a test error message"" }");
+            await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         CommandResult? actualResult = command.Result;
@@ -134,8 +160,18 @@ public class TransportTests
         Command command = await transport.SendCommandAsync(commandParameters);
         _ = Task.Run(async () => 
         {
+            string json = """
+                          {
+                            "type": "success",
+                            "id": 1, 
+                            "noResult": {
+                              "invalid": "unknown command",
+                              "message": "This is a test error message"
+                            }
+                          }
+                          """;
             await Task.Delay(TimeSpan.FromMilliseconds(50));
-            await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""success"", ""id"": 1,  ""noResult"": { ""invalid"": ""unknown command"", ""message"": ""This is a test error message"" } }");
+            await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
@@ -186,8 +222,17 @@ public class TransportTests
             syncEvent.Set();
             return Task.CompletedTask;
         });
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue" 
+                        }
+                      }
+                      """;
         await transport.ConnectAsync("ws:localhost");
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.Multiple(() =>
         {
@@ -211,8 +256,16 @@ public class TransportTests
             syncEvent.Set();
             return Task.CompletedTask;
         });
+        string json = """
+                      {
+                        "type": "error",
+                        "id": null,
+                        "error": "unknown error",
+                        "message": "This is a test error message"
+                      }
+                      """;
         await transport.ConnectAsync("ws:localhost");
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown error"", ""message"": ""This is a test error message"" }");
+        await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
         Assert.That(receivedData, Is.TypeOf<ErrorResult>());
@@ -242,8 +295,14 @@ public class TransportTests
         {
             return Task.CompletedTask;
         });
+        string json = """
+                      {
+                        "type": "event",
+                        "method": null
+                      }
+                      """;
         await transport.ConnectAsync("ws:localhost");
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": null }");
+        await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
     }
@@ -301,7 +360,14 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventWithMissingMessageType()
     {
-        string json = @"{ ""id"": 1, ""result"": { ""value"": ""response value"" } }";
+        string json = """
+                      {
+                        "id": 1,
+                        "result": {
+                          "value": "response value"
+                        }
+                      }
+                      """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
@@ -325,7 +391,15 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventWithInvalidMessageTypeValue()
     {
-        string json = @"{ ""type"": ""invalid"", ""id"": 1, ""result"": { ""value"": ""response value"" } }";
+        string json = """
+                      {
+                        "type": "invalid",
+                        "id": 1,
+                        "result": {
+                          "value": "response value"
+                        }
+                      }
+                      """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
@@ -349,7 +423,14 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForSuccessMessageWithMissingId()
     {
-        string json = @"{ ""type"": ""success"", ""result"": { ""value"": ""response value"" } }";
+        string json = """
+                      {
+                        "type": "success",
+                        "result": {
+                          "value": "response value"
+                        }
+                      }
+                      """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
@@ -373,7 +454,15 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForSuccessMessageWitInvalidIdDataType()
     {
-        string json = @"{ ""type"": ""success"", ""id"": true, ""result"": { ""value"": ""response value"" } }";
+        string json = """
+                      {
+                        "type": "success",
+                        "id": true,
+                        "result": {
+                          "value": "response value"
+                        }
+                      }
+                      """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
@@ -397,7 +486,15 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForSuccessMessageWitInvalidIdValue()
     {
-        string json = @"{ ""type"": ""success"", ""id"": 1, ""result"": { ""value"": ""response value"" } }";
+        string json = """
+                      {
+                        "type": "success",
+                        "id": 1,
+                        "result": {
+                          "value": "response value"
+                        }
+                      }
+                      """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
@@ -421,7 +518,13 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingId()
     {
-        string json = @"{ ""type"": ""error"", ""error"": ""unknown error"", ""message"": ""This is a test error message"" }";
+        string json = """
+                      {
+                        "type": "error",
+                        "error": "unknown error",
+                        "message": "This is a test error message"
+                      }
+                      """;
         string loggedEvent = string.Empty;
         List<LogMessageEventArgs> logs = new();
         CountdownEvent signaler = new(2);
@@ -459,7 +562,13 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingErrorProperty()
     {
-        string json = @"{ ""type"": ""error"", ""id"": null, ""message"": ""This is a test error message"" }";
+        string json = """
+                      {
+                        "type": "error",
+                        "id": null,
+                        "message": "This is a test error message"
+                      }
+                      """;
         string loggedEvent = string.Empty;
         List<LogMessageEventArgs> logs = new();
         CountdownEvent signaler = new(2);
@@ -497,7 +606,13 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForErrorMessageWithMissingMessageProperty()
     {
-        string json = @"{ ""type"": ""error"", ""id"": null, ""error"": ""unknown error"" }";
+        string json = """
+                      {
+                        "type": "error",
+                        "id": null,
+                        "error": "unknown error"
+                      }
+                      """;
         string loggedEvent = string.Empty;
         List<LogMessageEventArgs> logs = new();
         CountdownEvent signaler = new(2);
@@ -535,7 +650,14 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForEventMessageWithMissingMethod()
     {
-        string json = @"{ ""type"": ""event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string json = """
+                      {
+                        "type": "event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
@@ -559,7 +681,12 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForEventMessageWithMissingParams()
     {
-        string json = @"{ ""type"": ""event"", ""method"": ""protocol.event"" }";
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event"
+                      }
+                      """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
@@ -583,7 +710,15 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForEventMessageWithUnregisteredEventMethod()
     {
-        string json = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
         TestConnection connection = new();
@@ -607,7 +742,15 @@ public class TransportTests
     [Test]
     public async Task TestTransportRaisesUnknownMessageEventForEventMessageWithMismatchingEventParameters()
     {
-        string json = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""invalidParamName"": ""paramValue"" } }";
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "invalidParamName": "paramValue"
+                        }
+                      }
+                      """;
         string loggedEvent = string.Empty;
         List<LogMessageEventArgs> logs = new();
         CountdownEvent signaler = new(2);
@@ -693,8 +836,17 @@ public class TransportTests
             syncEvent.Set();
             return Task.CompletedTask;
         });
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         await transport.ConnectAsync("ws:localhost");
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(json);
         await transport.DisconnectAsync();
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
@@ -758,8 +910,17 @@ public class TransportTests
             syncEvent.Set();
             throw new WebDriverBiDiException("This is an unexpected exception");
         });
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         await transport.ConnectAsync("ws:localhost");
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("This is an unexpected exception"));
     }
@@ -787,11 +948,20 @@ public class TransportTests
                 syncEvent.Set();
             }
         });
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         await transport.ConnectAsync("ws:localhost");
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         syncEvent.Reset();
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<AggregateException>().With.Message.Contains("Normal shutdown").And.Property("InnerExceptions").Count.EqualTo(2).And.Property("InnerExceptions").All.InstanceOf<WebDriverBiDiException>().And.Message.Contains("This is an unexpected exception"));
     }
@@ -819,8 +989,17 @@ public class TransportTests
                 syncEvent.Set();
             }
         });
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         await transport.ConnectAsync("ws:localhost");
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
         string commandName = "module.command";
@@ -842,8 +1021,17 @@ public class TransportTests
         {
             return Task.FromException(new WebDriverBiDiException("This is an unexpected exception"));
         });
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         await transport.ConnectAsync("ws:localhost");
-        await connection.RaiseDataReceivedEventAsync(@"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }");
+        await connection.RaiseDataReceivedEventAsync(json);
         await transport.DisconnectAsync();
 
         await transport.ConnectAsync("ws:localhost");
@@ -868,7 +1056,6 @@ public class TransportTests
     [Test]
     public void TestTransportSubclassesCanAccessConnection()
     {
-        string receivedName = string.Empty;
         TestConnection connection = new();
         TestTransport transport = new(connection);
         Assert.That(transport.GetConnection(), Is.EqualTo(connection));

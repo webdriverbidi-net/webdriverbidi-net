@@ -36,7 +36,15 @@ public class ModuleTests
         });
 
         await driver.StartAsync("ws:localhost");
-        string eventJson = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""context"": ""invalid"" } }";
+        string eventJson = """
+                           {
+                             "type": "event",
+                             "method": "protocol.event",
+                             "params": {
+                               "context": "invalid"
+                             }
+                           }
+                           """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(10000));
         Assert.Multiple(() =>
@@ -62,7 +70,15 @@ public class ModuleTests
         });
 
         await driver.StartAsync("ws:localhost");
-        string eventJson = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string eventJson = """
+                           {
+                             "type": "event",
+                             "method": "protocol.event",
+                             "params": {
+                               "paramName": "paramValue"
+                             }
+                           }
+                           """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.That(eventSet, Is.True);
@@ -93,7 +109,15 @@ public class ModuleTests
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         await driver.StartAsync("ws:localhost");
-        string eventJson = @"{ ""type"": ""event"", ""method"": ""protocol.event"", ""params"": { ""paramName"": ""paramValue"" } }";
+        string eventJson = """
+                           {
+                             "type": "event",
+                             "method": "protocol.event",
+                             "params": {
+                               "paramName": "paramValue"
+                             }
+                           }
+                           """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
         Assert.That(eventSet, Is.True);

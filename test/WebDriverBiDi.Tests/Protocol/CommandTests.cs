@@ -35,7 +35,15 @@ public class CommandTests
     [Test]
     public void TestCannotDeserializeCommand()
     {
-        string json = @"{ ""id"": 1, ""method"": ""module.command"", ""params"": { ""paramName"": ""paramValue"" }}";
+        string json = """
+                      {
+                        "id": 1,
+                        "method": "module.command",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Command>(json), Throws.InstanceOf<NotImplementedException>());
     }
 }

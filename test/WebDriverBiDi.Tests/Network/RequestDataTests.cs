@@ -14,7 +14,32 @@ public class RequestDataTests
     [Test]
     public void CanDeserializeRequestData()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
@@ -46,7 +71,40 @@ public class RequestDataTests
     [Test]
     public void CanDeserializeRequestDataWithHeaders()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [{ ""name"": ""headerName"", ""value"": { ""type"": ""string"", ""value"": ""headerValue"" } }], ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [
+                          {
+                            "name": "headerName",
+                            "value": {
+                              "type": "string",
+                              "value": "headerValue" 
+                            }
+                          }
+                        ],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
@@ -81,7 +139,46 @@ public class RequestDataTests
     [Test]
     public void CanDeserializeRequestDataWithCookies()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""cookies"": [{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": true, ""httpOnly"": true, ""sameSite"": ""lax"", ""size"": 100 }], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [
+                          {
+                            "name": "cookieName",
+                            "value": {
+                              "type": "string",
+                              "value": "cookieValue"
+                            },
+                            "domain": "cookieDomain",
+                            "path": "/cookiePath",
+                            "secure": true,
+                            "httpOnly": true,
+                            "sameSite": "lax",
+                            "size": 100
+                          }
+                        ],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
@@ -124,7 +221,32 @@ public class RequestDataTests
     [Test]
     public void CanDeserializeRequestDataWithNullBodySize()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""cookies"": [], ""headersSize"": 0, ""bodySize"": null, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": null,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
@@ -156,49 +278,203 @@ public class RequestDataTests
     [Test]
     public void TestDeserializeWithMissingRequestIdThrows()
     {
-        string json = @"{ ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: request"));
     }
 
     [Test]
     public void TestDeserializeWithMissingUrlThrows()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""method"": ""get"", ""headers"": [], ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: url"));
     }
 
     [Test]
     public void TestDeserializeWithMissingMethodThrows()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""headers"": [], ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: method"));
     }
 
     [Test]
     public void TestDeserializeWithMissingHeadersThrows()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: headers"));
     }
 
     [Test]
     public void TestDeserializeWithMissingCookiesThrows()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""headersSize"": 0, ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: cookies"));
     }
 
     [Test]
     public void TestDeserializeWithMissingHeadersSizeThrows()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""cookies"": [], ""bodySize"": 0, ""timings"": { ""timeOrigin"": 1, ""requestTime"": 2, ""redirectStart"": 3, ""redirectEnd"": 4, ""fetchStart"": 5, ""dnsStart"": 6, ""dnsEnd"": 7, ""connectStart"": 8, ""connectEnd"": 9, ""tlsStart"": 10, ""requestStart"": 11, ""responseStart"": 12, ""responseEnd"": 13 } }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: headersSize"));
     }
 
     [Test]
     public void TestDeserializeWithMissingTimingsThrows()
     {
-        string json = @"{ ""request"": ""myRequestId"", ""url"": ""requestUrl"", ""method"": ""get"", ""headers"": [], ""cookies"": [], ""headersSize"": 0, ""bodySize"": 0 }";
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: timings"));
     }
 }

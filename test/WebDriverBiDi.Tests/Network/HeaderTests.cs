@@ -14,7 +14,15 @@ public class HeaderTests
     [Test]
     public void TestCanDeserializeHeader()
     {
-        string json = @"{ ""name"": ""headerName"", ""value"": { ""type"": ""string"", ""value"": ""headerValue"" } }";
+        string json = """
+                      {
+                        "name": "headerName",
+                        "value": {
+                          "type": "string",
+                          "value": "headerValue" 
+                        }
+                      }
+                      """;
         Header? header = JsonSerializer.Deserialize<Header>(json, deserializationOptions);
         Assert.That(header, Is.Not.Null);
         Assert.Multiple(() =>
@@ -30,7 +38,15 @@ public class HeaderTests
     {
         byte[] byteArray = new byte[] { 0x41, 0x42, 0x43 };
         string base64Value = Convert.ToBase64String(byteArray);
-        string json = $@"{{ ""name"": ""headerName"", ""value"": {{ ""type"": ""base64"", ""value"": ""{base64Value}"" }} }}";
+        string json = $$"""
+                      {
+                        "name": "headerName",
+                        "value": {
+                          "type": "base64",
+                          "value": "{{base64Value}}"
+                        }
+                      }
+                      """;
         Header? header = JsonSerializer.Deserialize<Header>(json, deserializationOptions);
         Assert.That(header, Is.Not.Null);
         Assert.Multiple(() =>
@@ -44,14 +60,25 @@ public class HeaderTests
     [Test]
     public void TestDeserializingWithMissingNameThrows()
     {
-        string json = @"{ ""value"":  { ""type"": ""string"", ""value"": ""headerValue"" } }";
+        string json = """
+                      {
+                        "value": {
+                          "type": "string",
+                          "value": "headerValue" 
+                        }
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Header>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: name"));
     }
 
     [Test]
     public void TestDeserializingWithMissingValueThrows()
     {
-        string json = @"{ ""name"": ""headerName"" }";
+        string json = """
+                      {
+                        "name": "headerName"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Header>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: value"));
     }
 }

@@ -14,7 +14,21 @@ public class CookieTests
     [Test]
     public void TestCanDeserializeCookie()
     {
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""strict"", ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "strict",
+                        "size": 100
+                      }
+                      """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
@@ -39,7 +53,21 @@ public class CookieTests
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
@@ -64,7 +92,21 @@ public class CookieTests
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""none"", ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "none",
+                        "size": 100
+                      }
+                      """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
@@ -88,7 +130,21 @@ public class CookieTests
     {
         byte[] byteArray = new byte[] { 0x41, 0x42, 0x43 };
         string base64Value = Convert.ToBase64String(byteArray);
-        string json = $@"{{ ""name"": ""cookieName"", ""value"": {{ ""type"": ""base64"", ""value"": ""{base64Value}"" }}, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100 }}";
+        string json = $$"""
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "base64",
+                          "value": "{{base64Value}}"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
@@ -113,7 +169,22 @@ public class CookieTests
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""name"": ""cookieName"", ""value"":{ ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100, ""expiry"": " + milliseconds + @" }";
+        string json = $$"""
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100,
+                        "expiry": {{milliseconds}}
+                      }
+                      """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
@@ -138,7 +209,22 @@ public class CookieTests
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
-        string json = @"{ ""name"": ""cookieName"", ""value"":{ ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100, ""expiry"": " + milliseconds + @" }";
+        string json = $$"""
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100,
+                        "expiry": {{milliseconds}}
+                      }
+                      """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
         SetCookieHeader header = cookie!.ToSetCookieHeader();
@@ -160,63 +246,178 @@ public class CookieTests
     [Test]
     public void TestDeserializeWithMissingNameThrows()
     {
-        string json = @"{ ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100 }";
+        string json = """
+                      {
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: name"));
     }
 
     [Test]
     public void TestDeserializeWithMissingValueThrows()
     {
-        string json = @"{ ""name"": ""cookieName"", ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: value"));
     }
 
     [Test]
     public void TestDeserializeWithMissingDomainThrows()
     {
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: domain"));
     }
 
     [Test]
     public void TestDeserializeWithMissingPathThrows()
     {
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: path"));
     }
 
     [Test]
     public void TestDeserializeWithMissingSecureThrows()
     {
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "httpOnly": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: secure"));
     }
 
     [Test]
     public void TestDeserializeWithMissingHttpOnlyThrows()
     {
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""sameSite"": ""lax"", ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "sameSite": "lax",
+                        "size": 100
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: httpOnly"));
     }
 
     [Test]
     public void TestDeserializeWithMissingSameSiteThrows()
     {
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""size"": 100 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "size": 100
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: sameSite"));
     }
 
     [Test]
     public void TestDeserializeWithMissingSizeThrows()
     {
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"" }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "lax"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: size"));
     }
 
     [Test]
     public void TestDeserializeWithInvalidSameSiteValueThrows()
     {
-        string json = @"{ ""name"": ""cookieName"", ""value"": { ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""invalid"", ""size"": 10 }";
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "invalid",
+                        "size": 100
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
     }
 }

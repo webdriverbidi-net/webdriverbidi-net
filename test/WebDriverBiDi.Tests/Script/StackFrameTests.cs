@@ -14,7 +14,14 @@ public class StackFrameTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" }";
+        string json = """
+                      {
+                        "functionName": "myFunction",
+                        "lineNumber": 1,
+                        "columnNumber": 5,
+                        "url": "http://some.url/file.js"
+                      }
+                      """;
         StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions);
         Assert.That(stackFrame, Is.Not.Null);
         Assert.Multiple(() =>
@@ -29,56 +36,108 @@ public class StackFrameTests
     [Test]
     public void TestDeserializeWithMissingFunctionNameThrows()
     {
-        string json = @"{ ""lineNumber"": 1, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" }";
+        string json = """
+                      {
+                        "lineNumber": 1,
+                        "columnNumber": 5,
+                        "url": "http://some.url/file.js"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidFunctionNameTypeThrows()
     {
-        string json = @"{ ""functionName"": {}, ""lineNumber"": 1, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" }";
+        string json = """
+                      {
+                        "functionName": {},
+                        "lineNumber": 1,
+                        "columnNumber": 5,
+                        "url": "http://some.url/file.js"
+                      }
+                      """;
        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingLineNumberThrows()
     {
-        string json = @"{ ""functionName"": ""myFunction"", ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" }";
+        string json = """
+                      {
+                        "functionName": "myFunction",
+                        "columnNumber": 5,
+                        "url": "http://some.url/file.js"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidLineNumberTypeThrows()
     {
-        string json = @"{ ""functionName"": ""myFunction"", ""lineNumber"": {}, ""columnNumber"": 5, ""url"": ""http://some.url/file.js"" }";
-       Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        string json = """
+                      {
+                        "functionName": "myFunction",
+                        "lineNumber": {},
+                        "columnNumber": 5,
+                        "url": "http://some.url/file.js"
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingColumnNumberThrows()
     {
-        string json = @"{ ""functionName"": ""myFunction"", ""lineNumber"": 1, ""url"": ""http://some.url/file.js"" }";
+        string json = """
+                      {
+                        "functionName": "myFunction",
+                        "lineNumber": 1,
+                        "url": "http://some.url/file.js"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidColumnNumberTypeThrows()
     {
-        string json = @"{ ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": {}, ""url"": ""http://some.url/file.js"" }";
-       Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        string json = """
+                      {
+                        "functionName": "myFunction",
+                        "lineNumber": 1,
+                        "columnNumber": {},
+                        "url": "http://some.url/file.js"
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithMissingUrlThrows()
     {
-        string json = @"{ ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": 5, }";
+        string json = """
+                      {
+                        "functionName": "myFunction",
+                        "lineNumber": 1,
+                        "columnNumber": 5
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializeWithInvalidUrlTypeThrows()
     {
-        string json = @"{ ""functionName"": ""myFunction"", ""lineNumber"": 1, ""columnNumber"": 5, ""url"": {} }";
-       Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        string json = """
+                      {
+                        "functionName": "myFunction",
+                        "lineNumber": 1,
+                        "columnNumber": 5,
+                        "url": {}
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

@@ -14,7 +14,11 @@ public class InitiatorTests
     [Test]
     public void TestCanDeserializeInitiator()
     {
-        string json = @"{ ""type"": ""script"" }";
+        string json = """
+                      {
+                        "type": "script"
+                      }
+                      """;
         Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json, deserializationOptions);
         Assert.That(initiator, Is.Not.Null);
         Assert.Multiple(() =>
@@ -30,7 +34,24 @@ public class InitiatorTests
     [Test]
     public void TestCanDeserializeInitiatorWithOptionalValues()
     {
-        string json = @"{ ""type"": ""script"", ""lineNumber"": 2, ""columnNumber"": 1, ""stackTrace"": { ""callFrames"": [ { ""functionName"": ""myFunction"", ""lineNumber"": 2, ""columnNumber"": 1, ""url"": ""http://some.url/file.js"" } ] }, ""request"": ""myRequestId"" }";
+        string json = """
+                      {
+                        "type": "script",
+                        "lineNumber": 2,
+                        "columnNumber": 1,
+                        "stackTrace": {
+                          "callFrames": [
+                            {
+                              "functionName": "myFunction",
+                              "lineNumber": 2,
+                              "columnNumber": 1,
+                              "url": "http://some.url/file.js" 
+                            }
+                          ] 
+                        },
+                        "request": "myRequestId"
+                      }
+                      """;
         Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json, deserializationOptions);
         Assert.That(initiator, Is.Not.Null);
         Assert.Multiple(() =>
@@ -47,14 +68,34 @@ public class InitiatorTests
     [Test]
     public void TestDeserializingInitiatorWithMissingTypeThrows()
     {
-        string json = @"{ ""lineNumber"": 2, ""columnNumber"": 1, ""stackTrace"": { ""callFrames"": [ { ""functionName"": ""myFunction"", ""lineNumber"": 2, ""columnNumber"": 1, ""url"": ""http://some.url/file.js"" } ] }, ""request"": ""myRequestId"" }";
+        string json = """
+                      {
+                        "lineNumber": 2,
+                        "columnNumber": 1,
+                        "stackTrace": {
+                          "callFrames": [
+                            {
+                              "functionName": "myFunction",
+                              "lineNumber": 2,
+                              "columnNumber": 1,
+                              "url": "http://some.url/file.js" 
+                            }
+                          ] 
+                        },
+                        "request": "myRequestId"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Initiator>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: type"));
     }
 
     [Test]
     public void TestDeserializingInitiatorWithInvalidTypeValueThrows()
     {
-        string json = @"{ ""type"": ""invalid"" }";
+        string json = """
+                      {
+                        "type": "invalid"
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<Initiator>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
     }
 }

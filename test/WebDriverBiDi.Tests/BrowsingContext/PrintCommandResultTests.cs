@@ -14,7 +14,11 @@ public class PrintCommandResultTests
     [Test]
     public void TestCanDeserialize()
     {
-        string json = @"{ ""data"": ""some print data"" }";
+        string json = """
+                      {
+                        "data": "some print data"
+                      }
+                      """;
         PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Data, Is.EqualTo("some print data"));
@@ -23,14 +27,18 @@ public class PrintCommandResultTests
     [Test]
     public void TestDeserializingWithMissingDataThrows()
     {
-        string json = @"{}";
+        string json = "{}";
         Assert.That(() => JsonSerializer.Deserialize<PrintCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingWithInvalidDataTypeThrows()
     {
-        string json = @"{ ""data"": {} }";
+        string json = """
+                      {
+                        "data": {}
+                      }
+                      """;
         Assert.That(() => JsonSerializer.Deserialize<PrintCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }
