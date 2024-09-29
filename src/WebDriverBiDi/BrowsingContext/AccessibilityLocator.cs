@@ -50,9 +50,9 @@ public class AccessibilityLocator : Locator
 
     private string? GetAccessiblePropertyValue(string propertyName)
     {
-        if (this.accessibilityAttributes.ContainsKey(propertyName))
+        if (this.accessibilityAttributes.TryGetValue(propertyName, out string value))
         {
-            return this.accessibilityAttributes[propertyName];
+            return value;
         }
 
         return null;
@@ -66,10 +66,7 @@ public class AccessibilityLocator : Locator
         }
         else
         {
-            if (this.accessibilityAttributes.ContainsKey(propertyName))
-            {
-                this.accessibilityAttributes.Remove(propertyName);
-            }
+            this.accessibilityAttributes.Remove(propertyName);
         }
     }
 }

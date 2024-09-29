@@ -145,7 +145,7 @@ public class InputBuilder
         List<string> usedDevices = new();
         foreach (Action interaction in interactionsToAdd)
         {
-            if (!this.sources.ContainsKey(interaction.SourceId))
+            if (!this.sources.TryGetValue(interaction.SourceId, out SourceActions source))
             {
                 throw new ArgumentException($"Builder does not contain an input source for ID {interaction.SourceId}");
             }
@@ -156,12 +156,8 @@ public class InputBuilder
             }
 
             usedDevices.Add(interaction.SourceId);
-            if (unusedDevices.Contains(interaction.SourceId))
-            {
-                unusedDevices.Remove(interaction.SourceId);
-            }
+            unusedDevices.Remove(interaction.SourceId);
 
-            SourceActions source = this.sources[interaction.SourceId];
             if (source is KeySourceActions keySource)
             {
                 keySource.Actions.Add(interaction.AsActionType<IKeySourceAction>());

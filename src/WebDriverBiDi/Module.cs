@@ -49,9 +49,8 @@ public abstract class Module
 
     private async Task OnDriverEventReceived(EventReceivedEventArgs e)
     {
-        if (this.asyncEventInvokers.ContainsKey(e.EventName))
+        if (this.asyncEventInvokers.TryGetValue(e.EventName, out EventInvoker eventInvoker))
         {
-            EventInvoker eventInvoker = this.asyncEventInvokers[e.EventName];
             await eventInvoker.InvokeEventAsync(e.EventData!, e.AdditionalData);
         }
     }
