@@ -236,12 +236,11 @@ public class BiDiDriver
     public virtual T GetModule<T>(string moduleName)
         where T : Module
     {
-        if (!this.modules.ContainsKey(moduleName))
+        if (!this.modules.TryGetValue(moduleName, out Module module))
         {
             throw new WebDriverBiDiException($"Module '{moduleName}' is not registered with this driver");
         }
 
-        Module module = this.modules[moduleName];
         if (module is not T)
         {
             throw new WebDriverBiDiException($"Module '{moduleName}' is registered with this driver, but the module object is not of type {typeof(T)}");

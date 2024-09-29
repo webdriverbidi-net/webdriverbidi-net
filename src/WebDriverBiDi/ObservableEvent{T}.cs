@@ -99,10 +99,7 @@ public class ObservableEvent<T>
     /// <param name="observerId">The ID of the handler handling the event.</param>
     public void RemoveObserver(string observerId)
     {
-        if (this.observers.ContainsKey(observerId))
-        {
-            this.observers.Remove(observerId);
-        }
+        this.observers.Remove(observerId);
     }
 
     /// <summary>

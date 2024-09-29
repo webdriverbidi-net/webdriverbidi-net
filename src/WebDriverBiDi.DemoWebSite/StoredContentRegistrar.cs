@@ -61,9 +61,9 @@ public class StoredContentRegistrar
         byte[] fileContent = File.ReadAllBytes(fileToRegister);
         string relativeUrl = $"{relativeUrlPath}/{Path.GetFileName(fileToRegister)}";
         string mimeType = "text/plain";
-        if (knownMimeTypes.ContainsKey(fileExtension))
+        if (knownMimeTypes.TryGetValue(fileExtension, out string? knownMimeType))
         {
-            mimeType = knownMimeTypes[fileExtension];
+            mimeType = knownMimeType;
         }
 
         HttpRequestHandler handler = new WebResourceRequestHandler(fileContent)
