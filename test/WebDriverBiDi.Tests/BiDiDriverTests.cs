@@ -12,6 +12,7 @@ using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Storage;
 using WebDriverBiDi.Permissions;
+using System.Globalization;
 
 [TestFixture]
 public class BiDiDriverTests
@@ -658,7 +659,7 @@ public class BiDiDriverTests
                                      "id": {{e.SentCommandId}},
                                      "result": {
                                        "value": "command result value for {{e.SentCommandName}}",
-                                       "elapsed": {{elapsed.TotalMilliseconds}}
+                                       "elapsed": {{elapsed.TotalMilliseconds.ToString(CultureInfo.InvariantCulture)}}
                                      }
                                    }
                                    """;
