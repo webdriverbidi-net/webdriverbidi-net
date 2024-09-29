@@ -21,7 +21,7 @@ public class TestConnection : Connection
 
     public async Task RaiseDataReceivedEventAsync(string data)
     {
-        await this.OnDataReceived.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(data));
+        await this.OnDataReceived.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(Encoding.UTF8.GetBytes(data)));
     }
 
     public async Task RaiseLogMessageEventAsync(string message, WebDriverBiDiLogLevel level)
@@ -54,14 +54,14 @@ public class TestConnection : Connection
         }
     }
 
-    public override Task SendDataAsync(string data)
+    public override Task SendDataAsync(byte[] data)
     {
         if (this.BypassStart)
         {
             // Bypass the check to see if the connection has been started,
             // so that we can test the plumbing without needing an actual
             // WebSocket server active.
-            return this.SendWebSocketDataAsync(Encoding.UTF8.GetBytes(data));
+            return this.SendWebSocketDataAsync(data);
         }
 
         return base.SendDataAsync(data);

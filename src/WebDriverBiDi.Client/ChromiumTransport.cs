@@ -50,7 +50,7 @@ public class ChromiumTransport : Transport
     /// </summary>
     /// <param name="command">The command to serialize.</param>
     /// <returns>The serialized JSON string representing the command.</returns>
-    protected override string SerializeCommand(Command command)
+    protected override byte[] SerializeCommand(Command command)
     {
         // Calling base.SerializeCommand yields the Command object serialized
         // as a string. This string must be passed as an argument to a function,
@@ -61,7 +61,7 @@ public class ChromiumTransport : Transport
         DevToolsProtocolCommand wrapperCommand = new(this.GetNextCommandId(), "Runtime.evaluate");
         wrapperCommand.Parameters["expression"] = @$"window.onBidiMessage({serializedCommand})";
         wrapperCommand.SessionId = this.sessionId;
-        return JsonSerializer.Serialize(wrapperCommand);
+        return JsonSerializer.SerializeToUtf8Bytes(wrapperCommand);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public class ChromiumTransport : Transport
     /// <exception cref="JsonException">
     /// Thrown when there is a syntax error in the incoming JSON.
     /// </exception>
-    protected override JsonElement DeserializeMessage(string messageData)
+    protected override JsonElement DeserializeMessage(byte[] messageData)
     {
         // Incoming BiDi messages are received by listening to the Runtime.bindingCalled
         // event, where the binding name is "sendBidiResponse". The BiDi message is
@@ -120,7 +120,7 @@ public class ChromiumTransport : Transport
 
         DevToolsProtocolCommand command = new(this.GetNextCommandId(), "Target.getTargets");
         await this.Connection.StartAsync(websocketUri);
-        await this.Connection.SendDataAsync(JsonSerializer.Serialize(command));
+        await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
         syncEvent.Wait(TimeSpan.FromSeconds(3));
         syncEvent.Reset();
         if (document is not null)
@@ -134,7 +134,7 @@ public class ChromiumTransport : Transport
             command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.attachToTarget");
             command.Parameters["targetId"] = targetId;
             command.Parameters["flatten"] = true;
-            await this.Connection.SendDataAsync(JsonSerializer.Serialize(command));
+            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
 
@@ -143,14 +143,14 @@ public class ChromiumTransport : Transport
 
             command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.createTarget");
             command.Parameters["url"] = "about:blank";
-            await this.Connection.SendDataAsync(JsonSerializer.Serialize(command));
+            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
 
             command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.addBinding");
             command.Parameters["name"] = "sendBidiResponse";
             command.SessionId = this.sessionId;
-            await this.Connection.SendDataAsync(JsonSerializer.Serialize(command));
+            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
         }
