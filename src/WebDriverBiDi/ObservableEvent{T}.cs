@@ -40,6 +40,11 @@ public class ObservableEvent<T>
     public int MaxObserverCount => this.maxObserverCount;
 
     /// <summary>
+    /// Gets the current number of observers that are observing this event.
+    /// </summary>
+    public int CurrentObserverCount => this.observers.Count;
+
+    /// <summary>
     /// Adds a function to observe the event that takes an argument of type T and returns void.
     /// It will be wrapped in a Task so that it can be awaited.
     /// </summary>

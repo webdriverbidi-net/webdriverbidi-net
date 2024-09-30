@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
 using WebDriverBiDi.JsonConverters;
@@ -31,7 +32,7 @@ public class Transport
     private readonly ObservableEvent<ErrorReceivedEventArgs> onErrorReceivedEvent = new();
     private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new();
 
-    private Channel<string> queue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions()
+    private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {
         SingleReader = true,
         SingleWriter = true,
@@ -141,7 +142,7 @@ public class Transport
             this.pendingCommands = new PendingCommandCollection();
         }
 
-        this.queue = Channel.CreateUnbounded<string>(new UnboundedChannelOptions()
+        this.queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
         {
             SingleReader = true,
             SingleWriter = true,
@@ -192,7 +193,7 @@ public class Transport
         long commandId = this.GetNextCommandId();
         Command command = new(commandId, commandData);
         this.pendingCommands.AddPendingCommand(command);
-        string commandJson = this.SerializeCommand(command);
+        byte[] commandJson = this.SerializeCommand(command);
         await this.connection.SendDataAsync(commandJson).ConfigureAwait(false);
         return command;
     }
@@ -221,9 +222,9 @@ public class Transport
     /// </summary>
     /// <param name="command">The command to serialize.</param>
     /// <returns>The serialized JSON string representing the command.</returns>
-    protected virtual string SerializeCommand(Command command)
+    protected virtual byte[] SerializeCommand(Command command)
     {
-        return JsonSerializer.Serialize(command);
+        return JsonSerializer.SerializeToUtf8Bytes(command);
     }
 
     /// <summary>
@@ -234,7 +235,7 @@ public class Transport
     /// <exception cref="JsonException">
     /// Thrown when there is a syntax error in the incoming JSON.
     /// </exception>
-    protected virtual JsonElement DeserializeMessage(string messageData)
+    protected virtual JsonElement DeserializeMessage(byte[] messageData)
     {
         try
         {
@@ -324,14 +325,14 @@ public class Transport
         // is not enough by itself to enable compilation using that construct.
         while (await this.queue.Reader.WaitToReadAsync().ConfigureAwait(false))
         {
-            while (this.queue.Reader.TryRead(out string? incomingMessage))
+            while (this.queue.Reader.TryRead(out byte[]? incomingMessage))
             {
                 await this.ProcessMessageAsync(incomingMessage);
             }
         }
     }
 
-    private async Task ProcessMessageAsync(string messageData)
+    private async Task ProcessMessageAsync(byte[] messageData)
     {
         bool isProcessed = false;
         JsonElement messageRootElement = default;
@@ -342,7 +343,7 @@ public class Transport
         catch (JsonException e)
         {
             await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error);
-            this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, e, $"Invalid JSON in protocol message: {messageData}");
+            this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, e, $"Invalid JSON in protocol message: {Encoding.UTF8.GetString(messageData)}");
         }
 
         if (messageRootElement.ValueKind != JsonValueKind.Undefined)
@@ -353,25 +354,38 @@ public class Transport
                 if (messageType == "success")
                 {
                     isProcessed = this.ProcessCommandResponseMessage(messageRootElement);
-                    await this.LogAsync($"Command response message processed {messageData}", WebDriverBiDiLogLevel.Trace);
+
+                    if (this.onLogMessageEvent.CurrentObserverCount > 0)
+                    {
+                        await this.LogAsync($"Command response message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
+                    }
                 }
                 else if (messageType == "error")
                 {
                     isProcessed = await this.ProcessErrorMessageAsync(messageRootElement);
-                    await this.LogAsync($"Error response message processed {messageData}", WebDriverBiDiLogLevel.Trace);
+
+                    if (this.onLogMessageEvent.CurrentObserverCount > 0)
+                    {
+                        await this.LogAsync($"Error response message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
+                    }
                 }
                 else if (messageType == "event")
                 {
                     isProcessed = await this.ProcessEventMessageAsync(messageRootElement);
-                    await this.LogAsync($"Event message processed {messageData}", WebDriverBiDiLogLevel.Trace);
+
+                    if (this.onLogMessageEvent.CurrentObserverCount > 0)
+                    {
+                        await this.LogAsync($"Event message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
+                    }
                 }
             }
         }
 
         if (!isProcessed)
         {
-            await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(messageData));
-            this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {messageData}"), "Unknown message from connection");
+            string message = Encoding.UTF8.GetString(messageData);
+            await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message));
+            this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
         }
     }
 

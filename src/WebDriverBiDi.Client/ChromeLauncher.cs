@@ -411,7 +411,7 @@ public class ChromeLauncher : BrowserLauncher
         long commandId = 0;
         DevToolsProtocolCommand command = new(commandId, "Target.getTargets");
         await connection.StartAsync(this.WebSocketUrl).ConfigureAwait(false);
-        await connection.SendDataAsync(JsonSerializer.Serialize(command)).ConfigureAwait(false);
+        await connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
         syncEvent.Wait(TimeSpan.FromSeconds(3));
         syncEvent.Reset();
         commandId++;
@@ -427,7 +427,7 @@ public class ChromeLauncher : BrowserLauncher
             command = new DevToolsProtocolCommand(commandId, "Target.attachToTarget");
             command.Parameters["targetId"] = targetId;
             command.Parameters["flatten"] = true;
-            await connection.SendDataAsync(JsonSerializer.Serialize(command)).ConfigureAwait(false);
+            await connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
             commandId++;
@@ -440,7 +440,7 @@ public class ChromeLauncher : BrowserLauncher
             command = new DevToolsProtocolCommand(commandId, "Runtime.evaluate");
             command.Parameters["expression"] = "document.body.click()";
             command.Parameters["userGesture"] = true;
-            await connection.SendDataAsync(JsonSerializer.Serialize(command)).ConfigureAwait(false);
+            await connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
             commandId++;
@@ -448,7 +448,7 @@ public class ChromeLauncher : BrowserLauncher
             // Enable the Runtime CDP domain.
             command = new DevToolsProtocolCommand(commandId, "Runtime.enable");
             command.SessionId = sessionId;
-            await connection.SendDataAsync(JsonSerializer.Serialize(command)).ConfigureAwait(false);
+            await connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
             commandId++;
@@ -457,7 +457,7 @@ public class ChromeLauncher : BrowserLauncher
             command = new DevToolsProtocolCommand(commandId, "Target.exposeDevToolsProtocol");
             command.Parameters["bindingName"] = "cdp";
             command.Parameters["targetId"] = targetId;
-            await connection.SendDataAsync(JsonSerializer.Serialize(command)).ConfigureAwait(false);
+            await connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
             commandId++;
@@ -480,7 +480,7 @@ public class ChromeLauncher : BrowserLauncher
                 command = new DevToolsProtocolCommand(commandId, "Runtime.evaluate");
                 command.Parameters["expression"] = mapperScript;
                 command.SessionId = sessionId;
-                await connection.SendDataAsync(JsonSerializer.Serialize(command)).ConfigureAwait(false);
+                await connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
                 syncEvent.Wait(TimeSpan.FromSeconds(3));
                 syncEvent.Reset();
                 commandId++;
@@ -490,7 +490,7 @@ public class ChromeLauncher : BrowserLauncher
                 command.Parameters["expression"] = @$"window.runMapperInstance(""{targetId}"")";
                 command.Parameters["awaitPromise"] = true;
                 command.SessionId = sessionId;
-                await connection.SendDataAsync(JsonSerializer.Serialize(command)).ConfigureAwait(false);
+                await connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
                 syncEvent.Wait(TimeSpan.FromSeconds(3));
                 syncEvent.Reset();
                 commandId++;

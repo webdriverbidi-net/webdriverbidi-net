@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Protocol;
 
+using System.Text;
 using System.Threading;
 using PinchHitter;
 using WebDriverBiDi.TestUtilities;
@@ -9,7 +10,7 @@ public class ConnectionTests
 {
     private Server? server;
     private string lastServerReceivedData = string.Empty;
-    private string lastConnectionReceivedData = string.Empty;
+    private byte[] lastConnectionReceivedData = [];
     private string connectionId = string.Empty;
     private readonly AutoResetEvent serverReceiveSyncEvent = new(false);
     private readonly AutoResetEvent connectionReceiveSyncEvent = new(false);
@@ -20,7 +21,7 @@ public class ConnectionTests
     {
         this.connectionId = string.Empty;
         this.lastServerReceivedData = string.Empty;
-        this.lastConnectionReceivedData = string.Empty;
+        this.lastConnectionReceivedData = [];
         this.connectionReceiveSyncEvent.Reset();
         this.serverReceiveSyncEvent.Reset();
         this.connectionSyncEvent.Reset();
@@ -71,7 +72,7 @@ public class ConnectionTests
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += OnSocketDataReceived;
 
-        await connection.SendDataAsync("Hello world");
+        await connection.SendDataAsync("Hello world"u8.ToArray());
         string dataReceivedByServer = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
 
         Assert.That(dataReceivedByServer, Is.EqualTo("Hello world"));
@@ -92,9 +93,9 @@ public class ConnectionTests
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
 
         await this.server.SendDataAsync(registeredConnectionId, "Hello back");
-        string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
+        byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
-        Assert.That(dataReceivedByConnection, Is.EqualTo("Hello back"));
+        Assert.That(dataReceivedByConnection, Is.EqualTo("Hello back"u8.ToArray()));
         await connection.StopAsync();
     }
 
@@ -114,9 +115,9 @@ public class ConnectionTests
         // Create a message on an exact boundary of the buffer
         string data = new('a', 2 * connection.BufferSize);
         await this.server.SendDataAsync(registeredConnectionId, data);
-        string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
+        byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
-        Assert.That(dataReceivedByConnection, Is.EqualTo(data));
+        Assert.That(dataReceivedByConnection, Is.EqualTo(Encoding.UTF8.GetBytes(data)));
         await connection.StopAsync();
     }
 
@@ -136,9 +137,9 @@ public class ConnectionTests
         // Create a message on an exact boundary of the buffer
         string data = new('a', 70000);
         await this.server.SendDataAsync(registeredConnectionId, data);
-        string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
+        byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
 
-        Assert.That(dataReceivedByConnection, Is.EqualTo(data));
+        Assert.That(dataReceivedByConnection, Is.EqualTo(Encoding.UTF8.GetBytes(data)));
         await connection.StopAsync();
     }
 
@@ -153,7 +154,7 @@ public class ConnectionTests
         List<LogMessageEventArgs> logValues = new();
         Connection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) => 
+        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             if (e.Level >= WebDriverBiDiLogLevel.Info)
             {
@@ -165,7 +166,7 @@ public class ConnectionTests
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += OnSocketDataReceived;
-        await connection.SendDataAsync("Hello world");
+        await connection.SendDataAsync("Hello world"u8.ToArray());
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
 
         await this.server.SendDataAsync(registeredConnectionId, "Hello back");
@@ -179,7 +180,7 @@ public class ConnectionTests
         }
 
         Assert.That(logValues, Has.Count.EqualTo(5), $"Actual values: {string.Join("\n", messages.ToArray())}");
-        foreach(LogMessageEventArgs args in logValues)
+        foreach (LogMessageEventArgs args in logValues)
         {
             Assert.Multiple(() =>
             {
@@ -262,7 +263,7 @@ public class ConnectionTests
         // Send data to the connection, which should force the receive data
         // task to enter a waiting state after receiving the first message.
         await this.server.SendDataAsync(registeredConnectionId, "Hello back");
-        string dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
+        byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
         await connection.StopAsync();
         Assert.That(connection.IsActive, Is.False);
     }
@@ -277,7 +278,7 @@ public class ConnectionTests
 
         List<string> connectionLog = new();
         Connection connection = new();
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) => 
+        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -328,7 +329,7 @@ public class ConnectionTests
 
         List<string> connectionLog = new();
         Connection connection = new();
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) => 
+        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -364,7 +365,7 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) => 
+        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -381,7 +382,7 @@ public class ConnectionTests
                 disconnectEvent.Set();
             }
         };
-    
+
         // Server initiated disconnection requires waiting for the
         // close websocket message to be received by the client.
         await this.server.DisconnectAsync(registeredConnectionId);
@@ -413,7 +414,7 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) => 
+        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -446,21 +447,21 @@ public class ConnectionTests
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += this.OnSocketDataReceived;
 
-        await connection.SendDataAsync("First connection hello");
+        await connection.SendDataAsync("First connection hello"u8.ToArray());
         string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
 
         await this.server.SendDataAsync(registeredConnectionId, "First connection acknowledged");
-        string receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         await connection.StopAsync();
-        Assert.That(receivedData, Is.EqualTo("First connection acknowledged"));
+        Assert.That(receivedData, Is.EqualTo("First connection acknowledged"u8.ToArray()));
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += this.OnSocketDataReceived;
 
-        await connection.SendDataAsync("Second connection hello");
+        await connection.SendDataAsync("Second connection hello"u8.ToArray());
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
@@ -468,7 +469,7 @@ public class ConnectionTests
         await this.server.SendDataAsync(registeredConnectionId, "Second connection acknowledged");
         receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         await connection.StopAsync();
-        Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"));
+        Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"u8.ToArray()));
     }
 
     [Test]
@@ -490,22 +491,22 @@ public class ConnectionTests
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += this.OnSocketDataReceived;
 
-        await connection.SendDataAsync("First connection hello");
+        await connection.SendDataAsync("First connection hello"u8.ToArray());
         string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
 
         await this.server.SendDataAsync(registeredConnectionId, "First connection acknowledged");
-        string receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
+        byte[] receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.IgnoreCloseConnectionRequest(registeredConnectionId, true);
         await connection.StopAsync();
-        Assert.That(receivedData, Is.EqualTo("First connection acknowledged"));
+        Assert.That(receivedData, Is.EqualTo("First connection acknowledged"u8.ToArray()));
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.server.DataReceived += this.OnSocketDataReceived;
 
-        await connection.SendDataAsync("Second connection hello");
+        await connection.SendDataAsync("Second connection hello"u8.ToArray());
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         this.server.DataReceived -= this.OnSocketDataReceived;
         Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
@@ -513,7 +514,7 @@ public class ConnectionTests
         await this.server.SendDataAsync(registeredConnectionId, "Second connection acknowledged");
         receivedData = this.WaitForConnectionToReceiveData(TimeSpan.FromMilliseconds(250));
         await connection.StopAsync();
-        Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"));
+        Assert.That(receivedData, Is.EqualTo("Second connection acknowledged"u8.ToArray()));
     }
 
     [Test]
@@ -542,7 +543,7 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        Assert.That(async () => await connection.SendDataAsync($"This send should fail"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.StartsWith($"The WebSocket has not been initialized"));
+        Assert.That(async () => await connection.SendDataAsync("This send should fail"u8.ToArray()), Throws.InstanceOf<WebDriverBiDiException>().With.Message.StartsWith($"The WebSocket has not been initialized"));
     }
 
     [Test]
@@ -559,7 +560,7 @@ public class ConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.Zero,
         };
-        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) => 
+        connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
@@ -597,9 +598,9 @@ public class ConnectionTests
         };
 
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        _ = Task.Run(() => connection.SendDataAsync("first data"));
+        _ = Task.Run(() => connection.SendDataAsync("first data"u8.ToArray()));
         syncEvent.Wait();
-        Assert.That(async () => await connection.SendDataAsync("second data"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
+        Assert.That(async () => await connection.SendDataAsync("second data"u8.ToArray()), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
         await connection.StopAsync();
     }
 
@@ -628,7 +629,7 @@ public class ConnectionTests
         return this.connectionId;
     }
 
-    private string WaitForConnectionToReceiveData(TimeSpan timeout)
+    private byte[] WaitForConnectionToReceiveData(TimeSpan timeout)
     {
         this.connectionReceiveSyncEvent.WaitOne(timeout);
         return this.lastConnectionReceivedData;

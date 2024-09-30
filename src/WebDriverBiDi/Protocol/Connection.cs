@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -155,7 +156,7 @@ public class Connection
     /// </summary>
     /// <param name="data">The data to be sent to the remote end of this connection.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task SendDataAsync(string data)
+    public virtual async Task SendDataAsync(byte[] data)
     {
         if (!this.IsActive)
         {
@@ -170,9 +171,12 @@ public class Connection
             throw new WebDriverBiDiException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
 
-        ArraySegment<byte> messageBuffer = new(Encoding.UTF8.GetBytes(data));
-        await this.LogAsync($"SEND >>> {data}", WebDriverBiDiLogLevel.Debug);
-        await this.SendWebSocketDataAsync(messageBuffer).ConfigureAwait(false);
+        if (this.onLogMessageEvent.CurrentObserverCount > 0)
+        {
+            await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug);
+        }
+
+        await this.SendWebSocketDataAsync(new ArraySegment<byte>(data)).ConfigureAwait(false);
         this.dataSendSemaphore.Release();
     }
 
@@ -219,7 +223,7 @@ public class Connection
         CancellationToken cancellationToken = this.clientTokenSource.Token;
         try
         {
-            StringBuilder messageBuilder = new();
+            MemoryStream? memoryStream = null;
             ArraySegment<byte> buffer = WebSocket.CreateClientBuffer(this.bufferSize, this.bufferSize);
             while (this.client.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
             {
@@ -245,18 +249,25 @@ public class Connection
                     // Display text or binary data
                     if (this.client.State == WebSocketState.Open && receiveResult.MessageType != WebSocketMessageType.Close)
                     {
-                        // WebSocket.CreateClientBuffer() should never create an ArraySegment with a
-                        // null backing array, so we can use the null-forgiving operator here to silence
-                        // the compiler warning.
-                        messageBuilder.Append(Encoding.UTF8.GetString(buffer.Array!, 0, receiveResult.Count));
+                        if (memoryStream is null && !receiveResult.EndOfMessage)
+                        {
+                            memoryStream = new MemoryStream();
+                        }
+
+                        memoryStream?.Write(buffer.Array, 0, receiveResult.Count);
+
                         if (receiveResult.EndOfMessage)
                         {
-                            string message = messageBuilder.ToString();
-                            messageBuilder = new StringBuilder();
-                            if (message.Length > 0)
+                            byte[] bytes = memoryStream is null ? buffer.AsSpan(0, receiveResult.Count).ToArray() : memoryStream.ToArray();
+                            memoryStream = null;
+                            if (bytes.Length > 0)
                             {
-                                await this.LogAsync($"RECV <<< {message}", WebDriverBiDiLogLevel.Debug);
-                                await this.onDataReceivedEvent.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(message));
+                                if (this.onLogMessageEvent.CurrentObserverCount > 0)
+                                {
+                                    await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(bytes)}", WebDriverBiDiLogLevel.Debug);
+                                }
+
+                                await this.onDataReceivedEvent.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(bytes));
                             }
                         }
                     }
