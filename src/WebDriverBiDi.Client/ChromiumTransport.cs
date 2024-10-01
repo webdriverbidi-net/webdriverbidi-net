@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Client;
 
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebDriverBiDi;
@@ -53,11 +54,14 @@ public class ChromiumTransport : Transport
     protected override byte[] SerializeCommand(Command command)
     {
         // Calling base.SerializeCommand yields the Command object serialized
-        // as a string. This string must be passed as an argument to a function,
-        // so we call JsonSerializer.Serialize again to enclose the serialized
-        // Command object in quotes, and properly escape any embedded quotes in
-        // the properties of the Command object.
-        string serializedCommand = JsonSerializer.Serialize(base.SerializeCommand(command));
+        // as a byte array. The string represented by this byte array must be
+        // passed as an argument to a function, so we decode the byte array
+        // into a string and call JsonSerializer.Serialize again to enclose
+        // the serialized Command object in quotes, and properly escape any
+        // embedded quotes in the properties of the Command object. Note
+        // carefully that this does double-convert from byte array to string
+        // and back, and that is intentional given the usage here.
+        string serializedCommand = JsonSerializer.Serialize(Encoding.UTF8.GetString(base.SerializeCommand(command)));
         DevToolsProtocolCommand wrapperCommand = new(this.GetNextCommandId(), "Runtime.evaluate");
         wrapperCommand.Parameters["expression"] = @$"window.onBidiMessage({serializedCommand})";
         wrapperCommand.SessionId = this.sessionId;
