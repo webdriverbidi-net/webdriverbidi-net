@@ -737,6 +737,39 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
+    public async Task TestCanReceiveHistoryUpdatedEvent()
+    {
+        TestConnection connection = new();
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        BrowsingContextModule module = new(driver);
+
+        ManualResetEvent syncEvent = new(false);
+        module.OnHistoryUpdated.AddObserver((HistoryUpdatedEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
+                Assert.That(e.Url, Is.EqualTo("https://example.com"));
+            });
+            syncEvent.Set();
+        });
+
+        string eventJson = """
+                           {
+                             "type": "event",
+                             "method": "browsingContext.historyUpdated",
+                             "params": {
+                               "context": "myContext",
+                               "url": "https://example.com"
+                             }
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
+        Assert.That(eventRaised, Is.True);
+    }
+
+    [Test]
     public async Task TestCanReceiveUserPromptClosedEvent()
     {
         TestConnection connection = new();

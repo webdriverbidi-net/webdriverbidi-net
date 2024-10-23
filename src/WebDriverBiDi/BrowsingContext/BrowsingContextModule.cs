@@ -24,6 +24,7 @@ public sealed class BrowsingContextModule : Module
     private readonly ObservableEvent<NavigationEventArgs> onDownloadWillBeginEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onNavigationAbortedEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onNavigationFailedEvent = new();
+    private readonly ObservableEvent<HistoryUpdatedEventArgs> onHistoryUpdatedEvent = new();
     private readonly ObservableEvent<UserPromptClosedEventArgs> onUserPromptClosedEvent = new();
     private readonly ObservableEvent<UserPromptOpenedEventArgs> onUserPromptOpenedEvent = new();
 
@@ -43,6 +44,7 @@ public sealed class BrowsingContextModule : Module
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.downloadWillBegin", this.OnDownloadWillBeginAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationAborted", this.OnNavigationAbortedAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationFailed", this.OnNavigationFailedAsync);
+        this.RegisterAsyncEventInvoker<HistoryUpdatedEventArgs>("browsingContext.historyUpdated", this.OnHistoryUpdatedAsync);
         this.RegisterAsyncEventInvoker<UserPromptClosedEventArgs>("browsingContext.userPromptClosed", this.OnUserPromptClosedAsync);
         this.RegisterAsyncEventInvoker<UserPromptOpenedEventArgs>("browsingContext.userPromptOpened", this.OnUserPromptOpenedAsync);
     }
@@ -91,6 +93,11 @@ public sealed class BrowsingContextModule : Module
     /// Gets an observable event that notifies when a browsing context navigation fails.
     /// </summary>
     public ObservableEvent<NavigationEventArgs> OnNavigationFailed => this.onNavigationFailedEvent;
+
+    /// <summary>
+    /// Gets an observable event that notifies when the browser history is updated.
+    /// </summary>
+    public ObservableEvent<HistoryUpdatedEventArgs> OnHistoryUpdated => this.onHistoryUpdatedEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a user prompt is opened.
@@ -293,6 +300,12 @@ public sealed class BrowsingContextModule : Module
     {
         NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
         await this.onNavigationFailedEvent.NotifyObserversAsync(eventArgs);
+    }
+
+    private async Task OnHistoryUpdatedAsync(EventInfo<HistoryUpdatedEventArgs> eventData)
+    {
+        HistoryUpdatedEventArgs eventArgs = eventData.ToEventArgs<HistoryUpdatedEventArgs>();
+        await this.onHistoryUpdatedEvent.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnUserPromptClosedAsync(EventInfo<UserPromptClosedEventArgs> eventData)
