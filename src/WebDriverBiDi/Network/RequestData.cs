@@ -98,7 +98,7 @@ public class RequestData
     [JsonPropertyName("timings")]
     [JsonRequired]
     [JsonInclude]
-    public FetchTimingInfo Timings { get => this.timingInfo; private set => this.timingInfo = value; }
+    public FetchTimingInfo Timings { get => this.timingInfo; set => this.timingInfo = value; }
 
     /// <summary>
     /// Gets or sets the headers of the request for serialization purposes.
