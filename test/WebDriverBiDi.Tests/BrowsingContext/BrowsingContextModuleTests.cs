@@ -291,6 +291,7 @@ public class BrowsingContextModuleTests
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.UserContextId, Is.EqualTo("default"));
+                Assert.That(e.OriginalOpener, Is.EqualTo("openerContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.Children, Has.Count.EqualTo(0));
                 Assert.That(e.Parent, Is.Null);
