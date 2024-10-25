@@ -32,6 +32,11 @@ public class BrowsingContextEventArgs : WebDriverBiDiEventArgs
     public string UserContextId => this.info.UserContextId;
 
     /// <summary>
+    /// Gets the browsing context ID of the original opener of this browsing context.
+    /// </summary>
+    public string? OriginalOpener => this.info.OriginalOpener;
+
+    /// <summary>
     /// Gets the current URL of the browsing context.
     /// </summary>
     public string Url => this.info.Url;
