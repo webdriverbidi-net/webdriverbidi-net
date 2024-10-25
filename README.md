@@ -3,7 +3,7 @@ A .NET client library for the WebDriver BiDi protocol
 
 ![Unit tests](https://github.com/jimevans/webdriverbidi-net/actions/workflows/dotnet.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/jimevans/webdriverbidi-net/badge.svg?branch=main&kill_cache=1)](https://coveralls.io/github/jimevans/webdriverbidi-net?branch=main)
-![NuGet Version](https://img.shields.io/nuget/v/WebDriverBiDi)
+[![NuGet Version](https://img.shields.io/nuget/v/WebDriverBiDi)](https://www.nuget.org/packages/WebDriverBiDi)
 
 
 This is repository contains a library that is a .NET client for the
