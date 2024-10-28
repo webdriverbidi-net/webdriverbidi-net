@@ -151,7 +151,8 @@ public class BrowsingContextInfoTests
         Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
-    [Test]
+    // [Test]
+    // TODO: Restore this test once https://bugzilla.mozilla.org/show_bug.cgi?id=1920952 is fixed.
     public void TestDeserializingBrowsingContextInfoWithMissingClientWindowIdThrows()
     {
         string json = """
