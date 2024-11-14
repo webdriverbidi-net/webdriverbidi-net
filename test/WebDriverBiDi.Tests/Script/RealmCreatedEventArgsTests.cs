@@ -13,7 +13,8 @@ public class RealmCreatedEventArgsTests
                         "realm": "myRealm",
                         "origin": "myOrigin",
                         "type": "window",
-                        "context": "myContext"
+                        "context": "myContext",
+                        "sandbox": "mySandbox"
                       }
                       """;
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
@@ -24,6 +25,7 @@ public class RealmCreatedEventArgsTests
             Assert.That(eventArgs.Origin, Is.EqualTo("myOrigin"));
             Assert.That(eventArgs.Type, Is.EqualTo(RealmType.Window));
             Assert.That(eventArgs.BrowsingContext, Is.EqualTo("myContext"));
+            Assert.That(eventArgs.Sandbox, Is.EqualTo("mySandbox"));
         });
     }
 

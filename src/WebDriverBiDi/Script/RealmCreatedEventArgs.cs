@@ -48,6 +48,22 @@ public class RealmCreatedEventArgs : WebDriverBiDiEventArgs
     }
 
     /// <summary>
+    /// Gets the sandbox name.
+    /// </summary>
+    public string? Sandbox
+    {
+        get
+        {
+            if (this.info is not WindowRealmInfo windowRealm)
+            {
+                return null;
+            }
+
+            return windowRealm.Sandbox;
+        }
+    }
+        
+    /// <summary>
     /// Gets the type of the realm being created.
     /// </summary>
     public RealmType Type { get => this.info.Type; }
