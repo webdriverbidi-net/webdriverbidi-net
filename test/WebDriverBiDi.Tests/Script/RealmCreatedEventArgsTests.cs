@@ -47,6 +47,7 @@ public class RealmCreatedEventArgsTests
             Assert.That(eventArgs.Origin, Is.EqualTo("myOrigin"));
             Assert.That(eventArgs.Type, Is.EqualTo(RealmType.Worker));
             Assert.That(eventArgs.BrowsingContext, Is.Null);
+            Assert.That(eventArgs.Sandbox, Is.Null);
         });
     }
 }
