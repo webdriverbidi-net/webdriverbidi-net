@@ -29,7 +29,10 @@ public class PrivateConstructorContractResolver : DefaultJsonTypeInfoResolver
             if (jsonTypeInfo.Type.GetConstructors(BindingFlags.Public | BindingFlags.Instance).Length == 0)
             {
                 // The type doesn't have public constructors
-                jsonTypeInfo.CreateObject = () => Activator.CreateInstance(jsonTypeInfo.Type, true);
+                // Note: We can use the null forgiving operator here because we
+                // should be guaranteed that the type exists, and we are never
+                // instantiating a Nullable<T>.
+                jsonTypeInfo.CreateObject = () => Activator.CreateInstance(jsonTypeInfo.Type, true)!;
             }
         }
 

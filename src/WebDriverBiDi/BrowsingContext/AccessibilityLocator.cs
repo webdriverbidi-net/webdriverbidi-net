@@ -50,7 +50,7 @@ public class AccessibilityLocator : Locator
 
     private string? GetAccessiblePropertyValue(string propertyName)
     {
-        if (this.accessibilityAttributes.TryGetValue(propertyName, out string value))
+        if (this.accessibilityAttributes.TryGetValue(propertyName, out string? value))
         {
             return value;
         }

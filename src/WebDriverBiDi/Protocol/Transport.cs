@@ -456,7 +456,7 @@ public class Transport
             // We have already validated that the token is of type string,
             // and therefore will never be null.
             string eventName = eventNameToken.GetString()!;
-            if (this.eventMessageTypes.TryGetValue(eventName, out Type eventMessageType))
+            if (this.eventMessageTypes.TryGetValue(eventName, out Type? eventMessageType))
             {
                 try
                 {

@@ -236,7 +236,7 @@ public class BiDiDriver
     public virtual T GetModule<T>(string moduleName)
         where T : Module
     {
-        if (!this.modules.TryGetValue(moduleName, out Module module))
+        if (!this.modules.TryGetValue(moduleName, out Module? module))
         {
             throw new WebDriverBiDiException($"Module '{moduleName}' is not registered with this driver");
         }

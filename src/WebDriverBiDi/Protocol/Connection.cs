@@ -254,7 +254,9 @@ public class Connection
                             memoryStream = new MemoryStream();
                         }
 
-                        memoryStream?.Write(buffer.Array, 0, receiveResult.Count);
+                        // Note: Use the null-forgiving operator here, as the Array
+                        // property of the buffer ArraySegment should never be null.
+                        memoryStream?.Write(buffer.Array!, 0, receiveResult.Count);
 
                         if (receiveResult.EndOfMessage)
                         {
