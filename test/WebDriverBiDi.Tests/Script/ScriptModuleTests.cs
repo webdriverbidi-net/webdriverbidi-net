@@ -256,7 +256,7 @@ public class ScriptModuleTests
             Assert.That(result.Realms[0].Type, Is.EqualTo(RealmType.Window));
             Assert.That(result.Realms[0], Is.TypeOf<WindowRealmInfo>());
         });
-        WindowRealmInfo? info = result.Realms[0] as WindowRealmInfo;
+        WindowRealmInfo info = result.Realms[0].As<WindowRealmInfo>();
         Assert.That(info, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -309,7 +309,7 @@ public class ScriptModuleTests
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
                 Assert.That(e.Origin, Is.EqualTo("myOrigin"));
                 Assert.That(e.Type, Is.EqualTo(RealmType.Window));
-                Assert.That(e.BrowsingContext, Is.EqualTo("myContext"));
+                Assert.That(e.As<WindowRealmInfo>().BrowsingContext, Is.EqualTo("myContext"));
             });
             syncEvent.Set();
             return Task.CompletedTask;
@@ -348,7 +348,6 @@ public class ScriptModuleTests
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
                 Assert.That(e.Origin, Is.EqualTo("myOrigin"));
                 Assert.That(e.Type, Is.EqualTo(RealmType.Worker));
-                Assert.That(e.BrowsingContext, Is.Null);
             });
             syncEvent.Set();
             return Task.CompletedTask;

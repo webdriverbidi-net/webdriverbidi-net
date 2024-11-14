@@ -464,7 +464,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
-        Assert.That(info.As<ServiceWorkerRealmInfo>(), Is.Not.Null);
+        Assert.That(info!.As<ServiceWorkerRealmInfo>(), Is.Not.Null);
     }
 
     [Test]
@@ -481,7 +481,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
-        Assert.That(() => info.As<SharedWorkerRealmInfo>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("cannot be cast"));
+        Assert.That(() => info!.As<SharedWorkerRealmInfo>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("cannot be cast"));
     }
 
     [Test]

@@ -23,7 +23,6 @@ public class RealmCreatedEventArgsTests
             Assert.That(eventArgs.RealmId, Is.EqualTo("myRealm"));
             Assert.That(eventArgs.Origin, Is.EqualTo("myOrigin"));
             Assert.That(eventArgs.Type, Is.EqualTo(RealmType.Window));
-            Assert.That(eventArgs.BrowsingContext, Is.EqualTo("myContext"));
         });
     }
 
@@ -44,7 +43,6 @@ public class RealmCreatedEventArgsTests
             Assert.That(eventArgs.RealmId, Is.EqualTo("myRealm"));
             Assert.That(eventArgs.Origin, Is.EqualTo("myOrigin"));
             Assert.That(eventArgs.Type, Is.EqualTo(RealmType.Worker));
-            Assert.That(eventArgs.BrowsingContext, Is.Null);
         });
     }
 }

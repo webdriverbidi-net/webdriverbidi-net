@@ -32,23 +32,19 @@ public class RealmCreatedEventArgs : WebDriverBiDiEventArgs
     public string Origin { get => this.info.Origin; }
 
     /// <summary>
-    /// Gets the ID of the browsing context of the realm being created.
-    /// </summary>
-    public string? BrowsingContext
-    {
-        get
-        {
-            if (this.info is not WindowRealmInfo windowRealm)
-            {
-                return null;
-            }
-
-            return windowRealm.BrowsingContext;
-        }
-    }
-
-    /// <summary>
     /// Gets the type of the realm being created.
     /// </summary>
     public RealmType Type { get => this.info.Type; }
+
+    /// <summary>
+    /// Gets this RealmCreatedEventArgs instance as a RealmInfo containing type-specific realm info.
+    /// </summary>
+    /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
+    /// <returns>This RealmCreatedEventArgs instance cast to the specified correct type.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if this RealmInfo is not the specified type.</exception>
+    public T As<T>()
+        where T : RealmInfo
+    {
+        return this.info.As<T>();
+    }
 }
