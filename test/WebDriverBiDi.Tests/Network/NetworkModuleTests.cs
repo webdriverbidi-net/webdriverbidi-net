@@ -34,6 +34,8 @@ public class NetworkModuleTests
                                                     "size": 10
                                                   }
                                                 ],
+                                                "destination": "document",
+                                                "initiatorType": "other",
                                                 "headersSize": 100,
                                                 "bodySize": 300,
                                                 "timings": {

@@ -18,6 +18,8 @@ public class ResponseStartedEventArgsTests
                                                "method": "get",
                                                "headers": [],
                                                "cookies": [],
+                                               "initiatorType": "other",
+                                               "destination": "document",
                                                "headersSize": 100,
                                                "bodySize": 300,
                                                "timings": {

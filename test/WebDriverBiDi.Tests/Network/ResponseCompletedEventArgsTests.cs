@@ -18,6 +18,8 @@ public class ResponseCompletedEventArgsTests
                                                 "method": "get",
                                                 "headers": [],
                                                 "cookies": [],
+                                                "destination": "document",
+                                                "initiatorType": "other",
                                                 "headersSize": 100,
                                                 "bodySize": 300,
                                                 "timings": {
@@ -52,6 +54,8 @@ public class ResponseCompletedEventArgsTests
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
                              "request": {{requestDataJson}},
+                             "initiatorType": "other",
+                             "destination": "document",
                              "response": {
                                "url": "https://example.com",
                                "protocol": "https",

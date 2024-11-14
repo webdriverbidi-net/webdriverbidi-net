@@ -18,6 +18,8 @@ public class BeforeRequestSentEventArgsTests
                                                 "method": "get",
                                                 "headers": [],
                                                 "cookies": [],
+                                                "destination": "document",
+                                                "initiatorType": "other",
                                                 "headersSize": 100,
                                                 "bodySize": 300,
                                                 "timings": {

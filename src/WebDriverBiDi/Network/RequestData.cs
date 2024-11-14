@@ -15,6 +15,8 @@ public class RequestData
     private string requestId = string.Empty;
     private string url = string.Empty;
     private string method = string.Empty;
+    private string destination = string.Empty;
+    private string? initiatorType;
     private List<Header> headers = new();
     private List<ReadOnlyHeader>? readOnlyHeaders;
     private List<Cookie> cookies = new();
@@ -54,6 +56,30 @@ public class RequestData
     public string Method { get => this.method; private set => this.method = value; }
 
     /// <summary>
+    /// Gets the destination of the request.
+    /// </summary>
+    [JsonPropertyName("destination")]
+    // TODO (Issue #32): Uncomment the JsonRequired attribute once
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 and
+    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2776
+    // are fixed.
+    // [JsonRequired]
+    [JsonInclude]
+    public string Destination { get => this.destination; private set => this.destination = value; }
+
+    /// <summary>
+    /// Gets the initiator type of the request.
+    /// </summary>
+    [JsonPropertyName("initiatorType")]
+    // TODO (Issue #32): Uncomment the JsonRequired attribute once
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 and
+    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2776
+    // are fixed.
+    // [JsonRequired]
+    [JsonInclude]
+    public string? InitiatorType { get => this.initiatorType; private set => this.initiatorType = value; }
+
+    /// <summary>
     /// Gets the headers of the request.
     /// </summary>
     [JsonIgnore]
@@ -89,6 +115,7 @@ public class RequestData
     /// Gets the size, in bytes, of the body in the request.
     /// </summary>
     [JsonPropertyName("bodySize")]
+    [JsonRequired]
     [JsonInclude]
     public ulong? BodySize { get => this.bodySize; private set => this.bodySize = value; }
 

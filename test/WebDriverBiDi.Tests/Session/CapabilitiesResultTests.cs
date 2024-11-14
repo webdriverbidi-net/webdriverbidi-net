@@ -336,7 +336,7 @@ public class CapabilitiesResultTests
     }
 
     // [Test]
-    // TODO: Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
+    // TODO (Issue #19): Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
     public void TestCannotDeserializeWithEmptyProxy()
     {
         string json = """
@@ -608,7 +608,7 @@ public class CapabilitiesResultTests
     }
 
     // [Test]
-    // TODO: Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 is fixed.
+    // TODO (Issue #18): Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 is fixed.
     public void TestDeserializingWithMissingSetWindowRectThrows()
     {
         string json = """

@@ -152,7 +152,7 @@ public class BrowsingContextInfoTests
     }
 
     // [Test]
-    // TODO: Restore this test once https://bugzilla.mozilla.org/show_bug.cgi?id=1920952 is fixed.
+    // TODO (Issue #31): Restore this test once https://bugzilla.mozilla.org/show_bug.cgi?id=1920952 is fixed.
     public void TestDeserializingBrowsingContextInfoWithMissingClientWindowIdThrows()
     {
         string json = """

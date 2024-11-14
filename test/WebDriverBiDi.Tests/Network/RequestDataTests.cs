@@ -23,6 +23,8 @@ public class RequestDataTests
                         "cookies": [],
                         "headersSize": 0,
                         "bodySize": 0,
+                        "destination": "document",
+                        "initiatorType": "other",
                         "timings": {
                           "timeOrigin": 1,
                           "requestTime": 2,
@@ -49,6 +51,8 @@ public class RequestDataTests
             Assert.That(request.Method, Is.EqualTo("get"));
             Assert.That(request.Headers, Is.Empty);
             Assert.That(request.Cookies, Is.Empty);
+            Assert.That(request.Destination, Is.EqualTo("document"));
+            Assert.That(request.InitiatorType, Is.EqualTo("other"));
             Assert.That(request.HeadersSize, Is.EqualTo(0));
             Assert.That(request.BodySize, Is.EqualTo(0));
             Assert.That(request.Timings, Is.Not.Null);
@@ -86,6 +90,8 @@ public class RequestDataTests
                           }
                         ],
                         "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": 0,
                         "timings": {
@@ -117,6 +123,8 @@ public class RequestDataTests
             Assert.That(request.Headers[0].Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(request.Headers[0].Value.Value, Is.EqualTo("headerValue"));
             Assert.That(request.Cookies, Is.Empty);
+            Assert.That(request.Destination, Is.EqualTo("document"));
+            Assert.That(request.InitiatorType, Is.EqualTo("other"));
             Assert.That(request.HeadersSize, Is.EqualTo(0));
             Assert.That(request.BodySize, Is.EqualTo(0));
             Assert.That(request.Timings, Is.Not.Null);
@@ -160,6 +168,8 @@ public class RequestDataTests
                             "size": 100
                           }
                         ],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": 0,
                         "timings": {
@@ -199,6 +209,8 @@ public class RequestDataTests
             Assert.That(request.Cookies[0].Size, Is.EqualTo(100));
             Assert.That(request.Cookies[0].Expires, Is.Null);
             Assert.That(request.Cookies[0].EpochExpires, Is.Null);
+            Assert.That(request.Destination, Is.EqualTo("document"));
+            Assert.That(request.InitiatorType, Is.EqualTo("other"));
             Assert.That(request.HeadersSize, Is.EqualTo(0));
             Assert.That(request.BodySize, Is.EqualTo(0));
             Assert.That(request.Timings, Is.Not.Null);
@@ -228,6 +240,8 @@ public class RequestDataTests
                         "method": "get",
                         "headers": [],
                         "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": null,
                         "timings": {
@@ -256,8 +270,71 @@ public class RequestDataTests
             Assert.That(request.Method, Is.EqualTo("get"));
             Assert.That(request.Headers, Is.Empty);
             Assert.That(request.Cookies, Is.Empty);
+            Assert.That(request.Destination, Is.EqualTo("document"));
+            Assert.That(request.InitiatorType, Is.EqualTo("other"));
             Assert.That(request.HeadersSize, Is.EqualTo(0));
             Assert.That(request.BodySize, Is.Null);
+            Assert.That(request.Timings, Is.Not.Null);
+            Assert.That(request.Timings.TimeOrigin, Is.EqualTo(1));
+            Assert.That(request.Timings.RequestTime, Is.EqualTo(2));
+            Assert.That(request.Timings.RedirectStart, Is.EqualTo(3));
+            Assert.That(request.Timings.RedirectEnd, Is.EqualTo(4));
+            Assert.That(request.Timings.FetchStart, Is.EqualTo(5));
+            Assert.That(request.Timings.DnsStart, Is.EqualTo(6));
+            Assert.That(request.Timings.DnsEnd, Is.EqualTo(7));
+            Assert.That(request.Timings.ConnectStart, Is.EqualTo(8));
+            Assert.That(request.Timings.ConnectEnd, Is.EqualTo(9));
+            Assert.That(request.Timings.TlsStart, Is.EqualTo(10));
+            Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
+            Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
+            Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
+        });       
+    }
+
+    [Test]
+    public void CanDeserializeRequestDataWithNullInitiatorType()
+    {
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "destination": "document",
+                        "initiatorType": null,
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        Assert.That(request, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(request!.RequestId, Is.EqualTo("myRequestId"));
+            Assert.That(request!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(request.Method, Is.EqualTo("get"));
+            Assert.That(request.Headers, Is.Empty);
+            Assert.That(request.Cookies, Is.Empty);
+            Assert.That(request.Destination, Is.EqualTo("document"));
+            Assert.That(request.InitiatorType, Is.Null);
+            Assert.That(request.HeadersSize, Is.EqualTo(0));
+            Assert.That(request.BodySize, Is.EqualTo(0));
             Assert.That(request.Timings, Is.Not.Null);
             Assert.That(request.Timings.TimeOrigin, Is.EqualTo(1));
             Assert.That(request.Timings.RequestTime, Is.EqualTo(2));
@@ -284,6 +361,8 @@ public class RequestDataTests
                         "method": "get",
                         "headers": [],
                         "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": 0,
                         "timings": {
@@ -315,6 +394,8 @@ public class RequestDataTests
                         "method": "get",
                         "headers": [],
                         "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": 0,
                         "timings": {
@@ -346,6 +427,8 @@ public class RequestDataTests
                         "url": "requestUrl",
                         "headers": [],
                         "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": 0,
                         "timings": {
@@ -377,6 +460,8 @@ public class RequestDataTests
                         "url": "requestUrl",
                         "method": "get",
                         "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": 0,
                         "timings": {
@@ -408,6 +493,8 @@ public class RequestDataTests
                         "url": "requestUrl",
                         "method": "get",
                         "headers": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": 0,
                         "timings": {
@@ -440,6 +527,8 @@ public class RequestDataTests
                         "method": "get",
                         "headers": [],
                         "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "bodySize": 0,
                         "timings": {
                           "timeOrigin": 1,
@@ -462,6 +551,113 @@ public class RequestDataTests
     }
 
     [Test]
+    public void TestDeserializeWithMissingBodySizeThrows()
+    {
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
+                        "headersSize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: bodySize"));
+    }
+
+    // TODO (Issue #32): Restore test once
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 and
+    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2776
+    // are fixed.
+    // [Test]
+    public void TestDeserializeWithMissingDestinationThrows()
+    {
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "initiatorType": "other",
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: destination"));
+    }
+
+    // TODO (Issue #32): Restore test once
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 and
+    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2776
+    // are fixed.
+    // [Test]
+    public void TestDeserializeWithMissingInitiatorTypeThrows()
+    {
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "destination": "document",
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: initiatorType"));
+    }
+
+    [Test]
     public void TestDeserializeWithMissingTimingsThrows()
     {
         string json = """
@@ -471,6 +667,8 @@ public class RequestDataTests
                         "method": "get",
                         "headers": [],
                         "cookies": [],
+                        "destination": "document",
+                        "initiatorType": "other",
                         "headersSize": 0,
                         "bodySize": 0
                       }
