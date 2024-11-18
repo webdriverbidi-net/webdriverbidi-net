@@ -13,7 +13,7 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class Initiator
 {
-    private InitiatorType type = InitiatorType.Other;
+    private InitiatorType? type;
     private ulong? columnNumber;
     private ulong? lineNumber;
     private StackTrace? stackTrace;
@@ -30,9 +30,8 @@ public class Initiator
     /// Gets the type of entity initiating the request.
     /// </summary>
     [JsonPropertyName("type")]
-    [JsonRequired]
     [JsonInclude]
-    public InitiatorType Type { get => this.type; private set => this.type = value; }
+    public InitiatorType? Type { get => this.type; private set => this.type = value; }
 
     /// <summary>
     /// Gets the column number of the script initiating the request.
