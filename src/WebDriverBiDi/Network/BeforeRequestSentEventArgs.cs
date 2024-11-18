@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class BeforeRequestSentEventArgs : BaseNetworkEventArgs
 {
-    private Initiator initiator = new();
+    private Initiator? initiator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BeforeRequestSentEventArgs"/> class.
@@ -26,7 +26,7 @@ public class BeforeRequestSentEventArgs : BaseNetworkEventArgs
     /// Gets the initiator of the request.
     /// </summary>
     [JsonPropertyName("initiator")]
-    [JsonRequired]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public Initiator Initiator { get => this.initiator; private set => this.initiator = value; }
+    public Initiator? Initiator { get => this.initiator; private set => this.initiator = value; }
 }

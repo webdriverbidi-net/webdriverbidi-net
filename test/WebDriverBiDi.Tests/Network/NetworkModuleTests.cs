@@ -442,7 +442,7 @@ public class NetworkModuleTests
                 Assert.That(e.Request.HeadersSize, Is.EqualTo(100));
                 Assert.That(e.Request.BodySize, Is.EqualTo(300));
                 Assert.That(e.Request.Timings, Is.Not.Null);
-                Assert.That(e.Initiator.Type, Is.EqualTo(InitiatorType.Parser));
+                Assert.That(e.Initiator!.Type, Is.EqualTo(InitiatorType.Parser));
             });
             syncEvent.Set();
         });

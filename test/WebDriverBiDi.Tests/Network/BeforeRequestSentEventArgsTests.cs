@@ -53,6 +53,31 @@ public class BeforeRequestSentEventArgsTests
                             "isBlocked": false,
                             "redirectCount": 0,
                             "timestamp": {{milliseconds}},
+                            "request": {{requestDataJson}}
+                           }
+                           """;
+        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
+            Assert.That(eventArgs!.Initiator, Is.Null);
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeWithOptionalValues()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                            "context": "myContextId",
+                            "navigation": "myNavigationId",
+                            "isBlocked": false,
+                            "redirectCount": 0,
+                            "timestamp": {{milliseconds}},
                             "request": {{requestDataJson}},
                             "initiator": {
                                 "type": "parser"
@@ -66,27 +91,8 @@ public class BeforeRequestSentEventArgsTests
             // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
             // Also proper deserialization of the Initiator object is handled in InitiatorTests.
             Assert.That(eventArgs!.Initiator, Is.Not.Null);
-            Assert.That(eventArgs.Initiator.Type, Is.EqualTo(InitiatorType.Parser));
+            Assert.That(eventArgs.Initiator!.Type, Is.EqualTo(InitiatorType.Parser));
         });
-    }
-
-    [Test]
-    public void TestDeserializingWithMissingInitiatorThrows()
-    {
-        DateTime now = DateTime.UtcNow;
-        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
-        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
-        string eventJson = $$"""
-                           {
-                            "context": "myContextId",
-                            "navigation": "myNavigationId",
-                            "isBlocked": false,
-                            "redirectCount": 0,
-                            "timestamp": {{milliseconds}},
-                            "request": {{requestDataJson}}
-                           }
-                           """;
-        Assert.That(() => JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
