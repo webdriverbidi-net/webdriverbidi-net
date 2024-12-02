@@ -13,6 +13,7 @@ using WebDriverBiDi.Session;
 using WebDriverBiDi.Storage;
 using WebDriverBiDi.Permissions;
 using System.Globalization;
+using WebDriverBiDi.WebExtension;
 
 [TestFixture]
 public class BiDiDriverTests
@@ -298,6 +299,7 @@ public class BiDiDriverTests
                 Assert.That(driver.Script, Is.InstanceOf<ScriptModule>());
                 Assert.That(driver.Session, Is.InstanceOf<SessionModule>());
                 Assert.That(driver.Storage, Is.InstanceOf<StorageModule>());
+                Assert.That(driver.WebExtension, Is.InstanceOf<WebExtensionModule>());
             });
         }
         finally

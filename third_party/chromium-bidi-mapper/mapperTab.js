@@ -390,6 +390,15 @@
         parseHandleRequestDevicePromptParams(params) {
             return params;
         }
+        parseSimulateAdapterParameters(params) {
+            return params;
+        }
+        parseSimulateAdvertisementParameters(params) {
+            return params;
+        }
+        parseSimulatePreconnectedPeripheralParameters(params) {
+            return params;
+        }
         // keep-sorted end
         // Browser domain
         // keep-sorted start block=yes
@@ -551,8 +560,10 @@
      */
     class BrowserProcessor {
         #browserCdpClient;
-        constructor(browserCdpClient) {
+        #browsingContextStorage;
+        constructor(browserCdpClient, browsingContextStorage) {
             this.#browserCdpClient = browserCdpClient;
+            this.#browsingContextStorage = browsingContextStorage;
         }
         close() {
             // Ensure that it is put at the end of the event loop.
@@ -606,6 +617,35 @@
                     }),
                 ],
             };
+        }
+        async #getWindowInfo(targetId) {
+            const windowInfo = await this.#browserCdpClient.sendCommand('Browser.getWindowForTarget', { targetId });
+            return {
+                // `active` is not supported in CDP yet.
+                active: false,
+                clientWindow: `${windowInfo.windowId}`,
+                state: windowInfo.bounds.windowState ?? 'normal',
+                height: windowInfo.bounds.height ?? 0,
+                width: windowInfo.bounds.width ?? 0,
+                x: windowInfo.bounds.left ?? 0,
+                y: windowInfo.bounds.top ?? 0,
+            };
+        }
+        async getClientWindows() {
+            const topLevelTargetIds = this.#browsingContextStorage
+                .getTopLevelContexts()
+                .map((b) => b.cdpTarget.id);
+            const clientWindows = await Promise.all(topLevelTargetIds.map(async (targetId) => await this.#getWindowInfo(targetId)));
+            const uniqueClientWindowIds = new Set();
+            const uniqueClientWindows = new Array();
+            // Filter out duplicated client windows.
+            for (const window of clientWindows) {
+                if (!uniqueClientWindowIds.has(window.clientWindow)) {
+                    uniqueClientWindowIds.add(window.clientWindow);
+                    uniqueClientWindows.push(window);
+                }
+            }
+            return { clientWindows: uniqueClientWindows };
         }
     }
 
@@ -2168,23 +2208,38 @@
                 }
             } while (!last);
         }
+        async #getFrameOffset() {
+            if (this.#context.id === this.#context.cdpTarget.id) {
+                return { x: 0, y: 0 };
+            }
+            // https://github.com/w3c/webdriver/pull/1847 proposes dispatching events from
+            // the top-level browsing context. This implementation dispatches it on the top-most
+            // same-target frame, which is not top-level one in case of OOPiF.
+            // TODO: switch to the top-level browsing context.
+            const { backendNodeId } = await this.#context.cdpTarget.cdpClient.sendCommand('DOM.getFrameOwner', { frameId: this.#context.id });
+            const { model: frameBoxModel } = await this.#context.cdpTarget.cdpClient.sendCommand('DOM.getBoxModel', {
+                backendNodeId,
+            });
+            return { x: frameBoxModel.content[0], y: frameBoxModel.content[1] };
+        }
         async #getCoordinateFromOrigin(origin, offsetX, offsetY, startX, startY) {
             let targetX;
             let targetY;
+            const frameOffset = await this.#getFrameOffset();
             switch (origin) {
                 case 'viewport':
-                    targetX = offsetX;
-                    targetY = offsetY;
+                    targetX = offsetX + frameOffset.x;
+                    targetY = offsetY + frameOffset.y;
                     break;
                 case 'pointer':
-                    targetX = startX + offsetX;
-                    targetY = startY + offsetY;
+                    targetX = startX + offsetX + frameOffset.x;
+                    targetY = startY + offsetY + frameOffset.y;
                     break;
                 default: {
                     const { x: posX, y: posY } = await getElementCenter(this.#context, origin.element);
                     // SAFETY: These can never be special numbers.
-                    targetX = posX + offsetX;
-                    targetY = posY + offsetY;
+                    targetX = posX + offsetX + frameOffset.x;
+                    targetY = posY + offsetY + frameOffset.y;
                     break;
                 }
             }
@@ -2920,9 +2975,270 @@
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
-    const URLPattern = globalThis.URLPattern;
-    if (!URLPattern) {
-        throw new Error('Unable to find URLPattern');
+    /**
+     * Encodes a string to base64.
+     *
+     * Uses the native Web API if available, otherwise falls back to a NodeJS Buffer.
+     * @param {string} base64Str
+     * @return {string}
+     */
+    function base64ToString(base64Str) {
+        // Available only if run in a browser context.
+        if ('atob' in globalThis) {
+            return globalThis.atob(base64Str);
+        }
+        // Available only if run in a NodeJS context.
+        return Buffer.from(base64Str, 'base64').toString('ascii');
+    }
+
+    /*
+     * Copyright 2023 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     *
+     */
+    function computeHeadersSize(headers) {
+        const requestHeaders = headers.reduce((acc, header) => {
+            return `${acc}${header.name}: ${header.value.value}\r\n`;
+        }, '');
+        return new TextEncoder().encode(requestHeaders).length;
+    }
+    /** Converts from CDP Network domain headers to BiDi network headers. */
+    function bidiNetworkHeadersFromCdpNetworkHeaders(headers) {
+        if (!headers) {
+            return [];
+        }
+        return Object.entries(headers).map(([name, value]) => ({
+            name,
+            value: {
+                type: 'string',
+                value,
+            },
+        }));
+    }
+    /** Converts from Bidi network headers to CDP Fetch domain header entries. */
+    function cdpFetchHeadersFromBidiNetworkHeaders(headers) {
+        if (headers === undefined) {
+            return undefined;
+        }
+        return headers.map(({ name, value }) => ({
+            name,
+            value: value.value,
+        }));
+    }
+    function networkHeaderFromCookieHeaders(headers) {
+        if (headers === undefined) {
+            return undefined;
+        }
+        const value = headers.reduce((acc, value, index) => {
+            if (index > 0) {
+                acc += ';';
+            }
+            const cookieValue = value.value.type === 'base64'
+                ? btoa(value.value.value)
+                : value.value.value;
+            acc += `${value.name}=${cookieValue}`;
+            return acc;
+        }, '');
+        return {
+            name: 'Cookie',
+            value: {
+                type: 'string',
+                value,
+            },
+        };
+    }
+    /** Converts from Bidi auth action to CDP auth challenge response. */
+    function cdpAuthChallengeResponseFromBidiAuthContinueWithAuthAction(action) {
+        switch (action) {
+            case 'default':
+                return 'Default';
+            case 'cancel':
+                return 'CancelAuth';
+            case 'provideCredentials':
+                return 'ProvideCredentials';
+        }
+    }
+    /**
+     * Converts from CDP Network domain cookie to BiDi network cookie.
+     * * https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Cookie
+     * * https://w3c.github.io/webdriver-bidi/#type-network-Cookie
+     */
+    function cdpToBiDiCookie(cookie) {
+        const result = {
+            name: cookie.name,
+            value: { type: 'string', value: cookie.value },
+            domain: cookie.domain,
+            path: cookie.path,
+            size: cookie.size,
+            httpOnly: cookie.httpOnly,
+            secure: cookie.secure,
+            sameSite: cookie.sameSite === undefined
+                ? "none" /* Network.SameSite.None */
+                : sameSiteCdpToBiDi(cookie.sameSite),
+            ...(cookie.expires >= 0 ? { expiry: cookie.expires } : undefined),
+        };
+        // Extending with CDP-specific properties with `goog:` prefix.
+        result[`goog:session`] = cookie.session;
+        result[`goog:priority`] = cookie.priority;
+        result[`goog:sameParty`] = cookie.sameParty;
+        result[`goog:sourceScheme`] = cookie.sourceScheme;
+        result[`goog:sourcePort`] = cookie.sourcePort;
+        if (cookie.partitionKey !== undefined) {
+            result[`goog:partitionKey`] = cookie.partitionKey;
+        }
+        if (cookie.partitionKeyOpaque !== undefined) {
+            result[`goog:partitionKeyOpaque`] = cookie.partitionKeyOpaque;
+        }
+        return result;
+    }
+    /**
+     * Decodes a byte value to a string.
+     * @param {Network.BytesValue} value
+     * @return {string}
+     */
+    function deserializeByteValue(value) {
+        if (value.type === 'base64') {
+            return base64ToString(value.value);
+        }
+        return value.value;
+    }
+    /**
+     * Converts from BiDi set network cookie params to CDP Network domain cookie.
+     * * https://w3c.github.io/webdriver-bidi/#type-network-Cookie
+     * * https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-CookieParam
+     */
+    function bidiToCdpCookie(params, partitionKey) {
+        const deserializedValue = deserializeByteValue(params.cookie.value);
+        const result = {
+            name: params.cookie.name,
+            value: deserializedValue,
+            domain: params.cookie.domain,
+            path: params.cookie.path ?? '/',
+            secure: params.cookie.secure ?? false,
+            httpOnly: params.cookie.httpOnly ?? false,
+            ...(partitionKey.sourceOrigin !== undefined && {
+                partitionKey: {
+                    hasCrossSiteAncestor: false,
+                    // CDP's `partitionKey.topLevelSite` is the BiDi's `partition.sourceOrigin`.
+                    topLevelSite: partitionKey.sourceOrigin,
+                },
+            }),
+            ...(params.cookie.expiry !== undefined && {
+                expires: params.cookie.expiry,
+            }),
+            ...(params.cookie.sameSite !== undefined && {
+                sameSite: sameSiteBiDiToCdp(params.cookie.sameSite),
+            }),
+        };
+        // Extending with CDP-specific properties with `goog:` prefix.
+        if (params.cookie[`goog:url`] !== undefined) {
+            result.url = params.cookie[`goog:url`];
+        }
+        if (params.cookie[`goog:priority`] !== undefined) {
+            result.priority = params.cookie[`goog:priority`];
+        }
+        if (params.cookie[`goog:sameParty`] !== undefined) {
+            result.sameParty = params.cookie[`goog:sameParty`];
+        }
+        if (params.cookie[`goog:sourceScheme`] !== undefined) {
+            result.sourceScheme = params.cookie[`goog:sourceScheme`];
+        }
+        if (params.cookie[`goog:sourcePort`] !== undefined) {
+            result.sourcePort = params.cookie[`goog:sourcePort`];
+        }
+        return result;
+    }
+    function sameSiteCdpToBiDi(sameSite) {
+        switch (sameSite) {
+            case 'Strict':
+                return "strict" /* Network.SameSite.Strict */;
+            case 'None':
+                return "none" /* Network.SameSite.None */;
+            case 'Lax':
+                return "lax" /* Network.SameSite.Lax */;
+            default:
+                // Defaults to `Lax`:
+                // https://web.dev/articles/samesite-cookies-explained#samesitelax_by_default
+                return "lax" /* Network.SameSite.Lax */;
+        }
+    }
+    function sameSiteBiDiToCdp(sameSite) {
+        switch (sameSite) {
+            case "strict" /* Network.SameSite.Strict */:
+                return 'Strict';
+            case "lax" /* Network.SameSite.Lax */:
+                return 'Lax';
+            case "none" /* Network.SameSite.None */:
+                return 'None';
+        }
+        throw new InvalidArgumentException(`Unknown 'sameSite' value ${sameSite}`);
+    }
+    /**
+     * Returns true if the given protocol is special.
+     * Special protocols are those that have a default port.
+     *
+     * Example inputs: 'http', 'http:'
+     *
+     * @see https://url.spec.whatwg.org/#special-scheme
+     */
+    function isSpecialScheme(protocol) {
+        return ['ftp', 'file', 'http', 'https', 'ws', 'wss'].includes(protocol.replace(/:$/, ''));
+    }
+    function getScheme(url) {
+        return url.protocol.replace(/:$/, '');
+    }
+    /** Matches the given URLPattern against the given URL. */
+    function matchUrlPattern(pattern, url) {
+        // Roughly https://w3c.github.io/webdriver-bidi/#match-url-pattern
+        // plus some differences based on the URL parsing methods.
+        const parsedUrl = new URL(url);
+        if (pattern.protocol !== undefined &&
+            pattern.protocol !== getScheme(parsedUrl)) {
+            return false;
+        }
+        if (pattern.hostname !== undefined &&
+            pattern.hostname !== parsedUrl.hostname) {
+            return false;
+        }
+        if (pattern.port !== undefined && pattern.port !== parsedUrl.port) {
+            return false;
+        }
+        if (pattern.pathname !== undefined &&
+            pattern.pathname !== parsedUrl.pathname) {
+            return false;
+        }
+        if (pattern.search !== undefined && pattern.search !== parsedUrl.search) {
+            return false;
+        }
+        return true;
+    }
+    function bidiBodySizeFromCdpPostDataEntries(entries) {
+        let size = 0;
+        for (const entry of entries) {
+            size += atob(entry.bytes ?? '').length;
+        }
+        return size;
+    }
+    function getTiming(timing) {
+        if (!timing) {
+            return 0;
+        }
+        if (timing < 0) {
+            return 0;
+        }
+        return timing;
     }
 
     /**
@@ -3117,78 +3433,143 @@
         }
         static parseUrlPatterns(urlPatterns) {
             return urlPatterns.map((urlPattern) => {
+                let patternUrl = '';
+                let hasProtocol = true;
+                let hasHostname = true;
+                let hasPort = true;
+                let hasPathname = true;
+                let hasSearch = true;
                 switch (urlPattern.type) {
                     case 'string': {
-                        NetworkProcessor.parseUrlString(urlPattern.pattern);
-                        return urlPattern;
+                        patternUrl = unescapeURLPattern(urlPattern.pattern);
+                        break;
                     }
-                    case 'pattern':
-                        // No params signifies intercept all
-                        if (urlPattern.protocol === undefined &&
-                            urlPattern.hostname === undefined &&
-                            urlPattern.port === undefined &&
-                            urlPattern.pathname === undefined &&
-                            urlPattern.search === undefined) {
-                            return urlPattern;
+                    case 'pattern': {
+                        if (urlPattern.protocol === undefined) {
+                            hasProtocol = false;
+                            patternUrl += 'http';
                         }
-                        if (urlPattern.protocol) {
+                        else {
+                            if (urlPattern.protocol === '') {
+                                throw new InvalidArgumentException('URL pattern must specify a protocol');
+                            }
                             urlPattern.protocol = unescapeURLPattern(urlPattern.protocol);
                             if (!urlPattern.protocol.match(/^[a-zA-Z+-.]+$/)) {
                                 throw new InvalidArgumentException('Forbidden characters');
                             }
+                            patternUrl += urlPattern.protocol;
                         }
-                        if (urlPattern.hostname) {
+                        const scheme = patternUrl.toLocaleLowerCase();
+                        patternUrl += ':';
+                        if (isSpecialScheme(scheme)) {
+                            patternUrl += '//';
+                        }
+                        if (urlPattern.hostname === undefined) {
+                            if (scheme !== 'file') {
+                                patternUrl += 'placeholder';
+                            }
+                            hasHostname = false;
+                        }
+                        else {
+                            if (urlPattern.hostname === '') {
+                                throw new InvalidArgumentException('URL pattern must specify a hostname');
+                            }
+                            if (urlPattern.protocol === 'file') {
+                                throw new InvalidArgumentException(`URL pattern protocol cannot be 'file'`);
+                            }
                             urlPattern.hostname = unescapeURLPattern(urlPattern.hostname);
+                            let insideBrackets = false;
+                            for (const c of urlPattern.hostname) {
+                                if (c === '/' || c === '?' || c === '#') {
+                                    throw new InvalidArgumentException(`'/', '?', '#' are forbidden in hostname`);
+                                }
+                                if (!insideBrackets && c === ':') {
+                                    throw new InvalidArgumentException(`':' is only allowed inside brackets in hostname`);
+                                }
+                                if (c === '[') {
+                                    insideBrackets = true;
+                                }
+                                if (c === ']') {
+                                    insideBrackets = false;
+                                }
+                            }
+                            patternUrl += urlPattern.hostname;
                         }
-                        if (urlPattern.port) {
+                        if (urlPattern.port === undefined) {
+                            hasPort = false;
+                        }
+                        else {
+                            if (urlPattern.port === '') {
+                                throw new InvalidArgumentException(`URL pattern must specify a port`);
+                            }
                             urlPattern.port = unescapeURLPattern(urlPattern.port);
+                            patternUrl += ':';
+                            if (!urlPattern.port.match(/^\d+$/)) {
+                                throw new InvalidArgumentException('Forbidden characters');
+                            }
+                            patternUrl += urlPattern.port;
                         }
-                        if (urlPattern.pathname) {
+                        if (urlPattern.pathname === undefined) {
+                            hasPathname = false;
+                        }
+                        else {
                             urlPattern.pathname = unescapeURLPattern(urlPattern.pathname);
                             if (urlPattern.pathname[0] !== '/') {
-                                urlPattern.pathname = `/${urlPattern.pathname}`;
+                                patternUrl += '/';
                             }
                             if (urlPattern.pathname.includes('#') ||
                                 urlPattern.pathname.includes('?')) {
                                 throw new InvalidArgumentException('Forbidden characters');
                             }
+                            patternUrl += urlPattern.pathname;
                         }
-                        else if (urlPattern.pathname === '') {
-                            urlPattern.pathname = '/';
+                        if (urlPattern.search === undefined) {
+                            hasSearch = false;
                         }
-                        if (urlPattern.search) {
+                        else {
                             urlPattern.search = unescapeURLPattern(urlPattern.search);
                             if (urlPattern.search[0] !== '?') {
-                                urlPattern.search = `?${urlPattern.search}`;
+                                patternUrl += '?';
                             }
                             if (urlPattern.search.includes('#')) {
                                 throw new InvalidArgumentException('Forbidden characters');
                             }
+                            patternUrl += urlPattern.search;
                         }
-                        if (urlPattern.protocol === '') {
-                            throw new InvalidArgumentException(`URL pattern must specify a protocol`);
-                        }
-                        if (urlPattern.hostname === '') {
-                            throw new InvalidArgumentException(`URL pattern must specify a hostname`);
-                        }
-                        if ((urlPattern.hostname?.length ?? 0) > 0) {
-                            if (urlPattern.protocol?.match(/^file/i)) {
-                                throw new InvalidArgumentException(`URL pattern protocol cannot be 'file'`);
-                            }
-                            if (urlPattern.hostname?.includes(':')) {
-                                throw new InvalidArgumentException(`URL pattern hostname must not contain a colon`);
-                            }
-                        }
-                        if (urlPattern.port === '') {
-                            throw new InvalidArgumentException(`URL pattern must specify a port`);
-                        }
-                        try {
-                            new URLPattern(urlPattern);
-                        }
-                        catch (error) {
-                            throw new InvalidArgumentException(`${error}`);
-                        }
-                        return urlPattern;
+                        break;
+                    }
+                }
+                const serializePort = (url) => {
+                    const defaultPorts = {
+                        'ftp:': 21,
+                        'file:': null,
+                        'http:': 80,
+                        'https:': 443,
+                        'ws:': 80,
+                        'wss:': 443,
+                    };
+                    if (isSpecialScheme(url.protocol) &&
+                        defaultPorts[url.protocol] !== null &&
+                        (!url.port || String(defaultPorts[url.protocol]) === url.port)) {
+                        return '';
+                    }
+                    else if (url.port) {
+                        return url.port;
+                    }
+                    return undefined;
+                };
+                try {
+                    const url = new URL(patternUrl);
+                    return {
+                        protocol: hasProtocol ? url.protocol.replace(/:$/, '') : undefined,
+                        hostname: hasHostname ? url.hostname : undefined,
+                        port: hasPort ? serializePort(url) : undefined,
+                        pathname: hasPathname && url.pathname ? url.pathname : undefined,
+                        search: hasSearch ? url.search : undefined,
+                    };
+                }
+                catch (err) {
+                    throw new InvalidArgumentException(`${err.message} '${patternUrl}'`);
                 }
             });
         }
@@ -3904,266 +4285,6 @@
     }
 
     /**
-     * Copyright 2024 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-    /**
-     * Encodes a string to base64.
-     *
-     * Uses the native Web API if available, otherwise falls back to a NodeJS Buffer.
-     * @param {string} base64Str
-     * @return {string}
-     */
-    function base64ToString(base64Str) {
-        // Available only if run in a browser context.
-        if ('atob' in globalThis) {
-            return globalThis.atob(base64Str);
-        }
-        // Available only if run in a NodeJS context.
-        return Buffer.from(base64Str, 'base64').toString('ascii');
-    }
-
-    /*
-     * Copyright 2023 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     *
-     */
-    function computeHeadersSize(headers) {
-        const requestHeaders = headers.reduce((acc, header) => {
-            return `${acc}${header.name}: ${header.value.value}\r\n`;
-        }, '');
-        return new TextEncoder().encode(requestHeaders).length;
-    }
-    /** Converts from CDP Network domain headers to BiDi network headers. */
-    function bidiNetworkHeadersFromCdpNetworkHeaders(headers) {
-        if (!headers) {
-            return [];
-        }
-        return Object.entries(headers).map(([name, value]) => ({
-            name,
-            value: {
-                type: 'string',
-                value,
-            },
-        }));
-    }
-    /** Converts from Bidi network headers to CDP Fetch domain header entries. */
-    function cdpFetchHeadersFromBidiNetworkHeaders(headers) {
-        if (headers === undefined) {
-            return undefined;
-        }
-        return headers.map(({ name, value }) => ({
-            name,
-            value: value.value,
-        }));
-    }
-    function networkHeaderFromCookieHeaders(headers) {
-        if (headers === undefined) {
-            return undefined;
-        }
-        const value = headers.reduce((acc, value, index) => {
-            if (index > 0) {
-                acc += ';';
-            }
-            const cookieValue = value.value.type === 'base64'
-                ? btoa(value.value.value)
-                : value.value.value;
-            acc += `${value.name}=${cookieValue}`;
-            return acc;
-        }, '');
-        return {
-            name: 'Cookie',
-            value: {
-                type: 'string',
-                value,
-            },
-        };
-    }
-    /** Converts from Bidi auth action to CDP auth challenge response. */
-    function cdpAuthChallengeResponseFromBidiAuthContinueWithAuthAction(action) {
-        switch (action) {
-            case 'default':
-                return 'Default';
-            case 'cancel':
-                return 'CancelAuth';
-            case 'provideCredentials':
-                return 'ProvideCredentials';
-        }
-    }
-    /**
-     * Converts from CDP Network domain cookie to BiDi network cookie.
-     * * https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Cookie
-     * * https://w3c.github.io/webdriver-bidi/#type-network-Cookie
-     */
-    function cdpToBiDiCookie(cookie) {
-        const result = {
-            name: cookie.name,
-            value: { type: 'string', value: cookie.value },
-            domain: cookie.domain,
-            path: cookie.path,
-            size: cookie.size,
-            httpOnly: cookie.httpOnly,
-            secure: cookie.secure,
-            sameSite: cookie.sameSite === undefined
-                ? "none" /* Network.SameSite.None */
-                : sameSiteCdpToBiDi(cookie.sameSite),
-            ...(cookie.expires >= 0 ? { expiry: cookie.expires } : undefined),
-        };
-        // Extending with CDP-specific properties with `goog:` prefix.
-        result[`goog:session`] = cookie.session;
-        result[`goog:priority`] = cookie.priority;
-        result[`goog:sameParty`] = cookie.sameParty;
-        result[`goog:sourceScheme`] = cookie.sourceScheme;
-        result[`goog:sourcePort`] = cookie.sourcePort;
-        if (cookie.partitionKey !== undefined) {
-            result[`goog:partitionKey`] = cookie.partitionKey;
-        }
-        if (cookie.partitionKeyOpaque !== undefined) {
-            result[`goog:partitionKeyOpaque`] = cookie.partitionKeyOpaque;
-        }
-        return result;
-    }
-    /**
-     * Decodes a byte value to a string.
-     * @param {Network.BytesValue} value
-     * @return {string}
-     */
-    function deserializeByteValue(value) {
-        if (value.type === 'base64') {
-            return base64ToString(value.value);
-        }
-        return value.value;
-    }
-    /**
-     * Converts from BiDi set network cookie params to CDP Network domain cookie.
-     * * https://w3c.github.io/webdriver-bidi/#type-network-Cookie
-     * * https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-CookieParam
-     */
-    function bidiToCdpCookie(params, partitionKey) {
-        const deserializedValue = deserializeByteValue(params.cookie.value);
-        const result = {
-            name: params.cookie.name,
-            value: deserializedValue,
-            domain: params.cookie.domain,
-            path: params.cookie.path ?? '/',
-            secure: params.cookie.secure ?? false,
-            httpOnly: params.cookie.httpOnly ?? false,
-            ...(partitionKey.sourceOrigin !== undefined && {
-                partitionKey: {
-                    hasCrossSiteAncestor: false,
-                    // CDP's `partitionKey.topLevelSite` is the BiDi's `partition.sourceOrigin`.
-                    topLevelSite: partitionKey.sourceOrigin,
-                },
-            }),
-            ...(params.cookie.expiry !== undefined && {
-                expires: params.cookie.expiry,
-            }),
-            ...(params.cookie.sameSite !== undefined && {
-                sameSite: sameSiteBiDiToCdp(params.cookie.sameSite),
-            }),
-        };
-        // Extending with CDP-specific properties with `goog:` prefix.
-        if (params.cookie[`goog:url`] !== undefined) {
-            result.url = params.cookie[`goog:url`];
-        }
-        if (params.cookie[`goog:priority`] !== undefined) {
-            result.priority = params.cookie[`goog:priority`];
-        }
-        if (params.cookie[`goog:sameParty`] !== undefined) {
-            result.sameParty = params.cookie[`goog:sameParty`];
-        }
-        if (params.cookie[`goog:sourceScheme`] !== undefined) {
-            result.sourceScheme = params.cookie[`goog:sourceScheme`];
-        }
-        if (params.cookie[`goog:sourcePort`] !== undefined) {
-            result.sourcePort = params.cookie[`goog:sourcePort`];
-        }
-        return result;
-    }
-    function sameSiteCdpToBiDi(sameSite) {
-        switch (sameSite) {
-            case 'Strict':
-                return "strict" /* Network.SameSite.Strict */;
-            case 'None':
-                return "none" /* Network.SameSite.None */;
-            case 'Lax':
-                return "lax" /* Network.SameSite.Lax */;
-            default:
-                // Defaults to `Lax`:
-                // https://web.dev/articles/samesite-cookies-explained#samesitelax_by_default
-                return "lax" /* Network.SameSite.Lax */;
-        }
-    }
-    function sameSiteBiDiToCdp(sameSite) {
-        switch (sameSite) {
-            case "strict" /* Network.SameSite.Strict */:
-                return 'Strict';
-            case "lax" /* Network.SameSite.Lax */:
-                return 'Lax';
-            case "none" /* Network.SameSite.None */:
-                return 'None';
-        }
-        throw new InvalidArgumentException(`Unknown 'sameSite' value ${sameSite}`);
-    }
-    /** Matches the given URLPattern against the given URL. */
-    function matchUrlPattern(urlPattern, url) {
-        switch (urlPattern.type) {
-            case 'string': {
-                const pattern = new URLPattern(urlPattern.pattern);
-                return new URLPattern({
-                    protocol: pattern.protocol,
-                    hostname: pattern.hostname,
-                    port: pattern.port,
-                    pathname: pattern.pathname,
-                    search: pattern.search,
-                }).test(url);
-            }
-            case 'pattern':
-                return new URLPattern(urlPattern).test(url);
-        }
-    }
-    function bidiBodySizeFromCdpPostDataEntries(entries) {
-        let size = 0;
-        for (const entry of entries) {
-            size += atob(entry.bytes ?? '').length;
-        }
-        return size;
-    }
-    function getTiming(timing) {
-        if (!timing) {
-            return 0;
-        }
-        if (timing < 0) {
-            return 0;
-        }
-        return timing;
-    }
-
-    /**
      * Responsible for handling the `storage` domain.
      */
     class StorageProcessor {
@@ -4434,7 +4555,7 @@
             this.#logger = logger;
             this.#bluetoothProcessor = bluetoothProcessor;
             // keep-sorted start block=yes
-            this.#browserProcessor = new BrowserProcessor(browserCdpClient);
+            this.#browserProcessor = new BrowserProcessor(browserCdpClient, browsingContextStorage);
             this.#browsingContextProcessor = new BrowsingContextProcessor(browserCdpClient, browsingContextStorage, eventManager);
             this.#cdpProcessor = new CdpProcessor(browsingContextStorage, realmStorage, cdpConnection, browserCdpClient);
             this.#inputProcessor = new InputProcessor(browsingContextStorage);
@@ -4447,28 +4568,25 @@
         }
         async #processCommand(command) {
             switch (command.method) {
-                case 'session.end':
-                    // TODO: Implement.
-                    break;
-                // Bluetooth domain
+                // Bluetooth module
                 // keep-sorted start block=yes
                 case 'bluetooth.handleRequestDevicePrompt':
                     return await this.#bluetoothProcessor.handleRequestDevicePrompt(this.#parser.parseHandleRequestDevicePromptParams(command.params));
                 case 'bluetooth.simulateAdapter':
-                    return await this.#bluetoothProcessor.simulateAdapter(command.params);
+                    return await this.#bluetoothProcessor.simulateAdapter(this.#parser.parseSimulateAdapterParameters(command.params));
                 case 'bluetooth.simulateAdvertisement':
-                    return await this.#bluetoothProcessor.simulateAdvertisement(command.params);
+                    return await this.#bluetoothProcessor.simulateAdvertisement(this.#parser.parseSimulateAdvertisementParameters(command.params));
                 case 'bluetooth.simulatePreconnectedPeripheral':
-                    return await this.#bluetoothProcessor.simulatePreconnectedPeripheral(command.params);
+                    return await this.#bluetoothProcessor.simulatePreconnectedPeripheral(this.#parser.parseSimulatePreconnectedPeripheralParameters(command.params));
                 // keep-sorted end
-                // Browser domain
+                // Browser module
                 // keep-sorted start block=yes
                 case 'browser.close':
                     return this.#browserProcessor.close();
                 case 'browser.createUserContext':
                     return await this.#browserProcessor.createUserContext(command.params);
                 case 'browser.getClientWindows':
-                    throw new UnknownErrorException(`Method ${command.method} is not implemented.`);
+                    return await this.#browserProcessor.getClientWindows();
                 case 'browser.getUserContexts':
                     return await this.#browserProcessor.getUserContexts();
                 case 'browser.removeUserContext':
@@ -4476,7 +4594,7 @@
                 case 'browser.setClientWindowState':
                     throw new UnknownErrorException(`Method ${command.method} is not implemented.`);
                 // keep-sorted end
-                // Browsing Context domain
+                // Browsing Context module
                 // keep-sorted start block=yes
                 case 'browsingContext.activate':
                     return await this.#browsingContextProcessor.activate(this.#parser.parseActivateParams(command.params));
@@ -4503,7 +4621,7 @@
                 case 'browsingContext.traverseHistory':
                     return await this.#browsingContextProcessor.traverseHistory(this.#parser.parseTraverseHistoryParams(command.params));
                 // keep-sorted end
-                // CDP domain
+                // CDP module
                 // keep-sorted start block=yes
                 case 'cdp.getSession':
                     return this.#cdpProcessor.getSession(this.#parser.parseGetSessionParams(command.params));
@@ -4512,7 +4630,7 @@
                 case 'cdp.sendCommand':
                     return await this.#cdpProcessor.sendCommand(this.#parser.parseSendCommandParams(command.params));
                 // keep-sorted end
-                // Input domain
+                // Input module
                 // keep-sorted start block=yes
                 case 'input.performActions':
                     return await this.#inputProcessor.performActions(this.#parser.parsePerformActionsParams(command.params));
@@ -4521,7 +4639,7 @@
                 case 'input.setFiles':
                     return await this.#inputProcessor.setFiles(this.#parser.parseSetFilesParams(command.params));
                 // keep-sorted end
-                // Network domain
+                // Network module
                 // keep-sorted start block=yes
                 case 'network.addIntercept':
                     return await this.#networkProcessor.addIntercept(this.#parser.parseAddInterceptParams(command.params));
@@ -4540,12 +4658,12 @@
                 case 'network.setCacheBehavior':
                     return await this.#networkProcessor.setCacheBehavior(this.#parser.parseSetCacheBehavior(command.params));
                 // keep-sorted end
-                // Permissions domain
+                // Permissions module
                 // keep-sorted start block=yes
                 case 'permissions.setPermission':
                     return await this.#permissionsProcessor.setPermissions(this.#parser.parseSetPermissionsParams(command.params));
                 // keep-sorted end
-                // Script domain
+                // Script module
                 // keep-sorted start block=yes
                 case 'script.addPreloadScript':
                     return await this.#scriptProcessor.addPreloadScript(this.#parser.parseAddPreloadScriptParams(command.params));
@@ -4560,8 +4678,10 @@
                 case 'script.removePreloadScript':
                     return await this.#scriptProcessor.removePreloadScript(this.#parser.parseRemovePreloadScriptParams(command.params));
                 // keep-sorted end
-                // Session domain
+                // Session module
                 // keep-sorted start block=yes
+                case 'session.end':
+                    throw new UnknownErrorException(`Method ${command.method} is not implemented.`);
                 case 'session.new':
                     return await this.#sessionProcessor.new(command.params);
                 case 'session.status':
@@ -4571,7 +4691,7 @@
                 case 'session.unsubscribe':
                     return await this.#sessionProcessor.unsubscribe(this.#parser.parseSubscribeParams(command.params), command.channel);
                 // keep-sorted end
-                // Storage domain
+                // Storage module
                 // keep-sorted start block=yes
                 case 'storage.deleteCookies':
                     return await this.#storageProcessor.deleteCookies(this.#parser.parseDeleteCookiesParams(command.params));
@@ -4580,11 +4700,18 @@
                 case 'storage.setCookie':
                     return await this.#storageProcessor.setCookie(this.#parser.parseSetCookieParams(command.params));
                 // keep-sorted end
+                // WebExtension module
+                // keep-sorted start block=yes
+                case 'webExtension.install':
+                    throw new UnknownErrorException(`Method ${command.method} is not implemented.`);
+                case 'webExtension.uninstall':
+                    throw new UnknownErrorException(`Method ${command.method} is not implemented.`);
+                // keep-sorted end
             }
             // Intentionally kept outside the switch statement to ensure that
             // ESLint @typescript-eslint/switch-exhaustiveness-check triggers if a new
             // command is added.
-            throw new UnknownCommandException(`Unknown command '${command.method}'.`);
+            throw new UnknownCommandException(`Unknown command '${command?.method}'.`);
         }
         // Workaround for as zod.union always take the first schema
         // https://github.com/w3c/webdriver-bidi/issues/635
@@ -4656,6 +4783,10 @@
         }
         async simulateAdapter(params) {
             const context = this.#browsingContextStorage.getContext(params.context);
+            // Bluetooth spec requires overriding the existing adapter (step 6). From the CDP
+            // perspective, we need to disable the emulation first.
+            // https://webbluetoothcg.github.io/web-bluetooth/#bluetooth-simulateAdapter-command
+            await context.cdpTarget.browserCdpClient.sendCommand('BluetoothEmulation.disable');
             await context.cdpTarget.browserCdpClient.sendCommand('BluetoothEmulation.enable', {
                 state: params.state,
             });
@@ -4794,6 +4925,55 @@
     /** @return Given an input in cm, convert it to inches. */
     function inchesFromCm(cm) {
         return cm / 2.54;
+    }
+
+    /*
+     *  Copyright 2024 Google LLC.
+     *  Copyright (c) Microsoft Corporation.
+     *
+     *  Licensed under the Apache License, Version 2.0 (the "License");
+     *  you may not use this file except in compliance with the License.
+     *  You may obtain a copy of the License at
+     *
+     *      http://www.apache.org/licenses/LICENSE-2.0
+     *
+     *  Unless required by applicable law or agreed to in writing, software
+     *  distributed under the License is distributed on an "AS IS" BASIS,
+     *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     *  See the License for the specific language governing permissions and
+     *  limitations under the License.
+     *
+     */
+    /**
+     * A URL matches about:blank if its scheme is "about", its path contains a single string
+     * "blank", its username and password are the empty string, and its host is null.
+     * https://html.spec.whatwg.org/multipage/urls-and-fetching.html#matches-about:blank
+     * @param {string} url
+     * @return {boolean}
+     */
+    function urlMatchesAboutBlank(url) {
+        // An empty string is a special case, and considered to be about:blank.
+        // https://html.spec.whatwg.org/multipage/nav-history-apis.html#window-open-steps
+        if (url === '') {
+            return true;
+        }
+        try {
+            const parsedUrl = new URL(url);
+            const schema = parsedUrl.protocol.replace(/:$/, '');
+            return (schema.toLowerCase() === 'about' &&
+                parsedUrl.pathname.toLowerCase() === 'blank' &&
+                parsedUrl.username === '' &&
+                parsedUrl.password === '' &&
+                parsedUrl.host === '');
+        }
+        catch (err) {
+            // Wrong URL considered do not match about:blank.
+            if (err instanceof TypeError) {
+                return false;
+            }
+            // Re-throw other unexpected errors.
+            throw err;
+        }
     }
 
     class Realm {
@@ -4973,7 +5153,9 @@
          */
         async stringifyObject(cdpRemoteObject) {
             const { result } = await this.cdpClient.sendCommand('Runtime.callFunctionOn', {
-                functionDeclaration: String((remoteObject) => String(remoteObject)),
+                functionDeclaration: String(
+                // eslint-disable-next-line @typescript-eslint/no-base-to-string
+                (remoteObject) => String(remoteObject)),
                 awaitPromise: false,
                 arguments: [cdpRemoteObject],
                 returnByValue: true,
@@ -5531,6 +5713,11 @@
         // Set if there is a pending navigation initiated by `BrowsingContext.navigate` command.
         // The promise is resolved when the navigation is finished or rejected when canceled.
         #pendingCommandNavigation;
+        // Flags if the initial navigation to `about:blank` is in progress.
+        #initialNavigation = true;
+        // Flags if the navigation is initiated by `browsingContext.navigate` or
+        // `browsingContext.reload` command.
+        #navigationInitiatedByCommand = false;
         #originalOpener;
         // Set when the user prompt is opened. Required to provide the type in closing event.
         #lastUserPromptType;
@@ -5793,24 +5980,29 @@
                 if (this.id !== params.frameId) {
                     return;
                 }
-                // Use `pendingNavigationId` if navigation initiated by BiDi
-                // `BrowsingContext.navigate` or generate a new navigation id.
-                this.#navigationId = this.#pendingNavigationId ?? uuidv4();
-                this.#pendingNavigationId = undefined;
-                this.#eventManager.registerEvent({
-                    type: 'event',
-                    method: BrowsingContext$2.EventNames.NavigationStarted,
-                    params: {
-                        context: this.id,
-                        navigation: this.#navigationId,
-                        timestamp: _a$5.getTimestamp(),
-                        // The URL of the navigation that is currently in progress. Although the URL
-                        // is not yet known in case of user-initiated navigations, it is possible to
-                        // provide the URL in case of BiDi-initiated navigations.
-                        // TODO: provide proper URL in case of user-initiated navigations.
-                        url: this.#pendingNavigationUrl ?? 'UNKNOWN',
-                    },
-                }, this.id);
+                if (this.#navigationInitiatedByCommand) {
+                    // In case of the navigation is initiated by `browsingContext.navigate` or
+                    // `browsingContext.reload` commands, the `Page.frameRequestedNavigation` is not
+                    // emitted, which means the `NavigationStarted` is not emitted.
+                    // TODO: consider emit it right after the CDP command `navigate` or `reload` is finished.
+                    // The URL of the navigation that is currently in progress. Although the URL
+                    // is not yet known in case of user-initiated navigations, it is possible to
+                    // provide the URL in case of BiDi-initiated navigations.
+                    // TODO: provide proper URL in case of user-initiated navigations.
+                    const url = this.#pendingNavigationUrl ?? 'UNKNOWN';
+                    this.#navigationId = this.#pendingNavigationId ?? uuidv4();
+                    this.#pendingNavigationId = undefined;
+                    this.#eventManager.registerEvent({
+                        type: 'event',
+                        method: BrowsingContext$2.EventNames.NavigationStarted,
+                        params: {
+                            context: this.id,
+                            navigation: this.#navigationId,
+                            timestamp: _a$5.getTimestamp(),
+                            url,
+                        },
+                    }, this.id);
+                }
             });
             // TODO: don't use deprecated `Page.frameScheduledNavigation` event.
             this.#cdpTarget.cdpClient.on('Page.frameScheduledNavigation', (params) => {
@@ -5835,8 +6027,30 @@
                             url: this.#url,
                         },
                     }, this.id);
-                    this.#pendingCommandNavigation.reject(BrowsingContext$2.EventNames.NavigationAborted);
+                    this.#pendingCommandNavigation.reject(new UnknownErrorException('navigation aborted'));
                     this.#pendingCommandNavigation = undefined;
+                    this.#navigationInitiatedByCommand = false;
+                }
+                if (!urlMatchesAboutBlank(params.url)) {
+                    // If the url does not match about:blank, do not consider it is an initial
+                    // navigation and emit all the required events.
+                    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2793.
+                    this.#initialNavigation = false;
+                }
+                if (!this.#initialNavigation) {
+                    // Do not emit the event for the initial navigation to `about:blank`.
+                    this.#navigationId = this.#pendingNavigationId ?? uuidv4();
+                    this.#pendingNavigationId = undefined;
+                    this.#eventManager.registerEvent({
+                        type: 'event',
+                        method: BrowsingContext$2.EventNames.NavigationStarted,
+                        params: {
+                            context: this.id,
+                            navigation: this.#navigationId,
+                            timestamp: _a$5.getTimestamp(),
+                            url: params.url,
+                        },
+                    }, this.id);
                 }
                 this.#pendingNavigationUrl = params.url;
             });
@@ -5865,29 +6079,37 @@
                 const timestamp = _a$5.getTimestamp();
                 switch (params.name) {
                     case 'DOMContentLoaded':
-                        this.#eventManager.registerEvent({
-                            type: 'event',
-                            method: BrowsingContext$2.EventNames.DomContentLoaded,
-                            params: {
-                                context: this.id,
-                                navigation: this.#navigationId,
-                                timestamp,
-                                url: this.#url,
-                            },
-                        }, this.id);
+                        if (!this.#initialNavigation) {
+                            // Do not emit for the initial navigation.
+                            this.#eventManager.registerEvent({
+                                type: 'event',
+                                method: BrowsingContext$2.EventNames.DomContentLoaded,
+                                params: {
+                                    context: this.id,
+                                    navigation: this.#navigationId,
+                                    timestamp,
+                                    url: this.#url,
+                                },
+                            }, this.id);
+                        }
                         this.#lifecycle.DOMContentLoaded.resolve();
                         break;
                     case 'load':
-                        this.#eventManager.registerEvent({
-                            type: 'event',
-                            method: BrowsingContext$2.EventNames.Load,
-                            params: {
-                                context: this.id,
-                                navigation: this.#navigationId,
-                                timestamp,
-                                url: this.#url,
-                            },
-                        }, this.id);
+                        if (!this.#initialNavigation) {
+                            // Do not emit for the initial navigation.
+                            this.#eventManager.registerEvent({
+                                type: 'event',
+                                method: BrowsingContext$2.EventNames.Load,
+                                params: {
+                                    context: this.id,
+                                    navigation: this.#navigationId,
+                                    timestamp,
+                                    url: this.#url,
+                                },
+                            }, this.id);
+                        }
+                        // The initial navigation is finished.
+                        this.#initialNavigation = false;
                         this.#lifecycle.load.resolve();
                         break;
                 }
@@ -6091,6 +6313,7 @@
             const navigationId = uuidv4();
             this.#pendingNavigationId = navigationId;
             this.#pendingCommandNavigation = new Deferred();
+            this.#navigationInitiatedByCommand = true;
             // Navigate and wait for the result. If the navigation fails, the error event is
             // emitted and the promise is rejected.
             const cdpNavigatePromise = (async () => {
@@ -6135,12 +6358,13 @@
             ]).catch((e) => {
                 // Aborting navigation should not fail the original navigation command for now.
                 // https://github.com/w3c/webdriver-bidi/issues/799#issue-2605618955
-                if (e !== BrowsingContext$2.EventNames.NavigationAborted) {
+                if (e.message !== 'navigation aborted') {
                     throw e;
                 }
             });
             // `#pendingCommandNavigation` can be already rejected and set to undefined.
             this.#pendingCommandNavigation?.resolve();
+            this.#navigationInitiatedByCommand = false;
             this.#pendingCommandNavigation = undefined;
             return {
                 navigation: navigationId,
@@ -6168,6 +6392,7 @@
         async reload(ignoreCache, wait) {
             await this.targetUnblockedOrThrow();
             this.#resetLifecycleIfFinished();
+            this.#navigationInitiatedByCommand = true;
             await this.#cdpTarget.cdpClient.sendCommand('Page.reload', {
                 ignoreCache,
             });
@@ -6238,9 +6463,6 @@
                 throw new UnsupportedOperationException(`Non-top-level 'context' (${params.context}) is currently not supported`);
             }
             const formatParameters = getImageFormatParameters(params);
-            // XXX: Focus the original tab after the screenshot is taken.
-            // This is needed because the screenshot gets blocked until the active tab gets focus.
-            await this.#cdpTarget.cdpClient.sendCommand('Page.bringToFront');
             let captureBeyondViewport = false;
             let script;
             params.origin ??= 'viewport';
@@ -8579,7 +8801,7 @@
                 // ),
             ];
             const authChallenges = this.#authChallenges;
-            return {
+            const response = {
                 url: this.url,
                 protocol: this.#response.info?.protocol ?? '',
                 status: this.#statusCode ?? -1, // TODO: Throw an exception or use some other status code?
@@ -8600,13 +8822,15 @@
                     size: 0,
                 },
                 ...(authChallenges ? { authChallenges } : {}),
-                // @ts-expect-error this is a CDP-specific extension.
+            };
+            return {
+                ...response,
                 'goog:securityDetails': this.#response.info?.securityDetails,
             };
         }
         #getRequestData() {
             const headers = this.#requestHeaders;
-            return {
+            const request = {
                 request: this.#id,
                 url: this.url,
                 method: this.#method ?? _a$3.unknownParameter,
@@ -8614,8 +8838,14 @@
                 cookies: this.#cookies,
                 headersSize: computeHeadersSize(headers),
                 bodySize: this.#bodySize,
+                // TODO: populate
+                destination: '',
+                // TODO: populate
+                initiatorType: null,
                 timings: this.#timings,
-                // @ts-expect-error CDP-specific attribute.
+            };
+            return {
+                ...request,
                 'goog:postData': this.#request.info?.request?.postData,
                 'goog:hasPostData': this.#request.info?.request?.hasPostData,
                 'goog:resourceType': this.#request.info?.type,
@@ -14478,6 +14708,7 @@
         ScriptCommandSchema,
         SessionCommandSchema,
         StorageCommandSchema,
+        WebExtensionsCommandSchema,
     ]));
     const ResultDataSchema = z.lazy(() => z.union([
         BrowsingContextResultSchema,
@@ -14486,6 +14717,7 @@
         ScriptResultSchema,
         SessionResultSchema,
         StorageResultSchema,
+        WebExtensionsResultSchema,
     ]));
     const EmptyParamsSchema = z.lazy(() => ExtensibleSchema);
     z.lazy(() => z.union([CommandResponseSchema, ErrorResponseSchema, EventSchema]));
@@ -14515,6 +14747,7 @@
         'invalid argument',
         'invalid selector',
         'invalid session id',
+        'invalid web extension',
         'move target out of bounds',
         'no such alert',
         'no such element',
@@ -14527,6 +14760,7 @@
         'no such script',
         'no such storage partition',
         'no such user context',
+        'no such web extension',
         'session not created',
         'unable to capture screen',
         'unable to close browser',
@@ -15381,11 +15615,11 @@
     })(Network$1 || (Network$1 = {}));
     (function (Network) {
         Network.InitiatorSchema = z.lazy(() => z.object({
-            type: z.enum(['parser', 'script', 'preflight', 'other']),
             columnNumber: JsUintSchema.optional(),
             lineNumber: JsUintSchema.optional(),
-            stackTrace: Script$1.StackTraceSchema.optional(),
             request: Network.RequestSchema.optional(),
+            stackTrace: Script$1.StackTraceSchema.optional(),
+            type: z.enum(['parser', 'script', 'preflight', 'other']).optional(),
         }));
     })(Network$1 || (Network$1 = {}));
     (function (Network) {
@@ -15403,6 +15637,8 @@
             cookies: z.array(Network.CookieSchema),
             headersSize: JsUintSchema,
             bodySize: z.union([JsUintSchema, z.null()]),
+            destination: z.string(),
+            initiatorType: z.union([z.string(), z.null()]),
             timings: Network.FetchTimingInfoSchema,
         }));
     })(Network$1 || (Network$1 = {}));
@@ -15607,7 +15843,7 @@
     })(Network$1 || (Network$1 = {}));
     (function (Network) {
         Network.BeforeRequestSentParametersSchema = z.lazy(() => Network.BaseParametersSchema.and(z.object({
-            initiator: Network.InitiatorSchema,
+            initiator: Network.InitiatorSchema.optional(),
         })));
     })(Network$1 || (Network$1 = {}));
     (function (Network) {
@@ -16678,6 +16914,64 @@
             files: z.array(z.string()),
         }));
     })(Input$1 || (Input$1 = {}));
+    const WebExtensionsCommandSchema = z.lazy(() => z.union([WebExtension.InstallSchema, WebExtension.UninstallSchema]));
+    const WebExtensionsResultSchema = z.lazy(() => WebExtension.InstallResultSchema);
+    var WebExtension;
+    (function (WebExtension) {
+        WebExtension.ExtensionSchema = z.lazy(() => z.string());
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.InstallParametersSchema = z.lazy(() => z.object({
+            extensionData: WebExtension.ExtensionDataSchema,
+        }));
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.InstallSchema = z.lazy(() => z.object({
+            method: z.literal('webExtension.install'),
+            params: WebExtension.InstallParametersSchema,
+        }));
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.ExtensionDataSchema = z.lazy(() => z.union([
+            WebExtension.ExtensionArchivePathSchema,
+            WebExtension.ExtensionBase64EncodedSchema,
+            WebExtension.ExtensionPathSchema,
+        ]));
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.ExtensionPathSchema = z.lazy(() => z.object({
+            type: z.literal('path'),
+            path: z.string(),
+        }));
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.ExtensionArchivePathSchema = z.lazy(() => z.object({
+            type: z.literal('archivePath'),
+            path: z.string(),
+        }));
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.ExtensionBase64EncodedSchema = z.lazy(() => z.object({
+            type: z.literal('base64'),
+            value: z.string(),
+        }));
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.InstallResultSchema = z.lazy(() => z.object({
+            extension: WebExtension.ExtensionSchema,
+        }));
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.UninstallSchema = z.lazy(() => z.object({
+            method: z.literal('webExtension.uninstall'),
+            params: WebExtension.UninstallParametersSchema,
+        }));
+    })(WebExtension || (WebExtension = {}));
+    (function (WebExtension) {
+        WebExtension.UninstallParametersSchema = z.lazy(() => z.object({
+            extension: WebExtension.ExtensionSchema,
+        }));
+    })(WebExtension || (WebExtension = {}));
 
     /**
      * Copyright 2022 Google LLC.
@@ -16938,6 +17232,19 @@
                 .HandleRequestDevicePromptParametersSchema);
         }
         Bluetooth.parseHandleRequestDevicePromptParams = parseHandleRequestDevicePromptParams;
+        function parseSimulateAdapterParams(params) {
+            return parseObject(params, Bluetooth$1.SimulateAdapterParametersSchema);
+        }
+        Bluetooth.parseSimulateAdapterParams = parseSimulateAdapterParams;
+        function parseSimulateAdvertisementParams(params) {
+            return parseObject(params, Bluetooth$1.SimulateAdvertisementParametersSchema);
+        }
+        Bluetooth.parseSimulateAdvertisementParams = parseSimulateAdvertisementParams;
+        function parseSimulatePreconnectedPeripheralParams(params) {
+            return parseObject(params, Bluetooth$1
+                .SimulatePreconnectedPeripheralParametersSchema);
+        }
+        Bluetooth.parseSimulatePreconnectedPeripheralParams = parseSimulatePreconnectedPeripheralParams;
     })(Bluetooth || (Bluetooth = {}));
 
     class BidiParser {
@@ -16945,6 +17252,15 @@
         // keep-sorted start block=yes
         parseHandleRequestDevicePromptParams(params) {
             return Bluetooth.parseHandleRequestDevicePromptParams(params);
+        }
+        parseSimulateAdapterParameters(params) {
+            return Bluetooth.parseSimulateAdapterParams(params);
+        }
+        parseSimulateAdvertisementParameters(params) {
+            return Bluetooth.parseSimulateAdvertisementParams(params);
+        }
+        parseSimulatePreconnectedPeripheralParameters(params) {
+            return Bluetooth.parseSimulatePreconnectedPeripheralParams(params);
         }
         // keep-sorted end
         // Browser domain
