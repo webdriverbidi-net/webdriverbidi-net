@@ -59,11 +59,7 @@ public class RequestData
     /// Gets the destination of the request.
     /// </summary>
     [JsonPropertyName("destination")]
-    // TODO (Issue #32): Uncomment the JsonRequired attribute once
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 and
-    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2776
-    // are fixed.
-    // [JsonRequired]
+    [JsonRequired]
     [JsonInclude]
     public string Destination { get => this.destination; private set => this.destination = value; }
 
@@ -71,11 +67,7 @@ public class RequestData
     /// Gets the initiator type of the request.
     /// </summary>
     [JsonPropertyName("initiatorType")]
-    // TODO (Issue #32): Uncomment the JsonRequired attribute once
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 and
-    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2776
-    // are fixed.
-    // [JsonRequired]
+    [JsonRequired]
     [JsonInclude]
     public string? InitiatorType { get => this.initiatorType; private set => this.initiatorType = value; }
 

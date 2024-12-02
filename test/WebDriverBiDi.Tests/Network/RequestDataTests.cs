@@ -583,11 +583,7 @@ public class RequestDataTests
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: bodySize"));
     }
 
-    // TODO (Issue #32): Restore test once
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 and
-    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2776
-    // are fixed.
-    // [Test]
+    [Test]
     public void TestDeserializeWithMissingDestinationThrows()
     {
         string json = """
@@ -620,11 +616,7 @@ public class RequestDataTests
         Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: destination"));
     }
 
-    // TODO (Issue #32): Restore test once
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 and
-    // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2776
-    // are fixed.
-    // [Test]
+    [Test]
     public void TestDeserializeWithMissingInitiatorTypeThrows()
     {
         string json = """
