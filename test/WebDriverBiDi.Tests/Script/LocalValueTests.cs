@@ -91,6 +91,24 @@ public class LocalValueTests
     }
 
     [Test]
+    public void TestCanSerializeDecimal()
+    {
+        LocalValue value = LocalValue.Number(123.23m);
+        Assert.That(value.Value, Is.Not.Null);
+        string json = JsonSerializer.Serialize(value);
+        JObject parsed = JObject.Parse(json);
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed, Contains.Key("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
+            Assert.That(parsed, Contains.Key("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
+            Assert.That(parsed["value"]!.Value<decimal>(), Is.EqualTo(123.23));
+        });
+    }
+    
+    [Test]
     public void TestCanSerializeDouble()
     {
         LocalValue value = LocalValue.Number(3.14);
