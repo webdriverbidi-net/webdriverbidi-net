@@ -152,7 +152,7 @@ public class LocalValue : ArgumentValue
     /// <param name="numericValue">The double to wrap as a LocalValue.</param>
     /// <returns>A LocalValue for a number.</returns>
     public static LocalValue Number(double numericValue) => new("number") { argValue = numericValue };
-    
+
     /// <summary>
     /// Creates a LocalValue for a number.
     /// </summary>
