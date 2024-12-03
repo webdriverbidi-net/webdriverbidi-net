@@ -23,5 +23,9 @@
         "worklet",
         "Zenkaku"
     ],
+    "cSpell.ignorePaths": [
+        "third_party/**",
+        ".vscode/**"
+    ],
     "sarif-viewer.connectToGithubCodeScanning": "off"
 }
