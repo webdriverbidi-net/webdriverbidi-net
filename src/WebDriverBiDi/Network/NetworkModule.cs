@@ -69,7 +69,7 @@ public sealed class NetworkModule : Module
     /// Adds an intercept for network traffic matching specific phases of the traffic and URL patterns.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>The result of the command containing a network interception ID.</returns>
     public async Task<AddInterceptCommandResult> AddInterceptAsync(AddInterceptCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<AddInterceptCommandResult>(commandProperties).ConfigureAwait(false);
@@ -79,7 +79,7 @@ public sealed class NetworkModule : Module
     /// Continues a paused request intercepted by the driver.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>The result of the command.</returns>
     public async Task<EmptyResult> ContinueRequestAsync(ContinueRequestCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
@@ -90,7 +90,7 @@ public sealed class NetworkModule : Module
     /// but before presented to the browser.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>The result of the command.</returns>
     public async Task<EmptyResult> ContinueResponseAsync(ContinueResponseCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
@@ -100,7 +100,7 @@ public sealed class NetworkModule : Module
     /// Continues a paused request intercepted by the driver with authentication information.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>The result of the command.</returns>
     public async Task<EmptyResult> ContinueWithAuthAsync(ContinueWithAuthCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
@@ -110,7 +110,7 @@ public sealed class NetworkModule : Module
     /// Fails a paused request intercepted by the driver.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>The result of the command.</returns>
     public async Task<EmptyResult> FailRequestAsync(FailRequestCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
@@ -120,7 +120,7 @@ public sealed class NetworkModule : Module
     /// Provides a full response for request intercepted by the driver without sending the request to the server.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>The result of the command.</returns>
     public async Task<EmptyResult> ProvideResponseAsync(ProvideResponseCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
@@ -130,7 +130,7 @@ public sealed class NetworkModule : Module
     /// Removes an added intercept for network traffic matching specific phases of the traffic and URL patterns.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>The result of the command.</returns>
     public async Task<EmptyResult> RemoveInterceptAsync(RemoveInterceptCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
