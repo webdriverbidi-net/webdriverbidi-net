@@ -53,10 +53,10 @@ public sealed class SessionModule : Module
     /// Subscribes to events for this session.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
-    /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SubscribeAsync(SubscribeCommandParameters commandProperties)
+    /// <returns>The result of the command containing the subscription ID.</returns>
+    public async Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SubscribeCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -10,12 +10,16 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the session.unsubscribe command.
 /// </summary>
-public class UnsubscribeCommandParameters : SubscribeCommandParameters
+public class UnsubscribeCommandParameters : CommandParameters<EmptyResult>
 {
+    private readonly List<string> eventList = [];
+
+    private readonly List<string> contextList = [];
+
     /// <summary>
     /// Initializes a new instance of the <see cref="UnsubscribeCommandParameters"/> class.
     /// </summary>
-    public UnsubscribeCommandParameters()
+    protected UnsubscribeCommandParameters()
     {
     }
 

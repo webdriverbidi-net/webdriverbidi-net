@@ -86,7 +86,9 @@ public class SessionModuleTests
                                   {
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
-                                    "result": {}
+                                    "result": {
+                                      "subscription": "mySubscriptionId"
+                                    }
                                   }
                                   """;
             await connection.RaiseDataReceivedEventAsync(responseJson);
@@ -98,15 +100,16 @@ public class SessionModuleTests
 
         SubscribeCommandParameters subscribeParameters = new();
         subscribeParameters.Events.Add("log.entryAdded");
-        Task<EmptyResult> task = module.SubscribeAsync(subscribeParameters);
+        Task<SubscribeCommandResult> task = module.SubscribeAsync(subscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SubscribeCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
+        Assert.That(result.SubscriptionId, Is.EqualTo("mySubscriptionId"));
     }
 
     [Test]
-    public async Task TestExecuteUnsubscribeCommand()
+    public async Task TestExecuteUnsubscribeByAttributesCommand()
     {
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
@@ -125,8 +128,37 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        UnsubscribeCommandParameters unsubscribeParameters = new();
+        UnsubscribeByAttributesCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.Events.Add("log.entryAdded");
+        Task<EmptyResult> task = module.UnsubscribeAsync(unsubscribeParameters);
+        task.Wait(TimeSpan.FromSeconds(1));
+        EmptyResult result = task.Result;
+        
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task TestExecuteUnsubscribeBySubscriptionIdsCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        SessionModule module = new(driver);
+        await driver.StartAsync("ws:localhost");
+
+        UnsubscribeByIdsCommandParameters unsubscribeParameters = new();
+        unsubscribeParameters.SubscriptionIds.Add("mySubscriptionId");
         Task<EmptyResult> task = module.UnsubscribeAsync(unsubscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         EmptyResult result = task.Result;
