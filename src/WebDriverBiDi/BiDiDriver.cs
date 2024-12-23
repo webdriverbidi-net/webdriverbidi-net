@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Input;
@@ -63,6 +64,7 @@ public class BiDiDriver
         this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
         this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
         this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
+        this.RegisterModule(new BluetoothModule(this));
         this.RegisterModule(new BrowserModule(this));
         this.RegisterModule(new BrowsingContextModule(this));
         this.RegisterModule(new LogModule(this));
@@ -94,6 +96,11 @@ public class BiDiDriver
     /// Gets an observable event that notifies when a log message is emitted by this driver.
     /// </summary>
     public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
+
+    /// <summary>
+    /// Gets the bluetooth module as described in the W3C Web Bluetooth Specification.
+    /// </summary>
+    public BluetoothModule Bluetooth => this.GetModule<BluetoothModule>(BluetoothModule.BluetoothModuleName);
 
     /// <summary>
     /// Gets the browser module as described in the WebDriver Bidi protocol.
