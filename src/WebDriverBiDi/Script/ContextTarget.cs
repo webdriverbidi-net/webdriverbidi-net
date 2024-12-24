@@ -19,10 +19,12 @@ public class ContextTarget : Target
     /// Initializes a new instance of the <see cref="ContextTarget"/> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context of the script target.</param>
+    /// <param name="sandbox">The name of the sandbox</param>
     [JsonConstructor]
-    public ContextTarget(string browsingContextId)
+    public ContextTarget(string browsingContextId, string? sandbox = null)
     {
         this.browsingContextId = browsingContextId;
+        this.sandbox = sandbox;
     }
 
     /// <summary>
