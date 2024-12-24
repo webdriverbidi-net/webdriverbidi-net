@@ -77,16 +77,20 @@ public class TargetTests
     [Test]
     public void TestCanSerializeContextTarget()
     {
-        Target target = new ContextTarget("myContext");
+        Target target = new ContextTarget("myContext", "mySandbox");
         string json = JsonSerializer.Serialize(target);
         JObject deserialized = JObject.Parse(json);
-        Assert.That(deserialized, Has.Count.EqualTo(1));
+        Assert.That(deserialized, Has.Count.EqualTo(2));
         Assert.That(deserialized, Contains.Key("context"));
         JToken contextValue = deserialized.GetValue("context")!;
+        JToken sandboxValue = deserialized.GetValue("sandbox")!;
+        
         Assert.Multiple(() =>
         {
             Assert.That(contextValue.Type, Is.EqualTo(JTokenType.String));
             Assert.That((string?)contextValue, Is.EqualTo("myContext"));
+            Assert.That(sandboxValue.Type, Is.EqualTo(JTokenType.String));
+            Assert.That((string?)sandboxValue, Is.EqualTo("mySandbox"));
         });
     }
 }
