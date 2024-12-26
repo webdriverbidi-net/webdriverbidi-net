@@ -77,7 +77,10 @@ public class TargetTests
     [Test]
     public void TestCanSerializeContextTarget()
     {
-        Target target = new ContextTarget("myContext", "mySandbox");
+        Target target = new ContextTarget("myContext")
+        {
+            Sandbox = "mySandbox"
+        };
         string json = JsonSerializer.Serialize(target);
         JObject deserialized = JObject.Parse(json);
         Assert.That(deserialized, Has.Count.EqualTo(2));

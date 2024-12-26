@@ -19,12 +19,10 @@ public class ContextTarget : Target
     /// Initializes a new instance of the <see cref="ContextTarget"/> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context of the script target.</param>
-    /// <param name="sandbox">The name of the sandbox</param>
     [JsonConstructor]
-    public ContextTarget(string browsingContextId, string? sandbox = null)
+    public ContextTarget(string browsingContextId)
     {
         this.browsingContextId = browsingContextId;
-        this.sandbox = sandbox;
     }
 
     /// <summary>
@@ -41,5 +39,5 @@ public class ContextTarget : Target
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Sandbox { get => this.sandbox; private set => this.sandbox = value; }
+    public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
 }
