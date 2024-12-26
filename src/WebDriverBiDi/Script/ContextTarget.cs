@@ -39,5 +39,5 @@ public class ContextTarget : Target
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Sandbox { get => this.sandbox; private set => this.sandbox = value; }
+    public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
 }
