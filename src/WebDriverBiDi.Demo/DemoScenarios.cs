@@ -262,6 +262,48 @@ public static class DemoScenarios
         }
     }
 
+    public static async Task ExecuteElementRoundtripInJavaScript(BiDiDriver driver, string baseUrl)
+    {
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/inputForm.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+
+        string firstFunctionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
+        CallFunctionCommandParameters callFunctionParams = new(firstFunctionDefinition, new ContextTarget(contextId), true);
+        EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        RemoteValue? elementResultValue = null;
+        if (scriptResult is EvaluateResultSuccess firstScriptSuccessResult)
+        {
+            Console.WriteLine($"Script result type: {firstScriptSuccessResult.Result.Type} (.NET type: {firstScriptSuccessResult.Result.Value!.GetType()})");
+            Console.WriteLine($"Script returned element with ID {firstScriptSuccessResult.Result.SharedId}");
+
+            elementResultValue = firstScriptSuccessResult.Result;
+        }
+        else if (scriptResult is EvaluateResultException scriptExceptionResult)
+        {
+            Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
+        }
+
+        string secondFunctionDefinition = @"(element) => element.tagName";
+        callFunctionParams = new(secondFunctionDefinition, new ContextTarget(contextId), true);
+        callFunctionParams.Arguments.Add(elementResultValue!.ToSharedReference());
+        scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        if (scriptResult is EvaluateResultSuccess secondScriptSuccessResult)
+        {
+            Console.WriteLine($"Script result type: {secondScriptSuccessResult.Result.Type} (.NET type: {secondScriptSuccessResult.Result.Value!.GetType()})");
+        }
+        else if (scriptResult is EvaluateResultException scriptExceptionResult)
+        {
+            Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
+        }
+
+    }
+
     public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
     {
         List<Task> beforeRequestSentTasks = new();

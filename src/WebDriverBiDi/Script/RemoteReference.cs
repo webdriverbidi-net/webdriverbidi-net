@@ -11,8 +11,6 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Object containing a remote reference.
 /// </summary>
-[JsonDerivedType(typeof(RemoteObjectReference))]
-[JsonDerivedType(typeof(SharedReference))]
 public class RemoteReference : ArgumentValue
 {
     private readonly Dictionary<string, object?> additionalData = new();

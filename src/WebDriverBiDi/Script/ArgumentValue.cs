@@ -12,6 +12,8 @@ using System.Text.Json.Serialization;
 /// </summary>
 [JsonDerivedType(typeof(LocalValue))]
 [JsonDerivedType(typeof(RemoteReference))]
+[JsonDerivedType(typeof(RemoteObjectReference))]
+[JsonDerivedType(typeof(SharedReference))]
 public abstract class ArgumentValue
 {
 }
