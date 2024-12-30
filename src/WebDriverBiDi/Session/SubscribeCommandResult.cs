@@ -26,7 +26,8 @@ public class SubscribeCommandResult : CommandResult
     /// Gets the ID of the subscription.
     /// </summary>
     [JsonPropertyName("subscription")]
-    [JsonRequired]
+    // TODO (Issue #38): Uncomment once https://bugzilla.mozilla.org/show_bug.cgi?id=1938576 is implemented.
+    // [JsonRequired]
     [JsonInclude]
     public string SubscriptionId { get => this.subscriptionId; private set => this.subscriptionId = value; }
 }
