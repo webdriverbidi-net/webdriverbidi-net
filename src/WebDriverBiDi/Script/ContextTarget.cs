@@ -34,7 +34,7 @@ public class ContextTarget : Target
     public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
 
     /// <summary>
-    /// Gets the name of the sandbox.
+    /// Gets or sets the name of the sandbox.
     /// </summary>
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
