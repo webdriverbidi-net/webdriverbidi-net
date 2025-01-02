@@ -61,7 +61,9 @@ public class ChromiumTransport : Transport
         // embedded quotes in the properties of the Command object. Note
         // carefully that this does double-convert from byte array to string
         // and back, and that is intentional given the usage here.
-        string serializedCommand = JsonSerializer.Serialize(Encoding.UTF8.GetString(base.SerializeCommand(command)));
+        byte[] commandBytes = base.SerializeCommand(command);
+        Console.WriteLine(Encoding.UTF8.GetString(commandBytes));
+        string serializedCommand = JsonSerializer.Serialize(Encoding.UTF8.GetString(commandBytes));
         DevToolsProtocolCommand wrapperCommand = new(this.GetNextCommandId(), "Runtime.evaluate");
         wrapperCommand.Parameters["expression"] = @$"window.onBidiMessage({serializedCommand})";
         wrapperCommand.SessionId = this.sessionId;
