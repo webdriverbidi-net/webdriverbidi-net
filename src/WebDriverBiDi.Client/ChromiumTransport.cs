@@ -62,7 +62,6 @@ public class ChromiumTransport : Transport
         // carefully that this does double-convert from byte array to string
         // and back, and that is intentional given the usage here.
         byte[] commandBytes = base.SerializeCommand(command);
-        Console.WriteLine(Encoding.UTF8.GetString(commandBytes));
         string serializedCommand = JsonSerializer.Serialize(Encoding.UTF8.GetString(commandBytes));
         DevToolsProtocolCommand wrapperCommand = new(this.GetNextCommandId(), "Runtime.evaluate");
         wrapperCommand.Parameters["expression"] = @$"window.onBidiMessage({serializedCommand})";
@@ -114,7 +113,6 @@ public class ChromiumTransport : Transport
         EventObserver<ConnectionDataReceivedEventArgs> observer = this.Connection.OnDataReceived.AddObserver((e) =>
         {
             document = JsonDocument.Parse(e.Data);
-            Console.WriteLine(e.Data);
             if (!document.RootElement.TryGetProperty("id", out _))
             {
                 // Only return data from command responses; ignore events.

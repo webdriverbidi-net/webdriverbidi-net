@@ -395,7 +395,6 @@ public class ChromeLauncher : BrowserLauncher
         EventObserver<ConnectionDataReceivedEventArgs> observer = connection.OnDataReceived.AddObserver((e) =>
         {
             document = JsonDocument.Parse(e.Data);
-            Console.WriteLine(e.Data);
             if (!document.RootElement.TryGetProperty("id", out _))
             {
                 // Only return data from command responses; ignore events.
