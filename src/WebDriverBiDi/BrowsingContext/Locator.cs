@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 /// Represents a locator for locating nodes.
 /// </summary>
 [JsonDerivedType(typeof(AccessibilityLocator))]
+[JsonDerivedType(typeof(ContextLocator))]
 [JsonDerivedType(typeof(CssLocator))]
 [JsonDerivedType(typeof(InnerTextLocator))]
 [JsonDerivedType(typeof(XPathLocator))]

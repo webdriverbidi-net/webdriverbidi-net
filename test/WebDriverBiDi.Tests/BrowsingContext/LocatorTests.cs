@@ -7,6 +7,21 @@ using Newtonsoft.Json.Linq;
 public class LocatorTests
 {
     [Test]
+    public void TestCanSerializeUsingBaseType()
+    {
+        Locator locator = new CssLocator("locator");
+        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        locator = new XPathLocator("//locator");
+        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        locator = new InnerTextLocator("locator text");
+        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        locator = new AccessibilityLocator();
+        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+        locator = new ContextLocator("myContext");
+        Assert.That(JsonSerializer.Serialize(locator), Is.Not.Empty);
+    }
+
+    [Test]
     public void TestCanSerializeCssLocator()
     {
         CssLocator value = new(".selector");
@@ -407,6 +422,31 @@ public class LocatorTests
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
             JObject? accessibilityValue = parsed["value"] as JObject;
             Assert.That(accessibilityValue, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeContextLocator()
+    {
+        ContextLocator value = new("myContext");
+        Assert.That(value.BrowsingContextId, Is.EqualTo("myContext"));
+
+        string json = JsonSerializer.Serialize(value);
+        JObject parsed = JObject.Parse(json);
+        Assert.Multiple(() =>
+        {
+            Assert.That(parsed, Has.Count.EqualTo(2));
+            Assert.That(parsed, Contains.Key("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("context"));
+            Assert.That(parsed["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(parsed, Contains.Key("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
+            JObject? contextValue = parsed["value"] as JObject;
+            Assert.That(contextValue, Is.Not.Null);
+            Assert.That(contextValue, Has.Count.EqualTo(1));
+            Assert.That(contextValue, Contains.Key("context"));
+            Assert.That(contextValue!["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(contextValue!["context"]!.Value<string>(), Is.EqualTo("myContext"));
         });
     }
 }
