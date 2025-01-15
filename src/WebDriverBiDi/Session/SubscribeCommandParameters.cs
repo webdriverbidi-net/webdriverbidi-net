@@ -34,6 +34,11 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     public SubscribeCommandParameters(IList<string> events, IList<string>? contexts = null, IList<string>? userContexts = null)
     {
         this.eventList.AddRange(events);
+        if (contexts is null && userContexts is null)
+        {
+            throw new ArgumentNullException("contexts and userContexts parameters cannot both be null");
+        }
+
         if (contexts is not null)
         {
             this.contextList.AddRange(contexts);

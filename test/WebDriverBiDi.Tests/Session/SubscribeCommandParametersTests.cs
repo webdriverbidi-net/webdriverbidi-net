@@ -87,7 +87,7 @@ public class SubscribeCommandParametersTests
             Assert.That(serialized["userContexts"]![0]!.Value<string>(), Is.EqualTo("myUserContext"));
         });
     }
-    
+
     [Test]
     public void TestInitializeUsingConstructor()
     {
@@ -101,5 +101,67 @@ public class SubscribeCommandParametersTests
             Assert.That(properties.UserContexts, Has.Count.EqualTo(1));
             Assert.That(properties.UserContexts, Contains.Item("someUserContext"));
         });
+    }
+
+    [Test]
+    public void TestInitializeUsingConstructorForBrowsingContexts()
+    {
+        SubscribeCommandParameters properties = new(["someEvent"], ["someContext"]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(properties.Events, Has.Count.EqualTo(1));
+            Assert.That(properties.Events, Contains.Item("someEvent"));
+            Assert.That(properties.Contexts, Has.Count.EqualTo(1));
+            Assert.That(properties.Contexts, Contains.Item("someContext"));
+            Assert.That(properties.UserContexts, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void TestInitializeUsingConstructorForBrowsingContextsWithEmptyUserContextList()
+    {
+        SubscribeCommandParameters properties = new(["someEvent"], ["someContext"], []);
+        Assert.Multiple(() =>
+        {
+            Assert.That(properties.Events, Has.Count.EqualTo(1));
+            Assert.That(properties.Events, Contains.Item("someEvent"));
+            Assert.That(properties.Contexts, Has.Count.EqualTo(1));
+            Assert.That(properties.Contexts, Contains.Item("someContext"));
+            Assert.That(properties.UserContexts, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void TestInitializeUsingConstructorForUserContexts()
+    {
+        SubscribeCommandParameters properties = new(["someEvent"], null, ["someUserContext"]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(properties.Events, Has.Count.EqualTo(1));
+            Assert.That(properties.Events, Contains.Item("someEvent"));
+            Assert.That(properties.Contexts, Is.Empty);
+            Assert.That(properties.UserContexts, Has.Count.EqualTo(1));
+            Assert.That(properties.UserContexts, Contains.Item("someUserContext"));
+        });
+    }
+
+    [Test]
+    public void TestInitializeUsingConstructorForUserContextsWithEmptyBrowsingContextList()
+    {
+        SubscribeCommandParameters properties = new(["someEvent"], [], ["someUserContext"]);
+        Assert.Multiple(() =>
+        {
+            Assert.That(properties.Events, Has.Count.EqualTo(1));
+            Assert.That(properties.Events, Contains.Item("someEvent"));
+            Assert.That(properties.Contexts, Is.Empty);
+            Assert.That(properties.UserContexts, Has.Count.EqualTo(1));
+            Assert.That(properties.UserContexts, Contains.Item("someUserContext"));
+        });
+    }
+
+    [Test]
+    public void TestInitializeUsingConstructorWithNoContextsThrows()
+    {
+        Assert.That(() => new SubscribeCommandParameters(["someEvent"]), Throws.InstanceOf<ArgumentNullException>());
     }
 }
