@@ -16,6 +16,8 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
 
     private readonly List<string> contextList = [];
 
+    private readonly List<string> userContextList = [];
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class.
     /// </summary>
@@ -27,11 +29,20 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class.
     /// </summary>
     /// <param name="events">The list of events to which to subscribe or unsubscribe.</param>
-    /// <param name="contexts">The list of browsing context IDs for which to subscribe to or unsubscribe from the specified events.</param>
-    public SubscribeCommandParameters(IList<string> events, IList<string> contexts)
+    /// <param name="contexts">The list of browsing context IDs for which to subscribe to the specified events.</param>
+    /// <param name="userContexts">The list of user context IDs for which to subscribe to the specified events.</param>
+    public SubscribeCommandParameters(IList<string> events, IList<string>? contexts = null, IList<string>? userContexts = null)
     {
         this.eventList.AddRange(events);
-        this.contextList.AddRange(contexts);
+        if (contexts is not null)
+        {
+            this.contextList.AddRange(contexts);
+        }
+
+        if (userContexts is not null)
+        {
+            this.userContextList.AddRange(userContexts);
+        }
     }
 
     /// <summary>
@@ -47,13 +58,19 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     public List<string> Events => this.eventList;
 
     /// <summary>
-    /// Gets the list of browsing context IDs for which to subscribe to or unsubscribe from the specified events.
+    /// Gets the list of browsing context IDs for which to subscribe to the specified events.
     /// </summary>
     [JsonIgnore]
     public List<string> Contexts => this.contextList;
 
     /// <summary>
-    /// Gets the list of browsing context IDs for which to subscribe to or unsubscribe from the specified events for serialization purposes.
+    /// Gets the list of user context IDs for which to subscribe to the specified events.
+    /// </summary>
+    [JsonIgnore]
+    public List<string> UserContexts => this.userContextList;
+
+    /// <summary>
+    /// Gets the list of browsing context IDs for which to subscribe to the specified events for serialization purposes.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -68,6 +85,25 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
             }
 
             return this.contextList;
+        }
+    }
+
+    /// <summary>
+    /// Gets the list of user context IDs for which to subscribe to the specified events for serialization purposes.
+    /// </summary>
+    [JsonPropertyName("userContexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    internal List<string>? SerializableUserContexts
+    {
+        get
+        {
+            if (this.userContextList.Count == 0)
+            {
+                return null;
+            }
+
+            return this.userContextList;
         }
     }
 }
