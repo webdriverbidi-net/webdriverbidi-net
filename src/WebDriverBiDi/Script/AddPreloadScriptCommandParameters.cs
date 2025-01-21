@@ -61,7 +61,7 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to add the preload script.
+    /// Gets or sets the user contexts for which to add the preload script.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
