@@ -107,12 +107,42 @@ public class AddPreloadScriptCommandParametersTests
             Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
             Assert.That(serialized, Contains.Key("contexts"));
             Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            JArray? argsArray = serialized["contexts"]!.Value<JArray>();
-            Assert.That(argsArray, Has.Count.EqualTo(2));
-            Assert.That(argsArray![0].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(argsArray[0].Value<string>(), Is.EqualTo("context1"));
-            Assert.That(argsArray[1].Type, Is.EqualTo(JTokenType.String));
-            Assert.That(argsArray[1].Value<string>(), Is.EqualTo("context2"));
+            JArray? contextsArray = serialized["contexts"]!.Value<JArray>();
+            Assert.That(contextsArray, Has.Count.EqualTo(2));
+            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
+            Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializePropertiesWithUserContexts()
+    {
+        AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration")
+        {
+            UserContexts = new()
+            {
+                "userContext1",
+                "userContext2",
+            }
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("functionDeclaration"));
+            Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["functionDeclaration"]!.Value<string>(), Is.EqualTo("myFunctionDeclaration"));
+            Assert.That(serialized, Contains.Key("userContexts"));
+            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
+            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
+            Assert.That(userContextsArray, Has.Count.EqualTo(2));
+            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
+            Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         });
     }
 }

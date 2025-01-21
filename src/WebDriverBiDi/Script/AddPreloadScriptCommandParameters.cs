@@ -15,6 +15,7 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     private string functionDeclaration;
     private List<ChannelValue>? arguments;
     private List<string>? contexts;
+    private List<string>? userContexts;
     private string? sandbox;
 
     /// <summary>
@@ -58,4 +59,11 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
+
+    /// <summary>
+    /// Gets or sets the browsing contexts for which to add the preload script.
+    /// </summary>
+    [JsonPropertyName("userContexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
 }
