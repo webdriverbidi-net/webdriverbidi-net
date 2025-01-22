@@ -53,11 +53,12 @@ public class ObservableEvent<T>
     /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
     /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
     /// </param>
+    /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the user attempts to add more observers than this event allows.
     /// </exception>
-    public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None)
+    public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None, string description = "")
     {
         Func<T, Task> wrappedHandler = (T args) =>
         {
@@ -71,7 +72,7 @@ public class ObservableEvent<T>
             return taskCompletionSource.Task;
         };
 
-        return this.AddObserver(wrappedHandler, handlerOptions);
+        return this.AddObserver(wrappedHandler, handlerOptions, description);
     }
 
     /// <summary>
@@ -82,19 +83,25 @@ public class ObservableEvent<T>
     /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
     /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
     /// </param>
+    /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the user attempts to add more observers than this event allows.
     /// </exception>
-    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None)
+    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None, string description = "")
     {
         if (this.maxObserverCount > 0 && this.observers.Count == this.maxObserverCount)
         {
-            throw new WebDriverBiDiException($"This observable event only allows {this.maxObserverCount} handlers.");
+            throw new WebDriverBiDiException($"""This observable event only allows {this.maxObserverCount} {(this.maxObserverCount == 1 ? "handler" : "handlers")}.""");
         }
 
         string observerId = Guid.NewGuid().ToString();
-        this.observers.Add(observerId, new ObservableEventHandler<T>(handler, handlerOptions));
+        if (string.IsNullOrEmpty(description))
+        {
+            description = $"EventObserver<{typeof(T).Name}> (id: {observerId})";
+        }
+
+        this.observers.Add(observerId, new ObservableEventHandler<T>(handler, handlerOptions, description));
         return new EventObserver<T>(this, observerId);
     }
 
@@ -127,19 +134,35 @@ public class ObservableEvent<T>
         }
     }
 
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+    {
+        return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", this.observers.Values)}";
+    }
+
     private class ObservableEventHandler<TEventArgs>
     {
         private readonly Func<TEventArgs, Task> handler;
         private readonly ObservableEventHandlerOptions handlerOptions;
+        private readonly string description;
 
-        public ObservableEventHandler(Func<TEventArgs, Task> handler, ObservableEventHandlerOptions handlerOptions)
+        public ObservableEventHandler(Func<TEventArgs, Task> handler, ObservableEventHandlerOptions handlerOptions, string description)
         {
             this.handler = handler;
             this.handlerOptions = handlerOptions;
+            this.description = description;
         }
 
         public Func<TEventArgs, Task> HandleObservedEvent => this.handler;
 
         public ObservableEventHandlerOptions Options => this.handlerOptions;
+
+        public override string ToString()
+        {
+            return this.description;
+        }
     }
 }
