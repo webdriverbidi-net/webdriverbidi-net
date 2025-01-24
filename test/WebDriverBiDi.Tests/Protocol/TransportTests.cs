@@ -790,11 +790,11 @@ public class TransportTests
     public async Task TestTransportCanUseDefaultConnection()
     {
         ManualResetEvent connectionSyncEvent = new(false);
-        static void dataReceivedHandler(object? sender, ServerDataReceivedEventArgs e) { }
-        void connectionHandler(object? sender, ClientConnectionEventArgs e) { connectionSyncEvent.Set(); }
+        static void dataReceivedHandler(ServerDataReceivedEventArgs e) { }
+        void connectionHandler(ClientConnectionEventArgs e) { connectionSyncEvent.Set(); }
         Server server = new();
-        server.DataReceived += dataReceivedHandler;
-        server.ClientConnected += connectionHandler;
+        ServerEventObserver<ServerDataReceivedEventArgs> dataReceivedObserver = server.OnDataReceived.AddObserver(dataReceivedHandler);
+        ServerEventObserver<ClientConnectionEventArgs> connectedObserver = server.OnClientConnected.AddObserver(connectionHandler);
         server.Start();
 
         Transport transport = new();
@@ -802,8 +802,8 @@ public class TransportTests
         bool connectionEventRaised = connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
         server.Stop();
-        server.DataReceived -= dataReceivedHandler;
-        server.ClientConnected -= connectionHandler;
+        dataReceivedObserver.Unobserve();
+        connectedObserver.Unobserve(); ;
         Assert.That(connectionEventRaised, Is.True);
     }
 

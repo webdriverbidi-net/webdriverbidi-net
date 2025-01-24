@@ -15,6 +15,9 @@ public class ConnectionTests
     private readonly AutoResetEvent serverReceiveSyncEvent = new(false);
     private readonly AutoResetEvent connectionReceiveSyncEvent = new(false);
     private readonly AutoResetEvent connectionSyncEvent = new(false);
+    private ServerEventObserver<ClientConnectionEventArgs>? clientConnectedObserver;
+    private ServerEventObserver<ClientConnectionEventArgs>? clientDisconnectedObserver;
+    private ServerEventObserver<ServerDataReceivedEventArgs>? serverDataReceivedObserver;
 
     [SetUp]
     public void InitializeServer()
@@ -26,7 +29,7 @@ public class ConnectionTests
         this.serverReceiveSyncEvent.Reset();
         this.connectionSyncEvent.Reset();
         this.server = new Server();
-        this.server.ClientConnected += OnClientConnected;
+        this.clientConnectedObserver = this.server.OnClientConnected.AddObserver(OnClientConnected);
         this.server.Start();
     }
 
@@ -36,8 +39,16 @@ public class ConnectionTests
         if (this.server is not null)
         {
             this.server.Stop();
-            this.server.DataReceived -= OnSocketDataReceived;
-            this.server.ClientConnected -= OnClientConnected;
+
+            this.serverDataReceivedObserver?.Unobserve();
+            this.serverDataReceivedObserver = null;
+
+            this.clientConnectedObserver?.Unobserve();
+            this.clientConnectedObserver = null;
+
+            this.clientDisconnectedObserver?.Unobserve();
+            this.clientDisconnectedObserver = null;
+
             this.server = null;
         }
     }
@@ -70,7 +81,7 @@ public class ConnectionTests
         Connection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.server.DataReceived += OnSocketDataReceived;
+        this.serverDataReceivedObserver = this.server.OnDataReceived.AddObserver(OnSocketDataReceived);
 
         await connection.SendDataAsync("Hello world"u8.ToArray());
         string dataReceivedByServer = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
@@ -165,7 +176,7 @@ public class ConnectionTests
         });
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.server.DataReceived += OnSocketDataReceived;
+        this.serverDataReceivedObserver = this.server.OnDataReceived.AddObserver(OnSocketDataReceived);
         await connection.SendDataAsync("Hello world"u8.ToArray());
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
 
@@ -375,13 +386,13 @@ public class ConnectionTests
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         ManualResetEvent disconnectEvent = new(false);
-        this.server.ClientDisconnected += (sender, e) =>
+        this.clientDisconnectedObserver = this.server.OnClientDisconnected.AddObserver((e) =>
         {
             if (e.ConnectionId == registeredConnectionId)
             {
                 disconnectEvent.Set();
             }
-        };
+        });
 
         // Server initiated disconnection requires waiting for the
         // close websocket message to be received by the client.
@@ -445,11 +456,11 @@ public class ConnectionTests
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.server.DataReceived += this.OnSocketDataReceived;
+        ServerEventObserver<ServerDataReceivedEventArgs> observer = this.server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("First connection hello"u8.ToArray());
         string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
-        this.server.DataReceived -= this.OnSocketDataReceived;
+        observer.Unobserve();
         Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
 
         await this.server.SendDataAsync(registeredConnectionId, "First connection acknowledged");
@@ -459,11 +470,11 @@ public class ConnectionTests
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.server.DataReceived += this.OnSocketDataReceived;
+        observer = this.server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("Second connection hello"u8.ToArray());
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
-        this.server.DataReceived -= this.OnSocketDataReceived;
+        observer.Unobserve();
         Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
 
         await this.server.SendDataAsync(registeredConnectionId, "Second connection acknowledged");
@@ -489,11 +500,11 @@ public class ConnectionTests
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.server.DataReceived += this.OnSocketDataReceived;
+        ServerEventObserver<ServerDataReceivedEventArgs> observer = this.server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("First connection hello"u8.ToArray());
         string serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
-        this.server.DataReceived -= this.OnSocketDataReceived;
+        observer.Unobserve();
         Assert.That(serverReceivedData, Is.EqualTo("First connection hello"));
 
         await this.server.SendDataAsync(registeredConnectionId, "First connection acknowledged");
@@ -504,11 +515,11 @@ public class ConnectionTests
 
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.server.DataReceived += this.OnSocketDataReceived;
-
+        observer = this.server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
+        
         await connection.SendDataAsync("Second connection hello"u8.ToArray());
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
-        this.server.DataReceived -= this.OnSocketDataReceived;
+        observer.Unobserve();
         Assert.That(serverReceivedData, Is.EqualTo("Second connection hello"));
 
         await this.server.SendDataAsync(registeredConnectionId, "Second connection acknowledged");
@@ -604,7 +615,7 @@ public class ConnectionTests
         await connection.StopAsync();
     }
 
-    private void OnSocketDataReceived(object? sender, ServerDataReceivedEventArgs e)
+    private void OnSocketDataReceived(ServerDataReceivedEventArgs e)
     {
         this.lastServerReceivedData = e.Data;
         this.serverReceiveSyncEvent.Set();
@@ -617,7 +628,7 @@ public class ConnectionTests
         return Task.CompletedTask;
     }
 
-    private void OnClientConnected(object? sender, ClientConnectionEventArgs e)
+    private void OnClientConnected(ClientConnectionEventArgs e)
     {
         this.connectionId = e.ConnectionId;
         this.connectionSyncEvent.Set();

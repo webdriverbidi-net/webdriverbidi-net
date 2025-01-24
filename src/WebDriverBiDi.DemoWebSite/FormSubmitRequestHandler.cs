@@ -29,12 +29,12 @@ public class FormSubmitRequestHandler : WebResourceRequestHandler
     /// <param name="request">The HTTP request to handle.</param>
     /// <param name="additionalData">Additional data passed into the method for handling requests.</param>
     /// <returns>The response to the HTTP request.</returns>
-    protected override HttpResponse ProcessRequest(HttpRequest request, params object[] additionalData)
+    protected override Task<HttpResponse> ProcessRequestAsync(HttpRequest request, params object[] additionalData)
     {
         Dictionary<string, string> formData = this.ParseRequestBody(request.Body);
         HttpResponse response = base.CreateHttpResponse(request.Id, HttpStatusCode.OK);
         response.TextBodyContent = string.Format(response.TextBodyContent, formData["dataToSend"]);
-        return response;
+        return Task.FromResult<HttpResponse>(response);
     }
 
     private Dictionary<string, string> ParseRequestBody(string requestBody)

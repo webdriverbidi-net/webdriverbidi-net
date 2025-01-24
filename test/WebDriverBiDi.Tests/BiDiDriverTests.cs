@@ -416,11 +416,11 @@ public class BiDiDriverTests
     public async Task TestDriverCanUseDefaultTransport()
     {
         ManualResetEvent connectionSyncEvent = new(false);
-        void connectionHandler(object? sender, ClientConnectionEventArgs e) { connectionSyncEvent.Set(); }
-        static void handler(object? sender, ServerDataReceivedEventArgs e) { }
+        void connectionHandler(ClientConnectionEventArgs e) { connectionSyncEvent.Set(); }
+        static void handler(ServerDataReceivedEventArgs e) { }
         Server server = new();
-        server.DataReceived += handler;
-        server.ClientConnected += connectionHandler;
+        ServerEventObserver<ServerDataReceivedEventArgs> dataReceivedObserver = server.OnDataReceived.AddObserver(handler);
+        server.OnClientConnected.AddObserver(connectionHandler);
         server.Start();
 
         BiDiDriver driver = new();
@@ -429,7 +429,7 @@ public class BiDiDriverTests
         await driver.StopAsync();
 
         server.Stop();
-        server.DataReceived -= handler;
+        dataReceivedObserver.Unobserve();
         Assert.That(connectionEventRaised, Is.True);
     }
 
@@ -438,14 +438,14 @@ public class BiDiDriverTests
     {
         string connectionId = string.Empty;
         ManualResetEvent connectionSyncEvent = new(false);
-        void connectionHandler(object? sender, ClientConnectionEventArgs e)
+        void connectionHandler(ClientConnectionEventArgs e)
         {
             connectionId = e.ConnectionId;
             connectionSyncEvent.Set();
         }
 
         Server server = new();
-        server.ClientConnected += connectionHandler;
+        server.OnClientConnected.AddObserver(connectionHandler);
         server.Start();
         BiDiDriver driver = new(TimeSpan.FromSeconds(30));
 
@@ -507,14 +507,14 @@ public class BiDiDriverTests
     {
         string connectionId = string.Empty;
         ManualResetEvent connectionSyncEvent = new(false);
-        void connectionHandler(object? sender, ClientConnectionEventArgs e)
+        void connectionHandler(ClientConnectionEventArgs e)
         {
             connectionId = e.ConnectionId;
             connectionSyncEvent.Set();
         }
 
         Server server = new();
-        server.ClientConnected += connectionHandler;
+        server.OnClientConnected.AddObserver(connectionHandler);
         server.Start();
         BiDiDriver driver = new();
 
@@ -580,14 +580,14 @@ public class BiDiDriverTests
     {
         string connectionId = string.Empty;
         ManualResetEvent connectionSyncEvent = new(false);
-        void connectionHandler(object? sender, ClientConnectionEventArgs e)
+        void connectionHandler(ClientConnectionEventArgs e)
         {
             connectionId = e.ConnectionId;
             connectionSyncEvent.Set();
         }
 
         Server server = new();
-        server.ClientConnected += connectionHandler;
+        server.OnClientConnected.AddObserver(connectionHandler);
         server.Start();
         BiDiDriver driver = new();
 
