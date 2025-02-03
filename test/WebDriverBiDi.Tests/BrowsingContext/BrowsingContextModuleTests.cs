@@ -659,6 +659,46 @@ public class BrowsingContextModuleTests
         Assert.That(eventRaised, Is.True);
     }
 
+  [Test]
+  public async Task TestCanReceiveNavigationCommittedEvent()
+  {
+      TestConnection connection = new();
+      BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+      await driver.StartAsync("ws:localhost");
+      BrowsingContextModule module = new(driver);
+
+      ManualResetEvent syncEvent = new(false);
+      long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+      module.OnNavigationCommitted.AddObserver((NavigationEventArgs e) =>
+      {
+        Assert.Multiple(() =>
+        {
+          Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
+          Assert.That(e.Url, Is.EqualTo("https://example.com"));
+          Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
+          Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
+          Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
+        });
+        syncEvent.Set();
+      });
+
+      string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "browsingContext.navigationCommitted",
+                             "params": {
+                               "context": "myContext",
+                               "url": "https://example.com",
+                               "timestamp": {{epochTimestamp}},
+                               "navigation": "myNavigationId"
+                             }
+                           }
+                           """;
+      await connection.RaiseDataReceivedEventAsync(eventJson);
+      bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
+      Assert.That(eventRaised, Is.True);
+    }
+
     [Test]
     public async Task TestCanReceiveNavigationFailedEvent()
     {

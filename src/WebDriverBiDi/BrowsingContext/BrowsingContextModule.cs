@@ -23,6 +23,7 @@ public sealed class BrowsingContextModule : Module
     private readonly ObservableEvent<NavigationEventArgs> onLoadEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onDownloadWillBeginEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onNavigationAbortedEvent = new();
+    private readonly ObservableEvent<NavigationEventArgs> onNavigationCommittedEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onNavigationFailedEvent = new();
     private readonly ObservableEvent<HistoryUpdatedEventArgs> onHistoryUpdatedEvent = new();
     private readonly ObservableEvent<UserPromptClosedEventArgs> onUserPromptClosedEvent = new();
@@ -43,6 +44,7 @@ public sealed class BrowsingContextModule : Module
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.load", this.OnLoadAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.downloadWillBegin", this.OnDownloadWillBeginAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationAborted", this.OnNavigationAbortedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationCommitted", this.OnNavigationCommittedAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationFailed", this.OnNavigationFailedAsync);
         this.RegisterAsyncEventInvoker<HistoryUpdatedEventArgs>("browsingContext.historyUpdated", this.OnHistoryUpdatedAsync);
         this.RegisterAsyncEventInvoker<UserPromptClosedEventArgs>("browsingContext.userPromptClosed", this.OnUserPromptClosedAsync);
@@ -88,6 +90,11 @@ public sealed class BrowsingContextModule : Module
     /// Gets an observable event that notifies when a browsing context navigation is aborted.
     /// </summary>
     public ObservableEvent<NavigationEventArgs> OnNavigationAborted => this.onNavigationAbortedEvent;
+
+    /// <summary>
+    /// Gets an observable event that notifies when a browsing context navigation is committed.
+    /// </summary>
+    public ObservableEvent<NavigationEventArgs> OnNavigationCommitted => this.onNavigationCommittedEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation fails.
@@ -294,6 +301,12 @@ public sealed class BrowsingContextModule : Module
     {
         NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
         await this.onNavigationAbortedEvent.NotifyObserversAsync(eventArgs);
+    }
+
+    private async Task OnNavigationCommittedAsync(EventInfo<NavigationEventArgs> eventData)
+    {
+        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        await this.onNavigationCommittedEvent.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnNavigationFailedAsync(EventInfo<NavigationEventArgs> eventData)
