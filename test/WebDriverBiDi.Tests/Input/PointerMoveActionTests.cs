@@ -30,6 +30,56 @@ public class PointerMoveActionTests
     }
 
     [Test]
+    public void TestCanSerializeParametersWithIntegerPosition()
+    {
+        PointerMoveAction properties = new()
+        {
+            X = 2,
+            Y = 3,
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
+            Assert.That(serialized, Contains.Key("x"));
+            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Integer));
+            Assert.That(serialized["x"]!.Value<long>(), Is.EqualTo(2));
+            Assert.That(serialized, Contains.Key("y"));
+            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Integer));
+            Assert.That(serialized["y"]!.Value<long>(), Is.EqualTo(3));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeParametersWithFractionalPosition()
+    {
+        PointerMoveAction properties = new()
+        {
+            X = 2.1,
+            Y = 3.4,
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("type"));
+            Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pointerMove"));
+            Assert.That(serialized, Contains.Key("x"));
+            Assert.That(serialized["x"]!.Type, Is.EqualTo(JTokenType.Float));
+            Assert.That(serialized["x"]!.Value<decimal>(), Is.EqualTo(2.1));
+            Assert.That(serialized, Contains.Key("y"));
+            Assert.That(serialized["y"]!.Type, Is.EqualTo(JTokenType.Float));
+            Assert.That(serialized["y"]!.Value<decimal>(), Is.EqualTo(3.4));
+        });
+    }
+
+    [Test]
     public void TestCanSerializeParametersWithOptionalDuration()
     {
         PointerMoveAction properties = new()
