@@ -217,6 +217,13 @@ public static class DemoScenarios
         Console.WriteLine($"Performed navigation to {navigation.Url}");
     }
 
+    /// <summary>
+    /// Demonstrates execution of JavaScript functions.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task ExecuteJavaScriptFunctions(BiDiDriver driver, string baseUrl)
     {
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -227,6 +234,7 @@ public static class DemoScenarios
             Wait = ReadinessState.Complete
         };
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = "(first, second) => first + second";
         List<ArgumentValue> arguments = new()
@@ -262,6 +270,101 @@ public static class DemoScenarios
         }
     }
 
+    /// <summary>
+    /// Demonstrates usage of a preload script, including calling JavaScript added by the preload
+    /// script after addition.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public static async Task ExecutePreloadScript(BiDiDriver driver, string baseUrl)
+    {
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        // A preload script will be executed during every navigation, ensuring
+        // that the data structures are available before the page's JavaScript
+        // (if any) is executed. A special note here, we are using the sandbox
+        // feature to isolate the added JS from running code on the page, so as
+        // not to pollute the global objects.
+        AddPreloadScriptCommandParameters preloadScriptParams = new("() => window.bidi = { getTagName: (e) => e.tagName }")
+        {
+            Sandbox = "webdriverbidi",
+        };
+        AddPreloadScriptCommandResult addScriptResult = await driver.Script.AddPreloadScriptAsync(preloadScriptParams);
+        string preloadScriptId = addScriptResult.PreloadScriptId;
+
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
+
+        LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator(".text")));
+        RemoteValue node = locateResult.Nodes[0];
+
+        // This function will access the "bidi" object added to its window object
+        // and execute the defined function. Calling the function without specifying
+        // the proper sandbox will result in an error, as the object will be undefined.
+        Console.WriteLine("Executing function without specifying using sandbox");
+        string functionDefinition = "(e) => window.bidi.getTagName(e)";
+        ContextTarget contextTarget = new(contextId);
+        CallFunctionCommandParameters callFunctionParams = new(functionDefinition, contextTarget, true);
+        callFunctionParams.Arguments.Add(node.ToSharedReference());
+
+        EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        if (scriptResult is EvaluateResultException scriptExceptionResult)
+        {
+            Console.WriteLine($"Script exception received: {scriptExceptionResult.ExceptionDetails.Text}");
+        }
+
+        // Calling the function with the proper sandbox will yield a proper result.
+        contextTarget.Sandbox = "webdriverbidi";
+
+        Console.WriteLine("Executing function with specifying using sandbox");
+        scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
+        {
+            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type} (.NET type: {scriptSuccessResult.Result.Value!.GetType()})");
+            RemoteValue scriptResultValue = scriptSuccessResult.Result;
+            Console.WriteLine($"Return value of function is {scriptResultValue.ValueAs<string>()}");
+        }
+
+        await driver.Script.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters(preloadScriptId));
+
+        navigateParams = new(contextId, $"{baseUrl}/inputForm.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
+
+        locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("h1")));
+        node = locateResult.Nodes[0];
+
+        // Calling the function again after removing the preload script and another navigation
+        // yields an exception that the object can't be found, because the preload script didn't
+        // create it on the new page after navigation.
+        Console.WriteLine("Executing function after removing preload script");
+        callFunctionParams.Arguments.Clear();
+        callFunctionParams.Arguments.Add(node.ToSharedReference());
+        scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        if (scriptResult is EvaluateResultException removedScriptExceptionResult)
+        {
+            Console.WriteLine($"Script exception received: {removedScriptExceptionResult.ExceptionDetails.Text}");
+        }
+    }
+
+    /// <summary>
+    /// Demonstrates the ability to round-trip an element for manipulation using JavaScript
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task ExecuteElementRoundtripInJavaScript(BiDiDriver driver, string baseUrl)
     {
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -304,6 +407,13 @@ public static class DemoScenarios
 
     }
 
+    /// <summary>
+    /// Demonstrates interception of network calls before the request is sent to the web server.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
     {
         List<Task> beforeRequestSentTasks = new();
@@ -361,6 +471,14 @@ public static class DemoScenarios
         navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
     }
 
+    /// <summary>
+    /// Demonstrates the ability to intercept a network call and replace it with custom, user-defined
+    /// content.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task InterceptAndReplaceNetworkData(BiDiDriver driver, string baseUrl)
     {
         SubscribeCommandParameters subscribe = new();
@@ -407,7 +525,7 @@ public static class DemoScenarios
         };
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         await substituteTask!;
-        
+
         Console.WriteLine($"Navigation command completed");
     }
 

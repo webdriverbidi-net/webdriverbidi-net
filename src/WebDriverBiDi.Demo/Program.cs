@@ -55,6 +55,7 @@ try
     // await DemoScenarios.MonitorNetworkTraffic(driver, baseDemoSiteUrl);
     // await DemoScenarios.MonitorBrowserConsole(driver, baseDemoSiteUrl);
     // await DemoScenarios.ExecuteJavaScriptFunctions(driver, baseDemoSiteUrl);
+    // await DemoScenarios.ExecutePreloadScript(driver, baseDemoSiteUrl);
     // await DemoScenarios.InterceptBeforeRequestSentEvent(driver, baseDemoSiteUrl);
     // await DemoScenarios.InterceptAndReplaceNetworkData(driver, baseDemoSiteUrl);
     // await DemoScenarios.ExecuteElementRoundtripInJavaScript(driver, baseDemoSiteUrl);
