@@ -93,6 +93,7 @@
         LogType["debug"] = "debug";
         LogType["debugError"] = "debug:error";
         LogType["debugInfo"] = "debug:info";
+        LogType["debugWarn"] = "debug:warn";
         // keep-sorted end
     })(LogType || (LogType = {}));
 
@@ -175,6 +176,7 @@
      * limitations under the License.
      */
     // keep-sorted end
+    /* eslint-enable @typescript-eslint/no-unnecessary-template-expression */
     var BiDiModule;
     (function (BiDiModule) {
         // keep-sorted start
@@ -218,6 +220,7 @@
             EventNames["HistoryUpdated"] = "browsingContext.historyUpdated";
             EventNames["Load"] = "browsingContext.load";
             EventNames["NavigationAborted"] = "browsingContext.navigationAborted";
+            EventNames["NavigationCommitted"] = "browsingContext.navigationCommitted";
             EventNames["NavigationFailed"] = "browsingContext.navigationFailed";
             EventNames["NavigationStarted"] = "browsingContext.navigationStarted";
             EventNames["UserPromptClosed"] = "browsingContext.userPromptClosed";
@@ -246,6 +249,7 @@
     const EVENT_NAMES = new Set([
         // keep-sorted start
         ...Object.values(BiDiModule),
+        ...Object.values(Bluetooth$2.EventNames),
         ...Object.values(BrowsingContext$2.EventNames),
         ...Object.values(Log$1.EventNames),
         ...Object.values(Network$2.EventNames),
@@ -529,6 +533,9 @@
         parseSubscribeParams(params) {
             return params;
         }
+        parseUnsubscribeParams(params) {
+            return params;
+        }
         // keep-sorted end
         // Storage module
         // keep-sorted start block=yes
@@ -562,9 +569,11 @@
     class BrowserProcessor {
         #browserCdpClient;
         #browsingContextStorage;
-        constructor(browserCdpClient, browsingContextStorage) {
+        #userContextStorage;
+        constructor(browserCdpClient, browsingContextStorage, userContextStorage) {
             this.#browserCdpClient = browserCdpClient;
             this.#browsingContextStorage = browsingContextStorage;
+            this.#userContextStorage = userContextStorage;
         }
         close() {
             // Ensure that it is put at the end of the event loop.
@@ -605,18 +614,8 @@
             return {};
         }
         async getUserContexts() {
-            const result = await this.#browserCdpClient.sendCommand('Target.getBrowserContexts');
             return {
-                userContexts: [
-                    {
-                        userContext: 'default',
-                    },
-                    ...result.browserContextIds.map((id) => {
-                        return {
-                            userContext: id,
-                        };
-                    }),
-                ],
+                userContexts: await this.#userContextStorage.getUserContexts(),
             };
         }
         async #getWindowInfo(targetId) {
@@ -1105,6 +1104,14 @@
         }
         getClickCount(button) {
             return this.#clickContexts.get(button)?.count ?? 0;
+        }
+        /**
+         * Resets click count. Resets consequent click counter. Prevents grouping clicks in
+         * different `performActions` calls, so that they are not grouped as double, triple etc
+         * clicks. Required for https://github.com/GoogleChromeLabs/chromium-bidi/issues/3043.
+         */
+        resetClickCount() {
+            this.#clickContexts = new Map();
         }
     }
     class WheelSource {
@@ -2948,6 +2955,8 @@
                         if (source.subtype !== action.parameters.pointerType) {
                             throw new InvalidArgumentException(`Expected input source ${action.id} to be ${source.subtype}; got ${action.parameters.pointerType}.`);
                         }
+                        // https://github.com/GoogleChromeLabs/chromium-bidi/issues/3043
+                        source.resetClickCount();
                         break;
                     }
                     default:
@@ -3022,6 +3031,21 @@
             return `${acc}${header.name}: ${header.value.value}\r\n`;
         }, '');
         return new TextEncoder().encode(requestHeaders).length;
+    }
+    function stringToBase64(str) {
+        return typedArrayToBase64(new TextEncoder().encode(str));
+    }
+    function typedArrayToBase64(typedArray) {
+        // chunkSize should be less V8 limit on number of arguments!
+        // https://github.com/v8/v8/blob/d3de848bea727518aee94dd2fd42ba0b62037a27/src/objects/code.h#L444
+        const chunkSize = 65534;
+        const chunks = [];
+        for (let i = 0; i < typedArray.length; i += chunkSize) {
+            const chunk = typedArray.subarray(i, i + chunkSize);
+            chunks.push(String.fromCodePoint.apply(null, chunk));
+        }
+        const binaryString = chunks.join('');
+        return btoa(binaryString);
     }
     /** Converts from CDP Network domain headers to BiDi network headers. */
     function bidiNetworkHeadersFromCdpNetworkHeaders(headers) {
@@ -3584,8 +3608,9 @@
         }
         static wrapInterceptionError(error) {
             // https://source.chromium.org/chromium/chromium/src/+/main:content/browser/devtools/protocol/fetch_handler.cc;l=169
-            if (error?.message.includes('Invalid header')) {
-                return new InvalidArgumentException('Invalid header');
+            if (error?.message.includes('Invalid header') ||
+                error?.message.includes('Unsafe header')) {
+                return new InvalidArgumentException(error.message);
             }
             return error;
         }
@@ -3993,6 +4018,8 @@
         #sandbox;
         /** The browsing contexts to execute the preload scripts in, if any. */
         #contexts;
+        /** The browsing contexts to execute the preload scripts in, if any. */
+        #userContexts;
         get id() {
             return this.#id;
         }
@@ -4005,6 +4032,7 @@
             this.#functionDeclaration = params.functionDeclaration;
             this.#sandbox = params.sandbox;
             this.#contexts = params.contexts;
+            this.#userContexts = params.userContexts;
         }
         /** Channels of the preload script. */
         get channels() {
@@ -4013,6 +4041,10 @@
         /** Contexts of the preload script, if any */
         get contexts() {
             return this.#contexts;
+        }
+        /** UserContexts of the preload script, if any */
+        get userContexts() {
+            return this.#userContexts;
         }
         /**
          * String to be evaluated. Wraps user-provided function so that the following
@@ -4092,11 +4124,13 @@
         #browsingContextStorage;
         #realmStorage;
         #preloadScriptStorage;
+        #userContextStorage;
         #logger;
-        constructor(eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, logger) {
+        constructor(eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, userContextStorage, logger) {
             this.#browsingContextStorage = browsingContextStorage;
             this.#realmStorage = realmStorage;
             this.#preloadScriptStorage = preloadScriptStorage;
+            this.#userContextStorage = userContextStorage;
             this.#logger = logger;
             this.#eventManager = eventManager;
             this.#eventManager.addSubscribeHook(Script$2.EventNames.RealmCreated, this.#onRealmCreatedSubscribeHook.bind(this));
@@ -4126,14 +4160,28 @@
             return Promise.resolve();
         }
         async addPreloadScript(params) {
-            const contexts = this.#browsingContextStorage.verifyTopLevelContextsList(params.contexts);
+            if (params.userContexts?.length && params.contexts?.length) {
+                throw new InvalidArgumentException('Both userContexts and contexts cannot be specified.');
+            }
+            const userContexts = await this.#userContextStorage.verifyUserContextIdList(params.userContexts ?? []);
+            const browsingContexts = this.#browsingContextStorage.verifyTopLevelContextsList(params.contexts);
             const preloadScript = new PreloadScript(params, this.#logger);
             this.#preloadScriptStorage.add(preloadScript);
-            const cdpTargets = contexts.size === 0
-                ? new Set(this.#browsingContextStorage
+            let contextsToRunIn = [];
+            if (userContexts.size) {
+                contextsToRunIn = this.#browsingContextStorage
                     .getTopLevelContexts()
-                    .map((context) => context.cdpTarget))
-                : new Set([...contexts.values()].map((context) => context.cdpTarget));
+                    .filter((context) => {
+                    return userContexts.has(context.userContext);
+                });
+            }
+            else if (browsingContexts.size) {
+                contextsToRunIn = [...browsingContexts.values()];
+            }
+            else {
+                contextsToRunIn = this.#browsingContextStorage.getTopLevelContexts();
+            }
+            const cdpTargets = new Set(contextsToRunIn.map((context) => context.cdpTarget));
             await preloadScript.initInTargets(cdpTargets, false);
             return {
                 script: preloadScript.id,
@@ -4141,12 +4189,9 @@
         }
         async removePreloadScript(params) {
             const { script: id } = params;
-            const scripts = this.#preloadScriptStorage.find({ id });
-            if (scripts.length === 0) {
-                throw new NoSuchScriptException(`No preload script with id '${id}'`);
-            }
-            await Promise.all(scripts.map((script) => script.remove()));
-            this.#preloadScriptStorage.remove({ id });
+            const script = this.#preloadScriptStorage.getPreloadScript(id);
+            await script.remove();
+            this.#preloadScriptStorage.remove(id);
             return {};
         }
         async callFunction(params) {
@@ -4283,12 +4328,18 @@
                 },
             };
         }
-        async subscribe(params, channel = null) {
-            await this.#eventManager.subscribe(params.events, params.contexts ?? [null], channel);
-            return {};
+        async subscribe(params, channel = {}) {
+            const subscription = await this.#eventManager.subscribe(params.events, params.contexts ?? [], params.userContexts ?? [], channel);
+            return {
+                subscription,
+            };
         }
-        async unsubscribe(params, channel = null) {
-            await this.#eventManager.unsubscribe(params.events, params.contexts ?? [null], channel);
+        async unsubscribe(params, channel = {}) {
+            if ('subscriptions' in params) {
+                await this.#eventManager.unsubscribeByIds(params.subscriptions);
+                return {};
+            }
+            await this.#eventManager.unsubscribe(params.events, params.contexts ?? [], channel);
             return {};
         }
     }
@@ -4498,7 +4549,7 @@
     class OutgoingMessage {
         #message;
         #channel;
-        constructor(message, channel = null) {
+        constructor(message, channel) {
             this.#message = message;
             this.#channel = channel;
         }
@@ -4558,19 +4609,19 @@
         // keep-sorted end
         #parser;
         #logger;
-        constructor(cdpConnection, browserCdpClient, eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, networkStorage, bluetoothProcessor, parser = new BidiNoOpParser(), initConnection, logger) {
+        constructor(cdpConnection, browserCdpClient, eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, networkStorage, bluetoothProcessor, userContextStorage, parser = new BidiNoOpParser(), initConnection, logger) {
             super();
             this.#parser = parser;
             this.#logger = logger;
             this.#bluetoothProcessor = bluetoothProcessor;
             // keep-sorted start block=yes
-            this.#browserProcessor = new BrowserProcessor(browserCdpClient, browsingContextStorage);
+            this.#browserProcessor = new BrowserProcessor(browserCdpClient, browsingContextStorage, userContextStorage);
             this.#browsingContextProcessor = new BrowsingContextProcessor(browserCdpClient, browsingContextStorage, eventManager);
             this.#cdpProcessor = new CdpProcessor(browsingContextStorage, realmStorage, cdpConnection, browserCdpClient);
             this.#inputProcessor = new InputProcessor(browsingContextStorage);
             this.#networkProcessor = new NetworkProcessor(browsingContextStorage, networkStorage);
             this.#permissionsProcessor = new PermissionsProcessor(browserCdpClient);
-            this.#scriptProcessor = new ScriptProcessor(eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, logger);
+            this.#scriptProcessor = new ScriptProcessor(eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, userContextStorage, logger);
             this.#sessionProcessor = new SessionProcessor(eventManager, browserCdpClient, initConnection);
             this.#storageProcessor = new StorageProcessor(browserCdpClient, browsingContextStorage, logger);
             // keep-sorted end
@@ -4643,10 +4694,13 @@
                 // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2844
                 // keep-sorted start block=yes
                 case 'cdp.getSession':
+                    this.#logger?.(LogType.debugWarn, `Legacy '${command.method}' command is deprecated and will not supported soon. Use 'goog:${command.method}' instead.`);
                     return this.#cdpProcessor.getSession(this.#parser.parseGetSessionParams(command.params));
                 case 'cdp.resolveRealm':
+                    this.#logger?.(LogType.debugWarn, `Legacy '${command.method}' command is deprecated and will not supported soon. Use 'goog:${command.method}' instead.`);
                     return this.#cdpProcessor.resolveRealm(this.#parser.parseResolveRealmParams(command.params));
                 case 'cdp.sendCommand':
+                    this.#logger?.(LogType.debugWarn, `Legacy '${command.method}' command is deprecated and will not supported soon. Use 'goog:${command.method}' instead.`);
                     return await this.#cdpProcessor.sendCommand(this.#parser.parseSendCommandParams(command.params));
                 // keep-sorted end
                 // Input module
@@ -4708,7 +4762,7 @@
                 case 'session.subscribe':
                     return await this.#sessionProcessor.subscribe(this.#parser.parseSubscribeParams(command.params), command.channel);
                 case 'session.unsubscribe':
-                    return await this.#sessionProcessor.unsubscribe(this.#parser.parseSubscribeParams(command.params), command.channel);
+                    return await this.#sessionProcessor.unsubscribe(this.#parser.parseUnsubscribeParams(command.params), command.channel);
                 // keep-sorted end
                 // Storage module
                 // keep-sorted start block=yes
@@ -4855,6 +4909,57 @@
                 });
             }
             return {};
+        }
+    }
+
+    /**
+     * Copyright 2025 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    class UserContextStorage {
+        #browserClient;
+        constructor(browserClient) {
+            this.#browserClient = browserClient;
+        }
+        async getUserContexts() {
+            const result = await this.#browserClient.sendCommand('Target.getBrowserContexts');
+            return [
+                {
+                    userContext: 'default',
+                },
+                ...result.browserContextIds.map((id) => {
+                    return {
+                        userContext: id,
+                    };
+                }),
+            ];
+        }
+        async verifyUserContextIdList(userContextIds) {
+            const foundContexts = new Set();
+            if (!userContextIds.length) {
+                return foundContexts;
+            }
+            const userContexts = await this.getUserContexts();
+            const knownUserContextIds = new Set(userContexts.map((userContext) => userContext.userContext));
+            for (const userContextId of userContextIds) {
+                if (!knownUserContextIds.has(userContextId)) {
+                    throw new NoSuchUserContextException(`User context ${userContextId} not found`);
+                }
+                foundContexts.add(userContextId);
+            }
+            return foundContexts;
         }
     }
 
@@ -5027,7 +5132,8 @@
                 delete deepSerializedValue['weakLocalObjectReference'];
             }
             if (deepSerializedValue.type === 'node' &&
-                Object.hasOwn(deepSerializedValue?.value, 'frameId')) {
+                deepSerializedValue.value &&
+                Object.hasOwn(deepSerializedValue.value, 'frameId')) {
                 // `frameId` is not needed in BiDi as it is not yet specified.
                 delete deepSerializedValue.value['frameId'];
             }
@@ -5099,7 +5205,7 @@
         }
         #registerEvent(event) {
             if (this.associatedBrowsingContexts.length === 0) {
-                this.#eventManager.registerEvent(event, null);
+                this.#eventManager.registerGlobalEvent(event);
             }
             else {
                 for (const browsingContext of this.associatedBrowsingContexts) {
@@ -5726,7 +5832,8 @@
         loaderId;
         #isInitial;
         #eventManager;
-        #navigated = false;
+        committed = new Deferred();
+        isFragmentNavigation;
         get finished() {
             return this.#finished;
         }
@@ -5768,17 +5875,24 @@
             this.#finished.resolve(navigationResult);
         }
         frameNavigated() {
-            this.#navigated = true;
+            this.committed.resolve();
+            if (!this.#isInitial) {
+                this.#eventManager.registerEvent({
+                    type: 'event',
+                    method: BrowsingContext$2.EventNames.NavigationCommitted,
+                    params: this.navigationInfo(),
+                }, this.#browsingContextId);
+            }
         }
         fragmentNavigated() {
-            this.#navigated = true;
+            this.committed.resolve();
             this.#finish(new NavigationResult("browsingContext.fragmentNavigated" /* NavigationEventName.FragmentNavigated */));
         }
         load() {
             this.#finish(new NavigationResult("browsingContext.load" /* NavigationEventName.Load */));
         }
         fail(message) {
-            this.#finish(new NavigationResult(this.#navigated
+            this.#finish(new NavigationResult(this.committed.isFinished
                 ? "browsingContext.navigationAborted" /* NavigationEventName.NavigationAborted */
                 : "browsingContext.navigationFailed" /* NavigationEventName.NavigationFailed */, message));
         }
@@ -5798,9 +5912,6 @@
         #pendingNavigation;
         // Flags if the initial navigation to `about:blank` is in progress.
         #isInitialNavigation = true;
-        navigation = {
-            withinDocument: new Deferred(),
-        };
         constructor(url, browsingContextId, eventManager, logger) {
             this.#browsingContextId = browsingContextId;
             this.#eventManager = eventManager;
@@ -5861,7 +5972,7 @@
                 return this.#loaderIdToNavigationsMap.get(loaderId);
             }
             if (this.#pendingNavigation !== undefined &&
-                this.#pendingNavigation?.loaderId === undefined) {
+                this.#pendingNavigation.loaderId === undefined) {
                 // This can be a pending navigation to `about:blank` created by a command. Use the
                 // pending navigation in this case.
                 return this.#pendingNavigation;
@@ -5886,7 +5997,6 @@
                 return;
             }
             const navigation = this.#getNavigationForFrameNavigated(url, loaderId);
-            navigation.frameNavigated();
             if (navigation !== this.#currentNavigation) {
                 this.#currentNavigation.fail('navigation canceled by concurrent navigation');
             }
@@ -5894,6 +6004,7 @@
             navigation.loaderId = loaderId;
             this.#loaderIdToNavigationsMap.set(loaderId, navigation);
             navigation.start();
+            navigation.frameNavigated();
             this.#currentNavigation = navigation;
             if (this.#pendingNavigation === navigation) {
                 this.#pendingNavigation = undefined;
@@ -5953,6 +6064,7 @@
                 navigation.loaderId = loaderId;
                 this.#loaderIdToNavigationsMap.set(loaderId, navigation);
             }
+            navigation.isFragmentNavigation = loaderId === undefined;
             if (loaderId === undefined || this.#currentNavigation === navigation) {
                 // If the command's navigation is same-document or is already the current one,
                 // nothing to do.
@@ -6110,7 +6222,6 @@
         }
         dispose(emitContextDestroyed) {
             this.#navigationTracker.dispose();
-            this.#deleteAllChildren();
             this.#realmStorage.deleteRealms({
                 browsingContextId: this.id,
             });
@@ -6124,9 +6235,11 @@
                 this.#eventManager.registerEvent({
                     type: 'event',
                     method: BrowsingContext$2.EventNames.ContextDestroyed,
-                    params: this.serializeToBidiValue(),
+                    params: this.serializeToBidiValue(null),
                 }, this.id);
             }
+            // Dispose children after the events are emitted.
+            this.#deleteAllChildren();
             this.#eventManager.clearBufferedEvents(this.id);
             this.#browsingContextStorage.deleteContextById(this.id);
         }
@@ -6237,6 +6350,9 @@
             // through evaluation.
             return maybeSandboxes[0];
         }
+        /**
+         * Implements https://w3c.github.io/webdriver-bidi/#get-the-navigable-info.
+         */
         serializeToBidiValue(maxDepth = 0, addParentField = true) {
             return {
                 context: this.#id,
@@ -6245,8 +6361,8 @@
                 originalOpener: this.#originalOpener ?? null,
                 // TODO(#2646): Implement Client Window correctly
                 clientWindow: '',
-                children: maxDepth > 0
-                    ? this.directChildren.map((c) => c.serializeToBidiValue(maxDepth - 1, false))
+                children: maxDepth === null || maxDepth > 0
+                    ? this.directChildren.map((c) => c.serializeToBidiValue(maxDepth === null ? maxDepth : maxDepth - 1, false))
                     : null,
                 ...(addParentField ? { parent: this.#parentId } : {}),
             };
@@ -6553,7 +6669,7 @@
             catch {
                 throw new InvalidArgumentException(`Invalid URL: ${url}`);
             }
-            const commandNavigation = this.#navigationTracker.createPendingNavigation(url);
+            const navigationState = this.#navigationTracker.createPendingNavigation(url);
             // Navigate and wait for the result. If the navigation fails, the error event is
             // emitted and the promise is rejected.
             const cdpNavigatePromise = (async () => {
@@ -6563,24 +6679,18 @@
                 });
                 if (cdpNavigateResult.errorText) {
                     // If navigation failed, no pending navigation is left.
-                    this.#navigationTracker.failNavigation(commandNavigation, cdpNavigateResult.errorText);
+                    this.#navigationTracker.failNavigation(navigationState, cdpNavigateResult.errorText);
                     throw new UnknownErrorException(cdpNavigateResult.errorText);
                 }
-                this.#navigationTracker.navigationCommandFinished(commandNavigation, cdpNavigateResult.loaderId);
+                this.#navigationTracker.navigationCommandFinished(navigationState, cdpNavigateResult.loaderId);
                 this.#documentChanged(cdpNavigateResult.loaderId);
             })();
-            if (wait === "none" /* BrowsingContext.ReadinessState.None */) {
-                return {
-                    navigation: commandNavigation.navigationId,
-                    url,
-                };
-            }
             // Wait for either the navigation is finished or canceled by another navigation.
             const result = await Promise.race([
                 // No `loaderId` means same-document navigation.
-                this.#waitNavigation(wait, cdpNavigatePromise),
+                this.#waitNavigation(wait, cdpNavigatePromise, navigationState),
                 // Throw an error if the navigation is canceled.
-                commandNavigation.finished,
+                navigationState.finished,
             ]);
             if (result instanceof NavigationResult) {
                 if (
@@ -6592,39 +6702,48 @@
                 }
             }
             return {
-                navigation: commandNavigation.navigationId,
+                navigation: navigationState.navigationId,
                 // Url can change due to redirects. Get the one from commandNavigation.
-                url: commandNavigation.url,
+                url: navigationState.url,
             };
         }
-        async #waitNavigation(wait, cdpCommandPromise) {
-            switch (wait) {
-                case "none" /* BrowsingContext.ReadinessState.None */:
-                    return;
-                case "interactive" /* BrowsingContext.ReadinessState.Interactive */:
-                    await cdpCommandPromise;
-                    await this.#lifecycle.DOMContentLoaded;
-                    return;
-                case "complete" /* BrowsingContext.ReadinessState.Complete */:
-                    await cdpCommandPromise;
-                    await this.#lifecycle.load;
-                    return;
+        async #waitNavigation(wait, cdpCommandPromise, navigationState) {
+            await Promise.all([navigationState.committed, cdpCommandPromise]);
+            if (wait === "none" /* BrowsingContext.ReadinessState.None */) {
+                return;
             }
+            if (navigationState.isFragmentNavigation === true) {
+                // After the cdp command is finished, the `fragmentNavigation` should be already
+                // settled. If it's the fragment navigation, wait for the `navigationStatus` to be
+                // finished, which happens after the fragment navigation happened. No need to wait for
+                // DOM events.
+                await navigationState.finished;
+                return;
+            }
+            if (wait === "interactive" /* BrowsingContext.ReadinessState.Interactive */) {
+                await this.#lifecycle.DOMContentLoaded;
+                return;
+            }
+            if (wait === "complete" /* BrowsingContext.ReadinessState.Complete */) {
+                await this.#lifecycle.load;
+                return;
+            }
+            throw new InvalidArgumentException(`Wait condition ${wait} is not supported`);
         }
         // TODO: support concurrent navigations analogous to `navigate`.
         async reload(ignoreCache, wait) {
             await this.targetUnblockedOrThrow();
             this.#resetLifecycleIfFinished();
-            const commandNavigation = this.#navigationTracker.createPendingNavigation(this.#navigationTracker.url);
+            const navigationState = this.#navigationTracker.createPendingNavigation(this.#navigationTracker.url);
             const cdpReloadPromise = this.#cdpTarget.cdpClient.sendCommand('Page.reload', {
                 ignoreCache,
             });
             // Wait for either the navigation is finished or canceled by another navigation.
             const result = await Promise.race([
                 // No `loaderId` means same-document navigation.
-                this.#waitNavigation(wait, cdpReloadPromise),
+                this.#waitNavigation(wait, cdpReloadPromise, navigationState),
                 // Throw an error if the navigation is canceled.
-                commandNavigation.finished,
+                navigationState.finished,
             ]);
             if (result instanceof NavigationResult) {
                 if (result.eventName === "browsingContext.navigationAborted" /* NavigationEventName.NavigationAborted */ ||
@@ -6633,9 +6752,9 @@
                 }
             }
             return {
-                navigation: commandNavigation.navigationId,
+                navigation: navigationState.navigationId,
                 // Url can change due to redirects. Get the one from commandNavigation.
-                url: commandNavigation.url,
+                url: navigationState.url,
             };
         }
         async setViewport(viewport, devicePixelRatio) {
@@ -6899,6 +7018,8 @@
         }
         async #getLocatorDelegate(realm, locator, maxNodeCount, startNodes) {
             switch (locator.type) {
+                case 'context':
+                    throw new Error('Unreachable');
                 case 'css':
                     return {
                         functionDeclaration: String((cssSelector, maxNodeCount, ...startNodes) => {
@@ -7148,6 +7269,36 @@
             }
         }
         async #locateNodesByLocator(realm, locator, startNodes, maxNodeCount, serializationOptions) {
+            if (locator.type === 'context') {
+                if (startNodes.length !== 0) {
+                    throw new InvalidArgumentException('Start nodes are not supported');
+                }
+                const contextId = locator.value.context;
+                if (!contextId) {
+                    throw new InvalidSelectorException('Invalid context');
+                }
+                const context = this.#browsingContextStorage.getContext(contextId);
+                const parent = context.parent;
+                if (!parent) {
+                    throw new InvalidArgumentException('This context has no container');
+                }
+                try {
+                    const { backendNodeId } = await parent.#cdpTarget.cdpClient.sendCommand('DOM.getFrameOwner', {
+                        frameId: contextId,
+                    });
+                    const { object } = await parent.#cdpTarget.cdpClient.sendCommand('DOM.resolveNode', {
+                        backendNodeId,
+                    });
+                    const locatorResult = await realm.callFunction(`function () { return this; }`, false, { handle: object.objectId }, [], "none" /* Script.ResultOwnership.None */, serializationOptions);
+                    if (locatorResult.type === 'exception') {
+                        throw new Error('Unknown exception');
+                    }
+                    return { nodes: [locatorResult.result] };
+                }
+                catch {
+                    throw new InvalidArgumentException('Context does not exist');
+                }
+            }
             const locatorDelegate = await this.#getLocatorDelegate(realm, locator, maxNodeCount, startNodes);
             serializationOptions = {
                 ...serializationOptions,
@@ -7936,7 +8087,7 @@
             }
         }
         async toggleDeviceAccessIfNeeded() {
-            const enabled = this.isSubscribedTo(BiDiModule.Bluetooth);
+            const enabled = this.isSubscribedTo(Bluetooth$2.EventNames.RequestDevicePromptUpdated);
             if (this.#deviceAccessEnabled === enabled) {
                 return;
             }
@@ -8071,7 +8222,6 @@
                 .find({
                 // Needed for OOPIF
                 targetId: this.topLevelId,
-                global: true,
             })
                 .map((script) => {
                 return script.initInTarget(this, true);
@@ -8136,7 +8286,6 @@
                 this.#handleTargetCrashedEvent(cdpClient);
             });
             cdpClient.on('Page.frameAttached', this.#handleFrameAttachedEvent.bind(this));
-            cdpClient.on('Page.frameDetached', this.#handleFrameDetachedEvent.bind(this));
             cdpClient.on('Page.frameSubtreeWillBeDetached', this.#handleFrameSubtreeWillBeDetached.bind(this));
         }
         #handleFrameAttachedEvent(params) {
@@ -8147,13 +8296,6 @@
                 // later.
                 'about:blank', undefined, this.#unhandledPromptBehavior, this.#logger);
             }
-        }
-        #handleFrameDetachedEvent(params) {
-            // In case of OOPiF no need in deleting BrowsingContext.
-            if (params.reason === 'swap') {
-                return;
-            }
-            this.#browsingContextStorage.findContext(params.frameId)?.dispose(true);
         }
         #handleFrameSubtreeWillBeDetached(params) {
             this.#browsingContextStorage.findContext(params.frameId)?.dispose(true);
@@ -8189,8 +8331,12 @@
                 return;
             }
             this.#targetKeysToBeIgnoredByAutoAttach.add(targetKey);
+            const userContext = targetInfo.browserContextId &&
+                targetInfo.browserContextId !== this.#defaultUserContextId
+                ? targetInfo.browserContextId
+                : 'default';
             switch (targetInfo.type) {
-                case 'tab':
+                case 'tab': {
                     // Tab targets are required only to handle page targets beneath them.
                     this.#setEventListeners(targetCdpClient);
                     // Auto-attach to the page target. No need in resuming tab target debugger, as it
@@ -8204,9 +8350,10 @@
                         });
                     })();
                     return;
+                }
                 case 'page':
                 case 'iframe': {
-                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo);
+                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo, userContext);
                     const maybeContext = this.#browsingContextStorage.findContext(targetInfo.targetId);
                     if (maybeContext && targetInfo.type === 'iframe') {
                         // OOPiF.
@@ -8216,10 +8363,6 @@
                         // If attaching to existing browser instance, there could be OOPiF targets. This
                         // case is handled by the `findFrameParentId` method.
                         const parentId = this.#findFrameParentId(targetInfo, parentSessionCdpClient.sessionId);
-                        const userContext = targetInfo.browserContextId &&
-                            targetInfo.browserContextId !== this.#defaultUserContextId
-                            ? targetInfo.browserContextId
-                            : 'default';
                         // New context.
                         BrowsingContextImpl.create(targetInfo.targetId, parentId, userContext, cdpTarget, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, 
                         // Hack: when a new target created, CDP emits targetInfoChanged with an empty
@@ -8244,7 +8387,7 @@
                         void detach();
                         return;
                     }
-                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo);
+                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo, userContext);
                     this.#handleWorkerTarget(cdpToBidiTargetTypes[targetInfo.type], cdpTarget, realm);
                     return;
                 }
@@ -8253,7 +8396,7 @@
                 // behave like service workers (emits on both browser and frame targets),
                 // we can remove this block and merge service workers with the above one.
                 case 'shared_worker': {
-                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo);
+                    const cdpTarget = this.#createCdpTarget(targetCdpClient, parentSessionCdpClient, targetInfo, userContext);
                     this.#handleWorkerTarget(cdpToBidiTargetTypes[targetInfo.type], cdpTarget);
                     return;
                 }
@@ -8277,8 +8420,9 @@
             }
             return null;
         }
-        #createCdpTarget(targetCdpClient, parentCdpClient, targetInfo) {
+        #createCdpTarget(targetCdpClient, parentCdpClient, targetInfo, userContext) {
             this.#setEventListeners(targetCdpClient);
+            this.#preloadScriptStorage.onCdpTargetCreated(targetInfo.targetId, userContext);
             const target = CdpTarget.create(targetInfo.targetId, targetCdpClient, this.#browserCdpClient, parentCdpClient, this.#realmStorage, this.#eventManager, this.#preloadScriptStorage, this.#browsingContextStorage, this.#networkStorage, this.#prerenderingDisabled, this.#unhandledPromptBehavior, this.#logger);
             this.#networkStorage.onCdpTargetCreated(target);
             this.#bluetoothProcessor.onCdpTargetCreated(target);
@@ -8379,6 +8523,9 @@
          * Waits for a context with the given ID to be added and returns it.
          */
         waitForContext(browsingContextId) {
+            if (this.#contexts.has(browsingContextId)) {
+                return Promise.resolve(this.getContext(browsingContextId));
+            }
             return new Promise((resolve) => {
                 const listener = (event) => {
                     if (event.browsingContext.id === browsingContextId) {
@@ -8403,7 +8550,10 @@
                 return null;
             }
             const maybeContext = this.findContext(id);
-            const parentId = maybeContext?.parentId ?? null;
+            if (!maybeContext) {
+                return null;
+            }
+            const parentId = maybeContext.parentId ?? null;
             if (parentId === null) {
                 return id;
             }
@@ -8440,6 +8590,50 @@
                 }
             }
             return foundContexts;
+        }
+        verifyContextsList(contexts) {
+            if (!contexts.length) {
+                return;
+            }
+            for (const contextId of contexts) {
+                this.getContext(contextId);
+            }
+        }
+    }
+
+    /**
+     * Copyright 2023 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    /**
+     * A subclass of Map whose functionality is almost the same as its parent
+     * except for the fact that DefaultMap never returns undefined. It provides a
+     * default value for keys that do not exist.
+     */
+    class DefaultMap extends Map {
+        /** The default value to return whenever a key is not present in the map. */
+        #getDefaultValue;
+        constructor(getDefaultValue, entries) {
+            super(entries);
+            this.#getDefaultValue = getDefaultValue;
+        }
+        get(key) {
+            if (!this.has(key)) {
+                this.set(key, this.#getDefaultValue(key));
+            }
+            return super.get(key);
         }
     }
 
@@ -8521,9 +8715,9 @@
             const fragment = this.#request.info?.request.urlFragment ??
                 this.#request.paused?.request.urlFragment ??
                 '';
-            const url = this.#response.info?.url ??
-                this.#response.paused?.request.url ??
+            const url = this.#response.paused?.request.url ??
                 this.#requestOverrides?.url ??
+                this.#response.info?.url ??
                 this.#request.auth?.request.url ??
                 this.#request.info?.request.url ??
                 this.#request.paused?.request.url ??
@@ -8603,7 +8797,19 @@
         get #requestHeaders() {
             let headers = [];
             if (this.#requestOverrides?.headers) {
-                headers = this.#requestOverrides.headers;
+                const headerMap = new DefaultMap(() => []);
+                for (const header of this.#requestOverrides.headers) {
+                    headerMap.get(header.name).push(header.value.value);
+                }
+                for (const [name, value] of headerMap.entries()) {
+                    headers.push({
+                        name,
+                        value: {
+                            type: 'string',
+                            value: value.join('\n').trimEnd(),
+                        },
+                    });
+                }
             }
             else {
                 headers = [
@@ -8992,9 +9198,16 @@
             }
             this.#phaseChanged();
             this.#emittedEvents[event.method] = true;
-            this.#eventManager.registerEvent(Object.assign(event, {
-                type: 'event',
-            }), this.#context);
+            if (this.#context) {
+                this.#eventManager.registerEvent(Object.assign(event, {
+                    type: 'event',
+                }), this.#context);
+            }
+            else {
+                this.#eventManager.registerGlobalEvent(Object.assign(event, {
+                    type: 'event',
+                }));
+            }
         }
         #getBaseEventParams(phase) {
             const interceptProps = {
@@ -9072,9 +9285,9 @@
                 headersSize: computeHeadersSize(headers),
                 bodySize: this.#bodySize,
                 // TODO: populate
-                destination: '',
+                destination: this.#getDestination(),
                 // TODO: populate
-                initiatorType: null,
+                initiatorType: this.#getInitiatorType(),
                 timings: this.#timings,
             };
             return {
@@ -9082,7 +9295,72 @@
                 'goog:postData': this.#request.info?.request?.postData,
                 'goog:hasPostData': this.#request.info?.request?.hasPostData,
                 'goog:resourceType': this.#request.info?.type,
+                'goog:resourceInitiator': this.#request.info?.initiator,
             };
+        }
+        /**
+         * Heuristic trying to guess the destination.
+         * Specification: https://fetch.spec.whatwg.org/#concept-request-destination.
+         * Specified values: "audio", "audioworklet", "document", "embed", "font", "frame",
+         * "iframe", "image", "json", "manifest", "object", "paintworklet", "report", "script",
+         * "serviceworker", "sharedworker", "style", "track", "video", "webidentity", "worker",
+         * "xslt".
+         */
+        #getDestination() {
+            switch (this.#request.info?.type) {
+                case 'Script':
+                    return 'script';
+                case 'Stylesheet':
+                    return 'style';
+                case 'Image':
+                    return 'image';
+                case 'Document':
+                    // If request to document is initiated by parser, assume it is expected to
+                    // arrive in an iframe. Otherwise, fallback to empty string.
+                    return this.#request.info?.initiator.type === 'parser' ? 'iframe' : '';
+                default:
+                    return '';
+            }
+        }
+        /**
+         * Heuristic trying to guess the initiator type.
+         * Specification: https://fetch.spec.whatwg.org/#request-initiator-type.
+         * Specified values: "audio", "beacon", "body", "css", "early-hints", "embed", "fetch",
+         * "font", "frame", "iframe", "image", "img", "input", "link", "object", "ping",
+         * "script", "track", "video", "xmlhttprequest", "other".
+         */
+        #getInitiatorType() {
+            if (this.#request.info?.initiator.type === 'parser') {
+                switch (this.#request.info?.type) {
+                    case 'Document':
+                        // The request to document is initiated by the parser. Assuming it's an iframe.
+                        return 'iframe';
+                    case 'Font':
+                        // If the document's url is not the parser's url, assume the resource is loaded
+                        // from css. Otherwise, it's a `font` element.
+                        return this.#request.info?.initiator?.url ===
+                            this.#request.info?.documentURL
+                            ? 'font'
+                            : 'css';
+                    case 'Image':
+                        // If the document's url is not the parser's url, assume the resource is loaded
+                        // from css. Otherwise, it's a `img` element.
+                        return this.#request.info?.initiator?.url ===
+                            this.#request.info?.documentURL
+                            ? 'img'
+                            : 'css';
+                    case 'Script':
+                        return 'script';
+                    case 'Stylesheet':
+                        return 'link';
+                    default:
+                        return null;
+                }
+            }
+            if (this.#request?.info?.type === 'Fetch') {
+                return 'fetch';
+            }
+            return null;
         }
         #getBeforeRequestEvent() {
             assert(this.#request.info, 'RequestWillBeSentEvent is not set');
@@ -9091,7 +9369,7 @@
                 params: {
                     ...this.#getBaseEventParams("beforeRequestSent" /* Network.InterceptPhase.BeforeRequestSent */),
                     initiator: {
-                        type: _a$3.#getInitiatorType(this.#request.info.initiator.type),
+                        type: _a$3.#getInitiator(this.#request.info.initiator.type),
                         columnNumber: this.#request.info.initiator.columnNumber,
                         lineNumber: this.#request.info.initiator.lineNumber,
                         stackTrace: this.#request.info.initiator.stack,
@@ -9141,7 +9419,7 @@
             }
             return overrideHeaders;
         }
-        static #getInitiatorType(initiatorType) {
+        static #getInitiator(initiatorType) {
             switch (initiatorType) {
                 case 'parser':
                 case 'script':
@@ -9156,7 +9434,7 @@
     function getCdpBodyFromBiDiBytesValue(body) {
         let parsedBody;
         if (body?.type === 'string') {
-            parsedBody = btoa(body.value);
+            parsedBody = stringToBase64(body.value);
         }
         else if (body?.type === 'base64') {
             parsedBody = body.value;
@@ -9391,6 +9669,22 @@
         }
     }
 
+    /*
+     * Copyright 2023 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
     /**
      * Container class for preload scripts.
      */
@@ -9405,18 +9699,12 @@
                 return [...this.#scripts];
             }
             return [...this.#scripts].filter((script) => {
-                if (filter.id !== undefined && filter.id === script.id) {
+                // Global scripts have no contexts or userContext
+                if (script.contexts === undefined && script.userContexts === undefined) {
                     return true;
                 }
                 if (filter.targetId !== undefined &&
                     script.targetIds.has(filter.targetId)) {
-                    return true;
-                }
-                if (filter.global !== undefined &&
-                    // Global scripts have no contexts
-                    ((filter.global && script.contexts === undefined) ||
-                        // Non global scripts always have contexts
-                        (!filter.global && script.contexts !== undefined))) {
                     return true;
                 }
                 return false;
@@ -9426,9 +9714,31 @@
             this.#scripts.add(preloadScript);
         }
         /** Deletes all BiDi preload script entries that match the given filter. */
-        remove(filter) {
-            for (const preloadScript of this.find(filter)) {
-                this.#scripts.delete(preloadScript);
+        remove(id) {
+            const script = [...this.#scripts].find((script) => script.id === id);
+            if (script === undefined) {
+                throw new NoSuchScriptException(`No preload script with id '${id}'`);
+            }
+            this.#scripts.delete(script);
+        }
+        /** Gets the preload script with the given ID, if any, otherwise throws. */
+        getPreloadScript(id) {
+            const script = [...this.#scripts].find((script) => script.id === id);
+            if (script === undefined) {
+                throw new NoSuchScriptException(`No preload script with id '${id}'`);
+            }
+            return script;
+        }
+        onCdpTargetCreated(targetId, userContext) {
+            const scriptInUserContext = [...this.#scripts].filter((script) => {
+                // Global scripts
+                if (!script.userContexts && !script.contexts) {
+                    return true;
+                }
+                return script.userContexts?.includes(userContext);
+            });
+            for (const script of scriptInUserContext) {
+                script.targetIds.add(targetId);
             }
         }
     }
@@ -9549,96 +9859,6 @@
     };
 
     /**
-     * Copyright 2023 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-    /**
-     * A subclass of Map whose functionality is almost the same as its parent
-     * except for the fact that DefaultMap never returns undefined. It provides a
-     * default value for keys that do not exist.
-     */
-    class DefaultMap extends Map {
-        /** The default value to return whenever a key is not present in the map. */
-        #getDefaultValue;
-        constructor(getDefaultValue, entries) {
-            super(entries);
-            this.#getDefaultValue = getDefaultValue;
-        }
-        get(key) {
-            if (!this.has(key)) {
-                this.set(key, this.#getDefaultValue(key));
-            }
-            return super.get(key);
-        }
-    }
-
-    /*
-     * Copyright 2024 Google LLC.
-     * Copyright (c) Microsoft Corporation.
-     *
-     * Licensed under the Apache License, Version 2.0 (the "License");
-     * you may not use this file except in compliance with the License.
-     * You may obtain a copy of the License at
-     *
-     *     http://www.apache.org/licenses/LICENSE-2.0
-     *
-     * Unless required by applicable law or agreed to in writing, software
-     * distributed under the License is distributed on an "AS IS" BASIS,
-     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     * See the License for the specific language governing permissions and
-     * limitations under the License.
-     */
-    /**
-     * Returns an array of distinct values. Order is not guaranteed.
-     * @param values - The values to filter. Should be JSON-serializable.
-     * @return - An array of distinct values.
-     */
-    function distinctValues(values) {
-        const map = new Map();
-        for (const value of values) {
-            map.set(deterministicJSONStringify(value), value);
-        }
-        return Array.from(map.values());
-    }
-    /**
-     * Returns a stringified version of the object with keys sorted. This is required to
-     * ensure that the stringified version of an object is deterministic independent of the
-     * order of keys.
-     * @param obj
-     * @return {string}
-     */
-    function deterministicJSONStringify(obj) {
-        return JSON.stringify(normalizeObject(obj));
-    }
-    function normalizeObject(obj) {
-        if (obj === undefined ||
-            obj === null ||
-            Array.isArray(obj) ||
-            typeof obj !== 'object') {
-            return obj;
-        }
-        // Copy the original object key and values to a new object in sorted order.
-        const newObj = {};
-        for (const key of Object.keys(obj).sort()) {
-            const value = obj[key];
-            newObj[key] = normalizeObject(value); // Recursively sort nested objects
-        }
-        return newObj;
-    }
-
-    /**
      * Copyright 2022 Google LLC.
      * Copyright (c) Microsoft Corporation.
      *
@@ -9726,15 +9946,6 @@
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
-    /**
-     * Returns the cartesian product of the given arrays.
-     *
-     * Example:
-     *   cartesian([1, 2], ['a', 'b']); => [[1, 'a'], [1, 'b'], [2, 'a'], [2, 'b']]
-     */
-    function cartesianProduct(...a) {
-        return a.reduce((a, b) => a.flatMap((d) => b.map((e) => [d, e].flat())));
-    }
     /** Expands "AllEvents" events into atomic events. */
     function unrollEvents(events) {
         const allEvents = new Set();
@@ -9764,108 +9975,83 @@
                     allEvents.add(event);
             }
         }
-        return [...allEvents.values()];
+        return allEvents.values();
     }
     class SubscriptionManager {
-        #subscriptionPriority = 0;
-        // BrowsingContext `null` means the event has subscription across all the
-        // browsing contexts.
-        // Channel `null` means no `channel` should be added.
-        #channelToContextToEventMap = new Map();
+        #subscriptions = [];
+        #knownSubscriptionIds = new Set();
         #browsingContextStorage;
         constructor(browsingContextStorage) {
             this.#browsingContextStorage = browsingContextStorage;
         }
-        getChannelsSubscribedToEvent(eventMethod, contextId) {
-            const prioritiesAndChannels = Array.from(this.#channelToContextToEventMap.keys())
-                .map((channel) => ({
-                priority: this.#getEventSubscriptionPriorityForChannel(eventMethod, contextId, channel),
-                channel,
-            }))
-                .filter(({ priority }) => priority !== null);
-            // Sort channels by priority.
-            return prioritiesAndChannels
-                .sort((a, b) => a.priority - b.priority)
-                .map(({ channel }) => channel);
-        }
-        #getEventSubscriptionPriorityForChannel(eventMethod, contextId, channel) {
-            const contextToEventMap = this.#channelToContextToEventMap.get(channel);
-            if (contextToEventMap === undefined) {
-                return null;
-            }
-            const maybeTopLevelContextId = this.#browsingContextStorage.findTopLevelContextId(contextId);
-            // `null` covers global subscription.
-            const relevantContexts = [...new Set([null, maybeTopLevelContextId])];
-            // Get all the subscription priorities.
-            const priorities = relevantContexts
-                .map((context) => {
-                // Get the priority for exact event name
-                const priority = contextToEventMap.get(context)?.get(eventMethod);
-                // For CDP we can't provide specific event name when subscribing
-                // to the module directly.
-                // Because of that we need to see event `cdp` exists in the map.
-                if (isCdpEvent(eventMethod)) {
-                    const cdpPriority = contextToEventMap
-                        .get(context)
-                        ?.get(BiDiModule.Cdp);
-                    // If we subscribe to the event directly and `cdp` module as well
-                    // priority will be different we take minimal priority
-                    return priority && cdpPriority
-                        ? Math.min(priority, cdpPriority)
-                        : // At this point we know that we have subscribed
-                            // to only one of the two
-                            (priority ?? cdpPriority);
+        getChannelsSubscribedToEvent(eventName, contextId) {
+            // Maps JSON stringified channel to a channel.
+            // TODO: switch to `Set` of `goog:channel` once legacy `channel` is removed.
+            const channels = new Map();
+            for (const subscription of this.#subscriptions) {
+                if (this.#isSubscribedTo(subscription, eventName, contextId)) {
+                    channels.set(JSON.stringify(subscription.channel), subscription.channel);
                 }
-                // https://github.com/GoogleChromeLabs/chromium-bidi/issues/2844.
-                if (isDeprecatedCdpEvent(eventMethod)) {
-                    const cdpPriority = contextToEventMap
-                        .get(context)
-                        ?.get(BiDiModule.DeprecatedCdp);
-                    // If we subscribe to the event directly and `cdp` module as well
-                    // priority will be different we take minimal priority
-                    return priority && cdpPriority
-                        ? Math.min(priority, cdpPriority)
-                        : // At this point we know that we have subscribed
-                            // to only one of the two
-                            (priority ?? cdpPriority);
-                }
-                return priority;
-            })
-                .filter((p) => p !== undefined);
-            if (priorities.length === 0) {
-                // Not subscribed, return null.
-                return null;
             }
-            // Return minimal priority.
-            return Math.min(...priorities);
+            return Array.from(channels.values());
         }
-        /**
-         * @param module BiDi+ module
-         * @param contextId `null` == globally subscribed
-         *
-         * @returns
-         */
-        isSubscribedTo(moduleOrEvent, contextId = null) {
-            const topLevelContext = this.#browsingContextStorage.findTopLevelContextId(contextId);
-            for (const browserContextToEventMap of this.#channelToContextToEventMap.values()) {
-                for (const [id, eventMap] of browserContextToEventMap.entries()) {
-                    // Not subscribed to this context or globally
-                    if (topLevelContext !== id && id !== null) {
-                        continue;
-                    }
-                    for (const event of eventMap.keys()) {
-                        // This also covers the `cdp` case where
-                        // we don't unroll the event names
-                        if (
-                        // Event explicitly subscribed
-                        event === moduleOrEvent ||
-                            // Event subscribed via module
-                            event === moduleOrEvent.split('.').at(0) ||
-                            // Event explicitly subscribed compared to module
-                            event.split('.').at(0) === moduleOrEvent) {
-                            return true;
-                        }
-                    }
+        getChannelsSubscribedToEventGlobally(eventName) {
+            // Maps JSON stringified channel to a channel.
+            // TODO: switch to `Set` of `goog:channel` once legacy `channel` is removed.
+            const channels = new Map();
+            for (const subscription of this.#subscriptions) {
+                if (this.#isSubscribedTo(subscription, eventName)) {
+                    channels.set(JSON.stringify(subscription.channel), subscription.channel);
+                }
+            }
+            return Array.from(channels.values());
+        }
+        #isSubscribedTo(subscription, moduleOrEvent, browsingContextId) {
+            let includesEvent = false;
+            for (const eventName of subscription.eventNames) {
+                // This also covers the `cdp` case where
+                // we don't unroll the event names
+                if (
+                // Event explicitly subscribed
+                eventName === moduleOrEvent ||
+                    // Event subscribed via module
+                    eventName === moduleOrEvent.split('.').at(0) ||
+                    // Event explicitly subscribed compared to module
+                    eventName.split('.').at(0) === moduleOrEvent) {
+                    includesEvent = true;
+                    break;
+                }
+            }
+            if (!includesEvent) {
+                return false;
+            }
+            // user context subscription.
+            if (subscription.userContextIds.size !== 0) {
+                if (!browsingContextId) {
+                    return false;
+                }
+                const context = this.#browsingContextStorage.findContext(browsingContextId);
+                if (!context) {
+                    return false;
+                }
+                return subscription.userContextIds.has(context.userContext);
+            }
+            // context subscription.
+            if (subscription.topLevelTraversableIds.size !== 0) {
+                if (!browsingContextId) {
+                    return false;
+                }
+                const topLevelContext = this.#browsingContextStorage.findTopLevelContextId(browsingContextId);
+                return (topLevelContext !== null &&
+                    subscription.topLevelTraversableIds.has(topLevelContext));
+            }
+            // global subscription.
+            return true;
+        }
+        isSubscribedTo(moduleOrEvent, contextId) {
+            for (const subscription of this.#subscriptions) {
+                if (this.#isSubscribedTo(subscription, moduleOrEvent, contextId)) {
+                    return true;
                 }
             }
             return false;
@@ -9880,105 +10066,181 @@
          * events. If the contextId is null, it will return all the top-level contexts which were
          * not subscribed before the command.
          */
-        subscribe(event, contextId, channel) {
+        subscribe(eventNames, contextIds, userContextIds, channel) {
             // All the subscriptions are handled on the top-level contexts.
-            contextId = this.#browsingContextStorage.findTopLevelContextId(contextId);
-            // Check if subscribed event is a whole module
-            switch (event) {
-                case BiDiModule.BrowsingContext:
-                    return Object.values(BrowsingContext$2.EventNames)
-                        .map((specificEvent) => this.subscribe(specificEvent, contextId, channel))
-                        .flat();
-                case BiDiModule.Log:
-                    return Object.values(Log$1.EventNames)
-                        .map((specificEvent) => this.subscribe(specificEvent, contextId, channel))
-                        .flat();
-                case BiDiModule.Network:
-                    return Object.values(Network$2.EventNames)
-                        .map((specificEvent) => this.subscribe(specificEvent, contextId, channel))
-                        .flat();
-                case BiDiModule.Script:
-                    return Object.values(Script$2.EventNames)
-                        .map((specificEvent) => this.subscribe(specificEvent, contextId, channel))
-                        .flat();
-                case BiDiModule.Bluetooth:
-                    return Object.values(Bluetooth$2.EventNames)
-                        .map((specificEvent) => this.subscribe(specificEvent, contextId, channel))
-                        .flat();
-                // Intentionally left empty.
-            }
-            if (!this.#channelToContextToEventMap.has(channel)) {
-                this.#channelToContextToEventMap.set(channel, new Map());
-            }
-            const contextToEventMap = this.#channelToContextToEventMap.get(channel);
-            if (!contextToEventMap.has(contextId)) {
-                contextToEventMap.set(contextId, new Map());
-            }
-            const eventMap = contextToEventMap.get(contextId);
-            const affectedContextIds = (contextId === null
-                ? this.#browsingContextStorage.getTopLevelContexts().map((c) => c.id)
-                : [contextId])
-                // There can be contexts that are already subscribed to the event. Do not include
-                // them to the output.
-                .filter((contextId) => !this.isSubscribedTo(event, contextId));
-            if (!eventMap.has(event)) {
-                // Add subscription only if it's not already subscribed.
-                eventMap.set(event, this.#subscriptionPriority++);
-            }
-            return affectedContextIds.map((contextId) => ({
-                event,
-                contextId,
-            }));
+            const subscription = {
+                id: uuidv4(),
+                eventNames: new Set(unrollEvents(eventNames)),
+                topLevelTraversableIds: new Set(contextIds.map((contextId) => {
+                    const topLevelContext = this.#browsingContextStorage.findTopLevelContextId(contextId);
+                    if (!topLevelContext) {
+                        throw new NoSuchFrameException(`Top-level navigable not found for context id ${contextId}`);
+                    }
+                    return topLevelContext;
+                })),
+                userContextIds: new Set(userContextIds),
+                channel,
+            };
+            this.#subscriptions.push(subscription);
+            this.#knownSubscriptionIds.add(subscription.id);
+            return subscription;
         }
         /**
          * Unsubscribes atomically from all events in the given contexts and channel.
+         *
+         * This is a legacy spec branch to unsubscribe by attributes.
          */
-        unsubscribeAll(events, contextIds, channel) {
-            // Assert all contexts are known.
-            for (const contextId of contextIds) {
-                if (contextId !== null) {
-                    this.#browsingContextStorage.getContext(contextId);
+        unsubscribe(inputEventNames, inputContextIds, channel) {
+            const eventNames = new Set(unrollEvents(inputEventNames));
+            // Validation that contexts exist.
+            this.#browsingContextStorage.verifyContextsList(inputContextIds);
+            const topLevelTraversables = new Set(inputContextIds.map((contextId) => {
+                const topLevelContext = this.#browsingContextStorage.findTopLevelContextId(contextId);
+                if (!topLevelContext) {
+                    throw new NoSuchFrameException(`Top-level navigable not found for context id ${contextId}`);
+                }
+                return topLevelContext;
+            }));
+            const isGlobalUnsubscribe = topLevelTraversables.size === 0;
+            const newSubscriptions = [];
+            const eventsMatched = new Set();
+            const contextsMatched = new Set();
+            for (const subscription of this.#subscriptions) {
+                // `channel` is undefined or an object with 1 field, so `JSON.stringify` is stable.
+                if (JSON.stringify(subscription.channel) !== JSON.stringify(channel)) {
+                    newSubscriptions.push(subscription);
+                    continue;
+                }
+                // Skip user context subscriptions.
+                if (subscription.userContextIds.size !== 0) {
+                    newSubscriptions.push(subscription);
+                    continue;
+                }
+                // Skip subscriptions when none of the event names match.
+                if (intersection(subscription.eventNames, eventNames).size === 0) {
+                    newSubscriptions.push(subscription);
+                    continue;
+                }
+                if (isGlobalUnsubscribe) {
+                    // Skip non-global subscriptions.
+                    if (subscription.topLevelTraversableIds.size !== 0) {
+                        newSubscriptions.push(subscription);
+                        continue;
+                    }
+                    const subscriptionEventNames = new Set(subscription.eventNames);
+                    for (const eventName of eventNames) {
+                        if (subscriptionEventNames.has(eventName)) {
+                            eventsMatched.add(eventName);
+                            subscriptionEventNames.delete(eventName);
+                        }
+                    }
+                    // If some events remain in the subscription, we keep it.
+                    if (subscriptionEventNames.size !== 0) {
+                        newSubscriptions.push({
+                            ...subscription,
+                            eventNames: subscriptionEventNames,
+                        });
+                    }
+                }
+                else {
+                    // Skip global subscriptions.
+                    if (subscription.topLevelTraversableIds.size === 0) {
+                        newSubscriptions.push(subscription);
+                        continue;
+                    }
+                    // Splitting context subscriptions.
+                    const eventMap = new Map();
+                    for (const eventName of subscription.eventNames) {
+                        eventMap.set(eventName, new Set(subscription.topLevelTraversableIds));
+                    }
+                    for (const eventName of eventNames) {
+                        const eventContextSet = eventMap.get(eventName);
+                        if (!eventContextSet) {
+                            continue;
+                        }
+                        for (const toRemoveId of topLevelTraversables) {
+                            if (eventContextSet.has(toRemoveId)) {
+                                contextsMatched.add(toRemoveId);
+                                eventsMatched.add(eventName);
+                                eventContextSet.delete(toRemoveId);
+                            }
+                        }
+                        if (eventContextSet.size === 0) {
+                            eventMap.delete(eventName);
+                        }
+                    }
+                    for (const [eventName, remainingContextIds] of eventMap) {
+                        const partialSubscription = {
+                            id: subscription.id,
+                            channel: subscription.channel,
+                            eventNames: new Set([eventName]),
+                            topLevelTraversableIds: remainingContextIds,
+                            userContextIds: new Set(),
+                        };
+                        newSubscriptions.push(partialSubscription);
+                    }
                 }
             }
-            const eventContextPairs = cartesianProduct(unrollEvents(events), contextIds);
-            // Assert all unsubscriptions are valid.
-            // If any of the unsubscriptions are invalid, do not unsubscribe from anything.
-            eventContextPairs
-                .map(([event, contextId]) => this.#checkUnsubscribe(event, contextId, channel))
-                .forEach((unsubscribe) => unsubscribe());
+            // If some events did not match, it is an invalid request.
+            if (!equal(eventsMatched, eventNames)) {
+                throw new InvalidArgumentException('No subscription found');
+            }
+            // If some contexts did not match, it is an invalid request.
+            if (!isGlobalUnsubscribe && !equal(contextsMatched, topLevelTraversables)) {
+                throw new InvalidArgumentException('No subscription found');
+            }
+            // Committing the new subscriptions.
+            this.#subscriptions = newSubscriptions;
         }
         /**
-         * Unsubscribes from the event in the given context and channel.
-         * Syntactic sugar for "unsubscribeAll".
+         * Unsubscribes by subscriptionId.
          */
-        unsubscribe(eventName, contextId, channel) {
-            this.unsubscribeAll([eventName], [contextId], channel);
+        unsubscribeById(subscriptionIds) {
+            const subscriptionIdsSet = new Set(subscriptionIds);
+            const unknownIds = difference(subscriptionIdsSet, this.#knownSubscriptionIds);
+            if (unknownIds.size !== 0) {
+                throw new InvalidArgumentException('No subscription found');
+            }
+            this.#subscriptions = this.#subscriptions.filter((subscription) => {
+                return !subscriptionIdsSet.has(subscription.id);
+            });
+            this.#knownSubscriptionIds = difference(this.#knownSubscriptionIds, subscriptionIdsSet);
         }
-        #checkUnsubscribe(event, contextId, channel) {
-            // All the subscriptions are handled on the top-level contexts.
-            contextId = this.#browsingContextStorage.findTopLevelContextId(contextId);
-            if (!this.#channelToContextToEventMap.has(channel)) {
-                throw new InvalidArgumentException(`Cannot unsubscribe from ${event}, ${contextId === null ? 'null' : contextId}. No subscription found.`);
+    }
+    /**
+     * Replace with Set.prototype.intersection once Node 20 is dropped.
+     */
+    function intersection(setA, setB) {
+        const result = new Set();
+        for (const a of setA) {
+            if (setB.has(a)) {
+                result.add(a);
             }
-            const contextToEventMap = this.#channelToContextToEventMap.get(channel);
-            if (!contextToEventMap.has(contextId)) {
-                throw new InvalidArgumentException(`Cannot unsubscribe from ${event}, ${contextId === null ? 'null' : contextId}. No subscription found.`);
-            }
-            const eventMap = contextToEventMap.get(contextId);
-            if (!eventMap.has(event)) {
-                throw new InvalidArgumentException(`Cannot unsubscribe from ${event}, ${contextId === null ? 'null' : contextId}. No subscription found.`);
-            }
-            return () => {
-                eventMap.delete(event);
-                // Clean up maps if empty.
-                if (eventMap.size === 0) {
-                    contextToEventMap.delete(event);
-                }
-                if (contextToEventMap.size === 0) {
-                    this.#channelToContextToEventMap.delete(channel);
-                }
-            };
         }
+        return result;
+    }
+    /**
+     * Replace with Set.prototype.difference once Node 20 is dropped.
+     */
+    function difference(setA, setB) {
+        const result = new Set();
+        for (const a of setA) {
+            if (!setB.has(a)) {
+                result.add(a);
+            }
+        }
+        return result;
+    }
+    function equal(setA, setB) {
+        if (setA.size !== setB.size) {
+            return false;
+        }
+        for (const a of setA) {
+            if (!setB.has(a)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -10033,7 +10295,7 @@
          */
         #eventBuffers = new Map();
         /**
-         * Maps `eventName` + `browsingContext` to  Map of channel to last id
+         * Maps `eventName` + `browsingContext` to  Map of json stringified channel to last id.
          * Used to avoid sending duplicated events when user
          * subscribes -> unsubscribes -> subscribes.
          */
@@ -10044,9 +10306,11 @@
          * Map of event name to hooks to be called when client is subscribed to the event.
          */
         #subscribeHooks;
-        constructor(browsingContextStorage) {
+        #userContextStorage;
+        constructor(browsingContextStorage, userContextStorage) {
             super();
             this.#browsingContextStorage = browsingContextStorage;
+            this.#userContextStorage = userContextStorage;
             this.#subscriptionManager = new SubscriptionManager(browsingContextStorage);
             this.#subscribeHooks = new DefaultMap(() => []);
         }
@@ -10068,6 +10332,12 @@
                 value: event,
             }), contextId, event.method);
         }
+        registerGlobalEvent(event) {
+            this.registerGlobalPromiseEvent(Promise.resolve({
+                kind: 'success',
+                value: event,
+            }), event.method);
+        }
         registerPromiseEvent(event, contextId, eventName) {
             const eventWrapper = new EventWrapper(event, contextId);
             const sortedChannels = this.#subscriptionManager.getChannelsSubscribedToEvent(eventName, contextId);
@@ -10081,24 +10351,53 @@
                 this.#markEventSent(eventWrapper, channel, eventName);
             }
         }
-        async subscribe(eventNames, contextIds, channel) {
+        registerGlobalPromiseEvent(event, eventName) {
+            const eventWrapper = new EventWrapper(event, null);
+            const sortedChannels = this.#subscriptionManager.getChannelsSubscribedToEventGlobally(eventName);
+            this.#bufferEvent(eventWrapper, eventName);
+            // Send events to channels in the subscription priority.
+            for (const channel of sortedChannels) {
+                this.emit("event" /* EventManagerEvents.Event */, {
+                    message: OutgoingMessage.createFromPromise(event, channel),
+                    event: eventName,
+                });
+                this.#markEventSent(eventWrapper, channel, eventName);
+            }
+        }
+        async subscribe(eventNames, contextIds, userContextIds, channel) {
             for (const name of eventNames) {
                 assertSupportedEvent(name);
             }
-            // First check if all the contexts are known.
-            for (const contextId of contextIds) {
-                if (contextId !== null) {
-                    // Assert the context is known. Throw exception otherwise.
-                    this.#browsingContextStorage.getContext(contextId);
-                }
+            if (userContextIds.length && contextIds.length) {
+                throw new InvalidArgumentException('Both userContexts and contexts cannot be specified.');
             }
-            // List of the subscription items that were actually added. Each contains a specific
-            // event and context. No module event (like "network") or global context subscription
-            // (like null) are included.
-            const addedSubscriptionItems = [];
-            for (const eventName of eventNames) {
-                for (const contextId of contextIds) {
-                    addedSubscriptionItems.push(...this.#subscriptionManager.subscribe(eventName, contextId, channel));
+            // First check if all the contexts are known.
+            this.#browsingContextStorage.verifyContextsList(contextIds);
+            // Validate user contexts.
+            await this.#userContextStorage.verifyUserContextIdList(userContextIds);
+            const unrolledEventNames = new Set(unrollEvents(eventNames));
+            const subscribeStepEvents = new Map();
+            const subscriptionNavigableIds = new Set(contextIds.length
+                ? contextIds.map((contextId) => {
+                    const id = this.#browsingContextStorage.findTopLevelContextId(contextId);
+                    if (!id) {
+                        throw new InvalidArgumentException('Invalid context id');
+                    }
+                    return id;
+                })
+                : this.#browsingContextStorage.getTopLevelContexts().map((c) => c.id));
+            for (const eventName of unrolledEventNames) {
+                const subscribedNavigableIds = new Set(this.#browsingContextStorage
+                    .getTopLevelContexts()
+                    .map((c) => c.id)
+                    .filter((id) => {
+                    return this.#subscriptionManager.isSubscribedTo(eventName, id);
+                }));
+                subscribeStepEvents.set(eventName, difference(subscriptionNavigableIds, subscribedNavigableIds));
+            }
+            const subscription = this.#subscriptionManager.subscribe(eventNames, contextIds, userContextIds, channel);
+            for (const eventName of subscription.eventNames) {
+                for (const contextId of subscriptionNavigableIds) {
                     for (const eventWrapper of this.#getBufferedEvents(eventName, contextId, channel)) {
                         // The order of the events is important.
                         this.emit("event" /* EventManagerEvents.Event */, {
@@ -10109,20 +10408,23 @@
                     }
                 }
             }
-            // Iterate over all new subscription items and call hooks if any. There can be
-            // duplicates, e.g. when subscribing to the whole module and some specific event in
-            // the same time ("network", "network.responseCompleted"). `distinctValues` guarantees
-            // that hooks are called only once per pair event + context.
-            distinctValues(addedSubscriptionItems).forEach(({ contextId, event }) => {
-                this.#subscribeHooks.get(event).forEach((hook) => hook(contextId));
-            });
+            for (const [eventName, contextIds] of subscribeStepEvents) {
+                for (const contextId of contextIds) {
+                    this.#subscribeHooks.get(eventName).forEach((hook) => hook(contextId));
+                }
+            }
             await this.toggleModulesIfNeeded();
+            return subscription.id;
         }
         async unsubscribe(eventNames, contextIds, channel) {
             for (const name of eventNames) {
                 assertSupportedEvent(name);
             }
-            this.#subscriptionManager.unsubscribeAll(eventNames, contextIds, channel);
+            this.#subscriptionManager.unsubscribe(eventNames, contextIds, channel);
+            await this.toggleModulesIfNeeded();
+        }
+        async unsubscribeByIds(subscriptionIds) {
+            this.#subscriptionManager.unsubscribeById(subscriptionIds);
             await this.toggleModulesIfNeeded();
         }
         async toggleModulesIfNeeded() {
@@ -10163,13 +10465,14 @@
                 return;
             }
             const lastSentMapKey = _a$2.#getMapKey(eventName, eventWrapper.contextId);
-            const lastId = Math.max(this.#lastMessageSent.get(lastSentMapKey)?.get(channel) ?? 0, eventWrapper.id);
+            const lastId = Math.max(this.#lastMessageSent.get(lastSentMapKey)?.get(JSON.stringify(channel)) ??
+                0, eventWrapper.id);
             const channelMap = this.#lastMessageSent.get(lastSentMapKey);
             if (channelMap) {
-                channelMap.set(channel, lastId);
+                channelMap.set(JSON.stringify(channel), lastId);
             }
             else {
-                this.#lastMessageSent.set(lastSentMapKey, new Map([[channel, lastId]]));
+                this.#lastMessageSent.set(lastSentMapKey, new Map([[JSON.stringify(channel), lastId]]));
             }
         }
         /**
@@ -10177,7 +10480,8 @@
          */
         #getBufferedEvents(eventName, contextId, channel) {
             const bufferMapKey = _a$2.#getMapKey(eventName, contextId);
-            const lastSentMessageId = this.#lastMessageSent.get(bufferMapKey)?.get(channel) ?? -Infinity;
+            const lastSentMessageId = this.#lastMessageSent.get(bufferMapKey)?.get(JSON.stringify(channel)) ??
+                -Infinity;
             const result = this.#eventBuffers
                 .get(bufferMapKey)
                 ?.get()
@@ -10230,10 +10534,8 @@
             });
         };
         #processOutgoingMessage = async (messageEntry) => {
-            const message = messageEntry.message;
-            if (messageEntry.channel !== null) {
-                message['channel'] = messageEntry.channel;
-            }
+            // Enrich message with channel data.
+            const message = { ...messageEntry.message, ...messageEntry.channel };
             await this.#transport.sendMessage(message);
         };
         constructor(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, parser, logger) {
@@ -10242,10 +10544,11 @@
             this.#messageQueue = new ProcessingQueue(this.#processOutgoingMessage, this.#logger);
             this.#transport = bidiTransport;
             this.#transport.setOnMessage(this.#handleIncomingMessage);
-            this.#eventManager = new EventManager(this.#browsingContextStorage);
+            const userUserContextStorage = new UserContextStorage(browserCdpClient);
+            this.#eventManager = new EventManager(this.#browsingContextStorage, userUserContextStorage);
             const networkStorage = new NetworkStorage(this.#eventManager, this.#browsingContextStorage, browserCdpClient, logger);
             this.#bluetoothProcessor = new BluetoothProcessor(this.#eventManager, this.#browsingContextStorage);
-            this.#commandProcessor = new CommandProcessor(cdpConnection, browserCdpClient, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.#preloadScriptStorage, networkStorage, this.#bluetoothProcessor, parser, async (options) => {
+            this.#commandProcessor = new CommandProcessor(cdpConnection, browserCdpClient, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.#preloadScriptStorage, networkStorage, this.#bluetoothProcessor, userUserContextStorage, parser, async (options) => {
                 // This is required to ignore certificate errors when service worker is fetched.
                 await browserCdpClient.sendCommand('Security.setIgnoreCertificateErrors', {
                     ignore: options.acceptInsecureCerts ?? false,
@@ -10647,6 +10950,9 @@
         return json.replace(/"([^"]+)":/g, "$1:");
     };
     class ZodError extends Error {
+        get errors() {
+            return this.issues;
+        }
         constructor(issues) {
             super();
             this.issues = [];
@@ -10666,9 +10972,6 @@
             }
             this.name = "ZodError";
             this.issues = issues;
-        }
-        get errors() {
-            return this.issues;
         }
         format(_mapper) {
             const mapper = _mapper ||
@@ -10925,9 +11228,9 @@
             data: ctx.data,
             path: ctx.path,
             errorMaps: [
-                ctx.common.contextualErrorMap,
-                ctx.schemaErrorMap,
-                overrideMap,
+                ctx.common.contextualErrorMap, // contextual error map is first priority
+                ctx.schemaErrorMap, // then schema-bound map if available
+                overrideMap, // then global override map
                 overrideMap === errorMap ? undefined : errorMap, // then global default map
             ].filter((x) => !!x),
         });
@@ -11100,35 +11403,6 @@
         return { errorMap: customMap, description };
     }
     class ZodType {
-        constructor(def) {
-            /** Alias of safeParseAsync */
-            this.spa = this.safeParseAsync;
-            this._def = def;
-            this.parse = this.parse.bind(this);
-            this.safeParse = this.safeParse.bind(this);
-            this.parseAsync = this.parseAsync.bind(this);
-            this.safeParseAsync = this.safeParseAsync.bind(this);
-            this.spa = this.spa.bind(this);
-            this.refine = this.refine.bind(this);
-            this.refinement = this.refinement.bind(this);
-            this.superRefine = this.superRefine.bind(this);
-            this.optional = this.optional.bind(this);
-            this.nullable = this.nullable.bind(this);
-            this.nullish = this.nullish.bind(this);
-            this.array = this.array.bind(this);
-            this.promise = this.promise.bind(this);
-            this.or = this.or.bind(this);
-            this.and = this.and.bind(this);
-            this.transform = this.transform.bind(this);
-            this.brand = this.brand.bind(this);
-            this.default = this.default.bind(this);
-            this.catch = this.catch.bind(this);
-            this.describe = this.describe.bind(this);
-            this.pipe = this.pipe.bind(this);
-            this.readonly = this.readonly.bind(this);
-            this.isNullable = this.isNullable.bind(this);
-            this.isOptional = this.isOptional.bind(this);
-        }
         get description() {
             return this._def.description;
         }
@@ -11191,6 +11465,48 @@
             };
             const result = this._parseSync({ data, path: ctx.path, parent: ctx });
             return handleResult(ctx, result);
+        }
+        "~validate"(data) {
+            var _a, _b;
+            const ctx = {
+                common: {
+                    issues: [],
+                    async: !!this["~standard"].async,
+                },
+                path: [],
+                schemaErrorMap: this._def.errorMap,
+                parent: null,
+                data,
+                parsedType: getParsedType(data),
+            };
+            if (!this["~standard"].async) {
+                try {
+                    const result = this._parseSync({ data, path: [], parent: ctx });
+                    return isValid(result)
+                        ? {
+                            value: result.value,
+                        }
+                        : {
+                            issues: ctx.common.issues,
+                        };
+                }
+                catch (err) {
+                    if ((_b = (_a = err === null || err === void 0 ? void 0 : err.message) === null || _a === void 0 ? void 0 : _a.toLowerCase()) === null || _b === void 0 ? void 0 : _b.includes("encountered")) {
+                        this["~standard"].async = true;
+                    }
+                    ctx.common = {
+                        issues: [],
+                        async: true,
+                    };
+                }
+            }
+            return this._parseAsync({ data, path: [], parent: ctx }).then((result) => isValid(result)
+                ? {
+                    value: result.value,
+                }
+                : {
+                    issues: ctx.common.issues,
+                });
         }
         async parseAsync(data, params) {
             const result = await this.safeParseAsync(data, params);
@@ -11278,6 +11594,40 @@
         superRefine(refinement) {
             return this._refinement(refinement);
         }
+        constructor(def) {
+            /** Alias of safeParseAsync */
+            this.spa = this.safeParseAsync;
+            this._def = def;
+            this.parse = this.parse.bind(this);
+            this.safeParse = this.safeParse.bind(this);
+            this.parseAsync = this.parseAsync.bind(this);
+            this.safeParseAsync = this.safeParseAsync.bind(this);
+            this.spa = this.spa.bind(this);
+            this.refine = this.refine.bind(this);
+            this.refinement = this.refinement.bind(this);
+            this.superRefine = this.superRefine.bind(this);
+            this.optional = this.optional.bind(this);
+            this.nullable = this.nullable.bind(this);
+            this.nullish = this.nullish.bind(this);
+            this.array = this.array.bind(this);
+            this.promise = this.promise.bind(this);
+            this.or = this.or.bind(this);
+            this.and = this.and.bind(this);
+            this.transform = this.transform.bind(this);
+            this.brand = this.brand.bind(this);
+            this.default = this.default.bind(this);
+            this.catch = this.catch.bind(this);
+            this.describe = this.describe.bind(this);
+            this.pipe = this.pipe.bind(this);
+            this.readonly = this.readonly.bind(this);
+            this.isNullable = this.isNullable.bind(this);
+            this.isOptional = this.isOptional.bind(this);
+            this["~standard"] = {
+                version: 1,
+                vendor: "zod",
+                validate: (data) => this["~validate"](data),
+            };
+        }
         optional() {
             return ZodOptional.create(this, this._def);
         }
@@ -11288,7 +11638,7 @@
             return this.nullable().optional();
         }
         array() {
-            return ZodArray.create(this, this._def);
+            return ZodArray.create(this);
         }
         promise() {
             return ZodPromise.create(this, this._def);
@@ -11354,11 +11704,12 @@
     }
     const cuidRegex = /^c[^\s-]{8,}$/i;
     const cuid2Regex = /^[0-9a-z]+$/;
-    const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+    const ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/i;
     // const uuidRegex =
     //   /^([a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[a-f0-9]{4}-[a-f0-9]{12}|00000000-0000-0000-0000-000000000000)$/i;
     const uuidRegex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
     const nanoidRegex = /^[a-z0-9_-]{21}$/i;
+    const jwtRegex = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/;
     const durationRegex = /^[-+]?P(?!$)(?:(?:[-+]?\d+Y)|(?:[-+]?\d+[.,]\d+Y$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:(?:[-+]?\d+W)|(?:[-+]?\d+[.,]\d+W$))?(?:(?:[-+]?\d+D)|(?:[-+]?\d+[.,]\d+D$))?(?:T(?=[\d+-])(?:(?:[-+]?\d+H)|(?:[-+]?\d+[.,]\d+H$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:[-+]?\d+(?:[.,]\d+)?S)?)??$/;
     // from https://stackoverflow.com/a/46181/1550155
     // old version: too slow, didn't support unicode
@@ -11380,9 +11731,15 @@
     let emojiRegex;
     // faster, simpler, safer
     const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
-    const ipv6Regex = /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/;
+    const ipv4CidrRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(3[0-2]|[12]?[0-9])$/;
+    // const ipv6Regex =
+    // /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/;
+    const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+    const ipv6CidrRegex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/;
     // https://stackoverflow.com/questions/7860392/determine-if-string-is-in-base64-using-javascript
     const base64Regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+    // https://base64.guru/standards/base64url
+    const base64urlRegex = /^([0-9a-zA-Z-_]{4})*(([0-9a-zA-Z-_]{2}(==)?)|([0-9a-zA-Z-_]{3}(=)?))?$/;
     // simple
     // const dateRegexSource = `\\d{4}-\\d{2}-\\d{2}`;
     // no leap year validation
@@ -11419,6 +11776,38 @@
             return true;
         }
         if ((version === "v6" || !version) && ipv6Regex.test(ip)) {
+            return true;
+        }
+        return false;
+    }
+    function isValidJWT(jwt, alg) {
+        if (!jwtRegex.test(jwt))
+            return false;
+        try {
+            const [header] = jwt.split(".");
+            // Convert base64url to base64
+            const base64 = header
+                .replace(/-/g, "+")
+                .replace(/_/g, "/")
+                .padEnd(header.length + ((4 - (header.length % 4)) % 4), "=");
+            const decoded = JSON.parse(atob(base64));
+            if (typeof decoded !== "object" || decoded === null)
+                return false;
+            if (!decoded.typ || !decoded.alg)
+                return false;
+            if (alg && decoded.alg !== alg)
+                return false;
+            return true;
+        }
+        catch (_a) {
+            return false;
+        }
+    }
+    function isValidCidr(ip, version) {
+        if ((version === "v4" || !version) && ipv4CidrRegex.test(ip)) {
+            return true;
+        }
+        if ((version === "v6" || !version) && ipv6CidrRegex.test(ip)) {
             return true;
         }
         return false;
@@ -11704,11 +12093,44 @@
                         status.dirty();
                     }
                 }
+                else if (check.kind === "jwt") {
+                    if (!isValidJWT(input.data, check.alg)) {
+                        ctx = this._getOrReturnCtx(input, ctx);
+                        addIssueToContext(ctx, {
+                            validation: "jwt",
+                            code: ZodIssueCode.invalid_string,
+                            message: check.message,
+                        });
+                        status.dirty();
+                    }
+                }
+                else if (check.kind === "cidr") {
+                    if (!isValidCidr(input.data, check.version)) {
+                        ctx = this._getOrReturnCtx(input, ctx);
+                        addIssueToContext(ctx, {
+                            validation: "cidr",
+                            code: ZodIssueCode.invalid_string,
+                            message: check.message,
+                        });
+                        status.dirty();
+                    }
+                }
                 else if (check.kind === "base64") {
                     if (!base64Regex.test(input.data)) {
                         ctx = this._getOrReturnCtx(input, ctx);
                         addIssueToContext(ctx, {
                             validation: "base64",
+                            code: ZodIssueCode.invalid_string,
+                            message: check.message,
+                        });
+                        status.dirty();
+                    }
+                }
+                else if (check.kind === "base64url") {
+                    if (!base64urlRegex.test(input.data)) {
+                        ctx = this._getOrReturnCtx(input, ctx);
+                        addIssueToContext(ctx, {
+                            validation: "base64url",
                             code: ZodIssueCode.invalid_string,
                             message: check.message,
                         });
@@ -11761,8 +12183,21 @@
         base64(message) {
             return this._addCheck({ kind: "base64", ...errorUtil.errToObj(message) });
         }
+        base64url(message) {
+            // base64url encoding is a modification of base64 that can safely be used in URLs and filenames
+            return this._addCheck({
+                kind: "base64url",
+                ...errorUtil.errToObj(message),
+            });
+        }
+        jwt(options) {
+            return this._addCheck({ kind: "jwt", ...errorUtil.errToObj(options) });
+        }
         ip(options) {
             return this._addCheck({ kind: "ip", ...errorUtil.errToObj(options) });
+        }
+        cidr(options) {
+            return this._addCheck({ kind: "cidr", ...errorUtil.errToObj(options) });
         }
         datetime(options) {
             var _a, _b;
@@ -11854,8 +12289,7 @@
             });
         }
         /**
-         * @deprecated Use z.string().min(1) instead.
-         * @see {@link ZodString.min}
+         * Equivalent to `.min(1)`
          */
         nonempty(message) {
             return this.min(1, errorUtil.errToObj(message));
@@ -11917,8 +12351,15 @@
         get isIP() {
             return !!this._def.checks.find((ch) => ch.kind === "ip");
         }
+        get isCIDR() {
+            return !!this._def.checks.find((ch) => ch.kind === "cidr");
+        }
         get isBase64() {
             return !!this._def.checks.find((ch) => ch.kind === "base64");
+        }
+        get isBase64url() {
+            // base64url encoding is a modification of base64 that can safely be used in URLs and filenames
+            return !!this._def.checks.find((ch) => ch.kind === "base64url");
         }
         get minLength() {
             let min = null;
@@ -12212,17 +12653,16 @@
         }
         _parse(input) {
             if (this._def.coerce) {
-                input.data = BigInt(input.data);
+                try {
+                    input.data = BigInt(input.data);
+                }
+                catch (_a) {
+                    return this._getInvalidInput(input);
+                }
             }
             const parsedType = this._getType(input);
             if (parsedType !== ZodParsedType.bigint) {
-                const ctx = this._getOrReturnCtx(input);
-                addIssueToContext(ctx, {
-                    code: ZodIssueCode.invalid_type,
-                    expected: ZodParsedType.bigint,
-                    received: ctx.parsedType,
-                });
-                return INVALID;
+                return this._getInvalidInput(input);
             }
             let ctx = undefined;
             const status = new ParseStatus();
@@ -12275,6 +12715,15 @@
                 }
             }
             return { status: status.value, value: input.data };
+        }
+        _getInvalidInput(input) {
+            const ctx = this._getOrReturnCtx(input);
+            addIssueToContext(ctx, {
+                code: ZodIssueCode.invalid_type,
+                expected: ZodParsedType.bigint,
+                received: ctx.parsedType,
+            });
+            return INVALID;
         }
         gte(value, message) {
             return this.setLimit("min", value, true, errorUtil.toString(message));
@@ -15045,7 +15494,11 @@
             z.object({}),
         ]));
     })(Session$1 || (Session$1 = {}));
-    const SessionResultSchema = z.lazy(() => z.union([Session$1.NewResultSchema, Session$1.StatusResultSchema]));
+    const SessionResultSchema = z.lazy(() => z.union([
+        Session$1.NewResultSchema,
+        Session$1.StatusResultSchema,
+        Session$1.SubscribeResultSchema,
+    ]));
     (function (Session) {
         Session.CapabilitiesRequestSchema = z.lazy(() => z.object({
             alwaysMatch: Session.CapabilityRequestSchema.optional(),
@@ -15126,7 +15579,25 @@
         Session.UserPromptHandlerTypeSchema = z.lazy(() => z.enum(['accept', 'dismiss', 'ignore']));
     })(Session$1 || (Session$1 = {}));
     (function (Session) {
+        Session.SubscriptionSchema = z.lazy(() => z.string());
+    })(Session$1 || (Session$1 = {}));
+    (function (Session) {
         Session.SubscriptionRequestSchema = z.lazy(() => z.object({
+            events: z.array(z.string()).min(1),
+            contexts: z
+                .array(BrowsingContext$1.BrowsingContextSchema)
+                .min(1)
+                .optional(),
+            userContexts: z.array(Browser$1.UserContextSchema).min(1).optional(),
+        }));
+    })(Session$1 || (Session$1 = {}));
+    (function (Session) {
+        Session.UnsubscribeByIdRequestSchema = z.lazy(() => z.object({
+            subscriptions: z.array(Session.SubscriptionSchema).min(1),
+        }));
+    })(Session$1 || (Session$1 = {}));
+    (function (Session) {
+        Session.UnsubscribeByAttributesRequestSchema = z.lazy(() => z.object({
             events: z.array(z.string()).min(1),
             contexts: z
                 .array(BrowsingContext$1.BrowsingContextSchema)
@@ -15188,10 +15659,21 @@
         }));
     })(Session$1 || (Session$1 = {}));
     (function (Session) {
+        Session.SubscribeResultSchema = z.lazy(() => z.object({
+            subscription: Session.SubscriptionSchema,
+        }));
+    })(Session$1 || (Session$1 = {}));
+    (function (Session) {
         Session.UnsubscribeSchema = z.lazy(() => z.object({
             method: z.literal('session.unsubscribe'),
-            params: Session.SubscriptionRequestSchema,
+            params: Session.UnsubscribeParametersSchema,
         }));
+    })(Session$1 || (Session$1 = {}));
+    (function (Session) {
+        Session.UnsubscribeParametersSchema = z.lazy(() => z.union([
+            Session.UnsubscribeByAttributesRequestSchema,
+            Session.UnsubscribeByIdRequestSchema,
+        ]));
     })(Session$1 || (Session$1 = {}));
     const BrowserCommandSchema = z.lazy(() => z.union([
         Browser$1.CloseSchema,
@@ -15330,6 +15812,7 @@
         BrowsingContext$1.HistoryUpdatedSchema,
         BrowsingContext$1.LoadSchema,
         BrowsingContext$1.NavigationAbortedSchema,
+        BrowsingContext$1.NavigationCommittedSchema,
         BrowsingContext$1.NavigationFailedSchema,
         BrowsingContext$1.NavigationStartedSchema,
         BrowsingContext$1.UserPromptClosedSchema,
@@ -15371,6 +15854,7 @@
         BrowsingContext.LocatorSchema = z.lazy(() => z.union([
             BrowsingContext.AccessibilityLocatorSchema,
             BrowsingContext.CssLocatorSchema,
+            BrowsingContext.ContextLocatorSchema,
             BrowsingContext.InnerTextLocatorSchema,
             BrowsingContext.XPathLocatorSchema,
         ]));
@@ -15388,6 +15872,14 @@
         BrowsingContext.CssLocatorSchema = z.lazy(() => z.object({
             type: z.literal('css'),
             value: z.string(),
+        }));
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.ContextLocatorSchema = z.lazy(() => z.object({
+            type: z.literal('context'),
+            value: z.object({
+                context: BrowsingContext.BrowsingContextSchema,
+            }),
         }));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
     (function (BrowsingContext) {
@@ -15726,6 +16218,12 @@
     (function (BrowsingContext) {
         BrowsingContext.NavigationAbortedSchema = z.lazy(() => z.object({
             method: z.literal('browsingContext.navigationAborted'),
+            params: BrowsingContext.NavigationInfoSchema,
+        }));
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.NavigationCommittedSchema = z.lazy(() => z.object({
+            method: z.literal('browsingContext.navigationCommitted'),
             params: BrowsingContext.NavigationInfoSchema,
         }));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
@@ -16690,6 +17188,7 @@
                 .array(BrowsingContext$1.BrowsingContextSchema)
                 .min(1)
                 .optional(),
+            userContexts: z.array(Browser$1.UserContextSchema).min(1).optional(),
             sandbox: z.string().optional(),
         }));
     })(Script$1 || (Script$1 = {}));
@@ -17395,6 +17894,13 @@
             return parseObject(params, Session$1.SubscriptionRequestSchema);
         }
         Session.parseSubscribeParams = parseSubscribeParams;
+        function parseUnsubscribeParams(params) {
+            if (params && typeof params === 'object' && 'subscriptions' in params) {
+                return parseObject(params, Session$1.UnsubscribeByIdRequestSchema);
+            }
+            return parseObject(params, Session$1.UnsubscribeParametersSchema);
+        }
+        Session.parseUnsubscribeParams = parseUnsubscribeParams;
     })(Session || (Session = {}));
     var Input;
     (function (Input) {
@@ -17647,6 +18153,9 @@
         parseSubscribeParams(params) {
             return Session.parseSubscribeParams(params);
         }
+        parseUnsubscribeParams(params) {
+            return Session.parseUnsubscribeParams(params);
+        }
         // keep-sorted end
         // Storage module
         // keep-sorted start block=yes
@@ -17724,6 +18233,7 @@
     class WindowBidiTransport {
         static LOGGER_PREFIX_RECV = `${LogType.bidi}:RECV ◂`;
         static LOGGER_PREFIX_SEND = `${LogType.bidi}:SEND ▸`;
+        static LOGGER_PREFIX_WARN = LogType.debugWarn;
         #onMessage = null;
         constructor() {
             window.onBidiMessage = (message) => {
@@ -17735,7 +18245,7 @@
                 catch (e) {
                     const error = e instanceof Error ? e : new Error(e);
                     // Transport-level error does not provide channel.
-                    this.#respondWithError(message, "invalid argument" /* ErrorCode.InvalidArgument */, error, null);
+                    this.#respondWithError(message, "invalid argument" /* ErrorCode.InvalidArgument */, error, {});
                 }
             };
         }
@@ -17753,15 +18263,10 @@
         }
         #respondWithError(plainCommandData, errorCode, error, channel) {
             const errorResponse = _a.#getErrorResponse(plainCommandData, errorCode, error);
-            if (channel) {
-                this.sendMessage({
-                    ...errorResponse,
-                    channel,
-                });
-            }
-            else {
-                this.sendMessage(errorResponse);
-            }
+            this.sendMessage({
+                ...errorResponse,
+                ...(channel ?? {}),
+            });
         }
         static #getJsonType(value) {
             if (value === null) {
@@ -17819,15 +18324,24 @@
             if (paramsType !== 'object') {
                 throw new Error(`Expected object params but got ${paramsType}`);
             }
-            let channel = command.channel;
-            if (channel !== undefined) {
-                const channelType = _a.#getJsonType(channel);
+            let channel = {};
+            if (command['goog:channel'] !== undefined) {
+                const channelType = _a.#getJsonType(command['goog:channel']);
                 if (channelType !== 'string') {
-                    throw new Error(`Expected string channel but got ${channelType}`);
+                    throw new Error(`Expected string value of 'goog:channel' but got ${channelType}`);
                 }
-                // Empty string channel is considered as no channel provided.
-                if (channel === '') {
-                    channel = undefined;
+                if (command['goog:channel'] !== '') {
+                    channel = { 'goog:channel': command['goog:channel'] };
+                }
+            }
+            else if (command.channel !== undefined) {
+                log(_a.LOGGER_PREFIX_WARN, 'Legacy `channel` parameter is deprecated and will not supported soon. Use `goog:channel` instead.');
+                const channelType = _a.#getJsonType(command.channel);
+                if (channelType !== 'string') {
+                    throw new Error(`Expected string 'channel' but got ${channelType}`);
+                }
+                if (command.channel !== '') {
+                    channel = { channel: command.channel };
                 }
             }
             return { id, method, params, channel };
