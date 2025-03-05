@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
+using System.Globalization;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
@@ -123,6 +124,37 @@ public class SetViewportCommandParametersTests
             Assert.That(serialized, Contains.Key("devicePixelRatio"));
             Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(serialized["devicePixelRatio"]!.Value<double>(), Is.EqualTo(1.5));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeParametersWithUserContexts()
+    {
+        SetViewportCommandParameters properties = new("myContextId")
+        {
+            UserContextIds = new List<string>() { "myUserContextId" },
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(4));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("context"));
+            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
+            Assert.That(serialized, Contains.Key("viewport"));
+            Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(serialized["viewport"]!.Value<JObject>(), Is.Null);
+            Assert.That(serialized, Contains.Key("devicePixelRatio"));
+            Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(serialized["devicePixelRatio"]!.Value<double?>(), Is.Null);
+            Assert.That(serialized.ContainsKey("userContexts"));
+            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
+            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
+            Assert.That(userContextsArray, Is.Not.Null);
+            Assert.That(userContextsArray, Has.Count.EqualTo(1));
+            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(userContextsArray![0].Value<string>(), Is.EqualTo("myUserContextId"));
         });
     }
 }

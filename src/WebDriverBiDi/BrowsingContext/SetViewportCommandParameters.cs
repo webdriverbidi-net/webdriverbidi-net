@@ -15,6 +15,7 @@ public class SetViewportCommandParameters : CommandParameters<EmptyResult>
     private string browsingContextId;
     private Viewport? viewport;
     private double? devicePixelRatio;
+    private List<string>? userContextIds;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetViewportCommandParameters"/> class.
@@ -51,4 +52,11 @@ public class SetViewportCommandParameters : CommandParameters<EmptyResult>
     [JsonPropertyName("devicePixelRatio")]
     [JsonInclude]
     public double? DevicePixelRatio { get => this.devicePixelRatio; set => this.devicePixelRatio = value; }
+
+    /// <summary>
+    /// Gets or sets the user context IDs for which to set the viewport.
+    /// </summary>
+    [JsonPropertyName("userContexts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? UserContextIds { get => this.userContextIds; set => this.userContextIds = value; }
 }
