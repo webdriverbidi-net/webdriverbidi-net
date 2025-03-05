@@ -370,7 +370,8 @@ public class CapabilitiesResultTests
                           "alert": "accept",
                           "confirm": "dismiss",
                           "prompt": "dismiss",
-                          "beforeunload": "ignore"
+                          "beforeunload": "ignore",
+                          "file": "ignore"
                         }
                       }
                       """;
@@ -390,6 +391,7 @@ public class CapabilitiesResultTests
             Assert.That(userPromptHandler.Confirm, Is.EqualTo(UserPromptHandlerType.Dismiss));
             Assert.That(userPromptHandler.Prompt, Is.EqualTo(UserPromptHandlerType.Dismiss));
             Assert.That(userPromptHandler.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Ignore));
+            Assert.That(userPromptHandler.File, Is.EqualTo(UserPromptHandlerType.Ignore));
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
         });
     }

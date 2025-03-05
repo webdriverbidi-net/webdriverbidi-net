@@ -24,25 +24,30 @@ public class UserPromptHandlerResult
     /// <summary>
     /// Gets the type of prompt handler for user prompts for which a handler type has not been explicitly set.
     /// </summary>
-    public UserPromptHandlerType? Default { get => this.userPromptHandler.Default; }
+    public UserPromptHandlerType? Default => this.userPromptHandler.Default;
 
     /// <summary>
     /// Gets the type of prompt handler for alert user prompts.
     /// </summary>
-    public UserPromptHandlerType? Alert { get => this.userPromptHandler.Alert; }
+    public UserPromptHandlerType? Alert => this.userPromptHandler.Alert;
 
     /// <summary>
     /// Gets the type of prompt handler for confirm user prompts.
     /// </summary>
-    public UserPromptHandlerType? Confirm { get => this.userPromptHandler.Confirm; }
+    public UserPromptHandlerType? Confirm => this.userPromptHandler.Confirm;
 
     /// <summary>
     /// Gets the type of prompt handler for prompt user prompts.
     /// </summary>
-    public UserPromptHandlerType? Prompt { get => this.userPromptHandler.Prompt; }
+    public UserPromptHandlerType? Prompt => this.userPromptHandler.Prompt;
 
     /// <summary>
     /// Gets the type of prompt handler for beforeUnload user prompts.
     /// </summary>
-    public UserPromptHandlerType? BeforeUnload { get => this.userPromptHandler.BeforeUnload; }
+    public UserPromptHandlerType? BeforeUnload => this.userPromptHandler.BeforeUnload;
+
+    /// <summary>
+    /// Gets the type of prompt handler for file user prompts.
+    /// </summary>
+    public UserPromptHandlerType? File => this.userPromptHandler.File;
 }
