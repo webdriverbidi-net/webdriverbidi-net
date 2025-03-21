@@ -8,6 +8,7 @@ namespace WebDriverBiDi;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
@@ -19,7 +20,7 @@ using WebDriverBiDi.Storage;
 using WebDriverBiDi.WebExtension;
 
 /// <summary>
-/// Object containing commands to drive a browser using the WebDriver Bidi protocol.
+/// Object containing commands to drive a browser using the WebDriver BiDi protocol.
 /// </summary>
 public class BiDiDriver
 {
@@ -67,6 +68,7 @@ public class BiDiDriver
         this.RegisterModule(new BluetoothModule(this));
         this.RegisterModule(new BrowserModule(this));
         this.RegisterModule(new BrowsingContextModule(this));
+        this.RegisterModule(new EmulationModule(this));
         this.RegisterModule(new LogModule(this));
         this.RegisterModule(new InputModule(this));
         this.RegisterModule(new NetworkModule(this));
@@ -103,37 +105,32 @@ public class BiDiDriver
     public BluetoothModule Bluetooth => this.GetModule<BluetoothModule>(BluetoothModule.BluetoothModuleName);
 
     /// <summary>
-    /// Gets the browser module as described in the WebDriver Bidi protocol.
+    /// Gets the browser module as described in the WebDriver BiDi protocol.
     /// </summary>
     public BrowserModule Browser => this.GetModule<BrowserModule>(BrowserModule.BrowserModuleName);
 
     /// <summary>
-    /// Gets the browsingContext module as described in the WebDriver Bidi protocol.
+    /// Gets the browsingContext module as described in the WebDriver BiDi protocol.
     /// </summary>
     public BrowsingContextModule BrowsingContext => this.GetModule<BrowsingContextModule>(BrowsingContextModule.BrowsingContextModuleName);
 
     /// <summary>
-    /// Gets the session module as described in the WebDriver Bidi protocol.
+    /// Gets the emulation module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public SessionModule Session => this.GetModule<SessionModule>(SessionModule.SessionModuleName);
+    public EmulationModule Emulation => this.GetModule<EmulationModule>(EmulationModule.EmulationModuleName);
 
     /// <summary>
-    /// Gets the script module as described in the WebDriver Bidi protocol.
-    /// </summary>
-    public ScriptModule Script => this.GetModule<ScriptModule>(ScriptModule.ScriptModuleName);
-
-    /// <summary>
-    /// Gets the log module as described in the WebDriver Bidi protocol.
-    /// </summary>
-    public LogModule Log => this.GetModule<LogModule>(LogModule.LogModuleName);
-
-    /// <summary>
-    /// Gets the input module as described in the WebDriver Bidi protocol.
+    /// Gets the input module as described in the WebDriver BiDi protocol.
     /// </summary>
     public InputModule Input => this.GetModule<InputModule>(InputModule.InputModuleName);
 
     /// <summary>
-    /// Gets the network module as described in the WebDriver Bidi protocol.
+    /// Gets the log module as described in the WebDriver BiDi protocol.
+    /// </summary>
+    public LogModule Log => this.GetModule<LogModule>(LogModule.LogModuleName);
+
+    /// <summary>
+    /// Gets the network module as described in the WebDriver BiDi protocol.
     /// </summary>
     public NetworkModule Network => this.GetModule<NetworkModule>(NetworkModule.NetworkModuleName);
 
@@ -143,7 +140,17 @@ public class BiDiDriver
     public PermissionsModule Permissions => this.GetModule<PermissionsModule>(PermissionsModule.PermissionsModuleName);
 
     /// <summary>
-    /// Gets the storage module as described in the WebDriver Bidi protocol.
+    /// Gets the script module as described in the WebDriver BiDi protocol.
+    /// </summary>
+    public ScriptModule Script => this.GetModule<ScriptModule>(ScriptModule.ScriptModuleName);
+
+    /// <summary>
+    /// Gets the session module as described in the WebDriver BiDi protocol.
+    /// </summary>
+    public SessionModule Session => this.GetModule<SessionModule>(SessionModule.SessionModuleName);
+
+    /// <summary>
+    /// Gets the storage module as described in the WebDriver BiDi protocol.
     /// </summary>
     public StorageModule Storage => this.GetModule<StorageModule>(StorageModule.StorageModuleName);
 
@@ -153,7 +160,7 @@ public class BiDiDriver
     public WebExtensionModule WebExtension => this.GetModule<WebExtensionModule>(WebExtensionModule.WebExtensionModuleName);
 
     /// <summary>
-    /// Asynchronously starts the communication with the remote end of the WebDriver Bidi protocol.
+    /// Asynchronously starts the communication with the remote end of the WebDriver BiDi protocol.
     /// </summary>
     /// <param name="url">The URL of the remote end.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
@@ -163,7 +170,7 @@ public class BiDiDriver
     }
 
     /// <summary>
-    /// Asynchronously stops the communication with the remote end of the WebDriver Bidi protocol.
+    /// Asynchronously stops the communication with the remote end of the WebDriver BiDi protocol.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task StopAsync()
@@ -172,7 +179,7 @@ public class BiDiDriver
     }
 
     /// <summary>
-    /// Asynchronously sends a command to the remote end of the WebDriver Bidi protocol and waits for the
+    /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for the
     /// default command timeout.
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
@@ -186,7 +193,7 @@ public class BiDiDriver
     }
 
     /// <summary>
-    /// Asynchronously sends a command to the remote end of the WebDriver Bidi protocol and waits for a response.
+    /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for a response.
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="command">The object containing settings for the command, including parameters.</param>
@@ -264,7 +271,7 @@ public class BiDiDriver
     }
 
     /// <summary>
-    /// Registers an event to be raised by the remote end of the WebDriver Bidi protocol.
+    /// Registers an event to be raised by the remote end of the WebDriver BiDi protocol.
     /// </summary>
     /// <typeparam name="T">The type of data that will be raised by the event.</typeparam>
     /// <param name="eventName">The name of the event to raise.</param>

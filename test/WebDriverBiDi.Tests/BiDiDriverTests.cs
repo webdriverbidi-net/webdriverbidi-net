@@ -15,6 +15,7 @@ using WebDriverBiDi.Permissions;
 using System.Globalization;
 using WebDriverBiDi.WebExtension;
 using WebDriverBiDi.Bluetooth;
+using WebDriverBiDi.Emulation;
 
 [TestFixture]
 public class BiDiDriverTests
@@ -294,6 +295,7 @@ public class BiDiDriverTests
                 Assert.That(driver.Bluetooth, Is.InstanceOf<BluetoothModule>());
                 Assert.That(driver.Browser, Is.InstanceOf<BrowserModule>());
                 Assert.That(driver.BrowsingContext, Is.InstanceOf<BrowsingContextModule>());
+                Assert.That(driver.Emulation, Is.InstanceOf<EmulationModule>());
                 Assert.That(driver.Input, Is.InstanceOf<InputModule>());
                 Assert.That(driver.Log, Is.InstanceOf<LogModule>());
                 Assert.That(driver.Network, Is.InstanceOf<NetworkModule>());
