@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Protocol;
 
+using System.Reflection.Metadata.Ecma335;
 using TestUtilities;
 
 [TestFixture]
@@ -21,11 +22,7 @@ public class EventInvokerTests
     [Test]
     public void TestInvokeEventWithInvalidObjectTypeThrows()
     {
-        static Task action(EventInfo<TestEventArgs> info)
-        {
-            return Task.CompletedTask;
-        }
-        EventInvoker<TestEventArgs> invoker = new(action);
+        EventInvoker<TestEventArgs> invoker = new((info) => Task.CompletedTask);
         Assert.That(async () => await invoker.InvokeEventAsync("this is an invalid object", ReceivedDataDictionary.EmptyDictionary), Throws.InstanceOf<WebDriverBiDiException>());
     }
 }
