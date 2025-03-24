@@ -35,6 +35,7 @@ public class NavigationEventArgs : WebDriverBiDiEventArgs
     /// Gets the ID of the navigation operation.
     /// </summary>
     [JsonPropertyName("navigation")]
+    [JsonRequired]
     [JsonInclude]
     public string? NavigationId { get => this.id; private set => this.id = value; }
 

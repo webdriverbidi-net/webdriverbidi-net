@@ -13,7 +13,8 @@ public class NavigationEventArgsTests
                       {
                         "context": "myContextId",
                         "url": "http://example.com",
-                        "timestamp": {{epochTimestamp}}
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": null
                       }
                       """;
         NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
@@ -57,7 +58,8 @@ public class NavigationEventArgsTests
         string json = $$"""
                       {
                         "url": "http://example.com",
-                        "timestamp": {{epochTimestamp}}
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": null
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
@@ -71,7 +73,8 @@ public class NavigationEventArgsTests
                       {
                         "context": {},
                         "url": "http://example.com",
-                        "timestamp": {{epochTimestamp}}
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": null
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
@@ -84,7 +87,8 @@ public class NavigationEventArgsTests
         string json = $$"""
                       {
                         "context": "myContextId",
-                        "timestamp": {{epochTimestamp}}
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": null
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
@@ -98,7 +102,8 @@ public class NavigationEventArgsTests
                       {
                         "context": "myContextId",
                         "url": {},
-                        "timestamp": {{epochTimestamp}}
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": null
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
@@ -110,7 +115,8 @@ public class NavigationEventArgsTests
         string json = $$"""
                       {
                         "context": "myContextId",
-                        "url": "http://example.com"
+                        "url": "http://example.com",
+                        "navigation": null
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
@@ -124,7 +130,22 @@ public class NavigationEventArgsTests
                       {
                         "context": "myContextId",
                         "url": "http://example.com",
-                        "timestamp": {}
+                        "timestamp": {},
+                        "navigation": null
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());
+    }
+
+    [Test]
+    public void TestDeserializeWithMissingNavigationValueThrows()
+    {
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": {{epochTimestamp}}
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<NavigationEventArgs>(json), Throws.InstanceOf<JsonException>());

@@ -14,6 +14,7 @@ public class DownloadWillBeginEventArgsTests
                         "context": "myContextId",
                         "url": "http://example.com",
                         "timestamp": {{epochTimestamp}},
+                        "navigation": "myNavigationId",
                         "suggestedFileName": "myFile.file"
                       }
                       """;
@@ -25,7 +26,7 @@ public class DownloadWillBeginEventArgsTests
             Assert.That(eventArgs!.Url, Is.EqualTo("http://example.com"));
             Assert.That(eventArgs!.EpochTimestamp, Is.EqualTo(epochTimestamp));
             Assert.That(eventArgs!.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            Assert.That(eventArgs.NavigationId, Is.Null);
+            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
             Assert.That(eventArgs.SuggestedFileName, Is.EqualTo("myFile.file"));
         });
     }
@@ -38,7 +39,8 @@ public class DownloadWillBeginEventArgsTests
                       {
                         "context": "myContextId",
                         "url": "http://example.com",
-                        "timestamp": {{epochTimestamp}}
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": "myNavigationId"
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<DownloadWillBeginEventArgs>(json), Throws.InstanceOf<JsonException>());
@@ -53,6 +55,7 @@ public class DownloadWillBeginEventArgsTests
                         "context": "myContextId",
                         "url": "http://example.com",
                         "timestamp": {{epochTimestamp}},
+                        "navigation": "myNavigationId",
                         "suggestedFileName": {}
                       }
                       """;
