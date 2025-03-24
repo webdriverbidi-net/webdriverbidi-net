@@ -37,8 +37,7 @@ public class BrowsingContextInfo
     /// Gets the ID of the client window that contains this browsing context.
     /// </summary>
     [JsonPropertyName("clientWindow")]
-    // TODO (Issue #31): Uncomment once https://bugzilla.mozilla.org/show_bug.cgi?id=1920952 is fixed.
-    // [JsonRequired]
+    [JsonRequired]
     [JsonInclude]
     public string ClientWindowId { get => this.clientWindowId; private set => this.clientWindowId = value; }
 
