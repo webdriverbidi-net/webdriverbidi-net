@@ -15,28 +15,20 @@ public class NavigationEventArgs : WebDriverBiDiEventArgs
 {
     private string? id;
 
-    private string browsingContextId;
+    private string browsingContextId = string.Empty;
 
-    private string url;
+    private string url = string.Empty;
 
-    private long epochTimestamp;
+    private long epochTimestamp = 0;
 
     private DateTime timestamp;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationEventArgs" /> class.
     /// </summary>
-    /// <param name="browsingContextId">The ID of the browsing context being navigated.</param>
-    /// <param name="url">The URL of the navigation.</param>
-    /// <param name="epochTimestamp">The timestamp of the navigation.</param>
-    /// <param name="navigationId">The ID of the navigation.</param>
     [JsonConstructor]
-    public NavigationEventArgs(string browsingContextId, string url, long epochTimestamp, string? navigationId)
+    public NavigationEventArgs()
     {
-        this.browsingContextId = browsingContextId;
-        this.url = url;
-        this.EpochTimestamp = epochTimestamp;
-        this.id = navigationId;
     }
 
     /// <summary>
