@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Client;
+namespace WebDriverBiDi.Client.Inputs;
 
 /// <summary>
 /// A helper class for providing character values for non-character keys on a keyboard.

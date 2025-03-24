@@ -1,7 +1,7 @@
 namespace WebDriverBiDi.Demo;
 
 using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Client;
+using WebDriverBiDi.Client.Inputs;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;

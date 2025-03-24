@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
-namespace WebDriverBiDi.Client;
+namespace WebDriverBiDi.Client.Inputs;
 
 /// <summary>
 /// Specifies the button used during a pointer down or up action.

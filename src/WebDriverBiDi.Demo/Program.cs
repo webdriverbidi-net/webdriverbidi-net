@@ -1,5 +1,6 @@
 ﻿using WebDriverBiDi;
 using WebDriverBiDi.Client;
+using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.DemoWebSite;
 using WebDriverBiDi.Demo;
 using WebDriverBiDi.Protocol;
