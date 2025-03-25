@@ -392,19 +392,22 @@ public static class DemoScenarios
             Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
         }
 
-        string secondFunctionDefinition = @"(element) => element.tagName";
-        callFunctionParams = new(secondFunctionDefinition, new ContextTarget(contextId), true);
-        callFunctionParams.Arguments.Add(elementResultValue!.ToSharedReference());
-        scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
-        if (scriptResult is EvaluateResultSuccess secondScriptSuccessResult)
+        if (elementResultValue is not null)
         {
-            Console.WriteLine($"Script result type: {secondScriptSuccessResult.Result.Type} (.NET type: {secondScriptSuccessResult.Result.Value!.GetType()})");
+            string secondFunctionDefinition = @"(element) => `The element tag name is ${element.tagName}`";
+            callFunctionParams = new(secondFunctionDefinition, new ContextTarget(contextId), true);
+            callFunctionParams.Arguments.Add(elementResultValue.ToSharedReference());
+            scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+            if (scriptResult is EvaluateResultSuccess secondScriptSuccessResult)
+            {
+                Console.WriteLine($"Script result type: {secondScriptSuccessResult.Result.Type} (.NET type: {secondScriptSuccessResult.Result.Value!.GetType()})");
+                Console.WriteLine($"Script result: {secondScriptSuccessResult.Result.ValueAs<string>()}");
+            }
+            else if (scriptResult is EvaluateResultException scriptExceptionResult)
+            {
+                Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
+            }
         }
-        else if (scriptResult is EvaluateResultException scriptExceptionResult)
-        {
-            Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
-        }
-
     }
 
     /// <summary>
