@@ -6,12 +6,11 @@
 namespace WebDriverBiDi.Speculation;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.Bluetooth;
 
 /// <summary>
 /// Object containing event data for events the prefetch status of a resource is updated.
 /// </summary>
-public class PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
+public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId = string.Empty;
     private string url = string.Empty;

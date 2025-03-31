@@ -11,7 +11,7 @@ using WebDriverBiDi.Session;
 /// <summary>
 /// Object containing event data for the event raised when a user prompt opens.
 /// </summary>
-public class UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
+public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId;
     private UserPromptHandlerType handler;

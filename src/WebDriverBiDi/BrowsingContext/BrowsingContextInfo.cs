@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides information about a browsing context.
 /// </summary>
-public class BrowsingContextInfo
+public record BrowsingContextInfo
 {
     private string id = string.Empty;
     private string clientWindowId = string.Empty;

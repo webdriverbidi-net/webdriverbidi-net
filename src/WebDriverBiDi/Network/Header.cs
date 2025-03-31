@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public class Header
 {
     private string name = string.Empty;
-    private BytesValue value = new(BytesValueType.String, string.Empty);
+    private BytesValue value = BytesValue.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Header"/> class.
@@ -31,7 +31,7 @@ public class Header
     public Header(string name, string value)
     {
         this.name = name;
-        this.value = new BytesValue(BytesValueType.String, value);
+        this.value = BytesValue.FromString(value);
     }
 
     /// <summary>

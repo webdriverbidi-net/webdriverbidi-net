@@ -12,12 +12,20 @@ using WebDriverBiDi.Internal;
 /// <summary>
 /// Object containing data about a partition key for a browser cookie.
 /// </summary>
-public class PartitionKey
+public record PartitionKey
 {
     private string? userContextId;
     private string? sourceOrigin;
     private Dictionary<string, JsonElement> writableAdditionalData = new();
     private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PartitionKey"/> class.
+    /// </summary>
+    [JsonConstructor]
+    internal PartitionKey()
+    {
+    }
 
     /// <summary>
     /// Gets the ID of the user context of the cookie partition key.

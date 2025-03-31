@@ -12,7 +12,7 @@ using WebDriverBiDi.JsonConverters;
 /// Object representing a remote value in the browser.
 /// </summary>
 [JsonConverter(typeof(RemoteValueJsonConverter))]
-public class RemoteValue
+public record RemoteValue
 {
     private static readonly List<string> KnownRemoteValueTypes = new()
     {

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// A network request.
 /// </summary>
-public class RequestData
+public record RequestData
 {
     private string requestId = string.Empty;
     private string url = string.Empty;
@@ -22,7 +22,7 @@ public class RequestData
     private List<Cookie> cookies = new();
     private ulong? headersSize;
     private ulong? bodySize;
-    private FetchTimingInfo timingInfo = new();
+    private FetchTimingInfo timingInfo = FetchTimingInfo.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RequestData"/> class.

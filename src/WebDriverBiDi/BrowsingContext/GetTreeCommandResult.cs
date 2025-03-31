@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for getting the tree of browsing contexts using the browserContext.getTree command.
 /// </summary>
-public class GetTreeCommandResult : CommandResult
+public record GetTreeCommandResult : CommandResult
 {
     private List<BrowsingContextInfo> contextTree = new();
 

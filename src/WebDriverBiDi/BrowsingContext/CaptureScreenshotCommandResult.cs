@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for capturing a screenshot using the browserContext.captureScreenshot command.
 /// </summary>
-public class CaptureScreenshotCommandResult : CommandResult
+public record CaptureScreenshotCommandResult : CommandResult
 {
     private string base64Screenshot = string.Empty;
 

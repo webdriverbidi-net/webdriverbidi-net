@@ -11,7 +11,7 @@ using WebDriverBiDi.Script;
 /// <summary>
 /// The initiator of a network traffic item.
 /// </summary>
-public class Initiator
+public record Initiator
 {
     private InitiatorType? type;
     private ulong? columnNumber;
@@ -22,7 +22,8 @@ public class Initiator
     /// <summary>
     /// Initializes a new instance of the <see cref="Initiator"/> class.
     /// </summary>
-    internal Initiator()
+    [JsonConstructor]
+    private Initiator()
     {
     }
 

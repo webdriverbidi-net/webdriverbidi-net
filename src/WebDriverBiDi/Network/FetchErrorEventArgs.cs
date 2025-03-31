@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing event data for events raised by before a network request is sent.
 /// </summary>
-public class FetchErrorEventArgs : BaseNetworkEventArgs
+public record FetchErrorEventArgs : BaseNetworkEventArgs
 {
     private string errorText = string.Empty;
 

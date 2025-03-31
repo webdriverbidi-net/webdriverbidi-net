@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for adding a data collector for network traffic using the network.addDataCollector command.
 /// </summary>
-public class AddDataCollectorCommandResult : CommandResult
+public record AddDataCollectorCommandResult : CommandResult
 {
     private string collectorId = string.Empty;
 

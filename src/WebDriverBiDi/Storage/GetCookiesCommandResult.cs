@@ -11,7 +11,7 @@ using WebDriverBiDi.Network;
 /// <summary>
 /// Result for getting cookies using the storage.getCookies command.
 /// </summary>
-public class GetCookiesCommandResult : CommandResult
+public record GetCookiesCommandResult : CommandResult
 {
     private List<Cookie> cookies = new();
     private PartitionKey partitionKey = new();

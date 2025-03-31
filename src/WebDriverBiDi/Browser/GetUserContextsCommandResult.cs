@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Represents the user context info for a browser.
 /// </summary>
-public class GetUserContextsCommandResult : CommandResult
+public record GetUserContextsCommandResult : CommandResult
 {
     private List<UserContextInfo> userContexts = new();
 

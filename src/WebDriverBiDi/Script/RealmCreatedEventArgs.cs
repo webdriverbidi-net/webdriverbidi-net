@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Script;
 /// <summary>
 /// Object containing event data for the event raised when a script realm is destroyed.
 /// </summary>
-public class RealmCreatedEventArgs : WebDriverBiDiEventArgs
+public record RealmCreatedEventArgs : WebDriverBiDiEventArgs
 {
     private readonly RealmInfo info;
 

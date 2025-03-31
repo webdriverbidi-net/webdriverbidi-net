@@ -10,14 +10,15 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing the properties of a window proxy object.
 /// </summary>
-public class WindowProxyProperties
+public record WindowProxyProperties
 {
     private string context = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WindowProxyProperties"/> class.
     /// </summary>
-    internal WindowProxyProperties()
+    [JsonConstructor]
+    private WindowProxyProperties()
     {
     }
 

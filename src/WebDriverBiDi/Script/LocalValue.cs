@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing a local value for use as an argument in script execution.
 /// </summary>
-public class LocalValue : ArgumentValue
+public record LocalValue : ArgumentValue
 {
     private string argType;
     private object? argValue;

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing information about a Node object.
 /// </summary>
-public class NodeProperties
+public record NodeProperties
 {
     private uint nodeType = 0;
     private uint childNodeCount = 0;
@@ -27,7 +27,7 @@ public class NodeProperties
     /// Initializes a new instance of the <see cref="NodeProperties"/> class.
     /// </summary>
     [JsonConstructor]
-    internal NodeProperties()
+    private NodeProperties()
     {
     }
 

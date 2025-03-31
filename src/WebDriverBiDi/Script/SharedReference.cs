@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing a remote reference to an object in the browser containing a shared ID, such as a node.
 /// </summary>
-public class SharedReference : RemoteReference
+public record SharedReference : RemoteReference
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="SharedReference"/> class.

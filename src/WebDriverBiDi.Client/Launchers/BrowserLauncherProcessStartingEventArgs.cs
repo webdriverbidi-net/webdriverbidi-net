@@ -11,7 +11,7 @@ using System.Diagnostics;
 /// <summary>
 /// Provides data for the LauncherProcessStarting event of a <see cref="BrowserLauncher"/> object.
 /// </summary>
-public class BrowserLauncherProcessStartingEventArgs : EventArgs
+public record BrowserLauncherProcessStartingEventArgs : WebDriverBiDiEventArgs
 {
     private readonly ProcessStartInfo startInfo;
 

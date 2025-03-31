@@ -16,7 +16,7 @@ public class PartialCookie
 {
     private readonly Dictionary<string, object?> additionalData = new();
     private string name = string.Empty;
-    private BytesValue value = new BytesValue(BytesValueType.String, string.Empty);
+    private BytesValue value = BytesValue.Empty;
     private string domain = string.Empty;
     private string? path;
     private ulong? size;

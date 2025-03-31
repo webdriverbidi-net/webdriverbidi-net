@@ -115,7 +115,7 @@ public class ObservableEventTests
         }
     }
 
-    private class TestObservableEventArgs: EventArgs
+    private record TestObservableEventArgs: WebDriverBiDiEventArgs
     {
         private string eventValue = string.Empty;
 

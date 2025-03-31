@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing event data for the event raised when a preload script sends a message to the client.
 /// </summary>
-public class MessageEventArgs : WebDriverBiDiEventArgs
+public record MessageEventArgs : WebDriverBiDiEventArgs
 {
     private readonly string channelId;
     private readonly RemoteValue data;

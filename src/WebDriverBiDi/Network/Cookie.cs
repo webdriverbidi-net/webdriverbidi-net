@@ -5,16 +5,17 @@
 
 namespace WebDriverBiDi.Network;
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Represents a cookie in a web request or response.
 /// </summary>
-public class Cookie
+public record Cookie
 {
     private string name = string.Empty;
-    private BytesValue value = new(BytesValueType.String, string.Empty);
+    private BytesValue value = BytesValue.Empty;
     private string domain = string.Empty;
     private string path = string.Empty;
     private ulong? epochExpires;
@@ -23,11 +24,14 @@ public class Cookie
     private bool isSecure;
     private bool isHttpOnly;
     private CookieSameSiteValue sameSite = CookieSameSiteValue.None;
+    private Dictionary<string, JsonElement> writableAdditionalData = new();
+    private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Cookie"/> class.
     /// </summary>
-    internal Cookie()
+    [JsonConstructor]
+    private Cookie()
     {
     }
 
@@ -126,6 +130,30 @@ public class Cookie
     [JsonRequired]
     [JsonInclude]
     public CookieSameSiteValue SameSite { get => this.sameSite; private set => this.sameSite = value; }
+
+    /// <summary>
+    /// Gets the read-only dictionary containing extra data returned for this cookie.
+    /// </summary>
+    [JsonIgnore]
+    public ReceivedDataDictionary AdditionalData
+    {
+        get
+        {
+            if (this.writableAdditionalData.Count > 0 && this.additionalData.Count == 0)
+            {
+                this.additionalData = JsonConverterUtilities.ConvertIncomingExtensionData(this.writableAdditionalData);
+            }
+
+            return this.additionalData;
+        }
+    }
+
+    /// <summary>
+    /// Gets additional properties deserialized with this cookie.
+    /// </summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get => this.writableAdditionalData; private set => this.writableAdditionalData = value; }
 
     /// <summary>
     /// Converts this cookie to a <see cref="SetCookieHeader"/>.

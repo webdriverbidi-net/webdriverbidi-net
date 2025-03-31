@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing event data for the event raised when a user prompt is closed.
 /// </summary>
-public class UserPromptClosedEventArgs : WebDriverBiDiEventArgs
+public record UserPromptClosedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId;
     private bool isAccepted;

@@ -12,7 +12,7 @@ using WebDriverBiDi.Internal;
 /// <summary>
 /// Object containing the capabilities returned by a new session.
 /// </summary>
-public class CapabilitiesResult
+public record CapabilitiesResult
 {
     private Dictionary<string, JsonElement> writableCapabilities = new();
     private bool acceptInsecureCertificates = false;

@@ -10,9 +10,14 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Represents the user context info for a browser.
 /// </summary>
-public class UserContextInfo
+public record UserContextInfo
 {
     private string userContextId = string.Empty;
+
+    [JsonConstructor]
+    private UserContextInfo()
+    {
+    }
 
     /// <summary>
     /// Gets the ID of the user context.

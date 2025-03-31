@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing the source for a script.
 /// </summary>
-public class Source
+public record Source
 {
     private string realmId = string.Empty;
     private string? browsingContextId;

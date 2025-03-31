@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing the evaluation of a script that throws an exception.
 /// </summary>
-public class EvaluateResultException : EvaluateResult
+public record EvaluateResultException : EvaluateResult
 {
     private ExceptionDetails result = new();
 
@@ -18,7 +18,7 @@ public class EvaluateResultException : EvaluateResult
     /// Initializes a new instance of the <see cref="EvaluateResultException"/> class.
     /// </summary>
     [JsonConstructor]
-    internal EvaluateResultException()
+    private EvaluateResultException()
         : base()
     {
     }

@@ -5,19 +5,18 @@
 
 namespace WebDriverBiDi.Network;
 
+using System.Diagnostics.Contracts;
 using System.Text.Json.Serialization;
 
 /// <summary>
 /// Content of a response.
 /// </summary>
-public class ResponseContent
+public record ResponseContent
 {
     private ulong size = 0;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ResponseContent"/> class.
-    /// </summary>
-    internal ResponseContent()
+    [JsonConstructor]
+    private ResponseContent()
     {
     }
 
@@ -28,4 +27,9 @@ public class ResponseContent
     [JsonRequired]
     [JsonInclude]
     public ulong Size { get => this.size; private set => this.size = value; }
+
+    /// <summary>
+    /// Gets an. empty <see cref="ResponseContent"/> object.
+    /// </summary>
+    public static ResponseContent Empty => new();
 }

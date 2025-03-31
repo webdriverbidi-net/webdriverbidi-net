@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing a remote reference.
 /// </summary>
-public class RemoteReference : ArgumentValue
+public record RemoteReference : ArgumentValue
 {
     private readonly Dictionary<string, object?> additionalData = new();
     private string? handle;

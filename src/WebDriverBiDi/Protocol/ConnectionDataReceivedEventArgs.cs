@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Protocol;
 /// <summary>
 /// Object containing event data for events raised when data is received from a WebDriver Bidi connection.
 /// </summary>
-public class ConnectionDataReceivedEventArgs : WebDriverBiDiEventArgs
+public record ConnectionDataReceivedEventArgs : WebDriverBiDiEventArgs
 {
     private readonly byte[] data;
 

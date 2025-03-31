@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// The abstract base class for a value that can contain either a string or a byte array.
 /// </summary>
-public class BytesValue
+public record BytesValue
 {
     private BytesValueType valueType = BytesValueType.String;
     private string actualValue = string.Empty;
@@ -21,7 +21,7 @@ public class BytesValue
     /// </summary>
     /// <param name="type">The type of value to initialize.</param>
     /// <param name="value">The value to use in the object.</param>
-    internal BytesValue(BytesValueType type, string value)
+    private BytesValue(BytesValueType type, string value)
     {
         this.valueType = type;
         this.actualValue = value;
@@ -64,6 +64,11 @@ public class BytesValue
             return Convert.FromBase64String(this.actualValue);
         }
     }
+
+    /// <summary>
+    /// Gets an empty <see cref="BytesValue"/> object.
+    /// </summary>
+    internal static BytesValue Empty => new();
 
     /// <summary>
     /// Creates a BytesValue object from a string value.

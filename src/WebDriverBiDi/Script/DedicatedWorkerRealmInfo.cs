@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing a dedicated worker realm for executing script.
 /// </summary>
-public class DedicatedWorkerRealmInfo : RealmInfo
+public record DedicatedWorkerRealmInfo : RealmInfo
 {
     private List<string> owners = new();
 

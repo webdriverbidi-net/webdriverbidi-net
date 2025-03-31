@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for adding an intercept for network traffic using the network.addIntercept command.
 /// </summary>
-public class AddInterceptCommandResult : CommandResult
+public record AddInterceptCommandResult : CommandResult
 {
     private string interceptId = string.Empty;
 

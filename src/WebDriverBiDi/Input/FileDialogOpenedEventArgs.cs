@@ -10,7 +10,7 @@ using WebDriverBiDi.Script;
 /// <summary>
 /// Object containing event data for the input.fileDialogOpened event.
 /// </summary>
-public class FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
+public record FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
 {
     private readonly FileDialogInfo info;
 

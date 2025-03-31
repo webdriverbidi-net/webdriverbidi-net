@@ -16,7 +16,7 @@ using System.Text.Json.Serialization;
 /// type descending from <see cref="CommandResult"/>, and C# does not permit multiple inheritance.
 /// Should the structure of the info object change, this class will require updates to match.
 /// </remarks>
-public class SetClientWindowStateCommandResult : CommandResult
+public record SetClientWindowStateCommandResult : CommandResult
 {
     private string clientWindowId = string.Empty;
     private bool isActive = false;

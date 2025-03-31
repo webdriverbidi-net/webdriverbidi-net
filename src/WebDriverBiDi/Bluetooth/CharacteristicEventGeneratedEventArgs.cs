@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing event data for events raised when a Bluetooth GATT connection is attempted.
 /// </summary>
-public class CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
+public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId = string.Empty;
     private string address = string.Empty;

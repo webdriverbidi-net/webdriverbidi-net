@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing event data for the event raised when a script realm is destroyed.
 /// </summary>
-public class RealmDestroyedEventArgs : WebDriverBiDiEventArgs
+public record RealmDestroyedEventArgs : WebDriverBiDiEventArgs
 {
     private string realmId;
 

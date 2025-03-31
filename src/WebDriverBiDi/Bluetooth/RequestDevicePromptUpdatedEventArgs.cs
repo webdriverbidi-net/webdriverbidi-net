@@ -11,7 +11,7 @@ using WebDriverBiDi.Storage;
 /// <summary>
 /// Object containing event data for events raised when a Bluetooth device prompt is requested.
 /// </summary>
-public class RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
+public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId = string.Empty;
     private string prompt = string.Empty;

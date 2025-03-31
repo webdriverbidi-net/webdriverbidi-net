@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Script;
 /// <summary>
 /// Object representing a paint worklet realm for executing script.
 /// </summary>
-public class PaintWorkletRealmInfo : RealmInfo
+public record PaintWorkletRealmInfo : RealmInfo
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="PaintWorkletRealmInfo"/> class.

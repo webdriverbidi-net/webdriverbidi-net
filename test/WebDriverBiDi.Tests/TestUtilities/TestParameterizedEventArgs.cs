@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.TestUtilities;
 
-public class TestParameterizedEventArgs : WebDriverBiDiEventArgs
+public record TestParameterizedEventArgs : WebDriverBiDiEventArgs
 {
     private readonly string eventName;
 

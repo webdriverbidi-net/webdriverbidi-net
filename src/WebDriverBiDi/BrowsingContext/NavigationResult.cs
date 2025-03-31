@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Contains the result of a navigation.
 /// </summary>
-public class NavigationResult : CommandResult
+public record NavigationResult : CommandResult
 {
     private string? id;
     private string url = string.Empty;

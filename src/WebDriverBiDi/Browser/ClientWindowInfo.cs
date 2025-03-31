@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// A class representing data about a browser's enclosing window.
 /// </summary>
-public class ClientWindowInfo
+public record ClientWindowInfo
 {
     private string clientWindowId = string.Empty;
     private bool isActive = false;

@@ -8,6 +8,6 @@ namespace WebDriverBiDi;
 /// <summary>
 /// Represents an empty result from a command.
 /// </summary>
-public class EmptyResult : CommandResult
+public record EmptyResult : CommandResult
 {
 }

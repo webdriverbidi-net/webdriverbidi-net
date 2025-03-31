@@ -8,7 +8,7 @@ namespace WebDriverBiDi;
 /// <summary>
 /// Data received from a response.
 /// </summary>
-public class CommandResult
+public record CommandResult
 {
     private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
 

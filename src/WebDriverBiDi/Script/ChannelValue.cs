@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Value to be used as argument to a preload script.
 /// </summary>
-public class ChannelValue : ArgumentValue
+public record ChannelValue : ArgumentValue
 {
     private readonly string type = "channel";
     private readonly ChannelProperties value;

@@ -14,7 +14,7 @@ using WebDriverBiDi.JsonConverters;
 [JsonConverter(typeof(ProxyConfigurationJsonConverter))]
 public class ProxyConfiguration
 {
-    private readonly Dictionary<string, object> additionalData = new();
+    private readonly Dictionary<string, object?> additionalData = new();
     private ProxyType proxyType;
 
     /// <summary>
@@ -39,5 +39,5 @@ public class ProxyConfiguration
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    public Dictionary<string, object> AdditionalData => this.additionalData;
+    public Dictionary<string, object?> AdditionalData => this.additionalData;
 }

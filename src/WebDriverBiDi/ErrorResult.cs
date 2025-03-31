@@ -10,7 +10,7 @@ using WebDriverBiDi.Protocol;
 /// <summary>
 /// Object containing an error response to a command.
 /// </summary>
-public class ErrorResult : CommandResult
+public record ErrorResult : CommandResult
 {
     private readonly string error = string.Empty;
     private readonly string message = string.Empty;

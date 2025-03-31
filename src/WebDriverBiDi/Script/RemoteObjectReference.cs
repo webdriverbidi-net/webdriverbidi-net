@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing a remote reference to an existing ECMAScript object in the browser.
 /// </summary>
-public class RemoteObjectReference : RemoteReference
+public record RemoteObjectReference : RemoteReference
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteObjectReference"/> class.

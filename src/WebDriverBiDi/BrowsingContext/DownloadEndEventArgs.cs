@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing event data for the browsingContext.downloadEnd event.
 /// </summary>
-public class DownloadEndEventArgs : NavigationEventArgs
+public record DownloadEndEventArgs : NavigationEventArgs
 {
     private string? filePath;
     private DownloadEndStatus status = DownloadEndStatus.Complete;

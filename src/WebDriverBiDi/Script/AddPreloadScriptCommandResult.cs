@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for adding a preload script using the script.addPreloadScript command.
 /// </summary>
-public class AddPreloadScriptCommandResult : CommandResult
+public record AddPreloadScriptCommandResult : CommandResult
 {
     private string preloadScriptId = string.Empty;
 

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Data of a network response.
 /// </summary>
-public class ResponseData
+public record ResponseData
 {
     private string url = string.Empty;
     private string protocol = string.Empty;
@@ -23,7 +23,7 @@ public class ResponseData
     private ulong bytesReceived = 0;
     private ulong? headersSize;
     private ulong? bodySize;
-    private ResponseContent content = new();
+    private ResponseContent content = ResponseContent.Empty;
     private List<AuthChallenge>? authChallenges;
 
     /// <summary>

@@ -11,7 +11,7 @@ using WebDriverBiDi.Internal;
 /// <summary>
 /// Object representing a read-only proxy settings object that is being used by the browser in this session.
 /// </summary>
-public class ProxyConfigurationResult
+public record ProxyConfigurationResult
 {
     private readonly ProxyConfiguration proxy;
     private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;

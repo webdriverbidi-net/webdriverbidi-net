@@ -12,7 +12,7 @@ using System.IO;
 /// <summary>
 /// Provides data for the LauncherProcessStarted event of a <see cref="BrowserLauncher"/> object.
 /// </summary>
-public class BrowserLauncherProcessStartedEventArgs : EventArgs
+public record BrowserLauncherProcessStartedEventArgs : WebDriverBiDiEventArgs
 {
     private readonly int processId;
     private readonly StreamReader? standardOutputStreamReader;

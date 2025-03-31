@@ -11,7 +11,7 @@ namespace WebDriverBiDi;
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
 public class ObservableEvent<T>
-    where T : EventArgs
+    where T : WebDriverBiDiEventArgs
 {
     private readonly Dictionary<string, ObservableEventHandler<T>> observers = new();
     private readonly int maxObserverCount;

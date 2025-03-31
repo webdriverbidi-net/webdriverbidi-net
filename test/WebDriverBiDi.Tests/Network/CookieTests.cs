@@ -44,6 +44,7 @@ public class CookieTests
             Assert.That(cookie.Size, Is.EqualTo(100));
             Assert.That(cookie.Expires, Is.Null);
             Assert.That(cookie.EpochExpires, Is.Null);
+            Assert.That(cookie.AdditionalData, Is.Empty);
         });
     }
 
@@ -83,6 +84,7 @@ public class CookieTests
             Assert.That(cookie.Size, Is.EqualTo(100));
             Assert.That(cookie.Expires, Is.Null);
             Assert.That(cookie.EpochExpires, Is.Null);
+            Assert.That(cookie.AdditionalData, Is.Empty);
         });
     }
 
@@ -122,6 +124,7 @@ public class CookieTests
             Assert.That(cookie.Size, Is.EqualTo(100));
             Assert.That(cookie.Expires, Is.Null);
             Assert.That(cookie.EpochExpires, Is.Null);
+            Assert.That(cookie.AdditionalData, Is.Empty);
         });
     }
 
@@ -160,6 +163,7 @@ public class CookieTests
             Assert.That(cookie.Size, Is.EqualTo(100));
             Assert.That(cookie.Expires, Is.Null);
             Assert.That(cookie.EpochExpires, Is.Null);
+            Assert.That(cookie.AdditionalData, Is.Empty);
         });
     }
 
@@ -200,6 +204,48 @@ public class CookieTests
             Assert.That(cookie.Size, Is.EqualTo(100));
             Assert.That(cookie.Expires, Is.EqualTo(expireTime));
             Assert.That(cookie.EpochExpires, Is.EqualTo(milliseconds));
+            Assert.That(cookie.AdditionalData, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeCookieWithAdditionalData()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "strict",
+                        "size": 100,
+                        "extraData": "myExtraData"
+                      }
+                      """;
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Assert.That(cookie, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(cookie!.Name, Is.EqualTo("cookieName"));
+            Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
+            Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
+            Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
+            Assert.That(cookie.Path, Is.EqualTo("/cookiePath"));
+            Assert.That(cookie.Secure, Is.False);
+            Assert.That(cookie.HttpOnly, Is.False);
+            Assert.That(cookie.SameSite, Is.EqualTo(CookieSameSiteValue.Strict));
+            Assert.That(cookie.Size, Is.EqualTo(100));
+            Assert.That(cookie.Expires, Is.Null);
+            Assert.That(cookie.EpochExpires, Is.Null);
+            Assert.That(cookie.AdditionalData, Has.Count.EqualTo(1));
+            Assert.That(cookie.AdditionalData, Contains.Key("extraData"));
+            Assert.That(cookie.AdditionalData["extraData"]!.GetType, Is.EqualTo(typeof(string)));
+            Assert.That(cookie.AdditionalData["extraData"]!, Is.EqualTo("myExtraData"));
         });
     }
 

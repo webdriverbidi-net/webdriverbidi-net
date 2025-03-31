@@ -8,7 +8,7 @@ namespace WebDriverBiDi;
 /// <summary>
 /// Object containing event data for events raised when a log message is received from a WebDriver Bidi connection.
 /// </summary>
-public class LogMessageEventArgs : WebDriverBiDiEventArgs
+public record LogMessageEventArgs : WebDriverBiDiEventArgs
 {
     private readonly string message;
     private readonly WebDriverBiDiLogLevel level;

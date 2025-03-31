@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for getting the status of a remote end using the session.status command.
 /// </summary>
-public class StatusCommandResult : CommandResult
+public record StatusCommandResult : CommandResult
 {
     private bool ready;
     private string message = string.Empty;

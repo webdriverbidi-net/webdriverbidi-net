@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public class SetCookieHeader
 {
     private string name = string.Empty;
-    private BytesValue value = new(BytesValueType.String, string.Empty);
+    private BytesValue value = BytesValue.Empty;
     private string? domain;
     private string? path;
     private DateTime? expires;

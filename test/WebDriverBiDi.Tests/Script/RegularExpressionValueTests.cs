@@ -158,11 +158,4 @@ public class RegularExpressionValueTests
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue!.Equals("invalid"), Is.False);
     }
-
-    [Test]
-    public void TestGetHashCode()
-    {
-        RegularExpressionValue regexValue = new("myPattern", "gi");
-        Assert.That(regexValue.GetHashCode(), Is.EqualTo(HashCode.Combine(regexValue.Pattern, regexValue.Flags)));
-    }
 }

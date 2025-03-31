@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing a window realm for executing script.
 /// </summary>
-public class WindowRealmInfo : RealmInfo
+public record WindowRealmInfo : RealmInfo
 {
     private string browsingContextId = string.Empty;
     private string? sandbox;

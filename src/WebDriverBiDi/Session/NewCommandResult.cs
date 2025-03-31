@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for creating a new session using the session.new command.
 /// </summary>
-public class NewCommandResult : CommandResult
+public record NewCommandResult : CommandResult
 {
     private string sessionId = string.Empty;
 

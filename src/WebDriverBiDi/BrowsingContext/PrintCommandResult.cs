@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for getting the tree of browsing contexts using the browserContext.getTree command.
 /// </summary>
-public class PrintCommandResult : CommandResult
+public record PrintCommandResult : CommandResult
 {
     private string base64PdfPrintOutput = string.Empty;
 

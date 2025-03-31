@@ -11,7 +11,7 @@ using WebDriverBiDi.Internal;
 /// <summary>
 /// Object containing event data for events raised during navigation.
 /// </summary>
-public class NavigationEventArgs : WebDriverBiDiEventArgs
+public record NavigationEventArgs : WebDriverBiDiEventArgs
 {
     private string? id;
 

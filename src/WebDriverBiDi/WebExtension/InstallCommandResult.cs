@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for installing a web extension using the webExtension.install command.
 /// </summary>
-public class InstallCommandResult : CommandResult
+public record InstallCommandResult : CommandResult
 {
     private string extensionId = string.Empty;
 

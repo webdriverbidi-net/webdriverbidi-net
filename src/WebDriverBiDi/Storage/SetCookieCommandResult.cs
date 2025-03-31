@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for setting a cookie using the storage.setCookie command.
 /// </summary>
-public class SetCookieCommandResult : CommandResult
+public record SetCookieCommandResult : CommandResult
 {
     private PartitionKey partitionKey = new();
 

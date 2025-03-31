@@ -11,7 +11,7 @@ using WebDriverBiDi.Script;
 /// <summary>
 /// Result for locating nodes using the browserContext.locateNodes command.
 /// </summary>
-public class LocateNodesCommandResult : CommandResult
+public record LocateNodesCommandResult : CommandResult
 {
     private List<RemoteValue> resultNodes = new();
 

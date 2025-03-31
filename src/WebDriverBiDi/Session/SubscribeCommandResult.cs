@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for getting the status of a remote end using the session.status command.
 /// </summary>
-public class SubscribeCommandResult : CommandResult
+public record SubscribeCommandResult : CommandResult
 {
     private string subscriptionId = string.Empty;
 

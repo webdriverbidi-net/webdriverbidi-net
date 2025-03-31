@@ -12,7 +12,7 @@ using WebDriverBiDi.JsonConverters;
 /// Base class for the result of a script evaluation.
 /// </summary>
 [JsonConverter(typeof(ScriptEvaluateResultJsonConverter))]
-public class EvaluateResult : CommandResult
+public record EvaluateResult : CommandResult
 {
     private string realmId = string.Empty;
     private EvaluateResultType resultType = EvaluateResultType.Success;

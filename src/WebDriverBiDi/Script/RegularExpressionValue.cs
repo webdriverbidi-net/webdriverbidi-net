@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing a regular expression.
 /// </summary>
-public class RegularExpressionValue
+public record RegularExpressionValue
 {
     private string pattern;
     private string? flags;
@@ -51,39 +51,4 @@ public class RegularExpressionValue
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? Flags { get => this.flags; private set => this.flags = value; }
-
-    /// <summary>
-    /// Computes a hash code for this RegularExpressionValue.
-    /// </summary>
-    /// <returns>A hash code for the this RegularExpressionValue.</returns>
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(this.pattern, this.flags);
-    }
-
-    /// <summary>
-    /// Determines whether the specified object is equal to the current object.
-    /// </summary>
-    /// <param name="obj">The object to compare with the current object.</param>
-    /// <returns><see langword="true" /> if the objects are equal; otherwise <see langword="false" />.</returns>
-    public override bool Equals(object? obj)
-    {
-        if (obj is null)
-        {
-            return false;
-        }
-
-        if (obj is not RegularExpressionValue other)
-        {
-            return false;
-        }
-
-        bool areEqual = this.pattern == other.pattern;
-        if (this.flags is null && other.flags is null)
-        {
-            return areEqual;
-        }
-
-        return areEqual && this.flags == other.flags;
-    }
 }

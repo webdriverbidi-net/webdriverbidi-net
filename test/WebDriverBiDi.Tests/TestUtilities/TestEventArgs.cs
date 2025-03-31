@@ -2,7 +2,7 @@ namespace WebDriverBiDi.TestUtilities;
 
 using System.Text.Json.Serialization;
 
-public class TestEventArgs: WebDriverBiDiEventArgs
+public record TestEventArgs: WebDriverBiDiEventArgs
 {
     private string parameterName = "paramValue";
 

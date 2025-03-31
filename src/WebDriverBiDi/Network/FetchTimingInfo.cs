@@ -11,7 +11,7 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// The timings for a fetch operation.
 /// </summary>
-public class FetchTimingInfo
+public record FetchTimingInfo
 {
     private double timeOrigin = 0;
     private double requestTime = 0;
@@ -30,7 +30,8 @@ public class FetchTimingInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="FetchTimingInfo"/> class.
     /// </summary>
-    internal FetchTimingInfo()
+    [JsonConstructor]
+    private FetchTimingInfo()
     {
     }
 
@@ -150,4 +151,9 @@ public class FetchTimingInfo
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double ResponseEnd { get => this.responseEnd; private set => this.responseEnd = value; }
+
+    /// <summary>
+    /// Gets an empty <see cref="FetchTimingInfo"/> object.
+    /// </summary>
+    internal static FetchTimingInfo Empty => new();
 }

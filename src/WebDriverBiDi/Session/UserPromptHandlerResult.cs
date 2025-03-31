@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Session;
 /// <summary>
 /// Describes a set of settings for handling user prompts during test execution.
 /// </summary>
-public class UserPromptHandlerResult
+public record UserPromptHandlerResult
 {
     private UserPromptHandler userPromptHandler;
 

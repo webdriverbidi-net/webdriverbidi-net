@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Script;
 /// <summary>
 /// Object representing a shared worker realm for executing script.
 /// </summary>
-public class SharedWorkerRealmInfo : RealmInfo
+public record SharedWorkerRealmInfo : RealmInfo
 {
     private List<string> owners = new();
 

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for creating a new user context for the browser.createUserContext command.
 /// </summary>
-public class CreateUserContextCommandResult : CommandResult
+public record CreateUserContextCommandResult : CommandResult
 {
     private string userContextId = string.Empty;
 

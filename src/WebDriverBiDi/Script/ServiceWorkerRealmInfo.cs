@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Script;
 /// <summary>
 /// Object representing a service worker realm for executing script.
 /// </summary>
-public class ServiceWorkerRealmInfo : RealmInfo
+public record ServiceWorkerRealmInfo : RealmInfo
 {
     private List<string> owners = new();
 

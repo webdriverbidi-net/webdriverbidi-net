@@ -14,6 +14,6 @@ using System.Text.Json.Serialization;
 [JsonDerivedType(typeof(RemoteReference))]
 [JsonDerivedType(typeof(RemoteObjectReference))]
 [JsonDerivedType(typeof(SharedReference))]
-public abstract class ArgumentValue
+public abstract record ArgumentValue
 {
 }

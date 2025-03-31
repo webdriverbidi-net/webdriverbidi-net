@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Session;
 /// <summary>
 /// Object representing a read only direct proxy configuration used by the browser for this session.
 /// </summary>
-public class DirectProxyConfigurationResult : ProxyConfigurationResult
+public record DirectProxyConfigurationResult : ProxyConfigurationResult
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DirectProxyConfigurationResult"/> class.

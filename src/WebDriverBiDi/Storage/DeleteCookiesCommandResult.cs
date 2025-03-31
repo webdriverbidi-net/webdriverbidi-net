@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for deleting cookies using the storage.deleteCookies command.
 /// </summary>
-public class DeleteCookiesCommandResult : CommandResult
+public record DeleteCookiesCommandResult : CommandResult
 {
     private PartitionKey partitionKey = new();
 

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing the details of an exception thrown by a script.
 /// </summary>
-public class ExceptionDetails
+public record ExceptionDetails
 {
     private int columnNumber = -1;
     private int lineNumber = -1;

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// A class providing credentials for authorization.
 /// </summary>
-public class AuthChallenge
+public record AuthChallenge
 {
     private string scheme = string.Empty;
     private string realm = string.Empty;
@@ -18,7 +18,8 @@ public class AuthChallenge
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthChallenge"/> class.
     /// </summary>
-    internal AuthChallenge()
+    [JsonConstructor]
+    private AuthChallenge()
     {
     }
 

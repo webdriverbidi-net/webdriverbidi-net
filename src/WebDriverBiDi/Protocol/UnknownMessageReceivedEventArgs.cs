@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Protocol;
 /// <summary>
 /// Object containing event data for events raised when an unknown protocol message is received from a WebDriver Bidi connection.
 /// </summary>
-public class UnknownMessageReceivedEventArgs : EventArgs
+public record UnknownMessageReceivedEventArgs : WebDriverBiDiEventArgs
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="UnknownMessageReceivedEventArgs" /> class.

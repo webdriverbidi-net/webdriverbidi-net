@@ -8,7 +8,7 @@ namespace WebDriverBiDi;
 /// <summary>
 /// Base EventArgs class for use with WebDriver Bidi events.
 /// </summary>
-public class WebDriverBiDiEventArgs : EventArgs
+public record WebDriverBiDiEventArgs
 {
     private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
 

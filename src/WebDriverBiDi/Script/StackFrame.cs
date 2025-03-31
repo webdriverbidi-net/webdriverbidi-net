@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Represents a frame within a stack trace for a script.
 /// </summary>
-public class StackFrame
+public record StackFrame
 {
     private int lineNumber = -1;
     private int columnNumber = -1;

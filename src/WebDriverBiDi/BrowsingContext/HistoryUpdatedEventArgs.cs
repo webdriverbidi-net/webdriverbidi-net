@@ -11,7 +11,7 @@ using WebDriverBiDi.Internal;
 /// <summary>
 /// Object containing event data for the browsingContext.historyUpdated event.
 /// </summary>
-public class HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
+public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId;
     private string url;

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for getting the current client windows for the browser.createUserContext command.
 /// </summary>
-public class GetClientWindowsCommandResult : CommandResult
+public record GetClientWindowsCommandResult : CommandResult
 {
     private List<ClientWindowInfo> clientWindows = new();
 

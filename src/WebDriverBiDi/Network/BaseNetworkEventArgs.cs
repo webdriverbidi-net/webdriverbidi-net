@@ -16,7 +16,7 @@ using WebDriverBiDi.Internal;
 [JsonDerivedType(typeof(FetchErrorEventArgs))]
 [JsonDerivedType(typeof(ResponseCompletedEventArgs))]
 [JsonDerivedType(typeof(ResponseStartedEventArgs))]
-public class BaseNetworkEventArgs : WebDriverBiDiEventArgs
+public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
 {
     private string? browsingContextId;
     private string? navigationId;

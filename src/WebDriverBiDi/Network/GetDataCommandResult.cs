@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for retrieving data from a data collector for network traffic using the network.getData command.
 /// </summary>
-public class GetDataCommandResult : CommandResult
+public record GetDataCommandResult : CommandResult
 {
     private BytesValue bytes = BytesValue.FromString(string.Empty);
 

@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 /// <summary>
 /// A read-only header from a request.
 /// </summary>
-public class ReadOnlyHeader
+public record ReadOnlyHeader
 {
     private readonly Header header;
 

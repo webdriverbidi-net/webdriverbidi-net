@@ -11,7 +11,7 @@ using WebDriverBiDi.Script;
 /// <summary>
 /// Object containing event data for the input.fileDialogOpened event.
 /// </summary>
-public class FileDialogInfo
+public record FileDialogInfo
 {
     private string browsingContextId = string.Empty;
     private RemoteValue? elementValue;

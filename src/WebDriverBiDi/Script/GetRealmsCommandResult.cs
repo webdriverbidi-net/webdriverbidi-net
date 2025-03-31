@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for getting realms using the script.getRealms command.
 /// </summary>
-public class GetRealmsCommandResult : CommandResult
+public record GetRealmsCommandResult : CommandResult
 {
     private List<RealmInfo> realms = new();
 

@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Protocol;
 /// <summary>
 /// Object containing event data for events raised when a protocol error is received from a WebDriver Bidi connection.
 /// </summary>
-public class ErrorReceivedEventArgs : EventArgs
+public record ErrorReceivedEventArgs : WebDriverBiDiEventArgs
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ErrorReceivedEventArgs" /> class.

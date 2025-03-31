@@ -12,7 +12,7 @@ using WebDriverBiDi.JsonConverters;
 /// Object containing information about a script realm.
 /// </summary>
 [JsonConverter(typeof(RealmInfoJsonConverter))]
-public class RealmInfo
+public record RealmInfo
 {
     private string realmId = string.Empty;
     private string origin = string.Empty;

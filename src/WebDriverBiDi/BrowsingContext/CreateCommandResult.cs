@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Result for creating a new browsing context using the browserContext.create command.
 /// </summary>
-public class CreateCommandResult : CommandResult
+public record CreateCommandResult : CommandResult
 {
     private string contextId = string.Empty;
 

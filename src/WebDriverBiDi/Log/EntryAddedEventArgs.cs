@@ -10,7 +10,7 @@ using WebDriverBiDi.Script;
 /// <summary>
 /// Object containing event data for the event raised when a log entry is added.
 /// </summary>
-public class EntryAddedEventArgs : WebDriverBiDiEventArgs
+public record EntryAddedEventArgs : WebDriverBiDiEventArgs
 {
     private readonly LogEntry entry;
 

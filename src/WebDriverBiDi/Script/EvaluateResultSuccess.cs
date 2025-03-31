@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing the successful evaluation of a script.
 /// </summary>
-public class EvaluateResultSuccess : EvaluateResult
+public record EvaluateResultSuccess : EvaluateResult
 {
     private RemoteValue result = new("null");
 
@@ -18,7 +18,7 @@ public class EvaluateResultSuccess : EvaluateResult
     /// Initializes a new instance of the <see cref="EvaluateResultSuccess"/> class.
     /// </summary>
     [JsonConstructor]
-    internal EvaluateResultSuccess()
+    private EvaluateResultSuccess()
         : base()
     {
     }

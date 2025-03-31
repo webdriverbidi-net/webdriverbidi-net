@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides information about a Bluetooth device during a request.
 /// </summary>
-public class RequestDeviceInfo
+public record RequestDeviceInfo
 {
     private string id = string.Empty;
     private string? name;
