@@ -5,8 +5,6 @@
 
 namespace WebDriverBiDi.Bluetooth;
 
-using System.Text.Json.Serialization;
-
 /// <summary>
 /// Provides parameters for the bluetooth.handleRequestDevicePrompt command to cancel the prompt.
 /// </summary>

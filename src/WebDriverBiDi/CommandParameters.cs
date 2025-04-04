@@ -6,7 +6,6 @@
 namespace WebDriverBiDi;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.BrowsingContext;
 
 /// <summary>
 /// Abstract base class for a set of settings for a command.

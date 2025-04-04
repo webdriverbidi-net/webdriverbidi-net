@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Object containing event data for events raised during navigation.

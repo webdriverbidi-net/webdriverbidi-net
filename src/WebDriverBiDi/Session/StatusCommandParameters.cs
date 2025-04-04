@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.Session;
 
-using System;
 using System.Text.Json.Serialization;
 
 /// <summary>

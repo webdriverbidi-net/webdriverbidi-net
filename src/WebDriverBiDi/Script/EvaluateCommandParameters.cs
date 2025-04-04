@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Provides parameters for the script.evaluate command.

@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Input;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// An action to send a pointer move on a pointer device.

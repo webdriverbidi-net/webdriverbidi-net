@@ -5,9 +5,7 @@
 
 namespace WebDriverBiDi.BrowsingContext;
 
-using System;
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Provides parameters for the browsingContext.navigate command.
