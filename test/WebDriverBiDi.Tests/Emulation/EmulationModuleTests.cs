@@ -6,7 +6,7 @@ using TestUtilities;
 public class EmulationModuleTests
 {
     [Test]
-    public async Task TestSetGeolocationOverrideCommand()
+    public async Task TestSetGeolocationOverrideCommandWithCoordinates()
     {
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
@@ -25,7 +25,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetGeolocationOverride(new SetGeolocationOverrideCommandParameters());
+        Task<EmptyResult> task = module.SetGeolocationOverride(new SetGeolocationOverrideCoordinatesCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         EmptyResult result = task.Result;
 

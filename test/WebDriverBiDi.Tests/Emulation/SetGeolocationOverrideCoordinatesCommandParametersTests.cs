@@ -4,19 +4,19 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class SetGeolocationOverrideCommandParametersTests
+public class SetGeolocationOverrideCoordinatesCommandParametersTests
 {
     [Test]
     public void TestCommandName()
     {
-        SetGeolocationOverrideCommandParameters properties = new();
+        SetGeolocationOverrideCoordinatesCommandParameters properties = new();
         Assert.That(properties.MethodName, Is.EqualTo("emulation.setGeolocationOverride"));
     }
 
     [Test]
     public void TestCanSerializeParameters()
     {
-        SetGeolocationOverrideCommandParameters properties = new();
+        SetGeolocationOverrideCoordinatesCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
@@ -31,7 +31,7 @@ public class SetGeolocationOverrideCommandParametersTests
     [Test]
     public void TestCanSerializeParametersWithCoordinates()
     {
-        SetGeolocationOverrideCommandParameters properties = new()
+        SetGeolocationOverrideCoordinatesCommandParameters properties = new()
         {
             Coordinates = new(123.45, -67.89),
         };
@@ -56,7 +56,7 @@ public class SetGeolocationOverrideCommandParametersTests
     [Test]
     public void TestCanSerializePropertiesWithContexts()
     {
-        SetGeolocationOverrideCommandParameters properties = new()
+        SetGeolocationOverrideCoordinatesCommandParameters properties = new()
         {
             Contexts = new()
             {
@@ -86,7 +86,7 @@ public class SetGeolocationOverrideCommandParametersTests
     [Test]
     public void TestCanSerializePropertiesWithUserContexts()
     {
-        SetGeolocationOverrideCommandParameters properties = new()
+        SetGeolocationOverrideCoordinatesCommandParameters properties = new()
         {
             UserContexts = new()
             {

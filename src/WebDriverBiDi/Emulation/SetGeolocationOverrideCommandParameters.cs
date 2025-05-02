@@ -12,14 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetGeolocationOverrideCommandParameters : CommandParameters<EmptyResult>
 {
-    private GeolocationCoordinates? coordinates;
     private List<string>? contexts;
     private List<string>? userContexts;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetGeolocationOverrideCommandParameters"/> class.
     /// </summary>
-    public SetGeolocationOverrideCommandParameters()
+    protected SetGeolocationOverrideCommandParameters()
     {
     }
 
@@ -28,13 +27,6 @@ public class SetGeolocationOverrideCommandParameters : CommandParameters<EmptyRe
     /// </summary>
     [JsonIgnore]
     public override string MethodName => "emulation.setGeolocationOverride";
-
-    /// <summary>
-    /// Gets or sets the coordinates to which to override the geolocation. When <see langword="null"/>, clears the override.
-    /// </summary>
-    [JsonPropertyName("coordinates")]
-    [JsonInclude]
-    public GeolocationCoordinates? Coordinates { get => this.coordinates; set => this.coordinates = value; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set the geolocation override.
