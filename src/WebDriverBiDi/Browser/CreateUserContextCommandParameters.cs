@@ -12,6 +12,8 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class CreateUserContextCommandParameters : CommandParameters<CreateUserContextCommandResult>
 {
+    private bool? acceptInsecureCerts;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateUserContextCommandParameters"/> class.
     /// </summary>
@@ -24,4 +26,11 @@ public class CreateUserContextCommandParameters : CommandParameters<CreateUserCo
     /// </summary>
     [JsonIgnore]
     public override string MethodName => "browser.createUserContext";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to accept insecure certificates.
+    /// </summary>
+    [JsonPropertyName("acceptInsecureCerts")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? AcceptInsecureCerts { get => this.acceptInsecureCerts; set => this.acceptInsecureCerts = value; }
 }
