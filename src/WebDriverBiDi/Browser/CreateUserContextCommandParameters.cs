@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Browser;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Provides parameters for the browser.createUserContext command.
@@ -13,6 +14,7 @@ using System.Text.Json.Serialization;
 public class CreateUserContextCommandParameters : CommandParameters<CreateUserContextCommandResult>
 {
     private bool? acceptInsecureCerts;
+    private ProxyConfiguration? proxyConfiguration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateUserContextCommandParameters"/> class.
@@ -33,4 +35,11 @@ public class CreateUserContextCommandParameters : CommandParameters<CreateUserCo
     [JsonPropertyName("acceptInsecureCerts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? AcceptInsecureCerts { get => this.acceptInsecureCerts; set => this.acceptInsecureCerts = value; }
+
+    /// <summary>
+    /// Gets or sets the proxy configuration used with the created user context.
+    /// </summary>
+    [JsonPropertyName("proxy")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ProxyConfiguration? Proxy { get => this.proxyConfiguration; set => this.proxyConfiguration = value; }
 }
