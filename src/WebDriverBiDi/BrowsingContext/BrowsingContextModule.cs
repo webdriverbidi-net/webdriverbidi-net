@@ -84,7 +84,7 @@ public sealed class BrowsingContextModule : Module
     public ObservableEvent<DownloadWillBeginEventArgs> OnDownloadWillBegin => this.onDownloadWillBeginEvent;
 
     /// <summary>
-    /// Gets an observable event that nofifies when a download has ended.
+    /// Gets an observable event that notifies when a download has ended.
     /// </summary>
     public ObservableEvent<DownloadEndEventArgs> OnDownloadEndEvent => this.onDownloadEndEvent;
 
