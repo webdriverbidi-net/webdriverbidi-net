@@ -801,7 +801,8 @@ public class BrowsingContextModuleTests
                              "method": "browsingContext.historyUpdated",
                              "params": {
                                "context": "myContext",
-                               "url": "https://example.com"
+                               "url": "https://example.com",
+                               "timestamp": 300
                              }
                            }
                            """;

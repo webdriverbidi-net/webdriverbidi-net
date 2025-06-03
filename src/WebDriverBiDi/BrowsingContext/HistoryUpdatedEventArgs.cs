@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Object containing event data for the browsingContext.historyUpdated event.
@@ -13,8 +14,9 @@ using System.Text.Json.Serialization;
 public class HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
 {
     private string browsingContextId;
-
     private string url;
+    private ulong epochTimestamp = 0;
+    private DateTime timestamp = DateTimeUtilities.UnixEpoch;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HistoryUpdatedEventArgs" /> class.
@@ -43,4 +45,30 @@ public class HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonRequired]
     [JsonInclude]
     public string Url { get => this.url; private set => this.url = value; }
+
+    /// <summary>
+    /// Gets the timestamp of the navigation in UTC.
+    /// </summary>
+    [JsonIgnore]
+    public DateTime Timestamp => this.timestamp;
+
+    /// <summary>
+    /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
+    /// </summary>
+    [JsonPropertyName("timestamp")]
+    [JsonRequired]
+    [JsonInclude]
+    public ulong EpochTimestamp
+    {
+        get
+        {
+            return this.epochTimestamp;
+        }
+
+        private set
+        {
+            this.epochTimestamp = value;
+            this.timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
+        }
+    }
 }
