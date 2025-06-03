@@ -513,7 +513,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDownloadWillBegin.AddObserver((NavigationEventArgs e) => {
+        module.OnDownloadWillBegin.AddObserver((DownloadWillBeginEventArgs e) => {
             Assert.Multiple(() =>
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -521,6 +521,7 @@ public class BrowsingContextModuleTests
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
+                Assert.That(e.SuggestedFileName, Is.EqualTo("myFile.file"));
             });
             syncEvent.Set();
         });
@@ -533,7 +534,51 @@ public class BrowsingContextModuleTests
                                "context": "myContext",
                                "url": "https://example.com",
                                "timestamp": {{epochTimestamp}},
-                               "navigation": "myNavigationId"
+                               "navigation": "myNavigationId",
+                               "suggestedFileName": "myFile.file"
+                             }
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
+        Assert.That(eventRaised, Is.True);
+    }
+
+    [Test]
+    public async Task TestCanReceiveDownloadEndEvent()
+    {
+        TestConnection connection = new();
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        BrowsingContextModule module = new(driver);
+
+        ManualResetEvent syncEvent = new(false);
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        module.OnDownloadEndEvent.AddObserver((DownloadEndEventArgs e) => {
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
+                Assert.That(e.Url, Is.EqualTo("https://example.com"));
+                Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
+                Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
+                Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
+                Assert.That(e.Status, Is.EqualTo(DownloadEndStatus.Complete));
+                Assert.That(e.FilePath, Is.EqualTo("myFile.file"));
+            });
+            syncEvent.Set();
+        });
+
+        string eventJson = $$"""
+                           {
+                             "type": "event",
+                             "method": "browsingContext.downloadEnd",
+                             "params": {
+                               "context": "myContext",
+                               "url": "https://example.com",
+                               "timestamp": {{epochTimestamp}},
+                               "navigation": "myNavigationId",
+                               "status": "complete",
+                               "filepath": "myFile.file"
                              }
                            }
                            """;

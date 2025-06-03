@@ -21,7 +21,8 @@ public sealed class BrowsingContextModule : Module
     private readonly ObservableEvent<NavigationEventArgs> onFragmentNavigatedEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onDomContentLoadedEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onLoadEvent = new();
-    private readonly ObservableEvent<NavigationEventArgs> onDownloadWillBeginEvent = new();
+    private readonly ObservableEvent<DownloadWillBeginEventArgs> onDownloadWillBeginEvent = new();
+    private readonly ObservableEvent<DownloadEndEventArgs> onDownloadEndEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onNavigationAbortedEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onNavigationCommittedEvent = new();
     private readonly ObservableEvent<NavigationEventArgs> onNavigationFailedEvent = new();
@@ -42,7 +43,8 @@ public sealed class BrowsingContextModule : Module
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.fragmentNavigated", this.OnFragmentNavigatedAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.domContentLoaded", this.OnDomContentLoadedAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.load", this.OnLoadAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.downloadWillBegin", this.OnDownloadWillBeginAsync);
+        this.RegisterAsyncEventInvoker<DownloadWillBeginEventArgs>("browsingContext.downloadWillBegin", this.OnDownloadWillBeginAsync);
+        this.RegisterAsyncEventInvoker<DownloadEndEventArgs>("browsingContext.downloadEnd", this.OnDownloadEndAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationAborted", this.OnNavigationAbortedAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationCommitted", this.OnNavigationCommittedAsync);
         this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationFailed", this.OnNavigationFailedAsync);
@@ -79,7 +81,12 @@ public sealed class BrowsingContextModule : Module
     /// <summary>
     /// Gets an observable event that notifies when a download in a browsing context is about to begin.
     /// </summary>
-    public ObservableEvent<NavigationEventArgs> OnDownloadWillBegin => this.onDownloadWillBeginEvent;
+    public ObservableEvent<DownloadWillBeginEventArgs> OnDownloadWillBegin => this.onDownloadWillBeginEvent;
+
+    /// <summary>
+    /// Gets an observable event that nofifies when a download has ended.
+    /// </summary>
+    public ObservableEvent<DownloadEndEventArgs> OnDownloadEndEvent => this.onDownloadEndEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when the content in a browsing context is loaded.
@@ -291,10 +298,16 @@ public sealed class BrowsingContextModule : Module
         await this.onLoadEvent.NotifyObserversAsync(eventArgs);
     }
 
-    private async Task OnDownloadWillBeginAsync(EventInfo<NavigationEventArgs> eventData)
+    private async Task OnDownloadWillBeginAsync(EventInfo<DownloadWillBeginEventArgs> eventData)
     {
-        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
+        DownloadWillBeginEventArgs eventArgs = eventData.ToEventArgs<DownloadWillBeginEventArgs>();
         await this.onDownloadWillBeginEvent.NotifyObserversAsync(eventArgs);
+    }
+
+    private async Task OnDownloadEndAsync(EventInfo<DownloadEndEventArgs> eventData)
+    {
+        DownloadEndEventArgs eventArgs = eventData.ToEventArgs<DownloadEndEventArgs>();
+        await this.onDownloadEndEvent.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnNavigationAbortedAsync(EventInfo<NavigationEventArgs> eventData)

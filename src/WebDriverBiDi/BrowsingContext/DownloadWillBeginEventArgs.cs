@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object containing event data for events raised during navigation.
+/// Object containing event data for for the browsingContext.downloadWillBegin event.
 /// </summary>
 public class DownloadWillBeginEventArgs : NavigationEventArgs
 {
