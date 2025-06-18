@@ -91,7 +91,6 @@ public class CapabilitiesResultTests
                           "proxyType": "manual",
                           "httpProxy": "http.proxy",
                           "sslProxy": "ssl.proxy",
-                          "ftpProxy": "ftp.proxy",
                           "socksProxy": "socks.proxy",
                           "socksVersion": 5,
                           "noProxy": [ "example.com" ]
@@ -114,7 +113,6 @@ public class CapabilitiesResultTests
             Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.Manual));
             Assert.That(proxyResult.HttpProxy, Is.EqualTo("http.proxy"));
             Assert.That(proxyResult.SslProxy, Is.EqualTo("ssl.proxy"));
-            Assert.That(proxyResult.FtpProxy, Is.EqualTo("ftp.proxy"));
             Assert.That(proxyResult.SocksProxy, Is.EqualTo("socks.proxy"));
             Assert.That(proxyResult.SocksVersion, Is.EqualTo(5));
             Assert.That(proxyResult.NoProxyAddresses, Has.Count.EqualTo(1));

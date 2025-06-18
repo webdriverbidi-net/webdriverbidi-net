@@ -63,7 +63,6 @@ public class ProxyConfigurationJsonConverter : JsonConverter<ProxyConfiguration>
             config = rootElement.Deserialize<ManualProxyConfiguration>();
             propertyNames.Add("httpProxy");
             propertyNames.Add("sslProxy");
-            propertyNames.Add("ftpProxy");
             propertyNames.Add("socksProxy");
             propertyNames.Add("socksVersion");
             propertyNames.Add("noProxy");

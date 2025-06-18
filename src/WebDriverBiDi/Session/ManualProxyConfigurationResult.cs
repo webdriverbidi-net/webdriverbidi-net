@@ -30,11 +30,6 @@ public class ManualProxyConfigurationResult : ProxyConfigurationResult
     public string? SslProxy => this.ProxyConfiguration.SslProxy;
 
     /// <summary>
-    /// Gets the address to be used to proxy FTP commands.
-    /// </summary>
-    public string? FtpProxy => this.ProxyConfiguration.FtpProxy;
-
-    /// <summary>
     /// Gets the address of a SOCKS proxy used to proxy commands.
     /// </summary>
     public string? SocksProxy => this.ProxyConfiguration.SocksProxy;

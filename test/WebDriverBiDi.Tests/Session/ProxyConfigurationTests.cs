@@ -49,27 +49,6 @@ public class ProxyConfigurationTests
     }
 
     [Test]
-    public void TestCanSerializeWithFtpProxy()
-    {
-        ProxyConfiguration proxy = new ManualProxyConfiguration()
-        {
-            FtpProxy = "ftp.proxy"
-        };
-        string json = JsonSerializer.Serialize(proxy);
-        JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
-        {
-            Assert.That(serialized, Contains.Key("proxyType"));
-            Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-            Assert.That(serialized, Contains.Key("ftpProxy"));
-            Assert.That(serialized["ftpProxy"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["ftpProxy"]!.Value<string>(), Is.EqualTo("ftp.proxy"));
-        });
-    }
-
-    [Test]
     public void TestCanSerializeWithSocksProxy()
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
@@ -274,7 +253,6 @@ public class ProxyConfigurationTests
             ManualProxyConfiguration deserializedResult = (ManualProxyConfiguration)deserialized;
             Assert.That(deserializedResult.HttpProxy, Is.Null);
             Assert.That(deserializedResult.SslProxy, Is.Null);
-            Assert.That(deserializedResult.FtpProxy, Is.Null);
             Assert.That(deserializedResult.SocksProxy, Is.Null);
             Assert.That(deserializedResult.SocksVersion, Is.Null);
         });

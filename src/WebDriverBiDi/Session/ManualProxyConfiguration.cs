@@ -14,7 +14,6 @@ public class ManualProxyConfiguration : ProxyConfiguration
 {
     private string? httpProxy;
     private string? sslProxy;
-    private string? ftpProxy;
     private List<string>? noProxyAddresses;
     private string? socksProxy;
     private int? socksVersion;
@@ -40,13 +39,6 @@ public class ManualProxyConfiguration : ProxyConfiguration
     [JsonPropertyName("sslProxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SslProxy { get => this.sslProxy; set => this.sslProxy = value; }
-
-    /// <summary>
-    /// Gets or sets the address to be used to proxy FTP commands.
-    /// </summary>
-    [JsonPropertyName("ftpProxy")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? FtpProxy { get => this.ftpProxy; set => this.ftpProxy = value; }
 
     /// <summary>
     /// Gets or sets the address of a SOCKS proxy used to proxy commands.
