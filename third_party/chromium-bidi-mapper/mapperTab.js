@@ -184,6 +184,7 @@
             EventNames["ContextCreated"] = "browsingContext.contextCreated";
             EventNames["ContextDestroyed"] = "browsingContext.contextDestroyed";
             EventNames["DomContentLoaded"] = "browsingContext.domContentLoaded";
+            EventNames["DownloadEnd"] = "browsingContext.downloadEnd";
             EventNames["DownloadWillBegin"] = "browsingContext.downloadWillBegin";
             EventNames["FragmentNavigated"] = "browsingContext.fragmentNavigated";
             EventNames["HistoryUpdated"] = "browsingContext.historyUpdated";
@@ -670,9 +671,6 @@
             const servers = [];
             if (proxyConfig.httpProxy !== undefined) {
                 servers.push(`http=${proxyConfig.httpProxy}`);
-            }
-            if (proxyConfig.ftpProxy !== undefined) {
-                servers.push(`ftp=${proxyConfig.ftpProxy}`);
             }
             if (proxyConfig.sslProxy !== undefined) {
                 servers.push(`https=${proxyConfig.sslProxy}`);
@@ -4472,6 +4470,7 @@
      */
     class CommandProcessor extends EventEmitter {
         #bluetoothProcessor;
+        #browserCdpClient;
         #browserProcessor;
         #browsingContextProcessor;
         #cdpProcessor;
@@ -4487,6 +4486,7 @@
         #logger;
         constructor(cdpConnection, browserCdpClient, eventManager, browsingContextStorage, realmStorage, preloadScriptStorage, networkStorage, mapperOptionsStorage, bluetoothProcessor, userContextStorage, parser = new BidiNoOpParser(), initConnection, logger) {
             super();
+            this.#browserCdpClient = browserCdpClient;
             this.#parser = parser;
             this.#logger = logger;
             this.#bluetoothProcessor = bluetoothProcessor;
@@ -4665,8 +4665,11 @@
                 else {
                     const error = e;
                     this.#logger?.(LogType.bidi, error);
+                    const errorException = this.#browserCdpClient.isCloseError(e)
+                        ? new NoSuchFrameException(`Browsing context is gone`)
+                        : new UnknownErrorException(error.message, error.stack);
                     this.emit("response" , {
-                        message: OutgoingMessage.createResolved(new UnknownErrorException(error.message, error.stack).toErrorResponse(command.id), command['goog:channel']),
+                        message: OutgoingMessage.createResolved(errorException.toErrorResponse(command.id), command['goog:channel']),
                         event: command.method,
                     });
                 }
@@ -6186,6 +6189,7 @@
         #id;
         userContext;
         #hiddenSandbox = uuidv4();
+        #downloadIdToUrlMap = new Map();
         #loaderId;
         #parentId = null;
         #originalOpener;
@@ -6435,6 +6439,7 @@
                         method: 'browsingContext.historyUpdated',
                         params: {
                             context: this.id,
+                            timestamp: getTimestamp(),
                             url: this.#navigationTracker.url,
                         },
                     }, this.id);
@@ -6613,6 +6618,7 @@
                 if (this.id !== params.frameId) {
                     return;
                 }
+                this.#downloadIdToUrlMap.set(params.guid, params.url);
                 this.#eventManager.registerEvent({
                     type: 'event',
                     method: BrowsingContext$2.EventNames.DownloadWillBegin,
@@ -6624,6 +6630,46 @@
                         url: params.url,
                     },
                 }, this.id);
+            });
+            this.#cdpTarget.browserCdpClient.on('Browser.downloadProgress', (params) => {
+                if (!this.#downloadIdToUrlMap.has(params.guid)) {
+                    return;
+                }
+                if (params.state === 'inProgress') {
+                    return;
+                }
+                const url = this.#downloadIdToUrlMap.get(params.guid);
+                switch (params.state) {
+                    case 'canceled':
+                        this.#eventManager.registerEvent({
+                            type: 'event',
+                            method: BrowsingContext$2.EventNames.DownloadEnd,
+                            params: {
+                                status: 'canceled',
+                                context: this.id,
+                                navigation: params.guid,
+                                timestamp: getTimestamp(),
+                                url,
+                            },
+                        }, this.id);
+                        break;
+                    case 'completed':
+                        this.#eventManager.registerEvent({
+                            type: 'event',
+                            method: BrowsingContext$2.EventNames.DownloadEnd,
+                            params: {
+                                filepath: params.filePath ?? null,
+                                status: 'complete',
+                                context: this.id,
+                                navigation: params.guid,
+                                timestamp: getTimestamp(),
+                                url,
+                            },
+                        }, this.id);
+                        break;
+                    default:
+                        throw new UnknownErrorException(`Unknown download state: ${params.state}`);
+                }
             });
         }
         static #getPromptType(cdpType) {
@@ -14964,7 +15010,6 @@
         Session.ManualProxyConfigurationSchema = z.lazy(() => z
             .object({
             proxyType: z.literal('manual'),
-            ftpProxy: z.string().optional(),
             httpProxy: z.string().optional(),
             sslProxy: z.string().optional(),
         })
@@ -15242,6 +15287,7 @@
         BrowsingContext$1.ContextCreatedSchema,
         BrowsingContext$1.ContextDestroyedSchema,
         BrowsingContext$1.DomContentLoadedSchema,
+        BrowsingContext$1.DownloadEndSchema,
         BrowsingContext$1.DownloadWillBeginSchema,
         BrowsingContext$1.FragmentNavigatedSchema,
         BrowsingContext$1.HistoryUpdatedSchema,
@@ -15633,6 +15679,7 @@
     (function (BrowsingContext) {
         BrowsingContext.HistoryUpdatedParametersSchema = z.lazy(() => z.object({
             context: BrowsingContext.BrowsingContextSchema,
+            timestamp: JsUintSchema,
             url: z.string(),
         }));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
@@ -15658,6 +15705,33 @@
         BrowsingContext.DownloadWillBeginParamsSchema = z.lazy(() => z
             .object({
             suggestedFilename: z.string(),
+        })
+            .and(BrowsingContext.BaseNavigationInfoSchema));
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.DownloadEndSchema = z.lazy(() => z.object({
+            method: z.literal('browsingContext.downloadEnd'),
+            params: BrowsingContext.DownloadEndParamsSchema,
+        }));
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.DownloadEndParamsSchema = z.lazy(() => z.union([
+            BrowsingContext.DownloadCanceledParamsSchema,
+            BrowsingContext.DownloadCompleteParamsSchema,
+        ]));
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.DownloadCanceledParamsSchema = z.lazy(() => z
+            .object({
+            status: z.literal('canceled'),
+        })
+            .and(BrowsingContext.BaseNavigationInfoSchema));
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.DownloadCompleteParamsSchema = z.lazy(() => z
+            .object({
+            status: z.literal('complete'),
+            filepath: z.union([z.string(), z.null()]),
         })
             .and(BrowsingContext.BaseNavigationInfoSchema));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
