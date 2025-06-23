@@ -119,6 +119,38 @@ public class NetworkModuleTests
     }
 
     [Test]
+    public async Task TestExecuteAddDataCollectorCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "collector": "myCollectorId"
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        NetworkModule module = new(driver);
+
+        AddDataCollectorCommandParameters commandParameters = new();
+        Task<AddDataCollectorCommandResult> task = module.AddDataCollectorAsync(commandParameters);
+
+        task.Wait(TimeSpan.FromSeconds(1));
+        AddDataCollectorCommandResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.CollectorId, Is.EqualTo("myCollectorId"));
+    }
+
+    [Test]
     public async Task TestExecuteContinueRequestCommand()
     {
         TestConnection connection = new();
@@ -207,6 +239,35 @@ public class NetworkModuleTests
     }
 
     [Test]
+    public async Task TestExecuteDisownDataCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        NetworkModule module = new(driver);
+
+        DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId");
+        Task<EmptyResult> task = module.DisownDataAsync(commandParameters);
+
+        task.Wait(TimeSpan.FromSeconds(1));
+        EmptyResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
     public async Task TestExecuteFailRequestCommand()
     {
         TestConnection connection = new();
@@ -235,6 +296,42 @@ public class NetworkModuleTests
     }
 
     [Test]
+    public async Task TestExecuteGetDataCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "bytes": {
+                                        "type": "string",
+                                        "value": "myNetworkData"
+                                      }
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        NetworkModule module = new(driver);
+
+        GetDataCommandParameters commandParameters = new("myRequestId");
+        Task<GetDataCommandResult> task = module.GetDataAsync(commandParameters);
+
+        task.Wait(TimeSpan.FromSeconds(1));
+        GetDataCommandResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Bytes.Type, Is.EqualTo(BytesValueType.String));
+        Assert.That(result.Bytes.Value, Is.EqualTo("myNetworkData"));
+    }
+
+    [Test]
     public async Task TestExecuteProvideResponseCommand()
     {
         TestConnection connection = new();
@@ -255,6 +352,35 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         Task<EmptyResult> task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"));
+
+        task.Wait(TimeSpan.FromSeconds(1));
+        EmptyResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task TestExecuteRemoveDataCollectorCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        NetworkModule module = new(driver);
+
+        RemoveDataCollectorCommandParameters commandParameters = new("myCollectorId");
+        Task<EmptyResult> task = module.RemoveDataCollectorAsync(commandParameters);
 
         task.Wait(TimeSpan.FromSeconds(1));
         EmptyResult result = task.Result;

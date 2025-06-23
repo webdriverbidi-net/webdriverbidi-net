@@ -76,6 +76,16 @@ public sealed class NetworkModule : Module
     }
 
     /// <summary>
+    /// Adds collector for network data like response bodies for specific phases of the traffic.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a network interception ID.</returns>
+    public async Task<AddDataCollectorCommandResult> AddDataCollectorAsync(AddDataCollectorCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<AddDataCollectorCommandResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Continues a paused request intercepted by the driver.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
@@ -107,6 +117,16 @@ public sealed class NetworkModule : Module
     }
 
     /// <summary>
+    /// Releases data from a network data collector for a specific request.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command.</returns>
+    public async Task<EmptyResult> DisownDataAsync(DisownDataCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Fails a paused request intercepted by the driver.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
@@ -117,11 +137,31 @@ public sealed class NetworkModule : Module
     }
 
     /// <summary>
+    /// Gets the collected data from a network data collector for a specific network request.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command containing a network interception ID.</returns>
+    public async Task<GetDataCommandResult> GetDataAsync(GetDataCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<GetDataCommandResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Provides a full response for request intercepted by the driver without sending the request to the server.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
     public async Task<EmptyResult> ProvideResponseAsync(ProvideResponseCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Removes a network data collector.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command.</returns>
+    public async Task<EmptyResult> RemoveDataCollectorAsync(RemoveDataCollectorCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
