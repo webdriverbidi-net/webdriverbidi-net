@@ -42,7 +42,7 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> HandleRequestDevicePrompt(HandleRequestDevicePromptCommandParameters commandProperties)
+    public async Task<EmptyResult> HandleRequestDevicePromptAsync(HandleRequestDevicePromptCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
@@ -52,7 +52,7 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateAdapter(SimulateAdapterCommandParameters commandProperties)
+    public async Task<EmptyResult> SimulateAdapterAsync(SimulateAdapterCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
@@ -62,7 +62,7 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateAdvertisement(SimulateAdvertisementCommandParameters commandProperties)
+    public async Task<EmptyResult> SimulateAdvertisementAsync(SimulateAdvertisementCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
@@ -72,7 +72,7 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulatePreconnectedPeripheral(SimulatePreconnectedPeripheralCommandParameters commandProperties)
+    public async Task<EmptyResult> SimulatePreconnectedPeripheralAsync(SimulatePreconnectedPeripheralCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }

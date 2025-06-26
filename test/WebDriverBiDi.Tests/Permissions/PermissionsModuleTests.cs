@@ -25,7 +25,7 @@ public class PermissionsModuleTests
         await driver.StartAsync("ws:localhost");
         PermissionsModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetPermission(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"));
+        Task<EmptyResult> task = module.SetPermissionAsync(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"));
         task.Wait(TimeSpan.FromSeconds(1));
         EmptyResult result = task.Result;
 
