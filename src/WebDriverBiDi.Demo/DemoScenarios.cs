@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Demo;
 
+using System.Text;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Inputs;
 using WebDriverBiDi.Input;
@@ -530,6 +531,83 @@ public static class DemoScenarios
         await substituteTask!;
 
         Console.WriteLine($"Navigation command completed");
+    }
+
+    public static async Task CaptureNetworkResponse(BiDiDriver driver, string baseUrl)
+    {
+        SubscribeCommandParameters subscribe = new();
+        subscribe.Events.Add("network.responseCompleted");
+        await driver.Session.SubscribeAsync(subscribe);
+
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        AddDataCollectorCommandParameters addCollectorParameters = new()
+        {
+            // Allocate a small amount of memory for this demonstration.
+            // Actual practice would probably require a larger allocation
+            // for data collection.
+            MaxEncodedDataSize = Convert.ToUInt64(Math.Pow(2, 24)),
+        };
+        addCollectorParameters.BrowsingContexts.Add(contextId);
+        AddDataCollectorCommandResult collectorResult = await driver.Network.AddDataCollectorAsync(addCollectorParameters);
+        string collectorId = collectorResult.CollectorId;
+
+        // Calling a command within an event observer must be done asynchronously.
+        // This is because the driver transport processes incoming messages one
+        // at a time. Sending the command involves receiving the command result
+        // message, which cannot be processed until processing of this event
+        // message is completed. To ensure that we can wait for the command
+        // response to be completely processed, capture the Task returned by the
+        // command execution, and await its completion later.
+        string responseStartLine = string.Empty;
+        List<ReadOnlyHeader> responseHeaders = new();
+        Task<GetDataCommandResult>? substituteTask = null;
+        EventObserver<ResponseCompletedEventArgs> observer = driver.Network.OnResponseCompleted.AddObserver((e) =>
+        {
+            responseStartLine = $"{e.Response.Protocol} {e.Response.Status} {e.Response.StatusText}";
+            responseHeaders.AddRange(e.Response.Headers);
+            // Be a good citizen and release the collected data when collected.
+            GetDataCommandParameters getDataParameters = new(e.Request.RequestId)
+            {
+                CollectorId = collectorId,
+                DisownCollectedData = true,
+            };
+            substituteTask = driver.Network.GetDataAsync(getDataParameters);
+        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+
+        if (substituteTask is null)
+        {
+            throw new Exception("Response completed event was not raised.");
+        }
+
+        await substituteTask;
+        BytesValue bodyResult = substituteTask.Result.Bytes;
+        string bodyText = string.Empty;
+        if (bodyResult.Type == BytesValueType.Base64)
+        {
+            bodyText = Encoding.UTF8.GetString(Convert.FromBase64String(bodyResult.Value));
+        }
+        else
+        {
+            bodyText = bodyResult.Value;
+        }
+
+        Console.WriteLine($"Response received for {baseUrl}/simpleContent.html");
+        Console.WriteLine(responseStartLine);
+        foreach (ReadOnlyHeader header in responseHeaders)
+        {
+            Console.WriteLine($"{header.Name}: {header.Value}");
+        }
+        Console.WriteLine();
+        Console.WriteLine(bodyText);
     }
 
     private static void AddClickOnElementAction(InputBuilder builder, SharedReference elementReference)

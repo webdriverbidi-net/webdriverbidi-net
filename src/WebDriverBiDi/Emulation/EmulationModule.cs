@@ -34,7 +34,17 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetGeolocationOverride(SetGeolocationOverrideCommandParameters commandProperties)
+    public async Task<EmptyResult> SetGeolocationOverrideAsync(SetGeolocationOverrideCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Sets the emulated override for the screen orientation for the specified contexts or user contexts.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<EmptyResult> SetScreenOrientationOverrideAsync(SetScreenOrientationOverrideCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
