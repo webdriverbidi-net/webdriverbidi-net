@@ -15,6 +15,7 @@ public class CreateUserContextCommandParameters : CommandParameters<CreateUserCo
 {
     private bool? acceptInsecureCerts;
     private ProxyConfiguration? proxyConfiguration;
+    private UserPromptHandler? unhandledPromptBehavior;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateUserContextCommandParameters"/> class.
@@ -42,4 +43,11 @@ public class CreateUserContextCommandParameters : CommandParameters<CreateUserCo
     [JsonPropertyName("proxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ProxyConfiguration? Proxy { get => this.proxyConfiguration; set => this.proxyConfiguration = value; }
+
+    /// <summary>
+    /// Gets or sets the handler for unhandled user prompts.
+    /// </summary>
+    [JsonPropertyName("unhandledPromptBehavior")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public UserPromptHandler? UnhandledPromptBehavior { get => this.unhandledPromptBehavior; set => this.unhandledPromptBehavior = value; }
 }

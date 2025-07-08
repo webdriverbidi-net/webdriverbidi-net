@@ -85,4 +85,29 @@ public class CreateUserContextCommandParametersTests
             Assert.That(proxyObject!["httpProxy"]!.Value<string>(), Is.EqualTo("example-proxy.com"));
         });
     }
+
+    [Test]
+    public void TestCanSerializeParametersWithUnhandledPromptBehavior()
+    {
+        CreateUserContextCommandParameters properties = new()
+        {
+            UnhandledPromptBehavior = new UserPromptHandler()
+            {
+                Default = UserPromptHandlerType.Accept
+            }
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("unhandledPromptBehavior"));
+            Assert.That(serialized["unhandledPromptBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
+            JObject? promptHandlerObject = serialized["unhandledPromptBehavior"] as JObject;
+            Assert.That(promptHandlerObject, Is.Not.Null);
+            Assert.That(promptHandlerObject, Has.Count.EqualTo(1));
+            Assert.That(promptHandlerObject, Contains.Key("default"));
+            Assert.That(promptHandlerObject!["default"]!.Value<string>(), Is.EqualTo("accept"));
+        });
+    }
 }
