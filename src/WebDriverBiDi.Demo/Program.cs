@@ -43,7 +43,7 @@ try
     BiDiDriver driver = InitializeDriver(launcher.CreateTransport());
     await driver.StartAsync(launcher.WebSocketUrl);
 
-    if (testBrowserType == BrowserType.Chrome || testBrowserType == BrowserType.Firefox)
+    if (!launcher.IsBiDiSessionInitialized)
     {
         // Using a classic WebDriver browser driver to launch the browser
         // automatically gives you a WebDriver BiDi session. Without the

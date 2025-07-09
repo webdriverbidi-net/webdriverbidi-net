@@ -52,6 +52,12 @@ public abstract class BrowserLauncher
     public int Port { get => this.launcherPort; set => this.launcherPort = value; }
 
     /// <summary>
+    /// Gets a value indicating whether the launched browser has a provided WebDriver BiDi
+    /// session as part of its initialization.
+    /// </summary>
+    public virtual bool IsBiDiSessionInitialized => false;
+
+    /// <summary>
     /// Gets or sets the location of the browser executable.
     /// </summary>
     protected string BrowserExecutableLocation { get => this.browserExecutableLocation; set => this.browserExecutableLocation = value; }

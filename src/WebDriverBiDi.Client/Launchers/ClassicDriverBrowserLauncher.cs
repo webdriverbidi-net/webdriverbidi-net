@@ -46,6 +46,12 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
     }
 
     /// <summary>
+    /// Gets a value indicating whether the launched browser has a provided WebDriver BiDi
+    /// session as part of its initialization.
+    /// </summary>
+    public override bool IsBiDiSessionInitialized => true;
+
+    /// <summary>
     /// Gets an observable event that notifies when the launcher process is starting.
     /// </summary>
     public ObservableEvent<BrowserLauncherProcessStartingEventArgs> OnLauncherProcessStarting => this.onLauncherProcessStartingEvent;
