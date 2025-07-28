@@ -186,6 +186,16 @@ public sealed class NetworkModule : Module
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Sets extra headers to be set for each request sent by the browser. This will overwrite existing header values for those requests.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>The result of the command.</returns>
+    public async Task<EmptyResult> SetExtraHeadersAsync(SetExtraHeadersCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
     private async Task OnAuthRequiredAsync(EventInfo<AuthRequiredEventArgs> eventData)
     {
         AuthRequiredEventArgs eventArgs = eventData.ToEventArgs<AuthRequiredEventArgs>();
