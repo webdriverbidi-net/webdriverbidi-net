@@ -30,6 +30,16 @@ public sealed class EmulationModule : Module
     public override string ModuleName => EmulationModuleName;
 
     /// <summary>
+    /// Sets the emulated override for forced color themes for the specified contexts or user contexts.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<EmptyResult> SetForcedColorsModeThemeOverrideAsync(SetForcedColorsModeThemeOverrideCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sets the emulated override for the geolocation for the specified contexts or user contexts.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
