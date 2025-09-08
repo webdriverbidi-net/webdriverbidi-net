@@ -8,7 +8,7 @@ public class WebExtensionModuleTests
     [Test]
     public async Task TestInstallActivateCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -38,7 +38,7 @@ public class WebExtensionModuleTests
     [Test]
     public async Task TestUninstallActivateCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""

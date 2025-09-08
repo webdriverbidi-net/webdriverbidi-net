@@ -7,7 +7,7 @@ using PinchHitter;
 using WebDriverBiDi.TestUtilities;
 
 [TestFixture]
-public class ConnectionTests
+public class WebSocketConnectionTests
 {
     private Server server;
     private string lastServerReceivedData = string.Empty;
@@ -54,7 +54,7 @@ public class ConnectionTests
     {
         int port = this.server.Port;
         DisposeServer();
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromMilliseconds(250)
         };
@@ -64,7 +64,7 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanSendData()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         this.serverDataReceivedObserver = this.server.OnDataReceived.AddObserver(OnSocketDataReceived);
@@ -79,7 +79,7 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanReceiveData()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
@@ -94,7 +94,7 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionReceivesDataOnBufferBoundary()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
@@ -111,7 +111,7 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionReceivesDataOnVeryLongMessage()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
@@ -129,7 +129,7 @@ public class ConnectionTests
     public async Task TestConnectionLog()
     {
         List<LogMessageEventArgs> logValues = [];
-        Connection connection = new();
+        WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
@@ -170,7 +170,7 @@ public class ConnectionTests
     [Test]
     public async Task TestIsActiveProperty()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         Assert.That(connection.IsActive, Is.False);
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
@@ -184,20 +184,20 @@ public class ConnectionTests
     public async Task TestUrlProperty()
     {
         string serverWebSocketUrl = $"ws://localhost:{this.server.Port}";
-        Connection connection = new();
-        Assert.That(connection.ConnectedUrl, Is.EqualTo(string.Empty));
+        WebSocketConnection connection = new();
+        Assert.That(connection.ConnectionString, Is.EqualTo(string.Empty));
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         await connection.StartAsync(serverWebSocketUrl);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        Assert.That(connection.ConnectedUrl, Is.EqualTo(serverWebSocketUrl));
+        Assert.That(connection.ConnectionString, Is.EqualTo(serverWebSocketUrl));
         await connection.StopAsync();
-        Assert.That(connection.ConnectedUrl, Is.EqualTo(string.Empty));
+        Assert.That(connection.ConnectionString, Is.EqualTo(string.Empty));
     }
 
     [Test]
     public async Task TestStopWithoutStart()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         Assert.That(connection.IsActive, Is.False);
         await connection.StopAsync();
         Assert.That(connection.IsActive, Is.False);
@@ -206,7 +206,7 @@ public class ConnectionTests
     [Test]
     public async Task TestStopForcesCancellationOfDataReceiveTask()
     {
-        TestConnection connection = new()
+        TestWebSocketConnection connection = new()
         {
             BypassStart = false,
             BypassStop = false
@@ -229,7 +229,7 @@ public class ConnectionTests
     public async Task TestConnectionStopCanBeCalledMultipleTimes()
     {
         List<string> connectionLog = [];
-        Connection connection = new();
+        WebSocketConnection connection = new();
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             connectionLog.Add(e.Message);
@@ -245,7 +245,7 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionHandlesRemoteEndStop()
     {
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -270,7 +270,7 @@ public class ConnectionTests
         ];
 
         List<string> connectionLog = [];
-        Connection connection = new();
+        WebSocketConnection connection = new();
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             connectionLog.Add(e.Message);
@@ -297,7 +297,7 @@ public class ConnectionTests
         ];
 
         List<string> connectionLog = [];
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -341,7 +341,7 @@ public class ConnectionTests
         ];
 
         List<string> connectionLog = [];
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -365,7 +365,7 @@ public class ConnectionTests
     {
         ConnectionErrorEventArgs? receivedErrorArgs = null;
         ManualResetEventSlim errorReceivedEvent = new(false);
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -391,7 +391,7 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanBeReusedAfterBeingShutDown()
     {
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -430,7 +430,7 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanBeReusedAfterBeingAborted()
     {
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -470,7 +470,7 @@ public class ConnectionTests
     [Test]
     public async Task TestCannotStartAlreadyStartedConnection()
     {
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -483,14 +483,14 @@ public class ConnectionTests
     [Test]
     public void TestStartAsyncThrowsForInvalidUrl()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         Assert.That(async () => await connection.StartAsync("not-a-valid-url"), Throws.InstanceOf<ArgumentException>().With.Message.Contains("not a valid absolute URI"));
     }
 
     [Test]
     public void TestCannotSendDataOnAConnectionNotYetStarted()
     {
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
@@ -502,7 +502,7 @@ public class ConnectionTests
     public async Task TestCanShutdownWhenCleanShutdownExceedsTimeout()
     {
         List<string> connectionLog = [];
-        Connection connection = new()
+        WebSocketConnection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.Zero,
@@ -523,7 +523,7 @@ public class ConnectionTests
     [Test]
     public async Task TestDataSendOperationsAreSynchronized()
     {
-        TestConnection connection = new()
+        TestWebSocketConnection connection = new()
         {
             BypassStart = false,
             BypassStop = false,
@@ -549,14 +549,14 @@ public class ConnectionTests
     [Test]
     public async Task TestCanDisposeAsyncWithoutStarting()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
     }
 
     [Test]
     public async Task TestDoubleDisposeAsyncDoesNotThrow()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         await connection.DisposeAsync();
         Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
     }
@@ -564,7 +564,7 @@ public class ConnectionTests
     [Test]
     public async Task TestDoubleDisposeAsyncAfterStartDoesNotThrow()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -575,7 +575,7 @@ public class ConnectionTests
     [Test]
     public async Task TestIsDisposedPropertyIsSetAfterDispose()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Assert.That(connection.Disposed, Is.False);
         await connection.DisposeAsync();
         Assert.That(connection.Disposed, Is.True);
@@ -584,7 +584,7 @@ public class ConnectionTests
     [Test]
     public async Task TestCanDisposeAsyncAfterStop()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -595,7 +595,7 @@ public class ConnectionTests
     [Test]
     public async Task TestCanDisposeAsyncWithoutStoping()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -607,7 +607,7 @@ public class ConnectionTests
     public async Task TestDisposeLogsExceptionFromStop()
     {
         List<LogMessageEventArgs> logs = [];
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.OnLogMessage.AddObserver((e) =>
         {
             logs.Add(e);
@@ -628,7 +628,7 @@ public class ConnectionTests
     [Test]
     public async Task TestCanDisposeAsyncStartedConnectionAfterStop()
     {
-        Connection connection = new();
+        WebSocketConnection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -645,7 +645,7 @@ public class ConnectionTests
     public async Task TestConnectionDiscardsPartialFragmentedMessageOnClose()
     {
         ManualResetEventSlim closeReturned = new(false);
-        TestConnection connection = new()
+        TestWebSocketConnection connection = new()
         {
             BypassStart = false,
             BypassStop = false,
@@ -677,7 +677,7 @@ public class ConnectionTests
     public async Task TestConnectionCleansUpPartialFragmentedMessageOnException()
     {
         ManualResetEventSlim exceptionThrown = new(false);
-        TestConnection connection = new()
+        TestWebSocketConnection connection = new()
         {
             BypassStart = false,
             BypassStop = false,
@@ -703,7 +703,7 @@ public class ConnectionTests
     public async Task TestSendDataThrowsWhenConnectionBecomesInactiveAfterSemaphoreAcquired()
     {
         int isActiveCallCount = 0;
-        TestConnection connection = new()
+        TestWebSocketConnection connection = new()
         {
             IsActiveOverride = () =>
             {
@@ -723,7 +723,7 @@ public class ConnectionTests
     [Test]
     public async Task TestSendDataWrapsWebSocketExceptionInConnectionException()
     {
-        TestConnection connection = new()
+        TestWebSocketConnection connection = new()
         {
             IsActiveOverride = () => true,
             SendWebSocketDataOverride = _ => throw new WebSocketException("Simulated WebSocket failure"),
@@ -778,7 +778,7 @@ public class ConnectionTests
     [Test]
     public void TestSendDataThrowsWhenCancellationTokenIsCanceled()
     {
-        TestConnection connection = new()
+        TestWebSocketConnection connection = new()
         {
             BypassStart = false,
             IsActiveOverride = () => true,

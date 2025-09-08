@@ -12,7 +12,7 @@ public class TestTransport : Transport
     private int deserializeThrowCount;
     private int disconnectCallCount;
 
-    public TestTransport(Connection connection) : base(connection)
+    public TestTransport(WebSocketConnection connection) : base(connection)
     {
     }
 

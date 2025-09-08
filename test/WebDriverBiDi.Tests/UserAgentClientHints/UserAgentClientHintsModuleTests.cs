@@ -8,7 +8,7 @@ public class UserAgentClientHintsModuleTests
     [Test]
     public async Task TestSetClientHintsOverrideCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -35,7 +35,7 @@ public class UserAgentClientHintsModuleTests
     [Test]
     public async Task TestSetClientHintsOverrideCommandOmittingParameters()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""

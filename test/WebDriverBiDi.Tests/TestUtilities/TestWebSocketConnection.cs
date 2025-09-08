@@ -4,7 +4,7 @@ using System.Net.WebSockets;
 using System.Text;
 using WebDriverBiDi.Protocol;
 
-public class TestConnection : Connection
+public class TestWebSocketConnection : WebSocketConnection
 {
     private int receiveCallCount;
     private int stopCallCount;
@@ -55,7 +55,7 @@ public class TestConnection : Connection
 
     public event EventHandler? DataSendStarting;
 
-    public event EventHandler<TestConnectionDataSentEventArgs>? DataSendComplete;
+    public event EventHandler<TestWebSocketConnectionDataSentEventArgs>? DataSendComplete;
 
     public async Task RaiseDataReceivedEventAsync(string data)
     {
@@ -64,7 +64,7 @@ public class TestConnection : Connection
 
     public async Task RaiseLogMessageEventAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "TestConnection"));
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "TestWebSocketConnection"));
     }
 
     public async Task RaiseConnectionErrorEventAsync(Exception exception)
@@ -74,7 +74,7 @@ public class TestConnection : Connection
 
     public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
-        this.ConnectedUrl = url;
+        this.ConnectionString = url;
         if (this.StartBarrier is not null)
         {
             await this.StartBarrier.Task.ConfigureAwait(false);
@@ -174,7 +174,7 @@ public class TestConnection : Connection
     {
         if (this.DataSendComplete is not null)
         {
-            this.DataSendComplete(this, new TestConnectionDataSentEventArgs(this.DataSent));
+            this.DataSendComplete(this, new TestWebSocketConnectionDataSentEventArgs(this.DataSent));
         }
     }
 }

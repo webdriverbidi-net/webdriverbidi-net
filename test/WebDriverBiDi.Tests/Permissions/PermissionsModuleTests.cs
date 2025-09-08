@@ -8,7 +8,7 @@ public class PermissionsModuleTests
     [Test]
     public async Task TestExecuteActivateCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""

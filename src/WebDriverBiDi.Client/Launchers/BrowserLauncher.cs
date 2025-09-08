@@ -12,6 +12,8 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public abstract class BrowserLauncher
 {
+    private Connection? connection;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
     /// </summary>
@@ -140,6 +142,15 @@ public abstract class BrowserLauncher
     /// <returns>The <see cref="Transport"/> to be used in instantiating the driver.</returns>
     public virtual Transport CreateTransport()
     {
-        return new Transport();
+        this.connection ??= new WebSocketConnection();
+        return new Transport(this.connection);
+    }
+
+    /// <summary>
+    /// Creates the Connection object to be used to communicate with the browser.
+    /// </summary>
+    protected virtual void CreateConnection()
+    {
+        this.connection = new WebSocketConnection();
     }
 }

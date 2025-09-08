@@ -50,7 +50,7 @@ public class Transport : IAsyncDisposable
     /// Initializes a new instance of the <see cref="Transport"/> class.
     /// </summary>
     public Transport()
-        : this(new Connection())
+        : this(new WebSocketConnection())
     {
     }
 
@@ -168,7 +168,7 @@ public class Transport : IAsyncDisposable
         {
             if (this.IsConnected)
             {
-                throw new WebDriverBiDiConnectionException($"The transport is already connected to {this.Connection.ConnectedUrl}; you must disconnect before connecting to another URL");
+                throw new WebDriverBiDiConnectionException($"The transport is already connected to {this.Connection.ConnectionString}; you must disconnect before connecting to another URL");
             }
 
             if (!this.pendingCommands.IsAcceptingCommands)

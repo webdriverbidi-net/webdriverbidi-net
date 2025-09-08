@@ -96,7 +96,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         // the Transport class. We introspect into the object using reflection to get
         // this list, as it's not, nor should it be, exposed to consumers of the
         // Transport class.
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         _ = new BiDiDriver(TimeSpan.FromSeconds(1), transport);
 
