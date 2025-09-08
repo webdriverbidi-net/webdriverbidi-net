@@ -3,7 +3,7 @@ namespace WebDriverBiDi.TestUtilities;
 using System.Text;
 using WebDriverBiDi.Protocol;
 
-public class TestConnection : Connection
+public class TestWebSocketConnection : WebSocketConnection
 {
     public bool BypassStart { get; set; } = true;
 
@@ -31,7 +31,7 @@ public class TestConnection : Connection
 
     public override Task StartAsync(string url)
     {
-        this.ConnectedUrl = url;
+        this.ConnectionString = url;
         if (this.BypassStart)
         {
             return Task.CompletedTask;

@@ -98,6 +98,7 @@ public class ChromeLauncher : BrowserLauncher
     public ChromeLauncher(string browserExecutableLocation, int port)
         : base(string.Empty, port, browserExecutableLocation)
     {
+        this.CreateConnection();
         if (string.IsNullOrEmpty(browserExecutableLocation))
         {
             this.BrowserExecutableLocation = this.GetDefaultBrowserExecutableLocation();

@@ -9,7 +9,7 @@ public class InputModuleTests
     [Test]
     public async Task TestExecutePerformActions()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -36,7 +36,7 @@ public class InputModuleTests
     [Test]
     public async Task TestExecuteReleaseActions()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -63,7 +63,7 @@ public class InputModuleTests
     [Test]
     public async Task TestExecuteSetFiles()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -91,7 +91,7 @@ public class InputModuleTests
     [Test]
     public async Task TestCanReceiveFileDialogOpenedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         InputModule module = new(driver);
@@ -125,7 +125,7 @@ public class InputModuleTests
     [Test]
     public async Task TestCanReceiveFileDialogOpenedEventWithElementReference()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         InputModule module = new(driver);

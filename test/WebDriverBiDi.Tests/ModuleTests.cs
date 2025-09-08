@@ -9,7 +9,7 @@ public class ModuleTests
     [Test]
     public async Task TestEventWithInvalidEventArgsThrows()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
@@ -58,7 +58,7 @@ public class ModuleTests
     [Test]
     public async Task TestCanRemoveEventHandler()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
@@ -93,7 +93,7 @@ public class ModuleTests
     [Test]
     public async Task TestCanExecuteEventHandlersAsynchronously()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
@@ -128,7 +128,7 @@ public class ModuleTests
     [Test]
     public void TestCanGetMaxObserverCount()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
@@ -138,7 +138,7 @@ public class ModuleTests
     [Test]
     public void TestSubclassCanGetAccessDriver()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver);
@@ -149,7 +149,7 @@ public class ModuleTests
     [Test]
     public void TestExceedingMaxObserverCountThrows()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         TestProtocolModule module = new(driver, 1);

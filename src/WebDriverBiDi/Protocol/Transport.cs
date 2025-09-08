@@ -46,7 +46,7 @@ public class Transport
     /// Initializes a new instance of the <see cref="Transport"/> class.
     /// </summary>
     public Transport()
-        : this(new Connection())
+        : this(new WebSocketConnection())
     {
     }
 
@@ -126,13 +126,13 @@ public class Transport
     /// <summary>
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
-    /// <param name="websocketUri">The URI used to connect to the web socket.</param>
+    /// <param name="connectionString">The string containing information used to connect to the underlying connection.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task ConnectAsync(string websocketUri)
+    public virtual async Task ConnectAsync(string connectionString)
     {
         if (this.isConnected)
         {
-            throw new WebDriverBiDiException($"The transport is already connected to {this.Connection.ConnectedUrl}; you must disconnect before connecting to another URL");
+            throw new WebDriverBiDiException($"The transport is already connected to {this.Connection.ConnectionString}; you must disconnect before connecting to another URL");
         }
 
         if (!this.pendingCommands.IsAcceptingCommands)
@@ -154,7 +154,7 @@ public class Transport
         if (!this.Connection.IsActive)
         {
             // Allow for the possibility of the connection to already being opened.
-            await this.Connection.StartAsync(websocketUri).ConfigureAwait(false);
+            await this.Connection.StartAsync(connectionString).ConfigureAwait(false);
         }
 
         this.isConnected = true;

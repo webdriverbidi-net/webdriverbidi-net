@@ -22,7 +22,7 @@ public class TransportTests
             { "params", expectedCommandParameters }
         };
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
 
@@ -49,7 +49,7 @@ public class TransportTests
             { "params", expectedCommandParameters }
         };
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
 
@@ -64,7 +64,7 @@ public class TransportTests
     public async Task TestTransportCanGetResponse()
     {
         string commandName = "module.command";
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
 
@@ -101,7 +101,7 @@ public class TransportTests
     public async Task TestTransportCanGetResponseWithAdditionalData()
     {
         string commandName = "module.command";
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
 
@@ -144,7 +144,7 @@ public class TransportTests
     public async Task TestTransportCanGetErrorResponse()
     {
         string commandName = "module.command";
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
 
@@ -185,7 +185,7 @@ public class TransportTests
     public async Task TestTransportGetResponseWithThrownException()
     {
         string commandName = "module.command";
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
 
@@ -214,7 +214,7 @@ public class TransportTests
     public void TestTransportCannotSendCommandWithoutConnection()
     {
         string commandName = "module.command";
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
 
         TestCommandParameters commandParameters = new(commandName);
@@ -225,7 +225,7 @@ public class TransportTests
     public async Task TestTransportLeavesCommandResultAndThrownExceptionNullWithoutResponse()
     {
         string commandName = "module.command";
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
 
@@ -245,7 +245,7 @@ public class TransportTests
         object? receivedData = null;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
@@ -283,7 +283,7 @@ public class TransportTests
         object? receivedData = null;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) => {
             receivedData = e.ErrorData;
@@ -318,7 +318,7 @@ public class TransportTests
         object? receivedData = null;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -346,7 +346,7 @@ public class TransportTests
     public async Task TestTransportLogsCommands()
     {
         List<LogMessageEventArgs> logs = [];
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnLogMessage.AddObserver((e) =>
         {
@@ -368,7 +368,7 @@ public class TransportTests
     {
         ManualResetEventSlim syncEvent = new(false);
         List<LogMessageEventArgs> logs = [];
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         TaskCompletionSource logCompletionSource = new();
         transport.OnLogMessage.AddObserver((e) =>
@@ -422,7 +422,7 @@ public class TransportTests
     {
         ManualResetEventSlim syncEvent = new(false);
         List<LogMessageEventArgs> logs = [];
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnLogMessage.AddObserver((e) =>
         {
@@ -459,7 +459,7 @@ public class TransportTests
                       """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -491,7 +491,7 @@ public class TransportTests
                       """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -522,7 +522,7 @@ public class TransportTests
                       """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -554,7 +554,7 @@ public class TransportTests
                       """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -586,7 +586,7 @@ public class TransportTests
                       """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -617,7 +617,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         List<LogMessageEventArgs> logs = [];
         CountdownEvent signaler = new(2);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -661,7 +661,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         List<LogMessageEventArgs> logs = [];
         CountdownEvent signaler = new(2);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -705,7 +705,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         List<LogMessageEventArgs> logs = [];
         CountdownEvent signaler = new(2);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -749,7 +749,7 @@ public class TransportTests
                       """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -778,7 +778,7 @@ public class TransportTests
                       """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -810,7 +810,7 @@ public class TransportTests
                       """;
         string loggedEvent = string.Empty;
         ManualResetEventSlim syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
         {
@@ -843,7 +843,7 @@ public class TransportTests
         string loggedEvent = string.Empty;
         List<LogMessageEventArgs> logs = [];
         CountdownEvent signaler = new(2);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         transport.RegisterEventMessage<TestEventArgs>("protocol.event");
         transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
@@ -899,7 +899,7 @@ public class TransportTests
     [Test]
     public async Task TestCannotConnectWhenAlreadyConnected()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync($"ws://localhost:1234");
         Assert.That(async () => await transport.ConnectAsync($"ws://localhost:5678"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.StartsWith($"The transport is already connected to ws://localhost:1234"));
@@ -912,7 +912,7 @@ public class TransportTests
         object? receivedData = null;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         TestTransport transport = new(connection)
         {
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
@@ -964,7 +964,7 @@ public class TransportTests
             { "params", expectedCommandParameters }
         };
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws://example.com:1234");
 
@@ -989,7 +989,7 @@ public class TransportTests
         string receivedName = string.Empty;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
@@ -1021,7 +1021,7 @@ public class TransportTests
         string receivedName = string.Empty;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
@@ -1062,7 +1062,7 @@ public class TransportTests
         string receivedName = string.Empty;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
@@ -1101,7 +1101,7 @@ public class TransportTests
     public async Task TestCapturedExceptionsCanBeReset()
     {
         string receivedName = string.Empty;
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection)
         {
             EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
@@ -1146,7 +1146,7 @@ public class TransportTests
     [Test]
     public async Task TestTransportTracksCommandId()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
         Assert.That(transport.LastTestCommandId, Is.Zero);
@@ -1175,7 +1175,7 @@ public class TransportTests
     [Test]
     public void TestTransportSubclassesCanAccessConnection()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         Assert.That(transport.GetConnection(), Is.EqualTo(connection));
     }

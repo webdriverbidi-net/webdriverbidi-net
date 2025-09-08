@@ -8,7 +8,7 @@ public class TestTransport : Transport
 {
     private TimeSpan messageProcessingDelay = TimeSpan.Zero;
 
-    public TestTransport(Connection connection) : base(connection)
+    public TestTransport(WebSocketConnection connection) : base(connection)
     {
     }
 

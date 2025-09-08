@@ -8,7 +8,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteCloseCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -35,7 +35,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteCloseCommandWithNoArgument()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -62,7 +62,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteCreateUserContextCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -92,7 +92,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteCreateUserContextCommandWithNoArgument()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -122,7 +122,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteGetClientWindowsCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -188,7 +188,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteGetClientWindowsCommandWithNoArgument()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -254,7 +254,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteGetUserContextsCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -297,7 +297,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteGetUserContextsCommandWithNoArgument()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -339,7 +339,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteRemoveUserContextCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -366,7 +366,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestExecuteSetClientWindowStateCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -418,7 +418,7 @@ public class BrowserModuleTests
     [Test]
     public async Task TestSetDownloadBehaviorCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
