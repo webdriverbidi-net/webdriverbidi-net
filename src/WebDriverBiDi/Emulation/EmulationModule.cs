@@ -89,4 +89,14 @@ public sealed class EmulationModule : Module
     {
         return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Sets the emulated override for the user agent string for the specified contexts or user contexts.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<EmptyResult> SetUserAgentOverrideAsync(SetUserAgentOverrideCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
 }
