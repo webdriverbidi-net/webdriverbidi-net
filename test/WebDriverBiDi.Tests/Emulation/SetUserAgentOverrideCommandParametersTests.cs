@@ -1,0 +1,108 @@
+namespace WebDriverBiDi.Emulation;
+
+using System.Text.Json;
+using Newtonsoft.Json.Linq;
+
+[TestFixture]
+public class SetUserAgentOverrideCoordinatesCommandParametersTests
+{
+    [Test]
+    public void TestCommandName()
+    {
+        SetUserAgentOverrideCommandParameters properties = new();
+        Assert.That(properties.MethodName, Is.EqualTo("emulation.setUserAgentOverride"));
+    }
+
+    [Test]
+    public void TestCanSerializeParameters()
+    {
+        SetUserAgentOverrideCommandParameters properties = new();
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("userAgent"));
+            Assert.That(serialized["userAgent"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(serialized["userAgent"]!.Value<JObject?>, Is.Null);
+        });
+    }
+
+    [Test]
+    public void TestCanSerializeParametersWithLocale()
+    {
+        SetUserAgentOverrideCommandParameters properties = new()
+        {
+            UserAgent = "WebDriverBiDi.NET/1.0 (no platform)"
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("userAgent"));
+            Assert.That(serialized["userAgent"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["userAgent"]!.Value<string>(), Is.EqualTo("WebDriverBiDi.NET/1.0 (no platform)"));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializePropertiesWithContexts()
+    {
+        SetUserAgentOverrideCommandParameters properties = new()
+        {
+            Contexts = new()
+            {
+                "context1",
+                "context2",
+            }
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("userAgent"));
+            Assert.That(serialized["userAgent"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(serialized["userAgent"]!.Value<JObject?>(), Is.Null);
+            Assert.That(serialized, Contains.Key("contexts"));
+            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
+            JArray? contextsArray = serialized["contexts"]!.Value<JArray>();
+            Assert.That(contextsArray, Has.Count.EqualTo(2));
+            Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
+            Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
+        });
+    }
+
+    [Test]
+    public void TestCanSerializePropertiesWithUserContexts()
+    {
+        SetUserAgentOverrideCommandParameters properties = new()
+        {
+            UserContexts = new()
+            {
+                "userContext1",
+                "userContext2",
+            }
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(2));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("userAgent"));
+            Assert.That(serialized["userAgent"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(serialized["userAgent"]!.Value<JObject?>(), Is.Null);
+            Assert.That(serialized, Contains.Key("userContexts"));
+            Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
+            JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
+            Assert.That(userContextsArray, Has.Count.EqualTo(2));
+            Assert.That(userContextsArray![0].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
+            Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
+        });
+    }
+}
