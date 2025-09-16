@@ -8,9 +8,10 @@ namespace WebDriverBiDi.Client.Launchers;
 using System.Runtime.InteropServices;
 
 /// <summary>
-/// Object for launching a Chrome browser to connect to using a WebDriverBiDi session.
+/// Object for launching a Chrome browser to connect to using a WebDriverBiDi session
+/// using a local instance of the chromedriver browser driver executable.
 /// </summary>
-public class ChromeDriverLauncher : ClassicDriverBrowserLauncher
+public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
 {
     private const string DefaultChromeLauncherFileName = "chromedriver";
 

@@ -8,9 +8,10 @@ namespace WebDriverBiDi.Client.Launchers;
 using System.Runtime.InteropServices;
 
 /// <summary>
-/// Object for launching a Firefox browser to connect to using a WebDriverBiDi session.
+/// Object for launching a Firefox browser to connect to using a WebDriverBiDi session
+/// using a local instance of the geckodriver browser driver executable.
 /// </summary>
-public class GeckoDriverLauncher : ClassicDriverBrowserLauncher
+public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
 {
     private const string DefaultFirefoxLauncherFileName = "geckodriver";
 

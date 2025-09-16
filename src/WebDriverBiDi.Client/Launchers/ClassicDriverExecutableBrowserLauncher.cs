@@ -1,4 +1,4 @@
-// <copyright file="ClassicDriverBrowserLauncher.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="ClassicDriverExecutableBrowserLauncher.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -8,24 +8,22 @@ namespace WebDriverBiDi.Client.Launchers;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
 using WebDriverBiDi;
 
 /// <summary>
-/// Abstract base class for launching a browser to connect to using a WebDriverBiDi session.
+/// Abstract base class for launching a browser to connect to using a WebDriver BiDi session.
+/// This class launches a WebDriver Classic browser driver executable (geckodriver,
+/// chromedriver, safaridriver, etc.), and then establishes a WebDriver Classic session
+/// that is upgraded to use WebDriver BiDi.
 /// </summary>
-public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
+public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicBrowserLauncher
 {
     private static readonly SemaphoreSlim LockObject = new(1, 1);
     private readonly string launcherExecutableName;
-    private readonly HttpClient httpClient = new();
 
     private readonly ObservableEvent<BrowserLauncherProcessStartingEventArgs> onLauncherProcessStartingEvent = new("classicDriverBrowserLauncher.launcherProcessStarting");
     private readonly ObservableEvent<BrowserLauncherProcessStartedEventArgs> onLauncherProcessStartedEvent = new("classicDriverBrowserLauncher.launcherProcessStarted");
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("classicDriverBrowserLauncher.logMessage");
 
-    private string launcherHostName = "localhost";
     private bool hideCommandPromptWindow;
     private bool captureBrowserLauncherOutput = true;
     private bool isLoggingLauncherProcessOutput;
@@ -33,13 +31,13 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
     private string sessionId = string.Empty;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ClassicDriverBrowserLauncher"/> class.
+    /// Initializes a new instance of the <see cref="ClassicDriverExecutableBrowserLauncher"/> class.
     /// </summary>
     /// <param name="launcherExecutablePath">The path to the directory containing the launcher executable.</param>
     /// <param name="launcherExecutableName">The name of the launcher executable.</param>
     /// <param name="port">The port on which the launcher executable should listen for connections.</param>
     /// <param name="browserExecutableLocation">The path containing the directory and file name of the browser executable. Default to an empty string, indicating to use the default installed browser.</param>
-    protected ClassicDriverBrowserLauncher(string launcherExecutablePath, string launcherExecutableName, int port, string browserExecutableLocation = "")
+    protected ClassicDriverExecutableBrowserLauncher(string launcherExecutablePath, string launcherExecutableName, int port, string browserExecutableLocation = "")
         : base(launcherExecutablePath, port, browserExecutableLocation)
     {
         this.launcherExecutableName = launcherExecutableName;
@@ -60,21 +58,6 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
     /// Gets an observable event that notifies when the launcher process has completely started.
     /// </summary>
     public ObservableEvent<BrowserLauncherProcessStartedEventArgs> OnLauncherProcessStarted => this.onLauncherProcessStartedEvent;
-
-    /// <summary>
-    /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
-    /// </summary>
-    public override ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
-
-    /// <summary>
-    /// Gets or sets the host name of the launcher. Defaults to "localhost".
-    /// </summary>
-    /// <remarks>
-    /// Most browser launcher executables do not allow connections from remote
-    /// (non-local) machines. This property can be used as a workaround so
-    /// that an IP address (like "127.0.0.1" or "::1") can be used instead.
-    /// </remarks>
-    public string HostName { get => this.launcherHostName; set => this.launcherHostName = value; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the command prompt window of the browser launcher should be hidden.
@@ -126,17 +109,7 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
     /// Gets a value indicating whether the service has a shutdown API that can be called to terminate
     /// it gracefully before forcing a termination.
     /// </summary>
-    protected virtual bool HasShutdownApi => true;
-
-    /// <summary>
-    /// Gets a value indicating the time to wait for the service to terminate before forcing it to terminate.
-    /// </summary>
-    protected virtual TimeSpan TerminationTimeout => TimeSpan.FromSeconds(10);
-
-    /// <summary>
-    /// Gets the Uri of the service.
-    /// </summary>
-    private string ServiceUrl => $"http://{this.launcherHostName}:{this.Port}";
+    protected override bool HasShutdownApi => true;
 
     /// <summary>
     /// Asynchronously starts the browser launcher if it is not already running.
@@ -163,7 +136,6 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
         // millisecond order of magnitude, but the chance does exist. We will attempt
         // to mitigate at least other instances of a BrowserLauncher acquiring the
         // same port when launching the browser.
-        bool launcherAvailable = false;
         await LockObject.WaitAsync().ConfigureAwait(false);
         try
         {
@@ -187,7 +159,10 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
 
             this.launcherProcess.Start();
             this.StartLoggingProcessOutput();
-            launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
+
+            // The base class's StartAsync method polls the WebDriver remote end's "status" end point
+            // until a timeout to make sure the HTTP server of the remote end is running.
+            await base.StartAsync().ConfigureAwait(false);
             BrowserLauncherProcessStartedEventArgs processStartedEventArgs = new(this.launcherProcess);
             await this.OnLauncherProcessStartedAsync(processStartedEventArgs);
             await this.LogAsync("Browser launcher started", WebDriverBiDiLogLevel.Info);
@@ -195,12 +170,6 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
         finally
         {
             LockObject.Release();
-        }
-
-        if (!launcherAvailable)
-        {
-            string msg = "Cannot start the browser launcher on " + this.ServiceUrl;
-            throw new WebDriverBiDiException(msg);
         }
     }
 
@@ -225,7 +194,7 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
                         // we'll retry. We wait for exit here, since catching the exception
                         // for a failed HTTP request due to a closed socket is particularly
                         // expensive.
-                        using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/shutdown").ConfigureAwait(false);
+                        using HttpResponseMessage response = await this.HttpClient.GetAsync($"{this.ServiceUrl}/shutdown").ConfigureAwait(false);
                         this.launcherProcess!.WaitForExit(3000);
                     }
                     catch (WebException)
@@ -252,91 +221,6 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
             await this.LogAsync("Browser launcher exited", WebDriverBiDiLogLevel.Info);
         }
     }
-
-    /// <summary>
-    /// Asynchronously launches the browser.
-    /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
-    public override async Task LaunchBrowserAsync()
-    {
-        Dictionary<string, object> classicCapabilities = new()
-        {
-            ["capabilities"] = new Dictionary<string, object>()
-            {
-                ["firstMatch"] = new List<object>()
-                {
-                    this.CreateBrowserLaunchCapabilities(),
-                },
-            },
-        };
-        string json = JsonSerializer.Serialize(classicCapabilities);
-        await this.LogAsync("Launching browser", WebDriverBiDiLogLevel.Info);
-        await this.LogAsync($"Sending classic new session command. JSON:\n{json}", WebDriverBiDiLogLevel.Debug);
-        StringContent content = new(json, Encoding.UTF8, "application/json");
-        using HttpResponseMessage response = await this.httpClient.PostAsync($"{this.ServiceUrl}/session", content).ConfigureAwait(false);
-        string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            throw new BrowserNotLaunchedException($"Unable to launch browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
-        }
-
-        await this.LogAsync($"Received classic new session response. JSON:\n{responseJson}", WebDriverBiDiLogLevel.Debug);
-        using (JsonDocument returned = JsonDocument.Parse(responseJson))
-        {
-            JsonElement rootElement = returned.RootElement;
-            if (rootElement.TryGetProperty("value", out JsonElement returnedValue))
-            {
-                if (returnedValue.TryGetProperty("sessionId", out JsonElement returnedSessionId))
-                {
-                    this.sessionId = returnedSessionId.GetString()!;
-                }
-
-                if (returnedValue.TryGetProperty("capabilities", out JsonElement capabilities))
-                {
-                    if (capabilities.TryGetProperty("webSocketUrl", out JsonElement returnedWebSocketUrl))
-                    {
-                        this.WebSocketUrl = returnedWebSocketUrl.GetString()!;
-                    }
-                }
-            }
-        }
-
-        if (string.IsNullOrEmpty(this.sessionId))
-        {
-            throw new BrowserNotLaunchedException($"Unable to launch browser. Could not detect session ID in WebDriver classic new session response (response JSON: {responseJson})");
-        }
-
-        if (string.IsNullOrEmpty(this.WebSocketUrl))
-        {
-            throw new BrowserNotLaunchedException($"Unable to connect to WebSocket. Launched browse may not support the WebDriver BiDi protocol (response JSON: {responseJson})");
-        }
-    }
-
-    /// <summary>
-    /// Asynchronously quits the browser.
-    /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
-    public override async Task QuitBrowserAsync()
-    {
-        if (!string.IsNullOrEmpty(this.sessionId))
-        {
-            await this.LogAsync($"Quitting browser", WebDriverBiDiLogLevel.Info);
-            using HttpResponseMessage response = await this.httpClient.DeleteAsync($"{this.ServiceUrl}/session/{this.sessionId}").ConfigureAwait(false);
-            string responseJson = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                throw new CannotQuitBrowserException($"Unable to quit browser. Received status code {response.StatusCode} with body {responseJson} from launcher");
-            }
-        }
-    }
-
-    /// <summary>
-    /// Creates the WebDriver Classic capabilities used to launch the browser.
-    /// </summary>
-    /// <returns>A dictionary containing the capabilities.</returns>
-    protected abstract Dictionary<string, object> CreateBrowserLaunchCapabilities();
 
     /// <summary>
     /// Finds a random, free port to be listened on.
@@ -367,43 +251,6 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
         return listeningPort;
     }
 
-    /// <summary>
-    /// Asynchronously waits for the initialization of the browser launcher.
-    /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    private async Task<bool> WaitForInitializationAsync()
-    {
-        bool isInitialized = false;
-        DateTime timeout = DateTime.Now.Add(this.InitializationTimeout);
-        while (!isInitialized && DateTime.Now < timeout)
-        {
-            // If the driver service process has exited, we can exit early.
-            if (!this.IsRunning)
-            {
-                break;
-            }
-
-            try
-            {
-                using HttpResponseMessage response = await this.httpClient.GetAsync($"{this.ServiceUrl}/status").ConfigureAwait(false);
-
-                // Checking the response from the 'status' end point. Note that we are simply checking
-                // that the HTTP status returned is a 200 status, and that the response has the correct
-                // Content-Type header. A more sophisticated check would parse the JSON response and
-                // validate its values. At the moment we do not do this more sophisticated check.
-                isInitialized = response.StatusCode == HttpStatusCode.OK &&
-                    response.Content.Headers.ContentType is not null &&
-                    response.Content.Headers.ContentType.MediaType is not null &&
-                    response.Content.Headers.ContentType.MediaType.StartsWith("application/json", StringComparison.OrdinalIgnoreCase);
-            }
-            catch (HttpRequestException)
-            {
-            }
-        }
-
-        return isInitialized;
-    }
-
     private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
     {
         await this.onLauncherProcessStartingEvent.NotifyObserversAsync(eventArgs);
@@ -412,16 +259,6 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
     private async Task OnLauncherProcessStartedAsync(BrowserLauncherProcessStartedEventArgs eventArgs)
     {
         await this.onLauncherProcessStartedEvent.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnLogMessageAsync(LogMessageEventArgs eventArgs)
-    {
-        await this.onLogMessageEvent.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task LogAsync(string message, WebDriverBiDiLogLevel level, string component = "Browser Launcher")
-    {
-        await this.OnLogMessageAsync(new LogMessageEventArgs(message, level, component));
     }
 
     private void StartLoggingProcessOutput()

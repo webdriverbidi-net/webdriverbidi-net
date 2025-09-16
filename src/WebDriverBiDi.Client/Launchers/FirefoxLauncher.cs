@@ -16,7 +16,8 @@ using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
-/// A browser launcher that does not rely on any external executable except for the browser itself.
+/// Object for launching a Firefox browser to connect to using a WebDriverBiDi session.
+/// This browser launcher does not rely on any external executable except for the browser itself.
 /// </summary>
 public class FirefoxLauncher : BrowserLauncher
 {
