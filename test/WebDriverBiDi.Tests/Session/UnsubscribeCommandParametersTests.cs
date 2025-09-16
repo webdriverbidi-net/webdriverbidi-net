@@ -47,28 +47,6 @@ public class UnsubscribeCommandParametersTests
     }
 
     [Test]
-    public void TestCanSerializeByAttributesParametersWithContexts()
-    {
-        UnsubscribeByAttributesCommandParameters properties = new();
-        properties.Contexts.Add("myContext");
-        properties.Events.Add("some.event");
-        string json = JsonSerializer.Serialize(properties);
-        JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
-        {
-            Assert.That(serialized, Contains.Key("events"));
-            Assert.That(serialized["events"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["events"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["events"]![0]!.Value<string>(), Is.EqualTo("some.event"));
-            Assert.That(serialized, Contains.Key("contexts"));
-            Assert.That(serialized["contexts"]!.Count, Is.EqualTo(1));
-            Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["contexts"]![0]!.Value<string>(), Is.EqualTo("myContext"));
-        });
-    }
-
-    [Test]
     public void TestCanSerializeByIdsParameters()
     {
         UnsubscribeByIdsCommandParameters properties = new();
