@@ -414,4 +414,31 @@ public class BrowserModuleTests
             Assert.That(result.Height, Is.EqualTo(480));
         });
     }
+
+    [Test]
+    public async Task TestSetDownloadBehaviorCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        BrowserModule module = new(driver);
+
+        Task<EmptyResult> task = module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters());
+        task.Wait(TimeSpan.FromSeconds(1));
+        EmptyResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
 }

@@ -90,4 +90,14 @@ public sealed class BrowserModule : Module
     {
         return await this.Driver.ExecuteCommandAsync<SetClientWindowStateCommandResult>(commandProperties).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Sets the download behavior for the browser.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<EmptyResult> SetDownloadBehaviorAsync(SetDownloadBehaviorCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
 }
