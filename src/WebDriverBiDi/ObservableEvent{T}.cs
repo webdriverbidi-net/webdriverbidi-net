@@ -15,23 +15,32 @@ public class ObservableEvent<T>
 {
     private readonly Dictionary<string, ObservableEventHandler<T>> observers = new();
     private readonly int maxObserverCount;
+    private readonly string eventName;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
     /// </summary>
-    public ObservableEvent()
-        : this(0)
+    /// <param name="eventName">The name of the event.</param>
+    public ObservableEvent(string eventName)
+        : this(eventName, 0)
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
     /// </summary>
+    /// <param name="eventName">The name of the event.</param>
     /// <param name="maxObserverCount">The maximum number of handlers that may observe this event.</param>
-    public ObservableEvent(int maxObserverCount)
+    public ObservableEvent(string eventName, int maxObserverCount)
     {
+        this.eventName = eventName;
         this.maxObserverCount = maxObserverCount;
     }
+
+    /// <summary>
+    /// Gets the name of this observable event.
+    /// </summary>
+    public string EventName => this.eventName;
 
     /// <summary>
     /// Gets the maximum number of observers that may observe this event.

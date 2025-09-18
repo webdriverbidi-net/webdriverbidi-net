@@ -15,7 +15,9 @@ public sealed class InputModule : Module
     /// </summary>
     public const string InputModuleName = "input";
 
-    private readonly ObservableEvent<FileDialogOpenedEventArgs> onFileDialogOpenedEvent = new();
+    private const string FileDialogOpenedEventName = $"{InputModuleName}.fileDialogOpened";
+
+    private readonly ObservableEvent<FileDialogOpenedEventArgs> onFileDialogOpenedEvent = new(FileDialogOpenedEventName);
 
      /// <summary>
     /// Initializes a new instance of the <see cref="InputModule"/> class.
@@ -24,7 +26,7 @@ public sealed class InputModule : Module
     public InputModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<FileDialogInfo>("input.fileDialogOpened", this.OnFileDialogOpenedAsync);
+        this.RegisterAsyncEventInvoker<FileDialogInfo>(FileDialogOpenedEventName, this.OnFileDialogOpenedAsync);
      }
 
     /// <summary>

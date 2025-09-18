@@ -15,20 +15,35 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     public const string BrowsingContextModuleName = "browsingContext";
 
-    private readonly ObservableEvent<BrowsingContextEventArgs> onContextCreatedEvent = new();
-    private readonly ObservableEvent<BrowsingContextEventArgs> onContextDestroyedEvent = new();
-    private readonly ObservableEvent<NavigationEventArgs> onNavigationStartedEvent = new();
-    private readonly ObservableEvent<NavigationEventArgs> onFragmentNavigatedEvent = new();
-    private readonly ObservableEvent<NavigationEventArgs> onDomContentLoadedEvent = new();
-    private readonly ObservableEvent<NavigationEventArgs> onLoadEvent = new();
-    private readonly ObservableEvent<DownloadWillBeginEventArgs> onDownloadWillBeginEvent = new();
-    private readonly ObservableEvent<DownloadEndEventArgs> onDownloadEndEvent = new();
-    private readonly ObservableEvent<NavigationEventArgs> onNavigationAbortedEvent = new();
-    private readonly ObservableEvent<NavigationEventArgs> onNavigationCommittedEvent = new();
-    private readonly ObservableEvent<NavigationEventArgs> onNavigationFailedEvent = new();
-    private readonly ObservableEvent<HistoryUpdatedEventArgs> onHistoryUpdatedEvent = new();
-    private readonly ObservableEvent<UserPromptClosedEventArgs> onUserPromptClosedEvent = new();
-    private readonly ObservableEvent<UserPromptOpenedEventArgs> onUserPromptOpenedEvent = new();
+    private const string ContextCreatedEventName = $"{BrowsingContextModuleName}.contextCreated";
+    private const string ContextDestroyedEventName = $"{BrowsingContextModuleName}.contextDestroyed";
+    private const string NavigationStartedEventName = $"{BrowsingContextModuleName}.navigationStarted";
+    private const string FragmentNavigatedEventName = $"{BrowsingContextModuleName}.fragmentNavigated";
+    private const string DomContentLoadedEventName = $"{BrowsingContextModuleName}.domContentLoaded";
+    private const string LoadEventName = $"{BrowsingContextModuleName}.load";
+    private const string DownloadWillBeginEventName = $"{BrowsingContextModuleName}.downloadWillBegin";
+    private const string DownloadEndEventName = $"{BrowsingContextModuleName}.downloadEnd";
+    private const string NavigationAbortedEventName = $"{BrowsingContextModuleName}.navigationAborted";
+    private const string NavigationCommittedEventName = $"{BrowsingContextModuleName}.navigationCommitted";
+    private const string NavigationFailedEventName = $"{BrowsingContextModuleName}.navigationFailed";
+    private const string HistoryUpdatedEventName = $"{BrowsingContextModuleName}.historyUpdated";
+    private const string UserPromptClosedEventName = $"{BrowsingContextModuleName}.userPromptClosed";
+    private const string UserPromptOpenedEventName = $"{BrowsingContextModuleName}.userPromptOpened";
+
+    private readonly ObservableEvent<BrowsingContextEventArgs> onContextCreatedEvent = new(ContextCreatedEventName);
+    private readonly ObservableEvent<BrowsingContextEventArgs> onContextDestroyedEvent = new(ContextDestroyedEventName);
+    private readonly ObservableEvent<NavigationEventArgs> onNavigationStartedEvent = new(NavigationStartedEventName);
+    private readonly ObservableEvent<NavigationEventArgs> onFragmentNavigatedEvent = new(FragmentNavigatedEventName);
+    private readonly ObservableEvent<NavigationEventArgs> onDomContentLoadedEvent = new(DomContentLoadedEventName);
+    private readonly ObservableEvent<NavigationEventArgs> onLoadEvent = new(LoadEventName);
+    private readonly ObservableEvent<DownloadWillBeginEventArgs> onDownloadWillBeginEvent = new(DownloadWillBeginEventName);
+    private readonly ObservableEvent<DownloadEndEventArgs> onDownloadEndEvent = new(DownloadEndEventName);
+    private readonly ObservableEvent<NavigationEventArgs> onNavigationAbortedEvent = new(NavigationAbortedEventName);
+    private readonly ObservableEvent<NavigationEventArgs> onNavigationCommittedEvent = new(NavigationCommittedEventName);
+    private readonly ObservableEvent<NavigationEventArgs> onNavigationFailedEvent = new(NavigationFailedEventName);
+    private readonly ObservableEvent<HistoryUpdatedEventArgs> onHistoryUpdatedEvent = new(HistoryUpdatedEventName);
+    private readonly ObservableEvent<UserPromptClosedEventArgs> onUserPromptClosedEvent = new(UserPromptClosedEventName);
+    private readonly ObservableEvent<UserPromptOpenedEventArgs> onUserPromptOpenedEvent = new(UserPromptOpenedEventName);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowsingContextModule"/> class.
@@ -37,20 +52,20 @@ public sealed class BrowsingContextModule : Module
     public BrowsingContextModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<BrowsingContextInfo>("browsingContext.contextCreated", this.OnContextCreatedAsync);
-        this.RegisterAsyncEventInvoker<BrowsingContextInfo>("browsingContext.contextDestroyed", this.OnContextDestroyedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationStarted", this.OnNavigationStartedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.fragmentNavigated", this.OnFragmentNavigatedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.domContentLoaded", this.OnDomContentLoadedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.load", this.OnLoadAsync);
-        this.RegisterAsyncEventInvoker<DownloadWillBeginEventArgs>("browsingContext.downloadWillBegin", this.OnDownloadWillBeginAsync);
-        this.RegisterAsyncEventInvoker<DownloadEndEventArgs>("browsingContext.downloadEnd", this.OnDownloadEndAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationAborted", this.OnNavigationAbortedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationCommitted", this.OnNavigationCommittedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>("browsingContext.navigationFailed", this.OnNavigationFailedAsync);
-        this.RegisterAsyncEventInvoker<HistoryUpdatedEventArgs>("browsingContext.historyUpdated", this.OnHistoryUpdatedAsync);
-        this.RegisterAsyncEventInvoker<UserPromptClosedEventArgs>("browsingContext.userPromptClosed", this.OnUserPromptClosedAsync);
-        this.RegisterAsyncEventInvoker<UserPromptOpenedEventArgs>("browsingContext.userPromptOpened", this.OnUserPromptOpenedAsync);
+        this.RegisterAsyncEventInvoker<BrowsingContextInfo>(ContextCreatedEventName, this.OnContextCreatedAsync);
+        this.RegisterAsyncEventInvoker<BrowsingContextInfo>(ContextDestroyedEventName, this.OnContextDestroyedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>(NavigationStartedEventName, this.OnNavigationStartedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>(FragmentNavigatedEventName, this.OnFragmentNavigatedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>(DomContentLoadedEventName, this.OnDomContentLoadedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>(LoadEventName, this.OnLoadAsync);
+        this.RegisterAsyncEventInvoker<DownloadWillBeginEventArgs>(DownloadWillBeginEventName, this.OnDownloadWillBeginAsync);
+        this.RegisterAsyncEventInvoker<DownloadEndEventArgs>(DownloadEndEventName, this.OnDownloadEndAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>(NavigationAbortedEventName, this.OnNavigationAbortedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>(NavigationCommittedEventName, this.OnNavigationCommittedAsync);
+        this.RegisterAsyncEventInvoker<NavigationEventArgs>(NavigationFailedEventName, this.OnNavigationFailedAsync);
+        this.RegisterAsyncEventInvoker<HistoryUpdatedEventArgs>(HistoryUpdatedEventName, this.OnHistoryUpdatedAsync);
+        this.RegisterAsyncEventInvoker<UserPromptClosedEventArgs>(UserPromptClosedEventName, this.OnUserPromptClosedAsync);
+        this.RegisterAsyncEventInvoker<UserPromptOpenedEventArgs>(UserPromptOpenedEventName, this.OnUserPromptOpenedAsync);
     }
 
     /// <summary>

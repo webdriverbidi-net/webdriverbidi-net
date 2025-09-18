@@ -21,9 +21,9 @@ public abstract class ClassicDriverBrowserLauncher : BrowserLauncher
     private readonly string launcherExecutableName;
     private readonly HttpClient httpClient = new();
 
-    private readonly ObservableEvent<BrowserLauncherProcessStartingEventArgs> onLauncherProcessStartingEvent = new();
-    private readonly ObservableEvent<BrowserLauncherProcessStartedEventArgs> onLauncherProcessStartedEvent = new();
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
+    private readonly ObservableEvent<BrowserLauncherProcessStartingEventArgs> onLauncherProcessStartingEvent = new("classicDriverBrowserLauncher.launcherProcessStarting");
+    private readonly ObservableEvent<BrowserLauncherProcessStartedEventArgs> onLauncherProcessStartedEvent = new("classicDriverBrowserLauncher.launcherProcessStarted");
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("classicDriverBrowserLauncher.logMessage");
 
     private string launcherHostName = "localhost";
     private bool hideCommandPromptWindow;

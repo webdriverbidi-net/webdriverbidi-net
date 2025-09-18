@@ -91,13 +91,20 @@ public class ObservableEventTests
         Assert.That(eventSourceString, Does.StartWith("ObservableEvent<TestObservableEventArgs> with observers:\n    EventObserver<TestObservableEventArgs> (id:"));
     }
 
+    [Test]
+    public void TestEventName()
+    {
+        TestEventSource testEventSource = new();
+        Assert.That(testEventSource.TestObservableEvent.EventName, Is.EqualTo("testModule.testEvent"));        
+    }
+
     private class TestEventSource
     {
-        private ObservableEvent<TestObservableEventArgs> testObservableEvent = new();
+        private ObservableEvent<TestObservableEventArgs> testObservableEvent = new("testModule.testEvent");
 
         public TestEventSource(int maxObserverCount = 0)
         {
-            this.testObservableEvent = new ObservableEvent<TestObservableEventArgs>(maxObserverCount);
+            this.testObservableEvent = new ObservableEvent<TestObservableEventArgs>("testModule.testEvent", maxObserverCount);
         }
 
         public ObservableEvent<TestObservableEventArgs> TestObservableEvent => testObservableEvent;

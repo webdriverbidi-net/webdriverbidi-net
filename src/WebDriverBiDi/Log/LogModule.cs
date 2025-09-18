@@ -15,7 +15,9 @@ public sealed class LogModule : Module
     /// </summary>
     public const string LogModuleName = "log";
 
-    private ObservableEvent<EntryAddedEventArgs> onEntryAddedEvent = new();
+    private const string EntryAddedEventName = $"{LogModuleName}.entryAdded";
+
+    private ObservableEvent<EntryAddedEventArgs> onEntryAddedEvent = new(EntryAddedEventName);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LogModule"/> class.
@@ -24,7 +26,7 @@ public sealed class LogModule : Module
     public LogModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<LogEntry>("log.entryAdded", this.OnEntryAddedAsync);
+        this.RegisterAsyncEventInvoker<LogEntry>(EntryAddedEventName, this.OnEntryAddedAsync);
     }
 
     /// <summary>

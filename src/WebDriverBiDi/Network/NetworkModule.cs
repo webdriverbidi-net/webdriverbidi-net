@@ -15,11 +15,17 @@ public sealed class NetworkModule : Module
     /// </summary>
     public const string NetworkModuleName = "network";
 
-    private ObservableEvent<AuthRequiredEventArgs> onAuthRequiredEvent = new();
-    private ObservableEvent<BeforeRequestSentEventArgs> onBeforeRequestSentEvent = new();
-    private ObservableEvent<FetchErrorEventArgs> onFetchErrorEvent = new();
-    private ObservableEvent<ResponseStartedEventArgs> onResponseStartedEvent = new();
-    private ObservableEvent<ResponseCompletedEventArgs> onResponseCompletedEvent = new();
+    private const string AuthRequiredEventName = $"{NetworkModuleName}.authRequired";
+    private const string BeforeRequestSentEventName = $"{NetworkModuleName}.beforeRequestSent";
+    private const string FetchErrorEventName = $"{NetworkModuleName}.fetchError";
+    private const string ResponseStartedEventName = $"{NetworkModuleName}.responseStarted";
+    private const string ResponseCompletedEventName = $"{NetworkModuleName}.responseCompleted";
+
+    private ObservableEvent<AuthRequiredEventArgs> onAuthRequiredEvent = new(AuthRequiredEventName);
+    private ObservableEvent<BeforeRequestSentEventArgs> onBeforeRequestSentEvent = new(BeforeRequestSentEventName);
+    private ObservableEvent<FetchErrorEventArgs> onFetchErrorEvent = new(FetchErrorEventName);
+    private ObservableEvent<ResponseStartedEventArgs> onResponseStartedEvent = new(ResponseStartedEventName);
+    private ObservableEvent<ResponseCompletedEventArgs> onResponseCompletedEvent = new(ResponseCompletedEventName);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NetworkModule"/> class.
@@ -28,11 +34,11 @@ public sealed class NetworkModule : Module
     public NetworkModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<AuthRequiredEventArgs>("network.authRequired", this.OnAuthRequiredAsync);
-        this.RegisterAsyncEventInvoker<BeforeRequestSentEventArgs>("network.beforeRequestSent", this.OnBeforeRequestSentAsync);
-        this.RegisterAsyncEventInvoker<FetchErrorEventArgs>("network.fetchError", this.OnFetchErrorAsync);
-        this.RegisterAsyncEventInvoker<ResponseStartedEventArgs>("network.responseStarted", this.OnResponseStartedAsync);
-        this.RegisterAsyncEventInvoker<ResponseCompletedEventArgs>("network.responseCompleted", this.OnResponseCompletedAsync);
+        this.RegisterAsyncEventInvoker<AuthRequiredEventArgs>(AuthRequiredEventName, this.OnAuthRequiredAsync);
+        this.RegisterAsyncEventInvoker<BeforeRequestSentEventArgs>(BeforeRequestSentEventName, this.OnBeforeRequestSentAsync);
+        this.RegisterAsyncEventInvoker<FetchErrorEventArgs>(FetchErrorEventName, this.OnFetchErrorAsync);
+        this.RegisterAsyncEventInvoker<ResponseStartedEventArgs>(ResponseStartedEventName, this.OnResponseStartedAsync);
+        this.RegisterAsyncEventInvoker<ResponseCompletedEventArgs>(ResponseCompletedEventName, this.OnResponseCompletedAsync);
     }
 
     /// <summary>

@@ -17,8 +17,8 @@ public class Connection
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
     private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
     private readonly int bufferSize = 4096;
-    private readonly ObservableEvent<ConnectionDataReceivedEventArgs> onDataReceivedEvent = new();
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
+    private readonly ObservableEvent<ConnectionDataReceivedEventArgs> onDataReceivedEvent = new("connection.dataReceived");
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("connection.logMessage");
     private TimeSpan startupTimeout = DefaultTimeout;
     private TimeSpan shutdownTimeout = DefaultTimeout;
     private TimeSpan socketTimeout = DefaultTimeout;

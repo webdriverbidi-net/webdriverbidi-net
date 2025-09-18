@@ -28,10 +28,10 @@ public class BiDiDriver
     private readonly Transport transport;
     private readonly Dictionary<string, Module> modules = new();
 
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
-    private readonly ObservableEvent<UnknownMessageReceivedEventArgs> onUnknownMessageReceivedEvent = new();
-    private readonly ObservableEvent<ErrorReceivedEventArgs> onUnexpectedErrorReceivedEvent = new();
-    private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new();
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("driver.logMessage");
+    private readonly ObservableEvent<UnknownMessageReceivedEventArgs> onUnknownMessageReceivedEvent = new("driver.unknownMessageReceived");
+    private readonly ObservableEvent<ErrorReceivedEventArgs> onUnexpectedErrorReceivedEvent = new("driver.unexpectedErrorReceived");
+    private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new("driver.eventReceived");
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.

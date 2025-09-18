@@ -27,10 +27,10 @@ public class Transport
     private readonly Dictionary<string, Type> eventMessageTypes = new();
     private readonly UnhandledErrorCollection unhandledErrors = new();
 
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
-    private readonly ObservableEvent<UnknownMessageReceivedEventArgs> onUnknownMessageReceivedEvent = new();
-    private readonly ObservableEvent<ErrorReceivedEventArgs> onErrorReceivedEvent = new();
-    private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new();
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("transport.logMessage");
+    private readonly ObservableEvent<UnknownMessageReceivedEventArgs> onUnknownMessageReceivedEvent = new("transport.unknownMessageReceived");
+    private readonly ObservableEvent<ErrorReceivedEventArgs> onErrorReceivedEvent = new("transport.errorReceived");
+    private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new("transport.eventReceived");
 
     private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {

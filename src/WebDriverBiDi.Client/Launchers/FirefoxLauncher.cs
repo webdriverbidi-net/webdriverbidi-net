@@ -21,7 +21,7 @@ using WebDriverBiDi.Protocol;
 public class FirefoxLauncher : BrowserLauncher
 {
     private static readonly SemaphoreSlim LockObject = new(1, 1);
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("firefoxLauncher.logMessage");
     private string userDataDirectory = string.Empty;
     private Process? browserProcess;
 

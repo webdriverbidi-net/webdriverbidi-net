@@ -23,7 +23,7 @@ using WebDriverBiDi.Protocol;
 public class ChromeLauncher : BrowserLauncher
 {
     private static readonly SemaphoreSlim LockObject = new(1, 1);
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new();
+    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("chromeLauncher.logMessage");
 
     private readonly List<string> disabledFeatures = [
       "Translate",

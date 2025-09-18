@@ -15,9 +15,13 @@ public sealed class ScriptModule : Module
     /// </summary>
     public const string ScriptModuleName = "script";
 
-    private ObservableEvent<RealmCreatedEventArgs> onRealmCreatedEvent = new();
-    private ObservableEvent<RealmDestroyedEventArgs> onRealmDestroyedEvent = new();
-    private ObservableEvent<MessageEventArgs> onMessageEvent = new();
+    private const string RealmCreatedEventName = $"{ScriptModuleName}.realmCreated";
+    private const string RealmDestroyedEventName = $"{ScriptModuleName}.realmDestroyed";
+    private const string MessageEventName = $"{ScriptModuleName}.message";
+
+    private ObservableEvent<RealmCreatedEventArgs> onRealmCreatedEvent = new(RealmCreatedEventName);
+    private ObservableEvent<RealmDestroyedEventArgs> onRealmDestroyedEvent = new(RealmDestroyedEventName);
+    private ObservableEvent<MessageEventArgs> onMessageEvent = new(MessageEventName);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ScriptModule"/> class.
@@ -26,9 +30,9 @@ public sealed class ScriptModule : Module
     public ScriptModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<RealmInfo>("script.realmCreated", this.OnRealmCreatedAsync);
-        this.RegisterAsyncEventInvoker<RealmDestroyedEventArgs>("script.realmDestroyed", this.OnRealmDestroyedAsync);
-        this.RegisterAsyncEventInvoker<MessageEventArgs>("script.message", this.OnMessageAsync);
+        this.RegisterAsyncEventInvoker<RealmInfo>(RealmCreatedEventName, this.OnRealmCreatedAsync);
+        this.RegisterAsyncEventInvoker<RealmDestroyedEventArgs>(RealmDestroyedEventName, this.OnRealmDestroyedAsync);
+        this.RegisterAsyncEventInvoker<MessageEventArgs>(MessageEventName, this.OnMessageAsync);
     }
 
     /// <summary>

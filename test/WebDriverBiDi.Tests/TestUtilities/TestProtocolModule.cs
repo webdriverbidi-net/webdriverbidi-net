@@ -11,7 +11,7 @@ public sealed class TestProtocolModule : Module
     public TestProtocolModule(BiDiDriver driver, int maxObserverCount = 0)
         : base(driver)
     {
-        this.onEventInvokedEvent = new ObservableEvent<TestEventArgs>(maxObserverCount);
+        this.onEventInvokedEvent = new ObservableEvent<TestEventArgs>("protocol.event", maxObserverCount);
         this.RegisterAsyncEventInvoker<TestEventArgs>("protocol.event", this.OnEventInvokedAsync);
     }
 

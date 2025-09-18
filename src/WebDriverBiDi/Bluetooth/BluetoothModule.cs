@@ -15,7 +15,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     public const string BluetoothModuleName = "bluetooth";
 
-    private readonly ObservableEvent<RequestDevicePromptUpdatedEventArgs> onRequestDevicePromptUpdatedEvent = new();
+    private const string RequestDevicePromptUpdatedEventName = $"{BluetoothModuleName}.requestDevicePromptUpdated";
+
+    private readonly ObservableEvent<RequestDevicePromptUpdatedEventArgs> onRequestDevicePromptUpdatedEvent = new(RequestDevicePromptUpdatedEventName);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BluetoothModule"/> class.
@@ -24,7 +26,7 @@ public sealed class BluetoothModule : Module
     public BluetoothModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<RequestDevicePromptUpdatedEventArgs>("bluetooth.requestDevicePromptUpdated", this.OnRequestDevicePromptUpdatedAsync);
+        this.RegisterAsyncEventInvoker<RequestDevicePromptUpdatedEventArgs>(RequestDevicePromptUpdatedEventName, this.OnRequestDevicePromptUpdatedAsync);
     }
 
     /// <summary>
