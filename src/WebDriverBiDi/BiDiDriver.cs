@@ -16,6 +16,7 @@ using WebDriverBiDi.Permissions;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
+using WebDriverBiDi.Speculation;
 using WebDriverBiDi.Storage;
 using WebDriverBiDi.WebExtension;
 
@@ -75,6 +76,7 @@ public class BiDiDriver
         this.RegisterModule(new PermissionsModule(this));
         this.RegisterModule(new SessionModule(this));
         this.RegisterModule(new ScriptModule(this));
+        this.RegisterModule(new SpeculationModule(this));
         this.RegisterModule(new StorageModule(this));
         this.RegisterModule(new WebExtensionModule(this));
     }
@@ -148,6 +150,11 @@ public class BiDiDriver
     /// Gets the session module as described in the WebDriver BiDi protocol.
     /// </summary>
     public SessionModule Session => this.GetModule<SessionModule>(SessionModule.SessionModuleName);
+
+    /// <summary>
+    /// Gets the speculation module as described in the W3C Community Group Prerendering specification.
+    /// </summary>
+    public SpeculationModule Speculation => this.GetModule<SpeculationModule>(SpeculationModule.SpeculationModuleName);
 
     /// <summary>
     /// Gets the storage module as described in the WebDriver BiDi protocol.

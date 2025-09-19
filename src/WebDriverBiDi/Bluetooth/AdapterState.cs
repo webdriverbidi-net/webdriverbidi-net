@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Values used for the creation of new browsing contexts.
+/// Values used for the state of new Bluetooth adapters.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<AdapterState>))]
 public enum AdapterState
