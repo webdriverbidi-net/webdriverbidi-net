@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -17,6 +18,7 @@ using WebDriverBiDi.Protocol;
 public class ChromiumTransport : Transport
 {
     private string sessionId = string.Empty;
+    private string mapperTabTargetId = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ChromiumTransport"/> class.
@@ -42,8 +44,8 @@ public class ChromiumTransport : Transport
     /// <returns>The task object representing the asynchronous operation.</returns>
     public override async Task ConnectAsync(string websocketUri)
     {
-        await this.ConnectToBiDi(websocketUri);
         await base.ConnectAsync(websocketUri);
+        await this.InitializeBiDi();
     }
 
     /// <summary>
@@ -105,11 +107,10 @@ public class ChromiumTransport : Transport
         return default;
     }
 
-    private async Task ConnectToBiDi(string websocketUri)
+    private async Task InitializeBiDi()
     {
         ManualResetEventSlim syncEvent = new(false);
         JsonDocument? document = null;
-        string targetId = string.Empty;
         EventObserver<ConnectionDataReceivedEventArgs> observer = this.Connection.OnDataReceived.AddObserver((e) =>
         {
             document = JsonDocument.Parse(e.Data);
@@ -122,41 +123,97 @@ public class ChromiumTransport : Transport
             syncEvent.Set();
         });
 
-        DevToolsProtocolCommand command = new(this.GetNextCommandId(), "Target.getTargets");
-        await this.Connection.StartAsync(websocketUri);
+        // Create a hidden tab in the browser to host the BiDi-to-CDP mapper code.
+        DevToolsProtocolCommand command = new(this.GetNextCommandId(), "Target.createTarget");
+        command.Parameters["url"] = "about:blank";
+        command.Parameters["hidden"] = true;
         await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
         syncEvent.Wait(TimeSpan.FromSeconds(3));
         syncEvent.Reset();
         if (document is not null)
         {
-            targetId = document.RootElement.GetProperty("result").GetProperty("targetInfos")[0].GetProperty("targetId").GetString()!;
-            Console.WriteLine($"Found target id {targetId}");
+            // Capture the session ID for the CDP session and the target ID of the created mapper tab.
+            JsonElement result = document.RootElement.GetProperty("result");
+            this.mapperTabTargetId = document.RootElement.GetProperty("result").GetProperty("targetId").GetString()!;
+            Console.WriteLine($"Created mapper tab with target id {this.mapperTabTargetId}");
         }
 
-        if (!string.IsNullOrEmpty(targetId))
+        if (!string.IsNullOrEmpty(this.mapperTabTargetId))
         {
+            // Attach to the target, and capture the session ID.
             command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.attachToTarget");
-            command.Parameters["targetId"] = targetId;
+            command.Parameters["targetId"] = this.mapperTabTargetId;
             command.Parameters["flatten"] = true;
-            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
+            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
 
             JsonElement result = document!.RootElement.GetProperty("result");
             this.sessionId = result.GetProperty("sessionId").GetString()!;
 
-            command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.createTarget");
-            command.Parameters["url"] = "about:blank";
-            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
+            // Send a click event to the target so that the beforeunload event
+            // will not be fired upon close.
+            command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.evaluate");
+            command.Parameters["expression"] = "document.body.click()";
+            command.Parameters["userGesture"] = true;
+            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
 
-            command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.addBinding");
-            command.Parameters["name"] = "sendBidiResponse";
+            // Enable the Runtime CDP domain.
+            command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.enable");
             command.SessionId = this.sessionId;
-            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
+            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
+
+            // Expose CDP for the mapper tab.
+            command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.exposeDevToolsProtocol");
+            command.Parameters["bindingName"] = "cdp";
+            command.Parameters["targetId"] = this.mapperTabTargetId;
+            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+            syncEvent.Wait(TimeSpan.FromSeconds(3));
+            syncEvent.Reset();
+
+            // Load the mapper tab source code from the resources of this assembly.
+            // This source code can be generated by building the chromium-bidi project
+            // (https://github.com/GoogleChromeLabs/chromium-bidi). It is stored for
+            // convenience in this project in the third_party directory.
+            string mapperScript = string.Empty;
+            Assembly executingAssembly = Assembly.GetExecutingAssembly();
+            using (Stream resourceStream = executingAssembly.GetManifestResourceStream("chromium-bidi-mapper"))
+            {
+                using StreamReader reader = new(resourceStream);
+                mapperScript = reader.ReadToEnd();
+            }
+
+            if (!string.IsNullOrEmpty(mapperScript))
+            {
+                // Load the source code for the BiDi-to-CDP mapper into the target tab.
+                command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.evaluate");
+                command.Parameters["expression"] = mapperScript;
+                command.SessionId = this.sessionId;
+                await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+                syncEvent.Wait(TimeSpan.FromSeconds(3));
+                syncEvent.Reset();
+
+                // Start the BiDi-to-CDP mapper code.
+                command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.evaluate");
+                command.Parameters["expression"] = @$"window.runMapperInstance(""{this.mapperTabTargetId}"")";
+                command.Parameters["awaitPromise"] = true;
+                command.SessionId = this.sessionId;
+                await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+                syncEvent.Wait(TimeSpan.FromSeconds(3));
+                syncEvent.Reset();
+
+                // Add a binding to be notified when a response is sent from the BiDi-to-CDP mapper code.
+                command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.addBinding");
+                command.Parameters["name"] = "sendBidiResponse";
+                command.SessionId = this.sessionId;
+                await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
+                syncEvent.Wait(TimeSpan.FromSeconds(3));
+                syncEvent.Reset();
+            }
         }
 
         observer.Unobserve();
