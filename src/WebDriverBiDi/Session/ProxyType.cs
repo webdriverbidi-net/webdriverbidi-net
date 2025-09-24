@@ -15,12 +15,6 @@ using WebDriverBiDi.JsonConverters;
 public enum ProxyType
 {
     /// <summary>
-    /// No proxy value has been set.
-    /// TODO (Issue #19): Remove this enum value once https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
-    /// </summary>
-    Unset,
-
-    /// <summary>
     /// Direct connection with no proxy.
     /// </summary>
     Direct,

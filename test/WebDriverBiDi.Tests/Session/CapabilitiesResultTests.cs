@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Session;
 
-using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.JsonConverters;
 
@@ -333,8 +332,7 @@ public class CapabilitiesResultTests
         // spell-checker: ensable
     }
 
-    // [Test]
-    // TODO (Issue #19): Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
+    [Test]
     public void TestCannotDeserializeWithEmptyProxy()
     {
         string json = """
@@ -349,7 +347,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'proxyType' property"));
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a 'proxyType' property"));
     }
 
     [Test]
