@@ -14,15 +14,34 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
 {
     private readonly List<string> contextList = [];
     private readonly List<string> userContextList = [];
-    private List<DataType> dataTypes = [DataType.Response];
-    private ulong maxEncodedDataSize = 0;
+    private HashSet<DataType> dataTypes = [];
+    private ulong maxEncodedDataSize;
     private CollectorType? collectorType;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AddDataCollectorCommandParameters" /> class.
     /// </summary>
-    public AddDataCollectorCommandParameters()
+    /// <param name="maxEncodedDataSize">
+    /// The maximum size (in bytes) allocated to be collected for each request or response collected.
+    /// Note carefully that zero (0) is an invalid value for maximum size.
+    /// </param>
+    /// <param name="collectionDataTypes">
+    /// One or more <see cref="DataType"/> values specifying the type for which data will be collected.
+    /// If no collection data types are specified, the data collector defaults to collecting data for
+    /// responses only.
+    /// </param>
+    public AddDataCollectorCommandParameters(ulong maxEncodedDataSize, params DataType[] collectionDataTypes)
     {
+        this.maxEncodedDataSize = maxEncodedDataSize;
+        if (collectionDataTypes.Length == 0)
+        {
+            this.dataTypes.Add(DataType.Response);
+        }
+
+        foreach (DataType dataType in collectionDataTypes)
+        {
+            this.dataTypes.Add(dataType);
+        }
     }
 
     /// <summary>
@@ -37,7 +56,7 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     [JsonPropertyName("dataTypes")]
     [JsonInclude]
     [JsonRequired]
-    public List<DataType> DataTypes { get => this.dataTypes; set => this.dataTypes = value; }
+    public HashSet<DataType> DataTypes { get => this.dataTypes; set => this.dataTypes = value; }
 
     /// <summary>
     /// Gets or sets the maximum encoded data size for this collector in bytes.

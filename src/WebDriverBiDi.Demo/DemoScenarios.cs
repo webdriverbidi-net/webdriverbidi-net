@@ -543,13 +543,10 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
-        AddDataCollectorCommandParameters addCollectorParameters = new()
-        {
-            // Allocate a small amount of memory for this demonstration.
-            // Actual practice would probably require a larger allocation
-            // for data collection.
-            MaxEncodedDataSize = Convert.ToUInt64(Math.Pow(2, 24)),
-        };
+        // Allocate a small amount of memory for this demonstration.
+        // Actual practice would probably require a larger allocation
+        // for data collection.
+        AddDataCollectorCommandParameters addCollectorParameters = new(Convert.ToUInt64(Math.Pow(2, 24)));
         addCollectorParameters.BrowsingContexts.Add(contextId);
         AddDataCollectorCommandResult collectorResult = await driver.Network.AddDataCollectorAsync(addCollectorParameters);
         string collectorId = collectorResult.CollectorId;
@@ -561,27 +558,35 @@ public static class DemoScenarios
         // message is completed. To ensure that we can wait for the command
         // response to be completely processed, capture the Task returned by the
         // command execution, and await its completion later.
+        ManualResetEventSlim syncEvent = new();
         string responseStartLine = string.Empty;
         List<ReadOnlyHeader> responseHeaders = new();
         Task<GetDataCommandResult>? substituteTask = null;
         EventObserver<ResponseCompletedEventArgs> observer = driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
-            responseStartLine = $"{e.Response.Protocol} {e.Response.Status} {e.Response.StatusText}";
-            responseHeaders.AddRange(e.Response.Headers);
-            // Be a good citizen and release the collected data when collected.
-            GetDataCommandParameters getDataParameters = new(e.Request.RequestId)
+            // Limit processing to the retrieval just of the HTML file.
+            if (e.Response.Url.Contains("simpleContent.html"))
             {
-                CollectorId = collectorId,
-                DisownCollectedData = true,
-            };
-            substituteTask = driver.Network.GetDataAsync(getDataParameters);
-        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+                responseStartLine = $"{e.Response.Protocol} {e.Response.Status} {e.Response.StatusText}";
+                responseHeaders.AddRange(e.Response.Headers);
+
+                // Be a good citizen and release the collected data when collected.
+                GetDataCommandParameters getDataParameters = new(e.Request.RequestId)
+                {
+                    CollectorId = collectorId,
+                    DisownCollectedData = true,
+                };
+                substituteTask = driver.Network.GetDataAsync(getDataParameters);
+                syncEvent.Set();
+            }
+       }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
         };
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        syncEvent.Wait(TimeSpan.FromSeconds(3));
 
         if (substituteTask is null)
         {
@@ -604,7 +609,7 @@ public static class DemoScenarios
         Console.WriteLine(responseStartLine);
         foreach (ReadOnlyHeader header in responseHeaders)
         {
-            Console.WriteLine($"{header.Name}: {header.Value}");
+            Console.WriteLine($"{header.Name}: {header.Value.Value}");
         }
         Console.WriteLine();
         Console.WriteLine(bodyText);

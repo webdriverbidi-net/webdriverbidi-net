@@ -16,6 +16,11 @@ using WebDriverBiDi.JsonConverters;
 public enum DataType
 {
     /// <summary>
+    /// The type of data being collected is from network requests.
+    /// </summary>
+    Request,
+
+    /// <summary>
     /// The type of data being collected is from network responses.
     /// </summary>
     Response,

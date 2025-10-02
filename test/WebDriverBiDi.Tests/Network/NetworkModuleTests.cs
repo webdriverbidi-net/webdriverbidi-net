@@ -140,7 +140,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
-        AddDataCollectorCommandParameters commandParameters = new();
+        AddDataCollectorCommandParameters commandParameters = new(1024 * 1024);
         Task<AddDataCollectorCommandResult> task = module.AddDataCollectorAsync(commandParameters);
 
         task.Wait(TimeSpan.FromSeconds(1));
