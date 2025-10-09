@@ -329,10 +329,45 @@ public class CapabilitiesResultTests
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'proxyautoconfig' is not valid for enum type"));
-        // spell-checker: ensable
+        // spell-checker: enable
     }
 
+    // TODO (Issue #19): Remove this test and enable the one below
+    // once https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
     [Test]
+    public void TestDeserializeWithEmptyProxyYieldsNull()
+    {
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {},
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result!.Proxy, Is.Null);
+            Assert.That(result.SetWindowRect, Is.EqualTo(true));
+            Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
+            Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
+        });
+    }
+
+    // TODO (Issue #19): Reenable this test and remove the one above
+    // once https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
+    // [Test]
     public void TestCannotDeserializeWithEmptyProxy()
     {
         string json = """
