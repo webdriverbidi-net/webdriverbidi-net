@@ -561,7 +561,7 @@ public static class DemoScenarios
         ManualResetEventSlim syncEvent = new();
         string responseStartLine = string.Empty;
         List<ReadOnlyHeader> responseHeaders = new();
-        Task<GetDataCommandResult>? substituteTask = null;
+        Task<GetDataCommandResult>? bodyRetrievalTask = null;
         EventObserver<ResponseCompletedEventArgs> observer = driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
             // Limit processing to the retrieval just of the HTML file.
@@ -576,7 +576,7 @@ public static class DemoScenarios
                     CollectorId = collectorId,
                     DisownCollectedData = true,
                 };
-                substituteTask = driver.Network.GetDataAsync(getDataParameters);
+                bodyRetrievalTask = driver.Network.GetDataAsync(getDataParameters);
                 syncEvent.Set();
             }
        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -588,13 +588,13 @@ public static class DemoScenarios
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         syncEvent.Wait(TimeSpan.FromSeconds(3));
 
-        if (substituteTask is null)
+        if (bodyRetrievalTask is null)
         {
             throw new Exception("Response completed event was not raised.");
         }
 
-        await substituteTask;
-        BytesValue bodyResult = substituteTask.Result.Bytes;
+        await bodyRetrievalTask;
+        BytesValue bodyResult = bodyRetrievalTask.Result.Bytes;
         string bodyText = string.Empty;
         if (bodyResult.Type == BytesValueType.Base64)
         {
