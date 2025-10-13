@@ -60,6 +60,16 @@ public sealed class EmulationModule : Module
     }
 
     /// <summary>
+    /// Sets the emulated network conditions for the specified contexts or user contexts.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<EmptyResult> SetNetworkConditions(SetNetworkConditionsCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sets the emulated override for the screen orientation for the specified contexts or user contexts.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
