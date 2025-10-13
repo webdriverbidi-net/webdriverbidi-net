@@ -15,6 +15,11 @@ using WebDriverBiDi.JsonConverters;
 public enum ForcedColorsModeTheme
 {
     /// <summary>
+    /// Emulate no forced color theme.
+    /// </summary>
+    None,
+
+    /// <summary>
     /// Emulate forced colors for "light mode" theme.
     /// </summary>
     Light,
