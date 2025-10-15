@@ -34,6 +34,7 @@ public class FormSubmitRequestHandler : WebResourceRequestHandler
         Dictionary<string, string> formData = this.ParseRequestBody(request.Body);
         HttpResponse response = base.CreateHttpResponse(request.Id, HttpStatusCode.OK);
         response.TextBodyContent = string.Format(response.TextBodyContent, formData["dataToSend"]);
+        response.Headers["Content-Length"][0] = response.BodyContent.Length.ToString();
         return Task.FromResult<HttpResponse>(response);
     }
 

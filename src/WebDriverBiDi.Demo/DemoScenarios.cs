@@ -55,8 +55,8 @@ public static class DemoScenarios
                 SharedReference elementReference = scriptResultValue.ToSharedReference();
 
                 InputBuilder inputBuilder = new();
-                AddClickOnElementAction(inputBuilder, elementReference);
-                AddSendKeysToActiveElementAction(inputBuilder, "Hello WebDriver BiDi" + Keys.Enter);
+                InputHelper.AddClickOnElementAction(inputBuilder, elementReference);
+                InputHelper.AddSendKeysToActiveElementAction(inputBuilder, "Hello WebDriver BiDi" + Keys.Enter);
 
                 PerformActionsCommandParameters actionsParams = new(contextId);
                 actionsParams.Actions.AddRange(inputBuilder.Build());
@@ -533,6 +533,13 @@ public static class DemoScenarios
         Console.WriteLine($"Navigation command completed");
     }
 
+    /// <summary>
+    /// Demonstrates capturing a network response, including the response body.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task CaptureNetworkResponse(BiDiDriver driver, string baseUrl)
     {
         SubscribeCommandParameters subscribe = new();
@@ -579,7 +586,7 @@ public static class DemoScenarios
                 bodyRetrievalTask = driver.Network.GetDataAsync(getDataParameters);
                 syncEvent.Set();
             }
-       }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
@@ -587,47 +594,146 @@ public static class DemoScenarios
         };
         NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         syncEvent.Wait(TimeSpan.FromSeconds(3));
-
         if (bodyRetrievalTask is null)
         {
-            throw new Exception("Response completed event was not raised.");
-        }
-
-        await bodyRetrievalTask;
-        BytesValue bodyResult = bodyRetrievalTask.Result.Bytes;
-        string bodyText = string.Empty;
-        if (bodyResult.Type == BytesValueType.Base64)
-        {
-            bodyText = Encoding.UTF8.GetString(Convert.FromBase64String(bodyResult.Value));
+            Console.WriteLine("Error: Body retrieval failed");
         }
         else
         {
-            bodyText = bodyResult.Value;
-        }
+            await bodyRetrievalTask;
+            BytesValue bodyResult = bodyRetrievalTask.Result.Bytes;
+            string bodyText = string.Empty;
+            if (bodyResult.Type == BytesValueType.Base64)
+            {
+                bodyText = Encoding.UTF8.GetString(Convert.FromBase64String(bodyResult.Value));
+            }
+            else
+            {
+                bodyText = bodyResult.Value;
+            }
 
-        Console.WriteLine($"Response received for {baseUrl}/simpleContent.html");
-        Console.WriteLine(responseStartLine);
-        foreach (ReadOnlyHeader header in responseHeaders)
-        {
-            Console.WriteLine($"{header.Name}: {header.Value.Value}");
+            Console.WriteLine($"Response received for {baseUrl}/simpleContent.html");
+            Console.WriteLine(responseStartLine);
+            foreach (ReadOnlyHeader header in responseHeaders)
+            {
+                Console.WriteLine($"{header.Name}: {header.Value.Value}");
+            }
+            Console.WriteLine();
+            Console.WriteLine(bodyText);
         }
-        Console.WriteLine();
-        Console.WriteLine(bodyText);
     }
-
-    private static void AddClickOnElementAction(InputBuilder builder, SharedReference elementReference)
+    
+    /// <summary>
+    /// Demonstrates an approach to capturing all network traffic during a session, including request and response bodies.
+    /// </summary>
+   /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public static async Task CaptureAllNetworkTraffic(BiDiDriver driver, string baseUrl)
     {
-        builder.AddAction(builder.DefaultPointerInputSource.CreatePointerMove(0, 0, Origin.Element(new ElementOrigin(elementReference))))
-            .AddAction(builder.DefaultPointerInputSource.CreatePointerDown(PointerButton.Left))
-            .AddAction(builder.DefaultPointerInputSource.CreatePointerUp());
-    }
+        SubscribeCommandParameters subscribe = new();
+        subscribe.Events.Add(driver.BrowsingContext.OnNavigationStarted.EventName);
+        subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+        SubscribeCommandResult subscribeResult = await driver.Session.SubscribeAsync(subscribe);
+        string navigationSubscriptionId = subscribeResult.SubscriptionId;
 
-    private static void AddSendKeysToActiveElementAction(InputBuilder builder, string keysToSend)
-    {
-        foreach (char character in keysToSend)
+        ManualResetEventSlim navigationEvent = new();
+        EventObserver<NavigationEventArgs> navigationObserver = driver.BrowsingContext.OnLoad.AddObserver((e) => navigationEvent.Set());
+
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        NetworkTrafficMonitor monitor = new(driver);
+        await monitor.StartMonitoringAsync(contextId);
+
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/inputForm.html")
         {
-            builder.AddAction(builder.DefaultKeyInputSource.CreateKeyDown(character))
-                .AddAction(builder.DefaultKeyInputSource.CreateKeyUp(character));
+            Wait = ReadinessState.Complete
+        };
+        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
+
+        string functionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
+        CallFunctionCommandParameters callFunctionParams = new(functionDefinition, new ContextTarget(contextId), true);
+        EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
+        if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
+        {
+            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type} (.NET type: {scriptSuccessResult.Result.Value!.GetType()})");
+            Console.WriteLine($"Script returned element with ID {scriptSuccessResult.Result.SharedId}");
+
+            RemoteValue scriptResultValue = scriptSuccessResult.Result;
+            NodeProperties? nodeProperties = scriptResultValue.ValueAs<NodeProperties>();
+            if (nodeProperties is not null)
+            {
+                Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
+                SharedReference elementReference = scriptResultValue.ToSharedReference();
+
+                InputBuilder inputBuilder = new();
+                InputHelper.AddClickOnElementAction(inputBuilder, elementReference);
+                InputHelper.AddSendKeysToActiveElementAction(inputBuilder, "Hello WebDriver BiDi" + Keys.Enter);
+
+                PerformActionsCommandParameters actionsParams = new(contextId);
+                actionsParams.Actions.AddRange(inputBuilder.Build());
+
+                navigationEvent.Reset();
+                await driver.Input.PerformActionsAsync(actionsParams);
+                bool navigationCompleted = navigationEvent.Wait(TimeSpan.FromSeconds(3));
+                if (!navigationCompleted)
+                {
+                    Console.WriteLine("Navigation completion not detected within three seconds");
+                }
+
+                List<NetworkTrafficMonitor.NetworkRequest> postRequests = await monitor.GetCapturedTrafficAsync();
+                Console.WriteLine($"Captured {postRequests.Count} requests");
+                foreach (NetworkTrafficMonitor.NetworkRequest request in postRequests)
+                {
+                    Console.WriteLine($"Traffic from {request.Url} (request id: {request.RequestId}):");
+                    Console.WriteLine("------- Begin Request Content -------");
+                    Console.Write(request.GetRequestText());
+                    Console.WriteLine("------- End Request Content -------");
+                    Console.WriteLine();
+                    Console.WriteLine("------- Begin Response Content -------");
+                    Console.Write(request.GetResponseText());
+                    Console.WriteLine("------- End Response Content -------");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Script result value did not describe a node; returned type {scriptResultValue.Type}");
+            }
         }
-    }
+        else if (scriptResult is EvaluateResultException scriptExceptionResult)
+        {
+            Console.WriteLine($"Script exception: {scriptExceptionResult.ExceptionDetails.Text}");
+        }
+
+        navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
+        List<NetworkTrafficMonitor.NetworkRequest> navigationRequests = await monitor.GetCapturedTrafficAsync();
+        Console.WriteLine($"Captured {navigationRequests.Count} requests");
+        foreach (NetworkTrafficMonitor.NetworkRequest request in navigationRequests)
+        {
+            Console.WriteLine($"Traffic from {request.Url} (request id: {request.RequestId}):");
+            Console.WriteLine("------- Begin Request Content -------");
+            Console.Write(request.GetRequestText());
+            Console.WriteLine("------- End Request Content -------");
+            Console.WriteLine();
+            Console.WriteLine("------- Begin Response Content -------");
+            Console.Write(request.GetResponseText());
+            Console.WriteLine("------- End Response Content -------");
+        }
+
+        Console.WriteLine("Stopping monitor of network traffic");
+        await monitor.StopMonitoringAsync();
+
+        UnsubscribeByIdsCommandParameters unsubscribe = new();
+        unsubscribe.SubscriptionIds.Add(navigationSubscriptionId);
+        await driver.Session.UnsubscribeAsync(unsubscribe);
+    } 
 }
