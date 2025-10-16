@@ -61,6 +61,7 @@ try
     // await DemoScenarios.InterceptAndReplaceNetworkData(driver, baseDemoSiteUrl);
     // await DemoScenarios.ExecuteElementRoundtripInJavaScript(driver, baseDemoSiteUrl);
     // await DemoScenarios.CaptureNetworkResponse(driver, baseDemoSiteUrl);
+    // await DemoScenarios.CaptureAllNetworkTraffic(driver, baseDemoSiteUrl);
 
     Console.WriteLine("Pausing 3 seconds to view results");
     await Task.Delay(TimeSpan.FromSeconds(3));
