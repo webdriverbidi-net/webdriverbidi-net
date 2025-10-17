@@ -23,6 +23,7 @@ public class BluetoothManufacturerDataTests
             Assert.That(serialized["data"]!.Value<string>(), Is.EqualTo("myData"));
         });
     }
+    
     [Test]
     public void TestCanUpdatePropertiesAfterInstantiation()
     {
