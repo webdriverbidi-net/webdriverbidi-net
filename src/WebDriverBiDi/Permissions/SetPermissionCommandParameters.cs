@@ -15,6 +15,7 @@ public class SetPermissionCommandParameters : CommandParameters<EmptyResult>
     private PermissionDescriptor descriptor;
     private PermissionState state;
     private string origin;
+    private string? embeddedOrigin;
     private string? userContextId;
 
     /// <summary>
@@ -67,6 +68,13 @@ public class SetPermissionCommandParameters : CommandParameters<EmptyResult>
     [JsonRequired]
     [JsonPropertyName("origin")]
     public string Origin { get => this.origin; set => this.origin = value; }
+
+    /// <summary>
+    /// Gets or sets the embedded origin of the permission.
+    /// </summary>
+    [JsonPropertyName("embeddedOrigin")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? EmbeddedOrigin { get => this.embeddedOrigin; set => this.embeddedOrigin = value; }
 
     /// <summary>
     /// Gets or sets the ID of the user context for which to set the permission.

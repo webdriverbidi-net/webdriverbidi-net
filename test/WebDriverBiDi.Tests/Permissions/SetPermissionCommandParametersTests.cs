@@ -64,6 +64,37 @@ public class SetPermissionsCommandParametersTests
     }
 
     [Test]
+    public void TestCanSerializeParametersWithEmbeddedOrigin()
+    {
+        SetPermissionCommandParameters properties = new("myPermission", PermissionState.Granted, "https://example.com")
+        {
+            EmbeddedOrigin = "myEmbeddedOrigin"
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(4));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("descriptor"));
+            Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
+            JObject descriptor = (JObject)serialized["descriptor"]!;
+            Assert.That(descriptor, Has.Count.EqualTo(1));
+            Assert.That(descriptor, Contains.Key("name"));
+            Assert.That(descriptor["name"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(descriptor["name"]!.Value<string>(), Is.EqualTo("myPermission"));
+            Assert.That(serialized, Contains.Key("state"));
+            Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("granted"));
+            Assert.That(serialized, Contains.Key("origin"));
+            Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
+            Assert.That(serialized, Contains.Key("embeddedOrigin"));
+            Assert.That(serialized["embeddedOrigin"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(serialized["embeddedOrigin"]!.Value<string>(), Is.EqualTo("myEmbeddedOrigin"));
+        });
+    }
+
+    [Test]
     public void TestCanSerializeParametersWithUserContext()
     {
         SetPermissionCommandParameters properties = new("myPermission", PermissionState.Granted, "https://example.com")
