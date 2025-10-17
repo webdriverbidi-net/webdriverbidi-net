@@ -729,8 +729,9 @@ public static class DemoScenarios
             Console.WriteLine("------- End Response Content -------");
         }
 
-        Console.WriteLine("Stopping monitor of network traffic");
+        Console.WriteLine("Stopping network traffic monitor");
         await monitor.StopMonitoringAsync();
+        Console.WriteLine("Network traffic monitor stopped");
 
         UnsubscribeByIdsCommandParameters unsubscribe = new();
         unsubscribe.SubscriptionIds.Add(navigationSubscriptionId);

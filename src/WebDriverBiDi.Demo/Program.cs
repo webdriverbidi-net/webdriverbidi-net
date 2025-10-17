@@ -30,6 +30,10 @@ BrowserType testBrowserType = BrowserType.Chrome;
 // installed location.
 string browserExecutableLocation = string.Empty;
 
+// The amount of time to pause after execution so that the browser can
+// be viewed to validate the results of the demo.
+TimeSpan viewResultsDelayTimeSpan = TimeSpan.FromSeconds(3);
+
 BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation);
 launcher.OnLogMessage.AddObserver(OnLogMessage);
 try
@@ -63,8 +67,8 @@ try
     // await DemoScenarios.CaptureNetworkResponse(driver, baseDemoSiteUrl);
     // await DemoScenarios.CaptureAllNetworkTraffic(driver, baseDemoSiteUrl);
 
-    Console.WriteLine("Pausing 3 seconds to view results");
-    await Task.Delay(TimeSpan.FromSeconds(3));
+    Console.WriteLine($"Pausing {viewResultsDelayTimeSpan.TotalSeconds} seconds to view results");
+    await Task.Delay(viewResultsDelayTimeSpan);
 
     await driver.Browser.CloseAsync(new CloseCommandParameters());
     await driver.StopAsync();
