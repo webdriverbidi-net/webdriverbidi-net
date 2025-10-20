@@ -14,7 +14,7 @@ using WebDriverBiDi.Network;
 public class GetCookiesCommandResult : CommandResult
 {
     private List<Cookie> cookies = new();
-    private PartitionKey partition = new();
+    private PartitionKey partitionKey = new();
 
     [JsonConstructor]
     private GetCookiesCommandResult()
@@ -30,10 +30,10 @@ public class GetCookiesCommandResult : CommandResult
     /// <summary>
     /// Gets the partition key for the list of returned cookies.
     /// </summary>
-    [JsonPropertyName("partition")]
+    [JsonPropertyName("partitionKey")]
     [JsonRequired]
     [JsonInclude]
-    public PartitionKey Partition { get => this.partition; private set => this.partition = value; }
+    public PartitionKey PartitionKey { get => this.partitionKey; private set => this.partitionKey = value; }
 
     /// <summary>
     /// Gets or sets the list of cookies returned by the command for serialization purposes.
