@@ -37,7 +37,7 @@ public class StorageModuleTests()
                                           "expiry": {{milliseconds}}
                                         }
                                       ],
-                                      "partition": {
+                                      "partitionKey": {
                                         "userContext": "myUserContext",
                                         "sourceOrigin": "mySourceOrigin"
                                       }
@@ -69,8 +69,8 @@ public class StorageModuleTests()
             Assert.That(result.Cookies[0].HttpOnly, Is.False);
             Assert.That(result.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
             Assert.That(result.Cookies[0].Expires, Is.EqualTo(expireTime));
-            Assert.That(result.Partition.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result.Partition.SourceOrigin, Is.EqualTo("mySourceOrigin"));
+            Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
+            Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
         });
     }
 
@@ -85,7 +85,7 @@ public class StorageModuleTests()
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
                                     "result": {
-                                      "partition": {
+                                      "partitionKey": {
                                         "userContext": "myUserContext",
                                         "sourceOrigin": "mySourceOrigin" 
                                       }
@@ -106,8 +106,8 @@ public class StorageModuleTests()
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Partition.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result!.Partition.SourceOrigin, Is.EqualTo("mySourceOrigin"));
+            Assert.That(result!.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
+            Assert.That(result!.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
         });
     }
 
@@ -122,7 +122,7 @@ public class StorageModuleTests()
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
                                     "result": {
-                                      "partition": {
+                                      "partitionKey": {
                                         "userContext": "myUserContext",
                                         "sourceOrigin": "mySourceOrigin"
                                       }
@@ -143,8 +143,8 @@ public class StorageModuleTests()
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Partition.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result!.Partition.SourceOrigin, Is.EqualTo("mySourceOrigin"));
+            Assert.That(result!.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
+            Assert.That(result!.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
         });
     }
 }

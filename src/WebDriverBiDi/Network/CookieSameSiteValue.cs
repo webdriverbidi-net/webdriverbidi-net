@@ -28,4 +28,9 @@ public enum CookieSameSiteValue
     /// The cookie adheres to no same-site policy.
     /// </summary>
     None,
+
+    /// <summary>
+    /// Default value when same-site is not specified.
+    /// </summary>
+    Default,
 }
