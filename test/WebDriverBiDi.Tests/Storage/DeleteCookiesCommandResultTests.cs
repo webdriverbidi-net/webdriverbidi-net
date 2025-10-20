@@ -16,7 +16,7 @@ public class DeleteCookiesCommandResultTests
     {
         string json = """
                       {
-                        "partition": {
+                        "partitionKey": {
                           "userContext": "myUserContext",
                           "sourceOrigin": "mySourceOrigin",
                           "extraPropertyName": "extraPropertyValue"
@@ -41,7 +41,7 @@ public class DeleteCookiesCommandResultTests
     {
         string json = """
                       {
-                        "partition": {}
+                        "partitionKey": {}
                       }
                       """;
         DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
@@ -67,7 +67,7 @@ public class DeleteCookiesCommandResultTests
     {
         string json = """
                       {
-                        "partition": "invalidPartitionType"
+                        "partitionKey": "invalidPartitionType"
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());

@@ -36,7 +36,7 @@ public class GetCookiesCommandResultTests
                             "expiry": {{milliseconds}}
                           }
                         ],
-                        "partition": {
+                        "partitionKey": {
                           "userContext": "myUserContext",
                           "sourceOrigin": "mySourceOrigin",
                           "extraPropertyName": "extraPropertyValue"
@@ -74,7 +74,7 @@ public class GetCookiesCommandResultTests
         string json = """
                       {
                         "cookies": [],
-                        "partition": {}
+                        "partitionKey": {}
                       }
                       """;
         GetCookiesCommandResult? result = JsonSerializer.Deserialize<GetCookiesCommandResult>(json, deserializationOptions);
@@ -95,7 +95,7 @@ public class GetCookiesCommandResultTests
     {
         string json = """
                       {
-                        "partition": {}
+                        "partitionKey": {}
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
@@ -106,7 +106,7 @@ public class GetCookiesCommandResultTests
     {
         string json = """
                       {
-                        "cookies": "invalidCookieArrayType", "partition": {}
+                        "cookies": "invalidCookieArrayType", "partitionKey": {}
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
@@ -128,7 +128,7 @@ public class GetCookiesCommandResultTests
     {
         string json = """
                       {
-                        "cookies": [], "partition": "invalidPartitionType"
+                        "cookies": [], "partitionKey": "invalidPartitionType"
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<GetCookiesCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());

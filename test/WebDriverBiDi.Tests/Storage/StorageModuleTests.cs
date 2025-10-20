@@ -37,7 +37,7 @@ public class StorageModuleTests()
                                           "expiry": {{milliseconds}}
                                         }
                                       ],
-                                      "partition": {
+                                      "partitionKey": {
                                         "userContext": "myUserContext",
                                         "sourceOrigin": "mySourceOrigin"
                                       }
@@ -85,7 +85,7 @@ public class StorageModuleTests()
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
                                     "result": {
-                                      "partition": {
+                                      "partitionKey": {
                                         "userContext": "myUserContext",
                                         "sourceOrigin": "mySourceOrigin" 
                                       }
@@ -122,7 +122,7 @@ public class StorageModuleTests()
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
                                     "result": {
-                                      "partition": {
+                                      "partitionKey": {
                                         "userContext": "myUserContext",
                                         "sourceOrigin": "mySourceOrigin"
                                       }

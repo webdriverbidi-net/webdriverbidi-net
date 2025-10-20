@@ -16,7 +16,7 @@ public class SetCookieCommandResultTests
     {
         string json = """
                       {
-                        "partition": {
+                        "partitionKey": {
                           "userContext": "myUserContext",
                           "sourceOrigin": "mySourceOrigin",
                           "extraPropertyName": "extraPropertyValue"
@@ -41,7 +41,7 @@ public class SetCookieCommandResultTests
     {
         string json = """
                       {
-                        "partition": {} 
+                        "partitionKey": {}
                       }
                       """;
         SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions);
@@ -67,7 +67,7 @@ public class SetCookieCommandResultTests
     {
         string json = """
                       {
-                        "partition": "invalidPartitionType"
+                        "partitionKey": "invalidPartitionType"
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
