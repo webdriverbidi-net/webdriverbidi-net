@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the input.performActions command.
 /// </summary>
-public class PerformActionsCommandParameters : CommandParameters<EmptyResult>
+public class PerformActionsCommandParameters : CommandParameters<PerformActionsCommandResult>
 {
     private readonly List<SourceActions> actions = new();
     private string browsingContextId;

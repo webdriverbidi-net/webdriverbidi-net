@@ -170,10 +170,10 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
-        Task<EmptyResult> task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"));
+        Task<ContinueRequestCommandResult> task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        ContinueRequestCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -198,10 +198,10 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
-        Task<EmptyResult> task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"));
+        Task<ContinueResponseCommandResult> task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        ContinueResponseCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -226,14 +226,14 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
-        Task<EmptyResult> task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
+        Task<ContinueWithAuthCommandResult> task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
         {
             Action = ContinueWithAuthActionType.ProvideCredentials,
             Credentials = new AuthCredentials("username", "password")
         });
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        ContinueWithAuthCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -259,10 +259,10 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId");
-        Task<EmptyResult> task = module.DisownDataAsync(commandParameters);
+        Task<DisownDataCommandResult> task = module.DisownDataAsync(commandParameters);
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        DisownDataCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -287,10 +287,10 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
-        Task<EmptyResult> task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"));
+        Task<FailRequestCommandResult> task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        FailRequestCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -351,10 +351,10 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
-        Task<EmptyResult> task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"));
+        Task<ProvideResponseCommandResult> task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        ProvideResponseCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -380,10 +380,10 @@ public class NetworkModuleTests
         NetworkModule module = new(driver);
 
         RemoveDataCollectorCommandParameters commandParameters = new("myCollectorId");
-        Task<EmptyResult> task = module.RemoveDataCollectorAsync(commandParameters);
+        Task<RemoveDataCollectorCommandResult> task = module.RemoveDataCollectorAsync(commandParameters);
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        RemoveDataCollectorCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -408,10 +408,10 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
-        Task<EmptyResult> task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"));
+        Task<RemoveInterceptCommandResult> task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"));
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        RemoveInterceptCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -436,10 +436,10 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters());
+        Task<SetCacheBehaviorCommandResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters());
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetCacheBehaviorCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -466,10 +466,10 @@ public class NetworkModuleTests
 
         SetExtraHeadersCommandParameters commandParameters = new();
         commandParameters.Headers.Add("X-Extra-Header: headerValue");
-        Task<EmptyResult> task = module.SetExtraHeadersAsync(commandParameters);
+        Task<SetExtraHeadersCommandResult> task = module.SetExtraHeadersAsync(commandParameters);
 
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetExtraHeadersCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

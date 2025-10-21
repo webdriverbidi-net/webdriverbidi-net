@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browsingContext.close command.
 /// </summary>
-public class CloseCommandParameters : CommandParameters<EmptyResult>
+public class CloseCommandParameters : CommandParameters<CloseCommandResult>
 {
     private string browsingContextId;
     private bool? promptUnload;

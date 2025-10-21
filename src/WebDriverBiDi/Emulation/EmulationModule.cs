@@ -34,9 +34,9 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetForcedColorsModeThemeOverrideAsync(SetForcedColorsModeThemeOverrideCommandParameters commandProperties)
+    public async Task<SetForcedColorsModeThemeOverrideCommandResult> SetForcedColorsModeThemeOverrideAsync(SetForcedColorsModeThemeOverrideCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetForcedColorsModeThemeOverrideCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -44,9 +44,9 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetGeolocationOverrideAsync(SetGeolocationOverrideCommandParameters commandProperties)
+    public async Task<SetGeolocationOverrideCommandResult> SetGeolocationOverrideAsync(SetGeolocationOverrideCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetGeolocationOverrideCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -54,9 +54,9 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetLocaleOverrideAsync(SetLocaleOverrideCommandParameters commandProperties)
+    public async Task<SetLocaleOverrideCommandResult> SetLocaleOverrideAsync(SetLocaleOverrideCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetLocaleOverrideCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -64,9 +64,9 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetNetworkConditions(SetNetworkConditionsCommandParameters commandProperties)
+    public async Task<SetNetworkConditionsCommandResult> SetNetworkConditions(SetNetworkConditionsCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetNetworkConditionsCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -74,9 +74,9 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetScreenOrientationOverrideAsync(SetScreenOrientationOverrideCommandParameters commandProperties)
+    public async Task<SetScreenOrientationOverrideCommandResult> SetScreenOrientationOverrideAsync(SetScreenOrientationOverrideCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetScreenOrientationOverrideCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -85,9 +85,9 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetScriptingEnabledAsync(SetScriptingEnabledCommandParameters commandProperties)
+    public async Task<SetScriptingEnabledCommandResult> SetScriptingEnabledAsync(SetScriptingEnabledCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetScriptingEnabledCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -95,9 +95,9 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetTimeZoneOverrideAsync(SetTimeZoneOverrideCommandParameters commandProperties)
+    public async Task<SetTimeZoneOverrideCommandResult> SetTimeZoneOverrideAsync(SetTimeZoneOverrideCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetTimeZoneOverrideCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -105,8 +105,8 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetUserAgentOverrideAsync(SetUserAgentOverrideCommandParameters commandProperties)
+    public async Task<SetUserAgentOverrideCommandResult> SetUserAgentOverrideAsync(SetUserAgentOverrideCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetUserAgentOverrideCommandResult>(commandProperties).ConfigureAwait(false);
     }
 }

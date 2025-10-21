@@ -19,7 +19,7 @@ public class NavigationResultTests
                         "url": "http://example.com"
                       }
                       """;
-        NavigationResult? result = JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions);
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -37,7 +37,7 @@ public class NavigationResultTests
                         "navigation": "myNavigationId"
                       }
                       """;
-        NavigationResult? result = JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions);
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
@@ -50,7 +50,7 @@ public class NavigationResultTests
     public void TestDeserializingWithMissingUrlThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -61,7 +61,7 @@ public class NavigationResultTests
                         "url": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -73,6 +73,6 @@ public class NavigationResultTests
                         "navigation": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigationResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 }

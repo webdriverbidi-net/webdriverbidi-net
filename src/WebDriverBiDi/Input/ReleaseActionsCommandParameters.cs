@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the input.releaseActions command.
 /// </summary>
-public class ReleaseActionsCommandParameters : CommandParameters<EmptyResult>
+public class ReleaseActionsCommandParameters : CommandParameters<ReleaseActionsCommandResult>
 {
     private string browsingContextId;
 

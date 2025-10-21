@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the script.disown command.
 /// </summary>
-public class DisownCommandParameters : CommandParameters<EmptyResult>
+public class DisownCommandParameters : CommandParameters<DisownCommandResult>
 {
     private List<string> handles = new();
     private Target target;

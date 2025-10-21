@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the bluetooth.simulateAdvertisement command.
 /// </summary>
-public class SimulateAdvertisementCommandParameters : CommandParameters<EmptyResult>
+public class SimulateAdvertisementCommandParameters : CommandParameters<SimulateAdvertisementCommandResult>
 {
     private string browsingContextId;
     private SimulateAdvertisementScanEntry scanEntry;

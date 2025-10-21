@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the bluetooth.simulateGattDisconnection command.
 /// </summary>
-public class SimulateGattDisconnectionCommandParameters : CommandParameters<EmptyResult>
+public class SimulateGattDisconnectionCommandParameters : CommandParameters<SimulateGattDisconnectionResponseCommandResult>
 {
     private string browsingContextId;
     private string address;

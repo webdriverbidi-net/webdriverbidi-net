@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the bluetooth.simulateCharacteristicResponse command.
 /// </summary>
-public class SimulateCharacteristicResponseCommandParameters : CommandParameters<EmptyResult>
+public class SimulateCharacteristicResponseCommandParameters : CommandParameters<SimulateCharacteristicResponseCommandResult>
 {
     private string browsingContextId;
     private string address;

@@ -286,12 +286,12 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        Task<EmptyResult> task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
+        Task<DisownCommandResult> task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        DisownCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.TypeOf<EmptyResult>());
+        Assert.That(result, Is.TypeOf<DisownCommandResult>());
    }
 
     [Test]
@@ -494,9 +494,9 @@ public class ScriptModuleTests
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
         
-        Task<EmptyResult> task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));
+        Task<RemovePreloadScriptCommandResult> task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        RemovePreloadScriptCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

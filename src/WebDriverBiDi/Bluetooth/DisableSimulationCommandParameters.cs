@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the bluetooth.disableSimulation command.
 /// </summary>
-public class DisableSimulationCommandParameters : CommandParameters<EmptyResult>
+public class DisableSimulationCommandParameters : CommandParameters<DisableSimulationCommandResult>
 {
     private string browsingContextId;
 

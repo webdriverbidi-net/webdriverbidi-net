@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.disownData command.
 /// </summary>
-public class RemoveDataCollectorCommandParameters : CommandParameters<EmptyResult>
+public class RemoveDataCollectorCommandParameters : CommandParameters<RemoveDataCollectorCommandResult>
 {
     private string collectorId;
 

@@ -44,8 +44,8 @@ public sealed class WebExtensionModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>A Task containing the result of the asynchronous operation.</returns>
-    public async Task<EmptyResult> UninstallAsync(UninstallCommandParameters commandProperties)
+    public async Task<UninstallCommandResult> UninstallAsync(UninstallCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<UninstallCommandResult>(commandProperties).ConfigureAwait(false);
     }
 }

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.continueResponse command.
 /// </summary>
-public class ContinueResponseCommandParameters : CommandParameters<EmptyResult>
+public class ContinueResponseCommandParameters : CommandParameters<ContinueResponseCommandResult>
 {
     private string requestId;
     private AuthCredentials? credentials;

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.disownData command.
 /// </summary>
-public class DisownDataCommandParameters : CommandParameters<EmptyResult>
+public class DisownDataCommandParameters : CommandParameters<DisownDataCommandResult>
 {
     private DataType dataType = DataType.Response;
     private string collectorId;

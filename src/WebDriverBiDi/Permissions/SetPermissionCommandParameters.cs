@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browsingContext.activate command.
 /// </summary>
-public class SetPermissionCommandParameters : CommandParameters<EmptyResult>
+public class SetPermissionCommandParameters : CommandParameters<SetPermissionCommandResult>
 {
     private PermissionDescriptor descriptor;
     private PermissionState state;

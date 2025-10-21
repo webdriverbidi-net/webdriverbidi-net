@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the bluetooth.simulateAdapter command.
 /// </summary>
-public class SimulateAdapterCommandParameters : CommandParameters<EmptyResult>
+public class SimulateAdapterCommandParameters : CommandParameters<SimulateAdapterCommandResult>
 {
     private string browsingContextId;
     private AdapterState state;

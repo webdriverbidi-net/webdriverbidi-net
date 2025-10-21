@@ -68,9 +68,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> DisableSimulationAsync(DisableSimulationCommandParameters commandProperties)
+    public async Task<DisableSimulationCommandResult> DisableSimulationAsync(DisableSimulationCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<DisableSimulationCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -78,9 +78,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> HandleRequestDevicePromptAsync(HandleRequestDevicePromptCommandParameters commandProperties)
+    public async Task<HandleRequestDevicePromptCommandResult> HandleRequestDevicePromptAsync(HandleRequestDevicePromptCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<HandleRequestDevicePromptCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -88,9 +88,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateAdapterAsync(SimulateAdapterCommandParameters commandProperties)
+    public async Task<SimulateAdapterCommandResult> SimulateAdapterAsync(SimulateAdapterCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateAdapterCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -98,9 +98,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateAdvertisementAsync(SimulateAdvertisementCommandParameters commandProperties)
+    public async Task<SimulateAdvertisementCommandResult> SimulateAdvertisementAsync(SimulateAdvertisementCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateAdvertisementCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -108,9 +108,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateCharacteristicAsync(SimulateCharacteristicCommandParameters commandProperties)
+    public async Task<SimulateCharacteristicCommandResult> SimulateCharacteristicAsync(SimulateCharacteristicCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateCharacteristicCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -118,9 +118,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateCharacteristicResponseAsync(SimulateCharacteristicResponseCommandParameters commandProperties)
+    public async Task<SimulateCharacteristicResponseCommandResult> SimulateCharacteristicResponseAsync(SimulateCharacteristicResponseCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateCharacteristicResponseCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -128,9 +128,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateDescriptorAsync(SimulateDescriptorCommandParameters commandProperties)
+    public async Task<SimulateDescriptorCommandResult> SimulateDescriptorAsync(SimulateDescriptorCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateDescriptorCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -138,9 +138,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateDescriptorResponseAsync(SimulateDescriptorResponseCommandParameters commandProperties)
+    public async Task<SimulateDescriptorResponseCommandResult> SimulateDescriptorResponseAsync(SimulateDescriptorResponseCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateDescriptorResponseCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -148,9 +148,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateGattConnectionResponseAsync(SimulateGattConnectionResponseCommandParameters commandProperties)
+    public async Task<SimulateGattConnectionResponseCommandResult> SimulateGattConnectionResponseAsync(SimulateGattConnectionResponseCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateGattConnectionResponseCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -158,9 +158,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateGattDisconnectionResponseAsync(SimulateGattDisconnectionCommandParameters commandProperties)
+    public async Task<SimulateGattDisconnectionResponseCommandResult> SimulateGattDisconnectionResponseAsync(SimulateGattDisconnectionCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateGattDisconnectionResponseCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -168,9 +168,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulatePreconnectedPeripheralAsync(SimulatePreconnectedPeripheralCommandParameters commandProperties)
+    public async Task<SimulatePreconnectedPeripheralCommandResult> SimulatePreconnectedPeripheralAsync(SimulatePreconnectedPeripheralCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulatePreconnectedPeripheralCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -178,9 +178,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SimulateServiceAsync(SimulateServiceCommandParameters commandProperties)
+    public async Task<SimulateServiceCommandResult> SimulateServiceAsync(SimulateServiceCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateServiceCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     private async Task OnCharacteristicEventGeneratedAsync(EventInfo<CharacteristicEventGeneratedEventArgs> eventData)

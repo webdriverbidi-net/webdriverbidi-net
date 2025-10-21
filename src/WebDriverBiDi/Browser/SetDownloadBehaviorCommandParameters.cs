@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browser.setDownloadBehavior command.
 /// </summary>
-public class SetDownloadBehaviorCommandParameters : CommandParameters<EmptyResult>
+public class SetDownloadBehaviorCommandParameters : CommandParameters<SetDownloadBehaviorCommandResult>
 {
     private DownloadBehavior? downloadBehavior;
     private List<string>? userContexts;

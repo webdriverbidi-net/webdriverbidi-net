@@ -64,9 +64,9 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> UnsubscribeAsync(UnsubscribeCommandParameters commandProperties)
+    public async Task<UnsubscribeCommandResult> UnsubscribeAsync(UnsubscribeCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<UnsubscribeCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -74,8 +74,8 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> EndAsync(EndCommandParameters? commandProperties = null)
+    public async Task<EndCommandResult> EndAsync(EndCommandParameters? commandProperties = null)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties ?? new()).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<EndCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
     }
 }

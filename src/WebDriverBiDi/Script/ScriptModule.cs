@@ -80,9 +80,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> DisownAsync(DisownCommandParameters commandProperties)
+    public async Task<DisownCommandResult> DisownAsync(DisownCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<DisownCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -110,9 +110,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandProperties)
+    public async Task<RemovePreloadScriptCommandResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<RemovePreloadScriptCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     private async Task OnRealmCreatedAsync(EventInfo<RealmInfo> eventData)

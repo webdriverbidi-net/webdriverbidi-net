@@ -25,9 +25,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.DisableSimulationAsync(new DisableSimulationCommandParameters("myContextId"));
+        Task<DisableSimulationCommandResult> task = module.DisableSimulationAsync(new DisableSimulationCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        DisableSimulationCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -52,7 +52,7 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.HandleRequestDevicePromptAsync(new HandleRequestDevicePromptAcceptCommandParameters("myContextId", "myPromptId", "myDeviceId"));
+        Task<HandleRequestDevicePromptCommandResult> task = module.HandleRequestDevicePromptAsync(new HandleRequestDevicePromptAcceptCommandParameters("myContextId", "myPromptId", "myDeviceId"));
         task.Wait(TimeSpan.FromSeconds(1));
         EmptyResult result = task.Result;
         
@@ -79,9 +79,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.HandleRequestDevicePromptAsync(new HandleRequestDevicePromptCancelCommandParameters("myContextId", "myPromptId"));
+        Task<HandleRequestDevicePromptCommandResult> task = module.HandleRequestDevicePromptAsync(new HandleRequestDevicePromptCancelCommandParameters("myContextId", "myPromptId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        HandleRequestDevicePromptCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -106,36 +106,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateAdapterAsync(new SimulateAdapterCommandParameters("myContextId", AdapterState.PoweredOn));
+        Task<SimulateAdapterCommandResult> task = module.SimulateAdapterAsync(new SimulateAdapterCommandParameters("myContextId", AdapterState.PoweredOn));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
-        
-        Assert.That(result, Is.Not.Null);
-    }
-
-    [Test]
-    public async Task TestSimulatePreconnectedPeripheralCommand()
-    {
-        TestConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
-        {
-            string responseJson = $$"""
-                                  {
-                                    "type": "success",
-                                    "id": {{e.SentCommandId}},
-                                    "result": {}
-                                  }
-                                  """;
-            await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
-
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
-        BluetoothModule module = new(driver);
-
-        Task<EmptyResult> task = module.SimulatePreconnectedPeripheralAsync(new SimulatePreconnectedPeripheralCommandParameters("myContextId", "08:08:08:08:08", "myDeviceName"));
-        task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateAdapterCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -160,9 +133,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateAdvertisementAsync(new SimulateAdvertisementCommandParameters("myContextId", new SimulateAdvertisementScanEntry("08:08:08:08:08", -10, new ScanRecord())));
+        Task<SimulateAdvertisementCommandResult> task = module.SimulateAdvertisementAsync(new SimulateAdvertisementCommandParameters("myContextId", new SimulateAdvertisementScanEntry("08:08:08:08:08", -10, new ScanRecord())));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateAdvertisementCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -187,9 +160,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateCharacteristicAsync(new SimulateCharacteristicCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", SimulateCharacteristicType.Add));
+        Task<SimulateCharacteristicCommandResult> task = module.SimulateCharacteristicAsync(new SimulateCharacteristicCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", SimulateCharacteristicType.Add));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateCharacteristicCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -214,9 +187,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateCharacteristicResponseAsync(new SimulateCharacteristicResponseCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", SimulateCharacteristicResponseType.Read, 0));
+        Task<SimulateCharacteristicResponseCommandResult> task = module.SimulateCharacteristicResponseAsync(new SimulateCharacteristicResponseCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", SimulateCharacteristicResponseType.Read, 0));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateCharacteristicResponseCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -241,9 +214,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateDescriptorAsync(new SimulateDescriptorCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", "my-descriptor-uuid", SimulateDescriptorType.Add));
+        Task<SimulateDescriptorCommandResult> task = module.SimulateDescriptorAsync(new SimulateDescriptorCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", "my-descriptor-uuid", SimulateDescriptorType.Add));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateDescriptorCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -268,9 +241,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateDescriptorResponseAsync(new SimulateDescriptorResponseCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", "my-descriptor-uuid", SimulateDescriptorResponseType.Read, 0));
+        Task<SimulateDescriptorResponseCommandResult> task = module.SimulateDescriptorResponseAsync(new SimulateDescriptorResponseCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", "my-descriptor-uuid", SimulateDescriptorResponseType.Read, 0));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateDescriptorResponseCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -295,9 +268,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateGattConnectionResponseAsync(new SimulateGattConnectionResponseCommandParameters("myContextId", "myAddress", 0));
+        Task<SimulateGattConnectionResponseCommandResult> task = module.SimulateGattConnectionResponseAsync(new SimulateGattConnectionResponseCommandParameters("myContextId", "myAddress", 0));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateGattConnectionResponseCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -322,9 +295,36 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateGattDisconnectionResponseAsync(new SimulateGattDisconnectionCommandParameters("myContextId", "myAddress"));
+        Task<SimulateGattDisconnectionResponseCommandResult> task = module.SimulateGattDisconnectionResponseAsync(new SimulateGattDisconnectionCommandParameters("myContextId", "myAddress"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateGattDisconnectionResponseCommandResult result = task.Result;
+        
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task TestSimulatePreconnectedPeripheralCommand()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        BluetoothModule module = new(driver);
+
+        Task<SimulatePreconnectedPeripheralCommandResult> task = module.SimulatePreconnectedPeripheralAsync(new SimulatePreconnectedPeripheralCommandParameters("myContextId", "08:08:08:08:08", "myDeviceName"));
+        task.Wait(TimeSpan.FromSeconds(1));
+        SimulatePreconnectedPeripheralCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -349,9 +349,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<EmptyResult> task = module.SimulateServiceAsync(new SimulateServiceCommandParameters("myContextId", "myAddress", "my-service-uuid", SimulateServiceType.Add));
+        Task<SimulateServiceCommandResult> task = module.SimulateServiceAsync(new SimulateServiceCommandParameters("myContextId", "myAddress", "my-service-uuid", SimulateServiceType.Add));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SimulateServiceCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }

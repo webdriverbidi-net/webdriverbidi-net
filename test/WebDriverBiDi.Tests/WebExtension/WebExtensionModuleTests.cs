@@ -55,9 +55,9 @@ public class WebExtensionModuleTests
         await driver.StartAsync("ws:localhost");
         WebExtensionModule module = new(driver);
         
-        Task<EmptyResult> task = module.UninstallAsync(new UninstallCommandParameters("myExtensionPath"));
+        Task<UninstallCommandResult> task = module.UninstallAsync(new UninstallCommandParameters("myExtensionPath"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        UninstallCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }

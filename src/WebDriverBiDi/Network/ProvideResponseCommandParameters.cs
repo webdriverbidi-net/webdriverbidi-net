@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.provideResponse command.
 /// </summary>
-public class ProvideResponseCommandParameters : CommandParameters<EmptyResult>
+public class ProvideResponseCommandParameters : CommandParameters<ProvideResponseCommandResult>
 {
     private string requestId;
     private BytesValue? body;

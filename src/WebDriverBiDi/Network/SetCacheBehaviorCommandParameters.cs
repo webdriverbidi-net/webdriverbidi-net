@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.setCacheBehavior command.
 /// </summary>
-public class SetCacheBehaviorCommandParameters : CommandParameters<EmptyResult>
+public class SetCacheBehaviorCommandParameters : CommandParameters<SetCacheBehaviorCommandResult>
 {
     private CacheBehavior cacheBehavior = CacheBehavior.Default;
     private List<string>? contexts;

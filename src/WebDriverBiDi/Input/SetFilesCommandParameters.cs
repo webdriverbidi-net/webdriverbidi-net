@@ -11,7 +11,7 @@ using WebDriverBiDi.Script;
 /// <summary>
 /// Provides parameters for the input.setFiles command.
 /// </summary>
-public class SetFilesCommandParameters : CommandParameters<EmptyResult>
+public class SetFilesCommandParameters : CommandParameters<SetFilesCommandResult>
 {
     private readonly List<string> files = new();
     private string browsingContextId;

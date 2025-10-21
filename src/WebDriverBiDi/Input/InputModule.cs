@@ -44,9 +44,9 @@ public sealed class InputModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> PerformActionsAsync(PerformActionsCommandParameters commandProperties)
+    public async Task<PerformActionsCommandResult> PerformActionsAsync(PerformActionsCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<PerformActionsCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -54,9 +54,9 @@ public sealed class InputModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> ReleaseActionsAsync(ReleaseActionsCommandParameters commandProperties)
+    public async Task<ReleaseActionsCommandResult> ReleaseActionsAsync(ReleaseActionsCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ReleaseActionsCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -64,9 +64,9 @@ public sealed class InputModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetFilesAsync(SetFilesCommandParameters commandProperties)
+    public async Task<SetFilesCommandResult> SetFilesAsync(SetFilesCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetFilesCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     private async Task OnFileDialogOpenedAsync(EventInfo<FileDialogInfo> eventData)

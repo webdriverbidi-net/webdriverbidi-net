@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setScreenOrientationOverride command.
 /// </summary>
-public class SetTimeZoneOverrideCommandParameters : CommandParameters<EmptyResult>
+public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
 {
     private string? timezone;
     private List<string>? contexts;

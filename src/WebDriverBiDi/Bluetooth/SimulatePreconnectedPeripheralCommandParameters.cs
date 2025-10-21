@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the bluetooth.simulatePreconnectedPeripheral command.
 /// </summary>
-public class SimulatePreconnectedPeripheralCommandParameters : CommandParameters<EmptyResult>
+public class SimulatePreconnectedPeripheralCommandParameters : CommandParameters<SimulatePreconnectedPeripheralCommandResult>
 {
     private string browsingContextId;
     private string address;

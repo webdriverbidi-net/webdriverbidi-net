@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setScreenOrientationOverride command.
 /// </summary>
-public class SetLocaleOverrideCommandParameters : CommandParameters<EmptyResult>
+public class SetLocaleOverrideCommandParameters : CommandParameters<SetLocaleOverrideCommandResult>
 {
     private string? locale;
     private List<string>? contexts;

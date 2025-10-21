@@ -34,9 +34,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> CloseAsync(CloseCommandParameters? commandProperties = null)
+    public async Task<CloseCommandResult> CloseAsync(CloseCommandParameters? commandProperties = null)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties ?? new()).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<CloseCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -74,9 +74,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> RemoveUserContextAsync(RemoveUserContextCommandParameters commandProperties)
+    public async Task<RemoveUserContextCommandResult> RemoveUserContextAsync(RemoveUserContextCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<RemoveUserContextCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -96,8 +96,8 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EmptyResult> SetDownloadBehaviorAsync(SetDownloadBehaviorCommandParameters commandProperties)
+    public async Task<SetDownloadBehaviorCommandResult> SetDownloadBehaviorAsync(SetDownloadBehaviorCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetDownloadBehaviorCommandResult>(commandProperties).ConfigureAwait(false);
     }
 }

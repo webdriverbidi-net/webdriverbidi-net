@@ -130,9 +130,9 @@ public class SessionModuleTests
 
         UnsubscribeByAttributesCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.Events.Add("log.entryAdded");
-        Task<EmptyResult> task = module.UnsubscribeAsync(unsubscribeParameters);
+        Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        UnsubscribeCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -159,9 +159,9 @@ public class SessionModuleTests
 
         UnsubscribeByIdsCommandParameters unsubscribeParameters = new();
         unsubscribeParameters.SubscriptionIds.Add("mySubscriptionId");
-        Task<EmptyResult> task = module.UnsubscribeAsync(unsubscribeParameters);
+        Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        UnsubscribeCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -245,10 +245,9 @@ public class SessionModuleTests
         await driver.StartAsync("ws:localhost");
 
         EndCommandParameters endParameters = new();
-        Task<EmptyResult> task = module.EndAsync(endParameters);
+        Task<EndCommandResult> task = module.EndAsync(endParameters);
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
-
+        EndCommandResult result = task.Result;
         Assert.That(result, Is.Not.Null);
     }
 
@@ -272,9 +271,9 @@ public class SessionModuleTests
         SessionModule module = new(driver);
         await driver.StartAsync("ws:localhost");
 
-        Task<EmptyResult> task = module.EndAsync();
+        Task<EndCommandResult> task = module.EndAsync();
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        EndCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

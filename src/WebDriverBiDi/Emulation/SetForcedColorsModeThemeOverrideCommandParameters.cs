@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setForcedColorsModeThemeOverride command.
 /// </summary>
-public class SetForcedColorsModeThemeOverrideCommandParameters : CommandParameters<EmptyResult>
+public class SetForcedColorsModeThemeOverrideCommandParameters : CommandParameters<SetForcedColorsModeThemeOverrideCommandResult>
 {
     private ForcedColorsModeTheme? theme;
     private List<string>? contexts;

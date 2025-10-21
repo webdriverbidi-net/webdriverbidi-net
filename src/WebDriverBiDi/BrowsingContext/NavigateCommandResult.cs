@@ -1,4 +1,4 @@
-// <copyright file="NavigationResult.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="NavigateCommandResult.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -10,13 +10,16 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Contains the result of a navigation.
 /// </summary>
-public record NavigationResult : CommandResult
+public record NavigateCommandResult : CommandResult
 {
     private string? id;
     private string url = string.Empty;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NavigateCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
-    private NavigationResult()
+    protected NavigateCommandResult()
     {
     }
 

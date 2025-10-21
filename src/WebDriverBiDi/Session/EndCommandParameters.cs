@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the session.end command.
 /// </summary>
-public class EndCommandParameters : CommandParameters<EmptyResult>
+public class EndCommandParameters : CommandParameters<EndCommandResult>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="EndCommandParameters"/> class.

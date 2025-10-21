@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.failRequest command.
 /// </summary>
-public class FailRequestCommandParameters : CommandParameters<EmptyResult>
+public class FailRequestCommandParameters : CommandParameters<FailRequestCommandResult>
 {
     private string requestId;
 

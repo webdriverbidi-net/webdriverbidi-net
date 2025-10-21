@@ -25,9 +25,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        Task<EmptyResult> task = module.CloseAsync(new CloseCommandParameters());
+        Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        CloseCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -52,9 +52,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        Task<EmptyResult> task = module.CloseAsync();
+        Task<CloseCommandResult> task = module.CloseAsync();
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        CloseCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -356,9 +356,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        Task<EmptyResult> task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"));
+        Task<RemoveUserContextCommandResult> task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        RemoveUserContextCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -435,9 +435,9 @@ public class BrowserModuleTests
         await driver.StartAsync("ws:localhost");
         BrowserModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters());
+        Task<SetDownloadBehaviorCommandResult> task = module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetDownloadBehaviorCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

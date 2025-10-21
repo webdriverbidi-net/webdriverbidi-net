@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browser.close command.
 /// </summary>
-public class CloseCommandParameters : CommandParameters<EmptyResult>
+public class CloseCommandParameters : CommandParameters<CloseCommandResult>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CloseCommandParameters"/> class.

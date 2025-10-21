@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.continueResponse command.
 /// </summary>
-public class ContinueWithAuthCommandParameters : CommandParameters<EmptyResult>
+public class ContinueWithAuthCommandParameters : CommandParameters<ContinueWithAuthCommandResult>
 {
     private string requestId;
     private ContinueWithAuthActionType action = ContinueWithAuthActionType.Default;

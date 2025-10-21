@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setScreenOrientationOverride command.
 /// </summary>
-public class SetUserAgentOverrideCommandParameters : CommandParameters<EmptyResult>
+public class SetUserAgentOverrideCommandParameters : CommandParameters<SetUserAgentOverrideCommandResult>
 {
     private string? userAgent;
     private List<string>? contexts;

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browser.removeUserContext command.
 /// </summary>
-public class RemoveUserContextCommandParameters : CommandParameters<EmptyResult>
+public class RemoveUserContextCommandParameters : CommandParameters<RemoveUserContextCommandResult>
 {
     private string userContextId;
 

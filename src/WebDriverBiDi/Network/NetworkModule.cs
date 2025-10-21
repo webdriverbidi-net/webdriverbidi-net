@@ -96,9 +96,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> ContinueRequestAsync(ContinueRequestCommandParameters commandProperties)
+    public async Task<ContinueRequestCommandResult> ContinueRequestAsync(ContinueRequestCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ContinueRequestCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -107,9 +107,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> ContinueResponseAsync(ContinueResponseCommandParameters commandProperties)
+    public async Task<ContinueResponseCommandResult> ContinueResponseAsync(ContinueResponseCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ContinueResponseCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -117,9 +117,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> ContinueWithAuthAsync(ContinueWithAuthCommandParameters commandProperties)
+    public async Task<ContinueWithAuthCommandResult> ContinueWithAuthAsync(ContinueWithAuthCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ContinueWithAuthCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -127,9 +127,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> DisownDataAsync(DisownDataCommandParameters commandProperties)
+    public async Task<DisownDataCommandResult> DisownDataAsync(DisownDataCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<DisownDataCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -137,9 +137,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> FailRequestAsync(FailRequestCommandParameters commandProperties)
+    public async Task<FailRequestCommandResult> FailRequestAsync(FailRequestCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<FailRequestCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -157,9 +157,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> ProvideResponseAsync(ProvideResponseCommandParameters commandProperties)
+    public async Task<ProvideResponseCommandResult> ProvideResponseAsync(ProvideResponseCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ProvideResponseCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -167,9 +167,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> RemoveDataCollectorAsync(RemoveDataCollectorCommandParameters commandProperties)
+    public async Task<RemoveDataCollectorCommandResult> RemoveDataCollectorAsync(RemoveDataCollectorCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<RemoveDataCollectorCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -177,9 +177,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> RemoveInterceptAsync(RemoveInterceptCommandParameters commandProperties)
+    public async Task<RemoveInterceptCommandResult> RemoveInterceptAsync(RemoveInterceptCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<RemoveInterceptCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -187,9 +187,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> SetCacheBehaviorAsync(SetCacheBehaviorCommandParameters commandProperties)
+    public async Task<SetCacheBehaviorCommandResult> SetCacheBehaviorAsync(SetCacheBehaviorCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetCacheBehaviorCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -197,9 +197,9 @@ public sealed class NetworkModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<EmptyResult> SetExtraHeadersAsync(SetExtraHeadersCommandParameters commandProperties)
+    public async Task<SetExtraHeadersCommandResult> SetExtraHeadersAsync(SetExtraHeadersCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetExtraHeadersCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     private async Task OnAuthRequiredAsync(EventInfo<AuthRequiredEventArgs> eventData)

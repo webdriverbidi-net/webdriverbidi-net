@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the bluetooth.handleRequestDevicePrompt command.
 /// </summary>
-public class HandleRequestDevicePromptCommandParameters : CommandParameters<EmptyResult>
+public class HandleRequestDevicePromptCommandParameters : CommandParameters<HandleRequestDevicePromptCommandResult>
 {
     private readonly bool accept;
     private string browsingContextId;

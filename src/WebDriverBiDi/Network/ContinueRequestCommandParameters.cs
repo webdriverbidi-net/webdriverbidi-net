@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.continueRequest command.
 /// </summary>
-public class ContinueRequestCommandParameters : CommandParameters<EmptyResult>
+public class ContinueRequestCommandParameters : CommandParameters<ContinueRequestCommandResult>
 {
     private string requestId;
     private BytesValue? body;

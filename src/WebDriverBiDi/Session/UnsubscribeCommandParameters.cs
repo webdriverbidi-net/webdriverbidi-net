@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the session.unsubscribe command.
 /// </summary>
-public class UnsubscribeCommandParameters : CommandParameters<EmptyResult>
+public class UnsubscribeCommandParameters : CommandParameters<UnsubscribeCommandResult>
 {
     private readonly List<string> eventList = [];
 

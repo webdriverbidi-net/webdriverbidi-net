@@ -25,9 +25,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        Task<EmptyResult> task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
+        Task<ActivateCommandResult> task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        ActivateCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -82,9 +82,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        Task<EmptyResult> task = module.CloseAsync(new CloseCommandParameters("myContextId"));
+        Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        CloseCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -184,9 +184,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        Task<EmptyResult> task = module.HandleUserPromptAsync(new HandleUserPromptCommandParameters("myContextId"));
+        Task<HandleUserPromptCommandResult> task = module.HandleUserPromptAsync(new HandleUserPromptCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        HandleUserPromptCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -253,9 +253,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        Task<NavigationResult> task = module.NavigateAsync(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
+        Task<NavigateCommandResult> task = module.NavigateAsync(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
         task.Wait(TimeSpan.FromSeconds(1));
-        NavigationResult result = task.Result;
+        NavigateCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -318,9 +318,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        Task<NavigationResult> task = module.ReloadAsync(new ReloadCommandParameters("myContext"));
+        Task<ReloadCommandResult> task = module.ReloadAsync(new ReloadCommandParameters("myContext"));
         task.Wait(TimeSpan.FromSeconds(1));
-        NavigationResult result = task.Result;
+        ReloadCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
@@ -350,9 +350,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetViewportAsync(new SetViewportCommandParameters("myContextId"));
+        Task<SetViewportCommandResult> task = module.SetViewportAsync(new SetViewportCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetViewportCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }
@@ -377,9 +377,9 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        Task<EmptyResult> task = module.TraverseHistoryAsync(new TraverseHistoryCommandParameters("myContextId", -3));
+        Task<TraverseHistoryCommandResult> task = module.TraverseHistoryAsync(new TraverseHistoryCommandParameters("myContextId", -3));
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        TraverseHistoryCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

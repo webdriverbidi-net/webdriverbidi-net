@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browsingContext.create command.
 /// </summary>
-public class SetViewportCommandParameters : CommandParameters<EmptyResult>
+public class SetViewportCommandParameters : CommandParameters<SetViewportCommandResult>
 {
     private string browsingContextId;
     private Viewport? viewport;

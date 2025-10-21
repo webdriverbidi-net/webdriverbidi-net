@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setGeolocationOverride command.
 /// </summary>
-public class SetGeolocationOverrideCommandParameters : CommandParameters<EmptyResult>
+public class SetGeolocationOverrideCommandParameters : CommandParameters<SetGeolocationOverrideCommandResult>
 {
     private List<string>? contexts;
     private List<string>? userContexts;

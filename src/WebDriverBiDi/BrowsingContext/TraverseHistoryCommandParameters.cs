@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browsingContext.traverseHistory command.
 /// </summary>
-public class TraverseHistoryCommandParameters : CommandParameters<EmptyResult>
+public class TraverseHistoryCommandParameters : CommandParameters<TraverseHistoryCommandResult>
 {
     private string browsingContextId;
     private long delta;

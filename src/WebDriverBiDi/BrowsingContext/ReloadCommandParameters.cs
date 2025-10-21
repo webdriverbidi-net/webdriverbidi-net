@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browsingContext.reload command.
 /// </summary>
-public class ReloadCommandParameters : CommandParameters<NavigationResult>
+public class ReloadCommandParameters : CommandParameters<ReloadCommandResult>
 {
     private string browsingContextId;
     private bool? ignoreCache;

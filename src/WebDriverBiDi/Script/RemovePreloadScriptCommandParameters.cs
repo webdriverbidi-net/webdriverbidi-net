@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the script.removePreloadScript command.
 /// </summary>
-public class RemovePreloadScriptCommandParameters : CommandParameters<EmptyResult>
+public class RemovePreloadScriptCommandParameters : CommandParameters<RemovePreloadScriptCommandResult>
 {
     private string preloadScriptId;
 

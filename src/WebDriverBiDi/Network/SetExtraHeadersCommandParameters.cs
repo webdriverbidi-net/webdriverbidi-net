@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.setExtraHeaders command.
 /// </summary>
-public class SetExtraHeadersCommandParameters : CommandParameters<EmptyResult>
+public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeadersCommandResult>
 {
     private List<string> headers = new();
     private List<string>? contexts;

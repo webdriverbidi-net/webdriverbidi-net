@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setNetworkConditions command.
 /// </summary>
-public class SetNetworkConditionsCommandParameters : CommandParameters<EmptyResult>
+public class SetNetworkConditionsCommandParameters : CommandParameters<SetNetworkConditionsCommandResult>
 {
     private NetworkConditions? networkConditions;
     private List<string>? contexts;

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browsingContext.handleUserPrompt command.
 /// </summary>
-public class HandleUserPromptCommandParameters : CommandParameters<EmptyResult>
+public class HandleUserPromptCommandParameters : CommandParameters<HandleUserPromptCommandResult>
 {
     private string browsingContextId;
     private bool? accept;

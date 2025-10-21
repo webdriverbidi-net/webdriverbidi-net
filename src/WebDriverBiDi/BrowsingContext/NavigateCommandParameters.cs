@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browsingContext.navigate command.
 /// </summary>
-public class NavigateCommandParameters : CommandParameters<NavigationResult>
+public class NavigateCommandParameters : CommandParameters<NavigateCommandResult>
 {
     private string browsingContextId;
     private string url;

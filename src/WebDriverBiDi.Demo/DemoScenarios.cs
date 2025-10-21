@@ -36,7 +36,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
@@ -122,7 +122,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         bool eventTriggered = syncEvent.Wait(TimeSpan.FromSeconds(10));
@@ -186,7 +186,7 @@ public static class DemoScenarios
             {
                 Wait = ReadinessState.Complete
             };
-            NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+            NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         }
     }
 
@@ -214,7 +214,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
     }
 
@@ -234,7 +234,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = "(first, second) => first + second";
@@ -301,7 +301,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator(".text")));
@@ -375,7 +375,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
 
         string firstFunctionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
         CallFunctionCommandParameters callFunctionParams = new(firstFunctionDefinition, new ContextTarget(contextId), true);
@@ -448,7 +448,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Navigation command completed");
 
         // Some explanation of this construct is in order. The long-running event handlers
@@ -527,7 +527,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         await substituteTask!;
 
         Console.WriteLine($"Navigation command completed");
@@ -592,7 +592,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         syncEvent.Wait(TimeSpan.FromSeconds(3));
         if (bodyRetrievalTask is null)
         {
@@ -652,7 +652,7 @@ public static class DemoScenarios
         {
             Wait = ReadinessState.Complete
         };
-        NavigationResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";

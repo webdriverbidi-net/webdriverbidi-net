@@ -25,9 +25,9 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetGeolocationOverrideAsync(new SetGeolocationOverrideCoordinatesCommandParameters());
+        Task<SetGeolocationOverrideCommandResult> task = module.SetGeolocationOverrideAsync(new SetGeolocationOverrideCoordinatesCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetGeolocationOverrideCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -52,9 +52,9 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetLocaleOverrideAsync(new SetLocaleOverrideCommandParameters());
+        Task<SetLocaleOverrideCommandResult> task = module.SetLocaleOverrideAsync(new SetLocaleOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetLocaleOverrideCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -79,9 +79,9 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetForcedColorsModeThemeOverrideAsync(new SetForcedColorsModeThemeOverrideCommandParameters());
+        Task<SetForcedColorsModeThemeOverrideCommandResult> task = module.SetForcedColorsModeThemeOverrideAsync(new SetForcedColorsModeThemeOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetForcedColorsModeThemeOverrideCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -106,9 +106,9 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetScreenOrientationOverrideAsync(new SetScreenOrientationOverrideCommandParameters());
+        Task<SetScreenOrientationOverrideCommandResult> task = module.SetScreenOrientationOverrideAsync(new SetScreenOrientationOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetScreenOrientationOverrideCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -133,9 +133,9 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetScriptingEnabledAsync(new SetScriptingEnabledCommandParameters());
+        Task<SetScriptingEnabledCommandResult> task = module.SetScriptingEnabledAsync(new SetScriptingEnabledCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetScriptingEnabledCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -160,9 +160,9 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters());
+        Task<SetTimeZoneOverrideCommandResult> task = module.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetTimeZoneOverrideCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -187,12 +187,12 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetNetworkConditions(new SetNetworkConditionsCommandParameters()
+        Task<SetNetworkConditionsCommandResult> task = module.SetNetworkConditions(new SetNetworkConditionsCommandParameters()
         {
             NetworkConditions = new NetworkConditionsOffline()
         });
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetNetworkConditionsCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }
@@ -217,12 +217,12 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<EmptyResult> task = module.SetUserAgentOverrideAsync(new SetUserAgentOverrideCommandParameters()
+        Task<SetUserAgentOverrideCommandResult> task = module.SetUserAgentOverrideAsync(new SetUserAgentOverrideCommandParameters()
         {
             UserAgent = "WebDriverBiDi.NET/1.0 (no platform)"
         });
         task.Wait(TimeSpan.FromSeconds(1));
-        EmptyResult result = task.Result;
+        SetUserAgentOverrideCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
     }

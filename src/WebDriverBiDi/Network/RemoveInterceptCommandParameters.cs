@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the network.removeIntercept command.
 /// </summary>
-public class RemoveInterceptCommandParameters : CommandParameters<EmptyResult>
+public class RemoveInterceptCommandParameters : CommandParameters<RemoveInterceptCommandResult>
 {
     private string interceptId;
 

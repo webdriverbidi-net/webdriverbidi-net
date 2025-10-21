@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the emulation.setScriptingEnabled command.
 /// </summary>
-public class SetScriptingEnabledCommandParameters : CommandParameters<EmptyResult>
+public class SetScriptingEnabledCommandParameters : CommandParameters<SetScriptingEnabledCommandResult>
 {
     private bool isScriptingEnabled;
     private List<string>? contexts;

@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the webExtension.uninstall command.
 /// </summary>
-public class UninstallCommandParameters : CommandParameters<EmptyResult>
+public class UninstallCommandParameters : CommandParameters<UninstallCommandResult>
 {
     private string extensionId;
 

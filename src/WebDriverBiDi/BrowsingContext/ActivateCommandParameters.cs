@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the browsingContext.activate command.
 /// </summary>
-public class ActivateCommandParameters : CommandParameters<EmptyResult>
+public class ActivateCommandParameters : CommandParameters<ActivateCommandResult>
 {
     private string browsingContextId;
 

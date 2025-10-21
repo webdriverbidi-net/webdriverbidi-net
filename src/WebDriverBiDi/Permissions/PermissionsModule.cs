@@ -35,8 +35,8 @@ public sealed class PermissionsModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
-    public async Task<EmptyResult> SetPermissionAsync(SetPermissionCommandParameters commandProperties)
+    public async Task<SetPermissionCommandResult> SetPermissionAsync(SetPermissionCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<EmptyResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetPermissionCommandResult>(commandProperties).ConfigureAwait(false);
     }
 }

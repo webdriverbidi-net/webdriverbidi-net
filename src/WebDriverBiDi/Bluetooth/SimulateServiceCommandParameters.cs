@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Provides parameters for the bluetooth.simulateService command.
 /// </summary>
-public class SimulateServiceCommandParameters : CommandParameters<EmptyResult>
+public class SimulateServiceCommandParameters : CommandParameters<SimulateServiceCommandResult>
 {
     private string browsingContextId;
     private string address;
