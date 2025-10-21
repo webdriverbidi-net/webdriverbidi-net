@@ -20,7 +20,7 @@ public record ErrorResult : CommandResult
     /// Initializes a new instance of the <see cref="ErrorResult"/> class.
     /// </summary>
     /// <param name="response">The error response containing the error data.</param>
-    public ErrorResult(ErrorResponseMessage response)
+    internal ErrorResult(ErrorResponseMessage response)
     {
         this.error = response.ErrorType;
         this.message = response.ErrorMessage;
