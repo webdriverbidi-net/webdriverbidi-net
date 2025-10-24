@@ -16,6 +16,23 @@ public class PointerSourceActions : SourceActions
     private PointerParameters? parameters;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="PointerSourceActions"/> class.
+    /// </summary>
+    public PointerSourceActions()
+        : base()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PointerSourceActions"/> class with a specific ID.
+    /// </summary>
+    /// <param name="id">The ID for this input source.</param>
+    public PointerSourceActions(string id)
+        : base(id)
+    {
+    }
+
+    /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
     [JsonPropertyName("type")]

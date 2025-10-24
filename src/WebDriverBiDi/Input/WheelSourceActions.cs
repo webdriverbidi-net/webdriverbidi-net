@@ -15,6 +15,23 @@ public class WheelSourceActions : SourceActions
     private readonly List<IWheelSourceAction> actions = new();
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="WheelSourceActions"/> class.
+    /// </summary>
+    public WheelSourceActions()
+        : base()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WheelSourceActions"/> class with a specific ID.
+    /// </summary>
+    /// <param name="id">The ID for this input source.</param>
+    public WheelSourceActions(string id)
+        : base(id)
+    {
+    }
+
+    /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
     [JsonPropertyName("type")]
