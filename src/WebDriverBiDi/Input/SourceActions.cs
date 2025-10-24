@@ -16,7 +16,23 @@ using System.Text.Json.Serialization;
 [JsonDerivedType(typeof(NoneSourceActions))]
 public abstract class SourceActions
 {
-    private readonly string id = Guid.NewGuid().ToString();
+    private string id = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SourceActions"/> class.
+    /// </summary>
+    protected SourceActions()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SourceActions"/> class with a specific ID.
+    /// </summary>
+    /// <param name="id">The ID for this input source.</param>
+    protected SourceActions(string id)
+    {
+        this.id = id;
+    }
 
     /// <summary>
     /// Gets the type of the source actions.
