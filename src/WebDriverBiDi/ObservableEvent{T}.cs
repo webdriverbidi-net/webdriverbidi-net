@@ -13,7 +13,7 @@ namespace WebDriverBiDi;
 public class ObservableEvent<T>
     where T : WebDriverBiDiEventArgs
 {
-    private readonly Dictionary<string, ObservableEventHandler<T>> observers = new();
+    private readonly Dictionary<string, EventObserver<T>> observers = new();
     private readonly int maxObserverCount;
     private readonly string eventName;
 
@@ -104,14 +104,9 @@ public class ObservableEvent<T>
             throw new WebDriverBiDiException($"""This observable event only allows {this.maxObserverCount} {(this.maxObserverCount == 1 ? "handler" : "handlers")}.""");
         }
 
-        string observerId = Guid.NewGuid().ToString();
-        if (string.IsNullOrEmpty(description))
-        {
-            description = $"EventObserver<{typeof(T).Name}> (id: {observerId})";
-        }
-
-        this.observers.Add(observerId, new ObservableEventHandler<T>(handler, handlerOptions, description));
-        return new EventObserver<T>(this, observerId);
+        EventObserver<T> observer = new(this, handler, handlerOptions, description);
+        this.observers.Add(observer.Id, observer);
+        return observer;
     }
 
     /// <summary>
@@ -130,16 +125,9 @@ public class ObservableEvent<T>
     /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task NotifyObserversAsync(T notifyData)
     {
-        foreach (ObservableEventHandler<T> observer in this.observers.Values)
+        foreach (EventObserver<T> observer in this.observers.Values)
         {
-            if ((observer.Options & ObservableEventHandlerOptions.RunHandlerAsynchronously) == ObservableEventHandlerOptions.RunHandlerAsynchronously)
-            {
-                _ = Task.Run(() => observer.HandleObservedEvent(notifyData)).ConfigureAwait(false);
-            }
-            else
-            {
-                await observer.HandleObservedEvent(notifyData).ConfigureAwait(false);
-            }
+            await observer.Notify(notifyData);
         }
     }
 
@@ -150,28 +138,5 @@ public class ObservableEvent<T>
     public override string ToString()
     {
         return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", this.observers.Values)}";
-    }
-
-    private class ObservableEventHandler<TEventArgs>
-    {
-        private readonly Func<TEventArgs, Task> handler;
-        private readonly ObservableEventHandlerOptions handlerOptions;
-        private readonly string description;
-
-        public ObservableEventHandler(Func<TEventArgs, Task> handler, ObservableEventHandlerOptions handlerOptions, string description)
-        {
-            this.handler = handler;
-            this.handlerOptions = handlerOptions;
-            this.description = description;
-        }
-
-        public Func<TEventArgs, Task> HandleObservedEvent => this.handler;
-
-        public ObservableEventHandlerOptions Options => this.handlerOptions;
-
-        public override string ToString()
-        {
-            return this.description;
-        }
     }
 }
