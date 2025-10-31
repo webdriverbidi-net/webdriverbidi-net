@@ -685,9 +685,9 @@ public static class DemoScenarios
                     Console.WriteLine("Navigation completion not detected within three seconds");
                 }
 
-                List<NetworkTrafficMonitor.NetworkRequest> postRequests = await monitor.GetCapturedTrafficAsync();
+                List<NetworkRequest> postRequests = await monitor.GetCapturedTrafficAsync();
                 Console.WriteLine($"Captured {postRequests.Count} requests");
-                foreach (NetworkTrafficMonitor.NetworkRequest request in postRequests)
+                foreach (NetworkRequest request in postRequests)
                 {
                     Console.WriteLine($"Traffic from {request.Url} (request id: {request.RequestId}):");
                     Console.WriteLine("------- Begin Request Content -------");
@@ -715,9 +715,9 @@ public static class DemoScenarios
         };
         navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
-        List<NetworkTrafficMonitor.NetworkRequest> navigationRequests = await monitor.GetCapturedTrafficAsync();
+        List<NetworkRequest> navigationRequests = await monitor.GetCapturedTrafficAsync();
         Console.WriteLine($"Captured {navigationRequests.Count} requests");
-        foreach (NetworkTrafficMonitor.NetworkRequest request in navigationRequests)
+        foreach (NetworkRequest request in navigationRequests)
         {
             Console.WriteLine($"Traffic from {request.Url} (request id: {request.RequestId}):");
             Console.WriteLine("------- Begin Request Content -------");
