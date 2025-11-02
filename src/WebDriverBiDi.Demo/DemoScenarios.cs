@@ -1,5 +1,7 @@
 namespace WebDriverBiDi.Demo;
 
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.InteropServices;
 using System.Text;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Inputs;
@@ -82,13 +84,11 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task WaitForDelayLoadAsync(BiDiDriver driver, string baseUrl)
     {
-        ManualResetEventSlim syncEvent = new(false);
-        driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
+        EventObserver<MessageEventArgs> observer = driver.Script.OnMessage.AddObserver((e) =>
         {
             if (e.ChannelId == "delayLoadChannel")
             {
                 Console.WriteLine("Received event from preload script");
-                syncEvent.Set();
             }
         });
 
@@ -118,6 +118,7 @@ public static class DemoScenarios
         };
         await driver.Script.AddPreloadScriptAsync(preloadScriptParameters);
 
+        observer.SetCheckpoint();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/delayLoadPage.html")
         {
             Wait = ReadinessState.Complete
@@ -125,7 +126,7 @@ public static class DemoScenarios
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
-        bool eventTriggered = syncEvent.Wait(TimeSpan.FromSeconds(10));
+        bool eventTriggered = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
         Console.WriteLine($"Event triggered from preload script: {eventTriggered}");
 
         string functionDefinition = @"() => {
@@ -420,11 +421,11 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
     {
-        List<Task> beforeRequestSentTasks = new();
+        // List<Task> beforeRequestSentTasks = new();
         EventObserver<BeforeRequestSentEventArgs> observer = driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs e) =>
         {
             TaskCompletionSource taskCompletionSource = new();
-            beforeRequestSentTasks.Add(taskCompletionSource.Task);
+            // beforeRequestSentTasks.Add(taskCompletionSource.Task);
             Console.WriteLine($"Entering BeforeRequestSent event");
 
             // Here we ara creating an artificially long-running event handler
@@ -444,6 +445,9 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
+        // Navigating to simpleContent.html generates 5 requests, one for the HTML page itself,
+        // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
+        observer.SetCheckpoint(5);
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
@@ -460,7 +464,8 @@ public static class DemoScenarios
         // that the event handlers will run in parallel. In this case, we've chosen to use
         // Tasks as the synchronization mechanism, so that we can wait for all of them to
         // complete before continuing.
-        Task.WaitAll(beforeRequestSentTasks.ToArray());
+        observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+        Task.WaitAll(observer.GetCheckpointTasks());
         Console.WriteLine($"Event handlers complete");
 
         // Demonstrate the ability to remove the event handler, and that the event handler
@@ -507,8 +512,10 @@ public static class DemoScenarios
         // message, which cannot be processed until processing of this event
         // message is completed. To ensure that we can wait for the command
         // response to be completely processed, capture the Task returned by the
-        // command execution, and await its completion later.
-        Task? substituteTask = null;
+        // command execution, and await its completion later. We do not need an
+        // external data structure because we do not need any information from the
+        // return of the command spawned in the handler; we only need to know that
+        // the handler was executed.
         EventObserver<BeforeRequestSentEventArgs> observer = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
             if (e.IsBlocked)
@@ -519,16 +526,23 @@ public static class DemoScenarios
                     ReasonPhrase = "OK",
                     Body = BytesValue.FromString($"<html><body><h1>Request to {e.Request.Url} has been hijacked!</h1></body></html>")
                 };
-                substituteTask = driver.Network.ProvideResponseAsync(provideResponse);
+                return driver.Network.ProvideResponseAsync(provideResponse);
             }
+
+            return Task.CompletedTask;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
+        // OnBeforeRequestSent will only be raised once, since we are hijacking the
+        // request, and providing a response that does not require any other requests
+        // to the web server.
+        observer.SetCheckpoint();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
         };
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
-        await substituteTask!;
+        observer.WaitForCheckpoint(TimeSpan.FromSeconds(3));
+        Task.WaitAll(observer.GetCheckpointTasks());
 
         Console.WriteLine($"Navigation command completed");
     }
@@ -565,10 +579,8 @@ public static class DemoScenarios
         // message is completed. To ensure that we can wait for the command
         // response to be completely processed, capture the Task returned by the
         // command execution, and await its completion later.
-        ManualResetEventSlim syncEvent = new();
         string responseStartLine = string.Empty;
         List<ReadOnlyHeader> responseHeaders = new();
-        Task<GetDataCommandResult>? bodyRetrievalTask = null;
         EventObserver<ResponseCompletedEventArgs> observer = driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
             // Limit processing to the retrieval just of the HTML file.
@@ -583,18 +595,34 @@ public static class DemoScenarios
                     CollectorId = collectorId,
                     DisownCollectedData = true,
                 };
-                bodyRetrievalTask = driver.Network.GetDataAsync(getDataParameters);
-                syncEvent.Set();
+                return driver.Network.GetDataAsync(getDataParameters);
             }
+
+            return Task.CompletedTask;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
+        // Navigating to simpleContent.html generates 5 responses, one for the HTML page itself,
+        // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
+        observer.SetCheckpoint(5);
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
         };
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
-        syncEvent.Wait(TimeSpan.FromSeconds(3));
-        if (bodyRetrievalTask is null)
+
+        bool checkpointFulfilled = observer.WaitForCheckpoint(TimeSpan.FromSeconds(3));
+        if (!checkpointFulfilled)
+        {
+            Console.WriteLine("Error: Checkpoint not fulfilled");
+            return;
+        }
+
+        // Only one task in the captured tasks will be from the Network.getData command,
+        // which is the task that retrieves the response body, so find that Task in the
+        // captured tasks array, and cast it to the correct type so we can await that task's
+        // result.
+        Task[] checkpointTasks = observer.GetCheckpointTasks();
+        if (Array.Find(checkpointTasks, t => t is Task<GetDataCommandResult>) is not Task<GetDataCommandResult> bodyRetrievalTask)
         {
             Console.WriteLine("Error: Body retrieval failed");
         }
@@ -638,8 +666,7 @@ public static class DemoScenarios
         SubscribeCommandResult subscribeResult = await driver.Session.SubscribeAsync(subscribe);
         string navigationSubscriptionId = subscribeResult.SubscriptionId;
 
-        ManualResetEventSlim navigationEvent = new();
-        EventObserver<NavigationEventArgs> navigationObserver = driver.BrowsingContext.OnLoad.AddObserver((e) => navigationEvent.Set());
+        EventObserver<NavigationEventArgs> navigationObserver = driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
@@ -677,9 +704,9 @@ public static class DemoScenarios
                 PerformActionsCommandParameters actionsParams = new(contextId);
                 actionsParams.Actions.AddRange(inputBuilder.Build());
 
-                navigationEvent.Reset();
+                navigationObserver.SetCheckpoint();
                 await driver.Input.PerformActionsAsync(actionsParams);
-                bool navigationCompleted = navigationEvent.Wait(TimeSpan.FromSeconds(3));
+                bool navigationCompleted = navigationObserver.WaitForCheckpoint(TimeSpan.FromSeconds(3));
                 if (!navigationCompleted)
                 {
                     Console.WriteLine("Navigation completion not detected within three seconds");

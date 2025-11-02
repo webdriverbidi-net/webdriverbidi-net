@@ -12,11 +12,14 @@ namespace WebDriverBiDi;
 public class EventObserver<T>
     where T : WebDriverBiDiEventArgs
 {
-    private readonly ObservableEvent<T> observableEvent;
     private readonly string id = Guid.NewGuid().ToString();
+    private readonly string description;
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
-    private readonly string description;
+    private readonly ObservableEvent<T> observableEvent;
+    private readonly List<Task> capturedTasks = new();
+    private bool isCapturing = false;
+    private CountdownEvent synchronizationCounter = new(0);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EventObserver{T}"/> class.
@@ -41,6 +44,11 @@ public class EventObserver<T>
     }
 
     /// <summary>
+    /// Gets a value indicating whether a checkpoint is set for this observer.
+    /// </summary>
+    public bool IsCheckpointSet => this.isCapturing;
+
+    /// <summary>
     /// Gets the internal unique identifier of this observer.
     /// </summary>
     internal string Id => this.id;
@@ -51,6 +59,75 @@ public class EventObserver<T>
     public void Unobserve()
     {
         this.observableEvent.RemoveObserver(this.id);
+    }
+
+    /// <summary>
+    /// Sets a checkpoint that can be satisfied after the specified number of notifications this observer receives,
+    /// capturing the <see cref="Task"/> objects created while waiting for the checkpoint to be fulfilled.
+    /// </summary>
+    /// <param name="numberOfNotifications">The number of notifications to wait for. If unspecified, defaults to 1.</param>
+    /// <exception cref="ArgumentException">Thrown when the number of notifications specified is less than 1.</exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when a checkpoint is already established and not yet fulfilled.</exception>
+    public void SetCheckpoint(uint numberOfNotifications = 1)
+    {
+        if (numberOfNotifications < 1)
+        {
+            throw new ArgumentException("Number of notifications must be greater than 1.", nameof(numberOfNotifications));
+        }
+
+        if (this.isCapturing)
+        {
+            throw new WebDriverBiDiException("This observer already has a checkpoint set. It must be satisfied or unset before setting another.");
+        }
+
+        this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
+        this.isCapturing = true;
+    }
+
+    /// <summary>
+    /// Waits for a checkpoint to be satisfied by having this event observer notified the number of
+    /// times specified when the checkpoint was set. If the wait is successful, it means only that
+    /// this observer was notified to execute the handler, not that the handler has necessarily
+    /// completed execution.
+    /// </summary>
+    /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied.</param>
+    /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
+    public bool WaitForCheckpoint(TimeSpan timeout)
+    {
+        if (!this.isCapturing)
+        {
+            return true;
+        }
+
+        bool waitSucceeded = this.synchronizationCounter.Wait(timeout);
+        if (waitSucceeded)
+        {
+            this.UnsetCheckpoint();
+        }
+
+        return waitSucceeded;
+    }
+
+    /// <summary>
+    /// Gets the <see cref="Task"/> objects captured while waiting for the checkpoint to be fulfilled.
+    /// Calling this method unsets the checkpoint, and transfers the ownership of the captured
+    ///  <see cref="Task"/>s to the calling method.
+    /// </summary>
+    /// <returns>An array of <see cref="Task"/> objects captured while waiting for the checkpoints to be fulfilled.</returns>
+    public Task[] GetCheckpointTasks()
+    {
+        this.UnsetCheckpoint();
+        Task[] capturedTasks = this.capturedTasks.ToArray();
+        this.capturedTasks.Clear();
+        return capturedTasks;
+    }
+
+    /// <summary>
+    /// Unset an established checkpoint for this observer.
+    /// </summary>
+    public void UnsetCheckpoint()
+    {
+        this.isCapturing = false;
     }
 
     /// <summary>
@@ -73,6 +150,12 @@ public class EventObserver<T>
         if (!this.handlerOptions.HasFlag(ObservableEventHandlerOptions.RunHandlerAsynchronously))
         {
             await executingTask.ConfigureAwait(false);
+        }
+
+        if (this.isCapturing && !this.synchronizationCounter.IsSet)
+        {
+            this.capturedTasks.Add(executingTask);
+            this.synchronizationCounter.Signal();
         }
     }
 }

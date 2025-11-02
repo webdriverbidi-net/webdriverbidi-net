@@ -17,23 +17,27 @@ public class ObservableEventTests
     [Test]
     public async Task TestCanExecuteEventHandlersAsynchronously()
     {
-        Task? eventTask = null;
-        ManualResetEvent syncEvent = new(false);
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> handler = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) =>
         {
             TaskCompletionSource taskCompletionSource = new();
-            eventTask = taskCompletionSource.Task;
             taskCompletionSource.SetResult();
-            syncEvent.Set();
+            return taskCompletionSource.Task;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
+        handler.SetCheckpoint();
+        Assert.That(handler.IsCheckpointSet, Is.True);
         await testEventSource.RaiseTestEventAsync("myValue");
-        bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
+        bool eventSet = handler.WaitForCheckpoint(TimeSpan.FromMilliseconds(100));
         Assert.That(eventSet, Is.True);
-        await eventTask!;
-        Assert.That(eventTask!.IsCompletedSuccessfully, Is.True);
+        Assert.That(handler.IsCheckpointSet, Is.False);
+
+        Task[] eventTasks = handler.GetCheckpointTasks();
+        Assert.That(eventTasks, Has.Length.EqualTo(1));
+        await eventTasks[0];
+        Assert.That(eventTasks[0].IsCompletedSuccessfully, Is.True);
     }
+
     [Test]
     public async Task TestCanRemoveObservableEventHandler()
     {
@@ -48,7 +52,6 @@ public class ObservableEventTests
         await testEventSource.RaiseTestEventAsync("myValue2");
         Assert.That(observedValue, Is.EqualTo("myValue1"));
     }
-
 
     [Test]
     public void TestCannotAddMoreThanMaxObservers()
@@ -96,6 +99,91 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         Assert.That(testEventSource.TestObservableEvent.EventName, Is.EqualTo("testModule.testEvent"));        
+    }
+
+    [Test]
+    public void TestSettingCheckpointCountZeroThrows()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> handler = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        Assert.That(() => handler.SetCheckpoint(0), Throws.InstanceOf<ArgumentException>().With.Message.Contains("must be greater than 1"));
+    }
+
+    [Test]
+    public void TestSettingCheckpointWithActiveCheckpointThrows()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> handler = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        handler.SetCheckpoint();
+        Assert.That(() => handler.SetCheckpoint(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("already has a checkpoint set"));
+    }
+
+    [Test]
+    public async Task TestObserverCheckpointCanCaptureMultipleEventTasks()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.SetCheckpoint(2);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        bool checkpointFulfilled = observer.WaitForCheckpoint(TimeSpan.FromMilliseconds(100));
+        Assert.That(checkpointFulfilled, Is.True);
+        Assert.That(observer.IsCheckpointSet, Is.False);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(2));
+    }
+
+    [Test]
+    public async Task TestObserverCheckpointBeUnfulfilledIfTimeoutExpires()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.SetCheckpoint(2);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        bool checkpointFulfilled = observer.WaitForCheckpoint(TimeSpan.FromMilliseconds(100));
+        Assert.That(checkpointFulfilled, Is.False);
+        Assert.That(observer.IsCheckpointSet, Is.True);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(1));
+    }
+
+    [Test]
+    public async Task TestCanUnsetCheckpoint()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        observer.SetCheckpoint();
+        observer.UnsetCheckpoint();
+        Assert.That(observer.IsCheckpointSet, Is.False);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Is.Empty);
+    }
+
+    [Test]
+    public void TestCanUnsetCheckpointWithoutSetting()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        observer.UnsetCheckpoint();
+        Assert.That(observer.IsCheckpointSet, Is.False);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Is.Empty);
+    }
+
+    [Test]
+    public void TestWaitForCheckpointWithoutSettingIsANoOp()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        bool checkpointFulfilled = observer.WaitForCheckpoint(TimeSpan.FromMilliseconds(100));
+        Assert.That(checkpointFulfilled, Is.True);
+        Assert.That(observer.GetCheckpointTasks(), Is.Empty);
     }
 
     private class TestEventSource
