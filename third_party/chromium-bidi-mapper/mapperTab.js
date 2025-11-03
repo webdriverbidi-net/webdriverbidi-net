@@ -3885,43 +3885,64 @@
             this.#networkStorage.disownData(params);
             return {};
         }
-        async setExtraHeaders(params) {
-            if (params.userContexts !== undefined && params.contexts !== undefined) {
-                throw new InvalidArgumentException('contexts and userContexts are mutually exclusive');
+        async #getRelatedTopLevelBrowsingContexts(browsingContextIds, userContextIds) {
+            if (browsingContextIds === undefined && userContextIds === undefined) {
+                return this.#browsingContextStorage.getTopLevelContexts();
             }
+            if (browsingContextIds !== undefined && userContextIds !== undefined) {
+                throw new InvalidArgumentException('User contexts and browsing contexts are mutually exclusive');
+            }
+            const result = [];
+            if (userContextIds !== undefined) {
+                if (userContextIds.length === 0) {
+                    throw new InvalidArgumentException('user context should be provided');
+                }
+                await this.#userContextStorage.verifyUserContextIdList(userContextIds);
+                for (const userContextId of userContextIds) {
+                    const topLevelBrowsingContexts = this.#browsingContextStorage
+                        .getTopLevelContexts()
+                        .filter((browsingContext) => browsingContext.userContext === userContextId);
+                    result.push(...topLevelBrowsingContexts);
+                }
+            }
+            if (browsingContextIds !== undefined) {
+                if (browsingContextIds.length === 0) {
+                    throw new InvalidArgumentException('browsing context should be provided');
+                }
+                for (const browsingContextId of browsingContextIds) {
+                    const browsingContext = this.#browsingContextStorage.getContext(browsingContextId);
+                    if (!browsingContext.isTopLevelContext()) {
+                        throw new InvalidArgumentException('The command is only supported on the top-level context');
+                    }
+                    result.push(browsingContext);
+                }
+            }
+            return [...new Set(result).values()];
+        }
+        async setExtraHeaders(params) {
+            const affectedBrowsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
             const cdpExtraHeaders = parseBiDiHeaders(params.headers);
-            const affectedCdpTargets = new Set();
             if (params.userContexts === undefined && params.contexts === undefined) {
                 this.#contextConfigStorage.updateGlobalConfig({
                     extraHeaders: cdpExtraHeaders,
                 });
-                this.#browsingContextStorage
-                    .getAllContexts()
-                    .forEach((c) => affectedCdpTargets.add(c.cdpTarget));
             }
             if (params.userContexts !== undefined) {
-                await this.#userContextStorage.verifyUserContextIdList(params.userContexts);
                 params.userContexts.forEach((userContext) => {
                     this.#contextConfigStorage.updateUserContextConfig(userContext, {
                         extraHeaders: cdpExtraHeaders,
                     });
-                    this.#browsingContextStorage
-                        .getAllContexts()
-                        .filter((c) => c.userContext === userContext)
-                        .forEach((c) => affectedCdpTargets.add(c.cdpTarget));
                 });
             }
             if (params.contexts !== undefined) {
-                this.#browsingContextStorage.verifyTopLevelContextsList(params.contexts);
                 params.contexts.forEach((browsingContextId) => {
                     this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, { extraHeaders: cdpExtraHeaders });
-                    affectedCdpTargets.add(this.#browsingContextStorage.getContext(browsingContextId).cdpTarget);
-                    this.#browsingContextStorage
-                        .getContext(browsingContextId)
-                        .allChildren.forEach((c) => affectedCdpTargets.add(c.cdpTarget));
                 });
             }
-            await Promise.all(Array.from(affectedCdpTargets).map((cdpTarget) => cdpTarget.setExtraHeaders(cdpExtraHeaders)));
+            await Promise.all(affectedBrowsingContexts.map(async (context) => {
+                const extraHeaders = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext).extraHeaders ?? {};
+                await context.setExtraHeaders(extraHeaders);
+            }));
             return {};
         }
     }
@@ -3993,13 +4014,7 @@
                 if (value.trim() !== value) {
                     throw new InvalidArgumentException(`Header value should not contain trailing or ending whitespaces`);
                 }
-                if (parsedHeaders[bidiHeader.name] === undefined) {
-                    parsedHeaders[bidiHeader.name] = bidiHeader.value.value;
-                }
-                else {
-                    parsedHeaders[bidiHeader.name] =
-                        `${parsedHeaders[bidiHeader.name]}, ${bidiHeader.value.value}`;
-                }
+                parsedHeaders[bidiHeader.name] = bidiHeader.value.value;
             }
             else {
                 throw new UnsupportedOperationException('Only string headers values are supported');
@@ -5525,6 +5540,7 @@
     class ContextConfig {
         acceptInsecureCerts;
         devicePixelRatio;
+        disableNetworkDurableMessages;
         downloadBehavior;
         emulatedNetworkConditions;
         extraHeaders;
@@ -5589,11 +5605,24 @@
         getGlobalConfig() {
             return this.#global;
         }
+        #getExtraHeaders(topLevelBrowsingContextId, userContext) {
+            const globalHeaders = this.#global.extraHeaders ?? {};
+            const userContextHeaders = this.#userContextConfigs.get(userContext)?.extraHeaders ?? {};
+            const browsingContextHeaders = topLevelBrowsingContextId === undefined
+                ? {}
+                : (this.#browsingContextConfigs.get(topLevelBrowsingContextId)
+                    ?.extraHeaders ?? {});
+            return { ...globalHeaders, ...userContextHeaders, ...browsingContextHeaders };
+        }
         getActiveConfig(topLevelBrowsingContextId, userContext) {
-            const userContextConfig = ContextConfig.merge(this.#global, this.#userContextConfigs.get(userContext));
-            if (topLevelBrowsingContextId === undefined)
-                return userContextConfig;
-            return ContextConfig.merge(userContextConfig, this.#browsingContextConfigs.get(topLevelBrowsingContextId));
+            let result = ContextConfig.merge(this.#global, this.#userContextConfigs.get(userContext));
+            if (topLevelBrowsingContextId !== undefined) {
+                result = ContextConfig.merge(result, this.#browsingContextConfigs.get(topLevelBrowsingContextId));
+            }
+            const extraHeaders = this.#getExtraHeaders(topLevelBrowsingContextId, userContext);
+            result.extraHeaders =
+                Object.keys(extraHeaders).length > 0 ? extraHeaders : undefined;
+            return result;
         }
     }
 
@@ -7819,6 +7848,9 @@
         async setEmulatedNetworkConditions(networkConditions) {
             await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setEmulatedNetworkConditions(networkConditions)));
         }
+        async setExtraHeaders(cdpExtraHeaders) {
+            await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setExtraHeaders(cdpExtraHeaders)));
+        }
     }
     _a$5 = BrowsingContextImpl;
     function serializeOrigin(origin) {
@@ -8575,15 +8607,29 @@
             }
             return cookies;
         }
+        #getBodySizeFromHeaders(headers) {
+            if (headers === undefined) {
+                return undefined;
+            }
+            if (headers['Content-Length'] !== undefined) {
+                const bodySize = Number.parseInt(headers['Content-Length']);
+                if (Number.isInteger(bodySize)) {
+                    return bodySize;
+                }
+                this.#logger?.(LogType.debugError, "Unexpected non-integer 'Content-Length' header");
+            }
+            return undefined;
+        }
         get bodySize() {
-            let bodySize = 0;
             if (typeof this.#requestOverrides?.bodySize === 'number') {
-                bodySize = this.#requestOverrides.bodySize;
+                return this.#requestOverrides.bodySize;
             }
-            else {
-                bodySize = bidiBodySizeFromCdpPostDataEntries(this.#request.info?.request.postDataEntries ?? []);
+            if (this.#request.info?.request.postDataEntries !== undefined) {
+                return bidiBodySizeFromCdpPostDataEntries(this.#request.info?.request.postDataEntries);
             }
-            return bodySize;
+            return (this.#getBodySizeFromHeaders(this.#request.info?.request.headers) ??
+                this.#getBodySizeFromHeaders(this.#request.extraInfo?.headers) ??
+                0);
         }
         get #context() {
             const result = this.#response.paused?.frameId ??
@@ -9064,7 +9110,9 @@
                 case 'Image':
                     return 'image';
                 case 'Document':
-                    return this.#request.info?.initiator.type === 'parser' ? 'iframe' : '';
+                    return this.#request.info?.initiator.type === 'parser'
+                        ? 'iframe'
+                        : 'document';
                 default:
                     return '';
             }
@@ -9206,7 +9254,7 @@
         }
         #getOrCreateNetworkRequest(id, cdpTarget, redirectCount) {
             let request = this.getRequestById(id);
-            if (request) {
+            if (redirectCount === undefined && request) {
                 return request;
             }
             request = new NetworkRequest(id, this.#eventManager, this, cdpTarget, redirectCount, this.#logger);
@@ -9369,8 +9417,7 @@
             };
         }
         collectIfNeeded(request, dataType) {
-            this.#collectorsStorage.collectIfNeeded(request, dataType, request.cdpTarget.topLevelId, this.#browsingContextStorage.getContext(request.cdpTarget.topLevelId)
-                .userContext);
+            this.#collectorsStorage.collectIfNeeded(request, dataType, request.cdpTarget.topLevelId, request.cdpTarget.userContext);
         }
         getInterceptionStages(browsingContextId) {
             const stages = {
@@ -9491,7 +9538,7 @@
 
     class CdpTarget {
         #id;
-        #userContext;
+        userContext;
         #cdpClient;
         #browserCdpClient;
         #parentCdpClient;
@@ -9527,7 +9574,7 @@
             return cdpTarget;
         }
         constructor(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, logger) {
-            this.#userContext = userContext;
+            this.userContext = userContext;
             this.#id = targetId;
             this.#cdpClient = cdpClient;
             this.#browserCdpClient = browserCdpClient;
@@ -9565,6 +9612,7 @@
             return this.#windowId ?? 0;
         }
         async #unblock() {
+            const config = this.contextConfigStorage.getActiveConfig(this.topLevelId, this.userContext);
             const results = await Promise.allSettled([
                 this.#cdpClient.sendCommand('Page.enable', {
                     enableFileChooserOpenedEvent: true,
@@ -9586,7 +9634,7 @@
                 }),
                 this.#cdpClient
                     .sendCommand('Network.enable', {
-                    enableDurableMessages: true,
+                    enableDurableMessages: config.disableNetworkDurableMessages !== true,
                     maxTotalBufferSize: MAX_TOTAL_COLLECTED_SIZE,
                 })
                     .then(() => this.toggleNetworkIfNeeded()),
@@ -9596,7 +9644,7 @@
                     flatten: true,
                 }),
                 this.#updateWindowId(),
-                this.#setUserContextConfig(),
+                this.#setUserContextConfig(config),
                 this.#initAndEvaluatePreloadScripts(),
                 this.#cdpClient.sendCommand('Runtime.runIfWaitingForDebugger'),
                 this.#parentCdpClient.sendCommand('Runtime.runIfWaitingForDebugger'),
@@ -9625,7 +9673,7 @@
             }
             if (maybeContext === undefined && frame.parentId !== undefined) {
                 const parentBrowsingContext = this.#browsingContextStorage.getContext(frame.parentId);
-                BrowsingContextImpl.create(frame.id, frame.parentId, this.#userContext, parentBrowsingContext.cdpTarget, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.contextConfigStorage, frame.url, undefined, this.#logger);
+                BrowsingContextImpl.create(frame.id, frame.parentId, this.userContext, parentBrowsingContext.cdpTarget, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, this.contextConfigStorage, frame.url, undefined, this.#logger);
             }
             frameTree.childFrames?.map((frameTree) => this.#restoreFrameTreeState(frameTree));
         }
@@ -9870,9 +9918,8 @@
                 throw err;
             }
         }
-        async #setUserContextConfig() {
+        async #setUserContextConfig(config) {
             const promises = [];
-            const config = this.contextConfigStorage.getActiveConfig(this.topLevelId, this.#userContext);
             promises.push(this.#cdpClient
                 .sendCommand('Page.setPrerenderingAllowed', {
                 isAllowed: !config.prerenderingDisabled,
@@ -9924,7 +9971,7 @@
             return this.#eventManager.subscriptionManager.isSubscribedTo(moduleOrEvent, this.topLevelId);
         }
         #ignoreFileDialog() {
-            const config = this.contextConfigStorage.getActiveConfig(this.topLevelId, this.#userContext);
+            const config = this.contextConfigStorage.getActiveConfig(this.topLevelId, this.userContext);
             return ((config.userPromptHandler?.file ??
                 config.userPromptHandler?.default ??
                 "ignore" ) ===
@@ -11161,6 +11208,7 @@
                     acceptInsecureCerts: options.acceptInsecureCerts ?? false,
                     userPromptHandler: options.unhandledPromptBehavior,
                     prerenderingDisabled: options?.['goog:prerenderingDisabled'] ?? false,
+                    disableNetworkDurableMessages: options?.['goog:disableNetworkDurableMessages'],
                 });
                 new CdpTargetManager(cdpConnection, browserCdpClient, selfTargetId, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, networkStorage, contextConfigStorage, this.#bluetoothProcessor, this.#speculationProcessor, this.#preloadScriptStorage, defaultUserContextId, logger);
                 await browserCdpClient.sendCommand('Target.setDiscoverTargets', {
