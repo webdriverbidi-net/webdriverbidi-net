@@ -1,7 +1,5 @@
 namespace WebDriverBiDi.Demo;
 
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices;
 using System.Text;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Inputs;
@@ -57,8 +55,8 @@ public static class DemoScenarios
                 SharedReference elementReference = scriptResultValue.ToSharedReference();
 
                 InputBuilder inputBuilder = new();
-                InputHelper.AddClickOnElementAction(inputBuilder, elementReference);
-                InputHelper.AddSendKeysToActiveElementAction(inputBuilder, "Hello WebDriver BiDi" + Keys.Enter);
+                inputBuilder.AddClickOnElementAction(elementReference);
+                inputBuilder.AddSendKeysToActiveElementAction("Hello WebDriver BiDi" + Keys.Enter);
 
                 PerformActionsCommandParameters actionsParams = new(contextId);
                 actionsParams.Actions.AddRange(inputBuilder.Build());
@@ -622,12 +620,18 @@ public static class DemoScenarios
         // captured tasks array, and cast it to the correct type so we can await that task's
         // result.
         Task[] checkpointTasks = observer.GetCheckpointTasks();
-        if (Array.Find(checkpointTasks, t => t is Task<GetDataCommandResult>) is not Task<GetDataCommandResult> bodyRetrievalTask)
+        Task<GetDataCommandResult>[] bodyRetrievalTasks = checkpointTasks.FilterTasksForType<GetDataCommandResult>();
+        if (bodyRetrievalTasks.Length == 0)
         {
             Console.WriteLine("Error: Body retrieval failed");
         }
+        else if (bodyRetrievalTasks.Length > 1)
+        {
+            Console.WriteLine("Error: Too many body retrieval tasks found");
+        }
         else
         {
+            Task<GetDataCommandResult> bodyRetrievalTask = bodyRetrievalTasks[0];
             await bodyRetrievalTask;
             BytesValue bodyResult = bodyRetrievalTask.Result.Bytes;
             string bodyText = string.Empty;
@@ -698,8 +702,8 @@ public static class DemoScenarios
                 SharedReference elementReference = scriptResultValue.ToSharedReference();
 
                 InputBuilder inputBuilder = new();
-                InputHelper.AddClickOnElementAction(inputBuilder, elementReference);
-                InputHelper.AddSendKeysToActiveElementAction(inputBuilder, "Hello WebDriver BiDi" + Keys.Enter);
+                inputBuilder.AddClickOnElementAction(elementReference);
+                inputBuilder.AddSendKeysToActiveElementAction("Hello WebDriver BiDi" + Keys.Enter);
 
                 PerformActionsCommandParameters actionsParams = new(contextId);
                 actionsParams.Actions.AddRange(inputBuilder.Build());
