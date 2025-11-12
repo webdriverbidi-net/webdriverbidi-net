@@ -31,6 +31,6 @@ public class ResponseContentTests
     public void TestDeserializeWithMissingSizeThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<ResponseContent>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: size"));
+        Assert.That(() => JsonSerializer.Deserialize<ResponseContent>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'size"));
     }
 }

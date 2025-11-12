@@ -52,8 +52,8 @@ public class TargetTests
     public void TestDeserializationOfInvalidJsonThrows()
     {
         string json = @"{ ""invalid"": ""invalidValue"" }";
-        Assert.That(() => JsonSerializer.Deserialize<ContextTarget>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: context"));
-        Assert.That(() => JsonSerializer.Deserialize<RealmTarget>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: realm"));
+        Assert.That(() => JsonSerializer.Deserialize<ContextTarget>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'context"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmTarget>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'realm"));
         Assert.That(() => JsonSerializer.Deserialize<Target>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("ScriptTarget must contain either a 'realm' or a 'context' property"));
         Assert.That(() => JsonSerializer.Deserialize<Target>(@"[ ""invalid target"" ]"), Throws.InstanceOf<JsonException>().With.Message.Contains("Script target JSON must be an object"));
     }

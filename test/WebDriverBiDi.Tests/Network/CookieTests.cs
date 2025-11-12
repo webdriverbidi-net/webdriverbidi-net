@@ -306,7 +306,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: name"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'name'"));
     }
 
     [Test]
@@ -323,7 +323,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: value"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value'"));
     }
 
     [Test]
@@ -343,7 +343,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: domain"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'domain'"));
     }
 
     [Test]
@@ -363,7 +363,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: path"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'path'"));
     }
 
     [Test]
@@ -383,7 +383,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: secure"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'secure'"));
     }
 
     [Test]
@@ -403,7 +403,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: httpOnly"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'httpOnly'"));
     }
 
     [Test]
@@ -423,7 +423,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: sameSite"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'sameSite'"));
     }
 
     [Test]
@@ -443,7 +443,7 @@ public class CookieTests
                         "sameSite": "lax"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: size"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'size'"));
     }
 
     [Test]

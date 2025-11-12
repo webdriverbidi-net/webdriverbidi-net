@@ -382,7 +382,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: request"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'request"));
     }
 
     [Test]
@@ -415,7 +415,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: url"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'url"));
     }
 
     [Test]
@@ -448,7 +448,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: method"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'method"));
     }
 
     [Test]
@@ -481,7 +481,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: headers"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headers"));
     }
 
     [Test]
@@ -514,7 +514,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: cookies"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'cookies"));
     }
 
     [Test]
@@ -547,7 +547,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: headersSize"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headersSize"));
     }
 
     [Test]
@@ -580,7 +580,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: bodySize"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'bodySize"));
     }
 
     [Test]
@@ -613,7 +613,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: destination"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'destination"));
     }
 
     [Test]
@@ -646,7 +646,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: initiatorType"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'initiatorType"));
     }
 
     [Test]
@@ -665,6 +665,6 @@ public class RequestDataTests
                         "bodySize": 0
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: timings"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'timings"));
     }
 }

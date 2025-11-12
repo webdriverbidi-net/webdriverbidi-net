@@ -68,7 +68,7 @@ public class HeaderTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Header>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: name"));
+        Assert.That(() => JsonSerializer.Deserialize<Header>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'name"));
     }
 
     [Test]
@@ -79,6 +79,6 @@ public class HeaderTests
                         "name": "headerName"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Header>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties, including the following: value"));
+        Assert.That(() => JsonSerializer.Deserialize<Header>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value"));
     }
 }
