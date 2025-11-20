@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.WebExtension;
 
+using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.JsonConverters;
 
@@ -21,7 +22,21 @@ public class InstallCommandResultTests
                       """;
         InstallCommandResult? result = JsonSerializer.Deserialize<InstallCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.ExtensionId, Is.EqualTo("myExtensionId"));
+        Assert.That(result.ExtensionId, Is.EqualTo("myExtensionId"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "extension": "myExtensionId"
+                      }
+                      """;
+        InstallCommandResult? result = JsonSerializer.Deserialize<InstallCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        InstallCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

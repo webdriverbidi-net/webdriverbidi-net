@@ -665,4 +665,13 @@ public class LocalValueTests
             });
         }
     }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        LocalValue value = LocalValue.Undefined;
+        Assert.That(value.Value, Is.Null);
+        LocalValue copy = value with { };
+        Assert.That(copy, Is.EqualTo(value));
+    }
 }

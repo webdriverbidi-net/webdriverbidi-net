@@ -21,7 +21,21 @@ public class AddInterceptCommandResultTests
                       """;
         AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.InterceptId, Is.EqualTo("myInterceptId"));
+        Assert.That(result.InterceptId, Is.EqualTo("myInterceptId"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "intercept": "myInterceptId"
+                      }
+                      """;
+        AddInterceptCommandResult? result = JsonSerializer.Deserialize<AddInterceptCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        AddInterceptCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

@@ -21,7 +21,21 @@ public class PrintCommandResultTests
                       """;
         PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Data, Is.EqualTo("some print data"));
+        Assert.That(result.Data, Is.EqualTo("some print data"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "data": "some print data"
+                      }
+                      """;
+        PrintCommandResult? result = JsonSerializer.Deserialize<PrintCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        PrintCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

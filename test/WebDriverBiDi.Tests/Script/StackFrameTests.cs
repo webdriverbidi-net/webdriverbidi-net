@@ -26,11 +26,28 @@ public class StackFrameTests
         Assert.That(stackFrame, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(stackFrame!.FunctionName, Is.EqualTo("myFunction"));
+            Assert.That(stackFrame.FunctionName, Is.EqualTo("myFunction"));
             Assert.That(stackFrame.LineNumber, Is.EqualTo(1));
             Assert.That(stackFrame.ColumnNumber, Is.EqualTo(5));
             Assert.That(stackFrame.Url, Is.EqualTo("http://some.url/file.js"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "functionName": "myFunction",
+                        "lineNumber": 1,
+                        "columnNumber": 5,
+                        "url": "http://some.url/file.js"
+                      }
+                      """;
+        StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions);
+        Assert.That(stackFrame, Is.Not.Null);
+        StackFrame copy = stackFrame with { };
+        Assert.That(copy, Is.EqualTo(stackFrame));
     }
 
     [Test]

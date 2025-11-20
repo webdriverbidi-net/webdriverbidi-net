@@ -23,9 +23,23 @@ public class SourceTests
         Assert.That(source, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(source!.RealmId, Is.EqualTo("realmId"));
+            Assert.That(source.RealmId, Is.EqualTo("realmId"));
             Assert.That(source.Context, Is.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "realm": "realmId"
+                      }
+                      """;
+        Source? source = JsonSerializer.Deserialize<Source>(json, deserializationOptions);
+        Assert.That(source, Is.Not.Null);
+        Source copy = source with { };
+        Assert.That(copy, Is.EqualTo(source));
     }
 
     [Test]
@@ -59,7 +73,7 @@ public class SourceTests
         Assert.That(source, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(source!.RealmId, Is.EqualTo("realmId"));
+            Assert.That(source.RealmId, Is.EqualTo("realmId"));
             Assert.That(source.Context, Is.Not.Null);
             Assert.That(source.Context, Is.EqualTo("contextId"));
         });

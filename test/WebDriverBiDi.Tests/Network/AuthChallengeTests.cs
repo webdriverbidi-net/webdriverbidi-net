@@ -24,9 +24,24 @@ public class AuthChallengeTests
         Assert.That(challenge, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(challenge!.Scheme, Is.EqualTo("basic"));
+            Assert.That(challenge.Scheme, Is.EqualTo("basic"));
             Assert.That(challenge.Realm, Is.EqualTo("example.com"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "scheme": "basic",
+                        "realm": "example.com"
+                      }
+                      """;
+        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions);
+        Assert.That(challenge, Is.Not.Null);
+        AuthChallenge copy = challenge with { };
+        Assert.That(copy, Is.EqualTo(challenge));
     }
 
     [Test]

@@ -21,7 +21,21 @@ public class CreateCommandResultTests
                       """;
         CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.BrowsingContextId, Is.EqualTo("myContextId"));
+        Assert.That(result.BrowsingContextId, Is.EqualTo("myContextId"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "context": "myContextId"
+                      }
+                      """;
+        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        CreateCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

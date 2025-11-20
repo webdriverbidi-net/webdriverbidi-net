@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Network;
 
+using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.JsonConverters;
 
@@ -10,6 +11,14 @@ public class HeaderTests
     {
         TypeInfoResolver = new PrivateConstructorContractResolver(),
     };
+
+    [Test]
+    public void TestCanConstructHeader()
+    {
+        Header header = new("name", "value");
+        Assert.That(header.Name, Is.EqualTo("name"));
+        Assert.That(header.Value, Is.EqualTo(BytesValue.FromString("value")));
+    }
 
     [Test]
     public void TestCanDeserializeHeader()
@@ -27,7 +36,7 @@ public class HeaderTests
         Assert.That(header, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(header!.Name, Is.EqualTo("headerName"));
+            Assert.That(header.Name, Is.EqualTo("headerName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(header.Value.Value, Is.EqualTo("headerValue"));
         });
@@ -51,7 +60,7 @@ public class HeaderTests
         Assert.That(header, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(header!.Name, Is.EqualTo("headerName"));
+            Assert.That(header.Name, Is.EqualTo("headerName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.Base64));
             Assert.That(header.Value.Value, Is.EqualTo(base64Value));
         });

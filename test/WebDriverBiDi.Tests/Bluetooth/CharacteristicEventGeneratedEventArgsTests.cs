@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
+using NUnit.Framework.Internal.Execution;
 using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
@@ -24,9 +25,10 @@ public class CharacteristicEventGeneratedEventArgsTests
                       }
                       """;
         CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -48,9 +50,10 @@ public class CharacteristicEventGeneratedEventArgsTests
                       }
                       """;
         CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -72,9 +75,10 @@ public class CharacteristicEventGeneratedEventArgsTests
                       }
                       """;
         CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -96,9 +100,10 @@ public class CharacteristicEventGeneratedEventArgsTests
                       }
                       """;
         CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -120,9 +125,10 @@ public class CharacteristicEventGeneratedEventArgsTests
                       }
                       """;
         CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -145,9 +151,10 @@ public class CharacteristicEventGeneratedEventArgsTests
                       }
                       """;
         CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -171,9 +178,10 @@ public class CharacteristicEventGeneratedEventArgsTests
                       }
                       """;
         CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -183,6 +191,24 @@ public class CharacteristicEventGeneratedEventArgsTests
             Assert.That(eventArgs.Data![0], Is.EqualTo(123));
             Assert.That(eventArgs.Data![1], Is.EqualTo(456));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "address": "myAddress",
+                        "serviceUuid": "myServiceUuid",
+                        "characteristicUuid": "myCharacteristicUuid",
+                        "type": "read"
+                      }
+                      """;
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
+        CharacteristicEventGeneratedEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]

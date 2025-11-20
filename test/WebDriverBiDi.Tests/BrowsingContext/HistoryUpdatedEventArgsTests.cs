@@ -22,11 +22,30 @@ public class HistoryUpdatedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.Url, Is.EqualTo("http://example.com"));
-            Assert.That(eventArgs!.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs!.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
+            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
+            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": {{milliseconds}}
+                      }
+                      """;
+        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        HistoryUpdatedEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]

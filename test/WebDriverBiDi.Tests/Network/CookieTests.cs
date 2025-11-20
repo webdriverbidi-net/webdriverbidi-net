@@ -33,7 +33,7 @@ public class CookieTests
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(cookie!.Name, Is.EqualTo("cookieName"));
+            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
             Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
@@ -73,7 +73,7 @@ public class CookieTests
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(cookie!.Name, Is.EqualTo("cookieName"));
+            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
             Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
@@ -113,7 +113,7 @@ public class CookieTests
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(cookie!.Name, Is.EqualTo("cookieName"));
+            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
             Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
@@ -152,7 +152,7 @@ public class CookieTests
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(cookie!.Name, Is.EqualTo("cookieName"));
+            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.Base64));
             Assert.That(cookie.Value.Value, Is.EqualTo(base64Value));
             Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
@@ -193,7 +193,7 @@ public class CookieTests
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(cookie!.Name, Is.EqualTo("cookieName"));
+            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
             Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
@@ -231,7 +231,7 @@ public class CookieTests
         Assert.That(cookie, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(cookie!.Name, Is.EqualTo("cookieName"));
+            Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(cookie.Value.Value, Is.EqualTo("cookieValue"));
             Assert.That(cookie.Domain, Is.EqualTo("cookieDomain"));
@@ -273,10 +273,10 @@ public class CookieTests
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
-        SetCookieHeader header = cookie!.ToSetCookieHeader();
+        SetCookieHeader header = cookie.ToSetCookieHeader();
         Assert.Multiple(() =>
         {
-            Assert.That(header!.Name, Is.EqualTo("cookieName"));
+            Assert.That(header.Name, Is.EqualTo("cookieName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(header.Value.Value, Is.EqualTo("cookieValue"));
             Assert.That(header.Domain, Is.EqualTo("cookieDomain"));
@@ -287,6 +287,30 @@ public class CookieTests
             Assert.That(header.Expires, Is.EqualTo(expireTime));
             Assert.That(header.MaxAge, Is.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "name": "cookieName",
+                        "value": {
+                          "type": "string",
+                          "value": "cookieValue"
+                        },
+                        "domain": "cookieDomain",
+                        "path": "/cookiePath",
+                        "secure": false,
+                        "httpOnly": false,
+                        "sameSite": "strict",
+                        "size": 100
+                      }
+                      """;
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Assert.That(cookie, Is.Not.Null);
+        Cookie copy = cookie with { };
+        Assert.That(copy, Is.EqualTo(cookie));
     }
 
     [Test]

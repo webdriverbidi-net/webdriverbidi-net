@@ -36,7 +36,7 @@ public class NewCommandResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.SessionId, Is.EqualTo("mySession"));
+            Assert.That(result.SessionId, Is.EqualTo("mySession"));
             Assert.That(result.Capabilities.BrowserName, Is.EqualTo("greatBrowser"));
             Assert.That(result.Capabilities.BrowserVersion, Is.EqualTo("101.5b"));
             Assert.That(result.Capabilities.PlatformName, Is.EqualTo("otherOS"));
@@ -52,6 +52,33 @@ public class NewCommandResultTests
             Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.Not.Null);
             Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "sessionId": "mySession",
+                        "capabilities": {
+                          "browserName": "greatBrowser",
+                          "browserVersion": "101.5b",
+                          "platformName": "otherOS",
+                          "userAgent": "WebDriverBidi.NET/1.0",
+                          "acceptInsecureCerts": true,
+                          "proxy": {
+                            "proxyType": "manual",
+                            "httpProxy": "http.proxy"
+                          },
+                          "setWindowRect": true,
+                          "capName": "capValue"
+                        }
+                      }
+                      """;
+        NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        NewCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

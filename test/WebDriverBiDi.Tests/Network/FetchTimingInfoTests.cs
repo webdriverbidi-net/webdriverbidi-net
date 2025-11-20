@@ -35,20 +35,46 @@ public class FetchTimingInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(info!.TimeOrigin, Is.EqualTo(1));
-            Assert.That(info!.RequestTime, Is.EqualTo(2));
-            Assert.That(info!.RedirectStart, Is.EqualTo(3));
-            Assert.That(info!.RedirectEnd, Is.EqualTo(4));
-            Assert.That(info!.FetchStart, Is.EqualTo(5));
-            Assert.That(info!.DnsStart, Is.EqualTo(6));
-            Assert.That(info!.DnsEnd, Is.EqualTo(7));
-            Assert.That(info!.ConnectStart, Is.EqualTo(8));
-            Assert.That(info!.ConnectEnd, Is.EqualTo(9));
-            Assert.That(info!.TlsStart, Is.EqualTo(10));
-            Assert.That(info!.RequestStart, Is.EqualTo(11));
-            Assert.That(info!.ResponseStart, Is.EqualTo(12));
-            Assert.That(info!.ResponseEnd, Is.EqualTo(13));
+            Assert.That(info.TimeOrigin, Is.EqualTo(1));
+            Assert.That(info.RequestTime, Is.EqualTo(2));
+            Assert.That(info.RedirectStart, Is.EqualTo(3));
+            Assert.That(info.RedirectEnd, Is.EqualTo(4));
+            Assert.That(info.FetchStart, Is.EqualTo(5));
+            Assert.That(info.DnsStart, Is.EqualTo(6));
+            Assert.That(info.DnsEnd, Is.EqualTo(7));
+            Assert.That(info.ConnectStart, Is.EqualTo(8));
+            Assert.That(info.ConnectEnd, Is.EqualTo(9));
+            Assert.That(info.TlsStart, Is.EqualTo(10));
+            Assert.That(info.RequestStart, Is.EqualTo(11));
+            Assert.That(info.ResponseStart, Is.EqualTo(12));
+            Assert.That(info.ResponseEnd, Is.EqualTo(13));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "timeOrigin": 1,
+                        "requestTime": 2,
+                        "redirectStart": 3,
+                        "redirectEnd": 4,
+                        "fetchStart": 5,
+                        "dnsStart": 6,
+                        "dnsEnd": 7,
+                        "connectStart": 8,
+                        "connectEnd": 9,
+                        "tlsStart": 10,
+                        "requestStart": 11,
+                        "responseStart": 12,
+                        "responseEnd": 13
+                      }
+                      """;
+        FetchTimingInfo? info = JsonSerializer.Deserialize<FetchTimingInfo>(json, deserializationOptions);
+        Assert.That(info, Is.Not.Null);
+        FetchTimingInfo copy = info with { };
+        Assert.That(copy, Is.EqualTo(info));
     }
 
     [Test]

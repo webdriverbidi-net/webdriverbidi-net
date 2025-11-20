@@ -27,7 +27,7 @@ public class EvaluateResultTests
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<EvaluateResultSuccess>());
-        EvaluateResultSuccess successResult = (EvaluateResultSuccess)result!;
+        EvaluateResultSuccess successResult = (EvaluateResultSuccess)result;
         Assert.Multiple(() =>
         {
             Assert.That(successResult.RealmId, Is.EqualTo("myRealm"));
@@ -61,16 +61,66 @@ public class EvaluateResultTests
         EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<EvaluateResultException>());
-        EvaluateResultException successResult = (EvaluateResultException)result!;
+        EvaluateResultException exceptionResult = (EvaluateResultException)result;
         Assert.Multiple(() =>
         {
-            Assert.That(successResult.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(successResult.ExceptionDetails.Text, Is.EqualTo("exception thrown"));
-            Assert.That(successResult.ExceptionDetails.LineNumber, Is.EqualTo(1));
-            Assert.That(successResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
-            Assert.That(successResult.ExceptionDetails.StackTrace.CallFrames, Has.Count.EqualTo(0));
-            Assert.That(successResult.ExceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("exception value"));
+            Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("exception thrown"));
+            Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(1));
+            Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
+            Assert.That(exceptionResult.ExceptionDetails.StackTrace.CallFrames, Has.Count.EqualTo(0));
+            Assert.That(exceptionResult.ExceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("exception value"));
         });
+    }
+
+    [Test]
+    public void TestEvaluateResultSuccessCopySemantics()
+    {
+        string json = """
+                      {
+                        "type": "success",
+                        "realm": "myRealm",
+                        "result": {
+                          "type": "string",
+                          "value": "myResult"
+                        }
+                      }
+                      """;
+        EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.InstanceOf<EvaluateResultSuccess>());
+        EvaluateResultSuccess successResult = (EvaluateResultSuccess)result;
+        EvaluateResultSuccess copy = successResult with { };
+        Assert.That(copy, Is.EqualTo(successResult));
+    }
+
+    [Test]
+    public void TestEvaluateResultExceptionCopySemantics()
+    {
+        string json = """
+                      {
+                        "type": "exception",
+                        "realm": "myRealm",
+                        "exceptionDetails": {
+                          "text": "exception thrown",
+                          "lineNumber": 1,
+                          "columnNumber": 5,
+                          "stackTrace": {
+                            "callFrames": [] 
+                          },
+                          "exception": {
+                            "type": "string",
+                            "value": "exception value"
+                          }
+                        }
+                      }
+                      """;
+        EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.InstanceOf<EvaluateResultException>());
+        EvaluateResultException exceptionResult = (EvaluateResultException)result;
+        EvaluateResultException copy = exceptionResult with { };
+        Assert.That(copy, Is.EqualTo(exceptionResult));
     }
 
     [Test]

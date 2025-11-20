@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
+using NUnit.Framework.Constraints;
 using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
@@ -24,10 +25,11 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize< DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
+        DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -50,9 +52,10 @@ public class DescriptorEventGeneratedEventArgsTests
                       }
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize< DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -76,9 +79,10 @@ public class DescriptorEventGeneratedEventArgsTests
                       }
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -103,9 +107,10 @@ public class DescriptorEventGeneratedEventArgsTests
                       }
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
             Assert.That(eventArgs.ServiceUuid, Is.EqualTo("myServiceUuid"));
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
@@ -115,6 +120,25 @@ public class DescriptorEventGeneratedEventArgsTests
             Assert.That(eventArgs.Data![0], Is.EqualTo(123));
             Assert.That(eventArgs.Data![1], Is.EqualTo(456));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "address": "myAddress",
+                        "serviceUuid": "myServiceUuid",
+                        "characteristicUuid": "myCharacteristicUuid",
+                        "descriptorUuid": "myDescriptorUuid",
+                        "type": "read"
+                      }
+                      """;
+        DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
+        DescriptorEventGeneratedEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]

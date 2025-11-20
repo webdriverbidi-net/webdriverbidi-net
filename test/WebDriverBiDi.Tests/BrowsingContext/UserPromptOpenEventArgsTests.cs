@@ -21,8 +21,8 @@ public class UserPromptOpenedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Alert));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Alert));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
         });
@@ -43,9 +43,9 @@ public class UserPromptOpenedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Confirm));
-            Assert.That(eventArgs!.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Confirm));
+            Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
         });
@@ -66,9 +66,9 @@ public class UserPromptOpenedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Prompt));
-            Assert.That(eventArgs!.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Prompt));
+            Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
         });
@@ -89,9 +89,9 @@ public class UserPromptOpenedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.BeforeUnload));
-            Assert.That(eventArgs!.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.BeforeUnload));
+            Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
         });
@@ -112,9 +112,9 @@ public class UserPromptOpenedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Alert));
-            Assert.That(eventArgs!.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Alert));
+            Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
         });
@@ -135,9 +135,9 @@ public class UserPromptOpenedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Alert));
-            Assert.That(eventArgs!.Handler, Is.EqualTo(UserPromptHandlerType.Dismiss));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Alert));
+            Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Dismiss));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
         });
@@ -158,9 +158,9 @@ public class UserPromptOpenedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Alert));
-            Assert.That(eventArgs!.Handler, Is.EqualTo(UserPromptHandlerType.Ignore));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Alert));
+            Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Ignore));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
         });
@@ -182,13 +182,30 @@ public class UserPromptOpenedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.PromptType, Is.EqualTo(UserPromptType.Prompt));
-            Assert.That(eventArgs!.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Prompt));
+            Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.EqualTo("prompt default"));
         });
     }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "type": "alert",
+                        "handler": "accept",
+                        "message": "some prompt message"
+                      }
+                      """;
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        UserPromptOpenedEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
+   }
 
     [Test]
     public void TestDeserializeWithMissingContextValueThrows()

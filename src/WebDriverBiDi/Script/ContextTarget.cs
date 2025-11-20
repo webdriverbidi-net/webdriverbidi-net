@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing a script target that is a browsing context.
 /// </summary>
-public class ContextTarget : Target
+public record ContextTarget : Target
 {
     private string browsingContextId;
     private string? sandbox;

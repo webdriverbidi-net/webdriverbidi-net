@@ -23,8 +23,22 @@ public class ResponseContentTests
         Assert.That(responseContent, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(responseContent!.Size, Is.EqualTo(300));
+            Assert.That(responseContent.Size, Is.EqualTo(300));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "size": 300
+                      }
+                      """;
+        ResponseContent? responseContent = JsonSerializer.Deserialize<ResponseContent>(json, deserializationOptions);
+        Assert.That(responseContent, Is.Not.Null);
+        ResponseContent copy = responseContent with { };
+        Assert.That(copy, Is.EqualTo(responseContent));
     }
 
     [Test]

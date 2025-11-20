@@ -30,7 +30,7 @@ public class GetTreeCommandResultTests
                       """;
         GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.ContextTree, Has.Count.EqualTo(1));
+        Assert.That(result.ContextTree, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -43,7 +43,30 @@ public class GetTreeCommandResultTests
                       """;
         GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.ContextTree, Is.Empty);
+        Assert.That(result.ContextTree, Is.Empty);
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "contexts": [
+                          {
+                            "context": "myContextId",
+                            "clientWindow": "myClientWindow",
+                            "url": "http://example.com",
+                            "originalOpener": "openerContext",
+                            "userContext": "default",
+                            "children": []
+                          }
+                        ]
+                      }
+                      """;
+        GetTreeCommandResult? result = JsonSerializer.Deserialize<GetTreeCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        GetTreeCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

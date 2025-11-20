@@ -136,6 +136,17 @@ public class ModuleTests
     }
 
     [Test]
+    public void TestSubclassCanGetAccessDriver()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        TestProtocolModule module = new(driver);
+        Assert.That(module.ModuleName, Is.EqualTo("protocol"));
+        Assert.That(module.HostingDriver, Is.EqualTo(driver));
+    }
+
+    [Test]
     public void TestExceedingMaxObserverCountThrows()
     {
         TestConnection connection = new();

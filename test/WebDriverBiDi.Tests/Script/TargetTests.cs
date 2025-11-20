@@ -87,7 +87,7 @@ public class TargetTests
         Assert.That(deserialized, Contains.Key("context"));
         JToken contextValue = deserialized.GetValue("context")!;
         JToken sandboxValue = deserialized.GetValue("sandbox")!;
-        
+
         Assert.Multiple(() =>
         {
             Assert.That(contextValue.Type, Is.EqualTo(JTokenType.String));
@@ -95,5 +95,23 @@ public class TargetTests
             Assert.That(sandboxValue.Type, Is.EqualTo(JTokenType.String));
             Assert.That((string?)sandboxValue, Is.EqualTo("mySandbox"));
         });
+    }
+
+    [Test]
+    public void TestContextTargetCopySemantics()
+    {
+        Target target = new ContextTarget("myContext");
+        Target copy = target with { };
+        Assert.That(copy, Is.InstanceOf<ContextTarget>());
+        Assert.That(copy, Is.EqualTo(target));
+    }
+
+    [Test]
+    public void TestRealmTargetCopySemantics()
+    {
+        Target target = new RealmTarget("myContext");
+        Target copy = target with { };
+        Assert.That(copy, Is.InstanceOf<RealmTarget>());
+        Assert.That(copy, Is.EqualTo(target));
     }
 }

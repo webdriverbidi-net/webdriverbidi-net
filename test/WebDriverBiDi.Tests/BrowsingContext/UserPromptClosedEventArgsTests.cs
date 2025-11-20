@@ -18,8 +18,8 @@ public class UserPromptClosedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.IsAccepted, Is.EqualTo(true));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.IsAccepted, Is.True);
             Assert.That(eventArgs.UserText, Is.Null);
         });
     }
@@ -37,8 +37,8 @@ public class UserPromptClosedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.IsAccepted, Is.EqualTo(false));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.IsAccepted, Is.False);
             Assert.That(eventArgs.UserText, Is.Null);
         });
     }
@@ -57,10 +57,25 @@ public class UserPromptClosedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.IsAccepted, Is.EqualTo(true));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.IsAccepted, Is.True);
             Assert.That(eventArgs.UserText, Is.EqualTo("some text"));
         });
+    }
+
+   [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "accepted": true
+                      }
+                      """;
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        UserPromptClosedEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]

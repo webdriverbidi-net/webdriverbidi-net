@@ -29,11 +29,11 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.Proxy, Is.Null);
             Assert.That(result.UnhandledPromptBehavior, Is.Null);
@@ -62,13 +62,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.Proxy, Is.Null);
-            Assert.That(result!.UnhandledPromptBehavior, Is.Null);
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.Proxy, Is.Null);
+            Assert.That(result.UnhandledPromptBehavior, Is.Null);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.WebSocketUrl, Is.EqualTo("ws://socket:1234"));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
@@ -102,13 +102,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.Proxy, Is.Not.Null);
-            ManualProxyConfigurationResult proxyResult = result!.Proxy!.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.Proxy, Is.Not.Null);
+            ManualProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
             Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.Manual));
             Assert.That(proxyResult.HttpProxy, Is.EqualTo("http.proxy"));
             Assert.That(proxyResult.SslProxy, Is.EqualTo("ssl.proxy"));
@@ -144,13 +144,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.Proxy, Is.Not.Null);
-            PacProxyConfigurationResult proxyResult = result!.Proxy!.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.Proxy, Is.Not.Null);
+            PacProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
             Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.ProxyAutoConfig));
             Assert.That(proxyResult.ProxyAutoConfigUrl, Is.EqualTo("proxy.autoconfig.url"));
             Assert.That(proxyResult.AdditionalData, Is.Empty);
@@ -181,13 +181,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.Proxy, Is.Not.Null);
-            AutoDetectProxyConfigurationResult proxyResult = result!.Proxy!.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.Proxy, Is.Not.Null);
+            AutoDetectProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
             Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.AutoDetect));
             Assert.That(proxyResult.AdditionalData, Is.Empty);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
@@ -217,13 +217,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.Proxy, Is.Not.Null);
-            SystemProxyConfigurationResult proxyResult = result!.Proxy!.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.Proxy, Is.Not.Null);
+            SystemProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
             Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.System));
             Assert.That(proxyResult.AdditionalData, Is.Empty);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
@@ -253,13 +253,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.Proxy, Is.Not.Null);
-            DirectProxyConfigurationResult proxyResult = result!.Proxy!.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.Proxy, Is.Not.Null);
+            DirectProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
             Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.Direct));
             Assert.That(proxyResult.AdditionalData, Is.Empty);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
@@ -290,13 +290,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.Proxy, Is.Not.Null);
-            SystemProxyConfigurationResult proxyResult = result!.Proxy!.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.Proxy, Is.Not.Null);
+            SystemProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
             Assert.That(proxyResult.ProxyType, Is.EqualTo(ProxyType.System));
             Assert.That(proxyResult.AdditionalData, Has.Count.EqualTo(1));
             Assert.That(proxyResult.AdditionalData, Contains.Key("additionalName"));
@@ -306,6 +306,26 @@ public class CapabilitiesResultTests
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        CapabilitiesResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]
@@ -353,12 +373,12 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.Proxy, Is.Null);
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.Proxy, Is.Null);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
@@ -410,13 +430,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.UnhandledPromptBehavior, Is.Not.Null);
-            UserPromptHandlerResult userPromptHandler = result!.UnhandledPromptBehavior!;
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.UnhandledPromptBehavior, Is.Not.Null);
+            UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior!;
             Assert.That(userPromptHandler.Default, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(userPromptHandler.Alert, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(userPromptHandler.Confirm, Is.EqualTo(UserPromptHandlerType.Dismiss));
@@ -445,13 +465,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.UnhandledPromptBehavior, Is.Not.Null);
-            UserPromptHandlerResult userPromptHandler = result!.UnhandledPromptBehavior!;
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.UnhandledPromptBehavior, Is.Not.Null);
+            UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior!;
             Assert.That(userPromptHandler.Default, Is.Null);
             Assert.That(userPromptHandler.Alert, Is.Null);
             Assert.That(userPromptHandler.Confirm, Is.Null);
@@ -481,13 +501,13 @@ public class CapabilitiesResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
-            Assert.That(result!.BrowserName, Is.EqualTo("greatBrowser"));
-            Assert.That(result!.BrowserVersion, Is.EqualTo("101.5b"));
-            Assert.That(result!.PlatformName, Is.EqualTo("otherOS"));
-            Assert.That(result!.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
-            Assert.That(result!.UnhandledPromptBehavior, Is.Not.Null);
-            UserPromptHandlerResult userPromptHandler = result!.UnhandledPromptBehavior!;
+            Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
+            Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
+            Assert.That(result.BrowserVersion, Is.EqualTo("101.5b"));
+            Assert.That(result.PlatformName, Is.EqualTo("otherOS"));
+            Assert.That(result.UserAgent, Is.EqualTo("WebDriverBidi.NET/1.0"));
+            Assert.That(result.UnhandledPromptBehavior, Is.Not.Null);
+            UserPromptHandlerResult userPromptHandler = result.UnhandledPromptBehavior!;
             Assert.That(userPromptHandler.Default, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(userPromptHandler.Alert, Is.Null);
             Assert.That(userPromptHandler.Confirm, Is.Null);

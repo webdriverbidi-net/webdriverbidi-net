@@ -58,7 +58,7 @@ public class StorageModuleTests()
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Cookies, Has.Count.EqualTo(1));
+            Assert.That(result.Cookies, Has.Count.EqualTo(1));
             Assert.That(result.Cookies[0].Name, Is.EqualTo("cookieName"));
             Assert.That(result.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(result.Cookies[0].Value.Value, Is.EqualTo("cookieValue"));
@@ -106,8 +106,8 @@ public class StorageModuleTests()
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result!.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
+            Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
+            Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
         });
     }
 
@@ -143,8 +143,8 @@ public class StorageModuleTests()
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
-            Assert.That(result!.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
+            Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
+            Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
         });
     }
 }

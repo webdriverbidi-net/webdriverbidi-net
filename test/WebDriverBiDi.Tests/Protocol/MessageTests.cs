@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Protocol;
 
+using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.TestUtilities;
 
@@ -19,11 +20,13 @@ public class MessageTests
                       }
                       """;
         CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
+        Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Type, Is.EqualTo("success"));
+            Assert.That(result.Type, Is.EqualTo("success"));
             Assert.That(result.Result, Is.InstanceOf<TestCommandResult>());
             Assert.That(((TestCommandResult)result.Result).Value, Is.EqualTo("response value"));
+            Assert.That(result.AdditionalData, Is.Empty);
         });
     }
 
@@ -40,12 +43,14 @@ public class MessageTests
                       }
                       """;
         EventMessage<TestEventArgs>? result = JsonSerializer.Deserialize<EventMessage<TestEventArgs>>(json);
+        Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Type, Is.EqualTo("event"));
+            Assert.That(result.Type, Is.EqualTo("event"));
             Assert.That(result.EventData, Is.InstanceOf<TestEventArgs>());
             Assert.That(result.EventName, Is.EqualTo("protocol.event"));
             Assert.That(((TestEventArgs)result.EventData).ParamName, Is.EqualTo("paramValue"));
+            Assert.That(result.AdditionalData, Is.Empty);
         });
     }
 
@@ -61,12 +66,15 @@ public class MessageTests
                       }
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Type, Is.EqualTo("error"));
+            Assert.That(result.Type, Is.EqualTo("error"));
             Assert.That(result.CommandId, Is.EqualTo(1));
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(result.AdditionalData, Is.Empty);
+            Assert.That(result.StackTrace, Is.Null);
         });
     }
 
@@ -82,12 +90,88 @@ public class MessageTests
                       }
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Type, Is.EqualTo("error"));
+            Assert.That(result.Type, Is.EqualTo("error"));
             Assert.That(result.CommandId, Is.Null);
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(result.AdditionalData, Is.Empty);
+        });
+    }
+
+    [Test]
+    public void TestCanDeserializeErrorMessageWithStackTrace()
+    {
+        string json = """
+                      {
+                        "type": "error",
+                        "id": 1,
+                        "error": "unknown error",
+                        "message": "This is a test error message",
+                        "stacktrace": "full stack trace"
+                      }
+                      """;
+        ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.That(result, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Type, Is.EqualTo("error"));
+            Assert.That(result.CommandId, Is.EqualTo(1));
+            Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(result.AdditionalData, Is.Empty);
+            Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
+        });
+    }
+
+    [Test]
+    public void TestCanGetErrorResultFromMessage()
+    {
+        string json = """
+                      {
+                        "type": "error",
+                        "id": 1,
+                        "error": "unknown error",
+                        "message": "This is a test error message",
+                        "stacktrace": "full stack trace"
+                      }
+                      """;
+        ErrorResponseMessage? messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.That(messageResult, Is.Not.Null);
+        ErrorResult result = messageResult.GetErrorResponseData();
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsError, Is.True);
+            Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(result.AdditionalData, Is.Empty);
+            Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
+        });
+    }
+    
+    [Test]
+    public void TestCanDeserializeMessageWithAdditionalData()
+    {
+        string json = """
+                      {
+                        "type": "success",
+                        "id": 1,
+                        "result": {
+                          "value": "response value"
+                        },
+                        "additionalProperty": "additional value"
+                      }
+                      """;
+        CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
+        Assert.That(result, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.Type, Is.EqualTo("success"));
+            Assert.That(result.Result, Is.InstanceOf<TestCommandResult>());
+            Assert.That(((TestCommandResult)result.Result).Value, Is.EqualTo("response value"));
+            Assert.That(result.AdditionalData, Has.Count.EqualTo(1));
         });
     }
 }

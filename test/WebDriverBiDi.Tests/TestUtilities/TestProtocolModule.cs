@@ -19,6 +19,8 @@ public sealed class TestProtocolModule : Module
 
     public override string ModuleName => "protocol";
 
+    public BiDiDriver HostingDriver => this.Driver;
+
     private async Task OnEventInvokedAsync(EventInfo<TestEventArgs> eventData)
     {
         TestEventArgs eventArgs = eventData.EventData;

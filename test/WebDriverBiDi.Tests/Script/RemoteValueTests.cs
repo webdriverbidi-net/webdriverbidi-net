@@ -25,7 +25,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("string"));
+            Assert.That(remoteValue.Type, Is.EqualTo("string"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -59,7 +59,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("number"));
+            Assert.That(remoteValue.Type, Is.EqualTo("number"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -81,7 +81,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("number"));
+            Assert.That(remoteValue.Type, Is.EqualTo("number"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -103,7 +103,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("number"));
+            Assert.That(remoteValue.Type, Is.EqualTo("number"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -125,7 +125,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("number"));
+            Assert.That(remoteValue.Type, Is.EqualTo("number"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -147,7 +147,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("number"));
+            Assert.That(remoteValue.Type, Is.EqualTo("number"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -169,13 +169,28 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("number"));
+            Assert.That(remoteValue.Type, Is.EqualTo("number"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<double>());
             Assert.That(remoteValue.ValueAs<double>(), Is.EqualTo(double.NegativeInfinity));
         });
+    }
+
+   [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "type": "string",
+                        "value": "myValue"
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        Assert.That(remoteValue, Is.Not.Null);
+        RemoteValue copy = remoteValue with { };
+        Assert.That(copy, Is.EqualTo(remoteValue));
     }
 
     [Test]
@@ -230,7 +245,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("boolean"));
+            Assert.That(remoteValue.Type, Is.EqualTo("boolean"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -264,7 +279,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("bigint"));
+            Assert.That(remoteValue.Type, Is.EqualTo("bigint"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -310,7 +325,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("date"));
+            Assert.That(remoteValue.Type, Is.EqualTo("date"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -359,7 +374,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("regexp"));
+            Assert.That(remoteValue.Type, Is.EqualTo("regexp"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -383,7 +398,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("regexp"));
+            Assert.That(remoteValue.Type, Is.EqualTo("regexp"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -421,18 +436,19 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("node"));
+            Assert.That(remoteValue.Type, Is.EqualTo("node"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<NodeProperties>());
         });
-        NodeProperties? nodeProperties = remoteValue!.ValueAs<NodeProperties>();
+        NodeProperties? nodeProperties = remoteValue.ValueAs<NodeProperties>();
+        Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
-            Assert.That(nodeProperties!.NodeValue, Is.EqualTo(string.Empty));
-            Assert.That(nodeProperties!.ChildNodeCount, Is.EqualTo(0));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeValue, Is.EqualTo(string.Empty));
+            Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
         });
     }
 
@@ -454,19 +470,20 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("node"));
+            Assert.That(remoteValue.Type, Is.EqualTo("node"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.SharedId, Is.EqualTo("mySharedId"));
             Assert.That(remoteValue.Value, Is.InstanceOf<NodeProperties>());
         });
-        NodeProperties? nodeProperties = remoteValue!.ValueAs<NodeProperties>();
+        NodeProperties? nodeProperties = remoteValue.ValueAs<NodeProperties>();
+        Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
-            Assert.That(nodeProperties!.NodeValue, Is.EqualTo(string.Empty));
-            Assert.That(nodeProperties!.ChildNodeCount, Is.EqualTo(0));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeValue, Is.EqualTo(string.Empty));
+            Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
         });
     }
 
@@ -514,20 +531,20 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("array"));
+            Assert.That(remoteValue.Type, Is.EqualTo("array"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
         });
-        RemoteValueList? arrayValue = remoteValue!.ValueAs<RemoteValueList>();
+        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
         Assert.That(arrayValue, Is.Not.Null);
         Assert.That(arrayValue, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(arrayValue![0].ValueAs<string>, Is.EqualTo("stringValue"));
-            Assert.That(arrayValue![1].ValueAs<long>, Is.EqualTo(123));
-            Assert.That(arrayValue![2].ValueAs<bool>, Is.EqualTo(true));
+            Assert.That(arrayValue[0].ValueAs<string>, Is.EqualTo("stringValue"));
+            Assert.That(arrayValue[1].ValueAs<long>, Is.EqualTo(123));
+            Assert.That(arrayValue[2].ValueAs<bool>, Is.EqualTo(true));
         });
     }
 
@@ -569,20 +586,20 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("array"));
+            Assert.That(remoteValue.Type, Is.EqualTo("array"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
         });
-        RemoteValueList? arrayValue = remoteValue!.ValueAs<RemoteValueList>();
+        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
         Assert.That(arrayValue, Is.Not.Null);
         Assert.That(arrayValue, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(arrayValue![0].ValueAs<string>, Is.EqualTo("stringValue"));
-            Assert.That(arrayValue![1].ValueAs<long>, Is.EqualTo(123));
-            Assert.That(arrayValue![2].ValueAs<bool>, Is.EqualTo(true));
+            Assert.That(arrayValue[0].ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(arrayValue[1].ValueAs<long>(), Is.EqualTo(123));
+            Assert.That(arrayValue[2].ValueAs<bool>(), Is.EqualTo(true));
         });
     }
 
@@ -640,20 +657,20 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("set"));
+            Assert.That(remoteValue.Type, Is.EqualTo("set"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
         });
-        RemoteValueList? arrayValue = remoteValue!.ValueAs<RemoteValueList>();
+        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
         Assert.That(arrayValue, Is.Not.Null);
-        Assert.That(arrayValue!, Has.Count.EqualTo(3));
+        Assert.That(arrayValue, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(arrayValue![0].ValueAs<string>, Is.EqualTo("stringValue"));
-            Assert.That(arrayValue![1].ValueAs<long>, Is.EqualTo(123));
-            Assert.That(arrayValue![2].ValueAs<bool>, Is.EqualTo(true));
+            Assert.That(arrayValue[0].ValueAs<string>, Is.EqualTo("stringValue"));
+            Assert.That(arrayValue[1].ValueAs<long>, Is.EqualTo(123));
+            Assert.That(arrayValue[2].ValueAs<bool>, Is.EqualTo(true));
         });
     }
 
@@ -706,13 +723,13 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("nodelist"));
+            Assert.That(remoteValue.Type, Is.EqualTo("nodelist"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
         });
-        RemoteValueList? arrayValue = remoteValue!.ValueAs<RemoteValueList>();
+        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
         Assert.That(arrayValue, Is.Not.Null);
         Assert.That(arrayValue!, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -771,13 +788,13 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("htmlcollection"));
+            Assert.That(remoteValue.Type, Is.EqualTo("htmlcollection"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
         });
-        RemoteValueList? arrayValue = remoteValue!.ValueAs<RemoteValueList>();
+        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
         Assert.That(arrayValue, Is.Not.Null);
         Assert.That(arrayValue!, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
@@ -850,23 +867,23 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(dictionaryValue!, Contains.Key("stringProperty"));
-            Assert.That(dictionaryValue!["stringProperty"].ValueAs<string>, Is.EqualTo("stringValue"));
+            Assert.That(dictionaryValue, Contains.Key("stringProperty"));
+            Assert.That(dictionaryValue["stringProperty"].ValueAs<string>(), Is.EqualTo("stringValue"));
             Assert.That(dictionaryValue, Contains.Key("numberProperty"));
-            Assert.That(dictionaryValue!["numberProperty"].ValueAs<long>, Is.EqualTo(123));
+            Assert.That(dictionaryValue["numberProperty"].ValueAs<long>(), Is.EqualTo(123));
             Assert.That(dictionaryValue, Contains.Key("booleanProperty"));
-            Assert.That(dictionaryValue!["booleanProperty"].ValueAs<bool>, Is.EqualTo(true));
+            Assert.That(dictionaryValue["booleanProperty"].ValueAs<bool>(), Is.EqualTo(true));
         });
     }
 
@@ -894,16 +911,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<string>());
@@ -937,16 +954,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<long>());
@@ -980,16 +997,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<bool>());
@@ -1023,16 +1040,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<BigInteger>());
@@ -1065,16 +1082,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<RemoteValue>());
@@ -1107,16 +1124,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<RemoteValue>());
@@ -1150,16 +1167,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<DateTime>());
@@ -1193,16 +1210,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<string>());
@@ -1236,16 +1253,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("map"));
+            Assert.That(remoteValue.Type, Is.EqualTo("map"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue!.ElementAt(0);
+        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
         Assert.Multiple(() =>
         {
             Assert.That(dictionaryItem.Key, Is.InstanceOf<string>());
@@ -1397,23 +1414,23 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("object"));
+            Assert.That(remoteValue.Type, Is.EqualTo("object"));
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
         });
-        RemoteValueDictionary? dictionaryValue = remoteValue!.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
         Assert.That(dictionaryValue, Is.Not.Null);
         Assert.That(dictionaryValue, Has.Count.EqualTo(3));
         Assert.Multiple(() =>
         {
-            Assert.That(dictionaryValue!, Contains.Key("stringProperty"));
-            Assert.That(dictionaryValue!["stringProperty"].ValueAs<string>, Is.EqualTo("stringValue"));
+            Assert.That(dictionaryValue, Contains.Key("stringProperty"));
+            Assert.That(dictionaryValue["stringProperty"].ValueAs<string>(), Is.EqualTo("stringValue"));
             Assert.That(dictionaryValue, Contains.Key("numberProperty"));
-            Assert.That(dictionaryValue!["numberProperty"].ValueAs<long>, Is.EqualTo(123));
+            Assert.That(dictionaryValue["numberProperty"].ValueAs<long>(), Is.EqualTo(123));
             Assert.That(dictionaryValue, Contains.Key("booleanProperty"));
-            Assert.That(dictionaryValue!["booleanProperty"].ValueAs<bool>, Is.EqualTo(true));
+            Assert.That(dictionaryValue["booleanProperty"].ValueAs<bool>(), Is.EqualTo(true));
         });
     }
 
@@ -1457,7 +1474,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("symbol"));
+            Assert.That(remoteValue.Type, Is.EqualTo("symbol"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1476,7 +1493,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("function"));
+            Assert.That(remoteValue.Type, Is.EqualTo("function"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1495,7 +1512,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("weakmap"));
+            Assert.That(remoteValue.Type, Is.EqualTo("weakmap"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1514,7 +1531,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("weakset"));
+            Assert.That(remoteValue.Type, Is.EqualTo("weakset"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1533,7 +1550,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("generator"));
+            Assert.That(remoteValue.Type, Is.EqualTo("generator"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1552,7 +1569,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("error"));
+            Assert.That(remoteValue.Type, Is.EqualTo("error"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1571,7 +1588,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("proxy"));
+            Assert.That(remoteValue.Type, Is.EqualTo("proxy"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1590,7 +1607,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("promise"));
+            Assert.That(remoteValue.Type, Is.EqualTo("promise"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1609,7 +1626,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("typedarray"));
+            Assert.That(remoteValue.Type, Is.EqualTo("typedarray"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1628,7 +1645,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("arraybuffer"));
+            Assert.That(remoteValue.Type, Is.EqualTo("arraybuffer"));
             Assert.That(remoteValue.HasValue, Is.False);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
@@ -1650,14 +1667,15 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("window"));
+            Assert.That(remoteValue.Type, Is.EqualTo("window"));
             Assert.That(remoteValue.HasValue, Is.True);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
             Assert.That(remoteValue.Value, Is.TypeOf<WindowProxyProperties>());
         });
-        WindowProxyProperties? windowProxyObject = remoteValue!.ValueAs<WindowProxyProperties>();
-        Assert.That(windowProxyObject!.Context, Is.EqualTo("myContext"));
+        WindowProxyProperties? windowProxyObject = remoteValue.ValueAs<WindowProxyProperties>();
+        Assert.That(windowProxyObject, Is.Not.Null);
+        Assert.That(windowProxyObject.Context, Is.EqualTo("myContext"));
     }
 
     [Test]
@@ -1677,7 +1695,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue!.Type, Is.EqualTo("window"));
+            Assert.That(remoteValue.Type, Is.EqualTo("window"));
             Assert.That(remoteValue.HasValue, Is.True);
             Assert.That(remoteValue.Handle, Is.Not.Null);
             Assert.That(remoteValue.Handle, Is.EqualTo("myHandle"));
@@ -1788,10 +1806,10 @@ public class RemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue, Is.Not.Null);
-            Assert.That(() => remoteValue!.ValueAs<string>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("RemoteValue could not be cast to the desired type"));
+            Assert.That(() => remoteValue.ValueAs<string>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("RemoteValue could not be cast to the desired type"));
         });
     }
 
@@ -1804,10 +1822,10 @@ public class RemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue, Is.Not.Null);
-            Assert.That(() => remoteValue!.ValueAs<int>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("RemoteValue has null value, but desired type is a value type"));
+            Assert.That(() => remoteValue.ValueAs<int>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("RemoteValue has null value, but desired type is a value type"));
         });
     }
 
@@ -1820,10 +1838,10 @@ public class RemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue, Is.Not.Null);
-            Assert.That(remoteValue!.ValueAs<string>(), Is.Null);
+            Assert.That(remoteValue.ValueAs<string>(), Is.Null);
         });
     }
 
@@ -1859,7 +1877,7 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
         Assert.That(remoteValue, Is.Not.Null);
-        RemoteReference reference = remoteValue!.ToRemoteReference();
+        RemoteReference reference = remoteValue.ToRemoteReference();
         Assert.That(reference, Is.InstanceOf<RemoteObjectReference>());
     }
 
@@ -1873,10 +1891,10 @@ public class RemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue, Is.Not.Null);
-            Assert.That(() => remoteValue!.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
+            Assert.That(() => remoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
         });
     }
 
@@ -1896,7 +1914,7 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
         Assert.That(remoteValue, Is.Not.Null);
-        RemoteReference reference = remoteValue!.ToRemoteReference();
+        RemoteReference reference = remoteValue.ToRemoteReference();
         Assert.That(reference, Is.InstanceOf<SharedReference>());
     }
 
@@ -1914,10 +1932,10 @@ public class RemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue, Is.Not.Null);
-            Assert.That(() => remoteValue!.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid shared ID"));
+            Assert.That(() => remoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid shared ID"));
         });
     }
 
@@ -1931,10 +1949,10 @@ public class RemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue, Is.Not.Null);
-            Assert.That(() => remoteValue!.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Primitive values cannot be used as remote references"));
+            Assert.That(() => remoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Primitive values cannot be used as remote references"));
         });
     }
 
@@ -1954,7 +1972,7 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
         Assert.That(remoteValue, Is.Not.Null);
-        SharedReference reference = remoteValue!.ToSharedReference();
+        SharedReference reference = remoteValue.ToSharedReference();
         Assert.That(reference, Is.InstanceOf<SharedReference>());
     }
 
@@ -1969,10 +1987,10 @@ public class RemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        Assert.That(remoteValue, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(remoteValue, Is.Not.Null);
-            Assert.That(() => remoteValue!.ToSharedReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Remote value cannot be converted to SharedReference"));
+            Assert.That(() => remoteValue.ToSharedReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Remote value cannot be converted to SharedReference"));
         });
      }
 }

@@ -57,6 +57,14 @@ public class RemoteReferenceTests
     }
 
     [Test]
+    public void TestRemoteObjectReferenceCopySemantics()
+    {
+        RemoteObjectReference reference = new("myHandle");
+        RemoteObjectReference copy = reference with { };
+        Assert.That(copy, Is.EqualTo(reference));
+    }
+
+    [Test]
     public void TestCanSerializeSharedReference()
     {
         SharedReference reference = new("mySharedId");
@@ -104,6 +112,14 @@ public class RemoteReferenceTests
             Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
         });
+    }
+
+    [Test]
+    public void TestSharedReferenceCopySemantics()
+    {
+        SharedReference reference = new("mySharedId");
+        SharedReference copy = reference with { };
+        Assert.That(copy, Is.EqualTo(reference));
     }
 
     [Test]

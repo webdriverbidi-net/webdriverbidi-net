@@ -22,9 +22,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
             Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Pending));
         });
@@ -41,9 +42,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
             Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Ready));
         });
@@ -60,9 +62,10 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
             Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Success));
         });
@@ -79,12 +82,29 @@ public class PrefetchStatusUpdatedEventArgsTests
                       }
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
             Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Failure));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "url": "https://example.com/index.html",
+                        "status": "pending"
+                      }
+                      """;
+        PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
+        PrefetchStatusUpdatedEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]

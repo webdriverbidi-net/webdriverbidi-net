@@ -62,7 +62,8 @@ public class EntryAddedEventArgsTests
                       }
                       """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
-        EntryAddedEventArgs eventArgs = new(entry!);
+        Assert.That(entry, Is.Not.Null);
+        EntryAddedEventArgs eventArgs = new(entry);
         Assert.Multiple(() =>
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
@@ -101,7 +102,8 @@ public class EntryAddedEventArgsTests
                       }
                       """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
-        EntryAddedEventArgs eventArgs = new(entry!);
+        Assert.That(entry, Is.Not.Null);
+        EntryAddedEventArgs eventArgs = new(entry);
         Assert.Multiple(() =>
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
@@ -116,5 +118,27 @@ public class EntryAddedEventArgsTests
             Assert.That(eventArgs.Arguments![0].ValueAs<string>(), Is.EqualTo("argValue"));
             Assert.That(eventArgs.StackTrace, Is.Not.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "type": "generic",
+                        "level": "debug",
+                        "source": {
+                          "realm": "realmId"
+                        },
+                        "text": null,
+                        "timestamp": {{epochTimestamp}}
+                      }
+                      """;
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        EntryAddedEventArgs eventArgs = new(entry!);
+        Assert.That(entry, Is.Not.Null);
+        EntryAddedEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 }

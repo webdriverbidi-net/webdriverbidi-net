@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Network;
 
+using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.JsonConverters;
 
@@ -35,7 +36,7 @@ public class ResponseDataTests
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(response!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
             Assert.That(response.Status, Is.EqualTo(200));
             Assert.That(response.StatusText, Is.EqualTo("OK"));
@@ -83,7 +84,7 @@ public class ResponseDataTests
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(response!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
             Assert.That(response.Status, Is.EqualTo(200));
             Assert.That(response.StatusText, Is.EqualTo("OK"));
@@ -126,7 +127,7 @@ public class ResponseDataTests
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(response!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
             Assert.That(response.Status, Is.EqualTo(200));
             Assert.That(response.StatusText, Is.EqualTo("OK"));
@@ -166,7 +167,7 @@ public class ResponseDataTests
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(response!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
             Assert.That(response.Status, Is.EqualTo(200));
             Assert.That(response.StatusText, Is.EqualTo("OK"));
@@ -211,7 +212,7 @@ public class ResponseDataTests
         Assert.That(response, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(response!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
             Assert.That(response.Status, Is.EqualTo(200));
             Assert.That(response.StatusText, Is.EqualTo("OK"));
@@ -228,6 +229,32 @@ public class ResponseDataTests
             Assert.That(response.AuthChallenges![0].Scheme, Is.EqualTo("basic"));
             Assert.That(response.AuthChallenges[0]!.Realm, Is.EqualTo("example.com"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "url": "requestUrl",
+                        "protocol": "http",
+                        "status": 200,
+                        "statusText": "OK",
+                        "fromCache": false,
+                        "headers": [],
+                        "mimeType": "text/html",
+                        "bytesReceived": 400,
+                        "headersSize": 100,
+                        "bodySize": 300,
+                        "content": {
+                          "size": 300 
+                        }
+                      }
+                      """;
+        ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
+        Assert.That(response, Is.Not.Null);
+        ResponseData copy = response with { };
+        Assert.That(copy, Is.EqualTo(response));
     }
 
     [Test]

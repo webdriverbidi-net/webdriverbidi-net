@@ -24,8 +24,25 @@ public class GetDataCommandResultTests
                       """;
         GetDataCommandResult? result = JsonSerializer.Deserialize<GetDataCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Bytes.Type, Is.EqualTo(BytesValueType.String));
-        Assert.That(result!.Bytes.Value, Is.EqualTo("myNetworkData"));
+        Assert.That(result.Bytes.Type, Is.EqualTo(BytesValueType.String));
+        Assert.That(result.Bytes.Value, Is.EqualTo("myNetworkData"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "bytes": {
+                          "type": "string",
+                          "value": "myNetworkData"
+                        }
+                      }
+                      """;
+        GetDataCommandResult? result = JsonSerializer.Deserialize<GetDataCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        GetDataCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

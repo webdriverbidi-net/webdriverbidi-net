@@ -85,8 +85,53 @@ public class AuthRequiredEventArgsTests
         {
             // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
             // Also proper deserialization of the ResponseData object is handled in InitiatorTests.
-            Assert.That(eventArgs!.Response, Is.Not.Null);
+            Assert.That(eventArgs.Response, Is.Not.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                             "context": "myContextId",
+                             "navigation": "myNavigationId",
+                             "isBlocked": false,
+                             "redirectCount": 0,
+                             "timestamp": {{milliseconds}},
+                             "request": {{requestDataJson}},
+                             "response": {
+                               "url": "https://example.com",
+                               "protocol": "https",
+                               "status": 200,
+                               "statusText": "OK",
+                               "fromCache": false,
+                               "headers": [
+                                 {
+                                   "name": "headerName",
+                                   "value": {
+                                     "type": "string",
+                                     "value": "headerValue"
+                                   }
+                                 }
+                               ],
+                               "mimeType": "text/html",
+                               "bytesReceived": 400,
+                               "headersSize": 100,
+                               "bodySize": 300,
+                               "content": {
+                                 "size": 300
+                               }
+                             }
+                           }
+                           """;
+        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
+        AuthRequiredEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]

@@ -30,10 +30,31 @@ public class StackTraceTests
         Assert.That(stacktrace, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(stacktrace!.CallFrames, Is.Not.Null);
+            Assert.That(stacktrace.CallFrames, Is.Not.Null);
             Assert.That(stacktrace.CallFrames, Has.Count.EqualTo(1));
             Assert.That(stacktrace.CallFrames[0], Is.TypeOf<StackFrame>());
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "callFrames": [
+                          {
+                            "functionName": "myFunction",
+                            "lineNumber": 1,
+                            "columnNumber": 5,
+                            "url": "http://some.url/file.js"
+                          }
+                        ]
+                      }
+                      """;
+        StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions);
+        Assert.That(stacktrace, Is.Not.Null);
+        StackTrace copy = stacktrace with { };
+        Assert.That(copy, Is.EqualTo(stacktrace));
     }
 
     [Test]

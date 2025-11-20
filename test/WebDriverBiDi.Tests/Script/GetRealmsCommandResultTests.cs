@@ -21,7 +21,21 @@ public class GetRealmsCommandResultTests
                       """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Realms, Is.Empty);
+        Assert.That(result.Realms, Is.Empty);
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "realms": []
+                      }
+                      """;
+        GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        GetRealmsCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]
@@ -41,14 +55,14 @@ public class GetRealmsCommandResultTests
                       """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Realms, Has.Count.EqualTo(1));
-        Assert.That(result!.Realms[0], Is.TypeOf<WindowRealmInfo>());
+        Assert.That(result.Realms, Has.Count.EqualTo(1));
+        Assert.That(result.Realms[0], Is.TypeOf<WindowRealmInfo>());
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Realms[0].RealmId, Is.EqualTo("realmId"));
-            Assert.That(result!.Realms[0].Origin, Is.EqualTo("myOrigin"));
-            Assert.That(result!.Realms[0].Type, Is.EqualTo(RealmType.Window));
-            Assert.That(((WindowRealmInfo)result!.Realms[0]).BrowsingContext, Is.EqualTo("contextId"));
+            Assert.That(result.Realms[0].RealmId, Is.EqualTo("realmId"));
+            Assert.That(result.Realms[0].Origin, Is.EqualTo("myOrigin"));
+            Assert.That(result.Realms[0].Type, Is.EqualTo(RealmType.Window));
+            Assert.That(((WindowRealmInfo)result.Realms[0]).BrowsingContext, Is.EqualTo("contextId"));
         });
     }
 
@@ -68,13 +82,13 @@ public class GetRealmsCommandResultTests
                       """;
         GetRealmsCommandResult? result = JsonSerializer.Deserialize<GetRealmsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Realms, Has.Count.EqualTo(1));
-        Assert.That(result!.Realms[0], Is.Not.TypeOf<WindowRealmInfo>());
+        Assert.That(result.Realms, Has.Count.EqualTo(1));
+        Assert.That(result.Realms[0], Is.Not.TypeOf<WindowRealmInfo>());
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Realms[0].RealmId, Is.EqualTo("realmId"));
-            Assert.That(result!.Realms[0].Origin, Is.EqualTo("myOrigin"));
-            Assert.That(result!.Realms[0].Type, Is.EqualTo(RealmType.Worker));
+            Assert.That(result.Realms[0].RealmId, Is.EqualTo("realmId"));
+            Assert.That(result.Realms[0].Origin, Is.EqualTo("myOrigin"));
+            Assert.That(result.Realms[0].Type, Is.EqualTo(RealmType.Worker));
         });
     }
 }

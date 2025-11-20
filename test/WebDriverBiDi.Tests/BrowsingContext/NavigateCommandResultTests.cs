@@ -23,7 +23,7 @@ public class NavigationResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Url, Is.EqualTo("http://example.com"));
+            Assert.That(result.Url, Is.EqualTo("http://example.com"));
             Assert.That(result.NavigationId, Is.Null);
         });
     }
@@ -41,9 +41,23 @@ public class NavigationResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.Url, Is.EqualTo("http://example.com"));
+            Assert.That(result.Url, Is.EqualTo("http://example.com"));
             Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "url": "http://example.com"
+                      }
+                      """;
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        NavigateCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

@@ -15,7 +15,21 @@ public class RealmDestroyedEventArgsTests
                       """;
         RealmDestroyedEventArgs? eventArgs = JsonSerializer.Deserialize<RealmDestroyedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.That(eventArgs!.RealmId, Is.EqualTo("myRealmId"));
+        Assert.That(eventArgs.RealmId, Is.EqualTo("myRealmId"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "realm": "myRealmId"
+                      }
+                      """;
+        RealmDestroyedEventArgs? eventArgs = JsonSerializer.Deserialize<RealmDestroyedEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        RealmDestroyedEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]

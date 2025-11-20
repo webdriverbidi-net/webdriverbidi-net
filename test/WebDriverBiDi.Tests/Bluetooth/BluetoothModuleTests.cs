@@ -276,7 +276,7 @@ public class BluetoothModuleTests
     }
 
     [Test]
-    public async Task TestSimulateGattDisconnectionResponse()
+    public async Task TestSimulateGattDisconnection()
     {
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
@@ -295,9 +295,9 @@ public class BluetoothModuleTests
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
 
-        Task<SimulateGattDisconnectionResponseCommandResult> task = module.SimulateGattDisconnectionResponseAsync(new SimulateGattDisconnectionCommandParameters("myContextId", "myAddress"));
+        Task<SimulateGattDisconnectionCommandResult> task = module.SimulateGattDisconnectionAsync(new SimulateGattDisconnectionCommandParameters("myContextId", "myAddress"));
         task.Wait(TimeSpan.FromSeconds(1));
-        SimulateGattDisconnectionResponseCommandResult result = task.Result;
+        SimulateGattDisconnectionCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
     }

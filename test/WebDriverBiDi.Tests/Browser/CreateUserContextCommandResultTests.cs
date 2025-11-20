@@ -21,7 +21,21 @@ public class CreateUserContextCommandResultTests
                       """;
         CreateUserContextCommandResult? result = JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.UserContextId, Is.EqualTo("myUserContext"));
+        Assert.That(result.UserContextId, Is.EqualTo("myUserContext"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "userContext": "myUserContext"
+                      }
+                      """;
+        CreateUserContextCommandResult? result = JsonSerializer.Deserialize<CreateUserContextCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        CreateUserContextCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

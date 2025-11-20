@@ -22,4 +22,13 @@ public class ChannelValueTests
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
         });
     }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        // Note that serialization of ChannelProperties (value property) is tested elsewhere.
+        ChannelValue value = new(new ChannelProperties("myChannel"));
+        ChannelValue copy = value with { };
+        Assert.That(copy, Is.EqualTo(value));
+    }
 }

@@ -349,10 +349,11 @@ public class SetCookieHeaderTests
         ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
         string json = @"{ ""name"": ""cookieName"", ""value"":{ ""type"": ""string"", ""value"": ""cookieValue"" }, ""domain"": ""cookieDomain"", ""path"": ""/cookiePath"", ""secure"": false, ""httpOnly"": false, ""sameSite"": ""lax"", ""size"": 100, ""expiry"": " + milliseconds + @" }";
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
-        SetCookieHeader header = cookie!.ToSetCookieHeader();
+        Assert.That(cookie, Is.Not.Null);
+        SetCookieHeader header = cookie.ToSetCookieHeader();
         Assert.Multiple(() =>
         {
-            Assert.That(header!.Name, Is.EqualTo("cookieName"));
+            Assert.That(header.Name, Is.EqualTo("cookieName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(header.Value.Value, Is.EqualTo("cookieValue"));
             Assert.That(header.Domain, Is.EqualTo("cookieDomain"));

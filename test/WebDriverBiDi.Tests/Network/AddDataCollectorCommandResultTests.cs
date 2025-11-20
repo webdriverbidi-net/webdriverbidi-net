@@ -21,7 +21,21 @@ public class AddDataCollectorCommandResultTests
                       """;
         AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.CollectorId, Is.EqualTo("myCollectorId"));
+        Assert.That(result.CollectorId, Is.EqualTo("myCollectorId"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "collector": "myCollectorId"
+                      }
+                      """;
+        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        AddDataCollectorCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

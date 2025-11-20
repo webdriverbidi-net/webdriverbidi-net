@@ -24,7 +24,7 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.NodeValue, Is.Null);
             Assert.That(nodeProperties.LocalName, Is.Null);
@@ -34,6 +34,21 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "nodeType": 1,
+                        "childNodeCount": 0
+                      }
+                      """;
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties copy = nodeProperties with { };
+        Assert.That(copy, Is.EqualTo(nodeProperties));
     }
 
     [Test]
@@ -96,7 +111,7 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.NodeValue, Is.EqualTo("myNodeValue"));
             Assert.That(nodeProperties.LocalName, Is.Null);
@@ -135,7 +150,7 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.NodeValue, Is.Null);
             Assert.That(nodeProperties.LocalName, Is.EqualTo("myLocalName"));
@@ -174,7 +189,7 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.NodeValue, Is.Null);
             Assert.That(nodeProperties.LocalName, Is.Null);
@@ -215,14 +230,14 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.NodeValue, Is.Null);
             Assert.That(nodeProperties.LocalName, Is.Null);
             Assert.That(nodeProperties.NamespaceUri, Is.Null);
-            Assert.That(nodeProperties!.Attributes, Is.Not.Null);
-            Assert.That(nodeProperties.Attributes!, Has.Count.EqualTo(1));
-            Assert.That(nodeProperties.Attributes!, Contains.Key("attributeName"));
+            Assert.That(nodeProperties.Attributes, Is.Not.Null);
+            Assert.That(nodeProperties.Attributes, Has.Count.EqualTo(1));
+            Assert.That(nodeProperties.Attributes, Contains.Key("attributeName"));
             Assert.That(nodeProperties.Attributes!["attributeName"], Is.EqualTo("attributeValue"));
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
@@ -298,14 +313,14 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.NodeValue, Is.Null);
             Assert.That(nodeProperties.LocalName, Is.Null);
             Assert.That(nodeProperties.NamespaceUri, Is.Null);
             Assert.That(nodeProperties.Attributes, Is.Null);
             Assert.That(nodeProperties.Children, Is.Not.Null);
-            Assert.That(nodeProperties.Children!, Has.Count.EqualTo(1));
+            Assert.That(nodeProperties.Children, Has.Count.EqualTo(1));
             Assert.That(nodeProperties.Children![0].HasValue, Is.True);
             Assert.That(nodeProperties.Children[0].Value, Is.TypeOf<NodeProperties>());
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
@@ -327,7 +342,7 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.NodeValue, Is.Null);
             Assert.That(nodeProperties.LocalName, Is.Null);
@@ -380,7 +395,7 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.Mode, Is.EqualTo(ShadowRootMode.Open));
             Assert.That(nodeProperties.NodeValue, Is.Null);
@@ -439,7 +454,7 @@ public class NodePropertiesTests
         Assert.That(nodeProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(nodeProperties!.NodeType, Is.EqualTo(1));
+            Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
             Assert.That(nodeProperties.NodeValue, Is.Null);
             Assert.That(nodeProperties.LocalName, Is.Null);

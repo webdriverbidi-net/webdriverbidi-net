@@ -43,7 +43,7 @@ public class ScriptModuleTests
         Assert.That(successResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(successResult!.RealmId, Is.EqualTo("myRealmId"));
+            Assert.That(successResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(successResult.ResultType, Is.EqualTo(EvaluateResultType.Success));
             Assert.That(successResult.Result, Is.Not.Null);
             Assert.That(successResult.Result.Type, Is.EqualTo("string"));
@@ -98,7 +98,7 @@ public class ScriptModuleTests
         Assert.That(exceptionResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(exceptionResult!.RealmId, Is.EqualTo("myRealmId"));
+            Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(exceptionResult.ResultType, Is.EqualTo(EvaluateResultType.Exception));
             Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("error received from script"));
             Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(2));
@@ -148,7 +148,7 @@ public class ScriptModuleTests
         Assert.That(successResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(successResult!.RealmId, Is.EqualTo("myRealmId"));
+            Assert.That(successResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(successResult.ResultType, Is.EqualTo(EvaluateResultType.Success));
             Assert.That(successResult.Result, Is.Not.Null);
             Assert.That(successResult.Result.Type, Is.EqualTo("string"));
@@ -203,7 +203,7 @@ public class ScriptModuleTests
         Assert.That(exceptionResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(exceptionResult!.RealmId, Is.EqualTo("myRealmId"));
+            Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(exceptionResult.ResultType, Is.EqualTo(EvaluateResultType.Exception));
             Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("error received from script"));
             Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(2));
@@ -260,7 +260,7 @@ public class ScriptModuleTests
         Assert.That(info, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(info!.RealmId, Is.EqualTo("myRealmId"));
+            Assert.That(info.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(info.Origin, Is.EqualTo("myOrigin"));
             Assert.That(info.BrowsingContext, Is.EqualTo("myContextId"));
         });

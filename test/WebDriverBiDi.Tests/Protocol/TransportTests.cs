@@ -59,13 +59,15 @@ public class TransportTests
         });
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
         CommandResult? actualResult = command.Result;
+        Assert.That(actualResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(actualResult!.IsError, Is.False);
+            Assert.That(actualResult.IsError, Is.False);
             Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
         });
         TestCommandResult? convertedResult = actualResult as TestCommandResult;
-        Assert.That(convertedResult!.Value, Is.EqualTo("response value"));
+        Assert.That(convertedResult, Is.Not.Null);
+        Assert.That(convertedResult.Value, Is.EqualTo("response value"));
     }
 
     [Test]
@@ -95,15 +97,17 @@ public class TransportTests
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         CommandResult? actualResult = command.Result;
+        Assert.That(actualResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(actualResult!.IsError, Is.False);
+            Assert.That(actualResult.IsError, Is.False);
             Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
         });
         TestCommandResult? convertedResult = actualResult as TestCommandResult;
+        Assert.That(convertedResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(convertedResult!.Value, Is.EqualTo("response value"));
+            Assert.That(convertedResult.Value, Is.EqualTo("response value"));
             Assert.That(convertedResult.AdditionalData, Has.Count.EqualTo(1));
             Assert.That(convertedResult.AdditionalData["extraDataName"], Is.EqualTo("extraDataValue"));
         });
@@ -134,16 +138,18 @@ public class TransportTests
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         CommandResult? actualResult = command.Result;
+        Assert.That(actualResult, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(actualResult!.IsError, Is.True);
+            Assert.That(actualResult.IsError, Is.True);
             Assert.That(actualResult, Is.InstanceOf<ErrorResult>());
         });
         ErrorResult? convertedResponse = actualResult as ErrorResult;
+        Assert.That(convertedResponse, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(convertedResponse!.ErrorType, Is.EqualTo("unknown command"));
-            Assert.That(convertedResponse!.ErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(convertedResponse.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(convertedResponse.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(convertedResponse.StackTrace, Is.Null);
         });
     }
@@ -240,7 +246,8 @@ public class TransportTests
             Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
         });
         TestEventArgs? convertedData = receivedData as TestEventArgs;
-        Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
+        Assert.That(convertedData, Is.Not.Null);
+        Assert.That(convertedData.ParamName, Is.EqualTo("paramValue"));
     }
 
     [Test]
@@ -270,9 +277,10 @@ public class TransportTests
 
         Assert.That(receivedData, Is.TypeOf<ErrorResult>());
         ErrorResult? convertedData = receivedData as ErrorResult;
+        Assert.That(convertedData, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(convertedData!.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(convertedData.ErrorType, Is.EqualTo("unknown error"));
             Assert.That(convertedData.ErrorMessage, Is.EqualTo("This is a test error message"));
         });
     }
@@ -325,6 +333,55 @@ public class TransportTests
         {
             Assert.That(logs[0].Message, Is.EqualTo("test log message"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Warn));
+        });
+    }
+
+    [Test]
+    public async Task TestTransportLogsSuccessfulCommandResponses()
+    {
+        List<LogMessageEventArgs> logs = new();
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        transport.OnLogMessage.AddObserver((e) =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+        string commandName = "module.command";
+        await transport.ConnectAsync("ws:localhost");
+
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
+        _ = Task.Run(async () => 
+        {
+            string json = """
+                          {
+                            "type": "success",
+                            "id": 1,
+                            "result": {
+                              "value": "response value"
+                            }
+                          }
+                          """;
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            await connection.RaiseDataReceivedEventAsync(json);
+        });
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
+        CommandResult? actualResult = command.Result;
+        Assert.That(actualResult, Is.Not.Null);
+        Assert.Multiple(() =>
+        {
+            Assert.That(actualResult.IsError, Is.False);
+            Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
+        });
+        TestCommandResult? convertedResult = actualResult as TestCommandResult;
+        Assert.That(convertedResult, Is.Not.Null);
+        Assert.That(convertedResult.Value, Is.EqualTo("response value"));
+        Assert.That(logs, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(logs[0].Message, Contains.Substring("Command response message processed"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Trace));
         });
     }
 
@@ -856,7 +913,8 @@ public class TransportTests
             Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
         });
         TestEventArgs? convertedData = receivedData as TestEventArgs;
-        Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
+        Assert.That(convertedData, Is.Not.Null);
+        Assert.That(convertedData.ParamName, Is.EqualTo("paramValue"));
     }
 
     [Test]
@@ -1051,6 +1109,35 @@ public class TransportTests
 
         Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
         Assert.That(dataValue, Is.EquivalentTo(expected));
+    }
+
+    [Test]
+    public async Task TestTransportTracksCommandId()
+    {
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+        Assert.That(transport.LastTestCommandId, Is.Zero);
+
+        string commandName = "module.command";
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
+        _ = Task.Run(async () => 
+        {
+            string json = """
+                          {
+                            "type": "success",
+                            "id": 1,
+                            "result": {
+                              "value": "response value"
+                            }
+                          }
+                          """;
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            await connection.RaiseDataReceivedEventAsync(json);
+        });
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
+        Assert.That(transport.LastTestCommandId, Is.EqualTo(1));
     }
 
     [Test]

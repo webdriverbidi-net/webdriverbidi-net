@@ -12,6 +12,6 @@ using WebDriverBiDi.JsonConverters;
 /// Abstract base class for script targets.
 /// </summary>
 [JsonConverter(typeof(ScriptTargetJsonConverter))]
-public abstract class Target
+public abstract record Target
 {
 }

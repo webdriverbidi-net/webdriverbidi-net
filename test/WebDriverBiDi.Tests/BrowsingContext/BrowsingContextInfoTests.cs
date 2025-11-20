@@ -29,7 +29,7 @@ public class BrowsingContextInfoTests
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         Assert.Multiple(() =>
         {
-            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(info.Url, Is.EqualTo("http://example.com"));
             Assert.That(info.ClientWindowId, Is.EqualTo("myClientWindowId"));
             Assert.That(info.UserContextId, Is.EqualTo("myUserContextId"));
@@ -67,7 +67,7 @@ public class BrowsingContextInfoTests
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         Assert.Multiple(() =>
         {
-            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(info.Url, Is.EqualTo("http://example.com"));
             Assert.That(info.ClientWindowId, Is.EqualTo("myClientWindowId"));
             Assert.That(info.OriginalOpener, Is.EqualTo("openerContext"));
@@ -96,7 +96,7 @@ public class BrowsingContextInfoTests
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         Assert.Multiple(() =>
         {
-            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(info.Url, Is.EqualTo("http://example.com"));
             Assert.That(info.ClientWindowId, Is.EqualTo("myClientWindowId"));
             Assert.That(info.OriginalOpener, Is.EqualTo("openerContext"));
@@ -125,7 +125,7 @@ public class BrowsingContextInfoTests
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         Assert.Multiple(() =>
         {
-            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(info.Url, Is.EqualTo("http://example.com"));
             Assert.That(info.ClientWindowId, Is.EqualTo("myClientWindowId"));
             Assert.That(info.UserContextId, Is.EqualTo("myUserContextId"));
@@ -134,6 +134,25 @@ public class BrowsingContextInfoTests
             Assert.That(info.Children, Is.Empty);
             Assert.That(info.Parent, Is.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "clientWindow": "myClientWindowId",
+                        "url": "http://example.com",
+                        "originalOpener": "openerContext",
+                        "userContext": "myUserContextId",
+                        "children": []
+                      }
+                      """;
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        Assert.That(info, Is.Not.Null);
+        BrowsingContextInfo copy = info with { };
+        Assert.That(copy, Is.EqualTo(info));
     }
 
     [Test]

@@ -61,7 +61,7 @@ public class BeforeRequestSentEventArgsTests
         Assert.Multiple(() =>
         {
             // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
-            Assert.That(eventArgs!.Initiator, Is.Null);
+            Assert.That(eventArgs.Initiator, Is.Null);
         });
     }
 
@@ -90,9 +90,31 @@ public class BeforeRequestSentEventArgsTests
         {
             // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
             // Also proper deserialization of the Initiator object is handled in InitiatorTests.
-            Assert.That(eventArgs!.Initiator, Is.Not.Null);
+            Assert.That(eventArgs.Initiator, Is.Not.Null);
             Assert.That(eventArgs.Initiator!.Type, Is.EqualTo(InitiatorType.Parser));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                            "context": "myContextId",
+                            "navigation": "myNavigationId",
+                            "isBlocked": false,
+                            "redirectCount": 0,
+                            "timestamp": {{milliseconds}},
+                            "request": {{requestDataJson}}
+                           }
+                           """;
+        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
+        BeforeRequestSentEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]

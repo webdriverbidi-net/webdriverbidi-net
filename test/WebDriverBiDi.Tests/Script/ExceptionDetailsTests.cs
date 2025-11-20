@@ -32,12 +32,35 @@ public class ExceptionDetailsTests
         Assert.That(exceptionDetails, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(exceptionDetails!.Text, Is.EqualTo("exception message"));
+            Assert.That(exceptionDetails.Text, Is.EqualTo("exception message"));
             Assert.That(exceptionDetails.LineNumber, Is.EqualTo(1));
             Assert.That(exceptionDetails.ColumnNumber, Is.EqualTo(5));
             Assert.That(exceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("myException"));
             Assert.That(exceptionDetails.StackTrace.CallFrames, Is.Empty);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "text": "exception message",
+                        "lineNumber": 1,
+                        "columnNumber": 5,
+                        "exception": {
+                          "type": "string",
+                          "value": "myException"
+                        },
+                        "stackTrace": {
+                          "callFrames": []
+                        }
+                      }
+                      """;
+        ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions);
+        Assert.That(exceptionDetails, Is.Not.Null);
+        ExceptionDetails copy = exceptionDetails with { };
+        Assert.That(copy, Is.EqualTo(exceptionDetails));
     }
 
     [Test]

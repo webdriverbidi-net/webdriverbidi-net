@@ -24,9 +24,24 @@ public class StatusCommandResultTests
         Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result!.IsReady, Is.EqualTo(true));
+            Assert.That(result.IsReady, Is.EqualTo(true));
             Assert.That(result.Message, Is.EqualTo("myMessage"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "ready": true,
+                        "message": "myMessage"
+                      }
+                      """;
+        StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        StatusCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Network;
 
+using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.JsonConverters;
 
@@ -46,8 +47,8 @@ public class RequestDataTests
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(request!.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
+            Assert.That(request.Url, Is.EqualTo("requestUrl"));
             Assert.That(request.Method, Is.EqualTo("get"));
             Assert.That(request.Headers, Is.Empty);
             Assert.That(request.Cookies, Is.Empty);
@@ -115,8 +116,8 @@ public class RequestDataTests
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(request!.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
+            Assert.That(request.Url, Is.EqualTo("requestUrl"));
             Assert.That(request.Method, Is.EqualTo("get"));
             Assert.That(request.Headers, Has.Count.EqualTo(1));
             Assert.That(request.Headers[0].Name, Is.EqualTo("headerName"));
@@ -193,8 +194,8 @@ public class RequestDataTests
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(request!.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
+            Assert.That(request.Url, Is.EqualTo("requestUrl"));
             Assert.That(request.Method, Is.EqualTo("get"));
             Assert.That(request.Headers, Is.Empty);
             Assert.That(request.Cookies, Has.Count.EqualTo(1));
@@ -265,8 +266,8 @@ public class RequestDataTests
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(request!.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
+            Assert.That(request.Url, Is.EqualTo("requestUrl"));
             Assert.That(request.Method, Is.EqualTo("get"));
             Assert.That(request.Headers, Is.Empty);
             Assert.That(request.Cookies, Is.Empty);
@@ -326,8 +327,8 @@ public class RequestDataTests
         Assert.That(request, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(request!.RequestId, Is.EqualTo("myRequestId"));
-            Assert.That(request!.Url, Is.EqualTo("requestUrl"));
+            Assert.That(request.RequestId, Is.EqualTo("myRequestId"));
+            Assert.That(request.Url, Is.EqualTo("requestUrl"));
             Assert.That(request.Method, Is.EqualTo("get"));
             Assert.That(request.Headers, Is.Empty);
             Assert.That(request.Cookies, Is.Empty);
@@ -350,6 +351,43 @@ public class RequestDataTests
             Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
             Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
         });       
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "request": "myRequestId",
+                        "url": "requestUrl",
+                        "method": "get",
+                        "headers": [],
+                        "cookies": [],
+                        "headersSize": 0,
+                        "bodySize": 0,
+                        "destination": "document",
+                        "initiatorType": "other",
+                        "timings": {
+                          "timeOrigin": 1,
+                          "requestTime": 2,
+                          "redirectStart": 3,
+                          "redirectEnd": 4,
+                          "fetchStart": 5,
+                          "dnsStart": 6,
+                          "dnsEnd": 7,
+                          "connectStart": 8,
+                          "connectEnd": 9,
+                          "tlsStart": 10,
+                          "requestStart": 11,
+                          "responseStart": 12,
+                          "responseEnd": 13
+                        }
+                      }
+                      """;
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        Assert.That(request, Is.Not.Null);
+        RequestData copy = request with { };
+        Assert.That(copy, Is.EqualTo(request));
     }
 
     [Test]

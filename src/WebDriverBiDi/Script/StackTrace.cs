@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing a stack trace from a script.
 /// </summary>
-public class StackTrace
+public record StackTrace
 {
     private List<StackFrame> callFrames = new();
 

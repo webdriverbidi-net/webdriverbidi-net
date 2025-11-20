@@ -24,16 +24,34 @@ public class DeleteCookiesCommandResultTests
                       }
                       """;
         DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result!.PartitionKey, Is.Not.Null);
+            Assert.That(result.PartitionKey, Is.Not.Null);
             Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
             Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
             Assert.That(result.PartitionKey.AdditionalData, Has.Count.EqualTo(1));
             Assert.That(result.PartitionKey.AdditionalData, Contains.Key("extraPropertyName"));
             Assert.That(result.PartitionKey.AdditionalData["extraPropertyName"], Is.EqualTo("extraPropertyValue"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "partitionKey": {
+                          "userContext": "myUserContext",
+                          "sourceOrigin": "mySourceOrigin",
+                          "extraPropertyName": "extraPropertyValue"
+                        }
+                      }
+                      """;
+        DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        DeleteCookiesCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]
@@ -45,10 +63,10 @@ public class DeleteCookiesCommandResultTests
                       }
                       """;
         DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result!.PartitionKey, Is.Not.Null);
+            Assert.That(result.PartitionKey, Is.Not.Null);
             Assert.That(result.PartitionKey.UserContextId, Is.Null);
             Assert.That(result.PartitionKey.SourceOrigin, Is.Null);
             Assert.That(result.PartitionKey.AdditionalData, Is.Empty);

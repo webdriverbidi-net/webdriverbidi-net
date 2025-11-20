@@ -18,9 +18,23 @@ public class RegularExpressionValueTests
         Assert.That(regexProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(regexProperties!.Pattern, Is.EqualTo("myPattern"));
+            Assert.That(regexProperties.Pattern, Is.EqualTo("myPattern"));
             Assert.That(regexProperties.Flags, Is.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "pattern": "myPattern"
+                      }
+                      """;
+        RegularExpressionValue? regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
+        Assert.That(regexProperties, Is.Not.Null);
+        RegularExpressionValue copy = regexProperties with { };
+        Assert.That(copy, Is.EqualTo(regexProperties));
     }
 
     [Test]
@@ -54,7 +68,7 @@ public class RegularExpressionValueTests
         Assert.That(regexProperties, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(regexProperties!.Pattern, Is.EqualTo("myPattern"));
+            Assert.That(regexProperties.Pattern, Is.EqualTo("myPattern"));
             Assert.That(regexProperties.Flags, Is.Not.Null);
             Assert.That(regexProperties.Flags, Is.EqualTo("gi"));
         });
@@ -142,7 +156,8 @@ public class RegularExpressionValueTests
                       }
                       """;
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
-        Assert.That(actualRegexValue!.Equals(null), Is.False);
+        Assert.That(actualRegexValue, Is.Not.Null);
+        Assert.That(actualRegexValue.Equals(null), Is.False);
     }
 
     [Test]
@@ -156,6 +171,7 @@ public class RegularExpressionValueTests
                       }
                       """;
         RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
+        Assert.That(actualRegexValue, Is.Not.Null);
         Assert.That(actualRegexValue!.Equals("invalid"), Is.False);
     }
 }

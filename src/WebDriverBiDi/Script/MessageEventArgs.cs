@@ -12,9 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record MessageEventArgs : WebDriverBiDiEventArgs
 {
-    private readonly string channelId;
-    private readonly RemoteValue data;
-    private readonly Source source;
+    private string channelId;
+    private RemoteValue data;
+    private Source source;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MessageEventArgs"/> class.
@@ -34,17 +34,23 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     /// Gets the ID of the channel used for this message.
     /// </summary>
     [JsonPropertyName("channel")]
-    public string ChannelId => this.channelId;
+    [JsonInclude]
+    [JsonRequired]
+    public string ChannelId { get => this.channelId; private set => this.channelId = value; }
 
     /// <summary>
     /// Gets the data for this message.
     /// </summary>
     [JsonPropertyName("data")]
-    public RemoteValue Data => this.data;
+    [JsonInclude]
+    [JsonRequired]
+    public RemoteValue Data { get => this.data; private set => this.data = value; }
 
     /// <summary>
     /// Gets the source for this message.
     /// </summary>
     [JsonPropertyName("source")]
-    public Source Source => this.source;
+    [JsonInclude]
+    [JsonRequired]
+    public Source Source { get => this.source; private set => this.source = value; }
 }

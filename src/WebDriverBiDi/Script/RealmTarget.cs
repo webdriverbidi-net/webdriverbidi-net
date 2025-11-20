@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// A script target for a realm.
 /// </summary>
-public class RealmTarget : Target
+public record RealmTarget : Target
 {
     private string realmId;
 

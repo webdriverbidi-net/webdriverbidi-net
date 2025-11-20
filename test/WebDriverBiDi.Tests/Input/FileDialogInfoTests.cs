@@ -6,26 +6,26 @@ using WebDriverBiDi.JsonConverters;
 [TestFixture]
 public class FileDialogInfoTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
+  private JsonSerializerOptions deserializationOptions = new()
+  {
+    TypeInfoResolver = new PrivateConstructorContractResolver(),
+  };
 
     [Test]
     public void TestCanDeserializeWithMultipleTrue()
     {
         string json = """
-                      {
-                        "context": "myContextId",
-                        "multiple": true
-                      }
-                      """;
+                        {
+                            "context": "myContextId",
+                            "multiple": true
+                        }
+                        """;
         FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         Assert.Multiple(() =>
         {
-            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(info.Multiple, Is.True);
             Assert.That(info.Element, Is.Null);
         });
@@ -35,26 +35,26 @@ public class FileDialogInfoTests
     public void TestCanDeserializeWithMultipleFalse()
     {
         string json = """
-                      {
-                        "context": "myContextId",
-                        "multiple": false
-                      }
-                      """;
+                        {
+                            "context": "myContextId",
+                            "multiple": false
+                        }
+                        """;
         FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         Assert.Multiple(() =>
         {
-            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(info.Multiple, Is.False);
             Assert.That(info.Element, Is.Null);
         });
     }
 
-    [Test]
-    public void TestCanDeserializeWithElementReference()
-    {
-        string json = """
+  [Test]
+  public void TestCanDeserializeWithElementReference()
+  {
+    string json = """
                       {
                         "context": "myContextId",
                         "multiple": true,
@@ -69,81 +69,97 @@ public class FileDialogInfoTests
                         }
                       }
                       """;
+    FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+    Assert.That(info, Is.Not.Null);
+    Assert.That(info, Is.InstanceOf<FileDialogInfo>());
+    Assert.Multiple(() =>
+    {
+        Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
+        Assert.That(info.Multiple, Is.True);
+        Assert.That(info.Element, Is.Not.Null);
+        Assert.That(info.Element!.SharedId, Is.EqualTo("mySharedId"));
+    });
+  }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                        {
+                          "context": "myContextId",
+                          "multiple": true
+                        }
+                        """;
         FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
-        Assert.Multiple(() =>
-        {
-            Assert.That(info!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(info.Multiple, Is.True);
-            Assert.That(info.Element, Is.Not.Null);
-            Assert.That(info.Element!.SharedId, Is.EqualTo("mySharedId"));
-        });
+        FileDialogInfo copy = info with { };
+        Assert.That(copy, Is.EqualTo(info));
     }
 
-    [Test]
-    public void TestDeserializingWithMissingContextThrows()
-    {
-        string json = """
+  [Test]
+  public void TestDeserializingWithMissingContextThrows()
+  {
+    string json = """
                       {
                         "multiple": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
-    }
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+  }
 
-    [Test]
-    public void TestDeserializingWithInvalidContextTypeThrows()
-    {
-        string json = """
+  [Test]
+  public void TestDeserializingWithInvalidContextTypeThrows()
+  {
+    string json = """
                       {
                         "context": {},
                         "multiple": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
-    }
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+  }
 
-    [Test]
-    public void TestDeserializingWithMissingMMultipleThrows()
-    {
-        string json = """
+  [Test]
+  public void TestDeserializingWithMissingMMultipleThrows()
+  {
+    string json = """
                       {
                         "context": "myContextId"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
-    }
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+  }
 
-    [Test]
-    public void TestDeserializingWithInvalidMMultipleTypeThrows()
-    {
-        string json = """
+  [Test]
+  public void TestDeserializingWithInvalidMMultipleTypeThrows()
+  {
+    string json = """
                       {
                         "context": "myContextId",
                         "multiple": "true"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
-    }
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+  }
 
-    [Test]
-    public void TestDeserializingWithInvalidElementTypeThrows()
-    {
-        string json = """
+  [Test]
+  public void TestDeserializingWithInvalidElementTypeThrows()
+  {
+    string json = """
                       {
                         "context": "myContextId",
                         "multiple": true,
                         "element": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
-    }
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+  }
 
-    [Test]
-    public void TestDeserializingWithNonSharedReferenceThrows()
-    {
-        string json = """
+  [Test]
+  public void TestDeserializingWithNonSharedReferenceThrows()
+  {
+    string json = """
                       {
                         "context": "myContextId",
                         "multiple": true,
@@ -157,6 +173,6 @@ public class FileDialogInfoTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
-    }
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+  }
 }

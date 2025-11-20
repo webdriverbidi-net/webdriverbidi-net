@@ -158,9 +158,9 @@ public sealed class BluetoothModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<SimulateGattDisconnectionResponseCommandResult> SimulateGattDisconnectionResponseAsync(SimulateGattDisconnectionCommandParameters commandProperties)
+    public async Task<SimulateGattDisconnectionCommandResult> SimulateGattDisconnectionAsync(SimulateGattDisconnectionCommandParameters commandProperties)
     {
-        return await this.Driver.ExecuteCommandAsync<SimulateGattDisconnectionResponseCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SimulateGattDisconnectionCommandResult>(commandProperties).ConfigureAwait(false);
     }
 
     /// <summary>

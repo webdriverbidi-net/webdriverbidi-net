@@ -82,10 +82,10 @@ public class BytesValueTests
                       }
                       """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
+        Assert.That(value, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(value, Is.Not.Null);
-            Assert.That(value!.Type, Is.EqualTo(BytesValueType.String));
+            Assert.That(value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(value.Value, Is.EqualTo("this is my string"));
             Assert.That(value.ValueAsByteArray, Is.EqualTo(valueArray));
         });
@@ -105,16 +105,33 @@ public class BytesValueTests
                       }
                       """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
+        Assert.That(value, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(value, Is.Not.Null);
-            Assert.That(value!.Type, Is.EqualTo(BytesValueType.Base64));
+            Assert.That(value.Type, Is.EqualTo(BytesValueType.Base64));
 
             // Disable spell checking only for the base64-encoded value.
             // cspell: disable-next
             Assert.That(value.Value, Is.EqualTo("dGhpcyBpcyBteSBzdHJpbmc="));
             Assert.That(value.ValueAsByteArray, Is.EqualTo(valueArray));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string stringValue = "this is my string";
+        byte[] valueArray = Encoding.UTF8.GetBytes(stringValue);
+        string json = $$"""
+                      {
+                        "type": "string",
+                        "value": "{{stringValue}}"
+                      }
+                      """;
+        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
+        Assert.That(value, Is.Not.Null);
+        BytesValue copy = value with { };
+        Assert.That(copy, Is.EqualTo(value));
     }
 
     [Test]

@@ -44,10 +44,10 @@ public class GetCookiesCommandResultTests
                       }
                       """;
         GetCookiesCommandResult? result = JsonSerializer.Deserialize<GetCookiesCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Cookies, Is.Not.Null);
+            Assert.That(result.Cookies, Is.Not.Null);
             Assert.That(result.Cookies, Has.Count.EqualTo(1));
             Assert.That(result.Cookies[0].Name, Is.EqualTo("cookieName"));
             Assert.That(result.Cookies[0].Value.Type, Is.EqualTo(BytesValueType.String));
@@ -59,7 +59,7 @@ public class GetCookiesCommandResultTests
             Assert.That(result.Cookies[0].Secure, Is.True);
             Assert.That(result.Cookies[0].SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
             Assert.That(result.Cookies[0].Expires, Is.EqualTo(expireTime));
-            Assert.That(result!.PartitionKey, Is.Not.Null);
+            Assert.That(result.PartitionKey, Is.Not.Null);
             Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
             Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
             Assert.That(result.PartitionKey.AdditionalData, Has.Count.EqualTo(1));
@@ -78,16 +78,53 @@ public class GetCookiesCommandResultTests
                       }
                       """;
         GetCookiesCommandResult? result = JsonSerializer.Deserialize<GetCookiesCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result!.Cookies, Is.Not.Null);
+            Assert.That(result.Cookies, Is.Not.Null);
             Assert.That(result.Cookies, Is.Empty);
-            Assert.That(result!.PartitionKey, Is.Not.Null);
+            Assert.That(result.PartitionKey, Is.Not.Null);
             Assert.That(result.PartitionKey.UserContextId, Is.Null);
             Assert.That(result.PartitionKey.SourceOrigin, Is.Null);
             Assert.That(result.PartitionKey.AdditionalData, Is.Empty);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        DateTime now = DateTime.UtcNow.AddSeconds(10);
+        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "cookies": [
+                          {
+                            "name": "cookieName",
+                            "value": {
+                              "type": "string",
+                              "value": "cookieValue"
+                            },
+                            "domain": "cookieDomain",
+                            "path": "cookiePath",
+                            "size": 123,
+                            "httpOnly": false,
+                            "secure": true,
+                            "sameSite": "lax",
+                            "expiry": {{milliseconds}}
+                          }
+                        ],
+                        "partitionKey": {
+                          "userContext": "myUserContext",
+                          "sourceOrigin": "mySourceOrigin",
+                          "extraPropertyName": "extraPropertyValue"
+                        }
+                      }
+                      """;
+        GetCookiesCommandResult? result = JsonSerializer.Deserialize<GetCookiesCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        GetCookiesCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
     }
 
     [Test]

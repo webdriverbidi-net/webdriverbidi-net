@@ -60,16 +60,16 @@ public class BaseNetworkEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs!.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs!.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs!.RedirectCount, Is.EqualTo(0));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
+            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
+            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
+            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
 
             // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs!.Request, Is.Not.Null);
-            Assert.That(eventArgs!.IsBlocked, Is.False);
-            Assert.That(eventArgs!.Intercepts, Is.Null);
+            Assert.That(eventArgs.Request, Is.Not.Null);
+            Assert.That(eventArgs.IsBlocked, Is.False);
+            Assert.That(eventArgs.Intercepts, Is.Null);
         });
     }
 
@@ -94,18 +94,18 @@ public class BaseNetworkEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs!.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs!.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs!.RedirectCount, Is.EqualTo(0));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
+            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
+            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
+            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
 
             // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs!.Request, Is.Not.Null);
-            Assert.That(eventArgs!.IsBlocked, Is.True);
-            Assert.That(eventArgs!.Intercepts, Is.Not.Null);
-            Assert.That(eventArgs!.Intercepts, Has.Count.EqualTo(1));
-            Assert.That(eventArgs!.Intercepts![0], Is.EqualTo("myInterceptId"));
+            Assert.That(eventArgs.Request, Is.Not.Null);
+            Assert.That(eventArgs.IsBlocked, Is.True);
+            Assert.That(eventArgs.Intercepts, Is.Not.Null);
+            Assert.That(eventArgs.Intercepts, Has.Count.EqualTo(1));
+            Assert.That(eventArgs.Intercepts![0], Is.EqualTo("myInterceptId"));
         });
     }
 
@@ -129,17 +129,39 @@ public class BaseNetworkEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.Null);
-            Assert.That(eventArgs!.NavigationId, Is.EqualTo("myNavigationId"));
-            Assert.That(eventArgs!.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs!.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs!.RedirectCount, Is.EqualTo(0));
+            Assert.That(eventArgs.BrowsingContextId, Is.Null);
+            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
+            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
+            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
+            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
 
             // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs!.Request, Is.Not.Null);
-            Assert.That(eventArgs!.IsBlocked, Is.False);
-            Assert.That(eventArgs!.Intercepts, Is.Null);
+            Assert.That(eventArgs.Request, Is.Not.Null);
+            Assert.That(eventArgs.IsBlocked, Is.False);
+            Assert.That(eventArgs.Intercepts, Is.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string eventJson = $$"""
+                           {
+                             "context": "myContextId",
+                             "navigation": "myNavigationId",
+                             "isBlocked": false,
+                             "redirectCount": 0,
+                             "timestamp": {{milliseconds}},
+                             "request": {{requestDataJson}}
+                           }
+                           """;
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions);
+        Assert.That(eventArgs, Is.Not.Null);
+        BaseNetworkEventArgs copy = eventArgs with { };
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 
     [Test]
@@ -199,16 +221,16 @@ public class BaseNetworkEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(eventArgs!.BrowsingContextId, Is.EqualTo("myContextId"));
-            Assert.That(eventArgs!.NavigationId, Is.Null);
-            Assert.That(eventArgs!.EpochTimestamp, Is.EqualTo(milliseconds));
-            Assert.That(eventArgs!.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-            Assert.That(eventArgs!.RedirectCount, Is.EqualTo(0));
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.NavigationId, Is.Null);
+            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
+            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
+            Assert.That(eventArgs.RedirectCount, Is.EqualTo(0));
 
             // Note that proper RequestData deserialization is tested elsewhere.
-            Assert.That(eventArgs!.Request, Is.Not.Null);
-            Assert.That(eventArgs!.IsBlocked, Is.False);
-            Assert.That(eventArgs!.Intercepts, Is.Null);
+            Assert.That(eventArgs.Request, Is.Not.Null);
+            Assert.That(eventArgs.IsBlocked, Is.False);
+            Assert.That(eventArgs.Intercepts, Is.Null);
         });
     }
 

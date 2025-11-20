@@ -25,6 +25,20 @@ public class CaptureScreenshotCommandResultTests
     }
 
     [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "data": "some screenshot data"
+                      }
+                      """;
+        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        CaptureScreenshotCommandResult copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
+    }
+
+    [Test]
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";

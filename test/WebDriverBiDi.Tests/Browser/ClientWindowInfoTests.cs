@@ -40,6 +40,26 @@ public class ClientWindowsInfoTests
     }
 
     [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "clientWindow": "myClientWindow",
+                        "active": true,
+                        "state": "normal",
+                        "x": 100,
+                        "y": 200,
+                        "width": 300,
+                        "height": 400
+                      }
+                      """;
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
+        Assert.That(result, Is.Not.Null);
+        ClientWindowInfo? copy = result with { };
+        Assert.That(copy, Is.EqualTo(result));
+    }
+
+    [Test]
     public void TestDeserializingWithMissingWindowIdThrows()
     {
         string json = """

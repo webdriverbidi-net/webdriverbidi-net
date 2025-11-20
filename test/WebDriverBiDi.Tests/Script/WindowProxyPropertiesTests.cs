@@ -21,7 +21,21 @@ public class WindowProxyPropertiesTests
                       """;
         WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions);
         Assert.That(windowProxyProperties, Is.Not.Null);
-        Assert.That(windowProxyProperties!.Context, Is.EqualTo("myContextId"));
+        Assert.That(windowProxyProperties.Context, Is.EqualTo("myContextId"));
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "context": "myContextId"
+                      }
+                      """;
+        WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions);
+        Assert.That(windowProxyProperties, Is.Not.Null);
+        WindowProxyProperties copy = windowProxyProperties with { };
+        Assert.That(copy, Is.EqualTo(windowProxyProperties));
     }
 
     [Test]

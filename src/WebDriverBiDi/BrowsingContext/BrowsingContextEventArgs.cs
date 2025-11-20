@@ -32,6 +32,11 @@ public record BrowsingContextEventArgs : WebDriverBiDiEventArgs
     public string UserContextId => this.info.UserContextId;
 
     /// <summary>
+    /// Gets the ID of the client window of this browsing context.
+    /// </summary>
+    public string ClientWindowId => this.info.ClientWindowId;
+
+    /// <summary>
     /// Gets the browsing context ID of the original opener of this browsing context.
     /// </summary>
     public string? OriginalOpener => this.info.OriginalOpener;

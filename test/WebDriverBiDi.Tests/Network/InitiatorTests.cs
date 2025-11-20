@@ -22,7 +22,7 @@ public class InitiatorTests
         Assert.That(initiator, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(initiator!.Type, Is.Null);
+            Assert.That(initiator.Type, Is.Null);
             Assert.That(initiator.ColumnNumber, Is.Null);
             Assert.That(initiator.LineNumber, Is.Null);
             Assert.That(initiator.StackTrace, Is.Null);
@@ -55,13 +55,26 @@ public class InitiatorTests
         Assert.That(initiator, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(initiator!.Type, Is.EqualTo(InitiatorType.Script));
+            Assert.That(initiator.Type, Is.EqualTo(InitiatorType.Script));
             Assert.That(initiator.ColumnNumber, Is.EqualTo(1));
             Assert.That(initiator.LineNumber, Is.EqualTo(2));
             Assert.That(initiator.StackTrace, Is.Not.Null);
             Assert.That(initiator.StackTrace!.CallFrames, Has.Count.EqualTo(1));
             Assert.That(initiator.RequestId, Is.EqualTo("myRequestId"));
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                      }
+                      """;
+        Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json, deserializationOptions);
+        Assert.That(initiator, Is.Not.Null);
+        Initiator copy = initiator with { };
+        Assert.That(copy, Is.EqualTo(initiator));
     }
 
     [Test]

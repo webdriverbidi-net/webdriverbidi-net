@@ -31,7 +31,7 @@ public class LogEntryTests
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         Assert.Multiple(() =>
         {
-            Assert.That(entry!.Level, Is.EqualTo(LogLevel.Debug));
+            Assert.That(entry.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(entry.Text, Is.Null);
             Assert.That(entry.EpochTimestamp, Is.EqualTo(epochTimestamp));
@@ -63,9 +63,10 @@ public class LogEntryTests
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<ConsoleLogEntry>());
         ConsoleLogEntry? consoleEntry = entry as ConsoleLogEntry;
+        Assert.That(consoleEntry, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(consoleEntry!.Level, Is.EqualTo(LogLevel.Debug));
+            Assert.That(consoleEntry.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(consoleEntry.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(consoleEntry.Text, Is.Not.Null);
             Assert.That(consoleEntry.Text, Is.EqualTo("my log message"));
@@ -104,9 +105,10 @@ public class LogEntryTests
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<ConsoleLogEntry>());
         ConsoleLogEntry? consoleEntry = entry as ConsoleLogEntry;
+        Assert.That(consoleEntry, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(consoleEntry!.Level, Is.EqualTo(LogLevel.Debug));
+            Assert.That(consoleEntry.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(consoleEntry.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(consoleEntry.Text, Is.Not.Null);
             Assert.That(consoleEntry.Text, Is.EqualTo("my log message"));
@@ -140,7 +142,7 @@ public class LogEntryTests
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         Assert.Multiple(() =>
         {
-            Assert.That(entry!.Level, Is.EqualTo(LogLevel.Debug));
+            Assert.That(entry.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(entry.Text, Is.Not.Null);
             Assert.That(entry.Text, Is.EqualTo("my log message"));
@@ -169,7 +171,7 @@ public class LogEntryTests
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         Assert.Multiple(() =>
         {
-            Assert.That(entry!.Level, Is.EqualTo(LogLevel.Info));
+            Assert.That(entry.Level, Is.EqualTo(LogLevel.Info));
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(entry.Text, Is.Not.Null);
             Assert.That(entry.Text, Is.EqualTo("my log message"));
@@ -196,7 +198,7 @@ public class LogEntryTests
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
-        Assert.That(entry!.Level, Is.EqualTo(LogLevel.Warn));
+        Assert.That(entry.Level, Is.EqualTo(LogLevel.Warn));
         Assert.Multiple(() =>
         {
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
@@ -227,7 +229,7 @@ public class LogEntryTests
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         Assert.Multiple(() =>
         {
-            Assert.That(entry!.Level, Is.EqualTo(LogLevel.Error));
+            Assert.That(entry.Level, Is.EqualTo(LogLevel.Error));
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(entry.Text, Is.Not.Null);
             Assert.That(entry.Text, Is.EqualTo("my log message"));

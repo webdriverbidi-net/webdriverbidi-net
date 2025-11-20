@@ -22,9 +22,10 @@ public class RequestDeviceInfoTests
                       }
                       """;
         RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions);
+        Assert.That(info, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(info!.DeviceId, Is.EqualTo("myDeviceId"));
+            Assert.That(info.DeviceId, Is.EqualTo("myDeviceId"));
             Assert.That(info.DeviceName, Is.EqualTo("myDeviceName"));
         });
     }
@@ -39,11 +40,27 @@ public class RequestDeviceInfoTests
                       }
                       """;
         RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions);
+        Assert.That(info, Is.Not.Null);
         Assert.Multiple(() =>
         {
-            Assert.That(info!.DeviceId, Is.EqualTo("myDeviceId"));
+            Assert.That(info.DeviceId, Is.EqualTo("myDeviceId"));
             Assert.That(info.DeviceName, Is.Null);
         });
+    }
+
+    [Test]
+    public void TestCopySemantics()
+    {
+        string json = """
+                      {
+                        "id": "myDeviceId",
+                        "name": "myDeviceName"
+                      }
+                      """;
+        RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions);
+        Assert.That(info, Is.Not.Null);
+        RequestDeviceInfo copy = info with { };
+        Assert.That(copy, Is.EqualTo(info));
     }
 
     [Test]
