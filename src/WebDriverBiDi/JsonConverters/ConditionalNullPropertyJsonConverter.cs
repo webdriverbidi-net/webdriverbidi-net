@@ -30,7 +30,7 @@ public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
     /// <returns>A value of the specified enum.</returns>
-    /// <exception cref="NotImplementedException">Always thrown, as this converter does not support deserialization</exception>
+    /// <exception cref="NotImplementedException">Always thrown, as this converter does not support deserialization<./exception>
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
