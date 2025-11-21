@@ -12,14 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class WheelScrollAction : IWheelSourceAction
 {
-    private readonly string actionType = "scroll";
-    private ulong x = 0;
-    private ulong y = 0;
-    private long deltaX = 0;
-    private long deltaY = 0;
-    private TimeSpan? duration;
-    private Origin? origin;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WheelScrollAction"/> class.
     /// </summary>
@@ -32,43 +24,43 @@ public class WheelScrollAction : IWheelSourceAction
     /// Gets the type of the action.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type => this.actionType;
+    public string Type { get; } = "scroll";
 
     /// <summary>
     /// Gets or sets the horizontal position of the action.
     /// </summary>
     [JsonPropertyName("x")]
-    public ulong X { get => this.x; set => this.x = value; }
+    public ulong X { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the vertical position of the action.
     /// </summary>
     [JsonPropertyName("y")]
-    public ulong Y { get => this.y; set => this.y = value; }
+    public ulong Y { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the horizontal change for the action.
     /// </summary>
     [JsonPropertyName("deltaX")]
-    public long DeltaX { get => this.deltaX; set => this.deltaX = value; }
+    public long DeltaX { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the vertical change for the action.
     /// </summary>
     [JsonPropertyName("deltaY")]
-    public long DeltaY { get => this.deltaY; set => this.deltaY = value; }
+    public long DeltaY { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the duration, in milliseconds, of the move.
     /// </summary>
     [JsonIgnore]
-    public TimeSpan? Duration { get => this.duration; set => this.duration = value; }
+    public TimeSpan? Duration { get; set; }
 
     /// <summary>
     /// Gets or sets the origin of the move.
     /// </summary>
     [JsonIgnore]
-    public Origin? Origin { get => this.origin; set => this.origin = value; }
+    public Origin? Origin { get; set; }
 
     /// <summary>
     /// Gets the duration, in milliseconds, of the move for serialization purposes.
@@ -80,12 +72,12 @@ public class WheelScrollAction : IWheelSourceAction
     {
         get
         {
-            if (this.duration is null)
+            if (this.Duration is null)
             {
                 return null;
             }
 
-            return Convert.ToUInt64(this.duration.Value.TotalMilliseconds);
+            return Convert.ToUInt64(this.Duration.Value.TotalMilliseconds);
         }
     }
 
@@ -99,12 +91,12 @@ public class WheelScrollAction : IWheelSourceAction
     {
         get
         {
-            if (this.origin is null)
+            if (this.Origin is null)
             {
                 return null;
             }
 
-            return this.origin.Value;
+            return this.Origin.Value;
         }
     }
 }

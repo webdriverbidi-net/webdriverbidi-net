@@ -13,27 +13,24 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class ElementOrigin
 {
-    private readonly string originType = "element";
-    private readonly SharedReference elementReference;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ElementOrigin"/> class.
     /// </summary>
     /// <param name="element">The reference to the element to be used as the origin.</param>
     public ElementOrigin(SharedReference element)
     {
-        this.elementReference = element;
+        this.Element = element;
     }
 
     /// <summary>
     /// Gets the type of the origin.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type => this.originType;
+    public string Type { get; } = "element";
 
     /// <summary>
     /// Gets the reference to the element used as the origin.
     /// </summary>
     [JsonPropertyName("element")]
-    public SharedReference Element => this.elementReference;
+    public SharedReference Element { get; }
 }

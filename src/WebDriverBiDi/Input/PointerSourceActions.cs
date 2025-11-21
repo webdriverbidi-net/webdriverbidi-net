@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PointerSourceActions : SourceActions
 {
-    private readonly List<IPointerSourceAction> actions = new();
-    private PointerParameters? parameters;
-
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
@@ -26,11 +23,11 @@ public class PointerSourceActions : SourceActions
     /// </summary>
     [JsonPropertyName("parameters")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public PointerParameters? Parameters { get => this.parameters; set => this.parameters = value; }
+    public PointerParameters? Parameters { get; set; }
 
     /// <summary>
     /// Gets the list of actions for this input device.
     /// </summary>
     [JsonPropertyName("actions")]
-    public List<IPointerSourceAction> Actions => this.actions;
+    public List<IPointerSourceAction> Actions { get; } = new();
 }

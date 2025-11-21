@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class KeyUpAction : IKeySourceAction
 {
-    private readonly string actionType = "keyUp";
-    private string value = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="KeyUpAction"/> class.
     /// </summary>
@@ -26,18 +23,18 @@ public class KeyUpAction : IKeySourceAction
             throw new ArgumentException("Action value cannot be null or the empty string", nameof(value));
         }
 
-        this.value = value;
+        this.Value = value;
     }
 
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type => this.actionType;
+    public string Type { get; } = "keyUp";
 
     /// <summary>
     /// Gets or sets the duration of the pause.
     /// </summary>
     [JsonPropertyName("value")]
-    public string Value { get => this.value; set => this.value = value; }
+    public string Value { get; set; } = string.Empty;
 }

@@ -13,10 +13,6 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class SetFilesCommandParameters : CommandParameters<SetFilesCommandResult>
 {
-    private readonly List<string> files = new();
-    private string browsingContextId;
-    private SharedReference element;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetFilesCommandParameters"/> class.
     /// </summary>
@@ -24,8 +20,8 @@ public class SetFilesCommandParameters : CommandParameters<SetFilesCommandResult
     /// <param name="element">The element for which to set the file list. Must be of type {input type="file"}.</param>
     public SetFilesCommandParameters(string browsingContextId, SharedReference element)
     {
-        this.browsingContextId = browsingContextId;
-        this.element = element;
+        this.BrowsingContextId = browsingContextId;
+        this.Element = element;
     }
 
     /// <summary>
@@ -38,17 +34,17 @@ public class SetFilesCommandParameters : CommandParameters<SetFilesCommandResult
     /// Gets or sets the browsing context ID containing the element for which to set the files.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the element for which to set the file list. Note that the element must be of type {input type="file"}.
     /// </summary>
     [JsonPropertyName("element")]
-    public SharedReference Element { get => this.element; set => this.element = value; }
+    public SharedReference Element { get; set; }
 
     /// <summary>
     /// Gets the list of files to be set on the element.
     /// </summary>
     [JsonPropertyName("files")]
-    public List<string> Files => this.files;
+    public List<string> Files { get; } = [];
 }

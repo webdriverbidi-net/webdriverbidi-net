@@ -12,16 +12,14 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class Origin
 {
-    private readonly object originValue;
-
     private Origin(string originValue)
     {
-        this.originValue = originValue;
+        this.Value = originValue;
     }
 
     private Origin(ElementOrigin originValue)
     {
-        this.originValue = originValue;
+        this.Value = originValue;
     }
 
     /// <summary>
@@ -37,7 +35,7 @@ public class Origin
     /// <summary>
     /// Gets the value of the action origin.
     /// </summary>
-    public object Value => this.originValue;
+    public object Value { get; }
 
     /// <summary>
     /// Creates an action origin using an element reference.

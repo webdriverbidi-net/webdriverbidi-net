@@ -13,11 +13,6 @@ using WebDriverBiDi.Script;
 /// </summary>
 public record FileDialogInfo
 {
-    private string browsingContextId = string.Empty;
-    private RemoteValue? elementValue;
-    private SharedReference? element;
-    private bool multiple;
-
     [JsonConstructor]
     private FileDialogInfo()
     {
@@ -29,7 +24,7 @@ public record FileDialogInfo
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets a value indicating whether the file dialog supports multiple file names.
@@ -37,13 +32,13 @@ public record FileDialogInfo
     [JsonPropertyName("multiple")]
     [JsonRequired]
     [JsonInclude]
-    public bool Multiple { get => this.multiple; private set => this.multiple = value; }
+    public bool Multiple { get; private set; }
 
     /// <summary>
     /// Gets the reference to the element that invoked the file dialog, if present.
     /// </summary>
     [JsonIgnore]
-    public SharedReference? Element => this.element;
+    public SharedReference? Element { get; private set; }
 
     /// <summary>
     /// Sets a reference to the element that invoked the file dialog for serialization purposes.
@@ -57,8 +52,7 @@ public record FileDialogInfo
         {
             if (value is not null)
             {
-                this.elementValue = value;
-                this.element = value.ToSharedReference();
+                this.Element = value.ToSharedReference();
             }
         }
     }

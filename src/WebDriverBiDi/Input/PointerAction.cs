@@ -13,14 +13,6 @@ using WebDriverBiDi.JsonConverters;
 /// </summary>
 public class PointerAction
 {
-    private ulong? width;
-    private ulong? height;
-    private double? pressure;
-    private double? tangentialPressure;
-    private ulong? twist;
-    private double? altitudeAngle;
-    private double? azimuthAngle;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PointerAction"/> class.
     /// </summary>
@@ -33,14 +25,14 @@ public class PointerAction
     /// </summary>
     [JsonPropertyName("width")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? Width { get => this.width; set => this.width = value; }
+    public ulong? Width { get; set; }
 
     /// <summary>
     /// Gets or sets the height of the pointer in pixels. If omitted, defaults to 1.
     /// </summary>
     [JsonPropertyName("height")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? Height { get => this.height; set => this.height = value; }
+    public ulong? Height { get; set; }
 
     /// <summary>
     /// Gets or sets the pressure of the pointer on the surface. If omitted, defaults to 0.0.
@@ -48,7 +40,7 @@ public class PointerAction
     [JsonPropertyName("pressure")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double? Pressure { get => this.pressure; set => this.pressure = value; }
+    public double? Pressure { get; set; }
 
     /// <summary>
     /// Gets or sets the tangential pressure of the pointer on the surface. If omitted, defaults to 0.0.
@@ -56,7 +48,7 @@ public class PointerAction
     [JsonPropertyName("tangentialPressure")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double? TangentialPressure { get => this.tangentialPressure; set => this.tangentialPressure = value; }
+    public double? TangentialPressure { get; set; }
 
     /// <summary>
     /// Gets or sets the twist of the pointer in degrees, between 0 and 359, on the surface. If omitted, defaults to 0.
@@ -65,11 +57,7 @@ public class PointerAction
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? Twist
     {
-        get
-        {
-            return this.twist;
-        }
-
+        get;
         set
         {
             if (value > 359)
@@ -77,7 +65,7 @@ public class PointerAction
                 throw new WebDriverBiDiException("Twist value must be between 0 and 359");
             }
 
-            this.twist = value;
+            field = value;
         }
     }
 
@@ -90,11 +78,7 @@ public class PointerAction
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? AltitudeAngle
     {
-        get
-        {
-            return this.altitudeAngle;
-        }
-
+        get;
         set
         {
             if (value < 0 || value > Math.PI / 2)
@@ -102,7 +86,7 @@ public class PointerAction
                 throw new WebDriverBiDiException("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive");
             }
 
-            this.altitudeAngle = value;
+            field = value;
         }
     }
 
@@ -115,11 +99,7 @@ public class PointerAction
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? AzimuthAngle
     {
-        get
-        {
-            return this.azimuthAngle;
-        }
-
+        get;
         set
         {
             if (value < 0 || value > Math.PI * 2)
@@ -127,7 +107,7 @@ public class PointerAction
                 throw new WebDriverBiDiException("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive");
             }
 
-            this.azimuthAngle = value;
+            field = value;
         }
     }
 }

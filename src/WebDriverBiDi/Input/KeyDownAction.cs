@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class KeyDownAction : IKeySourceAction
 {
-    private readonly string actionType = "keyDown";
-    private string value = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="KeyDownAction"/> class.
     /// </summary>
@@ -26,18 +23,18 @@ public class KeyDownAction : IKeySourceAction
             throw new ArgumentException("Action value cannot be null or the empty string", nameof(value));
         }
 
-        this.value = value;
+        this.Value = value;
     }
 
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type => this.actionType;
+    public string Type { get; } = "keyDown";
 
     /// <summary>
     /// Gets or sets the value of the key down action.
     /// </summary>
     [JsonPropertyName("value")]
-    public string Value { get => this.value; set => this.value = value; }
+    public string Value { get; set; } = string.Empty;
 }

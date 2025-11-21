@@ -10,16 +10,14 @@ namespace WebDriverBiDi.Input;
 /// </summary>
 public sealed class InputModule : Module
 {
-   /// <summary>
+    /// <summary>
     /// The name of the input module.
     /// </summary>
     public const string InputModuleName = "input";
 
     private const string FileDialogOpenedEventName = $"{InputModuleName}.fileDialogOpened";
 
-    private readonly ObservableEvent<FileDialogOpenedEventArgs> onFileDialogOpenedEvent = new(FileDialogOpenedEventName);
-
-     /// <summary>
+    /// <summary>
     /// Initializes a new instance of the <see cref="InputModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
@@ -37,7 +35,7 @@ public sealed class InputModule : Module
     /// <summary>
     /// Gets an observable event that notifies when a file dialog is opened.
     /// </summary>
-    public ObservableEvent<FileDialogOpenedEventArgs> OnFileDialogOpened => this.onFileDialogOpenedEvent;
+    public ObservableEvent<FileDialogOpenedEventArgs> OnFileDialogOpened { get; } = new(FileDialogOpenedEventName);
 
     /// <summary>
     /// Performs a set of actions.
@@ -80,6 +78,6 @@ public sealed class InputModule : Module
         // Note that the base class for a protocol module should not allow
         // eventData to be any other type than the expected type.
         FileDialogOpenedEventArgs eventArgs = eventData.ToEventArgs<FileDialogOpenedEventArgs>();
-        await this.onFileDialogOpenedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnFileDialogOpened.NotifyObserversAsync(eventArgs);
     }
 }

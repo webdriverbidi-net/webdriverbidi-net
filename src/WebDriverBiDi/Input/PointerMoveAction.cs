@@ -12,12 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PointerMoveAction : PointerAction, IPointerSourceAction
 {
-    private readonly string actionType = "pointerMove";
-    private double x = 0;
-    private double y = 0;
-    private TimeSpan? duration;
-    private Origin? origin;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PointerMoveAction"/> class.
     /// </summary>
@@ -30,31 +24,31 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     /// Gets the type of the action.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type => this.actionType;
+    public string Type { get; } = "pointerMove";
 
     /// <summary>
     /// Gets or sets the horizontal distance of the move, measured in pixels from the origin point.
     /// </summary>
     [JsonPropertyName("x")]
-    public double X { get => this.x; set => this.x = value; }
+    public double X { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the vertical distance of the move, measured in pixels from the origin point.
     /// </summary>
     [JsonPropertyName("y")]
-    public double Y { get => this.y; set => this.y = value; }
+    public double Y { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the duration of the move.
     /// </summary>
     [JsonIgnore]
-    public TimeSpan? Duration { get => this.duration; set => this.duration = value; }
+    public TimeSpan? Duration { get; set; }
 
     /// <summary>
     /// Gets or sets the origin of the move.
     /// </summary>
     [JsonIgnore]
-    public Origin? Origin { get => this.origin; set => this.origin = value; }
+    public Origin? Origin { get; set; }
 
     /// <summary>
     /// Gets the duration, in milliseconds, of the move for serialization purposes.
@@ -66,12 +60,12 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     {
         get
         {
-            if (this.duration is null)
+            if (this.Duration is null)
             {
                 return null;
             }
 
-            return Convert.ToUInt64(this.duration.Value.TotalMilliseconds);
+            return Convert.ToUInt64(this.Duration.Value.TotalMilliseconds);
         }
     }
 
@@ -85,12 +79,12 @@ public class PointerMoveAction : PointerAction, IPointerSourceAction
     {
         get
         {
-            if (this.origin is null)
+            if (this.Origin is null)
             {
                 return null;
             }
 
-            return this.origin.Value;
+            return this.Origin.Value;
         }
     }
 }

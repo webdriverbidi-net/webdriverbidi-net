@@ -12,20 +12,17 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PauseAction : INoneSourceAction, IKeySourceAction, IPointerSourceAction, IWheelSourceAction
 {
-    private readonly string actionType = "pause";
-    private TimeSpan? duration;
-
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type => this.actionType;
+    public string Type { get; } = "pause";
 
     /// <summary>
     /// Gets or sets the duration of the pause.
     /// </summary>
     [JsonIgnore]
-    public TimeSpan? Duration { get => this.duration; set => this.duration = value; }
+    public TimeSpan? Duration { get; set; }
 
     /// <summary>
     /// Gets the duration of the pause for serialization purposes.
@@ -37,12 +34,12 @@ public class PauseAction : INoneSourceAction, IKeySourceAction, IPointerSourceAc
     {
         get
         {
-            if (!this.duration.HasValue)
+            if (!this.Duration.HasValue)
             {
                 return null;
             }
 
-            return Convert.ToUInt64(this.duration.Value.TotalMilliseconds);
+            return Convert.ToUInt64(this.Duration.Value.TotalMilliseconds);
         }
     }
 }

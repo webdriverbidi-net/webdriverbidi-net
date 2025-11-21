@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class KeySourceActions : SourceActions
 {
-    private readonly List<IKeySourceAction> actions = new();
-
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
@@ -24,5 +22,5 @@ public class KeySourceActions : SourceActions
     /// Gets the list of actions for this input device.
     /// </summary>
     [JsonPropertyName("actions")]
-    public List<IKeySourceAction> Actions => this.actions;
+    public List<IKeySourceAction> Actions { get; } = [];
 }
