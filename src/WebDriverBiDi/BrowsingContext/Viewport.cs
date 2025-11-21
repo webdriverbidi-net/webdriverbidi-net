@@ -12,8 +12,32 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class Viewport
 {
+    private readonly bool useDefaultViewport;
     private ulong height = 0;
     private ulong width = 0;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Viewport"/> class.
+    /// </summary>
+    [JsonConstructor]
+    public Viewport()
+        : this(false)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Viewport"/> class.
+    /// </summary>
+    /// <param name="useDefaultViewport">A value indicating whether the viewport should be reset to its default settings.</param>
+    private Viewport(bool useDefaultViewport)
+    {
+        this.useDefaultViewport = useDefaultViewport;
+    }
+
+    /// <summary>
+    /// Gets a <see cref="Viewport"/> object that indicates the viewport should be reset to the default.
+    /// </summary>
+    public static Viewport ResetToDefaultViewport => new Viewport(true);
 
     /// <summary>
     /// Gets or sets the height of the viewport.
@@ -26,4 +50,10 @@ public class Viewport
     /// </summary>
     [JsonPropertyName("width")]
     public ulong Width { get => this.width; set => this.width = value; }
+
+    /// <summary>
+    /// Gets a value indicating whether to reset the viewport to its default size.
+    /// </summary>
+    [JsonIgnore]
+    internal bool IsResetViewport => this.useDefaultViewport;
 }

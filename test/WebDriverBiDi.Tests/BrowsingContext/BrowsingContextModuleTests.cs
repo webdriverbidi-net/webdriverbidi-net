@@ -350,7 +350,7 @@ public class BrowsingContextModuleTests
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
 
-        Task<SetViewportCommandResult> task = module.SetViewportAsync(new SetViewportCommandParameters("myContextId"));
+        Task<SetViewportCommandResult> task = module.SetViewportAsync(new SetViewportCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         SetViewportCommandResult result = task.Result;
         

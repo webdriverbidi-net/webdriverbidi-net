@@ -6,13 +6,14 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Provides parameters for the browsingContext.create command.
 /// </summary>
 public class SetViewportCommandParameters : CommandParameters<SetViewportCommandResult>
 {
-    private string browsingContextId;
+    private string? browsingContextId;
     private Viewport? viewport;
     private double? devicePixelRatio;
     private List<string>? userContextIds;
@@ -20,11 +21,19 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// <summary>
     /// Initializes a new instance of the <see cref="SetViewportCommandParameters"/> class.
     /// </summary>
-    /// <param name="browsingContextId">The ID of the browsing context for which to capture the screenshot.</param>
-    public SetViewportCommandParameters(string browsingContextId)
+    public SetViewportCommandParameters()
     {
-        this.browsingContextId = browsingContextId;
     }
+
+    /// <summary>
+    /// Gets a value indicating that the viewport should be reset to its default dimensions.
+    /// </summary>
+    public static Viewport ResetToDefaultViewport => Viewport.ResetToDefaultViewport;
+
+    /// <summary>
+    /// Gets a value indicating that the device pixel ratio should be reset to its default value.
+    /// </summary>
+    public static double ResetToDefaultDevicePixelRatio => -1;
 
     /// <summary>
     /// Gets the method name of the command.
@@ -36,21 +45,23 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// Gets or sets the ID of the browsing context for which to set the viewport.
     /// </summary>
     [JsonPropertyName("context")]
-    [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
 
     /// <summary>
     /// Gets or sets the viewport dimensions to set. A null value sets the viewport to the default dimensions.
     /// </summary>
     [JsonPropertyName("viewport")]
-    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<Viewport>))]
     public Viewport? Viewport { get => this.viewport; set => this.viewport = value; }
 
     /// <summary>
     /// Gets or sets the device pixel ratio of the viewport.
     /// </summary>
     [JsonPropertyName("devicePixelRatio")]
-    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<double>))]
     public double? DevicePixelRatio { get => this.devicePixelRatio; set => this.devicePixelRatio = value; }
 
     /// <summary>

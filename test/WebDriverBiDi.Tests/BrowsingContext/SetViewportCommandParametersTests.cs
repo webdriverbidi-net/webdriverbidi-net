@@ -10,35 +10,41 @@ public class SetViewportCommandParametersTests
     [Test]
     public void TestCommandName()
     {
-        SetViewportCommandParameters properties = new("myContextId");
+        SetViewportCommandParameters properties = new();
         Assert.That(properties.MethodName, Is.EqualTo("browsingContext.setViewport"));
     }
 
     [Test]
     public void TestCanSerializeParameters()
     {
-        SetViewportCommandParameters properties = new("myContextId");
+        SetViewportCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.That(serialized, Is.Empty);
+    }
+
+    [Test]
+    public void TestCanSerializeParametersWithBrowsingContext()
+    {
+        SetViewportCommandParameters properties = new()
+        {
+            BrowsingContextId = "myContext",
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("viewport"));
-            Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["viewport"]!.Value<JObject>(), Is.Null);
-            Assert.That(serialized, Contains.Key("devicePixelRatio"));
-            Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["devicePixelRatio"]!.Value<JObject>(), Is.Null);
+            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
         });
     }
 
     [Test]
     public void TestCanSerializeParametersWithViewport()
     {
-        SetViewportCommandParameters properties = new("myContextId")
+        SetViewportCommandParameters properties = new()
         {
             Viewport = new Viewport()
             {
@@ -48,15 +54,9 @@ public class SetViewportCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("devicePixelRatio"));
-            Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["devicePixelRatio"]!.Value<JObject>(), Is.Null);
             Assert.That(serialized, Contains.Key("viewport"));
             Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Object));
             JObject? viewportObject = serialized["viewport"]!.Value<JObject>();
@@ -74,21 +74,15 @@ public class SetViewportCommandParametersTests
     [Test]
     public void TestCanSerializeParametersWithDefaultViewport()
     {
-        SetViewportCommandParameters properties = new("myContextId")
+        SetViewportCommandParameters properties = new()
         {
             Viewport = new Viewport()
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("devicePixelRatio"));
-            Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["devicePixelRatio"]!.Value<JObject>(), Is.Null);
             Assert.That(serialized, Contains.Key("viewport"));
             Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Object));
             JObject? viewportObject = serialized["viewport"]!.Value<JObject>();
@@ -104,23 +98,34 @@ public class SetViewportCommandParametersTests
     }
 
     [Test]
+    public void TestCanSerializeParametersWithViewportReset()
+    {
+        SetViewportCommandParameters properties = new()
+        {
+            Viewport = SetViewportCommandParameters.ResetToDefaultViewport,
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("viewport"));
+            Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Null));
+        });
+    }
+
+    [Test]
     public void TestCanSerializeParametersWithDevicePixelRatio()
     {
-        SetViewportCommandParameters properties = new("myContextId")
+        SetViewportCommandParameters properties = new()
         {
             DevicePixelRatio = 1.5
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(3));
+        Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("viewport"));
-            Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["viewport"]!.Value<JObject>(), Is.Null);
             Assert.That(serialized, Contains.Key("devicePixelRatio"));
             Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(serialized["devicePixelRatio"]!.Value<double>(), Is.EqualTo(1.5));
@@ -128,26 +133,34 @@ public class SetViewportCommandParametersTests
     }
 
     [Test]
+    public void TestCanSerializeParametersWithResetDevicePixelRatio()
+    {
+        SetViewportCommandParameters properties = new()
+        {
+            DevicePixelRatio = SetViewportCommandParameters.ResetToDefaultDevicePixelRatio,
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("devicePixelRatio"));
+            Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Null));
+        });
+    }
+
+    [Test]
     public void TestCanSerializeParametersWithUserContexts()
     {
-        SetViewportCommandParameters properties = new("myContextId")
+        SetViewportCommandParameters properties = new()
         {
             UserContextIds = new List<string>() { "myUserContextId" },
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.That(serialized, Has.Count.EqualTo(4));
+        Assert.That(serialized, Has.Count.EqualTo(1));
         Assert.Multiple(() =>
         {
-            Assert.That(serialized, Contains.Key("context"));
-            Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-            Assert.That(serialized, Contains.Key("viewport"));
-            Assert.That(serialized["viewport"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["viewport"]!.Value<JObject>(), Is.Null);
-            Assert.That(serialized, Contains.Key("devicePixelRatio"));
-            Assert.That(serialized["devicePixelRatio"]!.Type, Is.EqualTo(JTokenType.Null));
-            Assert.That(serialized["devicePixelRatio"]!.Value<double?>(), Is.Null);
             Assert.That(serialized.ContainsKey("userContexts"));
             Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
             JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
