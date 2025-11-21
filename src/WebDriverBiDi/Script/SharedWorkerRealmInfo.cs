@@ -10,8 +10,6 @@ namespace WebDriverBiDi.Script;
 /// </summary>
 public record SharedWorkerRealmInfo : RealmInfo
 {
-    private List<string> owners = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SharedWorkerRealmInfo"/> class.
     /// </summary>

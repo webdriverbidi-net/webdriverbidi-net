@@ -59,5 +59,5 @@ public record PartitionKey
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; private set; } = new();
+    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; private set; } = [];
 }

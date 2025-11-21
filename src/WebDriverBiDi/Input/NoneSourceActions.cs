@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class NoneSourceActions : SourceActions
 {
-    private readonly List<INoneSourceAction> actions = new();
+    private readonly List<INoneSourceAction> actions = [];
 
     /// <summary>
     /// Gets the type of the source actions.

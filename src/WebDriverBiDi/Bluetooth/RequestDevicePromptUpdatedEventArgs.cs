@@ -45,5 +45,5 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("devices")]
     [JsonRequired]
     [JsonInclude]
-    internal List<RequestDeviceInfo> SerializableDevices { get; set; } = new();
+    internal List<RequestDeviceInfo> SerializableDevices { get; set; } = [];
 }

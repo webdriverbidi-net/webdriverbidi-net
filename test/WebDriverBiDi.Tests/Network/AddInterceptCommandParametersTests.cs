@@ -52,8 +52,8 @@ public class AddInterceptCommandParametersTests
     {
         AddInterceptCommandParameters properties = new()
         {
-            BrowsingContextIds = new List<string>() { "myContext" },
-            UrlPatterns = new List<UrlPattern>() { new UrlPatternString("https://example.com/*") }
+            BrowsingContextIds = ["myContext"],
+            UrlPatterns = [new UrlPatternString("https://example.com/*")]
         };
         properties.Phases.Add(InterceptPhase.BeforeRequestSent);
         string json = JsonSerializer.Serialize(properties);

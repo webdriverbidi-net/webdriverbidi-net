@@ -29,7 +29,7 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// Gets the list of phases for which network traffic will be intercepted.
     /// </summary>
     [JsonPropertyName("phases")]
-    public List<InterceptPhase> Phases { get; } = new();
+    public List<InterceptPhase> Phases { get; } = [];
 
     /// <summary>
     /// Gets or sets the list of top-level browsing context ID for which traffic will be intercepted.

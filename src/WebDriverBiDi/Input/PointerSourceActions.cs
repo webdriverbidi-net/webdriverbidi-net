@@ -29,5 +29,5 @@ public class PointerSourceActions : SourceActions
     /// Gets the list of actions for this input device.
     /// </summary>
     [JsonPropertyName("actions")]
-    public List<IPointerSourceAction> Actions { get; } = new();
+    public List<IPointerSourceAction> Actions { get; } = [];
 }

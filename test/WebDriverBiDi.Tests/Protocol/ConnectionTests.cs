@@ -162,7 +162,7 @@ public class ConnectionTests
             throw new WebDriverBiDiException("No server available");
         }
 
-        List<LogMessageEventArgs> logValues = new();
+        List<LogMessageEventArgs> logValues = [];
         Connection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
@@ -184,7 +184,7 @@ public class ConnectionTests
         this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(4));
         await connection.StopAsync();
 
-        List<string> messages = new();
+        List<string> messages = [];
         foreach (LogMessageEventArgs logValue in logValues)
         {
             messages.Add(logValue.Message);
@@ -287,7 +287,7 @@ public class ConnectionTests
             throw new WebDriverBiDiException("No server available");
         }
 
-        List<string> connectionLog = new();
+        List<string> connectionLog = [];
         Connection connection = new();
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
@@ -329,16 +329,16 @@ public class ConnectionTests
             throw new WebDriverBiDiException("No server available");
         }
 
-        List<string> expectedLogEntries = new()
-        {
+        List<string> expectedLogEntries =
+        [
             $"Opening connection to URL ws://localhost:{this.server.Port}",
             "Connection opened",
             "Closing connection",
             "Ending processing loop in state Closed",
             "Client state is Closed"
-        };
+        ];
 
-        List<string> connectionLog = new();
+        List<string> connectionLog = [];
         Connection connection = new();
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
@@ -360,17 +360,17 @@ public class ConnectionTests
             throw new WebDriverBiDiException("No server available");
         }
 
-        List<string> expectedLogEntries = new()
-        {
+        List<string> expectedLogEntries =
+        [
             $"Opening connection to URL ws://localhost:{this.server.Port}",
             "Connection opened",
             "Acknowledging Close frame received from server (client state: CloseReceived)",
             "Ending processing loop in state Closed",
             "Closing connection",
             "Socket already closed (Socket state: Closed)"
-        };
+        ];
 
-        List<string> connectionLog = new();
+        List<string> connectionLog = [];
         Connection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -410,16 +410,16 @@ public class ConnectionTests
             throw new WebDriverBiDiException("No server available");
         }
 
-        List<string> expectedLogEntries = new()
-        {
+        List<string> expectedLogEntries =
+        [
             $"Opening connection to URL ws://localhost:{this.server.Port}",
             "Connection opened",
             "Closing connection",
             "Unexpected error during receive of data: The remote party closed the WebSocket connection without completing the close handshake.",
             "Client state is Aborted"
-        };
+        ];
 
-        List<string> connectionLog = new();
+        List<string> connectionLog = [];
         Connection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -565,7 +565,7 @@ public class ConnectionTests
             throw new WebDriverBiDiException("No server available");
         }
 
-        List<string> connectionLog = new();
+        List<string> connectionLog = [];
         Connection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),

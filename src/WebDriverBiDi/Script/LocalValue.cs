@@ -94,14 +94,14 @@ public record LocalValue : ArgumentValue
             {
                 // One of the two cases (key is string, or key is LocalValue)
                 // must be true.
-                List<object> serializablePairList = new();
+                List<object> serializablePairList = [];
                 Dictionary<LocalValue, LocalValue>? dictionaryValue = this.Value as Dictionary<LocalValue, LocalValue>;
                 Dictionary<string, LocalValue>? stringDictionaryValue = this.Value as Dictionary<string, LocalValue>;
                 if (dictionaryValue is not null)
                 {
                     foreach (KeyValuePair<LocalValue, LocalValue> pair in dictionaryValue)
                     {
-                        List<object> itemList = new() { pair.Key, pair.Value };
+                        List<object> itemList = [pair.Key, pair.Value];
                         serializablePairList.Add(itemList);
                     }
                 }
@@ -110,7 +110,7 @@ public record LocalValue : ArgumentValue
                 {
                     foreach (KeyValuePair<string, LocalValue> pair in stringDictionaryValue)
                     {
-                        List<object> itemList = new() { pair.Key, pair.Value };
+                        List<object> itemList = [pair.Key, pair.Value];
                         serializablePairList.Add(itemList);
                     }
                 }

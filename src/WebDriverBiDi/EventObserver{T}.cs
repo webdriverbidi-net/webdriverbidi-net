@@ -16,7 +16,7 @@ public class EventObserver<T>
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
-    private readonly List<Task> capturedTasks = new();
+    private readonly List<Task> capturedTasks = [];
     private CountdownEvent synchronizationCounter = new(0);
 
     /// <summary>

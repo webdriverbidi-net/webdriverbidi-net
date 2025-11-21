@@ -64,7 +64,7 @@ public class ContinueResponseCommandParametersTests
     {
         ContinueResponseCommandParameters properties = new("myRequestId")
         {
-            Cookies = new List<SetCookieHeader>() { new SetCookieHeader("cookieName", "cookieValue") }
+            Cookies = [new SetCookieHeader("cookieName", "cookieValue")]
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -102,7 +102,7 @@ public class ContinueResponseCommandParametersTests
     {
         ContinueResponseCommandParameters properties = new("myRequestId")
         {
-            Headers = new List<Header>() { new Header("headerName", "headerValue") }
+            Headers = [new Header("headerName", "headerValue")]
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

@@ -142,7 +142,7 @@ public class InputBuilder
     private void ProcessTick(params Action[] interactionsToAdd)
     {
         List<string> unusedDevices = this.sources.Keys.ToList();
-        List<string> usedDevices = new();
+        List<string> usedDevices = [];
         foreach (Action interaction in interactionsToAdd)
         {
             if (!this.sources.TryGetValue(interaction.SourceId, out SourceActions source))
@@ -192,7 +192,7 @@ public class InputBuilder
 
     private List<PauseAction> CreatePauseActions()
     {
-        List<PauseAction> initialPauseActions = new();
+        List<PauseAction> initialPauseActions = [];
         int maxActionCount = 0;
         foreach (SourceActions source in this.sources.Values)
         {

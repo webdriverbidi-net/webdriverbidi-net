@@ -40,7 +40,7 @@ public class FormSubmitRequestHandler : WebResourceRequestHandler
 
     private Dictionary<string, string> ParseRequestBody(string requestBody)
     {
-        Dictionary<string, string> formData = new();
+        Dictionary<string, string> formData = [];
         string[] lines = requestBody.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         foreach (string line in lines)
         {

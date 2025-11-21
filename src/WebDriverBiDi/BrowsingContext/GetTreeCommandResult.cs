@@ -28,5 +28,5 @@ public record GetTreeCommandResult : CommandResult
     [JsonPropertyName("contexts")]
     [JsonRequired]
     [JsonInclude]
-    internal List<BrowsingContextInfo> SerializableContextTree { get; set; } = new();
+    internal List<BrowsingContextInfo> SerializableContextTree { get; set; } = [];
 }

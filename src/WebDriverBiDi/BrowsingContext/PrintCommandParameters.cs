@@ -94,7 +94,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// will cause an error when sending the browsingContext.print command.
     /// </summary>
     [JsonIgnore]
-    public List<object> PageRanges { get; set; } = new();
+    public List<object> PageRanges { get; set; } = [];
 
     /// <summary>
     /// Gets the list of page ranges to print for serialization purposes.

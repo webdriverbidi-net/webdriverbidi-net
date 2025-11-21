@@ -6,8 +6,8 @@ public class ReceivedDataListTests
     [Test]
     public void TestCanWrapList()
     {
-        List<object?> list = new()
-        {
+        List<object?> list =
+        [
             "myString",
             23,
             true,
@@ -25,7 +25,7 @@ public class ReceivedDataListTests
             {
                 { "dictionary dictionary string", "string" }
             }
-        };
+        ];
 
         ReceivedDataList received = new(list);
         IList<object?>? wrappedList = received[4] as IList<object?>;
@@ -49,8 +49,8 @@ public class ReceivedDataListTests
     [Test]
     public void TestCanUnwrapListToCopy()
     {
-        List<object?> list = new()
-        {
+        List<object?> list =
+        [
             "myString",
             23,
             true,
@@ -68,7 +68,7 @@ public class ReceivedDataListTests
             {
                 { "dictionary dictionary string", "string" }
             }
-        };
+        ];
 
         ReceivedDataList received = new(list);
         List<object?> unwrapped = received.ToWritableCopy();

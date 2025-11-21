@@ -30,7 +30,7 @@ public class FirefoxLauncher : BrowserLauncher
       "--no-remote",
     ];
 
-    private Dictionary<string, object> userPreferences = new();
+    private Dictionary<string, object> userPreferences = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FirefoxLauncher"/> class.
@@ -485,7 +485,7 @@ public class FirefoxLauncher : BrowserLauncher
         }
 
         Dictionary<string, object> defaultPreferences = GetDefaultPreferences(this.userPreferences);
-        List<string> preferenceList = new();
+        List<string> preferenceList = [];
         foreach (KeyValuePair<string, object> preferencePair in defaultPreferences)
         {
             preferenceList.Add($"user_pref({JsonSerializer.Serialize(preferencePair.Key)}, {JsonSerializer.Serialize(preferencePair.Value)});");

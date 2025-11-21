@@ -279,7 +279,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
     private RemoteValueList ProcessList(JsonElement arrayObject, JsonSerializerOptions options)
     {
-        List<RemoteValue> remoteValueList = new();
+        List<RemoteValue> remoteValueList = [];
         foreach (JsonElement arrayItem in arrayObject.EnumerateArray())
         {
             if (arrayItem.ValueKind != JsonValueKind.Object)
@@ -295,7 +295,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
 
     private RemoteValueDictionary ProcessMap(JsonElement mapArray, JsonSerializerOptions options)
     {
-        Dictionary<object, RemoteValue> remoteValueDictionary = new();
+        Dictionary<object, RemoteValue> remoteValueDictionary = [];
         foreach (JsonElement mapElementToken in mapArray.EnumerateArray())
         {
             if (mapElementToken.ValueKind != JsonValueKind.Array)

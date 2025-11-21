@@ -36,7 +36,7 @@ public class NetworkTrafficMonitor
         "PATCH"
     ];
     private readonly BiDiDriver driver;
-    private readonly Dictionary<string, NetworkRequest> pendingRequests = new();
+    private readonly Dictionary<string, NetworkRequest> pendingRequests = [];
     private string eventSubscriptionId = string.Empty;
     private string bodyCollectorId = string.Empty;
     private EventObserver<BeforeRequestSentEventArgs>? requestObserver;
@@ -112,7 +112,7 @@ public class NetworkTrafficMonitor
     {
         List<string> capturedRequestIds = [.. this.pendingRequests.Keys];
         List<NetworkRequest> capturedRequests = [.. this.pendingRequests.Values];
-        List<Task> requestCompletionTasks = new();
+        List<Task> requestCompletionTasks = [];
         foreach (NetworkRequest request in capturedRequests)
         {
             // Tasks for each request to have a response received.
@@ -128,7 +128,7 @@ public class NetworkTrafficMonitor
             this.pendingRequests.Remove(capturedRequestId);
         }
 
-        List<Task> responseCompletionTasks = new();
+        List<Task> responseCompletionTasks = [];
         foreach (NetworkRequest request in capturedRequests)
         {
             // Tasks for each response body to be complete.

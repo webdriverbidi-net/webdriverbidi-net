@@ -75,7 +75,7 @@ public record ProxyConfigurationResult
         // ASSUMPTION: Every object in the deserialized ProxyConfiguration is a
         // JsonElement. Since we control the deserialization, this should always
         // be true. If not, this will throw.
-        Dictionary<string, JsonElement> convertedData = new();
+        Dictionary<string, JsonElement> convertedData = [];
         foreach (KeyValuePair<string, object?> pair in this.proxy.AdditionalData)
         {
             convertedData[pair.Key] = (JsonElement)pair.Value!;

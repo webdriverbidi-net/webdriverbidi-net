@@ -14,8 +14,8 @@ using WebDriverBiDi.JsonConverters;
 [JsonConverter(typeof(RemoteValueJsonConverter))]
 public record RemoteValue
 {
-    private static readonly List<string> KnownRemoteValueTypes = new()
-    {
+    private static readonly List<string> KnownRemoteValueTypes =
+    [
         "undefined",
         "null",
         "string",
@@ -42,7 +42,7 @@ public record RemoteValue
         "htmlcollection",
         "node",
         "window",
-    };
+    ];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteValue"/> class.

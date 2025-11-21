@@ -327,13 +327,13 @@ public class LocalValueTests
     [Test]
     public void TestCanSerializeArray()
     {
-        List<LocalValue> arrayList = new()
-        {
+        List<LocalValue> arrayList =
+        [
             LocalValue.String("hello"),
             LocalValue.Number(123),
             LocalValue.Null,
             LocalValue.Boolean(true)
-        };
+        ];
         LocalValue value = LocalValue.Array(arrayList);
         Assert.That(value.Value, Is.Not.Null);
         string json = JsonSerializer.Serialize(value);
@@ -405,13 +405,13 @@ public class LocalValueTests
     [Test]
     public void TestCanSerializeSet()
     {
-        List<LocalValue> arrayList = new()
-        {
+        List<LocalValue> arrayList =
+        [
             LocalValue.String("hello"),
             LocalValue.Number(123),
             LocalValue.Null,
             LocalValue.Boolean(true)
-        };
+        ];
         LocalValue value = LocalValue.Set(arrayList);
         Assert.That(value.Value, Is.Not.Null);
         string json = JsonSerializer.Serialize(value);
@@ -508,7 +508,7 @@ public class LocalValueTests
         JArray? valueArray = parsed["value"] as JArray;
         Assert.That(valueArray, Is.Not.Null);
         Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
-        List<string> foundStrings = new();
+        List<string> foundStrings = [];
         for (int i = 0; i < dictionary.Count; i++)
         {
             Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
@@ -556,7 +556,7 @@ public class LocalValueTests
         JArray? valueArray = parsed["value"] as JArray;
         Assert.That(valueArray, Is.Not.Null);
         Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
-        List<string> foundStrings = new();
+        List<string> foundStrings = [];
         for (int i = 0; i < dictionary.Count; i++)
         {
             Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));

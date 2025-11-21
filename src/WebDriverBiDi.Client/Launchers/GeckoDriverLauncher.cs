@@ -74,7 +74,7 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
     /// <returns>A dictionary containing the capabilities.</returns>
     protected override Dictionary<string, object> CreateBrowserLaunchCapabilities()
     {
-        Dictionary<string, object> firefoxOptions = new();
+        Dictionary<string, object> firefoxOptions = [];
         if (!string.IsNullOrEmpty(this.BrowserExecutableLocation))
         {
             firefoxOptions["binary"] = this.BrowserExecutableLocation;

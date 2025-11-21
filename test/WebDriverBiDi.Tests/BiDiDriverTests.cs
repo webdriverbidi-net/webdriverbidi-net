@@ -318,7 +318,7 @@ public class BiDiDriverTests
     public async Task TestDriverCanEmitLogMessagesFromProtocol()
     {
         DateTime testStart = DateTime.UtcNow;
-        List<LogMessageEventArgs> logs = new();
+        List<LogMessageEventArgs> logs = [];
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(100), transport);
@@ -458,7 +458,7 @@ public class BiDiDriverTests
             await driver.StartAsync($"ws://localhost:{server.Port}");
             connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
             ManualResetEvent logSyncEvent = new(false);
-            List<string> driverLog = new();
+            List<string> driverLog = [];
             driver.OnLogMessage.AddObserver((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)
@@ -532,7 +532,7 @@ public class BiDiDriverTests
             });
 
             ManualResetEvent logSyncEvent = new(false);
-            List<string> driverLog = new();
+            List<string> driverLog = [];
             driver.OnLogMessage.AddObserver((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)
@@ -601,7 +601,7 @@ public class BiDiDriverTests
             connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
             ManualResetEvent logSyncEvent = new(false);
-            List<string> driverLog = new();
+            List<string> driverLog = [];
             driver.OnLogMessage.AddObserver((e) =>
             {
                 if (e.Level >= WebDriverBiDiLogLevel.Error)

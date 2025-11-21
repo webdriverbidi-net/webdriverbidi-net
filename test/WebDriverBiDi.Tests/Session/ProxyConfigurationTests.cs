@@ -95,7 +95,7 @@ public class ProxyConfigurationTests
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
         {
-            NoProxyAddresses = new List<string>() { "no.proxy.address" }
+            NoProxyAddresses = ["no.proxy.address"]
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
@@ -122,7 +122,7 @@ public class ProxyConfigurationTests
     {
         ProxyConfiguration proxy = new ManualProxyConfiguration()
         {
-            NoProxyAddresses = new List<string>()
+            NoProxyAddresses = []
         };
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);

@@ -27,7 +27,7 @@ public record RemoteReference : ArgumentValue
     /// Gets the dictionary of additional data about the remote reference.
     /// </summary>
     [JsonExtensionData]
-    public Dictionary<string, object?> AdditionalData { get; } = new();
+    public Dictionary<string, object?> AdditionalData { get; } = [];
 
     /// <summary>
     /// Gets or sets the internally accessible handle of the remote reference.

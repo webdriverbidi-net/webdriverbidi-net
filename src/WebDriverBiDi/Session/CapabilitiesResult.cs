@@ -166,5 +166,5 @@ public record CapabilitiesResult
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get; set; } = new();
+    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get; set; } = [];
 }

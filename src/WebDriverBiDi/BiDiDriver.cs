@@ -32,7 +32,7 @@ public class BiDiDriver
 
     private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
-    private readonly Dictionary<string, Module> modules = new();
+    private readonly Dictionary<string, Module> modules = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.

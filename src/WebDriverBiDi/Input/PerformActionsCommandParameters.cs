@@ -37,5 +37,5 @@ public class PerformActionsCommandParameters : CommandParameters<PerformActionsC
     /// Gets the list of actions to perform.
     /// </summary>
     [JsonPropertyName("actions")]
-    public List<SourceActions> Actions { get; } = new();
+    public List<SourceActions> Actions { get; } = [];
 }

@@ -53,11 +53,11 @@ public class SimulatePreconnectedPeripheralCommandParameters : CommandParameters
     /// Gets the list of all of the manufacturer data for the simulated already-connected Bluetooth peripheral.
     /// </summary>
     [JsonPropertyName("manufacturerData")]
-    public List<BluetoothManufacturerData> ManufacturerData { get; } = new();
+    public List<BluetoothManufacturerData> ManufacturerData { get; } = [];
 
     /// <summary>
     /// Gets the list of all of the known service UUIDs for the simulated already-connected Bluetooth peripheral.
     /// </summary>
     [JsonPropertyName("knownServiceUuids")]
-    public List<string> KnownServiceUUIDs { get; } = new();
+    public List<string> KnownServiceUUIDs { get; } = [];
 }

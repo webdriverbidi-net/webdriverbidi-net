@@ -64,7 +64,7 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// If empty, nodes will be located from the top-level document.
     /// </summary>
     [JsonIgnore]
-    public List<SharedReference> ContextNodes { get; } = new();
+    public List<SharedReference> ContextNodes { get; } = [];
 
     /// <summary>
     /// Gets the list of context nodes for serialization purposes.

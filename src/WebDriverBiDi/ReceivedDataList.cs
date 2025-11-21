@@ -28,7 +28,7 @@ public sealed class ReceivedDataList : ReadOnlyCollection<object?>
     /// <summary>
     /// Gets an empty list.
     /// </summary>
-    public static ReceivedDataList EmptyList => new(new List<object?>());
+    public static ReceivedDataList EmptyList => new([]);
 
     /// <summary>
     /// Gets a writable copy of this list.
@@ -36,7 +36,7 @@ public sealed class ReceivedDataList : ReadOnlyCollection<object?>
     /// <returns>A writable list containing a copy of the data in this ReceivedDataList.</returns>
     public List<object?> ToWritableCopy()
     {
-        List<object?> result = new();
+        List<object?> result = [];
         foreach (object? item in this.Items)
         {
             if (item is ReceivedDataDictionary dictionary)

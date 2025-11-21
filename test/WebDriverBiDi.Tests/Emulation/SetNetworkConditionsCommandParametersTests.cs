@@ -55,11 +55,11 @@ public class SetNetworkConditionsCommandParametersTests
     {
         SetNetworkConditionsCommandParameters properties = new()
         {
-            Contexts = new()
-            {
+            Contexts =
+            [
                 "context1",
                 "context2",
-            }
+            ]
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -85,11 +85,11 @@ public class SetNetworkConditionsCommandParametersTests
     {
         SetNetworkConditionsCommandParameters properties = new()
         {
-            UserContexts = new()
-            {
+            UserContexts =
+            [
                 "userContext1",
                 "userContext2",
-            }
+            ]
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

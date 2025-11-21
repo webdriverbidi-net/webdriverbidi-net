@@ -6,7 +6,7 @@ public static class JsonExtensions
 {
     public static Dictionary<string, object?> ToParsedDictionary(this JToken token)
     {
-        return ParseToken(token) as Dictionary<string, object?> ?? new Dictionary<string, object?>();
+        return ParseToken(token) as Dictionary<string, object?> ?? [];
     }
 
     private static object? ParseToken(JToken token)
@@ -14,7 +14,7 @@ public static class JsonExtensions
         switch (token.Type)
         {
             case JTokenType.Array:
-                List<object?> listObject = new();
+                List<object?> listObject = [];
                 foreach (JToken arrayElement in ((JArray)token).Values())
                 {
                     listObject.Add(ParseToken(arrayElement));
@@ -23,7 +23,7 @@ public static class JsonExtensions
                 return listObject;
 
             case JTokenType.Object:
-                Dictionary<string, object?> dictObject = new();
+                Dictionary<string, object?> dictObject = [];
                 foreach(JProperty property in ((JObject)token).Properties())
                 {
                     dictObject[property.Name] = ParseToken(property.Value);

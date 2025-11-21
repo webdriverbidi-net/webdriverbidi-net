@@ -19,7 +19,7 @@ public class ModuleTests
         });
 
         ManualResetEvent syncEvent = new(false);
-        List<string> driverLog = new();
+        List<string> driverLog = [];
         transport.OnLogMessage.AddObserver((e) =>
         {
             if (e.Level >= WebDriverBiDiLogLevel.Error)
