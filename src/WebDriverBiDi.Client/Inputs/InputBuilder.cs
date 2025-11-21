@@ -13,7 +13,7 @@ using WebDriverBiDi.Input;
 /// </summary>
 public class InputBuilder
 {
-    private readonly Dictionary<string, SourceActions> sources = new();
+    private readonly Dictionary<string, SourceActions> sources = [];
     private KeyInputSource? defaultKeyInputSource;
     private PointerInputSource? defaultPointerInputSource;
 

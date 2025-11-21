@@ -14,51 +14,38 @@ using System.IO;
 /// </summary>
 public record BrowserLauncherProcessStartedEventArgs : WebDriverBiDiEventArgs
 {
-    private readonly int processId;
-    private readonly StreamReader? standardOutputStreamReader;
-    private readonly StreamReader? standardErrorStreamReader;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncherProcessStartedEventArgs"/> class.
     /// </summary>
     /// <param name="launcherProcess">The <see cref="Process"/> object started.</param>
     public BrowserLauncherProcessStartedEventArgs(Process launcherProcess)
     {
-        this.processId = launcherProcess.Id;
+        this.ProcessId = launcherProcess.Id;
         if (launcherProcess.StartInfo.RedirectStandardOutput && !launcherProcess.StartInfo.UseShellExecute)
         {
-            this.standardOutputStreamReader = launcherProcess.StandardOutput;
+            this.StandardOutputStreamReader = launcherProcess.StandardOutput;
         }
 
         if (launcherProcess.StartInfo.RedirectStandardError && !launcherProcess.StartInfo.UseShellExecute)
         {
-            this.standardErrorStreamReader = launcherProcess.StandardError;
+            this.StandardErrorStreamReader = launcherProcess.StandardError;
         }
     }
 
     /// <summary>
     /// Gets the unique ID of the driver executable process.
     /// </summary>
-    public int ProcessId
-    {
-        get { return this.processId; }
-    }
+    public int ProcessId { get; }
 
     /// <summary>
     /// Gets a <see cref="StreamReader"/> object that can be used to read the contents
     /// printed to stdout by a driver service process.
     /// </summary>
-    public StreamReader? StandardOutputStreamReader
-    {
-        get { return this.standardOutputStreamReader; }
-    }
+    public StreamReader? StandardOutputStreamReader { get; }
 
     /// <summary>
     /// Gets a <see cref="StreamReader"/> object that can be used to read the contents
     /// printed to stderr by a driver service process.
     /// </summary>
-    public StreamReader? StandardErrorStreamReader
-    {
-        get { return this.standardErrorStreamReader; }
-    }
+    public StreamReader? StandardErrorStreamReader { get; }
 }

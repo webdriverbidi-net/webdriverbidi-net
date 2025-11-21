@@ -13,8 +13,6 @@ using System.Diagnostics;
 /// </summary>
 public record BrowserLauncherProcessStartingEventArgs : WebDriverBiDiEventArgs
 {
-    private readonly ProcessStartInfo startInfo;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncherProcessStartingEventArgs"/> class.
     /// </summary>
@@ -22,15 +20,12 @@ public record BrowserLauncherProcessStartingEventArgs : WebDriverBiDiEventArgs
     /// driver process to be started.</param>
     public BrowserLauncherProcessStartingEventArgs(ProcessStartInfo startInfo)
     {
-        this.startInfo = startInfo;
+        this.DriverServiceProcessStartInfo = startInfo;
     }
 
     /// <summary>
     /// Gets the <see cref="ProcessStartInfo"/> object with which the
     /// driver service process will be started.
     /// </summary>
-    public ProcessStartInfo DriverServiceProcessStartInfo
-    {
-        get { return this.startInfo; }
-    }
+    public ProcessStartInfo DriverServiceProcessStartInfo { get; }
 }
