@@ -44,12 +44,6 @@ public record RemoteValue
         "window",
     };
 
-    private string valueType;
-    private string? handle;
-    private string? internalId;
-    private object? valueObject;
-    private string? sharedId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteValue"/> class.
     /// </summary>
@@ -57,50 +51,50 @@ public record RemoteValue
     [JsonConstructor]
     internal RemoteValue(string valueType)
     {
-        this.valueType = valueType;
+        this.Type = valueType;
     }
 
     /// <summary>
     /// Gets the type of this RemoteValue.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get => this.valueType; private set => this.valueType = value; }
+    public string Type { get; private set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
     /// </summary>
     [JsonPropertyName("handle")]
-    public string? Handle { get => this.handle; internal set => this.handle = value; }
+    public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
     [JsonPropertyName("internalId")]
-    public string? InternalId { get => this.internalId; internal set => this.internalId = value; }
+    public string? InternalId { get; internal set; }
 
     /// <summary>
     /// Gets the shared ID of this RemoteValue.
     /// </summary>
     [JsonPropertyName("sharedId")]
-    public string? SharedId { get => this.sharedId; internal set => this.sharedId = value; }
+    public string? SharedId { get; internal set; }
 
     /// <summary>
     /// Gets the object that contains the value of this RemoteValue.
     /// </summary>
     [JsonPropertyName("value")]
-    public object? Value { get => this.valueObject; internal set => this.valueObject = value; }
+    public object? Value { get; internal set; }
 
     /// <summary>
     /// Gets a value indicating whether this RemoteValue has a value.
     /// </summary>
     [JsonIgnore]
-    public bool HasValue => this.valueObject is not null;
+    public bool HasValue => this.Value is not null;
 
     /// <summary>
     /// Gets a value indicating whether this RemoteValue contains a primitive value.
     /// </summary>
     [JsonIgnore]
-    internal bool IsPrimitive => this.valueType == "string" || this.valueType == "number" || this.valueType == "boolean" || this.valueType == "bigint" || this.valueType == "null" || this.valueType == "undefined";
+    internal bool IsPrimitive => this.Type == "string" || this.Type == "number" || this.Type == "boolean" || this.Type == "bigint" || this.Type == "null" || this.Type == "undefined";
 
     /// <summary>
     /// Gets a value indicating whether the specified type is valid for creating a RemoteValue.
@@ -122,20 +116,20 @@ public record RemoteValue
     {
         T? result = default;
         Type type = typeof(T);
-        if (this.valueObject == null)
+        if (this.Value == null)
         {
             if (type.IsValueType)
             {
                 throw new WebDriverBiDiException("RemoteValue has null value, but desired type is a value type");
             }
         }
-        else if (!type.IsInstanceOfType(this.valueObject))
+        else if (!type.IsInstanceOfType(this.Value))
         {
             throw new WebDriverBiDiException("RemoteValue could not be cast to the desired type");
         }
         else
         {
-            result = (T)this.valueObject;
+            result = (T)this.Value;
         }
 
         return result;
@@ -172,22 +166,22 @@ public record RemoteValue
             throw new WebDriverBiDiException("Primitive values cannot be used as remote references");
         }
 
-        if (this.valueType == "node")
+        if (this.Type == "node")
         {
-            if (this.sharedId is null)
+            if (this.SharedId is null)
             {
                 throw new WebDriverBiDiException("Node remote values must have a valid shared ID to be used as remote references");
             }
 
-            return new SharedReference(this.sharedId) { Handle = this.handle };
+            return new SharedReference(this.SharedId) { Handle = this.Handle };
         }
 
-        if (this.handle is null)
+        if (this.Handle is null)
         {
             throw new WebDriverBiDiException("Remote values must have a valid handle to be used as remote references");
         }
 
-        return new RemoteObjectReference(this.handle) { SharedId = this.sharedId };
+        return new RemoteObjectReference(this.Handle) { SharedId = this.SharedId };
     }
 
     /// <summary>

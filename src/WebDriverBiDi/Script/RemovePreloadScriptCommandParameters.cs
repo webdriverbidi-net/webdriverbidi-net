@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class RemovePreloadScriptCommandParameters : CommandParameters<RemovePreloadScriptCommandResult>
 {
-    private string preloadScriptId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RemovePreloadScriptCommandParameters"/> class.
     /// </summary>
     /// <param name="preloadScriptId">The ID of the preload script to remove.</param>
     public RemovePreloadScriptCommandParameters(string preloadScriptId)
     {
-        this.preloadScriptId = preloadScriptId;
+        this.PreloadScriptId = preloadScriptId;
     }
 
     /// <summary>
@@ -33,5 +31,5 @@ public class RemovePreloadScriptCommandParameters : CommandParameters<RemovePrel
     /// Gets or sets the ID of the preload script to remove.
     /// </summary>
     [JsonPropertyName("script")]
-    public string PreloadScriptId { get => this.preloadScriptId; set => this.preloadScriptId = value; }
+    public string PreloadScriptId { get; set; }
 }

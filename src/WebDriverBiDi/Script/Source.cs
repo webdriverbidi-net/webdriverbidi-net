@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record Source
 {
-    private string realmId = string.Empty;
-    private string? browsingContextId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Source"/> class.
     /// </summary>
@@ -29,7 +26,7 @@ public record Source
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get => this.realmId; private set => this.realmId = value; }
+    public string RealmId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the browsing context ID for a script.
@@ -37,5 +34,5 @@ public record Source
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Context { get => this.browsingContextId; private set => this.browsingContextId = value; }
+    public string? Context { get; private set; }
 }

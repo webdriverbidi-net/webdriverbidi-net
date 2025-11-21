@@ -12,24 +12,20 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ChannelProperties
 {
-    private string channelId = string.Empty;
-    private SerializationOptions? serializationOptions;
-    private ResultOwnership? resultOwnership;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ChannelProperties"/> class.
     /// </summary>
     /// <param name="channelId">The ID of the channel.</param>
     public ChannelProperties(string channelId)
     {
-        this.channelId = channelId;
+        this.ChannelId = channelId;
     }
 
     /// <summary>
     /// Gets or sets the ID of the channel.
     /// </summary>
     [JsonPropertyName("channel")]
-    public string ChannelId { get => this.channelId; set => this.channelId = value; }
+    public string ChannelId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the serialization options for the channel.
@@ -37,7 +33,7 @@ public class ChannelProperties
     [JsonPropertyName("serializationOptions")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
+    public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
     /// Gets or sets the result ownership for the channel.
@@ -45,5 +41,5 @@ public class ChannelProperties
     [JsonPropertyName("resultOwnership")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
+    public ResultOwnership? ResultOwnership { get; set; }
 }

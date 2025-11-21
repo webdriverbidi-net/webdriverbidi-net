@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record RealmTarget : Target
 {
-    private string realmId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RealmTarget"/> class.
     /// </summary>
@@ -21,7 +19,7 @@ public record RealmTarget : Target
     [JsonConstructor]
     public RealmTarget(string realmId)
     {
-        this.realmId = realmId;
+        this.RealmId = realmId;
     }
 
     /// <summary>
@@ -30,5 +28,5 @@ public record RealmTarget : Target
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get => this.realmId; private set => this.realmId = value; }
+    public string RealmId { get; private set; }
 }

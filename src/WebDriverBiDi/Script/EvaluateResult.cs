@@ -14,9 +14,6 @@ using WebDriverBiDi.JsonConverters;
 [JsonConverter(typeof(ScriptEvaluateResultJsonConverter))]
 public record EvaluateResult : CommandResult
 {
-    private string realmId = string.Empty;
-    private EvaluateResultType resultType = EvaluateResultType.Success;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="EvaluateResult"/> class.
     /// </summary>
@@ -30,7 +27,7 @@ public record EvaluateResult : CommandResult
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public EvaluateResultType ResultType { get => this.resultType; private set => this.resultType = value; }
+    public EvaluateResultType ResultType { get; private set; } = EvaluateResultType.Success;
 
     /// <summary>
     /// Gets the ID of the realm in which the script was executed.
@@ -38,5 +35,5 @@ public record EvaluateResult : CommandResult
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get => this.realmId; private set => this.realmId = value; }
+    public string RealmId { get; private set; } = string.Empty;
 }

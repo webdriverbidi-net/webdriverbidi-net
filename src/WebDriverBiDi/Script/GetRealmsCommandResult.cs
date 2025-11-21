@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GetRealmsCommandResult : CommandResult
 {
-    private List<RealmInfo> realms = new();
-
     [JsonConstructor]
     private GetRealmsCommandResult()
     {
@@ -23,12 +21,12 @@ public record GetRealmsCommandResult : CommandResult
     /// Gets a read-only list of information about the realms.
     /// </summary>
     [JsonIgnore]
-    public IList<RealmInfo> Realms => this.realms.AsReadOnly();
+    public IList<RealmInfo> Realms => this.SerializableRealms.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the list of information about the realms for serialization purposes.
     /// </summary>
     [JsonPropertyName("realms")]
     [JsonInclude]
-    internal List<RealmInfo> SerializableRealms { get => this.realms; set => this.realms = value; }
+    internal List<RealmInfo> SerializableRealms { get; set; } = [];
 }

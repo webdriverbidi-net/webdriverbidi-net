@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record ContextTarget : Target
 {
-    private string browsingContextId;
-    private string? sandbox;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ContextTarget"/> class.
     /// </summary>
@@ -22,7 +19,7 @@ public record ContextTarget : Target
     [JsonConstructor]
     public ContextTarget(string browsingContextId)
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -31,7 +28,7 @@ public record ContextTarget : Target
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; }
 
     /// <summary>
     /// Gets or sets the name of the sandbox.
@@ -39,5 +36,5 @@ public record ContextTarget : Target
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
+    public string? Sandbox { get; set; }
 }

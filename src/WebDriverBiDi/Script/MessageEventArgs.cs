@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record MessageEventArgs : WebDriverBiDiEventArgs
 {
-    private string channelId;
-    private RemoteValue data;
-    private Source source;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="MessageEventArgs"/> class.
     /// </summary>
@@ -25,9 +21,9 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     [JsonConstructor]
     public MessageEventArgs(string channelId, RemoteValue data, Source source)
     {
-        this.channelId = channelId;
-        this.data = data;
-        this.source = source;
+        this.ChannelId = channelId;
+        this.Data = data;
+        this.Source = source;
     }
 
     /// <summary>
@@ -36,7 +32,7 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("channel")]
     [JsonInclude]
     [JsonRequired]
-    public string ChannelId { get => this.channelId; private set => this.channelId = value; }
+    public string ChannelId { get; private set; }
 
     /// <summary>
     /// Gets the data for this message.
@@ -44,7 +40,7 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("data")]
     [JsonInclude]
     [JsonRequired]
-    public RemoteValue Data { get => this.data; private set => this.data = value; }
+    public RemoteValue Data { get; private set; }
 
     /// <summary>
     /// Gets the source for this message.
@@ -52,5 +48,5 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("source")]
     [JsonInclude]
     [JsonRequired]
-    public Source Source { get => this.source; private set => this.source = value; }
+    public Source Source { get; private set; }
 }

@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class GetRealmsCommandParameters : CommandParameters<GetRealmsCommandResult>
 {
-    private string? browsingContextId;
-    private RealmType? realmType;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="GetRealmsCommandParameters"/> class.
     /// </summary>
@@ -34,7 +31,7 @@ public class GetRealmsCommandParameters : CommandParameters<GetRealmsCommandResu
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string? BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the type of realms to get.
@@ -42,5 +39,5 @@ public class GetRealmsCommandParameters : CommandParameters<GetRealmsCommandResu
     [JsonPropertyName("type")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public RealmType? RealmType { get => this.realmType; set => this.realmType = value; }
+    public RealmType? RealmType { get; set; }
 }

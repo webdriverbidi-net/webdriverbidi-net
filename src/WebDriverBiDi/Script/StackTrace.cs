@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record StackTrace
 {
-    private List<StackFrame> callFrames = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="StackTrace"/> class.
     /// </summary>
@@ -25,7 +23,7 @@ public record StackTrace
     /// <summary>
     /// Gets the read-only list of stack frames for this stack trace.
     /// </summary>
-    public IList<StackFrame> CallFrames => this.callFrames.AsReadOnly();
+    public IList<StackFrame> CallFrames => this.SerializableCallFrames.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the list of stack frames for serialization purposes.
@@ -33,5 +31,5 @@ public record StackTrace
     [JsonPropertyName("callFrames")]
     [JsonRequired]
     [JsonInclude]
-    internal List<StackFrame> SerializableCallFrames { get => this.callFrames; set => this.callFrames = value; }
+    internal List<StackFrame> SerializableCallFrames { get; set; } = [];
 }

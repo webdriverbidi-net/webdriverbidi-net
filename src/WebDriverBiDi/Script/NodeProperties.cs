@@ -12,17 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record NodeProperties
 {
-    private uint nodeType = 0;
-    private uint childNodeCount = 0;
-    private string? nodeValue;
-    private string? localName;
-    private string? namespaceUri;
-    private List<RemoteValue>? children;
-    private NodeAttributes? attributes;
-    private Dictionary<string, string>? attributesDictionary;
-    private ShadowRootMode? mode;
-    private RemoteValue? shadowRoot;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="NodeProperties"/> class.
     /// </summary>
@@ -37,7 +26,7 @@ public record NodeProperties
     [JsonPropertyName("nodeType")]
     [JsonRequired]
     [JsonInclude]
-    public uint NodeType { get => this.nodeType; private set => this.nodeType = value; }
+    public uint NodeType { get; private set; } = 0;
 
     /// <summary>
     /// Gets the count of the child nodes.
@@ -45,7 +34,7 @@ public record NodeProperties
     [JsonPropertyName("childNodeCount")]
     [JsonRequired]
     [JsonInclude]
-    public uint ChildNodeCount { get => this.childNodeCount; private set => this.childNodeCount = value; }
+    public uint ChildNodeCount { get; private set; } = 0;
 
     /// <summary>
     /// Gets the value of the node.
@@ -53,7 +42,7 @@ public record NodeProperties
     [JsonPropertyName("nodeValue")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? NodeValue { get => this.nodeValue; private set => this.nodeValue = value; }
+    public string? NodeValue { get; private set; }
 
     /// <summary>
     /// Gets the local name of the node.
@@ -61,7 +50,7 @@ public record NodeProperties
     [JsonPropertyName("localName")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? LocalName { get => this.localName; private set => this.localName = value; }
+    public string? LocalName { get; private set; }
 
     /// <summary>
     /// Gets the namespace URI of the node.
@@ -69,7 +58,7 @@ public record NodeProperties
     [JsonPropertyName("namespaceURI")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? NamespaceUri { get => this.namespaceUri; private set => this.namespaceUri = value; }
+    public string? NamespaceUri { get; private set; }
 
     /// <summary>
     /// Gets a read-only list of the children of the node.
@@ -79,12 +68,12 @@ public record NodeProperties
     {
         get
         {
-            if (this.children is null)
+            if (this.SerializableChildren is null)
             {
                 return null;
             }
 
-            return this.children.AsReadOnly();
+            return this.SerializableChildren.AsReadOnly();
         }
     }
 
@@ -96,14 +85,13 @@ public record NodeProperties
     {
         get
         {
-            if (this.attributesDictionary is null)
+            if (this.SerializableAttributes is null)
             {
                 return null;
             }
 
-            this.attributes ??= new NodeAttributes(this.attributesDictionary);
-
-            return this.attributes;
+            field ??= new NodeAttributes(this.SerializableAttributes);
+            return field;
         }
     }
 
@@ -113,7 +101,7 @@ public record NodeProperties
     [JsonPropertyName("mode")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public ShadowRootMode? Mode { get => this.mode; private set => this.mode = value; }
+    public ShadowRootMode? Mode { get; private set; }
 
     /// <summary>
     /// Gets the RemoteValue representing the shadow root of this node, if available.
@@ -121,7 +109,7 @@ public record NodeProperties
     [JsonPropertyName("shadowRoot")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public RemoteValue? ShadowRoot { get => this.shadowRoot; private set => this.shadowRoot = value; }
+    public RemoteValue? ShadowRoot { get; private set; }
 
     /// <summary>
     /// Gets or sets the list of child nodes for serialization purposes.
@@ -129,7 +117,7 @@ public record NodeProperties
     [JsonPropertyName("children")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal List<RemoteValue>? SerializableChildren { get => this.children; set => this.children = value; }
+    internal List<RemoteValue>? SerializableChildren { get; set; }
 
     /// <summary>
     /// Gets or sets the dictionary of attributes of this node for serialization purposes.
@@ -137,5 +125,5 @@ public record NodeProperties
     [JsonPropertyName("attributes")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal Dictionary<string, string>? SerializableAttributes { get => this.attributesDictionary; set => this.attributesDictionary = value; }
+    internal Dictionary<string, string>? SerializableAttributes { get; set; }
 }

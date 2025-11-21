@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record EvaluateResultException : EvaluateResult
 {
-    private ExceptionDetails result = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="EvaluateResultException"/> class.
     /// </summary>
@@ -28,5 +26,5 @@ public record EvaluateResultException : EvaluateResult
     /// </summary>
     [JsonPropertyName("exceptionDetails")]
     [JsonInclude]
-    public ExceptionDetails ExceptionDetails { get => this.result; private set => this.result = value; }
+    public ExceptionDetails ExceptionDetails { get; private set; } = new();
 }
