@@ -18,8 +18,6 @@ public sealed class SpeculationModule : Module
 
     private const string PrefetchStatusUpdatedEventName = $"{SpeculationModuleName}.prefetchStatusUpdated";
 
-    private readonly ObservableEvent<PrefetchStatusUpdatedEventArgs> onPrefetchStatusUpdatedEvent = new(PrefetchStatusUpdatedEventName);
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SpeculationModule"/> class.
     /// </summary>
@@ -33,7 +31,7 @@ public sealed class SpeculationModule : Module
     /// <summary>
     /// Gets an observable event that notifies when the prefetch status of a resource is updated.
     /// </summary>
-    public ObservableEvent<PrefetchStatusUpdatedEventArgs> OnPrefetchStatusUpdated => this.onPrefetchStatusUpdatedEvent;
+    public ObservableEvent<PrefetchStatusUpdatedEventArgs> OnPrefetchStatusUpdated { get; } = new(PrefetchStatusUpdatedEventName);
 
     /// <summary>
     /// Gets the module name.
@@ -43,6 +41,6 @@ public sealed class SpeculationModule : Module
     private async Task OnPrefetchStatusUpdatedAsync(EventInfo<PrefetchStatusUpdatedEventArgs> eventData)
     {
         PrefetchStatusUpdatedEventArgs eventArgs = eventData.ToEventArgs<PrefetchStatusUpdatedEventArgs>();
-        await this.onPrefetchStatusUpdatedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnPrefetchStatusUpdated.NotifyObserversAsync(eventArgs);
     }
 }
