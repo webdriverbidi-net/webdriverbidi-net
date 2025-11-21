@@ -12,16 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class CapabilitiesRequest
 {
-    private CapabilityRequest? alwaysMatch;
-    private List<CapabilityRequest>? firstMatch;
-
     /// <summary>
     /// Gets or sets the set of capabilities that must be matched to create a new session.
     /// </summary>
     [JsonPropertyName("alwaysMatch")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public CapabilityRequest? AlwaysMatch { get => this.alwaysMatch; set => this.alwaysMatch = value; }
+    public CapabilityRequest? AlwaysMatch { get; set; }
 
     /// <summary>
     /// Gets or sets the list of sets of capabilities any of which may be matched to create a new session.
@@ -29,5 +26,5 @@ public class CapabilitiesRequest
     [JsonPropertyName("firstMatch")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public List<CapabilityRequest>? FirstMatch { get => this.firstMatch; set => this.firstMatch = value; }
+    public List<CapabilityRequest>? FirstMatch { get; set; }
 }

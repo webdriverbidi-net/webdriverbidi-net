@@ -14,26 +14,13 @@ using WebDriverBiDi.Internal;
 /// </summary>
 public record CapabilitiesResult
 {
-    private Dictionary<string, JsonElement> writableCapabilities = new();
-    private bool acceptInsecureCertificates = false;
-    private string browserName = string.Empty;
-    private string browserVersion = string.Empty;
-    private string platformName = string.Empty;
-    private bool setWindowRect = false;
-    private string userAgent = string.Empty;
-    private UserPromptHandlerResult? unhandledPromptHandlerResult;
-    private ProxyConfigurationResult? proxyResult;
-    private string? webSocketUrl;
-    private ProxyConfiguration? proxy;
-    private UserPromptHandler? unhandledPromptBehavior;
-    private ReceivedDataDictionary additionalCapabilities = ReceivedDataDictionary.EmptyDictionary;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CapabilitiesResult"/> class.
     /// </summary>
     [JsonConstructor]
     internal CapabilitiesResult()
     {
+        this.AdditionalCapabilities = ReceivedDataDictionary.EmptyDictionary;
     }
 
     /// <summary>
@@ -42,7 +29,7 @@ public record CapabilitiesResult
     [JsonPropertyName("acceptInsecureCerts")]
     [JsonRequired]
     [JsonInclude]
-    public bool AcceptInsecureCertificates { get => this.acceptInsecureCertificates; private set => this.acceptInsecureCertificates = value; }
+    public bool AcceptInsecureCertificates { get; private set; } = false;
 
     /// <summary>
     /// Gets the name of the browser.
@@ -50,7 +37,7 @@ public record CapabilitiesResult
     [JsonPropertyName("browserName")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowserName { get => this.browserName; private set => this.browserName = value; }
+    public string BrowserName { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the version of the browser.
@@ -58,7 +45,7 @@ public record CapabilitiesResult
     [JsonPropertyName("browserVersion")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowserVersion { get => this.browserVersion; private set => this.browserVersion = value; }
+    public string BrowserVersion { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the platform name.
@@ -66,7 +53,7 @@ public record CapabilitiesResult
     [JsonPropertyName("platformName")]
     [JsonRequired]
     [JsonInclude]
-    public string PlatformName { get => this.platformName; private set => this.platformName = value; }
+    public string PlatformName { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets a value indicating whether this session supports setting the size of the browser window.
@@ -75,14 +62,14 @@ public record CapabilitiesResult
     // TODO (Issue #18): Uncomment the JsonRequired attribute once https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 is fixed.
     // [JsonRequired]
     [JsonInclude]
-    public bool SetWindowRect { get => this.setWindowRect; private set => this.setWindowRect = value; }
+    public bool SetWindowRect { get; private set; } = false;
 
     /// <summary>
     /// Gets a value indicating the WebSocket URL used by this connection.
     /// </summary>
     [JsonPropertyName("webSocketUrl")]
     [JsonInclude]
-    public string? WebSocketUrl { get => this.webSocketUrl; private set => this.webSocketUrl = value; }
+    public string? WebSocketUrl { get; private set; }
 
     /// <summary>
     /// Gets a value containing the default user agent string for this browser.
@@ -90,7 +77,7 @@ public record CapabilitiesResult
     [JsonPropertyName("userAgent")]
     [JsonRequired]
     [JsonInclude]
-    public string UserAgent { get => this.userAgent; private set => this.userAgent = value; }
+    public string UserAgent { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets a read-only dictionary of additional capabilities specified by this session.
@@ -100,12 +87,12 @@ public record CapabilitiesResult
     {
         get
         {
-            if (this.writableCapabilities.Count > 0 && this.additionalCapabilities.Count == 0)
+            if (this.SerializableAdditionalCapabilities.Count > 0 && field.Count == 0)
             {
-                this.additionalCapabilities = JsonConverterUtilities.ConvertIncomingExtensionData(this.writableCapabilities);
+                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.SerializableAdditionalCapabilities);
             }
 
-            return this.additionalCapabilities;
+            return field;
         }
     }
 
@@ -117,12 +104,12 @@ public record CapabilitiesResult
     {
         get
         {
-            if (this.unhandledPromptBehavior is not null && this.unhandledPromptHandlerResult is null)
+            if (this.SerializableUnhandledPromptBehavior is not null && field is null)
             {
-                this.unhandledPromptHandlerResult = new UserPromptHandlerResult(this.unhandledPromptBehavior);
+                field = new UserPromptHandlerResult(this.SerializableUnhandledPromptBehavior);
             }
 
-            return this.unhandledPromptHandlerResult;
+            return field;
         }
     }
 
@@ -134,29 +121,29 @@ public record CapabilitiesResult
     {
         get
         {
-            if (this.proxy is not null && this.proxyResult is null)
+            if (this.SerializableProxy is not null && field is null)
             {
-                switch (this.proxy.ProxyType)
+                switch (this.SerializableProxy.ProxyType)
                 {
                     case ProxyType.Direct:
-                        this.proxyResult ??= new DirectProxyConfigurationResult((DirectProxyConfiguration)this.proxy);
+                        field ??= new DirectProxyConfigurationResult((DirectProxyConfiguration)this.SerializableProxy);
                         break;
                     case ProxyType.System:
-                        this.proxyResult ??= new SystemProxyConfigurationResult((SystemProxyConfiguration)this.proxy);
+                        field ??= new SystemProxyConfigurationResult((SystemProxyConfiguration)this.SerializableProxy);
                         break;
                     case ProxyType.AutoDetect:
-                        this.proxyResult ??= new AutoDetectProxyConfigurationResult((AutoDetectProxyConfiguration)this.proxy);
+                        field ??= new AutoDetectProxyConfigurationResult((AutoDetectProxyConfiguration)this.SerializableProxy);
                         break;
                     case ProxyType.ProxyAutoConfig:
-                        this.proxyResult ??= new PacProxyConfigurationResult((PacProxyConfiguration)this.proxy);
+                        field ??= new PacProxyConfigurationResult((PacProxyConfiguration)this.SerializableProxy);
                         break;
                     case ProxyType.Manual:
-                        this.proxyResult ??= new ManualProxyConfigurationResult((ManualProxyConfiguration)this.proxy);
+                        field ??= new ManualProxyConfigurationResult((ManualProxyConfiguration)this.SerializableProxy);
                         break;
                 }
             }
 
-            return this.proxyResult;
+            return field;
         }
     }
 
@@ -165,19 +152,19 @@ public record CapabilitiesResult
     /// </summary>
     [JsonPropertyName("proxy")]
     [JsonInclude]
-    internal ProxyConfiguration? SerializableProxy { get => this.proxy; set => this.proxy = value; }
+    internal ProxyConfiguration? SerializableProxy { get; set; }
 
     /// <summary>
     /// Gets or sets the behavior of the session for unhandled user prompts.
     /// </summary>
     [JsonPropertyName("unhandledPromptBehavior")]
     [JsonInclude]
-    internal UserPromptHandler? SerializableUnhandledPromptBehavior { get => this.unhandledPromptBehavior; set => this.unhandledPromptBehavior = value; }
+    internal UserPromptHandler? SerializableUnhandledPromptBehavior { get; set; }
 
     /// <summary>
     /// Gets or sets the dictionary containing additional, un-enumerated capabilities for deserialization purposes.
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get => this.writableCapabilities; set => this.writableCapabilities = value; }
+    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get; set; } = new();
 }

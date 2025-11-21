@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record SubscribeCommandResult : CommandResult
 {
-    private string subscriptionId = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SubscribeCommandResult"/> class.
     /// </summary>
@@ -28,5 +26,5 @@ public record SubscribeCommandResult : CommandResult
     [JsonPropertyName("subscription")]
     [JsonRequired]
     [JsonInclude]
-    public string SubscriptionId { get => this.subscriptionId; private set => this.subscriptionId = value; }
+    public string SubscriptionId { get; private set; } = string.Empty;
 }

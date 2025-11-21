@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class UnsubscribeCommandParameters : CommandParameters<UnsubscribeCommandResult>
 {
-    private readonly List<string> eventList = [];
-
-    private readonly List<string> contextList = [];
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UnsubscribeCommandParameters"/> class.
     /// </summary>

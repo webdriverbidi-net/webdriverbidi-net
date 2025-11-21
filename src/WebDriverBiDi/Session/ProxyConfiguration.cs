@@ -14,16 +14,13 @@ using WebDriverBiDi.JsonConverters;
 [JsonConverter(typeof(ProxyConfigurationJsonConverter))]
 public class ProxyConfiguration
 {
-    private readonly Dictionary<string, object?> additionalData = new();
-    private ProxyType proxyType;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ProxyConfiguration"/> class.
     /// </summary>
     /// <param name="proxyType">The type of proxy configuration.</param>
     protected ProxyConfiguration(ProxyType proxyType)
     {
-        this.proxyType = proxyType;
+        this.ProxyType = proxyType;
     }
 
     /// <summary>
@@ -32,12 +29,12 @@ public class ProxyConfiguration
     [JsonRequired]
     [JsonPropertyName("proxyType")]
     [JsonInclude]
-    public ProxyType ProxyType { get => this.proxyType; private set => this.proxyType = value; }
+    public ProxyType ProxyType { get; private set; }
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    public Dictionary<string, object?> AdditionalData => this.additionalData;
+    public Dictionary<string, object?> AdditionalData { get; } = [];
 }
