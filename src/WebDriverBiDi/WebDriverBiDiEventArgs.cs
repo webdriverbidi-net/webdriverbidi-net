@@ -10,10 +10,8 @@ namespace WebDriverBiDi;
 /// </summary>
 public record WebDriverBiDiEventArgs
 {
-    private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
-
     /// <summary>
     /// Gets or sets additional extended data sent with the event.
     /// </summary>
-    public ReceivedDataDictionary AdditionalData { get => this.additionalData; set => this.additionalData = value; }
+    public ReceivedDataDictionary AdditionalData { get; set; } = ReceivedDataDictionary.EmptyDictionary;
 }

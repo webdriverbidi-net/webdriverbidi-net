@@ -10,11 +10,6 @@ namespace WebDriverBiDi;
 /// </summary>
 public record LogMessageEventArgs : WebDriverBiDiEventArgs
 {
-    private readonly string message;
-    private readonly WebDriverBiDiLogLevel level;
-    private readonly string componentName = string.Empty;
-    private readonly DateTime timestamp = DateTime.UtcNow;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="LogMessageEventArgs" /> class with a log message, log level,
     /// and name of component from which the message is being logged.
@@ -24,28 +19,28 @@ public record LogMessageEventArgs : WebDriverBiDiEventArgs
     /// <param name="componentName">The name of the component from which the message is being logged.</param>
     public LogMessageEventArgs(string message, WebDriverBiDiLogLevel level, string componentName)
     {
-        this.message = message;
-        this.level = level;
-        this.componentName = componentName;
+        this.Message = message;
+        this.Level = level;
+        this.ComponentName = componentName;
     }
 
     /// <summary>
     /// Gets the text of the message sent to the log.
     /// </summary>
-    public string Message => this.message;
+    public string Message { get; }
 
     /// <summary>
     /// Gets the log level of the message sent to the log.
     /// </summary>
-    public WebDriverBiDiLogLevel Level => this.level;
+    public WebDriverBiDiLogLevel Level { get; }
 
     /// <summary>
     /// Gets the component name from which this log message originates.
     /// </summary>
-    public string ComponentName => this.componentName;
+    public string ComponentName { get; } = string.Empty;
 
     /// <summary>
     /// Gets the date and time (in UTC) when this log entry was created.
     /// </summary>
-    public DateTime Timestamp => this.timestamp;
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
 }

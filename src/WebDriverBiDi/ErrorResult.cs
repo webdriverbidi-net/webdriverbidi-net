@@ -12,19 +12,15 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public record ErrorResult : CommandResult
 {
-    private readonly string error = string.Empty;
-    private readonly string message = string.Empty;
-    private readonly string? stackTrace;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ErrorResult"/> class.
     /// </summary>
     /// <param name="response">The error response containing the error data.</param>
     internal ErrorResult(ErrorResponseMessage response)
     {
-        this.error = response.ErrorType;
-        this.message = response.ErrorMessage;
-        this.stackTrace = response.StackTrace;
+        this.ErrorType = response.ErrorType;
+        this.ErrorMessage = response.ErrorMessage;
+        this.StackTrace = response.StackTrace;
         this.AdditionalData = response.AdditionalData;
     }
 
@@ -36,15 +32,15 @@ public record ErrorResult : CommandResult
     /// <summary>
     /// Gets the type of error encountered.
     /// </summary>
-    public string ErrorType => this.error;
+    public string ErrorType { get; } = string.Empty;
 
     /// <summary>
     /// Gets the message of the error.
     /// </summary>
-    public string ErrorMessage => this.message;
+    public string ErrorMessage { get; } = string.Empty;
 
     /// <summary>
     /// Gets the stack trace associated with this error.
     /// </summary>
-    public string? StackTrace => this.stackTrace;
+    public string? StackTrace { get; }
 }
