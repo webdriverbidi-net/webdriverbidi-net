@@ -19,7 +19,7 @@ public class ContinueWithAuthCommandParametersTests
         ContinueWithAuthCommandParameters properties = new("requestId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("request"));
@@ -28,7 +28,7 @@ public class ContinueWithAuthCommandParametersTests
             Assert.That(serialized, Contains.Key("action"));
             Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("default"));
-        });
+        }
     }
 
     [Test]
@@ -40,7 +40,7 @@ public class ContinueWithAuthCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("request"));
@@ -49,7 +49,7 @@ public class ContinueWithAuthCommandParametersTests
             Assert.That(serialized, Contains.Key("action"));
             Assert.That(serialized["action"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["action"]!.Value<string>(), Is.EqualTo("cancel"));
-        });
+        }
     }
 
     [Test]
@@ -61,7 +61,7 @@ public class ContinueWithAuthCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("request"));
@@ -83,7 +83,7 @@ public class ContinueWithAuthCommandParametersTests
             Assert.That(credentialsObject, Contains.Key("password"));
             Assert.That(credentialsObject["password"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(credentialsObject["password"]!.Value<string>(), Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -96,7 +96,7 @@ public class ContinueWithAuthCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("request"));
@@ -118,6 +118,6 @@ public class ContinueWithAuthCommandParametersTests
             Assert.That(credentialsObject, Contains.Key("password"));
             Assert.That(credentialsObject["password"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(credentialsObject["password"]!.Value<string>(), Is.EqualTo("myPassword"));
-        });
+        }
     }
 }

@@ -56,7 +56,7 @@ public class StorageModuleTests()
         GetCookiesCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Cookies, Has.Count.EqualTo(1));
             Assert.That(result.Cookies[0].Name, Is.EqualTo("cookieName"));
@@ -71,7 +71,7 @@ public class StorageModuleTests()
             Assert.That(result.Cookies[0].Expires, Is.EqualTo(expireTime));
             Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
             Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-        });
+        }
     }
 
     [Test]
@@ -104,11 +104,11 @@ public class StorageModuleTests()
         SetCookieCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
             Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-        });
+        }
     }
 
     [Test]
@@ -141,10 +141,10 @@ public class StorageModuleTests()
         DeleteCookiesCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
             Assert.That(result.PartitionKey.SourceOrigin, Is.EqualTo("mySourceOrigin"));
-        });
+        }
     }
 }

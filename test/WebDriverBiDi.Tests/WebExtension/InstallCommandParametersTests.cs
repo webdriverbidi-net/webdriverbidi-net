@@ -20,7 +20,7 @@ public class InstallCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("extensionData"));
             Assert.That(serialized["extensionData"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -32,7 +32,7 @@ public class InstallCommandParametersTests
             Assert.That(extensionDataObject, Contains.Key("path"));
             Assert.That(extensionDataObject["path"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(extensionDataObject["path"]!.Value<string>(), Is.EqualTo("myExtension"));
-        });
+        }
     }
 
     [Test]
@@ -42,7 +42,7 @@ public class InstallCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("extensionData"));
             Assert.That(serialized["extensionData"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -54,7 +54,7 @@ public class InstallCommandParametersTests
             Assert.That(extensionDataObject, Contains.Key("path"));
             Assert.That(extensionDataObject["path"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(extensionDataObject["path"]!.Value<string>(), Is.EqualTo("myExtensionArchive"));
-        });
+        }
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class InstallCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("extensionData"));
             Assert.That(serialized["extensionData"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -76,6 +76,6 @@ public class InstallCommandParametersTests
             Assert.That(extensionDataObject, Contains.Key("value"));
             Assert.That(extensionDataObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(extensionDataObject["value"]!.Value<string>(), Is.EqualTo("Some base64 encoded data"));
-        });
+        }
     }
 }

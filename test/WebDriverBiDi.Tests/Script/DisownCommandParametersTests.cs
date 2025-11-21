@@ -20,14 +20,14 @@ public class DisownCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("target"));
             Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
             Assert.That(serialized, Contains.Key("handles"));
             Assert.That(serialized["handles"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["handles"]!.Count, Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -37,13 +37,13 @@ public class DisownCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("target"));
             Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
             Assert.That(serialized, Contains.Key("handles"));
             Assert.That(serialized["handles"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["handles"]!.Count, Is.EqualTo(1));
-        });
+        }
     }
 }

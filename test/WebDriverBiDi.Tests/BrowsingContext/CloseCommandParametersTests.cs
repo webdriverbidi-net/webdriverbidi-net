@@ -20,12 +20,12 @@ public class CloseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        });
+        }
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class CloseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -46,7 +46,7 @@ public class CloseCommandParametersTests
             Assert.That(serialized, Contains.Key("promptUnload"));
             Assert.That(serialized["promptUnload"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["promptUnload"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -59,7 +59,7 @@ public class CloseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -67,6 +67,6 @@ public class CloseCommandParametersTests
             Assert.That(serialized, Contains.Key("promptUnload"));
             Assert.That(serialized["promptUnload"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["promptUnload"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 }

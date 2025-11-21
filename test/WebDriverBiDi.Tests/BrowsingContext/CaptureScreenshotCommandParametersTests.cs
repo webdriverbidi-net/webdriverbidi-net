@@ -21,12 +21,12 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContextId"));
-        });
+        }
     }
 
     [Test]
@@ -39,7 +39,7 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -63,7 +63,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(clipObject, Contains.Key("height"));
             Assert.That(clipObject!["height"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(clipObject["height"]!.Value<double>(), Is.EqualTo(0.0));
-        });
+        }
     }
 
     [Test]
@@ -82,7 +82,7 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -106,7 +106,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(clipObject, Contains.Key("height"));
             Assert.That(clipObject!["height"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(clipObject["height"]!.Value<double>(), Is.EqualTo(100.0));
-        });
+        }
     }
 
     [Test]
@@ -119,7 +119,7 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -136,7 +136,7 @@ public class CaptureScreenshotCommandParametersTests
             JObject? sharedReferenceObject = clipObject["element"]!.Value<JObject>();
             Assert.That(sharedReferenceObject, Contains.Key("sharedId"));
             Assert.That(sharedReferenceObject!["sharedId"]!.Value<string>(), Is.EqualTo("myElementSharedId"));
-        });
+        }
     }
 
     [Test]
@@ -149,7 +149,7 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -161,7 +161,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(formatObject, Contains.Key("type"));
             Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(formatObject["type"]!.Value<string>(), Is.EqualTo("image/png"));
-        });
+        }
     }
 
     [Test]
@@ -177,7 +177,7 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -189,7 +189,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(formatObject, Contains.Key("type"));
             Assert.That(formatObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(formatObject["type"]!.Value<string>(), Is.EqualTo("image/jpeg"));
-        });
+        }
     }
 
     [Test]
@@ -206,7 +206,7 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -221,7 +221,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(formatObject, Contains.Key("quality"));
             Assert.That(formatObject!["quality"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(formatObject["quality"]!.Value<double>(), Is.EqualTo(0.5));
-        });
+        }
     }
 
     [Test]
@@ -234,7 +234,7 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -242,7 +242,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("viewport"));
-        });
+        }
     }
 
     [Test]
@@ -255,7 +255,7 @@ public class CaptureScreenshotCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -263,7 +263,7 @@ public class CaptureScreenshotCommandParametersTests
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("document"));
-        });
+        }
     }
 
     [Test]

@@ -42,7 +42,7 @@ public class ProxyConfigurationResultTests
         Assert.That(proxyResult, Is.Not.Null);
         Assert.That(proxyResult, Is.InstanceOf<ManualProxyConfigurationResult>());
         ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.Manual));
             Assert.That(proxyConfig.HttpProxy, Is.EqualTo("http.proxy"));
@@ -51,7 +51,7 @@ public class ProxyConfigurationResultTests
             Assert.That(proxyConfig.SocksVersion, Is.EqualTo(5));
             Assert.That(proxyConfig.NoProxyAddresses, Has.Count.EqualTo(1));
             Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -116,12 +116,12 @@ public class ProxyConfigurationResultTests
         Assert.That(proxyResult, Is.Not.Null);
         Assert.That(proxyResult, Is.InstanceOf<PacProxyConfigurationResult>());
         PacProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<PacProxyConfigurationResult>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.ProxyAutoConfig));
             Assert.That(proxyConfig.ProxyAutoConfigUrl, Is.EqualTo("proxy.autoconfig.url"));
             Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -181,11 +181,11 @@ public class ProxyConfigurationResultTests
         Assert.That(proxyResult, Is.Not.Null);
         Assert.That(proxyResult, Is.InstanceOf<AutoDetectProxyConfigurationResult>());
         AutoDetectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<AutoDetectProxyConfigurationResult>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.AutoDetect));
             Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -244,14 +244,14 @@ public class ProxyConfigurationResultTests
         Assert.That(proxyResult, Is.Not.Null);
         Assert.That(proxyResult, Is.InstanceOf<SystemProxyConfigurationResult>());
         SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.System));
             Assert.That(proxyConfig.AdditionalData, Is.Empty);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -310,11 +310,11 @@ public class ProxyConfigurationResultTests
         Assert.That(proxyResult, Is.Not.Null);
         Assert.That(proxyResult, Is.InstanceOf<DirectProxyConfigurationResult>());
         DirectProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<DirectProxyConfigurationResult>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.Direct));
             Assert.That(proxyConfig.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -374,14 +374,13 @@ public class ProxyConfigurationResultTests
         Assert.That(proxyResult, Is.Not.Null);
         Assert.That(proxyResult, Is.InstanceOf<SystemProxyConfigurationResult>());
         SystemProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
-            SystemProxyConfigurationResult proxyResult = result.Proxy!.ProxyConfigurationResultAs<SystemProxyConfigurationResult>();
             Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.System));
             Assert.That(proxyConfig.AdditionalData, Has.Count.EqualTo(1));
             Assert.That(proxyConfig.AdditionalData, Contains.Key("additionalName"));
             Assert.That(proxyConfig.AdditionalData["additionalName"], Is.InstanceOf<string>());
             Assert.That(proxyConfig.AdditionalData["additionalName"], Is.EqualTo("additionalValue"));
-        });
+        }
     }
 }

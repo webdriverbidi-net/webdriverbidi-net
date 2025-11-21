@@ -22,7 +22,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -33,7 +33,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -109,7 +109,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -120,7 +120,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -148,7 +148,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -159,7 +159,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -187,7 +187,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -198,7 +198,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -228,7 +228,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -242,7 +242,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -311,7 +311,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -325,7 +325,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children[0].Value, Is.TypeOf<NodeProperties>());
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -340,7 +340,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -352,7 +352,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children!, Is.Empty);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -393,7 +393,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -404,7 +404,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Attributes, Is.Null);
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -452,7 +452,7 @@ public class NodePropertiesTests
                       """;
         NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
         Assert.That(nodeProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -465,7 +465,7 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.ShadowRoot!.HasValue, Is.True);
             Assert.That(nodeProperties.ShadowRoot.Value, Is.TypeOf<NodeProperties>());
             Assert.That(nodeProperties.Mode, Is.Null);
-        });
+        }
     }
 
     [Test]

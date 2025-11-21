@@ -20,7 +20,7 @@ public class SimulateAdapterCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -28,7 +28,7 @@ public class SimulateAdapterCommandParametersTests
             Assert.That(serialized, Contains.Key("state"));
             Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("absent"));
-        });
+        }
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class SimulateAdapterCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -46,7 +46,7 @@ public class SimulateAdapterCommandParametersTests
             Assert.That(serialized, Contains.Key("state"));
             Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("powered-off"));
-        });
+        }
     }
 
     [Test]
@@ -56,7 +56,7 @@ public class SimulateAdapterCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -64,6 +64,6 @@ public class SimulateAdapterCommandParametersTests
             Assert.That(serialized, Contains.Key("state"));
             Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("powered-on"));
-        });
+        }
     }
 }

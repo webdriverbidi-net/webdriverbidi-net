@@ -12,12 +12,12 @@ public class ChannelPropertiesTests
         ChannelProperties properties = new("myChannel");
         string json = JsonSerializer.Serialize(properties);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(1));
             Assert.That(parsed, Contains.Key("channel"));
             Assert.That(parsed["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
-        });
+        }
     }
 
     [Test]
@@ -29,7 +29,7 @@ public class ChannelPropertiesTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("channel"));
@@ -38,7 +38,7 @@ public class ChannelPropertiesTests
             Assert.That(parsed, Contains.Key("resultOwnership"));
             Assert.That(parsed["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["resultOwnership"]!.Value<string>(), Is.EqualTo("root"));
-        });
+        }
     }
 
     [Test]
@@ -51,7 +51,7 @@ public class ChannelPropertiesTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         { 
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("channel"));
@@ -60,6 +60,6 @@ public class ChannelPropertiesTests
             Assert.That(parsed, Contains.Key("serializationOptions"));
             Assert.That(parsed["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
             Assert.That(parsed["serializationOptions"]!.Value<JObject>(), Is.Empty);
-        });
+        }
     }
 }

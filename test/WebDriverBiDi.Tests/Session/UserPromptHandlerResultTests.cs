@@ -39,7 +39,7 @@ public class UserPromptHandlerResultTests
         Assert.That(result, Is.Not.Null);
         UserPromptHandlerResult? handlerResult = result.UnhandledPromptBehavior;
         Assert.That(handlerResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handlerResult.Default, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(handlerResult.Alert, Is.EqualTo(UserPromptHandlerType.Accept));
@@ -47,7 +47,7 @@ public class UserPromptHandlerResultTests
             Assert.That(handlerResult.Prompt, Is.EqualTo(UserPromptHandlerType.Dismiss));
             Assert.That(handlerResult.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Ignore));
             Assert.That(handlerResult.File, Is.EqualTo(UserPromptHandlerType.Ignore));
-        });
+        }
     }
 
     [Test]

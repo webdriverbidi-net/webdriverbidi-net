@@ -13,11 +13,11 @@ public class RemoteReferenceTests
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
-        });
+        }
     }
 
     [Test]
@@ -30,11 +30,11 @@ public class RemoteReferenceTests
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myNewHandle"));
-        });
+        }
     }
 
     [Test]
@@ -47,13 +47,13 @@ public class RemoteReferenceTests
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
             Assert.That(referenceObject, Contains.Key("sharedId"));
             Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-        });
+        }
     }
 
     [Test]
@@ -71,11 +71,11 @@ public class RemoteReferenceTests
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(referenceObject, Contains.Key("sharedId"));
             Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-        });
+        }
     }
 
     [Test]
@@ -88,11 +88,11 @@ public class RemoteReferenceTests
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(referenceObject, Contains.Key("sharedId"));
             Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("myNewSharedId"));
-        });
+        }
     }
 
     [Test]
@@ -105,13 +105,13 @@ public class RemoteReferenceTests
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(referenceObject, Contains.Key("sharedId"));
             Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
             Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
-        });
+        }
     }
 
     [Test]
@@ -130,13 +130,13 @@ public class RemoteReferenceTests
         string json = JsonSerializer.Serialize(reference);
         JObject referenceObject = JObject.Parse(json);
         Assert.That(referenceObject, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(referenceObject, Contains.Key("handle"));
             Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
             Assert.That(referenceObject, Contains.Key("myPropertyName"));
             Assert.That(referenceObject["myPropertyName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(referenceObject["myPropertyName"]!.Value<string>(), Is.EqualTo("myValue"));
-        });
+        }
     }
 }

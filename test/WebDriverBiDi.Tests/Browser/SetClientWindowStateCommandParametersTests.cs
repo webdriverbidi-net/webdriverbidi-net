@@ -20,7 +20,7 @@ public class SetClientWindowStateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("clientWindow"));
             Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
@@ -28,7 +28,7 @@ public class SetClientWindowStateCommandParametersTests
             Assert.That(serialized, Contains.Key("state"));
             Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("normal"));
-        });
+        }
     }
 
     [Test]
@@ -44,7 +44,7 @@ public class SetClientWindowStateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("clientWindow"));
             Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
@@ -64,7 +64,7 @@ public class SetClientWindowStateCommandParametersTests
             Assert.That(serialized, Contains.Key("height"));
             Assert.That(serialized["height"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["height"]!.Value<ulong>(), Is.EqualTo(400));
-        });
+        }
     }
 
     [Test]
@@ -81,7 +81,7 @@ public class SetClientWindowStateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("clientWindow"));
             Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
@@ -89,7 +89,7 @@ public class SetClientWindowStateCommandParametersTests
             Assert.That(serialized, Contains.Key("state"));
             Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("maximized"));
-        });
+        }
     }
 
     [Test]
@@ -106,7 +106,7 @@ public class SetClientWindowStateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("clientWindow"));
             Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
@@ -114,7 +114,7 @@ public class SetClientWindowStateCommandParametersTests
             Assert.That(serialized, Contains.Key("state"));
             Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("minimized"));
-        });
+        }
     }
 
     [Test]
@@ -131,7 +131,7 @@ public class SetClientWindowStateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("clientWindow"));
             Assert.That(serialized["clientWindow"]!.Type, Is.EqualTo(JTokenType.String));
@@ -139,6 +139,6 @@ public class SetClientWindowStateCommandParametersTests
             Assert.That(serialized, Contains.Key("state"));
             Assert.That(serialized["state"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["state"]!.Value<string>(), Is.EqualTo("fullscreen"));
-        });
+        }
     }
 }

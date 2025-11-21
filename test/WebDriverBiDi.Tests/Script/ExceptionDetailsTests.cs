@@ -30,14 +30,14 @@ public class ExceptionDetailsTests
                       """;
         ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions);
         Assert.That(exceptionDetails, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(exceptionDetails.Text, Is.EqualTo("exception message"));
             Assert.That(exceptionDetails.LineNumber, Is.EqualTo(1));
             Assert.That(exceptionDetails.ColumnNumber, Is.EqualTo(5));
             Assert.That(exceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("myException"));
             Assert.That(exceptionDetails.StackTrace.CallFrames, Is.Empty);
-        });
+        }
     }
 
     [Test]

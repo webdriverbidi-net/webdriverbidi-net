@@ -28,7 +28,7 @@ public class BrowsingContextEventArgsTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         BrowsingContextEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
@@ -38,7 +38,7 @@ public class BrowsingContextEventArgsTests
             Assert.That(eventArgs.Children, Is.Not.Null);
             Assert.That(eventArgs.Children, Is.Empty);
             Assert.That(eventArgs.Parent, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -67,7 +67,7 @@ public class BrowsingContextEventArgsTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         BrowsingContextEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
@@ -76,7 +76,7 @@ public class BrowsingContextEventArgsTests
             Assert.That(eventArgs.Children, Is.Not.Null);
             Assert.That(eventArgs.Children, Has.Count.EqualTo(1));
             Assert.That(eventArgs.Parent, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -97,7 +97,7 @@ public class BrowsingContextEventArgsTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         BrowsingContextEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
@@ -107,7 +107,7 @@ public class BrowsingContextEventArgsTests
             Assert.That(eventArgs.Children, Has.Count.EqualTo(0));
             Assert.That(eventArgs.Parent, Is.Not.Null);
             Assert.That(eventArgs.Parent, Is.EqualTo("parentContextId"));
-        });
+        }
     }
 
     [Test]
@@ -127,7 +127,7 @@ public class BrowsingContextEventArgsTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         BrowsingContextEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
@@ -137,7 +137,7 @@ public class BrowsingContextEventArgsTests
             Assert.That(eventArgs.Children, Is.Not.Null);
             Assert.That(eventArgs.Children, Is.Empty);
             Assert.That(eventArgs.Parent, Is.Null);
-        });
+        }
     }
 
     [Test]

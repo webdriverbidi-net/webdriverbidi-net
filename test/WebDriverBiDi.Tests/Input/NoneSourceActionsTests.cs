@@ -13,7 +13,7 @@ public class NoneSourceActionsTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("id"));
             Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
@@ -23,7 +23,7 @@ public class NoneSourceActionsTests
             Assert.That(serialized, Contains.Key("actions"));
             Assert.That(serialized["actions"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["actions"]!.Value<JArray>(), Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -34,7 +34,7 @@ public class NoneSourceActionsTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("id"));
             Assert.That(serialized["id"]!.Type, Is.EqualTo(JTokenType.String));
@@ -48,9 +48,9 @@ public class NoneSourceActionsTests
             Assert.That(serialized["actions"]!.Value<JArray>(), Has.Count.EqualTo(1));
             Assert.That(serialized["actions"]![0], Is.Not.Null);
             Assert.That(serialized["actions"]![0]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
         JObject? action = serialized["actions"]![0]!.Value<JObject>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(action, Is.Not.Null);
             Assert.That(action, Has.Count.EqualTo(1));
@@ -58,6 +58,6 @@ public class NoneSourceActionsTests
             Assert.That(action!["type"], Is.Not.Null);
             Assert.That(action!["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(action!["type"]!.Value<string>(), Is.EqualTo("pause"));
-        });
+        }
     }
 }

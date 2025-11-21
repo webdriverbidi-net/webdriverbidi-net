@@ -13,7 +13,7 @@ public class SimulateAdvertisementScanEntryTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // ScanRecord serialization is tested in its own set of tests,
             // so its serialized structure need not be fully verified here.
@@ -25,6 +25,6 @@ public class SimulateAdvertisementScanEntryTests
             Assert.That(serialized["rssi"]!.Value<double>(), Is.EqualTo(-10.1));
             Assert.That(serialized, Contains.Key("scanRecord"));
             Assert.That(serialized["scanRecord"]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
     }
 }

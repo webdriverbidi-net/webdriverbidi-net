@@ -21,7 +21,7 @@ public class LocateNodesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -34,7 +34,7 @@ public class LocateNodesCommandParametersTests
             Assert.That(serialized["locator"]!, Contains.Key("value"));
             Assert.That(serialized["locator"]!["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["locator"]!["value"]!.Value<string>, Is.EqualTo(".selector"));
-        });
+        }
     }
 
     [Test]
@@ -47,7 +47,7 @@ public class LocateNodesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -63,7 +63,7 @@ public class LocateNodesCommandParametersTests
             Assert.That(serialized, Contains.Key("maxNodeCount"));
             Assert.That(serialized["maxNodeCount"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["maxNodeCount"]!.Value<ulong>(), Is.EqualTo(10));
-        });
+        }
     }
 
     [Test]
@@ -81,7 +81,7 @@ public class LocateNodesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -107,7 +107,7 @@ public class LocateNodesCommandParametersTests
             Assert.That(serializationOptions, Contains.Key("maxObjectDepth"));
             Assert.That(serializationOptions["maxObjectDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serializationOptions["maxObjectDepth"]!.Value<ulong>, Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -121,7 +121,7 @@ public class LocateNodesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -137,6 +137,6 @@ public class LocateNodesCommandParametersTests
             Assert.That(serialized, Contains.Key("contextNodes"));
             Assert.That(serialized["contextNodes"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["contextNodes"]! as JArray, Has.Count.EqualTo(1));
-        });
+        }
     }
 }

@@ -15,12 +15,12 @@ public class SpeculationModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnPrefetchStatusUpdated.AddObserver((PrefetchStatusUpdatedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com/index.html"));
                 Assert.That(e.Status, Is.EqualTo(PreloadingStatus.Pending));
-            });
+            }
             syncEvent.Set();
         });
 

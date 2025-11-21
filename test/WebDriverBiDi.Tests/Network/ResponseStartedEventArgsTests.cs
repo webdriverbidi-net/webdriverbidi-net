@@ -81,7 +81,7 @@ public class ResponseStartedEventArgsTests
                            """;
         ResponseStartedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseStartedEventArgs>(eventJson, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
@@ -95,7 +95,7 @@ public class ResponseStartedEventArgsTests
             Assert.That(eventArgs.IsBlocked, Is.False);
             Assert.That(eventArgs.Intercepts, Is.Null);
             Assert.That(eventArgs.Response, Is.Not.Null);
-        });
+        }
     }
 
     [Test]

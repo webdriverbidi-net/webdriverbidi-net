@@ -16,12 +16,12 @@ public class UserPromptClosedEventArgsTests
                       """;
         UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.IsAccepted, Is.True);
             Assert.That(eventArgs.UserText, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -35,12 +35,12 @@ public class UserPromptClosedEventArgsTests
                       """;
         UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.IsAccepted, Is.False);
             Assert.That(eventArgs.UserText, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -55,12 +55,12 @@ public class UserPromptClosedEventArgsTests
                       """;
         UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.IsAccepted, Is.True);
             Assert.That(eventArgs.UserText, Is.EqualTo("some text"));
-        });
+        }
     }
 
    [Test]

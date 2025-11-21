@@ -35,7 +35,7 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(6));
             Assert.That(serialized, Contains.Key("default"));
@@ -56,7 +56,7 @@ public class UserPromptHandlerTests
             Assert.That(serialized, Contains.Key("file"));
             Assert.That(serialized["file"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["file"]!.Value<string>(), Is.EqualTo("ignore"));
-        });
+        }
     }
 
     [Test]
@@ -68,13 +68,13 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("default"));
             Assert.That(serialized["default"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["default"]!.Value<string>(), Is.EqualTo("accept"));
-        });
+        }
     }
 
     [Test]
@@ -86,13 +86,13 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("alert"));
             Assert.That(serialized["alert"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["alert"]!.Value<string>(), Is.EqualTo("accept"));
-        });
+        }
     }
 
     [Test]
@@ -104,13 +104,13 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("confirm"));
             Assert.That(serialized["confirm"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["confirm"]!.Value<string>(), Is.EqualTo("accept"));
-        });
+        }
     }
 
     [Test]
@@ -122,13 +122,13 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("prompt"));
             Assert.That(serialized["prompt"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["prompt"]!.Value<string>(), Is.EqualTo("accept"));
-        });
+        }
     }
 
     [Test]
@@ -140,13 +140,13 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("beforeunload"));
             Assert.That(serialized["beforeunload"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["beforeunload"]!.Value<string>(), Is.EqualTo("accept"));
-        });
+        }
     }
 
     [Test]
@@ -158,13 +158,13 @@ public class UserPromptHandlerTests
         };
         string json = JsonSerializer.Serialize(handler);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("file"));
             Assert.That(serialized["file"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["file"]!.Value<string>(), Is.EqualTo("accept"));
-        });
+        }
     }
 
     [Test]
@@ -179,7 +179,7 @@ public class UserPromptHandlerTests
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
         Assert.That(handler, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handler.Default, Is.Null);
             Assert.That(handler.Alert, Is.Null);
@@ -187,7 +187,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.Null);
             Assert.That(handler.BeforeUnload, Is.Null);
             Assert.That(handler.File, Is.Null);
-         });
+         }
     }
 
     [Test]
@@ -208,7 +208,7 @@ public class UserPromptHandlerTests
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
         Assert.That(handler, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handler.Default, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(handler.Alert, Is.EqualTo(UserPromptHandlerType.Accept));
@@ -216,7 +216,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.EqualTo(UserPromptHandlerType.Dismiss));
             Assert.That(handler.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Ignore));
             Assert.That(handler.File, Is.EqualTo(UserPromptHandlerType.Ignore));
-        });
+        }
     }
 
     [Test]
@@ -232,7 +232,7 @@ public class UserPromptHandlerTests
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
         Assert.That(handler, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handler.Default, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(handler.Alert, Is.Null);
@@ -240,7 +240,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.Null);
             Assert.That(handler.BeforeUnload, Is.Null);
             Assert.That(handler.File, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -256,7 +256,7 @@ public class UserPromptHandlerTests
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
         Assert.That(handler, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handler.Default, Is.Null);
             Assert.That(handler.Alert, Is.EqualTo(UserPromptHandlerType.Accept));
@@ -264,7 +264,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.Null);
             Assert.That(handler.BeforeUnload, Is.Null);
             Assert.That(handler.File, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -280,7 +280,7 @@ public class UserPromptHandlerTests
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
         Assert.That(handler, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handler.Default, Is.Null);
             Assert.That(handler.Alert, Is.Null);
@@ -288,7 +288,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.Null);
             Assert.That(handler.BeforeUnload, Is.Null);
             Assert.That(handler.File, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -304,7 +304,7 @@ public class UserPromptHandlerTests
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
         Assert.That(handler, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handler.Default, Is.Null);
             Assert.That(handler.Alert, Is.Null);
@@ -312,7 +312,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(handler.BeforeUnload, Is.Null);
             Assert.That(handler.File, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -328,7 +328,7 @@ public class UserPromptHandlerTests
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
         Assert.That(handler, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handler.Default, Is.Null);
             Assert.That(handler.Alert, Is.Null);
@@ -336,7 +336,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.Null);
             Assert.That(handler.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(handler.File, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -352,7 +352,7 @@ public class UserPromptHandlerTests
                       """;
         UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
         Assert.That(handler, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(handler.Default, Is.Null);
             Assert.That(handler.Alert, Is.Null);
@@ -360,7 +360,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.Null);
             Assert.That(handler.BeforeUnload, Is.Null);
             Assert.That(handler.File, Is.EqualTo(UserPromptHandlerType.Accept));
-        });
+        }
     }
 
     [Test]

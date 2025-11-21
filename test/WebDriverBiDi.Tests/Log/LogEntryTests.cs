@@ -29,14 +29,14 @@ public class LogEntryTests
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(entry.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(entry.Text, Is.Null);
             Assert.That(entry.EpochTimestamp, Is.EqualTo(epochTimestamp));
             Assert.That(entry.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-        });
+        }
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class LogEntryTests
         Assert.That(entry, Is.InstanceOf<ConsoleLogEntry>());
         ConsoleLogEntry? consoleEntry = entry as ConsoleLogEntry;
         Assert.That(consoleEntry, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(consoleEntry.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(consoleEntry.Source.RealmId, Is.EqualTo("realmId"));
@@ -76,7 +76,7 @@ public class LogEntryTests
             Assert.That(consoleEntry.Args, Is.Empty);
             Assert.That(consoleEntry.StackTrace, Is.Not.Null);
             Assert.That(consoleEntry.StackTrace!.CallFrames, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -106,7 +106,7 @@ public class LogEntryTests
         Assert.That(entry, Is.InstanceOf<ConsoleLogEntry>());
         ConsoleLogEntry? consoleEntry = entry as ConsoleLogEntry;
         Assert.That(consoleEntry, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(consoleEntry.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(consoleEntry.Source.RealmId, Is.EqualTo("realmId"));
@@ -119,7 +119,7 @@ public class LogEntryTests
             Assert.That(consoleEntry.Args[0].HasValue);
             Assert.That(consoleEntry.Args[0].Type, Is.EqualTo("string"));
             Assert.That(consoleEntry.Args[0].ValueAs<string>(), Is.EqualTo("argValue"));
-        });
+        }
     }
 
     [Test]
@@ -140,7 +140,7 @@ public class LogEntryTests
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(entry.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
@@ -148,7 +148,7 @@ public class LogEntryTests
             Assert.That(entry.Text, Is.EqualTo("my log message"));
             Assert.That(entry.EpochTimestamp, Is.EqualTo(epochTimestamp));
             Assert.That(entry.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-        });
+        }
     }
 
     [Test]
@@ -169,7 +169,7 @@ public class LogEntryTests
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(entry.Level, Is.EqualTo(LogLevel.Info));
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
@@ -177,7 +177,7 @@ public class LogEntryTests
             Assert.That(entry.Text, Is.EqualTo("my log message"));
             Assert.That(entry.EpochTimestamp, Is.EqualTo(epochTimestamp));
             Assert.That(entry.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-        });
+        }
    }
 
     [Test]
@@ -199,14 +199,14 @@ public class LogEntryTests
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         Assert.That(entry.Level, Is.EqualTo(LogLevel.Warn));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(entry.Text, Is.Not.Null);
             Assert.That(entry.Text, Is.EqualTo("my log message"));
             Assert.That(entry.EpochTimestamp, Is.EqualTo(epochTimestamp));
             Assert.That(entry.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-        });
+        }
     }
 
     [Test]
@@ -227,7 +227,7 @@ public class LogEntryTests
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(entry.Level, Is.EqualTo(LogLevel.Error));
             Assert.That(entry.Source.RealmId, Is.EqualTo("realmId"));
@@ -235,7 +235,7 @@ public class LogEntryTests
             Assert.That(entry.Text, Is.EqualTo("my log message"));
             Assert.That(entry.EpochTimestamp, Is.EqualTo(epochTimestamp));
             Assert.That(entry.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-        });
+        }
     }
 
     [Test]

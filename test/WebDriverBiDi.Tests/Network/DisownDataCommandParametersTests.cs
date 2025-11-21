@@ -19,7 +19,7 @@ public class DisownDataCommandParametersTests
         DisownDataCommandParameters properties = new("myCollectorId", "myRequestId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("collector"));
@@ -31,6 +31,6 @@ public class DisownDataCommandParametersTests
             Assert.That(serialized, Contains.Key("dataType"));
             Assert.That(serialized["dataType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["dataType"]!.Value<string>(), Is.EqualTo("response"));
-        });
+        }
     }
 }

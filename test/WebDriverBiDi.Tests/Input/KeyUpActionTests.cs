@@ -13,7 +13,7 @@ public class KeyUpActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -21,7 +21,7 @@ public class KeyUpActionTests
             Assert.That(serialized, Contains.Key("value"));
             Assert.That(serialized["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["value"]!.Value<string>(), Is.EqualTo("a"));
-        });
+        }
     }
 
     [Test]

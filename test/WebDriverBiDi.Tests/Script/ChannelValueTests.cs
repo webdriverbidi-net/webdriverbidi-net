@@ -13,14 +13,14 @@ public class ChannelValueTests
         ChannelValue value = new(new ChannelProperties("myChannel"));
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("channel"));
             Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
     }
 
     [Test]

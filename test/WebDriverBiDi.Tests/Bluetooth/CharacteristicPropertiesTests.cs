@@ -32,7 +32,7 @@ public class CharacteristicPropertiesTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(8));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("broadcast"));
             Assert.That(serialized["broadcast"]!.Type, Is.EqualTo(JTokenType.Boolean));
@@ -58,7 +58,7 @@ public class CharacteristicPropertiesTests
             Assert.That(serialized, Contains.Key("extendedProperties"));
             Assert.That(serialized["extendedProperties"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["extendedProperties"]!.Value<bool>(), Is.True);
-        });
+        }
     }
     
     [Test]
@@ -78,7 +78,7 @@ public class CharacteristicPropertiesTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(8));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("broadcast"));
             Assert.That(serialized["broadcast"]!.Type, Is.EqualTo(JTokenType.Boolean));
@@ -104,6 +104,6 @@ public class CharacteristicPropertiesTests
             Assert.That(serialized, Contains.Key("extendedProperties"));
             Assert.That(serialized["extendedProperties"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["extendedProperties"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 }

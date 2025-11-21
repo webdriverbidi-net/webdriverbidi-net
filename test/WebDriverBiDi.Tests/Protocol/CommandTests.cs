@@ -92,11 +92,13 @@ public class CommandTests
         Command command = new(1, commandParams);
         Assert.That(command.Result, Is.Null);
         Assert.That(command.ThrownException, Is.Null);
-        command.Result = new TestCommandResult();
+        TestCommandResult result = new();
+        command.Result = result;
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
         Assert.That(command.Result, Is.Not.Null);
         Assert.That(command.Result, Is.InstanceOf<TestCommandResult>());
         Assert.That(command.ThrownException, Is.Null);
+        Assert.That(command.Result, Is.EqualTo(result with { }));
     }
 
     [Test]

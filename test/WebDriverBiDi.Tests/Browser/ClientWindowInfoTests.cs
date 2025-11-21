@@ -27,7 +27,7 @@ public class ClientWindowsInfoTests
                       """;
         ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindowId, Is.EqualTo("myClientWindow"));
             Assert.That(result.State, Is.EqualTo(ClientWindowState.Normal));
@@ -36,7 +36,7 @@ public class ClientWindowsInfoTests
             Assert.That(result.Y, Is.EqualTo(200));
             Assert.That(result.Width, Is.EqualTo(300));
             Assert.That(result.Height, Is.EqualTo(400));
-        });
+        }
     }
 
     [Test]
@@ -107,7 +107,7 @@ public class ClientWindowsInfoTests
                       """;
         ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindowId, Is.EqualTo("myClientWindow"));
             Assert.That(result.State, Is.EqualTo(ClientWindowState.Maximized));
@@ -116,7 +116,7 @@ public class ClientWindowsInfoTests
             Assert.That(result.Y, Is.EqualTo(0));
             Assert.That(result.Width, Is.EqualTo(1280));
             Assert.That(result.Height, Is.EqualTo(1024));
-        });
+        }
     }
 
     [Test]
@@ -135,7 +135,7 @@ public class ClientWindowsInfoTests
                       """;
         ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindowId, Is.EqualTo("myClientWindow"));
             Assert.That(result.State, Is.EqualTo(ClientWindowState.Minimized));
@@ -144,7 +144,7 @@ public class ClientWindowsInfoTests
             Assert.That(result.Y, Is.EqualTo(0));
             Assert.That(result.Width, Is.EqualTo(0));
             Assert.That(result.Height, Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -163,7 +163,7 @@ public class ClientWindowsInfoTests
                       """;
         ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindowId, Is.EqualTo("myClientWindow"));
             Assert.That(result.State, Is.EqualTo(ClientWindowState.Fullscreen));
@@ -172,7 +172,7 @@ public class ClientWindowsInfoTests
             Assert.That(result.Y, Is.EqualTo(0));
             Assert.That(result.Width, Is.EqualTo(1280));
             Assert.That(result.Height, Is.EqualTo(1024));
-        });
+        }
     }
 
     [Test]
@@ -241,7 +241,7 @@ public class ClientWindowsInfoTests
                       """;
         ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindowId, Is.EqualTo("myClientWindow"));
             Assert.That(result.State, Is.EqualTo(ClientWindowState.Normal));
@@ -250,7 +250,7 @@ public class ClientWindowsInfoTests
             Assert.That(result.Y, Is.EqualTo(200));
             Assert.That(result.Width, Is.EqualTo(300));
             Assert.That(result.Height, Is.EqualTo(400));
-        });
+        }
     }
 
     [Test]

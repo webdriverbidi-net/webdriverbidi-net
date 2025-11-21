@@ -20,12 +20,12 @@ public class CreateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("tab"));
-        });
+        }
     }
 
     [Test]
@@ -35,12 +35,12 @@ public class CreateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
-        });
+        }
     }
 
     [Test]
@@ -53,7 +53,7 @@ public class CreateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -61,7 +61,7 @@ public class CreateCommandParametersTests
             Assert.That(serialized, Contains.Key("referenceContext"));
             Assert.That(serialized["referenceContext"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["referenceContext"]!.Value<string>(), Is.EqualTo("myReferenceContext"));
-        });
+        }
     }
 
     [Test]
@@ -74,7 +74,7 @@ public class CreateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -82,7 +82,7 @@ public class CreateCommandParametersTests
             Assert.That(serialized, Contains.Key("userContext"));
             Assert.That(serialized["userContext"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-        });
+        }
     }
 
     [Test]
@@ -95,7 +95,7 @@ public class CreateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -103,7 +103,7 @@ public class CreateCommandParametersTests
             Assert.That(serialized, Contains.Key("background"));
             Assert.That(serialized["background"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["background"]!.Value<bool>(), Is.EqualTo(true));
-        });
+        }
     }
 
     [Test]
@@ -116,7 +116,7 @@ public class CreateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -124,7 +124,7 @@ public class CreateCommandParametersTests
             Assert.That(serialized, Contains.Key("background"));
             Assert.That(serialized["background"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["background"]!.Value<bool>(), Is.EqualTo(false));
-        });
+        }
     }
 
     [Test]
@@ -137,11 +137,11 @@ public class CreateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("window"));
-        });
+        }
     }
 }

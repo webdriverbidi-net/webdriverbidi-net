@@ -19,7 +19,7 @@ public class AddDataCollectorCommandParametersTests
         AddDataCollectorCommandParameters properties = new(1024);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("dataTypes"));
@@ -31,7 +31,7 @@ public class AddDataCollectorCommandParametersTests
             Assert.That(serialized, Contains.Key("maxEncodedDataSize"));
             Assert.That(serialized["maxEncodedDataSize"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["maxEncodedDataSize"]!.Value<ulong>(), Is.EqualTo(1024));
-        });
+        }
     }
 
     [Test]
@@ -40,7 +40,7 @@ public class AddDataCollectorCommandParametersTests
         AddDataCollectorCommandParameters properties = new(1024, DataType.Response);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("dataTypes"));
@@ -52,7 +52,7 @@ public class AddDataCollectorCommandParametersTests
             Assert.That(serialized, Contains.Key("maxEncodedDataSize"));
             Assert.That(serialized["maxEncodedDataSize"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["maxEncodedDataSize"]!.Value<ulong>(), Is.EqualTo(1024));
-        });
+        }
     }
 
     [Test]
@@ -61,7 +61,7 @@ public class AddDataCollectorCommandParametersTests
         AddDataCollectorCommandParameters properties = new(1024, DataType.Response, DataType.Request);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("dataTypes"));
@@ -75,7 +75,7 @@ public class AddDataCollectorCommandParametersTests
             Assert.That(serialized, Contains.Key("maxEncodedDataSize"));
             Assert.That(serialized["maxEncodedDataSize"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["maxEncodedDataSize"]!.Value<ulong>(), Is.EqualTo(1024));
-        });
+        }
     }
 
     [Test]
@@ -84,7 +84,7 @@ public class AddDataCollectorCommandParametersTests
         AddDataCollectorCommandParameters properties = new(1024, DataType.Request, DataType.Request, DataType.Response);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("dataTypes"));
@@ -98,7 +98,7 @@ public class AddDataCollectorCommandParametersTests
             Assert.That(serialized, Contains.Key("maxEncodedDataSize"));
             Assert.That(serialized["maxEncodedDataSize"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["maxEncodedDataSize"]!.Value<ulong>(), Is.EqualTo(1024));
-        });
+        }
     }
 
     [Test]
@@ -107,7 +107,7 @@ public class AddDataCollectorCommandParametersTests
         AddDataCollectorCommandParameters properties = new(100, DataType.Request);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("dataTypes"));
@@ -119,7 +119,7 @@ public class AddDataCollectorCommandParametersTests
             Assert.That(serialized, Contains.Key("maxEncodedDataSize"));
             Assert.That(serialized["maxEncodedDataSize"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["maxEncodedDataSize"]!.Value<ulong>(), Is.EqualTo(100));
-        });
+        }
     }
 
     [Test]
@@ -129,7 +129,7 @@ public class AddDataCollectorCommandParametersTests
         properties.BrowsingContexts.Add("myContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("dataTypes"));
@@ -147,7 +147,7 @@ public class AddDataCollectorCommandParametersTests
             Assert.That(contextsArray, Is.Not.Null);
             Assert.That(contextsArray, Has.Count.EqualTo(1));
             Assert.That(contextsArray![0].Value<string>(), Is.EqualTo("myContext"));
-        });
+        }
     }
 
     [Test]
@@ -157,7 +157,7 @@ public class AddDataCollectorCommandParametersTests
         properties.UserContexts.Add("myUserContext");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("dataTypes"));
@@ -175,7 +175,7 @@ public class AddDataCollectorCommandParametersTests
             Assert.That(userContextsArray, Is.Not.Null);
             Assert.That(userContextsArray, Has.Count.EqualTo(1));
             Assert.That(userContextsArray![0].Value<string>(), Is.EqualTo("myUserContext"));
-        });
+        }
     }
 
     [Test]
@@ -187,7 +187,7 @@ public class AddDataCollectorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("dataTypes"));
@@ -202,6 +202,6 @@ public class AddDataCollectorCommandParametersTests
             Assert.That(serialized, Contains.Key("collectorType"));
             Assert.That(serialized["collectorType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized!["collectorType"]!.Value<string>(), Is.EqualTo("blob"));
-        });
+        }
     }
 }

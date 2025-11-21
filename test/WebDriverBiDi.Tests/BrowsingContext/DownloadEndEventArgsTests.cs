@@ -21,7 +21,7 @@ public class DownloadEndEventArgsTests
                       """;
         DownloadEndEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadEndEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
@@ -30,7 +30,7 @@ public class DownloadEndEventArgsTests
             Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
             Assert.That(eventArgs.Status, Is.EqualTo(DownloadEndStatus.Complete));
             Assert.That(eventArgs.FilePath, Is.EqualTo("myFile.file"));
-        });
+        }
     }
 
     [Test]
@@ -49,7 +49,7 @@ public class DownloadEndEventArgsTests
                       """;
         DownloadEndEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadEndEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
@@ -58,7 +58,7 @@ public class DownloadEndEventArgsTests
             Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
             Assert.That(eventArgs.Status, Is.EqualTo(DownloadEndStatus.Complete));
             Assert.That(eventArgs.FilePath, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -76,7 +76,7 @@ public class DownloadEndEventArgsTests
                       """;
         DownloadEndEventArgs? eventArgs = JsonSerializer.Deserialize<DownloadEndEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
@@ -85,7 +85,7 @@ public class DownloadEndEventArgsTests
             Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
             Assert.That(eventArgs.Status, Is.EqualTo(DownloadEndStatus.Canceled));
             Assert.That(eventArgs.FilePath, Is.Null);
-        });
+        }
     }
 
     [Test]

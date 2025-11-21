@@ -19,7 +19,7 @@ public class GetDataCommandParametersTests
         GetDataCommandParameters properties = new("myRequestId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("request"));
@@ -28,7 +28,7 @@ public class GetDataCommandParametersTests
             Assert.That(serialized, Contains.Key("dataType"));
             Assert.That(serialized["dataType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["dataType"]!.Value<string>(), Is.EqualTo("response"));
-        });
+        }
     }
 
     [Test]
@@ -40,7 +40,7 @@ public class GetDataCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("request"));
@@ -52,7 +52,7 @@ public class GetDataCommandParametersTests
             Assert.That(serialized, Contains.Key("collector"));
             Assert.That(serialized["collector"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["collector"]!.Value<string>(), Is.EqualTo("myCollectorId"));
-        });
+        }
     }
 
     [Test]
@@ -65,7 +65,7 @@ public class GetDataCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
             Assert.That(serialized, Contains.Key("request"));
@@ -80,7 +80,7 @@ public class GetDataCommandParametersTests
             Assert.That(serialized, Contains.Key("disown"));
             Assert.That(serialized["disown"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["disown"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -93,7 +93,7 @@ public class GetDataCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(4));
             Assert.That(serialized, Contains.Key("request"));
@@ -108,6 +108,6 @@ public class GetDataCommandParametersTests
             Assert.That(serialized, Contains.Key("disown"));
             Assert.That(serialized["disown"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["disown"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 }

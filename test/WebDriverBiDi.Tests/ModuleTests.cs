@@ -47,12 +47,12 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(10000));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(driverLog, Has.Count.EqualTo(1));
             Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing event JSON"));
             Assert.That(unknownMessage, Is.Not.Empty);
-        });
+        }
     }
 
     [Test]

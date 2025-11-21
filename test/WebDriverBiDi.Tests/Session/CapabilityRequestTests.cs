@@ -25,12 +25,12 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("browserName"));
             Assert.That(result["browserName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(result["browserName"]!.Value<string>(), Is.EqualTo("greatBrowser"));
-        });
+        }
     }
 
     [Test]
@@ -43,12 +43,12 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("browserVersion"));
             Assert.That(result["browserVersion"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(result["browserVersion"]!.Value<string>(), Is.EqualTo("101.5b"));
-        });
+        }
     }
 
     [Test]
@@ -61,12 +61,12 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("platformName"));
             Assert.That(result["platformName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(result["platformName"]!.Value<string>(), Is.EqualTo("oddOS"));
-        });
+        }
     }
 
     [Test]
@@ -79,12 +79,12 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("acceptInsecureCerts"));
             Assert.That(result["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(result["acceptInsecureCerts"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -97,12 +97,12 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("acceptInsecureCerts"));
             Assert.That(result["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(result["acceptInsecureCerts"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 
     [Test]
@@ -118,19 +118,19 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("unhandledPromptBehavior"));
             Assert.That(result["unhandledPromptBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
         JObject? proxyObject = result["unhandledPromptBehavior"] as JObject;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(proxyObject, Has.Count.EqualTo(1));
             Assert.That(proxyObject, Contains.Key("alert"));
             Assert.That(proxyObject!["alert"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(proxyObject["alert"]!.Value<string>(), Is.EqualTo("accept"));
-        });
+        }
     }
 
     [Test]
@@ -143,13 +143,13 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("proxy"));
             Assert.That(result["proxy"]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
         JObject? proxyObject = result["proxy"] as JObject;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(proxyObject, Has.Count.EqualTo(2));
             Assert.That(proxyObject, Contains.Key("proxyType"));
@@ -158,7 +158,7 @@ public class CapabilityRequestTests
             Assert.That(proxyObject!, Contains.Key("httpProxy"));
             Assert.That(proxyObject!["httpProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(proxyObject["httpProxy"]!.Value<string>(), Is.EqualTo("http.proxy"));
-        });
+        }
     }
 
     [Test]
@@ -169,12 +169,12 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("capName"));
             Assert.That(result["capName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(result["capName"]!.Value<string>(), Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -185,18 +185,18 @@ public class CapabilityRequestTests
         string json = JsonSerializer.Serialize(capabilities);
         JObject result = JObject.Parse(json);
         Assert.That(result, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result, Contains.Key("additional"));
             Assert.That(result["additional"]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
         JObject? additionalObject = result["additional"] as JObject;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(additionalObject, Has.Count.EqualTo(1));
             Assert.That(additionalObject!, Contains.Key("capName"));
             Assert.That(additionalObject!["capName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(additionalObject!["capName"]!.Value<string>(), Is.EqualTo("capValue"));
-        });
+        }
     }
 }

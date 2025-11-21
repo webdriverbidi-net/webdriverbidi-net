@@ -22,13 +22,13 @@ public class MessageEventArgsTests
                       """;
         MessageEventArgs? eventArgs = JsonSerializer.Deserialize<MessageEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.ChannelId, Is.EqualTo("myChannel"));
             Assert.That(eventArgs.Data.Type, Is.EqualTo("string"));
             Assert.That(eventArgs.Data.ValueAs<string>(), Is.EqualTo("myChannelValue"));
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("myRealm"));
-        });
+        }
     }
 
     [Test]

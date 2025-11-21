@@ -12,13 +12,13 @@ public class UrlPatternPatternTests
         UrlPattern value = new UrlPatternPattern();
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pattern"));
-        });
+        }
     }
 
     [Test]
@@ -30,7 +30,7 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -39,7 +39,7 @@ public class UrlPatternPatternTests
             Assert.That(serialized, Contains.Key("protocol"));
             Assert.That(serialized["protocol"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["protocol"]!.Value<string>(), Is.EqualTo("https"));
-        });
+        }
     }
 
     [Test]
@@ -51,7 +51,7 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -60,7 +60,7 @@ public class UrlPatternPatternTests
             Assert.That(serialized, Contains.Key("hostname"));
             Assert.That(serialized["hostname"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["hostname"]!.Value<string>(), Is.EqualTo("example.com"));
-        });
+        }
     }
 
     [Test]
@@ -72,7 +72,7 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -81,7 +81,7 @@ public class UrlPatternPatternTests
             Assert.That(serialized, Contains.Key("port"));
             Assert.That(serialized["port"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["port"]!.Value<string>(), Is.EqualTo("2222"));
-        });
+        }
     }
 
     [Test]
@@ -93,7 +93,7 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -102,7 +102,7 @@ public class UrlPatternPatternTests
             Assert.That(serialized, Contains.Key("pathname"));
             Assert.That(serialized["pathname"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["pathname"]!.Value<string>(), Is.EqualTo("/data/*"));
-        });
+        }
     }
 
     [Test]
@@ -114,7 +114,7 @@ public class UrlPatternPatternTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -123,6 +123,6 @@ public class UrlPatternPatternTests
             Assert.That(serialized, Contains.Key("search"));
             Assert.That(serialized["search"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["search"]!.Value<string>(), Is.EqualTo("?user=foo"));
-        });
+        }
     }
 }

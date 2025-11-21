@@ -489,7 +489,7 @@ public class NetworkModuleTests
         ManualResetEvent syncEvent = new(false);
         module.OnAuthRequired.AddObserver((AuthRequiredEventArgs e) =>
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
@@ -531,7 +531,7 @@ public class NetworkModuleTests
                 Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
                 Assert.That(e.Response.BodySize, Is.EqualTo(300));
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
-             });
+             }
             syncEvent.Set();
         });
 
@@ -570,7 +570,7 @@ public class NetworkModuleTests
         ManualResetEvent syncEvent = new(false);
         module.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
@@ -599,7 +599,7 @@ public class NetworkModuleTests
                 Assert.That(e.Request.BodySize, Is.EqualTo(300));
                 Assert.That(e.Request.Timings, Is.Not.Null);
                 Assert.That(e.Initiator!.Type, Is.EqualTo(InitiatorType.Parser));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -640,7 +640,7 @@ public class NetworkModuleTests
         ManualResetEvent syncEvent = new(false);
         module.OnFetchError.AddObserver((FetchErrorEventArgs e) =>
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
@@ -669,7 +669,7 @@ public class NetworkModuleTests
                 Assert.That(e.Request.BodySize, Is.EqualTo(300));
                 Assert.That(e.Request.Timings, Is.Not.Null);
                 Assert.That(e.ErrorText, Is.EqualTo("An error occurred"));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -708,7 +708,7 @@ public class NetworkModuleTests
         ManualResetEvent syncEvent = new(false);
         module.OnResponseStarted.AddObserver((ResponseStartedEventArgs e) =>
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
@@ -750,7 +750,7 @@ public class NetworkModuleTests
                 Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
                 Assert.That(e.Response.BodySize, Is.EqualTo(300));
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -789,7 +789,7 @@ public class NetworkModuleTests
         ManualResetEvent syncEvent = new(false);
         module.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
@@ -831,7 +831,7 @@ public class NetworkModuleTests
                 Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
                 Assert.That(e.Response.BodySize, Is.EqualTo(300));
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
-            });
+            }
             syncEvent.Set();
         });
 

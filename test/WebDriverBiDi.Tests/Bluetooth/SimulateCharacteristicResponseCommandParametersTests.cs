@@ -20,7 +20,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -40,7 +40,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       });
+       }
     }
 
     [Test]
@@ -50,7 +50,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -70,7 +70,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       });
+       }
     }
 
     [Test]
@@ -80,7 +80,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -100,7 +100,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       });
+       }
     }
 
     [Test]
@@ -110,7 +110,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -130,7 +130,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       });
+       }
     }
 
     [Test]
@@ -143,7 +143,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(7));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -167,7 +167,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.Array));
             JArray? dataArray = serialized["data"] as JArray;
             Assert.That(dataArray, Is.Empty);
-       });
+       }
     }
 
     [Test]
@@ -180,7 +180,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(7));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -208,6 +208,6 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(dataArray[0].Value<uint>(), Is.EqualTo(123));
             Assert.That(dataArray![1].Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(dataArray[1].Value<uint>(), Is.EqualTo(456));
-       });
+       }
     }
 }

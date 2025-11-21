@@ -156,12 +156,12 @@ public class BrowsingContextModuleTests
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.ContextTree, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ContextTree[0].BrowsingContextId, Is.EqualTo("myContext"));
             Assert.That(result.ContextTree[0].Url, Is.EqualTo("https://example.com"));
             Assert.That(result.ContextTree[0].Children, Has.Count.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -258,11 +258,11 @@ public class BrowsingContextModuleTests
         NavigateCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
             Assert.That(result.Url, Is.EqualTo("https://example.com"));
-        });
+        }
     }
 
     [Test]
@@ -323,11 +323,11 @@ public class BrowsingContextModuleTests
         ReloadCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
             Assert.That(result.Url, Is.EqualTo("https://example.com"));
-        });
+        }
     }
 
     [Test]
@@ -394,7 +394,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnContextCreated.AddObserver((BrowsingContextEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.UserContextId, Is.EqualTo("default"));
@@ -402,7 +402,7 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.Children, Has.Count.EqualTo(0));
                 Assert.That(e.Parent, Is.Null);
-            });
+            }
             syncEvent.Set();
         });
 
@@ -435,13 +435,13 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnContextDestroyed.AddObserver((BrowsingContextEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.Children, Has.Count.EqualTo(0));
                 Assert.That(e.Parent, Is.Null);
-            });
+            }
             syncEvent.Set();
         });
 
@@ -475,14 +475,14 @@ public class BrowsingContextModuleTests
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnDomContentLoaded.AddObserver((NavigationEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -514,7 +514,7 @@ public class BrowsingContextModuleTests
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnDownloadWillBegin.AddObserver((DownloadWillBeginEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
@@ -522,7 +522,7 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
                 Assert.That(e.SuggestedFileName, Is.EqualTo("myFile.file"));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -555,7 +555,7 @@ public class BrowsingContextModuleTests
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnDownloadEndEvent.AddObserver((DownloadEndEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
@@ -564,7 +564,7 @@ public class BrowsingContextModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
                 Assert.That(e.Status, Is.EqualTo(DownloadEndStatus.Complete));
                 Assert.That(e.FilePath, Is.EqualTo("myFile.file"));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -598,14 +598,14 @@ public class BrowsingContextModuleTests
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnFragmentNavigated.AddObserver((NavigationEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -637,14 +637,14 @@ public class BrowsingContextModuleTests
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnLoad.AddObserver((NavigationEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -676,14 +676,14 @@ public class BrowsingContextModuleTests
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnNavigationAborted.AddObserver((NavigationEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -716,14 +716,14 @@ public class BrowsingContextModuleTests
       long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
       module.OnNavigationCommitted.AddObserver((NavigationEventArgs e) =>
       {
-        Assert.Multiple(() =>
-        {
+          using (Assert.EnterMultipleScope())
+          {
           Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
           Assert.That(e.Url, Is.EqualTo("https://example.com"));
           Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
           Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
           Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-        });
+        }
         syncEvent.Set();
       });
 
@@ -755,14 +755,14 @@ public class BrowsingContextModuleTests
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnNavigationFailed.AddObserver((NavigationEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -794,14 +794,14 @@ public class BrowsingContextModuleTests
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnNavigationStarted.AddObserver((NavigationEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -832,11 +832,11 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnHistoryUpdated.AddObserver((HistoryUpdatedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Url, Is.EqualTo("https://example.com"));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -866,12 +866,12 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnUserPromptClosed.AddObserver((UserPromptClosedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.IsAccepted, Is.EqualTo(true));
                 Assert.That(e.UserText, Is.EqualTo("my prompt text"));
-            });
+            }
             syncEvent.Set();
         });
 
@@ -901,12 +901,12 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnUserPromptOpened.AddObserver((UserPromptOpenedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.PromptType, Is.EqualTo(UserPromptType.Confirm));
                 Assert.That(e.Message, Is.EqualTo("my message text"));
-            });
+            }
             syncEvent.Set();
         });
 

@@ -20,13 +20,13 @@ public class MessageTests
                       """;
         CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Type, Is.EqualTo("success"));
             Assert.That(result.Result, Is.InstanceOf<TestCommandResult>());
             Assert.That(((TestCommandResult)result.Result).Value, Is.EqualTo("response value"));
             Assert.That(result.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -43,14 +43,14 @@ public class MessageTests
                       """;
         EventMessage<TestEventArgs>? result = JsonSerializer.Deserialize<EventMessage<TestEventArgs>>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Type, Is.EqualTo("event"));
             Assert.That(result.EventData, Is.InstanceOf<TestEventArgs>());
             Assert.That(result.EventName, Is.EqualTo("protocol.event"));
             Assert.That(((TestEventArgs)result.EventData).ParamName, Is.EqualTo("paramValue"));
             Assert.That(result.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -66,7 +66,7 @@ public class MessageTests
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Type, Is.EqualTo("error"));
             Assert.That(result.CommandId, Is.EqualTo(1));
@@ -74,7 +74,7 @@ public class MessageTests
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
             Assert.That(result.StackTrace, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -90,14 +90,14 @@ public class MessageTests
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Type, Is.EqualTo("error"));
             Assert.That(result.CommandId, Is.Null);
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -114,7 +114,7 @@ public class MessageTests
                       """;
         ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Type, Is.EqualTo("error"));
             Assert.That(result.CommandId, Is.EqualTo(1));
@@ -122,7 +122,7 @@ public class MessageTests
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
             Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
-        });
+        }
     }
 
     [Test]
@@ -140,14 +140,14 @@ public class MessageTests
         ErrorResponseMessage? messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
         Assert.That(messageResult, Is.Not.Null);
         ErrorResult result = messageResult.GetErrorResponseData();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsError, Is.True);
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
             Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
-        });
+        }
     }
     
     [Test]
@@ -165,12 +165,12 @@ public class MessageTests
                       """;
         CommandResponseMessage<TestCommandResult>? result = JsonSerializer.Deserialize<CommandResponseMessage<TestCommandResult>>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Type, Is.EqualTo("success"));
             Assert.That(result.Result, Is.InstanceOf<TestCommandResult>());
             Assert.That(((TestCommandResult)result.Result).Value, Is.EqualTo("response value"));
             Assert.That(result.AdditionalData, Has.Count.EqualTo(1));
-        });
+        }
     }
 }

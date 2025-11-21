@@ -37,15 +37,12 @@ public static class JsonExtensions
                 return token.ToObject<int>();
 
             case JTokenType.Float:
-                return token.ToObject<float>();
+                return token.ToObject<double>();
 
             case JTokenType.String:
                 return token.ToString();
-
-            case JTokenType.Null:
-                return null;
         }
 
-        return token.ToObject<object>()?.ToString();
+        return null;
     }
 }

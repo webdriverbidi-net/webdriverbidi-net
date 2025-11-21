@@ -8,7 +8,7 @@ using WebDriverBiDi.TestUtilities;
 [TestFixture]
 public class ConnectionTests
 {
-    private Server? server;
+    private Server server;
     private string lastServerReceivedData = string.Empty;
     private byte[] lastConnectionReceivedData = [];
     private string connectionId = string.Empty;
@@ -36,31 +36,21 @@ public class ConnectionTests
     [TearDown]
     public void DisposeServer()
     {
-        if (this.server is not null)
-        {
-            this.server.Stop();
+        this.server.Stop();
 
-            this.serverDataReceivedObserver?.Unobserve();
-            this.serverDataReceivedObserver = null;
+        this.serverDataReceivedObserver?.Unobserve();
+        this.serverDataReceivedObserver = null;
 
-            this.clientConnectedObserver?.Unobserve();
-            this.clientConnectedObserver = null;
+        this.clientConnectedObserver?.Unobserve();
+        this.clientConnectedObserver = null;
 
-            this.clientDisconnectedObserver?.Unobserve();
-            this.clientDisconnectedObserver = null;
-
-            this.server = null;
-        }
+        this.clientDisconnectedObserver?.Unobserve();
+        this.clientDisconnectedObserver = null;
     }
 
     [Test]
     public void TestConnectionFailure()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         int port = this.server.Port;
         DisposeServer();
         Connection connection = new()
@@ -73,11 +63,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanSendData()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -93,11 +78,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanReceiveData()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -113,11 +93,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionReceivesDataOnBufferBoundary()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new();
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -135,11 +110,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionReceivesDataOnVeryLongMessage()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new();
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -157,11 +127,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionLog()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         List<LogMessageEventArgs> logValues = [];
         Connection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
@@ -193,22 +158,17 @@ public class ConnectionTests
         Assert.That(logValues, Has.Count.EqualTo(5), $"Actual values: {string.Join("\n", messages.ToArray())}");
         foreach (LogMessageEventArgs args in logValues)
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(args.Level, Is.EqualTo(WebDriverBiDiLogLevel.Info));
                 Assert.That(args.Message, Is.Not.Null);
-            });
+            }
         }
     }
 
     [Test]
     public async Task TestIsActiveProperty()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new();
         Assert.That(connection.IsActive, Is.False);
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
@@ -222,11 +182,6 @@ public class ConnectionTests
     [Test]
     public async Task TestUrlProperty()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         string serverWebSocketUrl = $"ws://localhost:{this.server.Port}";
         Connection connection = new();
         Assert.That(connection.ConnectedUrl, Is.EqualTo(string.Empty));
@@ -241,11 +196,6 @@ public class ConnectionTests
     [Test]
     public async Task TestStopWithoutStart()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new();
         Assert.That(connection.IsActive, Is.False);
         await connection.StopAsync();
@@ -255,11 +205,6 @@ public class ConnectionTests
     [Test]
     public async Task TestStopForcesCancellationOfDataReceiveTask()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         TestConnection connection = new()
         {
             BypassStart = false,
@@ -282,11 +227,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionStopCanBeCalledMultipleTimes()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         List<string> connectionLog = [];
         Connection connection = new();
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
@@ -304,11 +244,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionHandlesRemoteEndStop()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -324,11 +259,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionInitiateWebSocketClose()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         List<string> expectedLogEntries =
         [
             $"Opening connection to URL ws://localhost:{this.server.Port}",
@@ -355,11 +285,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionHandlesDisconnectInitiatedByRemoteEnd()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         List<string> expectedLogEntries =
         [
             $"Opening connection to URL ws://localhost:{this.server.Port}",
@@ -405,11 +330,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionHandlesHungRemoteEnd()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         List<string> expectedLogEntries =
         [
             $"Opening connection to URL ws://localhost:{this.server.Port}",
@@ -442,11 +362,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanBeReusedAfterBeingShutDown()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -486,11 +401,6 @@ public class ConnectionTests
     [Test]
     public async Task TestConnectionCanBeReusedAfterBeingAborted()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -531,11 +441,6 @@ public class ConnectionTests
     [Test]
     public async Task TestCannotStartAlreadyStartedConnection()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         Connection connection = new()
         {
             StartupTimeout = TimeSpan.FromSeconds(1),
@@ -560,11 +465,6 @@ public class ConnectionTests
     [Test]
     public async Task TestCanShutdownWhenCleanShutdownExceedsTimeout()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         List<string> connectionLog = [];
         Connection connection = new()
         {
@@ -587,11 +487,6 @@ public class ConnectionTests
     [Test]
     public async Task TestDataSendOperationsAreSynchronized()
     {
-        if (this.server is null)
-        {
-            throw new WebDriverBiDiException("No server available");
-        }
-
         TestConnection connection = new()
         {
             BypassStart = false,

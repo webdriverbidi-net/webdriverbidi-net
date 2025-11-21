@@ -11,12 +11,12 @@ public class PartitionKeyTests
         string json = "{}";
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.UserContextId, Is.Null);
             Assert.That(result.SourceOrigin, Is.Null);
             Assert.That(result.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -29,12 +29,12 @@ public class PartitionKeyTests
                       """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.UserContextId, Is.EqualTo("myUserContext"));
             Assert.That(result.SourceOrigin, Is.Null);
             Assert.That(result.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -47,12 +47,12 @@ public class PartitionKeyTests
                       """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.UserContextId, Is.Null);
             Assert.That(result.SourceOrigin, Is.EqualTo("mySourceOrigin"));
             Assert.That(result.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -65,7 +65,7 @@ public class PartitionKeyTests
                       """;
         PartitionKey? result = JsonSerializer.Deserialize<PartitionKey>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.UserContextId, Is.Null);
             Assert.That(result.SourceOrigin, Is.Null);
@@ -73,7 +73,7 @@ public class PartitionKeyTests
             Assert.That(result.AdditionalData, Contains.Key("extraData"));
             Assert.That(result.AdditionalData["extraData"]!.GetType, Is.EqualTo(typeof(string)));
             Assert.That(result.AdditionalData["extraData"]!, Is.EqualTo("myExtraData"));
-        });
+        }
     }
 
     [Test]

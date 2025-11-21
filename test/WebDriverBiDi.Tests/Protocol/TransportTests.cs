@@ -34,6 +34,33 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestTransportCanSendCommandWithComplexParameters()
+    {
+        string commandName = "module.command";
+        Dictionary<string, object?> expectedCommandParameters = new()
+        {
+            { "parameterName", "parameterValue" },
+            { "complex", new object?[] { "stringValue", 1, 2.3d, true, null } }
+        };
+        Dictionary<string, object?> expected = new()
+        {
+            { "id", 1 },
+            { "method", commandName },
+            { "params", expectedCommandParameters }
+        };
+
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        TestComplexCommandParameters command = new(commandName);
+        _ = await transport.SendCommandAsync(command);
+
+        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        Assert.That(dataValue, Is.EquivalentTo(expected));
+    }
+
+    [Test]
     public async Task TestTransportCanGetResponse()
     {
         string commandName = "module.command";
@@ -60,11 +87,11 @@ public class TransportTests
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
         CommandResult? actualResult = command.Result;
         Assert.That(actualResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(actualResult.IsError, Is.False);
             Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
-        });
+        }
         TestCommandResult? convertedResult = actualResult as TestCommandResult;
         Assert.That(convertedResult, Is.Not.Null);
         Assert.That(convertedResult.Value, Is.EqualTo("response value"));
@@ -98,19 +125,19 @@ public class TransportTests
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         CommandResult? actualResult = command.Result;
         Assert.That(actualResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(actualResult.IsError, Is.False);
             Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
-        });
+        }
         TestCommandResult? convertedResult = actualResult as TestCommandResult;
         Assert.That(convertedResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(convertedResult.Value, Is.EqualTo("response value"));
             Assert.That(convertedResult.AdditionalData, Has.Count.EqualTo(1));
             Assert.That(convertedResult.AdditionalData["extraDataName"], Is.EqualTo("extraDataValue"));
-        });
+        }
     }
 
     [Test]
@@ -139,19 +166,19 @@ public class TransportTests
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
         CommandResult? actualResult = command.Result;
         Assert.That(actualResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(actualResult.IsError, Is.True);
             Assert.That(actualResult, Is.InstanceOf<ErrorResult>());
-        });
+        }
         ErrorResult? convertedResponse = actualResult as ErrorResult;
         Assert.That(convertedResponse, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(convertedResponse.ErrorType, Is.EqualTo("unknown command"));
             Assert.That(convertedResponse.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(convertedResponse.StackTrace, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -204,11 +231,11 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(command.Result, Is.Null);
             Assert.That(command.ThrownException, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -240,11 +267,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(receivedName, Is.EqualTo("protocol.event"));
             Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
-        });
+        }
         TestEventArgs? convertedData = receivedData as TestEventArgs;
         Assert.That(convertedData, Is.Not.Null);
         Assert.That(convertedData.ParamName, Is.EqualTo("paramValue"));
@@ -278,11 +305,11 @@ public class TransportTests
         Assert.That(receivedData, Is.TypeOf<ErrorResult>());
         ErrorResult? convertedData = receivedData as ErrorResult;
         Assert.That(convertedData, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(convertedData.ErrorType, Is.EqualTo("unknown error"));
             Assert.That(convertedData.ErrorMessage, Is.EqualTo("This is a test error message"));
-        });
+        }
     }
 
     [Test]
@@ -329,22 +356,25 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
         Assert.That(logs, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(logs[0].Message, Is.EqualTo("test log message"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Warn));
-        });
+        }
     }
 
     [Test]
     public async Task TestTransportLogsSuccessfulCommandResponses()
     {
+        ManualResetEventSlim syncEvent = new(false);
         List<LogMessageEventArgs> logs = [];
         TestConnection connection = new();
         Transport transport = new(connection);
+        TaskCompletionSource logCompletionSource = new();
         transport.OnLogMessage.AddObserver((e) =>
         {
             logs.Add(e);
+            syncEvent.Set();
             return Task.CompletedTask;
         });
         string commandName = "module.command";
@@ -369,20 +399,22 @@ public class TransportTests
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
         CommandResult? actualResult = command.Result;
         Assert.That(actualResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(actualResult.IsError, Is.False);
             Assert.That(actualResult, Is.TypeOf<TestCommandResult>());
-        });
+        }
         TestCommandResult? convertedResult = actualResult as TestCommandResult;
         Assert.That(convertedResult, Is.Not.Null);
         Assert.That(convertedResult.Value, Is.EqualTo("response value"));
-        Assert.That(logs, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        bool logEventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
+        Assert.That(logEventRaised, Is.True);
+        using (Assert.EnterMultipleScope())
         {
+            Assert.That(logs, Has.Count.EqualTo(1));
             Assert.That(logs[0].Message, Contains.Substring("Command response message processed"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Trace));
-        });
+        }
     }
 
     [Test]
@@ -405,13 +437,13 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync("{ { }");
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(logs, Has.Count.EqualTo(1));
             Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing JSON message"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Error));
-        });
+        }
     }
 
     [Test]
@@ -438,11 +470,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
-        });
+        }
     }
 
     [Test]
@@ -470,11 +502,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
-        });
+        }
     }
 
     [Test]
@@ -501,11 +533,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
-        });
+        }
     }
 
     [Test]
@@ -533,11 +565,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
-        });
+        }
     }
 
     [Test]
@@ -565,11 +597,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
-        });
+        }
     }
 
     [Test]
@@ -598,22 +630,22 @@ public class TransportTests
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
                 logs.Add(e);
+                signaler.Signal();
             }
 
-            signaler.Signal();
             return Task.CompletedTask;
         });
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
             Assert.That(logs, Has.Count.EqualTo(1));
             Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing error JSON"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Error));
-        });
+        }
     }
 
     [Test]
@@ -642,22 +674,22 @@ public class TransportTests
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
                 logs.Add(e);
+                signaler.Signal();
             }
 
-            signaler.Signal();
             return Task.CompletedTask;
         });
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
             Assert.That(logs, Has.Count.EqualTo(1));
             Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing error JSON"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Error));
-        });
+        }
     }
 
     [Test]
@@ -686,22 +718,22 @@ public class TransportTests
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
                 logs.Add(e);
+                signaler.Signal();
             }
 
-            signaler.Signal();
             return Task.CompletedTask;
         });
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
             Assert.That(logs, Has.Count.EqualTo(1));
             Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing error JSON"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Error));
-        });
+        }
     }
 
     [Test]
@@ -728,11 +760,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
-        });
+        }
     }
 
     [Test]
@@ -757,11 +789,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
-        });
+        }
     }
 
     [Test]
@@ -789,11 +821,11 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = syncEvent.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
-        });
+        }
     }
 
     [Test]
@@ -825,22 +857,22 @@ public class TransportTests
             if (e.Level > WebDriverBiDiLogLevel.Trace)
             {
                 logs.Add(e);
+                signaler.Signal();
             }
 
-            signaler.Signal();
             return Task.CompletedTask;
         });
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventRaised, Is.True);
             Assert.That(loggedEvent, Is.EqualTo(json));
             Assert.That(logs, Has.Count.EqualTo(1));
             Assert.That(logs[0].Message, Contains.Substring("Unexpected error parsing event JSON"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Error));
-        });
+        }
     }
 
     [Test]
@@ -907,11 +939,11 @@ public class TransportTests
         await transport.DisconnectAsync();
         bool eventRaised = syncEvent.WaitOne(TimeSpan.FromSeconds(1));
         Assert.That(eventRaised, Is.True);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(receivedName, Is.EqualTo("protocol.event"));
             Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
-        });
+        }
         TestEventArgs? convertedData = receivedData as TestEventArgs;
         Assert.That(convertedData, Is.Not.Null);
         Assert.That(convertedData.ParamName, Is.EqualTo("paramValue"));

@@ -26,7 +26,7 @@ public class DescriptorEventGeneratedEventArgsTests
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
@@ -34,7 +34,7 @@ public class DescriptorEventGeneratedEventArgsTests
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
             Assert.That(eventArgs.Type, Is.EqualTo(DescriptorEventGeneratedType.Read));
             Assert.That(eventArgs.Data, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -52,7 +52,7 @@ public class DescriptorEventGeneratedEventArgsTests
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize< DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
@@ -60,7 +60,7 @@ public class DescriptorEventGeneratedEventArgsTests
             Assert.That(eventArgs.CharacteristicUuid, Is.EqualTo("myCharacteristicUuid"));
             Assert.That(eventArgs.Type, Is.EqualTo(DescriptorEventGeneratedType.Write));
             Assert.That(eventArgs.Data, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -79,7 +79,7 @@ public class DescriptorEventGeneratedEventArgsTests
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
@@ -88,7 +88,7 @@ public class DescriptorEventGeneratedEventArgsTests
             Assert.That(eventArgs.Type, Is.EqualTo(DescriptorEventGeneratedType.Read));
             Assert.That(eventArgs.Data, Is.Not.Null);
             Assert.That(eventArgs.Data, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -107,7 +107,7 @@ public class DescriptorEventGeneratedEventArgsTests
                       """;
         DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Address, Is.EqualTo("myAddress"));
@@ -118,7 +118,7 @@ public class DescriptorEventGeneratedEventArgsTests
             Assert.That(eventArgs.Data, Has.Count.EqualTo(2));
             Assert.That(eventArgs.Data![0], Is.EqualTo(123));
             Assert.That(eventArgs.Data![1], Is.EqualTo(456));
-        });
+        }
     }
 
     [Test]

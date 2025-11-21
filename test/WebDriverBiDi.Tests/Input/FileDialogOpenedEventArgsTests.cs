@@ -24,12 +24,12 @@ public class FileDialogOpenedEventArgsTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         FileDialogOpenedEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.IsMultiple, Is.True);
             Assert.That(eventArgs.Element, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -45,12 +45,12 @@ public class FileDialogOpenedEventArgsTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         FileDialogOpenedEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.IsMultiple, Is.False);
             Assert.That(eventArgs.Element, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -75,13 +75,13 @@ public class FileDialogOpenedEventArgsTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         FileDialogOpenedEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.IsMultiple, Is.True);
             Assert.That(eventArgs.Element, Is.Not.Null);
             Assert.That(eventArgs.Element!.SharedId, Is.EqualTo("mySharedId"));
-        });
+        }
     }
 
     [Test]

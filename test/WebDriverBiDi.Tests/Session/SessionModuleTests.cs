@@ -33,11 +33,11 @@ public class SessionModuleTests
         StatusCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsReady, Is.True);
             Assert.That(result.Message, Is.EqualTo("ready for connection"));
-        });
+        }
     }
 
     [Test]
@@ -68,11 +68,11 @@ public class SessionModuleTests
         StatusCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsReady, Is.True);
             Assert.That(result.Message, Is.EqualTo("ready for connection"));
-        });
+        }
     }
 
     [Test]
@@ -205,7 +205,7 @@ public class SessionModuleTests
         NewCommandResult result = task.Result;
         
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.SessionId, Is.EqualTo("mySession"));
             Assert.That(result.Capabilities.BrowserName, Is.EqualTo("greatBrowser"));
@@ -220,7 +220,7 @@ public class SessionModuleTests
             Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"], Is.Not.Null);
             Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"], Is.TypeOf<string>());
             Assert.That(result.Capabilities.AdditionalCapabilities["additionalCapName"]!.ToString(), Is.EqualTo("additionalCapValue"));
-        });
+        }
     }
 
     [Test]

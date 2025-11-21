@@ -21,11 +21,11 @@ public class ReloadCommandResultTests
                       """;
         ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Url, Is.EqualTo("http://example.com"));
             Assert.That(result.NavigationId, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -39,11 +39,11 @@ public class ReloadCommandResultTests
                       """;
         ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Url, Is.EqualTo("http://example.com"));
             Assert.That(result.NavigationId, Is.EqualTo("myNavigationId"));
-        });
+        }
     }
 
     [Test]

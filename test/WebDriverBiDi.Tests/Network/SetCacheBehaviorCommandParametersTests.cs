@@ -19,13 +19,13 @@ public class SetCacheBehaviorCommandParametersTests
         SetCacheBehaviorCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("cacheBehavior"));
             Assert.That(serialized["cacheBehavior"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["cacheBehavior"]!.Value<string>(), Is.EqualTo("default"));
-        });
+        }
     }
 
     [Test]
@@ -37,13 +37,13 @@ public class SetCacheBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("cacheBehavior"));
             Assert.That(serialized["cacheBehavior"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["cacheBehavior"]!.Value<string>(), Is.EqualTo("bypass"));
-        });
+        }
     }
 
     [Test]
@@ -55,7 +55,7 @@ public class SetCacheBehaviorCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("cacheBehavior"));
@@ -67,6 +67,6 @@ public class SetCacheBehaviorCommandParametersTests
             Assert.That(contextsObject, Has.Count.EqualTo(1));
             Assert.That(contextsObject[0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextsObject[0].Value<string>(), Is.EqualTo("myContext"));
-        });
+        }
     }
 }

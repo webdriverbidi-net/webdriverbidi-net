@@ -20,7 +20,7 @@ public class NavigateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -28,7 +28,7 @@ public class NavigateCommandParametersTests
             Assert.That(serialized, Contains.Key("url"));
             Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("http://example.com"));
-        });
+        }
     }
 
     [Test]
@@ -41,7 +41,7 @@ public class NavigateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -52,7 +52,7 @@ public class NavigateCommandParametersTests
             Assert.That(serialized, Contains.Key("wait"));
             Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("none"));
-        });
+        }
     }
 
     [Test]
@@ -65,7 +65,7 @@ public class NavigateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -76,7 +76,7 @@ public class NavigateCommandParametersTests
             Assert.That(serialized, Contains.Key("wait"));
             Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("interactive"));
-        });
+        }
     }
 
     [Test]
@@ -89,7 +89,7 @@ public class NavigateCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -100,6 +100,6 @@ public class NavigateCommandParametersTests
             Assert.That(serialized, Contains.Key("wait"));
             Assert.That(serialized["wait"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["wait"]!.Value<string>(), Is.EqualTo("complete"));
-        });
+        }
     }
 }

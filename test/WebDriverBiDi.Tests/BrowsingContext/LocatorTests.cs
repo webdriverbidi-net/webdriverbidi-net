@@ -27,7 +27,7 @@ public class LocatorTests
         CssLocator value = new(".selector");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -36,7 +36,7 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo(".selector"));
-        });
+        }
     }
 
     [Test]
@@ -45,7 +45,7 @@ public class LocatorTests
         XPathLocator value = new("//selector");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -54,7 +54,7 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("//selector"));
-        });
+        }
     }
 
     [Test]
@@ -63,7 +63,7 @@ public class LocatorTests
         InnerTextLocator value = new("text to locate");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -72,7 +72,7 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("text to locate"));
-        });
+        }
     }
 
     [Test]
@@ -84,7 +84,7 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
             Assert.That(parsed, Contains.Key("type"));
@@ -96,7 +96,7 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("maxDepth"));
             Assert.That(parsed["maxDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(parsed["maxDepth"]!.Value<ulong>(), Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -108,7 +108,7 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
             Assert.That(parsed, Contains.Key("type"));
@@ -120,7 +120,7 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("maxDepth"));
             Assert.That(parsed["maxDepth"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(parsed["maxDepth"]!.Value<ulong>(), Is.EqualTo(10));
-        });
+        }
     }
 
     [Test]
@@ -132,7 +132,7 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
             Assert.That(parsed, Contains.Key("type"));
@@ -144,7 +144,7 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("ignoreCase"));
             Assert.That(parsed["ignoreCase"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(parsed["ignoreCase"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -156,7 +156,7 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
             Assert.That(parsed, Contains.Key("type"));
@@ -168,7 +168,7 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("ignoreCase"));
             Assert.That(parsed["ignoreCase"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(parsed["ignoreCase"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 
     [Test]
@@ -180,7 +180,7 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
             Assert.That(parsed, Contains.Key("type"));
@@ -192,7 +192,7 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("matchType"));
             Assert.That(parsed["matchType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["matchType"]!.Value<string>(), Is.EqualTo("full"));
-        });
+        }
     }
 
     [Test]
@@ -204,7 +204,7 @@ public class LocatorTests
         };
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(3));
             Assert.That(parsed, Contains.Key("type"));
@@ -216,22 +216,22 @@ public class LocatorTests
             Assert.That(parsed, Contains.Key("matchType"));
             Assert.That(parsed["matchType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["matchType"]!.Value<string>(), Is.EqualTo("partial"));
-        });
+        }
     }
 
     [Test]
     public void TestCanSerializeAccessibilityLocator()
     {
         AccessibilityLocator value = new();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(value.Name, Is.Null);
             Assert.That(value.Role, Is.Null);
-        });
+        }
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -241,7 +241,7 @@ public class LocatorTests
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
             JObject? accessibilityValue = parsed["value"] as JObject;
             Assert.That(accessibilityValue!, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -252,15 +252,15 @@ public class LocatorTests
             Name = "accessibleName",
             Role = "accessibleRole"
         };
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(value.Name, Is.EqualTo("accessibleName"));
             Assert.That(value.Role, Is.EqualTo("accessibleRole"));
-        });
+        }
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -277,7 +277,7 @@ public class LocatorTests
             Assert.That(accessibilityValue, Contains.Key("role"));
             Assert.That(accessibilityValue!["role"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(accessibilityValue!["role"]!.Value<string>(), Is.EqualTo("accessibleRole"));
-        });
+        }
     }
 
     [Test]
@@ -287,15 +287,15 @@ public class LocatorTests
         {
             Name = "accessibleName"
         };
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(value.Name, Is.EqualTo("accessibleName"));
             Assert.That(value.Role, Is.Null);
-        });
+        }
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -309,7 +309,7 @@ public class LocatorTests
             Assert.That(accessibilityValue, Contains.Key("name"));
             Assert.That(accessibilityValue!["name"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(accessibilityValue!["name"]!.Value<string>(), Is.EqualTo("accessibleName"));
-        });
+        }
     }
 
     [Test]
@@ -319,15 +319,15 @@ public class LocatorTests
         {
             Role = "accessibleRole"
         };
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(value.Name, Is.Null);
             Assert.That(value.Role, Is.EqualTo("accessibleRole"));
-        });
+        }
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -341,7 +341,7 @@ public class LocatorTests
             Assert.That(accessibilityValue, Contains.Key("role"));
             Assert.That(accessibilityValue!["role"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(accessibilityValue!["role"]!.Value<string>(), Is.EqualTo("accessibleRole"));
-        });
+        }
     }
 
     [Test]
@@ -355,7 +355,7 @@ public class LocatorTests
         value.Name = null;
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -369,7 +369,7 @@ public class LocatorTests
             Assert.That(accessibilityValue, Contains.Key("role"));
             Assert.That(accessibilityValue!["role"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(accessibilityValue!["role"]!.Value<string>(), Is.EqualTo("accessibleRole"));
-        });
+        }
     }
 
     [Test]
@@ -383,7 +383,7 @@ public class LocatorTests
         value.Role = null;
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -397,7 +397,7 @@ public class LocatorTests
             Assert.That(accessibilityValue, Contains.Key("name"));
             Assert.That(accessibilityValue!["name"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(accessibilityValue!["name"]!.Value<string>(), Is.EqualTo("accessibleName"));
-        });
+        }
     }
 
     [Test]
@@ -412,7 +412,7 @@ public class LocatorTests
         value.Role = null;
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -422,7 +422,7 @@ public class LocatorTests
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Object));
             JObject? accessibilityValue = parsed["value"] as JObject;
             Assert.That(accessibilityValue, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -433,7 +433,7 @@ public class LocatorTests
 
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -447,6 +447,6 @@ public class LocatorTests
             Assert.That(contextValue, Contains.Key("context"));
             Assert.That(contextValue!["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextValue!["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        });
+        }
     }
 }

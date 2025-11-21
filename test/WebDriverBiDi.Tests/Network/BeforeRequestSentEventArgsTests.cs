@@ -58,11 +58,11 @@ public class BeforeRequestSentEventArgsTests
                            """;
         BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
             Assert.That(eventArgs.Initiator, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -86,13 +86,13 @@ public class BeforeRequestSentEventArgsTests
                            """;
         BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
             // Also proper deserialization of the Initiator object is handled in InitiatorTests.
             Assert.That(eventArgs.Initiator, Is.Not.Null);
             Assert.That(eventArgs.Initiator!.Type, Is.EqualTo(InitiatorType.Parser));
-        });
+        }
     }
 
     [Test]

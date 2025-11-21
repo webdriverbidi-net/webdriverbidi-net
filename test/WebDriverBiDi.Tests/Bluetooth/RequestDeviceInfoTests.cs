@@ -22,11 +22,11 @@ public class RequestDeviceInfoTests
                       """;
         RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions);
         Assert.That(info, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(info.DeviceId, Is.EqualTo("myDeviceId"));
             Assert.That(info.DeviceName, Is.EqualTo("myDeviceName"));
-        });
+        }
     }
 
     [Test]
@@ -40,11 +40,11 @@ public class RequestDeviceInfoTests
                       """;
         RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions);
         Assert.That(info, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(info.DeviceId, Is.EqualTo("myDeviceId"));
             Assert.That(info.DeviceName, Is.Null);
-        });
+        }
     }
 
     [Test]

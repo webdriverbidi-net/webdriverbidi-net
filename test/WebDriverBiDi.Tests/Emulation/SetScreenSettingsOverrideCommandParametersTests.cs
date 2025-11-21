@@ -20,12 +20,12 @@ public class SetScreenSettingsOverrideCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("screenArea"));
             Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Null));
             Assert.That(serialized["screenArea"]!.Value<JObject?>, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class SetScreenSettingsOverrideCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("screenArea"));
             Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -50,7 +50,7 @@ public class SetScreenSettingsOverrideCommandParametersTests
             Assert.That(screenArea, Contains.Key("height"));
             Assert.That(screenArea!["height"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(screenArea!["height"]!.Value<ulong>, Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -67,7 +67,7 @@ public class SetScreenSettingsOverrideCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("screenArea"));
             Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -79,7 +79,7 @@ public class SetScreenSettingsOverrideCommandParametersTests
             Assert.That(screenArea, Contains.Key("height"));
             Assert.That(screenArea!["height"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(screenArea!["height"]!.Value<ulong>, Is.EqualTo(1024));
-        });
+        }
     }
 
     [Test]
@@ -96,7 +96,7 @@ public class SetScreenSettingsOverrideCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("screenArea"));
             Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Null));
@@ -109,7 +109,7 @@ public class SetScreenSettingsOverrideCommandParametersTests
             Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
             Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
-        });
+        }
     }
 
     [Test]
@@ -126,7 +126,7 @@ public class SetScreenSettingsOverrideCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("screenArea"));
             Assert.That(serialized["screenArea"]!.Type, Is.EqualTo(JTokenType.Null));
@@ -139,6 +139,6 @@ public class SetScreenSettingsOverrideCommandParametersTests
             Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
             Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
-        });
+        }
     }
 }

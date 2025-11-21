@@ -53,12 +53,12 @@ public class ReadOnlyHeaderTests
         RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
         Assert.That(request, Is.Not.Null);
         ReadOnlyHeader header = request.Headers[0];
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(header.Name, Is.EqualTo("headerName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(header.Value.Value, Is.EqualTo("headerValue"));
-        });       
+        }       
     }
 
     [Test]

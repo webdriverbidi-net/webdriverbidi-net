@@ -28,7 +28,7 @@ public class ScanRecordTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // BluetoothManufacturerData serialization is tested in its own set of tests,
             // so its serialized structure need not be fully verified here.
@@ -47,6 +47,6 @@ public class ScanRecordTests
             Assert.That(serialized["manufacturerData"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["manufacturerData"]!.Value<JArray>(), Has.Count.EqualTo(1));
             Assert.That(serialized["manufacturerData"]![0]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
     }
 }
