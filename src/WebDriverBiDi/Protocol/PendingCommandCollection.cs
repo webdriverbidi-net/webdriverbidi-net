@@ -14,12 +14,11 @@ public class PendingCommandCollection
 {
     private readonly SemaphoreSlim commandAdditionSemaphore = new(1, 1);
     private readonly ConcurrentDictionary<long, Command> pendingCommands = new();
-    private bool isAcceptingCommands = true;
 
     /// <summary>
     /// Gets a value indicating whether this collection is accepting commands.
     /// </summary>
-    public bool IsAcceptingCommands => this.isAcceptingCommands;
+    public bool IsAcceptingCommands { get; private set; } = true;
 
     /// <summary>
     /// Gets the number of commands currently in the collection.
@@ -39,7 +38,7 @@ public class PendingCommandCollection
         this.commandAdditionSemaphore.Wait();
         try
         {
-            if (!this.isAcceptingCommands)
+            if (!this.IsAcceptingCommands)
             {
                 throw new WebDriverBiDiException("Cannot add command; pending command collection is closed");
             }
@@ -77,7 +76,7 @@ public class PendingCommandCollection
     /// </exception>
     public virtual void Clear()
     {
-        if (this.isAcceptingCommands)
+        if (this.IsAcceptingCommands)
         {
             throw new WebDriverBiDiException("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first");
         }
@@ -96,7 +95,7 @@ public class PendingCommandCollection
     public virtual void Close()
     {
         this.commandAdditionSemaphore.Wait();
-        this.isAcceptingCommands = false;
+        this.IsAcceptingCommands = false;
         this.commandAdditionSemaphore.Release();
     }
 }

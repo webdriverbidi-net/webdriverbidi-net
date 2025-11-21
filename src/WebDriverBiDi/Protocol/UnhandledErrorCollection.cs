@@ -10,8 +10,8 @@ namespace WebDriverBiDi.Protocol;
 /// </summary>
 public class UnhandledErrorCollection
 {
-    private readonly List<UnhandledError> unhandledErrors = new();
-    private readonly Dictionary<UnhandledErrorType, TransportErrorBehavior> errorBehaviors = new();
+    private readonly List<UnhandledError> unhandledErrors = [];
+    private readonly Dictionary<UnhandledErrorType, TransportErrorBehavior> errorBehaviors = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UnhandledErrorCollection"/> class.

@@ -14,9 +14,13 @@ using WebDriverBiDi.Internal;
 /// </summary>
 public class Message
 {
-    private string type = string.Empty;
-    private Dictionary<string, JsonElement> writableAdditionalData = new();
-    private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Message"/> class.
+    /// </summary>
+    public Message()
+    {
+        this.AdditionalData = ReceivedDataDictionary.EmptyDictionary;
+    }
 
     /// <summary>
     /// Gets the type of message.
@@ -24,7 +28,7 @@ public class Message
     [JsonRequired]
     [JsonPropertyName("type")]
     [JsonInclude]
-    public string Type { get => this.type; private set => this.type = value; }
+    public string Type { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.
@@ -34,12 +38,12 @@ public class Message
     {
         get
         {
-            if (this.writableAdditionalData.Count > 0 && this.additionalData.Count == 0)
+            if (this.SerializableAdditionalData.Count > 0 && field.Count == 0)
             {
-                this.additionalData = JsonConverterUtilities.ConvertIncomingExtensionData(this.writableAdditionalData);
+                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.SerializableAdditionalData);
             }
 
-            return this.additionalData;
+            return field;
         }
     }
 
@@ -48,5 +52,5 @@ public class Message
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalData { get => this.writableAdditionalData; private set => this.writableAdditionalData = value; }
+    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; private set; } = [];
 }

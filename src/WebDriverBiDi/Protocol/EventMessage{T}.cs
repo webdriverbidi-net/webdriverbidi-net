@@ -13,13 +13,11 @@ using System.Text.Json.Serialization;
 /// <typeparam name="T">The type of data contained in the event.</typeparam>
 public class EventMessage<T> : EventMessage
 {
-    private T? data;
-
     /// <summary>
     /// Gets the data associated with the event.
     /// </summary>
     [JsonIgnore]
-    public override object EventData => this.data!;
+    public override object EventData => this.SerializableData!;
 
     /// <summary>
     /// Gets the data of the event for serialization purposes.
@@ -27,5 +25,5 @@ public class EventMessage<T> : EventMessage
     [JsonPropertyName("params")]
     [JsonRequired]
     [JsonInclude]
-    internal T? SerializableData { get => this.data; private set => this.data = value; }
+    internal T? SerializableData { get; private set; }
 }
