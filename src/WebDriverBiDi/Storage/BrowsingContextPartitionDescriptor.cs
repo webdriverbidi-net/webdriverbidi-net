@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 public class BrowsingContextPartitionDescriptor : PartitionDescriptor
 {
     private readonly string type = "context";
-    private string browsingContextId;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowsingContextPartitionDescriptor"/> class.
@@ -22,7 +21,7 @@ public class BrowsingContextPartitionDescriptor : PartitionDescriptor
     public BrowsingContextPartitionDescriptor(string browsingContextId)
         : base()
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -35,5 +34,5 @@ public class BrowsingContextPartitionDescriptor : PartitionDescriptor
     /// Gets or sets the ID of the browsing context for this partition key descriptor.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 }

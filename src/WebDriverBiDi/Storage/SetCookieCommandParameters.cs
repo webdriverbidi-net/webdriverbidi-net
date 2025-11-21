@@ -12,16 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetCookieCommandParameters : CommandParameters<SetCookieCommandResult>
 {
-    private PartialCookie cookie;
-    private PartitionDescriptor? partition;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetCookieCommandParameters"/> class.
     /// </summary>
     /// <param name="cookie">The values of the cookie to set.</param>
     public SetCookieCommandParameters(PartialCookie cookie)
     {
-        this.cookie = cookie;
+        this.Cookie = cookie;
     }
 
     /// <summary>
@@ -34,12 +31,12 @@ public class SetCookieCommandParameters : CommandParameters<SetCookieCommandResu
     /// Gets or sets the filter to use when getting the cookies.
     /// </summary>
     [JsonPropertyName("cookie")]
-    public PartialCookie Cookie { get => this.cookie; set => this.cookie = value; }
+    public PartialCookie Cookie { get; set; }
 
     /// <summary>
     /// Gets or sets the partition descriptor to use when getting the cookies.
     /// </summary>
     [JsonPropertyName("partition")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public PartitionDescriptor? Partition { get => this.partition; set => this.partition = value; }
+    public PartitionDescriptor? Partition { get; set; }
 }
