@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ActivateCommandParameters : CommandParameters<ActivateCommandResult>
 {
-    private string browsingContextId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivateCommandParameters"/> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context to activate.</param>
     public ActivateCommandParameters(string browsingContextId)
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -33,5 +31,5 @@ public class ActivateCommandParameters : CommandParameters<ActivateCommandResult
     /// Gets or sets the ID of the browsing context to activate.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 }

@@ -13,11 +13,6 @@ using WebDriverBiDi.Internal;
 /// </summary>
 public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
 {
-    private string browsingContextId;
-    private string url;
-    private ulong epochTimestamp = 0;
-    private DateTime timestamp = DateTimeUtilities.UnixEpoch;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="HistoryUpdatedEventArgs" /> class.
     /// </summary>
@@ -26,8 +21,9 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonConstructor]
     public HistoryUpdatedEventArgs(string browsingContextId, string url)
     {
-        this.browsingContextId = browsingContextId;
-        this.url = url;
+        this.BrowsingContextId = browsingContextId;
+        this.Url = url;
+        this.EpochTimestamp = 0;
     }
 
     /// <summary>
@@ -36,7 +32,7 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; }
 
     /// <summary>
     /// Gets the URL of the history entry.
@@ -44,13 +40,13 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; private set => this.url = value; }
+    public string Url { get; private set; }
 
     /// <summary>
     /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     [JsonIgnore]
-    public DateTime Timestamp => this.timestamp;
+    public DateTime Timestamp { get; private set; } = DateTimeUtilities.UnixEpoch;
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
@@ -60,15 +56,11 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonInclude]
     public ulong EpochTimestamp
     {
-        get
-        {
-            return this.epochTimestamp;
-        }
-
+        get;
         private set
         {
-            this.epochTimestamp = value;
-            this.timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
+            field = value;
+            this.Timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
         }
     }
 }

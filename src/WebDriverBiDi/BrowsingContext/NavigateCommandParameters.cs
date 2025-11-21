@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class NavigateCommandParameters : CommandParameters<NavigateCommandResult>
 {
-    private string browsingContextId;
-    private string url;
-    private ReadinessState? wait;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigateCommandParameters" /> class.
     /// </summary>
@@ -23,8 +19,8 @@ public class NavigateCommandParameters : CommandParameters<NavigateCommandResult
     /// <param name="url">The URL to which to navigate.</param>
     public NavigateCommandParameters(string browsingContextId, string url)
     {
-        this.browsingContextId = browsingContextId;
-        this.url = url;
+        this.BrowsingContextId = browsingContextId;
+        this.Url = url;
     }
 
     /// <summary>
@@ -38,19 +34,19 @@ public class NavigateCommandParameters : CommandParameters<NavigateCommandResult
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the URL to which to navigate.
     /// </summary>
     [JsonPropertyName("url")]
     [JsonRequired]
-    public string Url { get => this.url; set => this.url = value; }
+    public string Url { get; set; }
 
     /// <summary>
     /// Gets or sets the <see cref="ReadinessState" /> value for which to wait during the navigation.
     /// </summary>
     [JsonPropertyName("wait")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ReadinessState? Wait { get => this.wait; set => this.wait = value; }
+    public ReadinessState? Wait { get; set; }
 }

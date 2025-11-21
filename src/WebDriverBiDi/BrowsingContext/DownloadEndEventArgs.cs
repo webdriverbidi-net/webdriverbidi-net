@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record DownloadEndEventArgs : NavigationEventArgs
 {
-    private string? filePath;
-    private DownloadEndStatus status = DownloadEndStatus.Complete;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DownloadEndEventArgs" /> class.
     /// </summary>
@@ -29,12 +26,12 @@ public record DownloadEndEventArgs : NavigationEventArgs
     /// </summary>
     [JsonPropertyName("filepath")]
     [JsonInclude]
-    public string? FilePath { get => this.filePath; private set => this.filePath = value; }
+    public string? FilePath { get; private set; }
 
     /// <summary>
     /// Gets the status of the download.
     /// </summary>
     [JsonPropertyName("status")]
     [JsonInclude]
-    public DownloadEndStatus Status { get => this.status; private set => this.status = value; }
+    public DownloadEndStatus Status { get; private set; } = DownloadEndStatus.Complete;
 }

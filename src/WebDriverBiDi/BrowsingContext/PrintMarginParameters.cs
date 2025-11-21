@@ -12,11 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PrintMarginParameters
 {
-    private double? bottom;
-    private double? left;
-    private double? right;
-    private double? top;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PrintMarginParameters"/> class.
     /// </summary>
@@ -32,11 +27,7 @@ public class PrintMarginParameters
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Left
     {
-        get
-        {
-            return this.left;
-        }
-
+        get;
         set
         {
             if (value is not null && value.Value < 0)
@@ -44,7 +35,7 @@ public class PrintMarginParameters
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
             }
 
-            this.left = value;
+            field = value;
         }
     }
 
@@ -56,11 +47,7 @@ public class PrintMarginParameters
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Right
     {
-        get
-        {
-            return this.right;
-        }
-
+        get;
         set
         {
             if (value is not null && value.Value < 0)
@@ -68,7 +55,7 @@ public class PrintMarginParameters
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
             }
 
-            this.right = value;
+            field = value;
         }
     }
 
@@ -80,11 +67,7 @@ public class PrintMarginParameters
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Top
     {
-        get
-        {
-            return this.top;
-        }
-
+        get;
         set
         {
             if (value is not null && value.Value < 0)
@@ -92,7 +75,7 @@ public class PrintMarginParameters
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
             }
 
-            this.top = value;
+            field = value;
         }
     }
 
@@ -104,11 +87,7 @@ public class PrintMarginParameters
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Bottom
     {
-        get
-        {
-            return this.bottom;
-        }
-
+        get;
         set
         {
             if (value is not null && value.Value < 0)
@@ -116,7 +95,7 @@ public class PrintMarginParameters
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
             }
 
-            this.bottom = value;
+            field = value;
         }
     }
 }

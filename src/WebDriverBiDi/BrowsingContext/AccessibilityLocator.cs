@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 public class AccessibilityLocator : Locator
 {
     private readonly string type = "accessibility";
-    private readonly Dictionary<string, string> accessibilityAttributes = new();
+    private readonly Dictionary<string, string> accessibilityAttributes = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AccessibilityLocator"/> class.

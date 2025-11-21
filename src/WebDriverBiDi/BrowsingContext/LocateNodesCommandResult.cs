@@ -13,8 +13,6 @@ using WebDriverBiDi.Script;
 /// </summary>
 public record LocateNodesCommandResult : CommandResult
 {
-    private List<RemoteValue> resultNodes = new();
-
     [JsonConstructor]
     private LocateNodesCommandResult()
     {
@@ -23,7 +21,7 @@ public record LocateNodesCommandResult : CommandResult
     /// <summary>
     /// Gets the read-only list of located nodes.
     /// </summary>
-    public IList<RemoteValue> Nodes => this.resultNodes.AsReadOnly();
+    public IList<RemoteValue> Nodes => this.SerializableNodes.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the list of located nodes for serialization purposes.
@@ -31,5 +29,5 @@ public record LocateNodesCommandResult : CommandResult
     [JsonPropertyName("nodes")]
     [JsonRequired]
     [JsonInclude]
-    internal List<RemoteValue> SerializableNodes { get => this.resultNodes; set => this.resultNodes = value; }
+    internal List<RemoteValue> SerializableNodes { get; set; } = [];
 }

@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record NavigateCommandResult : CommandResult
 {
-    private string? id;
-    private string url = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigateCommandResult"/> class.
     /// </summary>
@@ -28,7 +25,7 @@ public record NavigateCommandResult : CommandResult
     /// </summary>
     [JsonPropertyName("navigation")]
     [JsonInclude]
-    public string? NavigationId { get => this.id; private set => this.id = value; }
+    public string? NavigationId { get; private set; }
 
     /// <summary>
     /// Gets the URL of the navigation.
@@ -36,5 +33,5 @@ public record NavigateCommandResult : CommandResult
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; private set => this.url = value; }
+    public string Url { get; private set; } = string.Empty;
 }

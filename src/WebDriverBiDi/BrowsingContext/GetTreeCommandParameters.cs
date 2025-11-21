@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class GetTreeCommandParameters : CommandParameters<GetTreeCommandResult>
 {
-    private int? maxDepth;
-    private string? rootBrowsingContextId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="GetTreeCommandParameters" /> class.
     /// </summary>
@@ -33,12 +30,12 @@ public class GetTreeCommandParameters : CommandParameters<GetTreeCommandResult>
     /// </summary>
     [JsonPropertyName("maxDepth")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? MaxDepth { get => this.maxDepth; set => this.maxDepth = value; }
+    public int? MaxDepth { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the browsing context used as the root of the tree.
     /// </summary>
     [JsonPropertyName("root")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? RootBrowsingContextId { get => this.rootBrowsingContextId; set => this.rootBrowsingContextId = value; }
+    public string? RootBrowsingContextId { get; set; }
 }

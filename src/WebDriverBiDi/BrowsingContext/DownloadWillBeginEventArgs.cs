@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record DownloadWillBeginEventArgs : NavigationEventArgs
 {
-    private string suggestedFileName = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DownloadWillBeginEventArgs" /> class.
     /// </summary>
@@ -29,5 +27,5 @@ public record DownloadWillBeginEventArgs : NavigationEventArgs
     [JsonPropertyName("suggestedFileName")]
     [JsonRequired]
     [JsonInclude]
-    public string SuggestedFileName { get => this.suggestedFileName; private set => this.suggestedFileName = value; }
+    public string SuggestedFileName { get; private set; } = string.Empty;
 }

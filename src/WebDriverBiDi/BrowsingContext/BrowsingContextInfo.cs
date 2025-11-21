@@ -12,14 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record BrowsingContextInfo
 {
-    private string id = string.Empty;
-    private string clientWindowId = string.Empty;
-    private string url = string.Empty;
-    private string userContextId = string.Empty;
-    private string? originalOpener = null;
-    private List<BrowsingContextInfo> children = new();
-    private string? parentId;
-
     [JsonConstructor]
     private BrowsingContextInfo()
     {
@@ -31,7 +23,7 @@ public record BrowsingContextInfo
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.id; private set => this.id = value; }
+    public string BrowsingContextId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the ID of the client window that contains this browsing context.
@@ -39,7 +31,7 @@ public record BrowsingContextInfo
     [JsonPropertyName("clientWindow")]
     [JsonRequired]
     [JsonInclude]
-    public string ClientWindowId { get => this.clientWindowId; private set => this.clientWindowId = value; }
+    public string ClientWindowId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the browsing context ID of the original opener of this browsing context.
@@ -47,7 +39,7 @@ public record BrowsingContextInfo
     [JsonPropertyName("originalOpener")]
     [JsonRequired]
     [JsonInclude]
-    public string? OriginalOpener { get => this.originalOpener; private set => this.originalOpener = value; }
+    public string? OriginalOpener { get; private set; } = null;
 
     /// <summary>
     /// Gets the URL of the browsing context.
@@ -55,7 +47,7 @@ public record BrowsingContextInfo
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; private set => this.url = value; }
+    public string Url { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the ID of the user context of the browsing context.
@@ -63,19 +55,19 @@ public record BrowsingContextInfo
     [JsonPropertyName("userContext")]
     [JsonRequired]
     [JsonInclude]
-    public string UserContextId { get => this.userContextId; private set => this.userContextId = value; }
+    public string UserContextId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the read-only list of child browsing contexts for this browsing context.
     /// </summary>
-    public IList<BrowsingContextInfo> Children => this.children.AsReadOnly();
+    public IList<BrowsingContextInfo> Children => this.SerializableChildren.AsReadOnly();
 
     /// <summary>
     /// Gets the ID of the parent browsing context of this browsing context.
     /// </summary>
     [JsonPropertyName("parent")]
     [JsonInclude]
-    public string? Parent { get => this.parentId; private set => this.parentId = value; }
+    public string? Parent { get; private set; }
 
     /// <summary>
     /// Gets or sets the list of child browsing contexts for this browsing context.
@@ -83,5 +75,5 @@ public record BrowsingContextInfo
     [JsonPropertyName("children")]
     [JsonRequired]
     [JsonInclude]
-    internal List<BrowsingContextInfo> SerializableChildren { get => this.children; set => this.children = value; }
+    internal List<BrowsingContextInfo> SerializableChildren { get; set; } = [];
 }

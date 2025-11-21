@@ -13,11 +13,6 @@ using WebDriverBiDi.JsonConverters;
 /// </summary>
 public class BoxClipRectangle : ClipRectangle
 {
-    private double x = 0.0;
-    private double y = 0.0;
-    private double width = 0.0;
-    private double height = 0.0;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BoxClipRectangle"/> class.
     /// </summary>
@@ -38,7 +33,7 @@ public class BoxClipRectangle : ClipRectangle
     [JsonPropertyName("x")]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double X { get => this.x; set => this.x = value; }
+    public double X { get; set; } = 0.0;
 
     /// <summary>
     /// Gets or sets the Y coordinate of the clip rectangle relative to the left edge of the viewport.
@@ -46,7 +41,7 @@ public class BoxClipRectangle : ClipRectangle
     [JsonPropertyName("y")]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double Y { get => this.y; set => this.y = value; }
+    public double Y { get; set; } = 0.0;
 
     /// <summary>
     /// Gets or sets the width of the clip rectangle.
@@ -54,7 +49,7 @@ public class BoxClipRectangle : ClipRectangle
     [JsonPropertyName("width")]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double Width { get => this.width; set => this.width = value; }
+    public double Width { get; set; } = 0.0;
 
     /// <summary>
     /// Gets or sets the height of the clip rectangle.
@@ -62,5 +57,5 @@ public class BoxClipRectangle : ClipRectangle
     [JsonPropertyName("height")]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double Height { get => this.height; set => this.height = value; }
+    public double Height { get; set; } = 0.0;
 }

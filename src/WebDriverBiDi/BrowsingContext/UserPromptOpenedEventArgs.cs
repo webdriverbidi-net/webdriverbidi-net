@@ -13,12 +13,6 @@ using WebDriverBiDi.Session;
 /// </summary>
 public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
 {
-    private string browsingContextId;
-    private UserPromptHandlerType handler;
-    private UserPromptType promptType;
-    private string message;
-    private string? defaultValue;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UserPromptOpenedEventArgs" /> class.
     /// </summary>
@@ -28,9 +22,9 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonConstructor]
     public UserPromptOpenedEventArgs(string browsingContextId, UserPromptType promptType, string message)
     {
-        this.browsingContextId = browsingContextId;
-        this.promptType = promptType;
-        this.message = message;
+        this.BrowsingContextId = browsingContextId;
+        this.PromptType = promptType;
+        this.Message = message;
     }
 
     /// <summary>
@@ -39,7 +33,7 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; }
 
     /// <summary>
     /// Gets the prompt handler type for this event.
@@ -47,7 +41,7 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("handler")]
     [JsonRequired]
     [JsonInclude]
-    public UserPromptHandlerType Handler { get => this.handler;  private set => this.handler = value; }
+    public UserPromptHandlerType Handler { get; private set; }
 
     /// <summary>
     /// Gets the type of user prompt opened.
@@ -55,7 +49,7 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public UserPromptType PromptType { get => this.promptType; private set => this.promptType = value; }
+    public UserPromptType PromptType { get; private set; }
 
     /// <summary>
     /// Gets the message displayed by the user prompt.
@@ -63,12 +57,12 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("message")]
     [JsonRequired]
     [JsonInclude]
-    public string Message { get => this.message; private set => this.message = value; }
+    public string Message { get; private set; }
 
     /// <summary>
     /// Gets the default value of the user prompt, if any.
     /// </summary>
     [JsonPropertyName("defaultValue")]
     [JsonInclude]
-    public string? DefaultValue { get => this.defaultValue; private set => this.defaultValue = value; }
+    public string? DefaultValue { get; private set; }
 }

@@ -15,7 +15,7 @@ using System.Text.Json.Serialization;
 public class ContextLocator : Locator
 {
     private readonly string type = "context";
-    private readonly Dictionary<string, string> contextAttributes = new();
+    private readonly Dictionary<string, string> contextAttributes = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ContextLocator"/> class.
