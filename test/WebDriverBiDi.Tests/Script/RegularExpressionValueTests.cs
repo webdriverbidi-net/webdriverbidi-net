@@ -16,11 +16,11 @@ public class RegularExpressionValueTests
                       """;
         RegularExpressionValue? regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(regexProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(regexProperties.Pattern, Is.EqualTo("myPattern"));
             Assert.That(regexProperties.Flags, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -66,12 +66,12 @@ public class RegularExpressionValueTests
                       """;
         RegularExpressionValue? regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(regexProperties, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(regexProperties.Pattern, Is.EqualTo("myPattern"));
             Assert.That(regexProperties.Flags, Is.Not.Null);
             Assert.That(regexProperties.Flags, Is.EqualTo("gi"));
-        });
+        }
     }
 
     [Test]

@@ -31,7 +31,7 @@ public class GetClientWindowsCommandResultTests
                       """;
         GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindows, Has.Count.EqualTo(1));
             Assert.That(result.ClientWindows[0].ClientWindowId, Is.EqualTo("myClientWindow"));
@@ -41,7 +41,7 @@ public class GetClientWindowsCommandResultTests
             Assert.That(result.ClientWindows[0].Y, Is.EqualTo(200));
             Assert.That(result.ClientWindows[0].Width, Is.EqualTo(300));
             Assert.That(result.ClientWindows[0].Height, Is.EqualTo(400));
-        });
+        }
     }
 
     [Test]

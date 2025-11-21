@@ -23,12 +23,12 @@ public class RequestDevicePromptUpdatedEventArgsTests
                       """;
         RequestDevicePromptUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Prompt, Is.EqualTo("myPromptId"));
             Assert.That(eventArgs.Devices, Has.Count.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -48,14 +48,14 @@ public class RequestDevicePromptUpdatedEventArgsTests
                       """;
         RequestDevicePromptUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<RequestDevicePromptUpdatedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Prompt, Is.EqualTo("myPromptId"));
             Assert.That(eventArgs.Devices, Has.Count.EqualTo(1));
             Assert.That(eventArgs.Devices[0].DeviceId, Is.EqualTo("myDeviceId"));
             Assert.That(eventArgs.Devices[0].DeviceName, Is.EqualTo("myDeviceName"));
-        });
+        }
     }
 
     [Test]

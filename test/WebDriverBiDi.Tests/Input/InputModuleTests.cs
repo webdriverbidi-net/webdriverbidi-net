@@ -98,12 +98,12 @@ public class InputModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.IsMultiple, Is.True);
                 Assert.That(e.Element, Is.Null);
-            });
+            }
             syncEvent.Set();
         });
 
@@ -132,13 +132,13 @@ public class InputModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.IsMultiple, Is.True);
                 Assert.That(e.Element, Is.Not.Null);
                 Assert.That(e.Element!.SharedId, Is.EqualTo("mySharedId"));
-            });
+            }
             syncEvent.Set();
         });
 

@@ -16,7 +16,7 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
@@ -24,7 +24,7 @@ public class ProxyConfigurationTests
             Assert.That(serialized, Contains.Key("httpProxy"));
             Assert.That(serialized["httpProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["httpProxy"]!.Value<string>(), Is.EqualTo("http.proxy"));
-        });
+        }
     }
 
     [Test]
@@ -37,7 +37,7 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
@@ -45,7 +45,7 @@ public class ProxyConfigurationTests
             Assert.That(serialized, Contains.Key("sslProxy"));
             Assert.That(serialized["sslProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["sslProxy"]!.Value<string>(), Is.EqualTo("ssl.proxy"));
-        });
+        }
     }
 
     [Test]
@@ -58,7 +58,7 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
@@ -66,7 +66,7 @@ public class ProxyConfigurationTests
             Assert.That(serialized, Contains.Key("socksProxy"));
             Assert.That(serialized["socksProxy"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["socksProxy"]!.Value<string>(), Is.EqualTo("socks.proxy"));
-        });
+        }
     }
 
     [Test]
@@ -79,7 +79,7 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
@@ -87,7 +87,7 @@ public class ProxyConfigurationTests
             Assert.That(serialized, Contains.Key("socksVersion"));
             Assert.That(serialized["socksVersion"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["socksVersion"]!.Value<long>(), Is.EqualTo(4));
-        });
+        }
     }
 
     [Test]
@@ -100,21 +100,21 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
             Assert.That(serialized, Contains.Key("noProxy"));
             Assert.That(serialized["noProxy"]!.Type, Is.EqualTo(JTokenType.Array));
-        });
+        }
         JArray? noProxyArray = serialized["noProxy"] as JArray;
         Assert.That(noProxyArray, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(noProxyArray![0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(noProxyArray![0].Value<string>(), Is.EqualTo("no.proxy.address"));
-        });
+        }
     }
 
     [Test]
@@ -127,14 +127,14 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
             Assert.That(serialized, Contains.Key("noProxy"));
             Assert.That(serialized["noProxy"]!.Type, Is.EqualTo(JTokenType.Array));
-        });
+        }
         JArray? noProxyArray = serialized["noProxy"] as JArray;
         Assert.That(noProxyArray, Is.Empty);
     }
@@ -146,12 +146,12 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("direct"));
-        });
+        }
     }
 
     [Test]
@@ -161,12 +161,12 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("manual"));
-        });
+        }
     }
 
     [Test]
@@ -176,12 +176,12 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("system"));
-        });
+        }
     }
 
     [Test]
@@ -191,12 +191,12 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyType"]!.Value<string>(), Is.EqualTo("autodetect"));
-        });
+        }
     }
 
     [Test]
@@ -206,7 +206,7 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
@@ -214,7 +214,7 @@ public class ProxyConfigurationTests
             Assert.That(serialized, Contains.Key("proxyAutoconfigUrl"));
             Assert.That(serialized["proxyAutoconfigUrl"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["proxyAutoconfigUrl"]!.Value<string>(), Is.EqualTo("proxy.autoconfig.url"));
-        });
+        }
     }
 
     [Test]
@@ -225,7 +225,7 @@ public class ProxyConfigurationTests
         string json = JsonSerializer.Serialize(proxy);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxyType"));
             Assert.That(serialized["proxyType"]!.Type, Is.EqualTo(JTokenType.String));
@@ -233,7 +233,7 @@ public class ProxyConfigurationTests
             Assert.That(serialized, Contains.Key("additionalName"));
             Assert.That(serialized["additionalName"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["additionalName"]!.Value<string>(), Is.EqualTo("additionalValue"));
-        });
+        }
     }
 
     [Test]
@@ -246,7 +246,7 @@ public class ProxyConfigurationTests
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.Manual));
             Assert.That(deserialized, Is.InstanceOf<ManualProxyConfiguration>());
@@ -255,7 +255,7 @@ public class ProxyConfigurationTests
             Assert.That(deserializedResult.SslProxy, Is.Null);
             Assert.That(deserializedResult.SocksProxy, Is.Null);
             Assert.That(deserializedResult.SocksVersion, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -268,11 +268,11 @@ public class ProxyConfigurationTests
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.System));
             Assert.That(deserialized, Is.InstanceOf<SystemProxyConfiguration>());
-        });
+        }
     }
 
     [Test]
@@ -285,11 +285,11 @@ public class ProxyConfigurationTests
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.AutoDetect));
             Assert.That(deserialized, Is.InstanceOf<AutoDetectProxyConfiguration>());
-        });
+        }
     }
 
     [Test]
@@ -303,13 +303,13 @@ public class ProxyConfigurationTests
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.ProxyAutoConfig));
             Assert.That(deserialized, Is.InstanceOf<PacProxyConfiguration>());
             PacProxyConfiguration deserializedResult = (PacProxyConfiguration)deserialized;
             Assert.That(deserializedResult.ProxyAutoConfigUrl, Is.EqualTo("proxy.autoconfig.url"));
-        });
+        }
     }
 
     [Test]
@@ -322,11 +322,11 @@ public class ProxyConfigurationTests
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.Direct));
             Assert.That(deserialized, Is.InstanceOf<DirectProxyConfiguration>());
-        });
+        }
     }
 
     [Test]
@@ -340,12 +340,12 @@ public class ProxyConfigurationTests
                       """;
         ProxyConfiguration? deserialized = JsonSerializer.Deserialize<ProxyConfiguration>(json);
         Assert.That(deserialized, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(deserialized!.ProxyType, Is.EqualTo(ProxyType.Direct));
             Assert.That(deserialized, Is.InstanceOf<DirectProxyConfiguration>());
             Assert.That(deserialized.AdditionalData, Has.Count.EqualTo(1));
-        });
+        }
     }
 
     [Test]

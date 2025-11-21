@@ -20,7 +20,7 @@ public class SimulatePreconnectedPeripheralCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -37,7 +37,7 @@ public class SimulatePreconnectedPeripheralCommandParametersTests
             Assert.That(serialized, Contains.Key("knownServiceUuids"));
             Assert.That(serialized["knownServiceUuids"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["knownServiceUuids"]!.Value<JArray>(), Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -49,7 +49,7 @@ public class SimulatePreconnectedPeripheralCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // BluetoothManufacturerData serialization is tested in its own set of tests,
             // so its serialized structure need not be fully verified here.
@@ -71,6 +71,6 @@ public class SimulatePreconnectedPeripheralCommandParametersTests
             Assert.That(serialized["knownServiceUuids"]!.Value<JArray>(), Has.Count.EqualTo(1));
             Assert.That(serialized["knownServiceUuids"]![0]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["knownServiceUuids"]![0]!.Value<string>(), Is.EqualTo("my-known-uuid"));
-        });
+        }
     }
 }

@@ -20,11 +20,11 @@ public class SetDownloadBehaviorCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("downloadBehavior"));
             Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Null));
-        });
+        }
     }
 
     [Test]
@@ -37,7 +37,7 @@ public class SetDownloadBehaviorCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("downloadBehavior"));
             Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Null));
@@ -48,7 +48,7 @@ public class SetDownloadBehaviorCommandParametersTests
             Assert.That(contextsArray, Has.Count.EqualTo(1));
             Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("myUserContext"));
-        });
+        }
     }
 
     [Test]
@@ -61,7 +61,7 @@ public class SetDownloadBehaviorCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("downloadBehavior"));
             Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -73,7 +73,7 @@ public class SetDownloadBehaviorCommandParametersTests
             Assert.That(behaviorObject, Contains.Key("destinationFolder"));
             Assert.That(behaviorObject!["destinationFolder"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(behaviorObject!["destinationFolder"]!.Value<string>, Is.EqualTo("my/destination/folder"));
-        });
+        }
     }
 
     [Test]
@@ -87,7 +87,7 @@ public class SetDownloadBehaviorCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("downloadBehavior"));
             Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -106,7 +106,7 @@ public class SetDownloadBehaviorCommandParametersTests
             Assert.That(contextsArray, Has.Count.EqualTo(1));
             Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("myUserContext"));
-        });
+        }
     }
 
     [Test]
@@ -119,7 +119,7 @@ public class SetDownloadBehaviorCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("downloadBehavior"));
             Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -128,7 +128,7 @@ public class SetDownloadBehaviorCommandParametersTests
             Assert.That(behaviorObject, Contains.Key("type"));
             Assert.That(behaviorObject!["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(behaviorObject!["type"]!.Value<string>, Is.EqualTo("denied"));
-        });
+        }
     }
 
     [Test]
@@ -142,7 +142,7 @@ public class SetDownloadBehaviorCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("downloadBehavior"));
             Assert.That(serialized["downloadBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -158,6 +158,6 @@ public class SetDownloadBehaviorCommandParametersTests
             Assert.That(contextsArray, Has.Count.EqualTo(1));
             Assert.That(contextsArray![0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("myUserContext"));
-        });
+        }
     }
 }

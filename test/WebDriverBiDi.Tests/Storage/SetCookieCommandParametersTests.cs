@@ -20,7 +20,7 @@ public class SetCookieCommandParametersTests
         SetCookieCommandParameters properties = new(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain"));
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("cookie"));
@@ -43,7 +43,7 @@ public class SetCookieCommandParametersTests
             Assert.That(cookieObject, Contains.Key("domain"));
             Assert.That(cookieObject["domain"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(cookieObject["domain"]!.Value<string>(), Is.EqualTo("cookieDomain"));
-        });        
+        }        
     }
 
     [Test]
@@ -55,7 +55,7 @@ public class SetCookieCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("cookie"));
@@ -88,7 +88,7 @@ public class SetCookieCommandParametersTests
             Assert.That(partitionObject, Contains.Key("context"));
             Assert.That(partitionObject["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        });        
+        }        
     }
 
     [Test]
@@ -103,7 +103,7 @@ public class SetCookieCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("cookie"));
@@ -136,6 +136,6 @@ public class SetCookieCommandParametersTests
             Assert.That(partitionObject, Contains.Key("userContext"));
             Assert.That(partitionObject["userContext"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-        });        
+        }        
     }
 }

@@ -20,12 +20,12 @@ public class SetTimeZoneOverrideCoordinatesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("timezone"));
             Assert.That(serialized["timezone"]!.Type, Is.EqualTo(JTokenType.Null));
             Assert.That(serialized["timezone"]!.Value<JObject?>, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -38,12 +38,12 @@ public class SetTimeZoneOverrideCoordinatesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("timezone"));
             Assert.That(serialized["timezone"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["timezone"]!.Value<string>(), Is.EqualTo("US/Eastern"));
-        });
+        }
     }
 
     [Test]
@@ -60,7 +60,7 @@ public class SetTimeZoneOverrideCoordinatesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("timezone"));
             Assert.That(serialized["timezone"]!.Type, Is.EqualTo(JTokenType.Null));
@@ -73,7 +73,7 @@ public class SetTimeZoneOverrideCoordinatesCommandParametersTests
             Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("context1"));
             Assert.That(contextsArray[1].Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextsArray[1].Value<string>(), Is.EqualTo("context2"));
-        });
+        }
     }
 
     [Test]
@@ -90,7 +90,7 @@ public class SetTimeZoneOverrideCoordinatesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("timezone"));
             Assert.That(serialized["timezone"]!.Type, Is.EqualTo(JTokenType.Null));
@@ -103,6 +103,6 @@ public class SetTimeZoneOverrideCoordinatesCommandParametersTests
             Assert.That(userContextsArray[0].Value<string>(), Is.EqualTo("userContext1"));
             Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
-        });
+        }
     }
 }

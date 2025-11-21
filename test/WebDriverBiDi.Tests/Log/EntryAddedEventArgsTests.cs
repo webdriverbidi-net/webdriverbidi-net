@@ -28,7 +28,7 @@ public class EntryAddedEventArgsTests
                       """;
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         EntryAddedEventArgs eventArgs = new(entry!);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(eventArgs.Text, Is.Null);
@@ -38,7 +38,7 @@ public class EntryAddedEventArgsTests
             Assert.That(eventArgs.Method, Is.Null);
             Assert.That(eventArgs.Arguments, Is.Null);
             Assert.That(eventArgs.StackTrace, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class EntryAddedEventArgsTests
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         Assert.That(entry, Is.Not.Null);
         EntryAddedEventArgs eventArgs = new(entry);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(eventArgs.Text,Is.EqualTo("my log message"));
@@ -74,7 +74,7 @@ public class EntryAddedEventArgsTests
             Assert.That(eventArgs.Method, Is.EqualTo("myMethod"));
             Assert.That(eventArgs.Arguments, Is.Empty);
             Assert.That(eventArgs.StackTrace, Is.Not.Null);
-        });
+        }
     }
 
     [Test]
@@ -104,7 +104,7 @@ public class EntryAddedEventArgsTests
         LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
         Assert.That(entry, Is.Not.Null);
         EntryAddedEventArgs eventArgs = new(entry);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
             Assert.That(eventArgs.Text,Is.EqualTo("my log message"));
@@ -117,7 +117,7 @@ public class EntryAddedEventArgsTests
             Assert.That(eventArgs.Arguments![0].Type, Is.EqualTo("string"));
             Assert.That(eventArgs.Arguments![0].ValueAs<string>(), Is.EqualTo("argValue"));
             Assert.That(eventArgs.StackTrace, Is.Not.Null);
-        });
+        }
     }
 
     [Test]

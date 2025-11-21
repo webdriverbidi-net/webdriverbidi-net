@@ -19,12 +19,12 @@ public class RemoveInterceptCommandParametersTests
         RemoveInterceptCommandParameters properties = new("interceptId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("intercept"));
             Assert.That(serialized["intercept"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["intercept"]!.Value<string>(), Is.EqualTo("interceptId"));
-        });
+        }
     }
 }

@@ -21,10 +21,10 @@ public class ResponseContentTests
                       """;
         ResponseContent? responseContent = JsonSerializer.Deserialize<ResponseContent>(json, deserializationOptions);
         Assert.That(responseContent, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(responseContent.Size, Is.EqualTo(300));
-        });
+        }
     }
 
     [Test]

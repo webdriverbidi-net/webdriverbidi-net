@@ -27,7 +27,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -40,7 +40,7 @@ public class CapabilitiesResultTests
             Assert.That(result.WebSocketUrl, Is.Null);
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -60,7 +60,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -73,7 +73,7 @@ public class CapabilitiesResultTests
             Assert.That(result.WebSocketUrl, Is.EqualTo("ws://socket:1234"));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -100,7 +100,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -119,7 +119,7 @@ public class CapabilitiesResultTests
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -142,7 +142,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -157,7 +157,7 @@ public class CapabilitiesResultTests
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -179,7 +179,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -193,7 +193,7 @@ public class CapabilitiesResultTests
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -215,7 +215,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -229,7 +229,7 @@ public class CapabilitiesResultTests
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -251,7 +251,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -265,7 +265,7 @@ public class CapabilitiesResultTests
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -288,7 +288,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -305,7 +305,7 @@ public class CapabilitiesResultTests
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]
@@ -371,7 +371,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -382,7 +382,7 @@ public class CapabilitiesResultTests
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     // TODO (Issue #19): Reenable this test and remove the one above
@@ -428,7 +428,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -444,7 +444,7 @@ public class CapabilitiesResultTests
             Assert.That(userPromptHandler.BeforeUnload, Is.EqualTo(UserPromptHandlerType.Ignore));
             Assert.That(userPromptHandler.File, Is.EqualTo(UserPromptHandlerType.Ignore));
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
-        });
+        }
     }
 
     [Test]
@@ -463,7 +463,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -478,7 +478,7 @@ public class CapabilitiesResultTests
             Assert.That(userPromptHandler.Prompt, Is.Null);
             Assert.That(userPromptHandler.BeforeUnload, Is.Null);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
-        });
+        }
     }
 
     [Test]
@@ -499,7 +499,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -514,7 +514,7 @@ public class CapabilitiesResultTests
             Assert.That(userPromptHandler.Prompt, Is.Null);
             Assert.That(userPromptHandler.BeforeUnload, Is.Null);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
-        });
+        }
     }
 
     [Test]
@@ -552,7 +552,7 @@ public class CapabilitiesResultTests
                       """;
         CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result!.AcceptInsecureCertificates, Is.EqualTo(true));
             Assert.That(result.BrowserName, Is.EqualTo("greatBrowser"));
@@ -562,7 +562,7 @@ public class CapabilitiesResultTests
             Assert.That(result.Proxy, Is.Not.Null);
             Assert.That(result.SetWindowRect, Is.EqualTo(true));
             Assert.That(result.AdditionalCapabilities, Is.Empty);
-        });
+        }
     }
 
     [Test]

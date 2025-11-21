@@ -12,7 +12,7 @@ public class UrlPatternStringTests
         UrlPattern value = new UrlPatternString("https://example.com/*");
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -21,7 +21,7 @@ public class UrlPatternStringTests
             Assert.That(serialized, Contains.Key("pattern"));
             Assert.That(serialized["pattern"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["pattern"]!.Value<string>(), Is.EqualTo("https://example.com/*"));
-        });
+        }
     }
 
     [Test]
@@ -30,7 +30,7 @@ public class UrlPatternStringTests
         UrlPattern value = new UrlPatternString();
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -39,6 +39,6 @@ public class UrlPatternStringTests
             Assert.That(serialized, Contains.Key("pattern"));
             Assert.That(serialized["pattern"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["pattern"]!.Value<string>(), Is.EqualTo(string.Empty));
-        });
+        }
     }
 }

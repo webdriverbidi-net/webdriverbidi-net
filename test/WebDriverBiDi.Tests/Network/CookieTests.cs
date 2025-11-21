@@ -31,7 +31,7 @@ public class CookieTests
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
@@ -45,7 +45,7 @@ public class CookieTests
             Assert.That(cookie.Expires, Is.Null);
             Assert.That(cookie.EpochExpires, Is.Null);
             Assert.That(cookie.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -71,7 +71,7 @@ public class CookieTests
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
@@ -85,7 +85,7 @@ public class CookieTests
             Assert.That(cookie.Expires, Is.Null);
             Assert.That(cookie.EpochExpires, Is.Null);
             Assert.That(cookie.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -111,7 +111,7 @@ public class CookieTests
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
@@ -125,7 +125,7 @@ public class CookieTests
             Assert.That(cookie.Expires, Is.Null);
             Assert.That(cookie.EpochExpires, Is.Null);
             Assert.That(cookie.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -150,7 +150,7 @@ public class CookieTests
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.Base64));
@@ -164,7 +164,7 @@ public class CookieTests
             Assert.That(cookie.Expires, Is.Null);
             Assert.That(cookie.EpochExpires, Is.Null);
             Assert.That(cookie.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -191,7 +191,7 @@ public class CookieTests
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
@@ -205,7 +205,7 @@ public class CookieTests
             Assert.That(cookie.Expires, Is.EqualTo(expireTime));
             Assert.That(cookie.EpochExpires, Is.EqualTo(milliseconds));
             Assert.That(cookie.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -229,7 +229,7 @@ public class CookieTests
                       """;
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(cookie.Name, Is.EqualTo("cookieName"));
             Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
@@ -246,7 +246,7 @@ public class CookieTests
             Assert.That(cookie.AdditionalData, Contains.Key("extraData"));
             Assert.That(cookie.AdditionalData["extraData"]!.GetType, Is.EqualTo(typeof(string)));
             Assert.That(cookie.AdditionalData["extraData"]!, Is.EqualTo("myExtraData"));
-        });
+        }
     }
 
     [Test]
@@ -274,7 +274,7 @@ public class CookieTests
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
         SetCookieHeader header = cookie.ToSetCookieHeader();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(header.Name, Is.EqualTo("cookieName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
@@ -286,7 +286,7 @@ public class CookieTests
             Assert.That(header.SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
             Assert.That(header.Expires, Is.EqualTo(expireTime));
             Assert.That(header.MaxAge, Is.Null);
-        });
+        }
     }
 
     [Test]

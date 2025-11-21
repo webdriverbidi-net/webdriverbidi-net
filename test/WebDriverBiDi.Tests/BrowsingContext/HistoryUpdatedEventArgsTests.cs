@@ -20,13 +20,13 @@ public class HistoryUpdatedEventArgsTests
                       """;
         HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
             Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
             Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
-        });
+        }
     }
 
     [Test]

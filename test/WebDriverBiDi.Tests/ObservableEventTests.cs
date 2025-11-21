@@ -1,3 +1,5 @@
+using WebDriverBiDi.TestUtilities;
+
 namespace WebDriverBiDi;
 
 [TestFixture]
@@ -56,30 +58,28 @@ public class ObservableEventTests
     [Test]
     public void TestCannotAddMoreThanMaxObservers()
     {
-        string? observedValue = null;
         TestEventSource testEventSource = new(1);
         Assert.That(testEventSource.TestObservableEvent.MaxObserverCount, Is.EqualTo(1));
         Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
         Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(1));
-        Assert.That(() => testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => _ = e.EventValue), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("This observable event only allows 1 handler."));
+        Assert.That(() => testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("This observable event only allows 1 handler."));
 
         testEventSource = new(2);
         Assert.That(testEventSource.TestObservableEvent.MaxObserverCount, Is.EqualTo(2));
         Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
         Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(1));
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
         Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(2));
-        Assert.That(() => testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => _ = e.EventValue), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("This observable event only allows 2 handlers."));
+        Assert.That(() => testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("This observable event only allows 2 handlers."));
     }
 
     [Test]
     public void TestToStringReturnsDescription()
     {
-        string? observedValue = null;
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue, ObservableEventHandlerOptions.None, "My first handler");
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }, ObservableEventHandlerOptions.None, "My first handler");
         string eventSourceString = testEventSource.TestObservableEvent.ToString();
         Assert.That(eventSourceString, Is.EqualTo("ObservableEvent<TestObservableEventArgs> with observers:\n    My first handler"));
     }
@@ -87,9 +87,8 @@ public class ObservableEventTests
     [Test]
     public void TestToStringReturnsDefaultDescription()
     {
-        string? observedValue = null;
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
         string eventSourceString = testEventSource.TestObservableEvent.ToString();
         Assert.That(eventSourceString, Does.StartWith("ObservableEvent<TestObservableEventArgs> with observers:\n    EventObserver<TestObservableEventArgs> (id:"));
     }
@@ -184,6 +183,14 @@ public class ObservableEventTests
         bool checkpointFulfilled = observer.WaitForCheckpoint(TimeSpan.FromMilliseconds(100));
         Assert.That(checkpointFulfilled, Is.True);
         Assert.That(observer.GetCheckpointTasks(), Is.Empty);
+    }
+
+    [Test]
+    public void TestEventArgsCopySemantics()
+    {
+        TestObservableEventArgs testEventArgs = new("foo");
+        TestObservableEventArgs copy = testEventArgs with { };
+        Assert.That(copy, Is.EqualTo(testEventArgs));
     }
 
     private class TestEventSource

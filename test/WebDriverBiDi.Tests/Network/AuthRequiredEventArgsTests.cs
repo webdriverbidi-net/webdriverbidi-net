@@ -81,12 +81,12 @@ public class AuthRequiredEventArgsTests
                            """;
         AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // Note that proper deserialization of base class properties is tested in BaseNetworkEventArgsTests.
             // Also proper deserialization of the ResponseData object is handled in InitiatorTests.
             Assert.That(eventArgs.Response, Is.Not.Null);
-        });
+        }
     }
 
     [Test]

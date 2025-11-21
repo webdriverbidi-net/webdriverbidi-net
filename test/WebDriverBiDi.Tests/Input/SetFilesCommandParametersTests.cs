@@ -23,7 +23,7 @@ public class SetFilesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -39,7 +39,7 @@ public class SetFilesCommandParametersTests
             Assert.That(serialized, Contains.Key("files"));
             Assert.That(serialized["files"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["files"]!, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -52,7 +52,7 @@ public class SetFilesCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -74,6 +74,6 @@ public class SetFilesCommandParametersTests
             Assert.That(filesArray[0].Value<string>(), Is.EqualTo("path/to/file1.txt"));
             Assert.That(filesArray[1].Type, Is.EqualTo(JTokenType.String));
             Assert.That(filesArray[1].Value<string>(), Is.EqualTo("path/to/file2.txt"));
-        });
+        }
     }
 }

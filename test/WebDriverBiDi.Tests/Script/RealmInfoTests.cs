@@ -19,12 +19,12 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
         RealmInfo realmInfo = (RealmInfo)info;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worker));
-        });
+        }
     }
 
     [Test]
@@ -58,12 +58,12 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
         RealmInfo realmInfo = (RealmInfo)info;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worklet));
-        });
+        }
     }
 
     [Test]
@@ -81,14 +81,14 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
         WindowRealmInfo realmInfo = (WindowRealmInfo)info;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
             Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
             Assert.That(realmInfo.Sandbox, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -107,14 +107,14 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
         WindowRealmInfo realmInfo = (WindowRealmInfo)info;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
             Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
             Assert.That(realmInfo.Sandbox, Is.EqualTo("mySandbox"));
-        });
+        }
     }
 
     [Test]
@@ -151,12 +151,12 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
         RealmInfo realmInfo = (RealmInfo)info!;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worker));
-        });
+        }
     }
 
     [Test]
@@ -174,14 +174,14 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<DedicatedWorkerRealmInfo>());
         DedicatedWorkerRealmInfo realmInfo = (DedicatedWorkerRealmInfo)info;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.DedicatedWorker));
             Assert.That(realmInfo.Owners, Has.Count.EqualTo(1));
             Assert.That(realmInfo.Owners[0], Is.EqualTo("ownerRealm"));
-        });
+        }
     }
 
     [Test]
@@ -217,12 +217,12 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<SharedWorkerRealmInfo>());
         SharedWorkerRealmInfo realmInfo = (SharedWorkerRealmInfo)info;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.SharedWorker));
-        });
+        }
     }
 
     [Test]
@@ -257,12 +257,12 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
         ServiceWorkerRealmInfo realmInfo = (ServiceWorkerRealmInfo)info!;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.ServiceWorker));
-        });
+        }
     }
 
     [Test]
@@ -297,12 +297,12 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
         RealmInfo realmInfo = (RealmInfo)info!;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Worklet));
-        });
+        }
     }
 
     [Test]
@@ -319,12 +319,12 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<PaintWorkletRealmInfo>());
         PaintWorkletRealmInfo realmInfo = (PaintWorkletRealmInfo)info!;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.PaintWorklet));
-        });
+        }
     }
 
     [Test]
@@ -359,12 +359,12 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<AudioWorkletRealmInfo>());
         AudioWorkletRealmInfo realmInfo = (AudioWorkletRealmInfo)info!;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.AudioWorklet));
-        });
+        }
     }
 
     [Test]

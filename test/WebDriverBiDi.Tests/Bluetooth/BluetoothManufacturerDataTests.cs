@@ -13,7 +13,7 @@ public class BluetoothManufacturerDataTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("key"));
             Assert.That(serialized["key"]!.Type, Is.EqualTo(JTokenType.Integer));
@@ -21,7 +21,7 @@ public class BluetoothManufacturerDataTests
             Assert.That(serialized, Contains.Key("data"));
             Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["data"]!.Value<string>(), Is.EqualTo("myData"));
-        });
+        }
     }
     
     [Test]
@@ -33,7 +33,7 @@ public class BluetoothManufacturerDataTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("key"));
             Assert.That(serialized["key"]!.Type, Is.EqualTo(JTokenType.Integer));
@@ -41,6 +41,6 @@ public class BluetoothManufacturerDataTests
             Assert.That(serialized, Contains.Key("data"));
             Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["data"]!.Value<string>(), Is.EqualTo("myUpdatedData"));
-        });
+        }
     }
 }

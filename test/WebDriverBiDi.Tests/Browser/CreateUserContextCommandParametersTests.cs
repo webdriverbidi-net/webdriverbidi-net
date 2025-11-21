@@ -33,12 +33,12 @@ public class CreateUserContextCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("acceptInsecureCerts"));
             Assert.That(serialized["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["acceptInsecureCerts"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -51,12 +51,12 @@ public class CreateUserContextCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("acceptInsecureCerts"));
             Assert.That(serialized["acceptInsecureCerts"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["acceptInsecureCerts"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 
     [Test]
@@ -72,7 +72,7 @@ public class CreateUserContextCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("proxy"));
             Assert.That(serialized["proxy"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -83,7 +83,7 @@ public class CreateUserContextCommandParametersTests
             Assert.That(proxyObject!["proxyType"]!.Value<string>()!, Is.EqualTo("manual"));
             Assert.That(proxyObject, Contains.Key("httpProxy"));
             Assert.That(proxyObject!["httpProxy"]!.Value<string>(), Is.EqualTo("example-proxy.com"));
-        });
+        }
     }
 
     [Test]
@@ -99,7 +99,7 @@ public class CreateUserContextCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("unhandledPromptBehavior"));
             Assert.That(serialized["unhandledPromptBehavior"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -108,6 +108,6 @@ public class CreateUserContextCommandParametersTests
             Assert.That(promptHandlerObject, Has.Count.EqualTo(1));
             Assert.That(promptHandlerObject, Contains.Key("default"));
             Assert.That(promptHandlerObject!["default"]!.Value<string>(), Is.EqualTo("accept"));
-        });
+        }
     }
 }

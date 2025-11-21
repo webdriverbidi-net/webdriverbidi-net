@@ -19,7 +19,7 @@ public class CallFunctionCommandParametersTests
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), true);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("functionDeclaration"));
@@ -28,7 +28,7 @@ public class CallFunctionCommandParametersTests
             Assert.That(serialized["target"]!.Type, Is.EqualTo(JTokenType.Object));
             Assert.That(serialized, Contains.Key("awaitPromise"));
             Assert.That(serialized["awaitPromise"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        });
+        }
     }
 
     [Test]
@@ -46,7 +46,7 @@ public class CallFunctionCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(8));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("functionDeclaration"));
             Assert.That(serialized["functionDeclaration"]!.Type, Is.EqualTo(JTokenType.String));
@@ -64,6 +64,6 @@ public class CallFunctionCommandParametersTests
             Assert.That(serialized["serializationOptions"]!.Type, Is.EqualTo(JTokenType.Object));
             Assert.That(serialized, Contains.Key("userActivation"));
             Assert.That(serialized["userActivation"]!.Type, Is.EqualTo(JTokenType.Boolean));
-        });
+        }
     }
 }

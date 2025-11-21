@@ -19,13 +19,13 @@ public class SetExtraHeadersCommandParametersTests
         SetExtraHeadersCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("headers"));
             Assert.That(serialized["headers"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["headers"], Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class SetExtraHeadersCommandParametersTests
         properties.Headers.Add("X-Extra-Header: headerValue");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("headers"));
@@ -51,7 +51,7 @@ public class SetExtraHeadersCommandParametersTests
             Assert.That(contextsObject, Has.Count.EqualTo(1));
             Assert.That(contextsObject[0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextsObject[0].Value<string>(), Is.EqualTo("myContext"));
-        });
+        }
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class SetExtraHeadersCommandParametersTests
         properties.Headers.Add("X-Extra-Header: headerValue");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("headers"));
@@ -77,6 +77,6 @@ public class SetExtraHeadersCommandParametersTests
             Assert.That(contextsObject, Has.Count.EqualTo(1));
             Assert.That(contextsObject[0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(contextsObject[0].Value<string>(), Is.EqualTo("myUserContext"));
-        });
+        }
     }
 }

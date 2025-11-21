@@ -22,11 +22,11 @@ public class AuthChallengeTests
                       """;
         AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions);
         Assert.That(challenge, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(challenge.Scheme, Is.EqualTo("basic"));
             Assert.That(challenge.Realm, Is.EqualTo("example.com"));
-        });
+        }
     }
 
     [Test]

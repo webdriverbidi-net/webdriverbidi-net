@@ -20,7 +20,7 @@ public class SimulateGattConnectionResponseCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -31,6 +31,6 @@ public class SimulateGattConnectionResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-        });
+        }
     }
 }

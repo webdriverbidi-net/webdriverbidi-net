@@ -19,13 +19,13 @@ public class AddInterceptCommandParametersTests
         AddInterceptCommandParameters properties = new();
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("phases"));
             Assert.That(serialized["phases"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["phases"] as JArray, Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -35,7 +35,7 @@ public class AddInterceptCommandParametersTests
         properties.Phases.Add(InterceptPhase.BeforeRequestSent);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("phases"));
@@ -44,7 +44,7 @@ public class AddInterceptCommandParametersTests
             Assert.That(phases, Has.Count.EqualTo(1));
             Assert.That(phases[0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(phases[0].Value<string>(), Is.EqualTo("beforeRequestSent"));
-        });
+        }
     }
 
     [Test]
@@ -58,7 +58,7 @@ public class AddInterceptCommandParametersTests
         properties.Phases.Add(InterceptPhase.BeforeRequestSent);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("phases"));
@@ -85,6 +85,6 @@ public class AddInterceptCommandParametersTests
             Assert.That(urlPatternObject, Contains.Key("pattern"));
             Assert.That(urlPatternObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(urlPatternObject["pattern"]!.Value<string>(), Is.EqualTo("https://example.com/*"));
-        });
+        }
     } 
 }

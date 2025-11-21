@@ -28,12 +28,12 @@ public class GetUserContextsCommandResultTests
                       """;
         GetUserContextsCommandResult? result = JsonSerializer.Deserialize<GetUserContextsCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.UserContexts, Has.Count.EqualTo(2));
             Assert.That(result.UserContexts[0].UserContextId, Is.EqualTo("default"));
             Assert.That(result.UserContexts[1].UserContextId, Is.EqualTo("myUserContext"));
-        });
+        }
     }
 
     [Test]

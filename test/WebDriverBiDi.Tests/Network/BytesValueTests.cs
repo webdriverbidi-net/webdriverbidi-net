@@ -19,7 +19,7 @@ public class BytesValueTests
         BytesValue value = BytesValue.FromString("this is my string");
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -28,7 +28,7 @@ public class BytesValueTests
             Assert.That(serialized, Contains.Key("value"));
             Assert.That(serialized["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["value"]!.Value<string>(), Is.EqualTo("this is my string"));
-        });
+        }
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class BytesValueTests
         BytesValue value = BytesValue.FromBase64String(base64String);
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -47,7 +47,7 @@ public class BytesValueTests
             Assert.That(serialized, Contains.Key("value"));
             Assert.That(serialized["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["value"]!.Value<string>(), Is.EqualTo(base64String));
-        });
+        }
     }
 
     [Test]
@@ -58,7 +58,7 @@ public class BytesValueTests
         BytesValue value = BytesValue.FromByteArray(byteArray);
         string json = JsonSerializer.Serialize(value);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("type"));
@@ -67,7 +67,7 @@ public class BytesValueTests
             Assert.That(serialized, Contains.Key("value"));
             Assert.That(serialized["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["value"]!.Value<string>(), Is.EqualTo(base64String));
-        });
+        }
     }
 
     [Test]
@@ -83,12 +83,12 @@ public class BytesValueTests
                       """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
         Assert.That(value, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(value.Value, Is.EqualTo("this is my string"));
             Assert.That(value.ValueAsByteArray, Is.EqualTo(valueArray));
-        });
+        }
     }
 
     [Test]
@@ -106,7 +106,7 @@ public class BytesValueTests
                       """;
         BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
         Assert.That(value, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(value.Type, Is.EqualTo(BytesValueType.Base64));
 
@@ -114,7 +114,7 @@ public class BytesValueTests
             // cspell: disable-next
             Assert.That(value.Value, Is.EqualTo("dGhpcyBpcyBteSBzdHJpbmc="));
             Assert.That(value.ValueAsByteArray, Is.EqualTo(valueArray));
-        });
+        }
     }
 
     [Test]

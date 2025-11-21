@@ -30,7 +30,7 @@ public class ReceivedDataListTests
         ReceivedDataList received = new(list);
         IList<object?>? wrappedList = received[4] as IList<object?>;
         IDictionary<string, object?>? wrappedDict = received[5] as IDictionary<string, object?>;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(received[0], Is.EqualTo("myString"));
             Assert.That(received[1], Is.EqualTo(23));
@@ -43,7 +43,7 @@ public class ReceivedDataListTests
             Assert.That(wrappedDict, Is.InstanceOf<ReceivedDataDictionary>());
             Assert.That(() => wrappedDict!["newKey"] = "newValue", Throws.InstanceOf<NotSupportedException>());
             Assert.That(() => wrappedDict!["string"] = "newValue", Throws.InstanceOf<NotSupportedException>());
-        });
+        }
     }
 
     [Test]
@@ -74,7 +74,7 @@ public class ReceivedDataListTests
         List<object?> unwrapped = received.ToWritableCopy();
         IList<object?>? unwrappedList = unwrapped[4] as IList<object?>;
         IDictionary<string, object?>? unwrappedDict = unwrapped[5] as IDictionary<string, object?>;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(unwrapped[0], Is.EqualTo("myString"));
             Assert.That(unwrapped[1], Is.EqualTo(23));
@@ -84,7 +84,7 @@ public class ReceivedDataListTests
             Assert.That(unwrappedList!, Is.InstanceOf<List<object?>>());
             Assert.That(unwrappedDict, Is.Not.Null);
             Assert.That(unwrappedDict, Is.InstanceOf<Dictionary<string, object?>>());
-        });
+        }
 
         unwrappedList!.Add("foo");
         unwrappedDict!["bar"] = "baz";

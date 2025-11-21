@@ -20,7 +20,7 @@ public class SetPermissionsCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("descriptor"));
             Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -35,7 +35,7 @@ public class SetPermissionsCommandParametersTests
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        });
+        }
     }
 
     [Test]
@@ -45,7 +45,7 @@ public class SetPermissionsCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("descriptor"));
             Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -60,7 +60,7 @@ public class SetPermissionsCommandParametersTests
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        });
+        }
     }
 
     [Test]
@@ -73,7 +73,7 @@ public class SetPermissionsCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("descriptor"));
             Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -91,7 +91,7 @@ public class SetPermissionsCommandParametersTests
             Assert.That(serialized, Contains.Key("embeddedOrigin"));
             Assert.That(serialized["embeddedOrigin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["embeddedOrigin"]!.Value<string>(), Is.EqualTo("myEmbeddedOrigin"));
-        });
+        }
     }
 
     [Test]
@@ -104,7 +104,7 @@ public class SetPermissionsCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("descriptor"));
             Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -122,7 +122,7 @@ public class SetPermissionsCommandParametersTests
             Assert.That(serialized, Contains.Key("userContext"));
             Assert.That(serialized["userContext"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["userContext"]!.Value<string>(), Is.EqualTo("myContext"));
-        });
+        }
     }
 
     [Test]
@@ -132,7 +132,7 @@ public class SetPermissionsCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("descriptor"));
             Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -147,7 +147,7 @@ public class SetPermissionsCommandParametersTests
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        });
+        }
     }
 
     [Test]
@@ -157,7 +157,7 @@ public class SetPermissionsCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("descriptor"));
             Assert.That(serialized["descriptor"]!.Type, Is.EqualTo(JTokenType.Object));
@@ -172,6 +172,6 @@ public class SetPermissionsCommandParametersTests
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        });
+        }
     }
 }

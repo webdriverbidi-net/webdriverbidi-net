@@ -23,12 +23,12 @@ public class FileDialogInfoTests
         FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(info.Multiple, Is.True);
             Assert.That(info.Element, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -43,12 +43,12 @@ public class FileDialogInfoTests
         FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(info.Multiple, Is.False);
             Assert.That(info.Element, Is.Null);
-        });
+        }
     }
 
   [Test]
@@ -72,13 +72,13 @@ public class FileDialogInfoTests
     FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
     Assert.That(info, Is.Not.Null);
     Assert.That(info, Is.InstanceOf<FileDialogInfo>());
-    Assert.Multiple(() =>
-    {
+        using (Assert.EnterMultipleScope())
+        {
         Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
         Assert.That(info.Multiple, Is.True);
         Assert.That(info.Element, Is.Not.Null);
         Assert.That(info.Element!.SharedId, Is.EqualTo("mySharedId"));
-    });
+    }
   }
 
     [Test]

@@ -15,7 +15,7 @@ public class WheelScrollActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(5));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -32,7 +32,7 @@ public class WheelScrollActionTests
             Assert.That(serialized, Contains.Key("deltaY"));
             Assert.That(serialized["deltaY"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["deltaY"]!.Value<long>(), Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -45,7 +45,7 @@ public class WheelScrollActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -65,7 +65,7 @@ public class WheelScrollActionTests
             Assert.That(serialized, Contains.Key("duration"));
             Assert.That(serialized["duration"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["duration"]!.Value<long>(), Is.EqualTo(1));
-        });
+        }
     }
 
     [Test]
@@ -78,7 +78,7 @@ public class WheelScrollActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -98,7 +98,7 @@ public class WheelScrollActionTests
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("viewport"));
-        });
+        }
     }
 
     [Test]
@@ -111,7 +111,7 @@ public class WheelScrollActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -131,7 +131,7 @@ public class WheelScrollActionTests
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["origin"]!.Value<string>(), Is.EqualTo("pointer"));
-        });
+        }
     }
 
     [Test]
@@ -159,7 +159,7 @@ public class WheelScrollActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(6));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -178,11 +178,11 @@ public class WheelScrollActionTests
             Assert.That(serialized["deltaY"]!.Value<long>(), Is.EqualTo(0));
             Assert.That(serialized, Contains.Key("origin"));
             Assert.That(serialized["origin"]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
         JObject originObject = (JObject)serialized["origin"]!;
         Assert.That(originObject, Has.Count.EqualTo(2));
         Assert.That(originObject, Contains.Key("type"));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(originObject["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(originObject["type"]!.Value<string>(), Is.EqualTo("element"));
@@ -193,6 +193,6 @@ public class WheelScrollActionTests
             Assert.That(elementObject, Contains.Key("sharedId"));
             Assert.That(elementObject["sharedId"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(elementObject["sharedId"]!.Value<string>(), Is.EqualTo("testSharedId"));
-        });
+        }
     }
 }

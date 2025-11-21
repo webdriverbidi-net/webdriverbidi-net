@@ -20,7 +20,7 @@ public class TraverseHistoryCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -28,7 +28,7 @@ public class TraverseHistoryCommandParametersTests
             Assert.That(serialized, Contains.Key("delta"));
             Assert.That(serialized["delta"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["delta"]!.Value<long>(), Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class TraverseHistoryCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -46,7 +46,7 @@ public class TraverseHistoryCommandParametersTests
             Assert.That(serialized, Contains.Key("delta"));
             Assert.That(serialized["delta"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["delta"]!.Value<long>(), Is.EqualTo(1));
-         });
+         }
     }
 
     [Test]
@@ -56,7 +56,7 @@ public class TraverseHistoryCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -64,6 +64,6 @@ public class TraverseHistoryCommandParametersTests
             Assert.That(serialized, Contains.Key("delta"));
             Assert.That(serialized["delta"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["delta"]!.Value<long>(), Is.EqualTo(-1));
-        });
+        }
     }
 }

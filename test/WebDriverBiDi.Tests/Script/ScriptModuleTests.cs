@@ -41,7 +41,7 @@ public class ScriptModuleTests
         Assert.That(result, Is.TypeOf<EvaluateResultSuccess>());
         EvaluateResultSuccess? successResult = result as EvaluateResultSuccess;
         Assert.That(successResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(successResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(successResult.ResultType, Is.EqualTo(EvaluateResultType.Success));
@@ -50,7 +50,7 @@ public class ScriptModuleTests
             Assert.That(successResult.Result.HasValue);
             Assert.That(successResult.Result.Value, Is.TypeOf<string>());
             Assert.That(successResult.Result.ValueAs<string>(), Is.EqualTo("myStringValue"));
-        });
+        }
     }
 
     [Test]
@@ -96,7 +96,7 @@ public class ScriptModuleTests
         Assert.That(result, Is.TypeOf<EvaluateResultException>());
         EvaluateResultException? exceptionResult = result as EvaluateResultException;
         Assert.That(exceptionResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(exceptionResult.ResultType, Is.EqualTo(EvaluateResultType.Exception));
@@ -108,7 +108,7 @@ public class ScriptModuleTests
             Assert.That(exceptionResult.ExceptionDetails.Exception.HasValue);
             Assert.That(exceptionResult.ExceptionDetails.Exception.Value, Is.TypeOf<string>());
             Assert.That(exceptionResult.ExceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("myStringValue"));
-        });
+        }
     }
 
     [Test]
@@ -146,7 +146,7 @@ public class ScriptModuleTests
         Assert.That(result, Is.TypeOf<EvaluateResultSuccess>());
         EvaluateResultSuccess? successResult = result as EvaluateResultSuccess;
         Assert.That(successResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(successResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(successResult.ResultType, Is.EqualTo(EvaluateResultType.Success));
@@ -155,7 +155,7 @@ public class ScriptModuleTests
             Assert.That(successResult.Result.HasValue);
             Assert.That(successResult.Result.Value, Is.TypeOf<string>());
             Assert.That(successResult.Result.ValueAs<string>(), Is.EqualTo("myStringValue"));
-        });
+        }
     }
 
     [Test]
@@ -201,7 +201,7 @@ public class ScriptModuleTests
         Assert.That(result, Is.TypeOf<EvaluateResultException>());
         EvaluateResultException? exceptionResult = result as EvaluateResultException;
         Assert.That(exceptionResult, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(exceptionResult.ResultType, Is.EqualTo(EvaluateResultType.Exception));
@@ -213,7 +213,7 @@ public class ScriptModuleTests
             Assert.That(exceptionResult.ExceptionDetails.Exception.HasValue);
             Assert.That(exceptionResult.ExceptionDetails.Exception.Value, Is.TypeOf<string>());
             Assert.That(exceptionResult.ExceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("myStringValue"));
-        });
+        }
     }
 
     [Test]
@@ -251,19 +251,19 @@ public class ScriptModuleTests
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Realms, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Realms[0].Type, Is.EqualTo(RealmType.Window));
             Assert.That(result.Realms[0], Is.TypeOf<WindowRealmInfo>());
-        });
+        }
         WindowRealmInfo info = result.Realms[0].As<WindowRealmInfo>();
         Assert.That(info, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(info.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(info.Origin, Is.EqualTo("myOrigin"));
             Assert.That(info.BrowsingContext, Is.EqualTo("myContextId"));
-        });
+        }
     }
 
     [Test]
@@ -304,13 +304,13 @@ public class ScriptModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
                 Assert.That(e.Origin, Is.EqualTo("myOrigin"));
                 Assert.That(e.Type, Is.EqualTo(RealmType.Window));
                 Assert.That(e.As<WindowRealmInfo>().BrowsingContext, Is.EqualTo("myContext"));
-            });
+            }
             syncEvent.Set();
             return Task.CompletedTask;
         });
@@ -343,12 +343,12 @@ public class ScriptModuleTests
         ManualResetEvent syncEvent = new(false);
         module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) =>
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
                 Assert.That(e.Origin, Is.EqualTo("myOrigin"));
                 Assert.That(e.Type, Is.EqualTo(RealmType.Worker));
-            });
+            }
             syncEvent.Set();
             return Task.CompletedTask;
         });
@@ -409,7 +409,7 @@ public class ScriptModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnMessage.AddObserver((MessageEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.ChannelId, Is.EqualTo("myChannel"));
                 Assert.That(e.Data, Is.Not.Null);
@@ -417,7 +417,7 @@ public class ScriptModuleTests
                 Assert.That(e.Data.ValueAs<string>(), Is.EqualTo("myChannelValue"));
                 Assert.That(e.Source, Is.Not.Null);
                 Assert.That(e.Source.RealmId, Is.EqualTo("myRealm"));
-            });
+            }
             syncEvent.Set();
             return Task.CompletedTask;
         });

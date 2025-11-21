@@ -165,7 +165,7 @@ public class BrowserModuleTests
         GetClientWindowsCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindows, Has.Count.EqualTo(2));
             Assert.That(result.ClientWindows[0].ClientWindowId, Is.EqualTo("myClientWindow"));
@@ -182,7 +182,7 @@ public class BrowserModuleTests
             Assert.That(result.ClientWindows[1].Y, Is.EqualTo(75));
             Assert.That(result.ClientWindows[1].Width, Is.EqualTo(960));
             Assert.That(result.ClientWindows[1].Height, Is.EqualTo(720));
-        });
+        }
     }
 
     [Test]
@@ -231,7 +231,7 @@ public class BrowserModuleTests
         GetClientWindowsCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindows, Has.Count.EqualTo(2));
             Assert.That(result.ClientWindows[0].ClientWindowId, Is.EqualTo("myClientWindow"));
@@ -248,7 +248,7 @@ public class BrowserModuleTests
             Assert.That(result.ClientWindows[1].Y, Is.EqualTo(75));
             Assert.That(result.ClientWindows[1].Width, Is.EqualTo(960));
             Assert.That(result.ClientWindows[1].Height, Is.EqualTo(720));
-        });
+        }
     }
 
     [Test]
@@ -285,12 +285,12 @@ public class BrowserModuleTests
         GetUserContextsCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.UserContexts, Has.Count.EqualTo(2));
             Assert.That(result.UserContexts[0].UserContextId, Is.EqualTo("default"));
             Assert.That(result.UserContexts[1].UserContextId, Is.EqualTo("myUserContextId"));
-        });
+        }
 
     }
 
@@ -328,12 +328,12 @@ public class BrowserModuleTests
         GetUserContextsCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.UserContexts, Has.Count.EqualTo(2));
             Assert.That(result.UserContexts[0].UserContextId, Is.EqualTo("default"));
             Assert.That(result.UserContexts[1].UserContextId, Is.EqualTo("myUserContextId"));
-        });
+        }
     }
 
     [Test]
@@ -403,7 +403,7 @@ public class BrowserModuleTests
         SetClientWindowStateCommandResult result = task.Result;
 
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.ClientWindowId, Is.EqualTo("myClientWindow"));
             Assert.That(result.IsActive, Is.True);
@@ -412,7 +412,7 @@ public class BrowserModuleTests
             Assert.That(result.Y, Is.EqualTo(200));
             Assert.That(result.Width, Is.EqualTo(640));
             Assert.That(result.Height, Is.EqualTo(480));
-        });
+        }
     }
 
     [Test]

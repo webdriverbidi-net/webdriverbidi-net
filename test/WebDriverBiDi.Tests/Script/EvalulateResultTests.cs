@@ -28,13 +28,13 @@ public class EvaluateResultTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<EvaluateResultSuccess>());
         EvaluateResultSuccess successResult = (EvaluateResultSuccess)result;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(successResult.RealmId, Is.EqualTo("myRealm"));
             Assert.That(successResult.Result.Type, Is.EqualTo("string"));
             Assert.That(successResult.Result.HasValue);
             Assert.That(successResult.Result.ValueAs<string>(), Is.EqualTo("myResult"));
-        });
+        }
     }
 
     [Test]
@@ -62,7 +62,7 @@ public class EvaluateResultTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<EvaluateResultException>());
         EvaluateResultException exceptionResult = (EvaluateResultException)result;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(exceptionResult.RealmId, Is.EqualTo("myRealm"));
             Assert.That(exceptionResult.ExceptionDetails.Text, Is.EqualTo("exception thrown"));
@@ -70,7 +70,7 @@ public class EvaluateResultTests
             Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
             Assert.That(exceptionResult.ExceptionDetails.StackTrace.CallFrames, Has.Count.EqualTo(0));
             Assert.That(exceptionResult.ExceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("exception value"));
-        });
+        }
     }
 
     [Test]

@@ -20,11 +20,11 @@ public class RemovePreloadScriptCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("script"));
             Assert.That(serialized["script"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["script"]!.Value<string>(), Is.EqualTo("myLoadScriptId"));
-        });
+        }
     }
 }

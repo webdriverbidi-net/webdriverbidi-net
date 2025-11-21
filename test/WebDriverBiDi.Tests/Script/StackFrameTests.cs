@@ -24,13 +24,13 @@ public class StackFrameTests
                       """;
         StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions);
         Assert.That(stackFrame, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(stackFrame.FunctionName, Is.EqualTo("myFunction"));
             Assert.That(stackFrame.LineNumber, Is.EqualTo(1));
             Assert.That(stackFrame.ColumnNumber, Is.EqualTo(5));
             Assert.That(stackFrame.Url, Is.EqualTo("http://some.url/file.js"));
-        });
+        }
     }
 
     [Test]

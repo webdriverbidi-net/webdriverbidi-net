@@ -130,11 +130,11 @@ public class BiDiDriverTests
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
 
         Assert.That(response, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(response!.ErrorType, Is.EqualTo("unknown command"));
             Assert.That(response.ErrorMessage, Is.EqualTo("This is a test error message"));
-        });
+        }
     }
 
     [Test]
@@ -168,12 +168,12 @@ public class BiDiDriverTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(receivedEvent, Is.EqualTo(eventName));
             Assert.That(receivedData, Is.Not.Null);
             Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
-        });
+        }
         TestEventArgs? convertedData = receivedData as TestEventArgs;
         Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
     }
@@ -213,12 +213,12 @@ public class BiDiDriverTests
         await connection.RaiseDataReceivedEventAsync(eventJson);
         await driver.StopAsync();
         syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(receivedEvent, Is.EqualTo(eventName));
             Assert.That(receivedData, Is.Not.Null);
             Assert.That(receivedData, Is.TypeOf<TestEventArgs>());
-        });
+        }
         TestEventArgs? convertedData = receivedData as TestEventArgs;
         Assert.That(convertedData!.ParamName, Is.EqualTo("paramValue"));
     }
@@ -291,7 +291,7 @@ public class BiDiDriverTests
         await driver.StartAsync("ws://localhost:5555");
         try
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(driver.Bluetooth, Is.InstanceOf<BluetoothModule>());
                 Assert.That(driver.Browser, Is.InstanceOf<BrowserModule>());
@@ -306,7 +306,7 @@ public class BiDiDriverTests
                 Assert.That(driver.Speculation, Is.InstanceOf<SpeculationModule>());
                 Assert.That(driver.Storage, Is.InstanceOf<StorageModule>());
                 Assert.That(driver.WebExtension, Is.InstanceOf<WebExtensionModule>());
-            });
+            }
         }
         finally
         {
@@ -329,13 +329,13 @@ public class BiDiDriverTests
         await driver.StartAsync("ws:localhost");
         await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
         Assert.That(logs, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(logs[0].Message, Is.EqualTo("test log message"));
             Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Warn));
             Assert.That(logs[0].Timestamp, Is.GreaterThanOrEqualTo(testStart));
             Assert.That(logs[0].ComponentName, Is.EqualTo("TestConnection"));
-        });
+        }
     }
 
     [Test]
@@ -405,7 +405,16 @@ public class BiDiDriverTests
     [Test]
     public async Task TestReceivingInvalidResultTypeFromSendingCommandThrows()
     {
-        TestCommandResultInvalid result = new();
+        TestCommandResultInvalid result = new()
+        {
+            Value = "invalid",
+        };
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Value, Is.EqualTo("invalid"));
+            Assert.That(result with { }, Is.EqualTo(result));
+        }
+
         TestTransport transport = new(new TestConnection())
         {
             ReturnCustomValue = true,
@@ -491,13 +500,13 @@ public class BiDiDriverTests
                                """;
             await server.SendDataAsync(connectionId, eventJson);
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(eventsRaised, Is.True);
                 Assert.That(driverLog, Has.Count.EqualTo(1));
                 Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing event JSON"));
                 Assert.That(unknownMessage, Is.Not.Empty);
-            });
+            }
         }
         finally
         {
@@ -565,12 +574,12 @@ public class BiDiDriverTests
             await server.SendDataAsync(connectionId, json);
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(driverLog, Has.Count.EqualTo(1));
                 Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing error JSON"));
                 Assert.That(unknownMessage, Is.Not.Empty);
-            });
+            }
         }
         finally
         {
@@ -632,12 +641,12 @@ public class BiDiDriverTests
             await server.SendDataAsync(connectionId, unparsableJson);
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(driverLog, Has.Count.EqualTo(1));
                 Assert.That(driverLog[0], Contains.Substring("Unexpected error parsing JSON message"));
                 Assert.That(unknownMessage, Is.Not.Empty);
-            });
+            }
         }
         finally
         {

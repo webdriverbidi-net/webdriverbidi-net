@@ -20,14 +20,14 @@ public class InitiatorTests
                       """;
         Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json, deserializationOptions);
         Assert.That(initiator, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(initiator.Type, Is.Null);
             Assert.That(initiator.ColumnNumber, Is.Null);
             Assert.That(initiator.LineNumber, Is.Null);
             Assert.That(initiator.StackTrace, Is.Null);
             Assert.That(initiator.RequestId, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -53,7 +53,7 @@ public class InitiatorTests
                       """;
         Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json, deserializationOptions);
         Assert.That(initiator, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(initiator.Type, Is.EqualTo(InitiatorType.Script));
             Assert.That(initiator.ColumnNumber, Is.EqualTo(1));
@@ -61,7 +61,7 @@ public class InitiatorTests
             Assert.That(initiator.StackTrace, Is.Not.Null);
             Assert.That(initiator.StackTrace!.CallFrames, Has.Count.EqualTo(1));
             Assert.That(initiator.RequestId, Is.EqualTo("myRequestId"));
-        });
+        }
     }
 
     [Test]

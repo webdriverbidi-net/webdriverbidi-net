@@ -13,7 +13,7 @@ public class SetCookieHeaderTests
         SetCookieHeader cookieHeader = new();
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("name"));
@@ -29,7 +29,7 @@ public class SetCookieHeaderTests
             Assert.That(valueObject, Contains.Key("value"));
             Assert.That(valueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(valueObject["value"]!.Value<string>(), Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class SetCookieHeaderTests
         SetCookieHeader cookieHeader = new("cookieName", "cookieValue");
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("name"));
@@ -54,7 +54,7 @@ public class SetCookieHeaderTests
             Assert.That(valueObject, Contains.Key("value"));
             Assert.That(valueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(valueObject["value"]!.Value<string>(), Is.EqualTo("cookieValue"));
-        });
+        }
     }
 
     [Test]
@@ -67,7 +67,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("name"));
@@ -83,7 +83,7 @@ public class SetCookieHeaderTests
             Assert.That(valueObject, Contains.Key("value"));
             Assert.That(valueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(valueObject["value"]!.Value<string>(), Is.EqualTo("cookieValue"));
-        });
+        }
     }
 
     [Test]
@@ -98,7 +98,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("name"));
@@ -114,7 +114,7 @@ public class SetCookieHeaderTests
             Assert.That(valueObject, Contains.Key("value"));
             Assert.That(valueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(valueObject["value"]!.Value<string>(), Is.EqualTo(base64Value));
-        });
+        }
     }
 
     [Test]
@@ -126,7 +126,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("name"));
@@ -145,7 +145,7 @@ public class SetCookieHeaderTests
             Assert.That(serialized, Contains.Key("domain"));
             Assert.That(serialized["domain"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["domain"]!.Value<string>(), Is.EqualTo("myDomain"));
-        });
+        }
     }
 
     [Test]
@@ -157,7 +157,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("name"));
@@ -176,7 +176,7 @@ public class SetCookieHeaderTests
             Assert.That(serialized, Contains.Key("path"));
             Assert.That(serialized["path"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["path"]!.Value<string>(), Is.EqualTo("myPath"));
-        });
+        }
     }
 
     [Test]
@@ -188,7 +188,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("name"));
@@ -207,7 +207,7 @@ public class SetCookieHeaderTests
             Assert.That(serialized, Contains.Key("httpOnly"));
             Assert.That(serialized["httpOnly"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["httpOnly"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -219,7 +219,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("name"));
@@ -238,7 +238,7 @@ public class SetCookieHeaderTests
             Assert.That(serialized, Contains.Key("secure"));
             Assert.That(serialized["secure"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["secure"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -250,7 +250,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("name"));
@@ -269,7 +269,7 @@ public class SetCookieHeaderTests
             Assert.That(serialized, Contains.Key("sameSite"));
             Assert.That(serialized["sameSite"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["sameSite"]!.Value<string>(), Is.EqualTo("strict"));
-        });
+        }
     }
 
     [Test]
@@ -283,7 +283,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("name"));
@@ -302,7 +302,7 @@ public class SetCookieHeaderTests
             Assert.That(serialized, Contains.Key("expiry"));
             Assert.That(serialized["expiry"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["expiry"]!.Value<string>(), Is.EqualTo(expected));
-        });
+        }
     }
 
     [Test]
@@ -314,7 +314,7 @@ public class SetCookieHeaderTests
         };
         string json = JsonSerializer.Serialize(cookieHeader);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(3));
             Assert.That(serialized, Contains.Key("name"));
@@ -333,7 +333,7 @@ public class SetCookieHeaderTests
             Assert.That(serialized, Contains.Key("maxAge"));
             Assert.That(serialized["maxAge"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["maxAge"]!.Value<ulong>(), Is.EqualTo(100));
-        });
+        }
     }
 
     [Test]
@@ -351,7 +351,7 @@ public class SetCookieHeaderTests
         Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
         Assert.That(cookie, Is.Not.Null);
         SetCookieHeader header = cookie.ToSetCookieHeader();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(header.Name, Is.EqualTo("cookieName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
@@ -363,6 +363,6 @@ public class SetCookieHeaderTests
             Assert.That(header.SameSite, Is.EqualTo(CookieSameSiteValue.Lax));
             Assert.That(header.Expires, Is.EqualTo(expireTime));
             Assert.That(header.MaxAge, Is.Null);
-        });
+        }
     }
 }

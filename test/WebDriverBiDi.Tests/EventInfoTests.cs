@@ -10,11 +10,12 @@ public class EventInfoTests
     {
         EventInfo<TestEventArgs> eventInfo = new(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
         TestEventArgs eventArgs = eventInfo.ToEventArgs<TestEventArgs>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.ParamName, Is.EqualTo("paramValue"));
             Assert.That(eventArgs.AdditionalData, Has.Count.EqualTo(0));
-        });
+            Assert.That(eventArgs with { }, Is.EqualTo(eventArgs));
+        }
     }
 
     [Test]
@@ -22,7 +23,12 @@ public class EventInfoTests
     {
         EventInfo<TestValidEventData> eventInfo = new(new TestValidEventData("eventName"), ReceivedDataDictionary.EmptyDictionary);
         TestParameterizedEventArgs eventArgs = eventInfo.ToEventArgs<TestParameterizedEventArgs>();
-        Assert.That(eventArgs.EventName, Is.EqualTo("eventName"));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(eventArgs.EventName, Is.EqualTo("eventName"));
+            Assert.That(eventArgs with { }, Is.EqualTo(eventArgs));
+        }
+
     }
 
     [Test]

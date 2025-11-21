@@ -13,12 +13,12 @@ public class PauseActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pause"));
-       });
+       }
     }
 
     [Test]
@@ -31,7 +31,7 @@ public class PauseActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -39,6 +39,6 @@ public class PauseActionTests
             Assert.That(serialized, Contains.Key("duration"));
             Assert.That(serialized["duration"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["duration"]!.Value<long>(), Is.EqualTo(1));
-        });
+        }
     }
 }

@@ -33,12 +33,12 @@ public class HeaderTests
                       """;
         Header? header = JsonSerializer.Deserialize<Header>(json, deserializationOptions);
         Assert.That(header, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(header.Name, Is.EqualTo("headerName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(header.Value.Value, Is.EqualTo("headerValue"));
-        });
+        }
     }
 
     [Test]
@@ -57,12 +57,12 @@ public class HeaderTests
                       """;
         Header? header = JsonSerializer.Deserialize<Header>(json, deserializationOptions);
         Assert.That(header, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(header.Name, Is.EqualTo("headerName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.Base64));
             Assert.That(header.Value.Value, Is.EqualTo(base64Value));
-        });
+        }
     }
 
     [Test]

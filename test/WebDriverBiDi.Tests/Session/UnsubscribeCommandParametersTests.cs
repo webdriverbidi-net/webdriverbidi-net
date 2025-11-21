@@ -22,11 +22,11 @@ public class UnsubscribeCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("events"));
             Assert.That(serialized["events"]!.Count, Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -37,13 +37,13 @@ public class UnsubscribeCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("events"));
             Assert.That(serialized["events"]!.Count, Is.EqualTo(1));
             Assert.That(serialized["events"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["events"]![0]!.Value<string>(), Is.EqualTo("some.event"));
-        });
+        }
     }
 
     [Test]
@@ -53,11 +53,11 @@ public class UnsubscribeCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("subscriptions"));
             Assert.That(serialized["subscriptions"]!.Count, Is.EqualTo(0));
-        });
+        }
     }
 
     [Test]
@@ -68,12 +68,12 @@ public class UnsubscribeCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("subscriptions"));
             Assert.That(serialized["subscriptions"]!.Count, Is.EqualTo(1));
             Assert.That(serialized["subscriptions"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["subscriptions"]![0]!.Value<string>(), Is.EqualTo("mySubscriptionId"));
-        });
+        }
     }
 }

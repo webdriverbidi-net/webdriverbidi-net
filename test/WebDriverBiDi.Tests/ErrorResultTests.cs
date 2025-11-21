@@ -24,14 +24,14 @@ public class ErrorResultTests
         ErrorResponseMessage? messageResult = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
         Assert.That(messageResult, Is.Not.Null);
         ErrorResult result = messageResult.GetErrorResponseData();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsError, Is.True);
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
             Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
-        });
+        }
     }
 
     [Test]

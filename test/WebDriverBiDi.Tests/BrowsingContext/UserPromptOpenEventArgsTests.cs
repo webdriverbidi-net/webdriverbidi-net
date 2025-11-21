@@ -19,13 +19,13 @@ public class UserPromptOpenedEventArgsTests
                       """;
         UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Alert));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -41,14 +41,14 @@ public class UserPromptOpenedEventArgsTests
                       """;
         UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Confirm));
             Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -64,14 +64,14 @@ public class UserPromptOpenedEventArgsTests
                       """;
         UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Prompt));
             Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -87,14 +87,14 @@ public class UserPromptOpenedEventArgsTests
                       """;
         UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.BeforeUnload));
             Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -110,14 +110,14 @@ public class UserPromptOpenedEventArgsTests
                       """;
         UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Alert));
             Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -133,14 +133,14 @@ public class UserPromptOpenedEventArgsTests
                       """;
         UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Alert));
             Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Dismiss));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -156,14 +156,14 @@ public class UserPromptOpenedEventArgsTests
                       """;
         UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Alert));
             Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Ignore));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -180,14 +180,14 @@ public class UserPromptOpenedEventArgsTests
                       """;
         UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Prompt));
             Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
             Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
             Assert.That(eventArgs.DefaultValue, Is.EqualTo("prompt default"));
-        });
+        }
     }
 
     [Test]

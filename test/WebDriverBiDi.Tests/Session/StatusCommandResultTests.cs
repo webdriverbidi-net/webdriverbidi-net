@@ -22,11 +22,11 @@ public class StatusCommandResultTests
                       """;
         StatusCommandResult? result = JsonSerializer.Deserialize<StatusCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsReady, Is.EqualTo(true));
             Assert.That(result.Message, Is.EqualTo("myMessage"));
-        });
+        }
     }
 
     [Test]

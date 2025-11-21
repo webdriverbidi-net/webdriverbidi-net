@@ -12,7 +12,7 @@ public class ExtensionDataTests
         ExtensionPath value = new("myPath");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -21,7 +21,7 @@ public class ExtensionDataTests
             Assert.That(parsed, Contains.Key("path"));
             Assert.That(parsed["path"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["path"]!.Value<string>(), Is.EqualTo("myPath"));
-        });
+        }
     }
 
     [Test]
@@ -30,7 +30,7 @@ public class ExtensionDataTests
         ExtensionPath value = new();
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -39,7 +39,7 @@ public class ExtensionDataTests
             Assert.That(parsed, Contains.Key("path"));
             Assert.That(parsed["path"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["path"]!.Value<string>(), Is.Empty);
-        });
+        }
     }
     [Test]
     public void TestCanSerializeExtensionArchivePathExtensionData()
@@ -47,7 +47,7 @@ public class ExtensionDataTests
         ExtensionArchivePath value = new("myPath.zip");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -56,7 +56,7 @@ public class ExtensionDataTests
             Assert.That(parsed, Contains.Key("path"));
             Assert.That(parsed["path"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["path"]!.Value<string>(), Is.EqualTo("myPath.zip"));
-        });
+        }
     }
 
     [Test]
@@ -65,7 +65,7 @@ public class ExtensionDataTests
         ExtensionArchivePath value = new();
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -74,7 +74,7 @@ public class ExtensionDataTests
             Assert.That(parsed, Contains.Key("path"));
             Assert.That(parsed["path"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["path"]!.Value<string>(), Is.Empty);
-        });
+        }
     }
 
     [Test]
@@ -83,7 +83,7 @@ public class ExtensionDataTests
         ExtensionBase64Encoded value = new("Base64 Encoded Data");
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -92,7 +92,7 @@ public class ExtensionDataTests
             Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo("Base64 Encoded Data"));
-        });
+        }
     }
 
     [Test]
@@ -101,7 +101,7 @@ public class ExtensionDataTests
         ExtensionBase64Encoded value = new();
         string json = JsonSerializer.Serialize(value);
         JObject parsed = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("type"));
@@ -110,6 +110,6 @@ public class ExtensionDataTests
             Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["value"]!.Value<string>(), Is.Empty);
-        });
+        }
     }
 }

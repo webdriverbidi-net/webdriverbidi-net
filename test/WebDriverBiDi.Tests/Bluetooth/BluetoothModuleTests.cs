@@ -366,7 +366,7 @@ public class BluetoothModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnCharacteristicGeneratedEvent.AddObserver((CharacteristicEventGeneratedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Address, Is.EqualTo("myAddress"));
@@ -374,7 +374,7 @@ public class BluetoothModuleTests
                 Assert.That(e.CharacteristicUuid, Is.EqualTo("my-characteristic-uuid"));
                 Assert.That(e.Type, Is.EqualTo(CharacteristicEventGeneratedType.Read));
                 Assert.That(e.Data, Is.Null);
-           });
+           }
             syncEvent.Set();
         });
 
@@ -406,7 +406,7 @@ public class BluetoothModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnDescriptorGeneratedEvent.AddObserver((DescriptorEventGeneratedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Address, Is.EqualTo("myAddress"));
@@ -415,7 +415,7 @@ public class BluetoothModuleTests
                 Assert.That(e.DescriptorUuid, Is.EqualTo("my-descriptor-uuid"));
                 Assert.That(e.Type, Is.EqualTo(DescriptorEventGeneratedType.Read));
                 Assert.That(e.Data, Is.Null);
-           });
+           }
             syncEvent.Set();
         });
 
@@ -448,11 +448,11 @@ public class BluetoothModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnGattConnectionAttempted.AddObserver((GattConnectionAttemptedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Address, Is.EqualTo("myAddress"));
-           });
+           }
             syncEvent.Set();
         });
 
@@ -481,14 +481,14 @@ public class BluetoothModuleTests
 
         ManualResetEvent syncEvent = new(false);
         module.OnRequestDevicePromptUpdated.AddObserver((RequestDevicePromptUpdatedEventArgs e) => {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Prompt, Is.EqualTo("myPrompt"));
                 Assert.That(e.Devices, Has.Count.EqualTo(1));
                 Assert.That(e.Devices[0].DeviceId, Is.EqualTo("myDeviceId"));
                 Assert.That(e.Devices[0].DeviceName, Is.EqualTo("myDeviceName"));
-            });
+            }
             syncEvent.Set();
         });
 

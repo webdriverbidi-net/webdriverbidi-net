@@ -34,7 +34,7 @@ public class NewCommandResultTests
                       """;
         NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.SessionId, Is.EqualTo("mySession"));
             Assert.That(result.Capabilities.BrowserName, Is.EqualTo("greatBrowser"));
@@ -51,7 +51,7 @@ public class NewCommandResultTests
             Assert.That(result.Capabilities.AdditionalCapabilities, Contains.Key("capName"));
             Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.Not.Null);
             Assert.That(result.Capabilities.AdditionalCapabilities["capName"], Is.EqualTo("capValue"));
-        });
+        }
     }
 
     [Test]

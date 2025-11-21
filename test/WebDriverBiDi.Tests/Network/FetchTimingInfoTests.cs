@@ -33,7 +33,7 @@ public class FetchTimingInfoTests
                       """;
         FetchTimingInfo? info = JsonSerializer.Deserialize<FetchTimingInfo>(json, deserializationOptions);
         Assert.That(info, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(info.TimeOrigin, Is.EqualTo(1));
             Assert.That(info.RequestTime, Is.EqualTo(2));
@@ -48,7 +48,7 @@ public class FetchTimingInfoTests
             Assert.That(info.RequestStart, Is.EqualTo(11));
             Assert.That(info.ResponseStart, Is.EqualTo(12));
             Assert.That(info.ResponseEnd, Is.EqualTo(13));
-        });
+        }
     }
 
     [Test]

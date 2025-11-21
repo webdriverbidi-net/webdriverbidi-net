@@ -16,7 +16,7 @@ public class LogModuleTests
         ManualResetEvent syncEvent = new(false);
         module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.Type, Is.EqualTo("javascript"));
                 Assert.That(e.Text, Is.EqualTo("my log message"));
@@ -24,7 +24,7 @@ public class LogModuleTests
                 Assert.That(e.Arguments, Is.Null);
                 Assert.That(e.StackTrace, Is.Not.Null);
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
-            });
+            }
             syncEvent.Set();
         });
 
@@ -65,7 +65,7 @@ public class LogModuleTests
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
         module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
-            Assert.Multiple(() =>
+            using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.Type, Is.EqualTo("console"));
                 Assert.That(e.Text, Is.EqualTo("my log message"));
@@ -75,7 +75,7 @@ public class LogModuleTests
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
                 Assert.That(e.StackTrace, Is.Not.Null);
                 Assert.That(e.StackTrace!.CallFrames, Is.Empty);
-            });
+            }
             syncEvent.Set();
         });
 

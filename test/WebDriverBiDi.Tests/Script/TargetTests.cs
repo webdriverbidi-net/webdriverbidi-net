@@ -25,11 +25,11 @@ public class TargetTests
         Assert.That(target, Is.Not.Null);
         Assert.That(target, Is.InstanceOf<ContextTarget>());
         ContextTarget contextTarget = (ContextTarget)target!;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
             Assert.That(contextTarget.Sandbox, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -40,11 +40,11 @@ public class TargetTests
         Assert.That(target, Is.Not.Null);
         Assert.That(target, Is.InstanceOf<ContextTarget>());
         ContextTarget contextTarget = (ContextTarget)target!;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(contextTarget.BrowsingContextId, Is.EqualTo("myContext"));
             Assert.That(contextTarget.Sandbox, Is.EqualTo("mySandbox"));
-        });
+        }
     }
 
     [Test]
@@ -66,11 +66,11 @@ public class TargetTests
         Assert.That(deserialized, Has.Count.EqualTo(1));
         Assert.That(deserialized, Contains.Key("realm"));
         JToken realmValue = deserialized.GetValue("realm")!;
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(realmValue.Type, Is.EqualTo(JTokenType.String));
             Assert.That((string?)realmValue, Is.EqualTo("myRealm"));
-        });
+        }
     }
 
     [Test]
@@ -87,13 +87,13 @@ public class TargetTests
         JToken contextValue = deserialized.GetValue("context")!;
         JToken sandboxValue = deserialized.GetValue("sandbox")!;
 
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(contextValue.Type, Is.EqualTo(JTokenType.String));
             Assert.That((string?)contextValue, Is.EqualTo("myContext"));
             Assert.That(sandboxValue.Type, Is.EqualTo(JTokenType.String));
             Assert.That((string?)sandboxValue, Is.EqualTo("mySandbox"));
-        });
+        }
     }
 
     [Test]

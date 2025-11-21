@@ -19,12 +19,12 @@ public class RemoveDataCollectorCommandParametersTests
         RemoveDataCollectorCommandParameters properties = new("myCollectorId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("collector"));
             Assert.That(serialized["collector"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["collector"]!.Value<string>(), Is.EqualTo("myCollectorId"));
-        });
+        }
     }
 }

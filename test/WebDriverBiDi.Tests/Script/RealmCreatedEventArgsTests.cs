@@ -19,12 +19,12 @@ public class RealmCreatedEventArgsTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.That(info, Is.Not.Null);
         RealmCreatedEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.RealmId, Is.EqualTo("myRealm"));
             Assert.That(eventArgs.Origin, Is.EqualTo("myOrigin"));
             Assert.That(eventArgs.Type, Is.EqualTo(RealmType.Window));
-        });
+        }
     }
 
     [Test]
@@ -40,12 +40,12 @@ public class RealmCreatedEventArgsTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.That(info, Is.Not.Null);
         RealmCreatedEventArgs eventArgs = new(info);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.RealmId, Is.EqualTo("myRealm"));
             Assert.That(eventArgs.Origin, Is.EqualTo("myOrigin"));
             Assert.That(eventArgs.Type, Is.EqualTo(RealmType.Worker));
-        });
+        }
     }
 
     [Test]
@@ -63,12 +63,12 @@ public class RealmCreatedEventArgsTests
         Assert.That(info, Is.Not.Null);
         RealmCreatedEventArgs eventArgs = new(info);
         WindowRealmInfo castInfo = eventArgs.As<WindowRealmInfo>();
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(castInfo.RealmId, Is.EqualTo("myRealm"));
             Assert.That(castInfo.Origin, Is.EqualTo("myOrigin"));
             Assert.That(castInfo.Type, Is.EqualTo(RealmType.Window));
-        });
+        }
     }
 
     [Test]

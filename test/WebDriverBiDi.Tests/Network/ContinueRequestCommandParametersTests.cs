@@ -19,13 +19,13 @@ public class ContinueRequestCommandParametersTests
         ContinueRequestCommandParameters properties = new("myRequestId");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("request"));
             Assert.That(serialized["request"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["request"]!.Value<string>(), Is.EqualTo("myRequestId"));
-        });
+        }
     }
 
     [Test]
@@ -37,7 +37,7 @@ public class ContinueRequestCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("request"));
@@ -53,7 +53,7 @@ public class ContinueRequestCommandParametersTests
             Assert.That(bodyObject, Contains.Key("value"));
             Assert.That(bodyObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(bodyObject["value"]!.Value<string>(), Is.EqualTo("test body"));
-        });
+        }
     }
 
     [Test]
@@ -65,7 +65,7 @@ public class ContinueRequestCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("request"));
@@ -91,7 +91,7 @@ public class ContinueRequestCommandParametersTests
             Assert.That(cookieValueObject, Contains.Key("value"));
             Assert.That(cookieValueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(cookieValueObject["value"]!.Value<string>(), Is.EqualTo("cookieValue"));
-        });
+        }
     }
 
     [Test]
@@ -103,7 +103,7 @@ public class ContinueRequestCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("request"));
@@ -129,7 +129,7 @@ public class ContinueRequestCommandParametersTests
             Assert.That(headerValueObject, Contains.Key("value"));
             Assert.That(headerValueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(headerValueObject["value"]!.Value<string>(), Is.EqualTo("headerValue"));
-        });
+        }
     }
 
     [Test]
@@ -141,7 +141,7 @@ public class ContinueRequestCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("request"));
@@ -150,7 +150,7 @@ public class ContinueRequestCommandParametersTests
             Assert.That(serialized, Contains.Key("method"));
             Assert.That(serialized["method"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["method"]!.Value<string>(), Is.EqualTo("get"));
-        });
+        }
     }
 
     [Test]
@@ -162,7 +162,7 @@ public class ContinueRequestCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("request"));
@@ -171,6 +171,6 @@ public class ContinueRequestCommandParametersTests
             Assert.That(serialized, Contains.Key("url"));
             Assert.That(serialized["url"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["url"]!.Value<string>(), Is.EqualTo("https://example.com"));
-        });
+        }
     }
 }

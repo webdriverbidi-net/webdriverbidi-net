@@ -22,7 +22,7 @@ public class HandleRequestDevicePromptCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -36,7 +36,7 @@ public class HandleRequestDevicePromptCommandParametersTests
             Assert.That(serialized, Contains.Key("device"));
             Assert.That(serialized["device"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["device"]!.Value<string>(), Is.EqualTo("myDevice"));
-        });
+        }
     }
 
     [Test]
@@ -49,7 +49,7 @@ public class HandleRequestDevicePromptCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -63,7 +63,7 @@ public class HandleRequestDevicePromptCommandParametersTests
             Assert.That(serialized, Contains.Key("device"));
             Assert.That(serialized["device"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["device"]!.Value<string>(), Is.EqualTo("myOtherDevice"));
-        });
+        }
     }
 
     [Test]
@@ -73,7 +73,7 @@ public class HandleRequestDevicePromptCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -84,7 +84,7 @@ public class HandleRequestDevicePromptCommandParametersTests
             Assert.That(serialized, Contains.Key("accept"));
             Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["accept"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 
     [Test]
@@ -96,7 +96,7 @@ public class HandleRequestDevicePromptCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -107,6 +107,6 @@ public class HandleRequestDevicePromptCommandParametersTests
             Assert.That(serialized, Contains.Key("accept"));
             Assert.That(serialized["accept"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["accept"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 }

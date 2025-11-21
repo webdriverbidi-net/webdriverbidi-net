@@ -23,12 +23,12 @@ public class PrefetchStatusUpdatedEventArgsTests
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
             Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Pending));
-        });
+        }
     }
 
     [Test]
@@ -43,12 +43,12 @@ public class PrefetchStatusUpdatedEventArgsTests
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
             Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Ready));
-        });
+        }
     }
 
     [Test]
@@ -63,12 +63,12 @@ public class PrefetchStatusUpdatedEventArgsTests
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
             Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Success));
-        });
+        }
     }
 
     [Test]
@@ -83,12 +83,12 @@ public class PrefetchStatusUpdatedEventArgsTests
                       """;
         PrefetchStatusUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json, deserializationOptions);
         Assert.That(eventArgs, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
             Assert.That(eventArgs.Url, Is.EqualTo("https://example.com/index.html"));
             Assert.That(eventArgs.Status, Is.EqualTo(PreloadingStatus.Failure));
-        });
+        }
     }
 
     [Test]

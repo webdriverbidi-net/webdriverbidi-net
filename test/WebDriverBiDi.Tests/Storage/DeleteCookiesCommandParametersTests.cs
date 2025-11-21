@@ -34,7 +34,7 @@ public class DeleteCookiesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("filter"));
@@ -44,7 +44,7 @@ public class DeleteCookiesCommandParametersTests
             Assert.That(filterObject, Contains.Key("name"));
             Assert.That(filterObject["name"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(filterObject["name"]!.Value<string>(), Is.EqualTo("cookieName"));
-        });        
+        }        
     }
 
     [Test]
@@ -56,7 +56,7 @@ public class DeleteCookiesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("partition"));
@@ -69,7 +69,7 @@ public class DeleteCookiesCommandParametersTests
             Assert.That(partitionObject, Contains.Key("context"));
             Assert.That(partitionObject["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        });        
+        }        
     }
 
     [Test]
@@ -84,7 +84,7 @@ public class DeleteCookiesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("partition"));
@@ -97,7 +97,7 @@ public class DeleteCookiesCommandParametersTests
             Assert.That(partitionObject, Contains.Key("userContext"));
             Assert.That(partitionObject["userContext"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-        });        
+        }        
     }
 
     [Test]
@@ -113,7 +113,7 @@ public class DeleteCookiesCommandParametersTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(2));
             Assert.That(serialized, Contains.Key("filter"));
@@ -133,6 +133,6 @@ public class DeleteCookiesCommandParametersTests
             Assert.That(partitionObject, Contains.Key("context"));
             Assert.That(partitionObject["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        });        
+        }        
     }
 }

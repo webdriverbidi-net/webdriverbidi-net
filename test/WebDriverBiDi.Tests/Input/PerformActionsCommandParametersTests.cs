@@ -20,7 +20,7 @@ public class PerformActionsCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("context"));
             Assert.That(serialized["context"]!.Type, Is.EqualTo(JTokenType.String));
@@ -28,6 +28,6 @@ public class PerformActionsCommandParametersTests
             Assert.That(serialized, Contains.Key("actions"));
             Assert.That(serialized["actions"]!.Type, Is.EqualTo(JTokenType.Array));
             Assert.That(serialized["actions"], Is.Empty);
-        });
+        }
     }
 }

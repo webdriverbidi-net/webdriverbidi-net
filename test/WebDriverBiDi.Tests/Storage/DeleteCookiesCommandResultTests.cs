@@ -25,7 +25,7 @@ public class DeleteCookiesCommandResultTests
                       """;
         DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.PartitionKey, Is.Not.Null);
             Assert.That(result.PartitionKey.UserContextId, Is.EqualTo("myUserContext"));
@@ -33,7 +33,7 @@ public class DeleteCookiesCommandResultTests
             Assert.That(result.PartitionKey.AdditionalData, Has.Count.EqualTo(1));
             Assert.That(result.PartitionKey.AdditionalData, Contains.Key("extraPropertyName"));
             Assert.That(result.PartitionKey.AdditionalData["extraPropertyName"], Is.EqualTo("extraPropertyValue"));
-        });
+        }
     }
 
     [Test]
@@ -64,13 +64,13 @@ public class DeleteCookiesCommandResultTests
                       """;
         DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
         Assert.That(result, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(result.PartitionKey, Is.Not.Null);
             Assert.That(result.PartitionKey.UserContextId, Is.Null);
             Assert.That(result.PartitionKey.SourceOrigin, Is.Null);
             Assert.That(result.PartitionKey.AdditionalData, Is.Empty);
-        });
+        }
     }
 
     [Test]

@@ -13,7 +13,7 @@ public class PointerUpActionTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
@@ -21,6 +21,6 @@ public class PointerUpActionTests
             Assert.That(serialized, Contains.Key("button"));
             Assert.That(serialized["button"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["button"]!.Value<long>(), Is.EqualTo(0));
-        });
+        }
     }
 }

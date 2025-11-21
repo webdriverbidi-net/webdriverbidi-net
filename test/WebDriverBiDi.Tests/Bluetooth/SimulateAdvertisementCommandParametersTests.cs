@@ -20,7 +20,7 @@ public class SimulateAdvertisementCommandParametersTests
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             // SimulateAdvertisementScanEntry serialization is tested in its own set of tests,
             // so its serialized structure need not be fully verified here.
@@ -29,6 +29,6 @@ public class SimulateAdvertisementCommandParametersTests
             Assert.That(serialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
             Assert.That(serialized, Contains.Key("scanEntry"));
             Assert.That(serialized["scanEntry"]!.Type, Is.EqualTo(JTokenType.Object));
-        });
+        }
     }
 }

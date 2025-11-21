@@ -16,13 +16,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("name"));
             Assert.That(serialized["name"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["name"]!.Value<string>(), Is.EqualTo("myCookieName"));
-        });
+        }
     }
 
     [Test]
@@ -34,7 +34,7 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("value"));
@@ -47,7 +47,7 @@ public class CookieFilterTests
             Assert.That(bytesValueObject, Contains.Key("value"));
             Assert.That(bytesValueObject["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(bytesValueObject["value"]!.Value<string>(), Is.EqualTo("myCookieValue"));
-        });
+        }
     }
 
     [Test]
@@ -59,13 +59,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("domain"));
             Assert.That(serialized["domain"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["domain"]!.Value<string>(), Is.EqualTo("myCookieDomain"));
-        });
+        }
     }
 
     [Test]
@@ -77,13 +77,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("path"));
             Assert.That(serialized["path"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["path"]!.Value<string>(), Is.EqualTo("myCookiePath"));
-        });
+        }
     }
 
     [Test]
@@ -95,13 +95,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("size"));
             Assert.That(serialized["size"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["size"]!.Value<ulong>(), Is.EqualTo(3));
-        });
+        }
     }
 
     [Test]
@@ -113,13 +113,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("httpOnly"));
             Assert.That(serialized["httpOnly"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["httpOnly"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -131,13 +131,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("httpOnly"));
             Assert.That(serialized["httpOnly"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["httpOnly"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 
     [Test]
@@ -149,13 +149,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("secure"));
             Assert.That(serialized["secure"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["secure"]!.Value<bool>(), Is.True);
-        });
+        }
     }
 
     [Test]
@@ -167,13 +167,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("secure"));
             Assert.That(serialized["secure"]!.Type, Is.EqualTo(JTokenType.Boolean));
             Assert.That(serialized["secure"]!.Value<bool>(), Is.False);
-        });
+        }
     }
 
     [Test]
@@ -185,13 +185,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("sameSite"));
             Assert.That(serialized["sameSite"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["sameSite"]!.Value<string>(), Is.EqualTo("strict"));
-        });
+        }
     }
 
     [Test]
@@ -206,13 +206,13 @@ public class CookieFilterTests
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("expiry"));
             Assert.That(serialized["expiry"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["expiry"]!.Value<ulong>(), Is.EqualTo(milliseconds));
-        });
+        }
     }
 
     [Test]

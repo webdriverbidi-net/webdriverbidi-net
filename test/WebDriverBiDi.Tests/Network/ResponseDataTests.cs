@@ -33,7 +33,7 @@ public class ResponseDataTests
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
@@ -48,7 +48,7 @@ public class ResponseDataTests
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
             Assert.That(response.AuthChallenges, Is.Null);
-        });
+        }
     }
 
     [Test]
@@ -81,7 +81,7 @@ public class ResponseDataTests
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
@@ -99,7 +99,7 @@ public class ResponseDataTests
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
             Assert.That(response.AuthChallenges, Is.Null);
-        });       
+        }       
     }
 
     [Test]
@@ -124,7 +124,7 @@ public class ResponseDataTests
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
@@ -139,7 +139,7 @@ public class ResponseDataTests
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
             Assert.That(response.AuthChallenges, Is.Null);
-        });       
+        }       
     }
 
     [Test]
@@ -164,7 +164,7 @@ public class ResponseDataTests
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
@@ -178,7 +178,7 @@ public class ResponseDataTests
             Assert.That(response.BodySize, Is.Null);
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
-        });       
+        }       
     }
 
     [Test]
@@ -209,7 +209,7 @@ public class ResponseDataTests
                       """;
         ResponseData? response = JsonSerializer.Deserialize<ResponseData>(json, deserializationOptions);
         Assert.That(response, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(response.Url, Is.EqualTo("requestUrl"));
             Assert.That(response.Protocol, Is.EqualTo("http"));
@@ -227,7 +227,7 @@ public class ResponseDataTests
             Assert.That(response.AuthChallenges, Has.Count.EqualTo(1));
             Assert.That(response.AuthChallenges![0].Scheme, Is.EqualTo("basic"));
             Assert.That(response.AuthChallenges[0]!.Realm, Is.EqualTo("example.com"));
-        });
+        }
     }
 
     [Test]

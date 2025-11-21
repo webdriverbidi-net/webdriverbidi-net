@@ -13,7 +13,7 @@ public class GeolocationCoordinatesTests
         string json = JsonSerializer.Serialize(coordinates);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("longitude"));
             Assert.That(serialized["longitude"]!.Type, Is.EqualTo(JTokenType.Float));
@@ -21,7 +21,7 @@ public class GeolocationCoordinatesTests
             Assert.That(serialized, Contains.Key("latitude"));
             Assert.That(serialized["latitude"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(serialized["latitude"]!.Value<double>(), Is.EqualTo(-67.89));
-        });
+        }
     }
 
     [Test]
@@ -34,7 +34,7 @@ public class GeolocationCoordinatesTests
         string json = JsonSerializer.Serialize(coordinates);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(3));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("longitude"));
             Assert.That(serialized["longitude"]!.Type, Is.EqualTo(JTokenType.Float));
@@ -45,7 +45,7 @@ public class GeolocationCoordinatesTests
             Assert.That(serialized, Contains.Key("accuracy"));
             Assert.That(serialized["accuracy"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(serialized["accuracy"]!.Value<double>(), Is.EqualTo(0.95));
-        });
+        }
     }
 
     [Test]
@@ -59,7 +59,7 @@ public class GeolocationCoordinatesTests
         string json = JsonSerializer.Serialize(coordinates);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("longitude"));
             Assert.That(serialized["longitude"]!.Type, Is.EqualTo(JTokenType.Float));
@@ -73,7 +73,7 @@ public class GeolocationCoordinatesTests
             Assert.That(serialized, Contains.Key("altitudeAccuracy"));
             Assert.That(serialized["altitudeAccuracy"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["altitudeAccuracy"]!.Value<double>(), Is.EqualTo(2.0));
-        });
+        }
     }
 
     [Test]
@@ -87,7 +87,7 @@ public class GeolocationCoordinatesTests
         string json = JsonSerializer.Serialize(coordinates);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("longitude"));
             Assert.That(serialized["longitude"]!.Type, Is.EqualTo(JTokenType.Float));
@@ -101,7 +101,7 @@ public class GeolocationCoordinatesTests
             Assert.That(serialized, Contains.Key("heading"));
             Assert.That(serialized["heading"]!.Type, Is.EqualTo(JTokenType.Float));
             Assert.That(serialized["heading"]!.Value<double>(), Is.EqualTo(137.5));
-        });
+        }
     }
 
     [Test]
@@ -115,7 +115,7 @@ public class GeolocationCoordinatesTests
         string json = JsonSerializer.Serialize(coordinates);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(4));
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("longitude"));
             Assert.That(serialized["longitude"]!.Type, Is.EqualTo(JTokenType.Float));
@@ -129,6 +129,6 @@ public class GeolocationCoordinatesTests
             Assert.That(serialized, Contains.Key("heading"));
             Assert.That(serialized["heading"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["heading"]!.Value<string>(), Is.EqualTo("NaN"));
-        });
+        }
     }
 }
