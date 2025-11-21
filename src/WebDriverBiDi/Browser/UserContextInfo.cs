@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record UserContextInfo
 {
-    private string userContextId = string.Empty;
-
     [JsonConstructor]
     private UserContextInfo()
     {
@@ -25,5 +23,5 @@ public record UserContextInfo
     [JsonPropertyName("userContext")]
     [JsonRequired]
     [JsonInclude]
-    public string UserContextId { get => this.userContextId; private set => this.userContextId = value; }
+    public string UserContextId { get; private set; } = string.Empty;
 }

@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class RemoveUserContextCommandParameters : CommandParameters<RemoveUserContextCommandResult>
 {
-    private string userContextId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoveUserContextCommandParameters"/> class.
     /// </summary>
     /// <param name="userContextId">The ID of the user context to remove.</param>
     public RemoveUserContextCommandParameters(string userContextId)
     {
-        this.userContextId = userContextId;
+        this.UserContextId = userContextId;
     }
 
     /// <summary>
@@ -33,5 +31,5 @@ public class RemoveUserContextCommandParameters : CommandParameters<RemoveUserCo
     /// Gets or sets the ID of the user context to remove.
     /// </summary>
     [JsonPropertyName("userContext")]
-    public string UserContextId { get => this.userContextId; set => this.userContextId = value; }
+    public string UserContextId { get; set; }
 }

@@ -12,13 +12,11 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GetUserContextsCommandResult : CommandResult
 {
-    private List<UserContextInfo> userContexts = new();
-
     /// <summary>
     /// Gets a read-only list of all of the user contexts open for the current browser.
     /// </summary>
     [JsonIgnore]
-    public IList<UserContextInfo> UserContexts => this.userContexts.AsReadOnly();
+    public IList<UserContextInfo> UserContexts => this.SerializableUserContexts.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the ID of the user context for serialization purposes.
@@ -26,5 +24,5 @@ public record GetUserContextsCommandResult : CommandResult
     [JsonPropertyName("userContexts")]
     [JsonRequired]
     [JsonInclude]
-    internal List<UserContextInfo> SerializableUserContexts { get => this.userContexts; set => this.userContexts = value; }
+    internal List<UserContextInfo> SerializableUserContexts { get; set; } = [];
 }
