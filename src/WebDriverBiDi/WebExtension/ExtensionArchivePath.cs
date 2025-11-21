@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 public class ExtensionArchivePath : ExtensionData
 {
     private readonly string extensionType = "archivePath";
-    private string archivePath = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionArchivePath"/> class.
@@ -28,7 +27,7 @@ public class ExtensionArchivePath : ExtensionData
     /// <param name="path">The full path and file name to the zip archive file containing the extension.</param>
     public ExtensionArchivePath(string path)
     {
-        this.archivePath = path;
+        this.Path = path;
     }
 
     /// <summary>
@@ -41,5 +40,5 @@ public class ExtensionArchivePath : ExtensionData
     /// Gets or sets the full path and file name to the zip archive file containing the extension.
     /// </summary>
     [JsonPropertyName("path")]
-    public string Path { get => this.archivePath; set => this.archivePath = value; }
+    public string Path { get; set; } = string.Empty;
 }
