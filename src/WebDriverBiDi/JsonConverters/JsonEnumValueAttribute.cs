@@ -11,19 +11,17 @@ namespace WebDriverBiDi.JsonConverters;
 [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
 public sealed class JsonEnumValueAttribute : Attribute
 {
-    private readonly string enumValue;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonEnumValueAttribute"/> class.
     /// </summary>
     /// <param name="enumValue">The string representation of the enumerated value.</param>
     public JsonEnumValueAttribute(string enumValue)
     {
-        this.enumValue = enumValue;
+        this.Value = enumValue;
     }
 
     /// <summary>
     /// Gets the value to use in JSON serialization and deserialization of the enumerated value.
     /// </summary>
-    public string Value => this.enumValue;
+    public string Value { get; }
 }
