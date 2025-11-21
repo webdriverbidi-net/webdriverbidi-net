@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.Network;
 
-using System.Diagnostics.Contracts;
 using System.Text.Json.Serialization;
 
 /// <summary>

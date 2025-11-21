@@ -2,7 +2,6 @@ namespace WebDriverBiDi;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using JsonConverters;
 using WebDriverBiDi.Internal;
 
 [TestFixture]

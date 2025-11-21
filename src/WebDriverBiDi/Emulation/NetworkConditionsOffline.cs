@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Emulation;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.Script;
 
 /// <summary>
 /// A class for emulating the network conditions of a device being offline.

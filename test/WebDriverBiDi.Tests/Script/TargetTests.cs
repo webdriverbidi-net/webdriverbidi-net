@@ -2,7 +2,6 @@ namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class TargetTests

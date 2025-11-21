@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Protocol;
 
-using System.Reflection.Metadata.Ecma335;
 using TestUtilities;
 
 [TestFixture]

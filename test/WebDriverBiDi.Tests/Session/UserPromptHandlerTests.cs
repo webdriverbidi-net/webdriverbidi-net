@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Session;
 
-using System.Runtime;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.JsonConverters;

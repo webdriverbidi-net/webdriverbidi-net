@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.BrowsingContext;
 
-using System.Reflection;
 using System.Text.Json;
 
 [TestFixture]

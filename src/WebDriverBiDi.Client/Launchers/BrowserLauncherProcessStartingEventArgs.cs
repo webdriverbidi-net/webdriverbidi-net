@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
-using System;
 using System.Diagnostics;
 
 /// <summary>

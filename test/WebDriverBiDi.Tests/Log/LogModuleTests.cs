@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Log;
 
-using System.Runtime.CompilerServices;
 using TestUtilities;
 
 [TestFixture]

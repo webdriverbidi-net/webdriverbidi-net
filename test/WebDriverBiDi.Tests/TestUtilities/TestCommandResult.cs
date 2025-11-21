@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.TestUtilities;
 
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 public record TestCommandResult: CommandResult

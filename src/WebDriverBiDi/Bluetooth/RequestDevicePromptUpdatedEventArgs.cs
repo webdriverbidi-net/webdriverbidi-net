@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.Storage;
 
 /// <summary>
 /// Object containing event data for events raised when a Bluetooth device prompt is requested.

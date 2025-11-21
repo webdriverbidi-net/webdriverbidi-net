@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Script;
 
-using System.Runtime;
 using System.Text.Json;
 
 [TestFixture]

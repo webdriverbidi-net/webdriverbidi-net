@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Protocol;
 
-using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.TestUtilities;
 

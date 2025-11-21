@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Demo;
 
-using System.Text;
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Session;
 

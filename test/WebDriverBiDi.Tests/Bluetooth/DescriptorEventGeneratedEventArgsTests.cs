@@ -1,7 +1,6 @@
 namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
-using NUnit.Framework.Constraints;
 using WebDriverBiDi.JsonConverters;
 
 [TestFixture]

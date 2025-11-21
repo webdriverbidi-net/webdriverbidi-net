@@ -1,7 +1,6 @@
 namespace WebDriverBiDi.TestUtilities;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.Protocol;
 
 public class TestCommandParameters : CommandParameters<TestCommandResult>
 {

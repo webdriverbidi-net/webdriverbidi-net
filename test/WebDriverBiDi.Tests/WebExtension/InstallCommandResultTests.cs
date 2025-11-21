@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.WebExtension;
 
-using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.JsonConverters;
 

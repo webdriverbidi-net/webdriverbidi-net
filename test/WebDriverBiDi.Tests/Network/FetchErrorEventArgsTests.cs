@@ -1,7 +1,6 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using Microsoft.VisualBasic;
 using WebDriverBiDi.JsonConverters;
 
 [TestFixture]

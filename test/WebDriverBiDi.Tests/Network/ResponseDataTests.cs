@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Network;
 
-using System.Runtime;
 using System.Text.Json;
 using WebDriverBiDi.JsonConverters;
 

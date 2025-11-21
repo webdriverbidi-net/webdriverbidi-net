@@ -1,7 +1,6 @@
 namespace WebDriverBiDi.Session;
 
 using TestUtilities;
-using WebDriverBiDi.Protocol;
 
 [TestFixture]
 public class SessionModuleTests
