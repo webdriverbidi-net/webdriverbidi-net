@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class FailRequestCommandParameters : CommandParameters<FailRequestCommandResult>
 {
-    private string requestId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="FailRequestCommandParameters" /> class.
     /// </summary>
     /// <param name="requestId">The ID of the request to fail.</param>
     public FailRequestCommandParameters(string requestId)
     {
-        this.requestId = requestId;
+        this.RequestId = requestId;
     }
 
     /// <summary>
@@ -33,5 +31,5 @@ public class FailRequestCommandParameters : CommandParameters<FailRequestCommand
     /// Gets or sets the ID of the request to fail..
     /// </summary>
     [JsonPropertyName("request")]
-    public string RequestId { get => this.requestId; set => this.requestId = value; }
+    public string RequestId { get; set; }
 }

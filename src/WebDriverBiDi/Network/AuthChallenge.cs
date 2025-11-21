@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record AuthChallenge
 {
-    private string scheme = string.Empty;
-    private string realm = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthChallenge"/> class.
     /// </summary>
@@ -29,7 +26,7 @@ public record AuthChallenge
     [JsonPropertyName("scheme")]
     [JsonRequired]
     [JsonInclude]
-    public string Scheme { get => this.scheme; private set => this.scheme = value; }
+    public string Scheme { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the realm of the authentication challenge.
@@ -37,5 +34,5 @@ public record AuthChallenge
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string Realm { get => this.realm; private set => this.realm = value; }
+    public string Realm { get; private set; } = string.Empty;
 }

@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class AddInterceptCommandParameters : CommandParameters<AddInterceptCommandResult>
 {
-    private readonly List<InterceptPhase> interceptPhases = new();
-    private List<string>? contexts;
-    private List<UrlPattern>? urlPatterns;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AddInterceptCommandParameters" /> class.
     /// </summary>
@@ -33,7 +29,7 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// Gets the list of phases for which network traffic will be intercepted.
     /// </summary>
     [JsonPropertyName("phases")]
-    public List<InterceptPhase> Phases { get => this.interceptPhases; }
+    public List<InterceptPhase> Phases { get; } = new();
 
     /// <summary>
     /// Gets or sets the list of top-level browsing context ID for which traffic will be intercepted.
@@ -42,7 +38,7 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? BrowsingContextIds { get => this.contexts; set => this.contexts = value; }
+    public List<string>? BrowsingContextIds { get; set; }
 
     /// <summary>
     /// Gets or sets list of URL patterns for which to intercept network traffic.
@@ -50,5 +46,5 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     [JsonPropertyName("urlPatterns")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public List<UrlPattern>? UrlPatterns { get => this.urlPatterns; set => this.urlPatterns = value; }
+    public List<UrlPattern>? UrlPatterns { get; set; }
 }

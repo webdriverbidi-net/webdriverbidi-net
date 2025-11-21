@@ -12,12 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class UrlPatternPattern : UrlPattern
 {
-    private string? protocol;
-    private string? hostName;
-    private string? port;
-    private string? pathName;
-    private string? search;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UrlPatternPattern"/> class.
     /// </summary>
@@ -31,33 +25,33 @@ public class UrlPatternPattern : UrlPattern
     /// </summary>
     [JsonPropertyName("protocol")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Protocol { get => this.protocol; set => this.protocol = value; }
+    public string? Protocol { get; set; }
 
     /// <summary>
     /// Gets or sets the host name to match.
     /// </summary>
     [JsonPropertyName("hostname")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? HostName { get => this.hostName; set => this.hostName = value; }
+    public string? HostName { get; set; }
 
     /// <summary>
     /// Gets or sets the port to match.
     /// </summary>
     [JsonPropertyName("port")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Port { get => this.port; set => this.port = value; }
+    public string? Port { get; set; }
 
     /// <summary>
     /// Gets or sets the path name to match.
     /// </summary>
     [JsonPropertyName("pathname")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? PathName { get => this.pathName; set => this.pathName = value; }
+    public string? PathName { get; set; }
 
     /// <summary>
     /// Gets or sets the search to match.
     /// </summary>
     [JsonPropertyName("search")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Search { get => this.search; set => this.search = value; }
+    public string? Search { get; set; }
 }

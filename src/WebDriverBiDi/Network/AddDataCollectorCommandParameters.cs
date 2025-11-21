@@ -12,12 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollectorCommandResult>
 {
-    private readonly List<string> contextList = [];
-    private readonly List<string> userContextList = [];
-    private HashSet<DataType> dataTypes = [];
-    private ulong maxEncodedDataSize;
-    private CollectorType? collectorType;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AddDataCollectorCommandParameters" /> class.
     /// </summary>
@@ -32,15 +26,15 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// </param>
     public AddDataCollectorCommandParameters(ulong maxEncodedDataSize, params DataType[] collectionDataTypes)
     {
-        this.maxEncodedDataSize = maxEncodedDataSize;
+        this.MaxEncodedDataSize = maxEncodedDataSize;
         if (collectionDataTypes.Length == 0)
         {
-            this.dataTypes.Add(DataType.Response);
+            this.DataTypes.Add(DataType.Response);
         }
 
         foreach (DataType dataType in collectionDataTypes)
         {
-            this.dataTypes.Add(dataType);
+            this.DataTypes.Add(dataType);
         }
     }
 
@@ -56,7 +50,7 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     [JsonPropertyName("dataTypes")]
     [JsonInclude]
     [JsonRequired]
-    public HashSet<DataType> DataTypes { get => this.dataTypes; set => this.dataTypes = value; }
+    public HashSet<DataType> DataTypes { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the maximum encoded data size for this collector in bytes.
@@ -64,7 +58,7 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     [JsonPropertyName("maxEncodedDataSize")]
     [JsonInclude]
     [JsonRequired]
-    public ulong MaxEncodedDataSize { get => this.maxEncodedDataSize; set => this.maxEncodedDataSize = value; }
+    public ulong MaxEncodedDataSize { get; set; }
 
     /// <summary>
     /// Gets or sets the type of this data collector. If unset, defaults to <see cref="CollectorType.Blob"/>.
@@ -72,19 +66,19 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     [JsonPropertyName("collectorType")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public CollectorType? CollectorType { get => this.collectorType; set => this.collectorType = value; }
+    public CollectorType? CollectorType { get; set; }
 
     /// <summary>
     /// Gets the list of browsing context IDs for which to collect network data.
     /// </summary>
     [JsonIgnore]
-    public List<string> BrowsingContexts => this.contextList;
+    public List<string> BrowsingContexts { get; } = [];
 
     /// <summary>
     /// Gets the list of user context IDs for which to collect network data.
     /// </summary>
     [JsonIgnore]
-    public List<string> UserContexts => this.userContextList;
+    public List<string> UserContexts { get; } = [];
 
     /// <summary>
     /// Gets the list of browsing context IDs for which to collect network data for serialization purposes.
@@ -96,12 +90,12 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     {
         get
         {
-            if (this.contextList.Count == 0)
+            if (this.BrowsingContexts.Count == 0)
             {
                 return null;
             }
 
-            return this.contextList;
+            return this.BrowsingContexts;
         }
     }
 
@@ -115,12 +109,12 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     {
         get
         {
-            if (this.userContextList.Count == 0)
+            if (this.UserContexts.Count == 0)
             {
                 return null;
             }
 
-            return this.userContextList;
+            return this.UserContexts;
         }
     }
 }

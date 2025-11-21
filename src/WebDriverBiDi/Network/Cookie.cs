@@ -14,25 +14,13 @@ using WebDriverBiDi.Internal;
 /// </summary>
 public record Cookie
 {
-    private string name = string.Empty;
-    private BytesValue value = BytesValue.Empty;
-    private string domain = string.Empty;
-    private string path = string.Empty;
-    private ulong? epochExpires;
-    private DateTime? expires;
-    private long size = 0;
-    private bool isSecure;
-    private bool isHttpOnly;
-    private CookieSameSiteValue sameSite = CookieSameSiteValue.None;
-    private Dictionary<string, JsonElement> writableAdditionalData = new();
-    private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Cookie"/> class.
     /// </summary>
     [JsonConstructor]
     private Cookie()
     {
+        this.AdditionalData = ReceivedDataDictionary.EmptyDictionary;
     }
 
     /// <summary>
@@ -41,7 +29,7 @@ public record Cookie
     [JsonPropertyName("name")]
     [JsonRequired]
     [JsonInclude]
-    public string Name { get => this.name; private set => this.name = value; }
+    public string Name { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the value of the cookie.
@@ -49,7 +37,7 @@ public record Cookie
     [JsonPropertyName("value")]
     [JsonRequired]
     [JsonInclude]
-    public BytesValue Value { get => this.value; private set => this.value = value; }
+    public BytesValue Value { get; private set; } = BytesValue.Empty;
 
     /// <summary>
     /// Gets the domain of the cookie.
@@ -57,7 +45,7 @@ public record Cookie
     [JsonPropertyName("domain")]
     [JsonRequired]
     [JsonInclude]
-    public string Domain { get => this.domain; private set => this.domain = value; }
+    public string Domain { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the path of the cookie.
@@ -65,13 +53,13 @@ public record Cookie
     [JsonPropertyName("path")]
     [JsonRequired]
     [JsonInclude]
-    public string Path { get => this.path; private set => this.path = value; }
+    public string Path { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the expiration time of the cookie.
     /// </summary>
     [JsonIgnore]
-    public DateTime? Expires => this.expires;
+    public DateTime? Expires { get; private set; }
 
     /// <summary>
     /// Gets the expiration time of the cookie as the total number of milliseconds
@@ -81,17 +69,13 @@ public record Cookie
     [JsonInclude]
     public ulong? EpochExpires
     {
-        get
-        {
-            return this.epochExpires;
-        }
-
+        get;
         private set
         {
-            this.epochExpires = value;
+            field = value;
             if (value.HasValue)
             {
-                this.expires = DateTimeUtilities.UnixEpoch.AddMilliseconds(value.Value);
+                this.Expires = DateTimeUtilities.UnixEpoch.AddMilliseconds(value.Value);
             }
         }
     }
@@ -102,7 +86,7 @@ public record Cookie
     [JsonPropertyName("size")]
     [JsonRequired]
     [JsonInclude]
-    public long Size { get => this.size; private set => this.size = value; }
+    public long Size { get; private set; } = 0;
 
     /// <summary>
     /// Gets a value indicating whether the cookie is secure, delivered via an
@@ -111,7 +95,7 @@ public record Cookie
     [JsonPropertyName("secure")]
     [JsonRequired]
     [JsonInclude]
-    public bool Secure { get => this.isSecure; private set => this.isSecure = value; }
+    public bool Secure { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether the cookie is only available via HTTP headers
@@ -121,7 +105,7 @@ public record Cookie
     [JsonPropertyName("httpOnly")]
     [JsonRequired]
     [JsonInclude]
-    public bool HttpOnly { get => this.isHttpOnly; private set => this.isHttpOnly = value; }
+    public bool HttpOnly { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether the cookie a same site cookie.
@@ -129,7 +113,7 @@ public record Cookie
     [JsonPropertyName("sameSite")]
     [JsonRequired]
     [JsonInclude]
-    public CookieSameSiteValue SameSite { get => this.sameSite; private set => this.sameSite = value; }
+    public CookieSameSiteValue SameSite { get; private set; } = CookieSameSiteValue.None;
 
     /// <summary>
     /// Gets the read-only dictionary containing extra data returned for this cookie.
@@ -139,12 +123,12 @@ public record Cookie
     {
         get
         {
-            if (this.writableAdditionalData.Count > 0 && this.additionalData.Count == 0)
+            if (this.SerializableAdditionalCapabilities.Count > 0 && field.Count == 0)
             {
-                this.additionalData = JsonConverterUtilities.ConvertIncomingExtensionData(this.writableAdditionalData);
+                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.SerializableAdditionalCapabilities);
             }
 
-            return this.additionalData;
+            return field;
         }
     }
 
@@ -153,7 +137,7 @@ public record Cookie
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get => this.writableAdditionalData; private set => this.writableAdditionalData = value; }
+    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get; private set; } = [];
 
     /// <summary>
     /// Converts this cookie to a <see cref="SetCookieHeader"/>.

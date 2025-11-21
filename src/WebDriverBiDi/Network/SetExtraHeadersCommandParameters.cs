@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeadersCommandResult>
 {
-    private List<string> headers = new();
-    private List<string>? contexts;
-    private List<string>? userContexts;
-
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
@@ -27,19 +23,19 @@ public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeader
     /// </summary>
     [JsonPropertyName("headers")]
     [JsonInclude]
-    public List<string> Headers => this.headers;
+    public List<string> Headers { get; } = [];
 
     /// <summary>
     /// Gets or sets the browsing contexts, if any, for which to set the cache behavior.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts;  set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the user contexts, if any, for which to set the cache behavior.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts;  set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

@@ -18,20 +18,12 @@ using WebDriverBiDi.Internal;
 [JsonDerivedType(typeof(ResponseStartedEventArgs))]
 public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
 {
-    private string? browsingContextId;
-    private string? navigationId;
-    private bool isBlocked = false;
-    private ulong redirectCount = 0;
-    private RequestData request = new();
-    private ulong epochTimestamp = 0;
-    private DateTime timestamp = DateTimeUtilities.UnixEpoch;
-    private List<string>? intercepts;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseNetworkEventArgs"/> class.
     /// </summary>
     internal BaseNetworkEventArgs()
     {
+        this.EpochTimestamp = 0;
     }
 
     /// <summary>
@@ -40,7 +32,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string? BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
+    public string? BrowsingContextId { get; private set; }
 
     /// <summary>
     /// Gets the ID of the navigation initiating the request.
@@ -48,7 +40,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("navigation")]
     [JsonRequired]
     [JsonInclude]
-    public string? NavigationId { get => this.navigationId; private set => this.navigationId = value; }
+    public string? NavigationId { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether this request is blocked by a network intercept.
@@ -56,7 +48,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("isBlocked")]
     [JsonRequired]
     [JsonInclude]
-    public bool IsBlocked { get => this.isBlocked; private set => this.isBlocked = value; }
+    public bool IsBlocked { get; private set; } = false;
 
     /// <summary>
     /// Gets the count of redirects for the request.
@@ -64,7 +56,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("redirectCount")]
     [JsonRequired]
     [JsonInclude]
-    public ulong RedirectCount { get => this.redirectCount; private set => this.redirectCount = value; }
+    public ulong RedirectCount { get; private set; } = 0;
 
     /// <summary>
     /// Gets the request data of the request.
@@ -72,19 +64,19 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("request")]
     [JsonRequired]
     [JsonInclude]
-    public RequestData Request { get => this.request; private set => this.request = value; }
+    public RequestData Request { get; private set; } = new();
 
     /// <summary>
     /// Gets the list of network intercepts for this request.
     /// </summary>
     [JsonIgnore]
-    public IList<string>? Intercepts => this.intercepts?.AsReadOnly();
+    public IList<string>? Intercepts => this.SerializableIntercepts?.AsReadOnly();
 
     /// <summary>
     /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     [JsonIgnore]
-    public DateTime Timestamp => this.timestamp;
+    public DateTime Timestamp { get; private set; } = DateTimeUtilities.UnixEpoch;
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
@@ -94,15 +86,11 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonInclude]
     public ulong EpochTimestamp
     {
-        get
-        {
-            return this.epochTimestamp;
-        }
-
+        get;
         private set
         {
-            this.epochTimestamp = value;
-            this.timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
+            field = value;
+            this.Timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
         }
     }
 
@@ -112,5 +100,5 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("intercepts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal List<string>? SerializableIntercepts { get => this.intercepts; set => this.intercepts = value; }
+    internal List<string>? SerializableIntercepts { get; set; }
 }

@@ -13,8 +13,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record ResponseContent
 {
-    private ulong size = 0;
-
     [JsonConstructor]
     private ResponseContent()
     {
@@ -26,7 +24,7 @@ public record ResponseContent
     [JsonPropertyName("size")]
     [JsonRequired]
     [JsonInclude]
-    public ulong Size { get => this.size; private set => this.size = value; }
+    public ulong Size { get; private set; } = 0;
 
     /// <summary>
     /// Gets an. empty <see cref="ResponseContent"/> object.

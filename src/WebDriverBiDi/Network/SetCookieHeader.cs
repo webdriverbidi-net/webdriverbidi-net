@@ -12,16 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetCookieHeader
 {
-    private string name = string.Empty;
-    private BytesValue value = BytesValue.Empty;
-    private string? domain;
-    private string? path;
-    private DateTime? expires;
-    private ulong? maxAge;
-    private bool? isSecure;
-    private bool? isHttpOnly;
-    private CookieSameSiteValue? sameSite;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetCookieHeader"/> class.
     /// </summary>
@@ -36,8 +26,8 @@ public class SetCookieHeader
     /// <param name="value">The string value of the cookie.</param>
     public SetCookieHeader(string name, string value)
     {
-        this.name = name;
-        this.value = BytesValue.FromString(value);
+        this.Name = name;
+        this.Value = BytesValue.FromString(value);
     }
 
     /// <summary>
@@ -46,14 +36,14 @@ public class SetCookieHeader
     /// <param name="cookie">The <see cref="Cookie"/> to convert to a header.</param>
     public SetCookieHeader(Cookie cookie)
     {
-        this.name = cookie.Name;
-        this.value = cookie.Value;
-        this.domain = cookie.Domain;
-        this.path = cookie.Path;
-        this.isHttpOnly = cookie.HttpOnly;
-        this.isSecure = cookie.Secure;
-        this.sameSite = cookie.SameSite;
-        this.expires = cookie.Expires;
+        this.Name = cookie.Name;
+        this.Value = cookie.Value;
+        this.Domain = cookie.Domain;
+        this.Path = cookie.Path;
+        this.HttpOnly = cookie.HttpOnly;
+        this.Secure = cookie.Secure;
+        this.SameSite = cookie.SameSite;
+        this.Expires = cookie.Expires;
     }
 
     /// <summary>
@@ -61,41 +51,41 @@ public class SetCookieHeader
     /// </summary>
     [JsonPropertyName("name")]
     [JsonRequired]
-    public string Name { get => this.name; set => this.name = value; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the value of the cookie.
     /// </summary>
     [JsonPropertyName("value")]
     [JsonRequired]
-    public BytesValue Value { get => this.value; set => this.value = value; }
+    public BytesValue Value { get; set; } = BytesValue.Empty;
 
     /// <summary>
     /// Gets or sets the domain of the cookie.
     /// </summary>
     [JsonPropertyName("domain")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Domain { get => this.domain; set => this.domain = value; }
+    public string? Domain { get; set; }
 
     /// <summary>
     /// Gets or sets the path of the cookie.
     /// </summary>
     [JsonPropertyName("path")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Path { get => this.path; set => this.path = value; }
+    public string? Path { get; set; }
 
     /// <summary>
     /// Gets or sets the expiration time of the cookie.
     /// </summary>
     [JsonIgnore]
-    public DateTime? Expires { get => this.expires; set => this.expires = value; }
+    public DateTime? Expires { get; set; }
 
     /// <summary>
     /// Gets or sets the max age of the cookie.
     /// </summary>
     [JsonPropertyName("maxAge")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? MaxAge { get => this.maxAge; set => this.maxAge = value; }
+    public ulong? MaxAge { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the cookie is secure, delivered via an
@@ -103,7 +93,7 @@ public class SetCookieHeader
     /// </summary>
     [JsonPropertyName("secure")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? Secure { get => this.isSecure; set => this.isSecure = value; }
+    public bool? Secure { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the cookie is only available via HTTP headers
@@ -112,14 +102,14 @@ public class SetCookieHeader
     /// </summary>
     [JsonPropertyName("httpOnly")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? HttpOnly { get => this.isHttpOnly; set => this.isHttpOnly = value; }
+    public bool? HttpOnly { get; set; }
 
     /// <summary>
     /// Gets or sets a value detailing whether the cookie is a sames site cookie.
     /// </summary>
     [JsonPropertyName("sameSite")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public CookieSameSiteValue? SameSite { get => this.sameSite; set => this.sameSite = value; }
+    public CookieSameSiteValue? SameSite { get; set; }
 
     /// <summary>
     /// Gets the expiration time of the cookie as the total number of milliseconds
@@ -128,5 +118,5 @@ public class SetCookieHeader
     [JsonPropertyName("expiry")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal string? EpochExpires => this.expires.HasValue ? $"{this.expires.Value.ToUniversalTime():ddd, dd MMM yyyy HH:mm:ss} GMT" : null;
+    internal string? EpochExpires => this.Expires.HasValue ? $"{this.Expires.Value.ToUniversalTime():ddd, dd MMM yyyy HH:mm:ss} GMT" : null;
 }

@@ -12,17 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ContinueWithAuthCommandParameters : CommandParameters<ContinueWithAuthCommandResult>
 {
-    private string requestId;
-    private ContinueWithAuthActionType action = ContinueWithAuthActionType.Default;
-    private AuthCredentials credentials = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ContinueWithAuthCommandParameters" /> class.
     /// </summary>
     /// <param name="requestId">The ID of the request to continue.</param>
     public ContinueWithAuthCommandParameters(string requestId)
     {
-        this.requestId = requestId;
+        this.RequestId = requestId;
     }
 
     /// <summary>
@@ -35,20 +31,20 @@ public class ContinueWithAuthCommandParameters : CommandParameters<ContinueWithA
     /// Gets or sets the ID of the request to continue.
     /// </summary>
     [JsonPropertyName("request")]
-    public string RequestId { get => this.requestId; set => this.requestId = value; }
+    public string RequestId { get; set; }
 
     /// <summary>
     /// Gets or sets the action to use with continuing this request.
     /// </summary>
     [JsonPropertyName("action")]
-    public ContinueWithAuthActionType Action { get => this.action; set => this.action = value; }
+    public ContinueWithAuthActionType Action { get; set; } = ContinueWithAuthActionType.Default;
 
     /// <summary>
     /// Gets or sets the credentials to be used when continuing this request.
     /// Credentials are only sent when the action is set to <see cref="ContinueWithAuthActionType.ProvideCredentials" />.
     /// </summary>
     [JsonIgnore]
-    public AuthCredentials Credentials { get => this.credentials; set => this.credentials = value; }
+    public AuthCredentials Credentials { get; set; } = new();
 
     /// <summary>
     /// Gets the credentials to be used for continuing the request for authorization purposes.
@@ -57,5 +53,5 @@ public class ContinueWithAuthCommandParameters : CommandParameters<ContinueWithA
     [JsonPropertyName("credentials")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal AuthCredentials? SerializableCredentials => this.action == ContinueWithAuthActionType.ProvideCredentials ? this.credentials : null;
+    internal AuthCredentials? SerializableCredentials => this.Action == ContinueWithAuthActionType.ProvideCredentials ? this.Credentials : null;
 }

@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class DisownDataCommandParameters : CommandParameters<DisownDataCommandResult>
 {
-    private DataType dataType = DataType.Response;
-    private string collectorId;
-    private string requestId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DisownDataCommandParameters" /> class.
     /// </summary>
@@ -23,8 +19,8 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     /// <param name="requestId">The ID of the network request for which to release network data from the collector.</param>
     public DisownDataCommandParameters(string collectorId, string requestId)
     {
-        this.collectorId = collectorId;
-        this.requestId = requestId;
+        this.CollectorId = collectorId;
+        this.RequestId = requestId;
     }
 
     /// <summary>
@@ -39,7 +35,7 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     [JsonPropertyName("dataType")]
     [JsonInclude]
     [JsonRequired]
-    public DataType DataType { get => this.dataType; set => this.dataType = value; }
+    public DataType DataType { get; set; } = DataType.Response;
 
     /// <summary>
     /// Gets or sets the ID of the data collector for which to release collected network data.
@@ -47,7 +43,7 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     [JsonPropertyName("collector")]
     [JsonInclude]
     [JsonRequired]
-    public string CollectorId { get => this.collectorId; set => this.collectorId = value; }
+    public string CollectorId { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the request for which to release collected network data.
@@ -55,5 +51,5 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     [JsonPropertyName("request")]
     [JsonInclude]
     [JsonRequired]
-    public string RequestId { get => this.requestId; set => this.requestId = value; }
+    public string RequestId { get; set; }
 }

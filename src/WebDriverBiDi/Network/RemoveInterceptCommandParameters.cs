@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class RemoveInterceptCommandParameters : CommandParameters<RemoveInterceptCommandResult>
 {
-    private string interceptId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoveInterceptCommandParameters" /> class.
     /// </summary>
     /// <param name="interceptId">The ID of the intercept to remove.</param>
     public RemoveInterceptCommandParameters(string interceptId)
     {
-        this.interceptId = interceptId;
+        this.InterceptId = interceptId;
     }
 
     /// <summary>
@@ -33,5 +31,5 @@ public class RemoveInterceptCommandParameters : CommandParameters<RemoveIntercep
     /// Gets or sets the ID of the intercept to remove.
     /// </summary>
     [JsonPropertyName("intercept")]
-    public string InterceptId { get => this.interceptId; set => this.interceptId = value; }
+    public string InterceptId { get; set; }
 }

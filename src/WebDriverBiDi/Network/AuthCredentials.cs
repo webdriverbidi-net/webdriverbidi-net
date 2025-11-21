@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class AuthCredentials
 {
-    private readonly string credentialType = "password";
-    private string userName = string.Empty;
-    private string password = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthCredentials"/> class.
     /// </summary>
@@ -30,25 +26,25 @@ public class AuthCredentials
     /// <param name="password">The password for the credentials.</param>
     public AuthCredentials(string userName, string password)
     {
-        this.userName = userName;
-        this.password = password;
+        this.UserName = userName;
+        this.Password = password;
     }
 
     /// <summary>
     /// Gets the type of credentials.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type => this.credentialType;
+    public string Type { get; } = "password";
 
     /// <summary>
     /// Gets or sets the user name to use for authentication.
     /// </summary>
     [JsonPropertyName("username")]
-    public string UserName { get => this.userName; set => this.userName = value; }
+    public string UserName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the password used for authentication.
     /// </summary>
     [JsonPropertyName("password")]
-    public string Password { get => this.password; set => this.password = value; }
+    public string Password { get; set; } = string.Empty;
 }
