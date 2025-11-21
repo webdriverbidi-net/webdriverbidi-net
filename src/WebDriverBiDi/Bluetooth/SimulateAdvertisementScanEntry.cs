@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SimulateAdvertisementScanEntry
 {
-    private string deviceAddress;
-    private double receivedSignalStrengthIndicator;
-    private ScanRecord scanRecord;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateAdvertisementScanEntry"/> class.
     /// </summary>
@@ -24,26 +20,26 @@ public class SimulateAdvertisementScanEntry
     /// <param name="scanRecord">The <see cref="ScanRecord"/> representing the data for this scan for Bluetooth devices.</param>
     public SimulateAdvertisementScanEntry(string deviceAddress, double receivedSignalStrengthIndicator, ScanRecord scanRecord)
     {
-        this.deviceAddress = deviceAddress;
-        this.receivedSignalStrengthIndicator = receivedSignalStrengthIndicator;
-        this.scanRecord = scanRecord;
+        this.DeviceAddress = deviceAddress;
+        this.Rssi = receivedSignalStrengthIndicator;
+        this.ScanRecord = scanRecord;
     }
 
     /// <summary>
     /// Gets or sets the physical address of the simulated Bluetooth device, or a prefix of it.
     /// </summary>
     [JsonPropertyName("address")]
-    public string DeviceAddress { get => this.deviceAddress; set => this.deviceAddress = value; }
+    public string DeviceAddress { get; set; }
 
     /// <summary>
     /// Gets or sets the list of Service UUIDs that this scan record says the Bluetooth device's GATT server supports.
     /// </summary>
     [JsonPropertyName("rssi")]
-    public double Rssi { get => this.receivedSignalStrengthIndicator; set => this.receivedSignalStrengthIndicator = value; }
+    public double Rssi { get; set; }
 
     /// <summary>
     /// Gets or sets the local name of the Bluetooth device, or a prefix of it.
     /// </summary>
     [JsonPropertyName("scanRecord")]
-    public ScanRecord ScanRecord { get => this.scanRecord; set => this.scanRecord = value; }
+    public ScanRecord ScanRecord { get; set; }
 }

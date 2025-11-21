@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SimulateAdvertisementCommandParameters : CommandParameters<SimulateAdvertisementCommandResult>
 {
-    private string browsingContextId;
-    private SimulateAdvertisementScanEntry scanEntry;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateAdvertisementCommandParameters"/> class.
     /// </summary>
@@ -22,8 +19,8 @@ public class SimulateAdvertisementCommandParameters : CommandParameters<Simulate
     /// <param name="scanEntry">The <see cref="SimulateAdvertisementScanEntry"/> object representing data about this entry scanning for peripherals.</param>
     public SimulateAdvertisementCommandParameters(string browsingContextId, SimulateAdvertisementScanEntry scanEntry)
     {
-        this.browsingContextId = browsingContextId;
-        this.scanEntry = scanEntry;
+        this.BrowsingContextId = browsingContextId;
+        this.ScanEntry = scanEntry;
     }
 
     /// <summary>
@@ -36,11 +33,11 @@ public class SimulateAdvertisementCommandParameters : CommandParameters<Simulate
     /// Gets or sets the ID of the browsing context for which to simulate the already-connected Bluetooth peripheral.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId;  set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the address of the simulated already-connected Bluetooth peripheral.
     /// </summary>
     [JsonPropertyName("scanEntry")]
-    public SimulateAdvertisementScanEntry ScanEntry { get => this.scanEntry;  set => this.scanEntry = value; }
+    public SimulateAdvertisementScanEntry ScanEntry { get; set; }
 }

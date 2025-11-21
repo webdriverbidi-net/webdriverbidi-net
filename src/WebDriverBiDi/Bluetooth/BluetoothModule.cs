@@ -20,11 +20,6 @@ public sealed class BluetoothModule : Module
     private const string CharacteristicEventGeneratedEventName = $"{BluetoothModuleName}.characteristicEventGenerated";
     private const string DescriptorEventGeneratedEventName = $"{BluetoothModuleName}.descriptorEventGenerated";
 
-    private readonly ObservableEvent<CharacteristicEventGeneratedEventArgs> onCharacteristicEventGeneratedEvent = new(CharacteristicEventGeneratedEventName);
-    private readonly ObservableEvent<DescriptorEventGeneratedEventArgs> onDescriptorEventGeneratedEvent = new(DescriptorEventGeneratedEventName);
-    private readonly ObservableEvent<GattConnectionAttemptedEventArgs> onGattConnectionAttemptedEvent = new(GattConnectionAttemptedEventName);
-    private readonly ObservableEvent<RequestDevicePromptUpdatedEventArgs> onRequestDevicePromptUpdatedEvent = new(RequestDevicePromptUpdatedEventName);
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BluetoothModule"/> class.
     /// </summary>
@@ -41,22 +36,22 @@ public sealed class BluetoothModule : Module
     /// <summary>
     /// Gets an observable event that notifies when a Bluetooth device generates a characteristic event.
     /// </summary>
-    public ObservableEvent<CharacteristicEventGeneratedEventArgs> OnCharacteristicGeneratedEvent => this.onCharacteristicEventGeneratedEvent;
+    public ObservableEvent<CharacteristicEventGeneratedEventArgs> OnCharacteristicGeneratedEvent { get; } = new(CharacteristicEventGeneratedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a Bluetooth device generates a descriptor event.
     /// </summary>
-    public ObservableEvent<DescriptorEventGeneratedEventArgs> OnDescriptorGeneratedEvent => this.onDescriptorEventGeneratedEvent;
+    public ObservableEvent<DescriptorEventGeneratedEventArgs> OnDescriptorGeneratedEvent { get; } = new(DescriptorEventGeneratedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a Bluetooth device attempts a GATT connection.
     /// </summary>
-    public ObservableEvent<GattConnectionAttemptedEventArgs> OnGattConnectionAttempted => this.onGattConnectionAttemptedEvent;
+    public ObservableEvent<GattConnectionAttemptedEventArgs> OnGattConnectionAttempted { get; } = new(GattConnectionAttemptedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a Bluetooth device prompt is updated.
     /// </summary>
-    public ObservableEvent<RequestDevicePromptUpdatedEventArgs> OnRequestDevicePromptUpdated => this.onRequestDevicePromptUpdatedEvent;
+    public ObservableEvent<RequestDevicePromptUpdatedEventArgs> OnRequestDevicePromptUpdated { get; } = new(RequestDevicePromptUpdatedEventName);
 
     /// <summary>
     /// Gets the module name.
@@ -186,24 +181,24 @@ public sealed class BluetoothModule : Module
     private async Task OnCharacteristicEventGeneratedAsync(EventInfo<CharacteristicEventGeneratedEventArgs> eventData)
     {
         CharacteristicEventGeneratedEventArgs eventArgs = eventData.ToEventArgs<CharacteristicEventGeneratedEventArgs>();
-        await this.onCharacteristicEventGeneratedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnCharacteristicGeneratedEvent.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnDescriptorGeneratedEventAsync(EventInfo<DescriptorEventGeneratedEventArgs> eventData)
     {
         DescriptorEventGeneratedEventArgs eventArgs = eventData.ToEventArgs<DescriptorEventGeneratedEventArgs>();
-        await this.onDescriptorEventGeneratedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnDescriptorGeneratedEvent.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnGattConnectionAttemptedAsync(EventInfo<GattConnectionAttemptedEventArgs> eventData)
     {
         GattConnectionAttemptedEventArgs eventArgs = eventData.ToEventArgs<GattConnectionAttemptedEventArgs>();
-        await this.onGattConnectionAttemptedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnGattConnectionAttempted.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnRequestDevicePromptUpdatedAsync(EventInfo<RequestDevicePromptUpdatedEventArgs> eventData)
     {
         RequestDevicePromptUpdatedEventArgs eventArgs = eventData.ToEventArgs<RequestDevicePromptUpdatedEventArgs>();
-        await this.onRequestDevicePromptUpdatedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnRequestDevicePromptUpdated.NotifyObserversAsync(eventArgs);
     }
 }

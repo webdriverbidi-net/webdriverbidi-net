@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SimulateAdapterCommandParameters : CommandParameters<SimulateAdapterCommandResult>
 {
-    private string browsingContextId;
-    private AdapterState state;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateAdapterCommandParameters"/> class.
     /// </summary>
@@ -22,8 +19,8 @@ public class SimulateAdapterCommandParameters : CommandParameters<SimulateAdapte
     /// <param name="state">The simulated state of the Bluetooth adapter.</param>
     public SimulateAdapterCommandParameters(string browsingContextId, AdapterState state)
     {
-        this.browsingContextId = browsingContextId;
-        this.state = state;
+        this.BrowsingContextId = browsingContextId;
+        this.State = state;
     }
 
     /// <summary>
@@ -36,11 +33,11 @@ public class SimulateAdapterCommandParameters : CommandParameters<SimulateAdapte
     /// Gets or sets the ID of the browsing context for which to simulate the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId;  set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the simulated state the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("state")]
-    public AdapterState State { get => this.state;  set => this.state = value; }
+    public AdapterState State { get; set; }
 }

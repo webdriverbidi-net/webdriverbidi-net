@@ -12,11 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ScanRecord
 {
-    private string? name;
-    private List<string>? uuids;
-    private uint? appearance;
-    private List<BluetoothManufacturerData>? manufacturerData;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ScanRecord"/> class.
     /// </summary>
@@ -29,26 +24,26 @@ public class ScanRecord
     /// </summary>
     [JsonPropertyName("name")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Name { get => this.name; set => this.name = value; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Gets or sets the list of Service UUIDs that this scan record says the Bluetooth device's GATT server supports.
     /// </summary>
     [JsonPropertyName("uuids")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UUIDs { get => this.uuids; set => this.uuids = value; }
+    public List<string>? UUIDs { get; set; }
 
     /// <summary>
     /// Gets or sets the local name of the Bluetooth device, or a prefix of it.
     /// </summary>
     [JsonPropertyName("appearance")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public uint? Appearance { get => this.appearance; set => this.appearance = value; }
+    public uint? Appearance { get; set; }
 
     /// <summary>
     /// Gets or sets the list of Service UUIDs that this scan record says the Bluetooth device's GATT server supports.
     /// </summary>
     [JsonPropertyName("manufacturerData")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<BluetoothManufacturerData>? ManufacturerData { get => this.manufacturerData; set => this.manufacturerData = value; }
+    public List<BluetoothManufacturerData>? ManufacturerData { get; set; }
 }

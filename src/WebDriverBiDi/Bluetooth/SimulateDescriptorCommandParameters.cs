@@ -12,13 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SimulateDescriptorCommandParameters : CommandParameters<SimulateDescriptorCommandResult>
 {
-    private string browsingContextId;
-    private string address;
-    private string serviceUuid;
-    private string characteristicUuid;
-    private string descriptorUuid;
-    private SimulateDescriptorType type;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateDescriptorCommandParameters"/> class.
     /// </summary>
@@ -30,12 +23,12 @@ public class SimulateDescriptorCommandParameters : CommandParameters<SimulateDes
     /// <param name="type">The <see cref="SimulateCharacteristicType"/> value for the type of simulation for the characteristic.</param>
     public SimulateDescriptorCommandParameters(string browsingContextId, string address, string serviceUuid, string characteristicUuid, string descriptorUuid, SimulateDescriptorType type)
     {
-        this.browsingContextId = browsingContextId;
-        this.address = address;
-        this.serviceUuid = serviceUuid;
-        this.characteristicUuid = characteristicUuid;
-        this.descriptorUuid = descriptorUuid;
-        this.type = type;
+        this.BrowsingContextId = browsingContextId;
+        this.Address = address;
+        this.ServiceUuid = serviceUuid;
+        this.CharacteristicUuid = characteristicUuid;
+        this.DescriptorUuid = descriptorUuid;
+        this.Type = type;
     }
 
     /// <summary>
@@ -48,35 +41,35 @@ public class SimulateDescriptorCommandParameters : CommandParameters<SimulateDes
     /// Gets or sets the ID of the browsing context for which to simulate a characteristic on the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId;  set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the address of the device for which to simulate the characteristic.
     /// </summary>
     [JsonPropertyName("address")]
-    public string Address { get => this.address; set => this.address = value; }
+    public string Address { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the service to simulate.
     /// </summary>
     [JsonPropertyName("serviceUuid")]
-    public string ServiceUuid { get => this.serviceUuid; set => this.serviceUuid = value; }
+    public string ServiceUuid { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the characteristic to simulate.
     /// </summary>
     [JsonPropertyName("characteristicUuid")]
-    public string CharacteristicUuid { get => this.characteristicUuid; set => this.characteristicUuid = value; }
+    public string CharacteristicUuid { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the descriptor to simulate.
     /// </summary>
     [JsonPropertyName("descriptorUuid")]
-    public string DescriptorUuid { get => this.descriptorUuid; set => this.descriptorUuid = value; }
+    public string DescriptorUuid { get; set; }
 
     /// <summary>
     /// Gets or sets the type of simulation of the descriptor.
     /// </summary>
     [JsonPropertyName("type")]
-    public SimulateDescriptorType Type { get => this.type; set => this.type = value; }
+    public SimulateDescriptorType Type { get; set; }
 }

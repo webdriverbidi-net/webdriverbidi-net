@@ -12,11 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class HandleRequestDevicePromptCommandParameters : CommandParameters<HandleRequestDevicePromptCommandResult>
 {
-    private readonly bool accept;
-    private string browsingContextId;
-    private string promptId;
-    private string? deviceId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="HandleRequestDevicePromptCommandParameters"/> class.
     /// </summary>
@@ -26,10 +21,10 @@ public class HandleRequestDevicePromptCommandParameters : CommandParameters<Hand
     /// <param name="deviceId">The ID of the device for which to accept the prompt, if the prompt is being accepted.</param>
     protected HandleRequestDevicePromptCommandParameters(string browsingContextId, string promptId, bool accept, string? deviceId = null)
     {
-        this.browsingContextId = browsingContextId;
-        this.promptId = promptId;
-        this.accept = accept;
-        this.deviceId = deviceId;
+        this.BrowsingContextId = browsingContextId;
+        this.PromptId = promptId;
+        this.Accept = accept;
+        this.SerializableDeviceId = deviceId;
     }
 
     /// <summary>
@@ -43,21 +38,21 @@ public class HandleRequestDevicePromptCommandParameters : CommandParameters<Hand
     /// </summary>
     [JsonPropertyName("context")]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the prompt to handle.
     /// </summary>
     [JsonPropertyName("prompt")]
     [JsonInclude]
-    public string PromptId { get => this.promptId; set => this.promptId = value; }
+    public string PromptId { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether to accept the prompt.
     /// </summary>
     [JsonPropertyName("accept")]
     [JsonInclude]
-    public bool Accept => this.accept;
+    public bool Accept { get; }
 
     /// <summary>
     /// Gets or sets the ID of the device for serialization purposes.
@@ -65,5 +60,5 @@ public class HandleRequestDevicePromptCommandParameters : CommandParameters<Hand
     [JsonPropertyName("device")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    internal string? SerializableDeviceId { get => this.deviceId; set => this.deviceId = value; }
+    internal string? SerializableDeviceId { get; set; }
 }

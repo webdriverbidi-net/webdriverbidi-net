@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SimulateGattDisconnectionCommandParameters : CommandParameters<SimulateGattDisconnectionCommandResult>
 {
-    private string browsingContextId;
-    private string address;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateGattDisconnectionCommandParameters"/> class.
     /// </summary>
@@ -22,8 +19,8 @@ public class SimulateGattDisconnectionCommandParameters : CommandParameters<Simu
     /// <param name="address">The address of the simulated device.</param>
     public SimulateGattDisconnectionCommandParameters(string browsingContextId, string address)
     {
-        this.browsingContextId = browsingContextId;
-        this.address = address;
+        this.BrowsingContextId = browsingContextId;
+        this.Address = address;
     }
 
     /// <summary>
@@ -36,11 +33,11 @@ public class SimulateGattDisconnectionCommandParameters : CommandParameters<Simu
     /// Gets or sets the ID of the browsing context for which to simulate the GATT disconnection for the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the address of the device for which to simulate the GATT disconnection.
     /// </summary>
     [JsonPropertyName("address")]
-    public string Address { get => this.address; set => this.address = value; }
+    public string Address { get; set; }
 }

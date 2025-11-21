@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class DisableSimulationCommandParameters : CommandParameters<DisableSimulationCommandResult>
 {
-    private string browsingContextId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DisableSimulationCommandParameters"/> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context for which to disable simulation of the Bluetooth adapter.</param>
     public DisableSimulationCommandParameters(string browsingContextId)
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -33,5 +31,5 @@ public class DisableSimulationCommandParameters : CommandParameters<DisableSimul
     /// Gets or sets the ID of the browsing context for which to simulate the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId;  set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 }

@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GattConnectionAttemptedEventArgs : WebDriverBiDiEventArgs
 {
-    private string browsingContextId = string.Empty;
-    private string address = string.Empty;
-
     [JsonConstructor]
     private GattConnectionAttemptedEventArgs()
     {
@@ -26,7 +23,7 @@ public record GattConnectionAttemptedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId;  private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the address of the device attempting the connection.
@@ -34,5 +31,5 @@ public record GattConnectionAttemptedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("address")]
     [JsonRequired]
     [JsonInclude]
-    public string Address { get => this.address; private set => this.address = value; }
+    public string Address { get; private set; } = string.Empty;
 }
