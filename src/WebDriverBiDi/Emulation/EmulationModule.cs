@@ -80,6 +80,16 @@ public sealed class EmulationModule : Module
     }
 
     /// <summary>
+    /// Sets the emulated override for the screen settings (height, width, etc.) for the specified contexts or user contexts.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<SetScreenSettingsOverrideCommandResult> SetScreenSettingsOverrideAsync(SetScreenSettingsOverrideCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<SetScreenSettingsOverrideCommandResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sets the override for whether JavaScript is enabled for the specified contexts or user contexts.
     /// Note carefully that this is only useful for simulating the disabling of JavaScript.
     /// </summary>
