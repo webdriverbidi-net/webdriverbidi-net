@@ -11,9 +11,9 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.BrowsingContext;
 
 /// <summary>
-/// Converts an enumerated type to and from JSON strings.
+/// Custom JSON serializer for properties that can be both missing and null, but with different semantics for each case.
 /// </summary>
-/// <typeparam name="T">The enum to convert.</typeparam>
+/// <typeparam name="T">The type to serialize.</typeparam>
 public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
 {
     /// <summary>
@@ -24,19 +24,20 @@ public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
     }
 
     /// <summary>
-    /// Deserializes the JSON string to an enum value.
+    /// Deserializes the JSON string to an object value.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
     /// <returns>A value of the specified enum.</returns>
+    /// <exception cref="NotImplementedException">Always thrown, as this converter does not support deserialization</exception>
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
     }
 
     /// <summary>
-    /// Serializes an enum value to a JSON string.
+    /// Conditionally serializes an object value to a JSON string, including null if the value meets criteria for the conversion.
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The enum value to be serialized.</param>
