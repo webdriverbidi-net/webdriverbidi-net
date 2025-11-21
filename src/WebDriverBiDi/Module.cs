@@ -12,8 +12,7 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public abstract class Module
 {
-    private readonly BiDiDriver driver;
-    private readonly Dictionary<string, EventInvoker> asyncEventInvokers = new();
+    private readonly Dictionary<string, EventInvoker> asyncEventInvokers = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Module"/> class.
@@ -21,8 +20,8 @@ public abstract class Module
     /// <param name="driver">The driver used for communication by the module.</param>
     protected Module(BiDiDriver driver)
     {
-        this.driver = driver;
-        this.driver.OnEventReceived.AddObserver(this.OnDriverEventReceived);
+        this.Driver = driver;
+        this.Driver.OnEventReceived.AddObserver(this.OnDriverEventReceived);
     }
 
     /// <summary>
@@ -33,7 +32,7 @@ public abstract class Module
     /// <summary>
     /// Gets the driver used for communication by the module.
     /// </summary>
-    protected BiDiDriver Driver => this.driver;
+    protected BiDiDriver Driver { get; }
 
     /// <summary>
     /// Registers an invoker for a given event.
@@ -44,7 +43,7 @@ public abstract class Module
     protected virtual void RegisterAsyncEventInvoker<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
         this.asyncEventInvokers[eventName] = new EventInvoker<T>(eventInvoker);
-        this.driver.RegisterEvent<T>(eventName);
+        this.Driver.RegisterEvent<T>(eventName);
     }
 
     private async Task OnDriverEventReceived(EventReceivedEventArgs e)

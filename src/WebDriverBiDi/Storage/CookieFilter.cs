@@ -14,17 +14,6 @@ using WebDriverBiDi.Network;
 /// </summary>
 public class CookieFilter
 {
-    private readonly Dictionary<string, object?> additionalData = new();
-    private string? name;
-    private BytesValue? value;
-    private string? domain;
-    private string? path;
-    private ulong? size;
-    private bool? httpOnly;
-    private bool? secure;
-    private CookieSameSiteValue? sameSite;
-    private ulong? expiry;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CookieFilter"/> class.
     /// </summary>
@@ -37,28 +26,28 @@ public class CookieFilter
     /// </summary>
     [JsonPropertyName("name")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Name { get => this.name; set => this.name = value; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Gets or sets the value to use in querying for cookies.
     /// </summary>
     [JsonPropertyName("value")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public BytesValue? Value { get => this.value; set => this.value = value; }
+    public BytesValue? Value { get; set; }
 
     /// <summary>
     /// Gets or sets the domain to use in querying for cookies.
     /// </summary>
     [JsonPropertyName("domain")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Domain { get => this.domain; set => this.domain = value; }
+    public string? Domain { get; set; }
 
     /// <summary>
     /// Gets or sets the path to use in querying for cookies.
     /// </summary>
     [JsonPropertyName("path")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Path { get => this.path; set => this.path = value; }
+    public string? Path { get; set; }
 
     /// <summary>
     /// Gets or sets the byte length of the cookie when serialized in an HTTP cookie header
@@ -66,7 +55,7 @@ public class CookieFilter
     /// </summary>
     [JsonPropertyName("size")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? Size { get => this.size; set => this.size = value; }
+    public ulong? Size { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the cookie is only available via HTTP headers
@@ -74,7 +63,7 @@ public class CookieFilter
     /// </summary>
     [JsonPropertyName("httpOnly")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? HttpOnly { get => this.httpOnly; set => this.httpOnly = value; }
+    public bool? HttpOnly { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the cookie is secure, delivered via an
@@ -82,14 +71,14 @@ public class CookieFilter
     /// </summary>
     [JsonPropertyName("secure")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? Secure { get => this.secure; set => this.secure = value; }
+    public bool? Secure { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the cookie a same site cookie to use in querying for cookies.
     /// </summary>
     [JsonPropertyName("sameSite")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public CookieSameSiteValue? SameSite { get => this.sameSite; set => this.sameSite = value; }
+    public CookieSameSiteValue? SameSite { get; set; }
 
     /// <summary>
     /// Gets or sets the expiration time of the cookie for querying cookies.
@@ -99,9 +88,9 @@ public class CookieFilter
     {
         get
         {
-            if (this.expiry.HasValue)
+            if (this.EpochExpires.HasValue)
             {
-                return DateTimeUtilities.UnixEpoch.AddMilliseconds(this.expiry.Value);
+                return DateTimeUtilities.UnixEpoch.AddMilliseconds(this.EpochExpires.Value);
             }
 
             return null;
@@ -111,11 +100,11 @@ public class CookieFilter
         {
             if (value.HasValue)
             {
-                this.expiry = Convert.ToUInt64((value.Value - DateTimeUtilities.UnixEpoch).TotalMilliseconds);
+                this.EpochExpires = Convert.ToUInt64((value.Value - DateTimeUtilities.UnixEpoch).TotalMilliseconds);
             }
             else
             {
-                this.expiry = null;
+                this.EpochExpires = null;
             }
         }
     }
@@ -124,7 +113,7 @@ public class CookieFilter
     /// Gets the dictionary containing extra data to use in querying for cookies.
     /// </summary>
     [JsonExtensionData]
-    public Dictionary<string, object?> AdditionalData => this.additionalData;
+    public Dictionary<string, object?> AdditionalData { get; } = [];
 
     /// <summary>
     /// Gets or sets the expiration time of the cookie as the total number of milliseconds
@@ -134,5 +123,5 @@ public class CookieFilter
     [JsonPropertyName("expiry")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    internal ulong? EpochExpires { get => this.expiry; set => this.expiry = value; }
+    internal ulong? EpochExpires { get; set; }
 }

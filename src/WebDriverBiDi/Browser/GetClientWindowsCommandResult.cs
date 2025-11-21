@@ -12,13 +12,11 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GetClientWindowsCommandResult : CommandResult
 {
-    private List<ClientWindowInfo> clientWindows = new();
-
     /// <summary>
     /// Gets a read-only list of information about all of the client windows open for the current browser.
     /// </summary>
     [JsonIgnore]
-    public IList<ClientWindowInfo> ClientWindows => this.clientWindows.AsReadOnly();
+    public IList<ClientWindowInfo> ClientWindows => this.SerializableClientWindows.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the information about the current browser's client windows for serialization purposes.
@@ -26,5 +24,5 @@ public record GetClientWindowsCommandResult : CommandResult
     [JsonPropertyName("clientWindows")]
     [JsonRequired]
     [JsonInclude]
-    internal List<ClientWindowInfo> SerializableClientWindows { get => this.clientWindows; set => this.clientWindows = value; }
+    internal List<ClientWindowInfo> SerializableClientWindows { get; set; } = [];
 }

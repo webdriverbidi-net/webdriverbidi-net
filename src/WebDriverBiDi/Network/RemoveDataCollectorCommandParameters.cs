@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class RemoveDataCollectorCommandParameters : CommandParameters<RemoveDataCollectorCommandResult>
 {
-    private string collectorId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoveDataCollectorCommandParameters" /> class.
     /// </summary>
     /// <param name="collectorId">The ID of the collector collecting network data to be released.</param>
     public RemoveDataCollectorCommandParameters(string collectorId)
     {
-        this.collectorId = collectorId;
+        this.CollectorId = collectorId;
     }
 
     /// <summary>
@@ -35,5 +33,5 @@ public class RemoveDataCollectorCommandParameters : CommandParameters<RemoveData
     [JsonPropertyName("collector")]
     [JsonInclude]
     [JsonRequired]
-    public string CollectorId { get => this.collectorId; set => this.collectorId = value; }
+    public string CollectorId { get; set; }
 }

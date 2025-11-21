@@ -10,19 +10,17 @@ namespace WebDriverBiDi.Protocol;
 /// </summary>
 public record ConnectionDataReceivedEventArgs : WebDriverBiDiEventArgs
 {
-    private readonly byte[] data;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ConnectionDataReceivedEventArgs" /> class.
     /// </summary>
     /// <param name="data">The data received from the connection.</param>
     public ConnectionDataReceivedEventArgs(byte[] data)
     {
-        this.data = data;
+        this.Data = data;
     }
 
     /// <summary>
     /// Gets the data received from the connection.
     /// </summary>
-    public byte[] Data => this.data;
+    public byte[] Data { get; }
 }

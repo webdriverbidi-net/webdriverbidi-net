@@ -13,9 +13,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record BytesValue
 {
-    private BytesValueType valueType = BytesValueType.String;
-    private string actualValue = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BytesValue"/> class.
     /// </summary>
@@ -23,8 +20,8 @@ public record BytesValue
     /// <param name="value">The value to use in the object.</param>
     private BytesValue(BytesValueType type, string value)
     {
-        this.valueType = type;
-        this.actualValue = value;
+        this.Type = type;
+        this.Value = value;
     }
 
     [JsonConstructor]
@@ -38,7 +35,7 @@ public record BytesValue
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public BytesValueType Type { get => this.valueType; private set => this.valueType = value; }
+    public BytesValueType Type { get; private set; } = BytesValueType.String;
 
     /// <summary>
     /// Gets the value of the value object.
@@ -46,7 +43,7 @@ public record BytesValue
     [JsonPropertyName("value")]
     [JsonRequired]
     [JsonInclude]
-    public string Value { get => this.actualValue; private set => this.actualValue = value; }
+    public string Value { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the value of the value object as an array of bytes.
@@ -56,12 +53,12 @@ public record BytesValue
     {
         get
         {
-            if (this.valueType == BytesValueType.String)
+            if (this.Type == BytesValueType.String)
             {
-                return Encoding.UTF8.GetBytes(this.actualValue);
+                return Encoding.UTF8.GetBytes(this.Value);
             }
 
-            return Convert.FromBase64String(this.actualValue);
+            return Convert.FromBase64String(this.Value);
         }
     }
 

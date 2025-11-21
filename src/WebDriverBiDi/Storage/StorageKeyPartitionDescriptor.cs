@@ -13,9 +13,6 @@ using System.Text.Json.Serialization;
 public class StorageKeyPartitionDescriptor : PartitionDescriptor
 {
     private readonly string type = "storageKey";
-    private readonly Dictionary<string, object?> additionalData = new();
-    private string? userContextId;
-    private string? sourceOrigin;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StorageKeyPartitionDescriptor"/> class.
@@ -36,18 +33,18 @@ public class StorageKeyPartitionDescriptor : PartitionDescriptor
     /// </summary>
     [JsonPropertyName("userContext")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? UserContextId { get => this.userContextId; set => this.userContextId = value; }
+    public string? UserContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the source origin for this partition key descriptor.
     /// </summary>
     [JsonPropertyName("sourceOrigin")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? SourceOrigin { get => this.sourceOrigin; set => this.sourceOrigin = value; }
+    public string? SourceOrigin { get; set; }
 
     /// <summary>
     /// Gets the dictionary containing additional data associated with this partition key descriptor.
     /// </summary>
     [JsonExtensionData]
-    public Dictionary<string, object?> AdditionalData => this.additionalData;
+    public Dictionary<string, object?> AdditionalData { get; } = [];
 }

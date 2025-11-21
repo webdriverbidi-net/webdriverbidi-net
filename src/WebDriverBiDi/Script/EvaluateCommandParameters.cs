@@ -12,13 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
 {
-    private string expression;
-    private Target scriptTarget;
-    private bool awaitPromise;
-    private ResultOwnership? resultOwnership;
-    private SerializationOptions? serializationOptions;
-    private bool? userActivation;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="EvaluateCommandParameters"/> class.
     /// </summary>
@@ -27,9 +20,9 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// <param name="awaitPromise"><see langword="true" /> to await the script evaluation as a Promise; otherwise, <see langword="false" />.</param>
     public EvaluateCommandParameters(string expression, Target scriptTarget, bool awaitPromise)
     {
-        this.expression = expression;
-        this.scriptTarget = scriptTarget;
-        this.awaitPromise = awaitPromise;
+        this.Expression = expression;
+        this.ScriptTarget = scriptTarget;
+        this.AwaitPromise = awaitPromise;
     }
 
     /// <summary>
@@ -42,19 +35,19 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     /// Gets or sets the expression to evaluate.
     /// </summary>
     [JsonPropertyName("expression")]
-    public string Expression { get => this.expression; set => this.expression = value; }
+    public string Expression { get; set; }
 
     /// <summary>
     /// Gets or sets the target against which to evaluate the script.
     /// </summary>
     [JsonPropertyName("target")]
-    public Target ScriptTarget { get => this.scriptTarget; set => this.scriptTarget = value; }
+    public Target ScriptTarget { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to await the completion of the evaluation of the script.
     /// </summary>
     [JsonPropertyName("awaitPromise")]
-    public bool AwaitPromise { get => this.awaitPromise; set => this.awaitPromise = value; }
+    public bool AwaitPromise { get; set; }
 
     /// <summary>
     /// Gets or sets the value of the model of ownership of the handles of the values in the script.
@@ -62,7 +55,7 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     [JsonPropertyName("resultOwnership")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
+    public ResultOwnership? ResultOwnership { get; set; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing results.
@@ -70,7 +63,7 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     [JsonPropertyName("serializationOptions")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
+    public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to activate the browsing context when evaluating the script. When omitted, is treated as if false.
@@ -78,5 +71,5 @@ public class EvaluateCommandParameters : CommandParameters<EvaluateResult>
     [JsonPropertyName("userActivation")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public bool? UserActivation { get => this.userActivation; set => this.userActivation = value; }
+    public bool? UserActivation { get; set; }
 }

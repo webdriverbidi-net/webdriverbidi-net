@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class UrlPatternString : UrlPattern
 {
-    private string pattern;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UrlPatternString"/> class.
     /// </summary>
@@ -29,7 +27,7 @@ public class UrlPatternString : UrlPattern
     public UrlPatternString(string pattern)
         : base(UrlPatternType.String)
     {
-        this.pattern = pattern;
+        this.Pattern = pattern;
     }
 
     /// <summary>
@@ -37,5 +35,5 @@ public class UrlPatternString : UrlPattern
     /// </summary>
     [JsonPropertyName("pattern")]
     [JsonInclude]
-    public string Pattern { get => this.pattern; set => this.pattern = value; }
+    public string Pattern { get; set; }
 }

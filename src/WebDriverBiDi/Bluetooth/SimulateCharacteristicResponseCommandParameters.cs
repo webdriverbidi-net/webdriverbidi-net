@@ -12,14 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SimulateCharacteristicResponseCommandParameters : CommandParameters<SimulateCharacteristicResponseCommandResult>
 {
-    private string browsingContextId;
-    private string address;
-    private string serviceUuid;
-    private string characteristicUuid;
-    private SimulateCharacteristicResponseType type;
-    private uint code;
-    private List<uint>? data;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateCharacteristicResponseCommandParameters"/> class.
     /// </summary>
@@ -31,12 +23,12 @@ public class SimulateCharacteristicResponseCommandParameters : CommandParameters
     /// <param name="code">The code of the simulated characteristic response.</param>
     public SimulateCharacteristicResponseCommandParameters(string browsingContextId, string address, string serviceUuid, string characteristicUuid, SimulateCharacteristicResponseType type, uint code)
     {
-        this.browsingContextId = browsingContextId;
-        this.address = address;
-        this.serviceUuid = serviceUuid;
-        this.characteristicUuid = characteristicUuid;
-        this.type = type;
-        this.code = code;
+        this.BrowsingContextId = browsingContextId;
+        this.Address = address;
+        this.ServiceUuid = serviceUuid;
+        this.CharacteristicUuid = characteristicUuid;
+        this.Type = type;
+        this.Code = code;
     }
 
     /// <summary>
@@ -49,42 +41,42 @@ public class SimulateCharacteristicResponseCommandParameters : CommandParameters
     /// Gets or sets the ID of the browsing context for which to simulate a characteristic response on the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId;  set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the address of the device for which to simulate the characteristic response.
     /// </summary>
     [JsonPropertyName("address")]
-    public string Address { get => this.address; set => this.address = value; }
+    public string Address { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the service to simulate.
     /// </summary>
     [JsonPropertyName("serviceUuid")]
-    public string ServiceUuid { get => this.serviceUuid; set => this.serviceUuid = value; }
+    public string ServiceUuid { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the characteristic to simulate.
     /// </summary>
     [JsonPropertyName("characteristicUuid")]
-    public string CharacteristicUuid { get => this.characteristicUuid; set => this.characteristicUuid = value; }
+    public string CharacteristicUuid { get; set; }
 
     /// <summary>
     /// Gets or sets the type of simulation of the characteristic response.
     /// </summary>
     [JsonPropertyName("type")]
-    public SimulateCharacteristicResponseType Type { get => this.type; set => this.type = value; }
+    public SimulateCharacteristicResponseType Type { get; set; }
 
     /// <summary>
     /// Gets or sets the code of the simulated characteristic response.
     /// </summary>
     [JsonPropertyName("code")]
-    public uint Code { get => this.code; set => this.code = value; }
+    public uint Code { get; set; }
 
     /// <summary>
     /// Gets or sets the data for the simulated characteristic response.
     /// </summary>
     [JsonPropertyName("data")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<uint>? Data { get => this.data; set => this.data = value; }
+    public List<uint>? Data { get; set; }
 }

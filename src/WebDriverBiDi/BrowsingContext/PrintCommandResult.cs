@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record PrintCommandResult : CommandResult
 {
-    private string base64PdfPrintOutput = string.Empty;
-
     [JsonConstructor]
     private PrintCommandResult()
     {
@@ -25,5 +23,5 @@ public record PrintCommandResult : CommandResult
     [JsonPropertyName("data")]
     [JsonRequired]
     [JsonInclude]
-    public string Data { get => this.base64PdfPrintOutput; private set => this.base64PdfPrintOutput = value; }
+    public string Data { get; private set; } = string.Empty;
 }

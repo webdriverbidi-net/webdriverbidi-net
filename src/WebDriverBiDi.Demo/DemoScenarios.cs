@@ -172,12 +172,12 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
-        List<string> testUrls = new()
-        {
+        List<string> testUrls =
+        [
             "",
             "simpleContent.html",
             "missingPage.html",
-        };
+        ];
 
         foreach (string testUrl in testUrls)
         {
@@ -237,11 +237,11 @@ public static class DemoScenarios
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = "(first, second) => first + second";
-        List<ArgumentValue> arguments = new()
-        {
+        List<ArgumentValue> arguments =
+        [
             LocalValue.Number(3),
             LocalValue.Number(5),
-        };
+        ];
 
         CallFunctionCommandParameters callFunctionParams = new(functionDefinition, new ContextTarget(contextId), true);
         callFunctionParams.Arguments.AddRange(arguments);
@@ -253,11 +253,11 @@ public static class DemoScenarios
             Console.WriteLine($"Return value of function is {scriptResultValue.ValueAs<long>()}");
         }
 
-        arguments = new()
-        {
+        arguments =
+        [
             LocalValue.String("Hello, "),
             LocalValue.String("World!"),
-        };
+        ];
 
         callFunctionParams = new(functionDefinition, new ContextTarget(contextId), true);
         callFunctionParams.Arguments.AddRange(arguments);
@@ -498,10 +498,10 @@ public static class DemoScenarios
 
         AddInterceptCommandParameters addIntercept = new()
         {
-            BrowsingContextIds = new List<string>() { contextId }
+            BrowsingContextIds = [contextId]
         };
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
-        addIntercept.UrlPatterns = new List<UrlPattern>() { new UrlPatternPattern() { PathName = "simpleContent.html" } };
+        addIntercept.UrlPatterns = [new UrlPatternPattern() { PathName = "simpleContent.html" }];
         await driver.Network.AddInterceptAsync(addIntercept);
 
         // Calling a command within an event observer must be done asynchronously.
@@ -578,7 +578,7 @@ public static class DemoScenarios
         // response to be completely processed, capture the Task returned by the
         // command execution, and await its completion later.
         string responseStartLine = string.Empty;
-        List<ReadOnlyHeader> responseHeaders = new();
+        List<ReadOnlyHeader> responseHeaders = [];
         EventObserver<ResponseCompletedEventArgs> observer = driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
             // Limit processing to the retrieval just of the HTML file.

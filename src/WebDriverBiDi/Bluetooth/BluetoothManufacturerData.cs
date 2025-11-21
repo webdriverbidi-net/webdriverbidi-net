@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class BluetoothManufacturerData
 {
-    private uint key = 0;
-    private string data = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BluetoothManufacturerData"/> class.
     /// </summary>
@@ -22,8 +19,8 @@ public class BluetoothManufacturerData
     /// <param name="data">A byte data sequence representing the manufacturer data as a base64-encoded string.</param>
     public BluetoothManufacturerData(uint key, string data)
     {
-        this.key = key;
-        this.data = data;
+        this.Key = key;
+        this.Data = data;
     }
 
     /// <summary>
@@ -32,7 +29,7 @@ public class BluetoothManufacturerData
     [JsonPropertyName("key")]
     [JsonRequired]
     [JsonInclude]
-    public uint Key { get => this.key; set => this.key = value; }
+    public uint Key { get; set; }
 
     /// <summary>
     /// Gets or sets the manufacturer data byte sequence as a base64-encoded string.
@@ -40,5 +37,5 @@ public class BluetoothManufacturerData
     [JsonPropertyName("data")]
     [JsonRequired]
     [JsonInclude]
-    public string Data { get => this.data; set => this.data = value; }
+    public string Data { get; set; }
 }

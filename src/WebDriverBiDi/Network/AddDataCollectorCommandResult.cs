@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record AddDataCollectorCommandResult : CommandResult
 {
-    private string collectorId = string.Empty;
-
     [JsonConstructor]
     private AddDataCollectorCommandResult()
     {
@@ -25,5 +23,5 @@ public record AddDataCollectorCommandResult : CommandResult
     [JsonPropertyName("collector")]
     [JsonRequired]
     [JsonInclude]
-    public string CollectorId { get => this.collectorId; private set => this.collectorId = value; }
+    public string CollectorId { get; private set; } = string.Empty;
 }

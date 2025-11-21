@@ -12,20 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ContinueResponseCommandParameters : CommandParameters<ContinueResponseCommandResult>
 {
-    private string requestId;
-    private AuthCredentials? credentials;
-    private List<Header>? headers;
-    private List<SetCookieHeader>? cookieHeaders;
-    private string? reasonPhrase;
-    private ulong? statusCode;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ContinueResponseCommandParameters" /> class.
     /// </summary>
     /// <param name="requestId">The ID of the request to continue.</param>
     public ContinueResponseCommandParameters(string requestId)
     {
-        this.requestId = requestId;
+        this.RequestId = requestId;
     }
 
     /// <summary>
@@ -38,40 +31,40 @@ public class ContinueResponseCommandParameters : CommandParameters<ContinueRespo
     /// Gets or sets the ID of the request to continue.
     /// </summary>
     [JsonPropertyName("request")]
-    public string RequestId { get => this.requestId; set => this.requestId = value; }
+    public string RequestId { get; set; }
 
     /// <summary>
     /// Gets or sets the credentials to use with this response.
     /// </summary>
     [JsonPropertyName("credentials")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public AuthCredentials? Credentials { get => this.credentials; set => this.credentials = value; }
+    public AuthCredentials? Credentials { get; set; }
 
     /// <summary>
     /// Gets or sets the headers of the response.
     /// </summary>
     [JsonPropertyName("headers")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<Header>? Headers { get => this.headers; set => this.headers = value; }
+    public List<Header>? Headers { get; set; }
 
     /// <summary>
     /// Gets or sets the cookies of the response.
     /// </summary>
     [JsonPropertyName("cookies")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<SetCookieHeader>? Cookies { get => this.cookieHeaders; set => this.cookieHeaders = value; }
+    public List<SetCookieHeader>? Cookies { get; set; }
 
     /// <summary>
     /// Gets or sets the HTTP reason phrase ('OK', 'Not Found', etc.) of the response.
     /// </summary>
     [JsonPropertyName("reasonPhrase")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? ReasonPhrase { get => this.reasonPhrase; set => this.reasonPhrase = value; }
+    public string? ReasonPhrase { get; set; }
 
     /// <summary>
     /// Gets or sets the HTTP status code of the response.
     /// </summary>
     [JsonPropertyName("statusCode")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? StatusCode { get => this.statusCode; set => this.statusCode = value; }
+    public ulong? StatusCode { get; set; }
 }

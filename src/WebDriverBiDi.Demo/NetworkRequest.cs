@@ -12,7 +12,7 @@ public class NetworkRequest
     private readonly string requestId;
     private readonly string requestUrl;
     private readonly string requestMethod;
-    private readonly List<ReadOnlyHeader> requestHeaders = new List<ReadOnlyHeader>();
+    private readonly List<ReadOnlyHeader> requestHeaders = [];
     private readonly Task<GetDataCommandResult>? requestBodyRetrieveTask;
     private readonly TaskCompletionSource responseReceivedTaskCompletionSource = new();
     private string requestBody = string.Empty;
@@ -20,7 +20,7 @@ public class NetworkRequest
     private ulong responseStatusCode = 0;
     private string responseStatusText = string.Empty;
     private string responseProtocol = string.Empty;
-    private List<ReadOnlyHeader> responseHeaders = new List<ReadOnlyHeader>();
+    private List<ReadOnlyHeader> responseHeaders = [];
     private Task<GetDataCommandResult>? responseBodyAvailableTask;
     private string responseBody = string.Empty;
     private bool isResponseBodyBase64Encoded = false;

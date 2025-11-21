@@ -96,7 +96,7 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
                 throw new JsonException("ConsoleLogEntry 'args' property value must be an array");
             }
 
-            List<RemoteValue> args = new();
+            List<RemoteValue> args = [];
             foreach (JsonElement arg in argsElement.EnumerateArray())
             {
                 // This will correctly throw if the arg element cannot be

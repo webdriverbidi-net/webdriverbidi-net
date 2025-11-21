@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetCacheBehaviorCommandParameters : CommandParameters<SetCacheBehaviorCommandResult>
 {
-    private CacheBehavior cacheBehavior = CacheBehavior.Default;
-    private List<string>? contexts;
-
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
@@ -25,12 +22,12 @@ public class SetCacheBehaviorCommandParameters : CommandParameters<SetCacheBehav
     /// Gets or sets the behavior of the cache.
     /// </summary>
     [JsonPropertyName("cacheBehavior")]
-    public CacheBehavior CacheBehavior { get => this.cacheBehavior; set => this.cacheBehavior = value; }
+    public CacheBehavior CacheBehavior { get; set; } = CacheBehavior.Default;
 
     /// <summary>
     /// Gets or sets the contexts, if any, for which to set the cache behavior.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts;  set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 }

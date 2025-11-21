@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record StatusCommandResult : CommandResult
 {
-    private bool ready;
-    private string message = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="StatusCommandResult"/> class.
     /// </summary>
@@ -29,7 +26,7 @@ public record StatusCommandResult : CommandResult
     [JsonPropertyName("ready")]
     [JsonRequired]
     [JsonInclude]
-    public bool IsReady { get => this.ready; private set => this.ready = value; }
+    public bool IsReady { get; private set; }
 
     /// <summary>
     /// Gets a message about the status from the remote end.
@@ -37,5 +34,5 @@ public record StatusCommandResult : CommandResult
     [JsonPropertyName("message")]
     [JsonRequired]
     [JsonInclude]
-    public string Message { get => this.message; private set => this.message = value; }
+    public string Message { get; private set; } = string.Empty;
 }

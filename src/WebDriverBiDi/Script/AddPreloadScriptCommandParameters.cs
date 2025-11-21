@@ -12,19 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScriptCommandResult>
 {
-    private string functionDeclaration;
-    private List<ChannelValue>? arguments;
-    private List<string>? contexts;
-    private List<string>? userContexts;
-    private string? sandbox;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AddPreloadScriptCommandParameters"/> class.
     /// </summary>
     /// <param name="functionDeclaration">The function declaration defining the preload script.</param>
     public AddPreloadScriptCommandParameters(string functionDeclaration)
     {
-        this.functionDeclaration = functionDeclaration;
+        this.FunctionDeclaration = functionDeclaration;
     }
 
     /// <summary>
@@ -37,33 +31,33 @@ public class AddPreloadScriptCommandParameters : CommandParameters<AddPreloadScr
     /// Gets or sets the function declaration defining the preload script.
     /// </summary>
     [JsonPropertyName("functionDeclaration")]
-    public string FunctionDeclaration { get => this.functionDeclaration; set => this.functionDeclaration = value; }
+    public string FunctionDeclaration { get; set; }
 
     /// <summary>
     /// Gets or sets the arguments for the function declaration.
     /// </summary>
     [JsonPropertyName("arguments")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<ChannelValue>? Arguments { get => this.arguments; set => this.arguments = value; }
+    public List<ChannelValue>? Arguments { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to add the preload script.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts; set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the sandbox name of the preload script.
     /// </summary>
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Sandbox { get => this.sandbox; set => this.sandbox = value; }
+    public string? Sandbox { get; set; }
 
     /// <summary>
     /// Gets or sets the user contexts for which to add the preload script.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

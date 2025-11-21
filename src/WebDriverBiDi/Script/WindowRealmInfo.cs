@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record WindowRealmInfo : RealmInfo
 {
-    private string browsingContextId = string.Empty;
-    private string? sandbox;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WindowRealmInfo"/> class.
     /// </summary>
@@ -28,12 +25,12 @@ public record WindowRealmInfo : RealmInfo
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
-    public string BrowsingContext { get => this.browsingContextId; internal set => this.browsingContextId = value; }
+    public string BrowsingContext { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the sandbox name for the realm.
     /// </summary>
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Sandbox { get => this.sandbox; internal set => this.sandbox = value; }
+    public string? Sandbox { get; internal set; }
 }

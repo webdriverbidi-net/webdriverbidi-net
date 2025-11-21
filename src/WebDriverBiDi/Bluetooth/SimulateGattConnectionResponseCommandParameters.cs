@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SimulateGattConnectionResponseCommandParameters : CommandParameters<SimulateGattConnectionResponseCommandResult>
 {
-    private string browsingContextId;
-    private string address;
-    private uint code;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateGattConnectionResponseCommandParameters"/> class.
     /// </summary>
@@ -24,9 +20,9 @@ public class SimulateGattConnectionResponseCommandParameters : CommandParameters
     /// <param name="code">The code of the simulated response.</param>
     public SimulateGattConnectionResponseCommandParameters(string browsingContextId, string address, uint code)
     {
-        this.browsingContextId = browsingContextId;
-        this.address = address;
-        this.code = code;
+        this.BrowsingContextId = browsingContextId;
+        this.Address = address;
+        this.Code = code;
     }
 
     /// <summary>
@@ -39,17 +35,17 @@ public class SimulateGattConnectionResponseCommandParameters : CommandParameters
     /// Gets or sets the ID of the browsing context for which to simulate the GATT response for the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the address of the device for which to simulate the GATT response.
     /// </summary>
     [JsonPropertyName("address")]
-    public string Address { get => this.address; set => this.address = value; }
+    public string Address { get; set; }
 
     /// <summary>
     /// Gets or sets the code of the simulated GATT response.
     /// </summary>
     [JsonPropertyName("code")]
-    public uint Code { get => this.code; set => this.code = value; }
+    public uint Code { get; set; }
 }

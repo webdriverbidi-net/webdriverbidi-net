@@ -14,10 +14,6 @@ using WebDriverBiDi.JsonConverters;
 [JsonConverter(typeof(RealmInfoJsonConverter))]
 public record RealmInfo
 {
-    private string realmId = string.Empty;
-    private string origin = string.Empty;
-    private RealmType realmType = RealmType.Window;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RealmInfo"/> class.
     /// </summary>
@@ -31,7 +27,7 @@ public record RealmInfo
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get => this.realmId; internal set => this.realmId = value; }
+    public string RealmId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the origin of the realm.
@@ -39,7 +35,7 @@ public record RealmInfo
     [JsonPropertyName("origin")]
     [JsonRequired]
     [JsonInclude]
-    public string Origin { get => this.origin; internal set => this.origin = value; }
+    public string Origin { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the type of the realm.
@@ -47,7 +43,7 @@ public record RealmInfo
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public RealmType Type { get => this.realmType; internal set => this.realmType = value; }
+    public RealmType Type { get; internal set; } = RealmType.Window;
 
     /// <summary>
     /// Gets this instance of a RealmInfo as a type-specific realm info.

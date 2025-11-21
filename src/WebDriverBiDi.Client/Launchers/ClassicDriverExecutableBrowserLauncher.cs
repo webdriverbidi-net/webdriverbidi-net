@@ -18,14 +18,11 @@ using WebDriverBiDi;
 /// </summary>
 public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicBrowserLauncher
 {
+    private const string LauncherProcessStartingEventName = "classicDriverBrowserLauncher.launcherProcessStarting";
+    private const string LauncherProcessStartedEventName = "classicDriverBrowserLauncher.launcherProcessStarted";
+
     private static readonly SemaphoreSlim LockObject = new(1, 1);
     private readonly string launcherExecutableName;
-
-    private readonly ObservableEvent<BrowserLauncherProcessStartingEventArgs> onLauncherProcessStartingEvent = new("classicDriverBrowserLauncher.launcherProcessStarting");
-    private readonly ObservableEvent<BrowserLauncherProcessStartedEventArgs> onLauncherProcessStartedEvent = new("classicDriverBrowserLauncher.launcherProcessStarted");
-
-    private bool hideCommandPromptWindow;
-    private bool captureBrowserLauncherOutput = true;
     private bool isLoggingLauncherProcessOutput;
     private Process? launcherProcess;
     private string sessionId = string.Empty;
@@ -52,22 +49,22 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// <summary>
     /// Gets an observable event that notifies when the launcher process is starting.
     /// </summary>
-    public ObservableEvent<BrowserLauncherProcessStartingEventArgs> OnLauncherProcessStarting => this.onLauncherProcessStartingEvent;
+    public ObservableEvent<BrowserLauncherProcessStartingEventArgs> OnLauncherProcessStarting { get; } = new(LauncherProcessStartingEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when the launcher process has completely started.
     /// </summary>
-    public ObservableEvent<BrowserLauncherProcessStartedEventArgs> OnLauncherProcessStarted => this.onLauncherProcessStartedEvent;
+    public ObservableEvent<BrowserLauncherProcessStartedEventArgs> OnLauncherProcessStarted { get; } = new(LauncherProcessStartedEventName);
 
     /// <summary>
     /// Gets or sets a value indicating whether the command prompt window of the browser launcher should be hidden.
     /// </summary>
-    public bool HideCommandPromptWindow { get => this.hideCommandPromptWindow; set => this.hideCommandPromptWindow = value; }
+    public bool HideCommandPromptWindow { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to capture the standard out for the browser launcher executable.
     /// </summary>
-    public bool CaptureBrowserLauncherOutput { get => this.captureBrowserLauncherOutput;  set => this.captureBrowserLauncherOutput = value; }
+    public bool CaptureBrowserLauncherOutput { get; set; } = true;
 
     /// <summary>
     /// Gets a value indicating whether the service is running.
@@ -148,10 +145,10 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             this.launcherProcess.StartInfo.FileName = browserLauncherFullPath;
             this.launcherProcess.StartInfo.Arguments = this.CommandLineArguments;
             this.launcherProcess.StartInfo.UseShellExecute = false;
-            this.launcherProcess.StartInfo.CreateNoWindow = this.hideCommandPromptWindow;
-            this.launcherProcess.StartInfo.RedirectStandardInput = this.captureBrowserLauncherOutput;
-            this.launcherProcess.StartInfo.RedirectStandardOutput = this.captureBrowserLauncherOutput;
-            this.launcherProcess.StartInfo.RedirectStandardError = this.captureBrowserLauncherOutput;
+            this.launcherProcess.StartInfo.CreateNoWindow = this.HideCommandPromptWindow;
+            this.launcherProcess.StartInfo.RedirectStandardInput = this.CaptureBrowserLauncherOutput;
+            this.launcherProcess.StartInfo.RedirectStandardOutput = this.CaptureBrowserLauncherOutput;
+            this.launcherProcess.StartInfo.RedirectStandardError = this.CaptureBrowserLauncherOutput;
 
             BrowserLauncherProcessStartingEventArgs eventArgs = new(this.launcherProcess.StartInfo);
             await this.OnLauncherProcessStartingAsync(eventArgs);
@@ -253,17 +250,17 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
 
     private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
     {
-        await this.onLauncherProcessStartingEvent.NotifyObserversAsync(eventArgs);
+        await this.OnLauncherProcessStarting.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnLauncherProcessStartedAsync(BrowserLauncherProcessStartedEventArgs eventArgs)
     {
-        await this.onLauncherProcessStartedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnLauncherProcessStarted.NotifyObserversAsync(eventArgs);
     }
 
     private void StartLoggingProcessOutput()
     {
-        if (this.captureBrowserLauncherOutput)
+        if (this.CaptureBrowserLauncherOutput)
         {
             this.isLoggingLauncherProcessOutput = true;
             _ = Task.Run(() => this.ReadStandardOutput());

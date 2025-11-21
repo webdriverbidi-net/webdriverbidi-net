@@ -14,20 +14,18 @@ using System.Text.Json.Serialization;
 [JsonDerivedType(typeof(UrlPatternString))]
 public class UrlPattern
 {
-    private readonly UrlPatternType patternType;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UrlPattern"/> class.
     /// </summary>
     /// <param name="patternType">The type of pattern to create.</param>
     protected UrlPattern(UrlPatternType patternType)
     {
-        this.patternType = patternType;
+        this.Type = patternType;
     }
 
     /// <summary>
     /// Gets the type of this UrlPattern.
     /// </summary>
     [JsonPropertyName("type")]
-    public UrlPatternType Type => this.patternType;
+    public UrlPatternType Type { get; }
 }

@@ -398,11 +398,11 @@ public class PrintCommandParametersTests
     {
         PrintCommandParameters properties = new("myContextId")
         {
-            PageRanges = new()
-            {
+            PageRanges =
+            [
                 1,
                 "3-5"
-            }
+            ]
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -448,12 +448,12 @@ public class PrintCommandParametersTests
     {
         PrintCommandParameters properties = new("myContextId")
         {
-            PageRanges = new()
-            {
+            PageRanges =
+            [
                 1,
                 "3-5",
                 true
-            }
+            ]
         };
         Assert.That(() => JsonSerializer.Serialize(properties), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Page range must be a string or an integer value"));
     }

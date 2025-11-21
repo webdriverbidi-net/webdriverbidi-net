@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GetTreeCommandResult : CommandResult
 {
-    private List<BrowsingContextInfo> contextTree = new();
-
     [JsonConstructor]
     private GetTreeCommandResult()
     {
@@ -22,7 +20,7 @@ public record GetTreeCommandResult : CommandResult
     /// <summary>
     /// Gets the read-only tree of browsing contexts.
     /// </summary>
-    public IList<BrowsingContextInfo> ContextTree => this.contextTree.AsReadOnly();
+    public IList<BrowsingContextInfo> ContextTree => this.SerializableContextTree.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the tree of browsing contexts for serialization purposes.
@@ -30,5 +28,5 @@ public record GetTreeCommandResult : CommandResult
     [JsonPropertyName("contexts")]
     [JsonRequired]
     [JsonInclude]
-    internal List<BrowsingContextInfo> SerializableContextTree { get => this.contextTree; set => this.contextTree = value; }
+    internal List<BrowsingContextInfo> SerializableContextTree { get; set; } = [];
 }

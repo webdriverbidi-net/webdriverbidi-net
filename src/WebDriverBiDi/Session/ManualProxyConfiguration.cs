@@ -12,12 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ManualProxyConfiguration : ProxyConfiguration
 {
-    private string? httpProxy;
-    private string? sslProxy;
-    private List<string>? noProxyAddresses;
-    private string? socksProxy;
-    private int? socksVersion;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ManualProxyConfiguration"/> class.
     /// </summary>
@@ -31,33 +25,33 @@ public class ManualProxyConfiguration : ProxyConfiguration
     /// </summary>
     [JsonPropertyName("httpProxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? HttpProxy { get => this.httpProxy; set => this.httpProxy = value; }
+    public string? HttpProxy { get; set; }
 
     /// <summary>
     /// Gets or sets the address to be used to proxy HTTPS commands.
     /// </summary>
     [JsonPropertyName("sslProxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? SslProxy { get => this.sslProxy; set => this.sslProxy = value; }
+    public string? SslProxy { get; set; }
 
     /// <summary>
     /// Gets or sets the address of a SOCKS proxy used to proxy commands.
     /// </summary>
     [JsonPropertyName("socksProxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? SocksProxy { get => this.socksProxy; set => this.socksProxy = value; }
+    public string? SocksProxy { get; set; }
 
     /// <summary>
     /// Gets or sets the version of the SOCKS proxy to be used.
     /// </summary>
     [JsonPropertyName("socksVersion")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? SocksVersion { get => this.socksVersion; set => this.socksVersion = value; }
+    public int? SocksVersion { get; set; }
 
     /// <summary>
     /// Gets or sets a list of addresses to be bypassed by the proxy.
     /// </summary>
     [JsonPropertyName("noProxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? NoProxyAddresses { get => this.noProxyAddresses; set => this.noProxyAddresses = value; }
+    public List<string>? NoProxyAddresses { get; set; }
 }

@@ -12,14 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
 {
-    private string browsingContextId = string.Empty;
-    private string address = string.Empty;
-    private string serviceUuid = string.Empty;
-    private string characteristicUuid = string.Empty;
-    private string descriptorUuid = string.Empty;
-    private DescriptorEventGeneratedType type = DescriptorEventGeneratedType.Read;
-    private List<uint>? data;
-
     [JsonConstructor]
     private DescriptorEventGeneratedEventArgs()
     {
@@ -31,7 +23,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId;  private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the address of the device generating the descriptor event..
@@ -39,7 +31,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("address")]
     [JsonRequired]
     [JsonInclude]
-    public string Address { get => this.address; private set => this.address = value; }
+    public string Address { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the service generating the descriptor event.
@@ -47,7 +39,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("serviceUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string ServiceUuid { get => this.serviceUuid; private set => this.serviceUuid = value; }
+    public string ServiceUuid { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the characteristic generating the descriptor event.
@@ -55,7 +47,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("characteristicUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string CharacteristicUuid { get => this.characteristicUuid; private set => this.characteristicUuid = value; }
+    public string CharacteristicUuid { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the descriptor generating the descriptor event.
@@ -63,7 +55,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("descriptorUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string DescriptorUuid { get => this.descriptorUuid; private set => this.descriptorUuid = value; }
+    public string DescriptorUuid { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the type of the descriptor event.
@@ -71,18 +63,18 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public DescriptorEventGeneratedType Type { get => this.type; private set => this.type = value; }
+    public DescriptorEventGeneratedType Type { get; private set; } = DescriptorEventGeneratedType.Read;
 
     /// <summary>
     /// Gets the read-only data for the event, if any..
     /// </summary>
     [JsonIgnore]
-    public IList<uint>? Data => this.data?.AsReadOnly();
+    public IList<uint>? Data => this.SerializableData?.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the read-only data for the event.
     /// </summary>
     [JsonPropertyName("data")]
     [JsonInclude]
-    internal List<uint>? SerializableData { get => this.data; set => this.data = value; }
+    internal List<uint>? SerializableData { get; set; }
 }

@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record NewCommandResult : CommandResult
 {
-    private string sessionId = string.Empty;
-
-    private CapabilitiesResult capabilitiesResult = new();
-
     [JsonConstructor]
     private NewCommandResult()
     {
@@ -27,7 +23,7 @@ public record NewCommandResult : CommandResult
     [JsonPropertyName("sessionId")]
     [JsonRequired]
     [JsonInclude]
-    public string SessionId { get => this.sessionId; private set => this.sessionId = value; }
+    public string SessionId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the actual capabilities used in this session.
@@ -35,5 +31,5 @@ public record NewCommandResult : CommandResult
     [JsonPropertyName("capabilities")]
     [JsonRequired]
     [JsonInclude]
-    public CapabilitiesResult Capabilities { get => this.capabilitiesResult; private set => this.capabilitiesResult = value; }
+    public CapabilitiesResult Capabilities { get; private set; } = new();
 }

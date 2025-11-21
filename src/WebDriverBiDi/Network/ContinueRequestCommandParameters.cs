@@ -12,20 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ContinueRequestCommandParameters : CommandParameters<ContinueRequestCommandResult>
 {
-    private string requestId;
-    private BytesValue? body;
-    private List<CookieHeader>? cookieHeaders;
-    private List<Header>? headers;
-    private string? method;
-    private string? url;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ContinueRequestCommandParameters" /> class.
     /// </summary>
     /// <param name="requestId">The ID of the request to continue.</param>
     public ContinueRequestCommandParameters(string requestId)
     {
-        this.requestId = requestId;
+        this.RequestId = requestId;
     }
 
     /// <summary>
@@ -38,7 +31,7 @@ public class ContinueRequestCommandParameters : CommandParameters<ContinueReques
     /// Gets or sets the ID of the request to continue.
     /// </summary>
     [JsonPropertyName("request")]
-    public string RequestId { get => this.requestId; set => this.requestId = value; }
+    public string RequestId { get; set; }
 
     /// <summary>
     /// Gets or sets the body of the request.
@@ -46,33 +39,33 @@ public class ContinueRequestCommandParameters : CommandParameters<ContinueReques
     [JsonPropertyName("body")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public BytesValue? Body { get => this.body; set => this.body = value; }
+    public BytesValue? Body { get; set; }
 
     /// <summary>
     /// Gets or sets the headers of the request.
     /// </summary>
     [JsonPropertyName("headers")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<Header>? Headers { get => this.headers; set => this.headers = value; }
+    public List<Header>? Headers { get; set; }
 
     /// <summary>
     /// Gets or sets the cookie headers of the request.
     /// </summary>
     [JsonPropertyName("cookies")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<CookieHeader>? Cookies { get => this.cookieHeaders; set => this.cookieHeaders = value; }
+    public List<CookieHeader>? Cookies { get; set; }
 
     /// <summary>
     /// Gets or sets the HTTP method of the request.
     /// </summary>
     [JsonPropertyName("method")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Method { get => this.method; set => this.method = value; }
+    public string? Method { get; set; }
 
     /// <summary>
     /// Gets or sets the URL of the request.
     /// </summary>
     [JsonPropertyName("url")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Url { get => this.url; set => this.url = value; }
+    public string? Url { get; set; }
 }

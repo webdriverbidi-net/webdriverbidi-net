@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class InstallCommandParameters : CommandParameters<InstallCommandResult>
 {
-    private ExtensionData extension;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="InstallCommandParameters"/> class.
     /// </summary>
     /// <param name="extension">The <see cref="ExtensionData"/> object describing the extension to install.</param>
     public InstallCommandParameters(ExtensionData extension)
     {
-        this.extension = extension;
+        this.ExtensionData = extension;
     }
 
     /// <summary>
@@ -33,5 +31,5 @@ public class InstallCommandParameters : CommandParameters<InstallCommandResult>
     /// Gets or sets the data of the web extension to install.
     /// </summary>
     [JsonPropertyName("extensionData")]
-    public ExtensionData ExtensionData { get => this.extension; set => this.extension = value; }
+    public ExtensionData ExtensionData { get; set; }
 }

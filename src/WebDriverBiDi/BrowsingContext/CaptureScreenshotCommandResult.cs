@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record CaptureScreenshotCommandResult : CommandResult
 {
-    private string base64Screenshot = string.Empty;
-
     [JsonConstructor]
     private CaptureScreenshotCommandResult()
     {
@@ -25,5 +23,5 @@ public record CaptureScreenshotCommandResult : CommandResult
     [JsonPropertyName("data")]
     [JsonRequired]
     [JsonInclude]
-    public string Data { get => this.base64Screenshot; private set => this.base64Screenshot = value; }
+    public string Data { get; private set; } = string.Empty;
 }

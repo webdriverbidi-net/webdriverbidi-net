@@ -13,9 +13,6 @@ using WebDriverBiDi.JsonConverters;
 /// </summary>
 public class PrintPageParameters
 {
-    private double? height;
-    private double? width;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PrintPageParameters"/> class.
     /// </summary>
@@ -32,11 +29,7 @@ public class PrintPageParameters
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Width
     {
-        get
-        {
-            return this.width;
-        }
-
+        get;
         set
         {
             if (value is not null && value.Value < 0)
@@ -44,7 +37,7 @@ public class PrintPageParameters
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
             }
 
-            this.width = value;
+            field = value;
         }
     }
 
@@ -57,11 +50,7 @@ public class PrintPageParameters
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
     public double? Height
     {
-        get
-        {
-            return this.height;
-        }
-
+        get;
         set
         {
             if (value is not null && value.Value < 0)
@@ -69,7 +58,7 @@ public class PrintPageParameters
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be greater than or equal to zero");
             }
 
-            this.height = value;
+            field = value;
         }
     }
 }

@@ -12,11 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record StackFrame
 {
-    private int lineNumber = -1;
-    private int columnNumber = -1;
-    private string functionName = string.Empty;
-    private string url = string.Empty;
-
     [JsonConstructor]
     private StackFrame()
     {
@@ -28,7 +23,7 @@ public record StackFrame
     [JsonPropertyName("functionName")]
     [JsonRequired]
     [JsonInclude]
-    public string FunctionName { get => this.functionName; private set => this.functionName = value; }
+    public string FunctionName { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the line number for this stack frame.
@@ -36,7 +31,7 @@ public record StackFrame
     [JsonPropertyName("lineNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int LineNumber { get => this.lineNumber; private set => this.lineNumber = value; }
+    public int LineNumber { get; private set; } = -1;
 
     /// <summary>
     /// Gets the column number for this stack frame.
@@ -44,7 +39,7 @@ public record StackFrame
     [JsonPropertyName("columnNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int ColumnNumber { get => this.columnNumber; private set => this.columnNumber = value; }
+    public int ColumnNumber { get; private set; } = -1;
 
     /// <summary>
     /// Gets the URL for this stack frame.
@@ -52,5 +47,5 @@ public record StackFrame
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; private set => this.url = value; }
+    public string Url { get; private set; } = string.Empty;
 }

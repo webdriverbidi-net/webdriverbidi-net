@@ -19,7 +19,7 @@ public static class JsonConverterUtilities
     /// <returns>A read-only, immutable data structure of .NET objects.</returns>
     public static ReceivedDataDictionary ConvertIncomingExtensionData(Dictionary<string, JsonElement> overflowData)
     {
-        Dictionary<string, object?> receivedData = new();
+        Dictionary<string, object?> receivedData = [];
         foreach (KeyValuePair<string, JsonElement> entry in overflowData)
         {
             receivedData[entry.Key] = ProcessJsonElement(entry.Value);
@@ -46,7 +46,7 @@ public static class JsonConverterUtilities
 
     private static ReceivedDataDictionary ProcessObject(JsonElement objectElement)
     {
-        Dictionary<string, object?> processedObject = new();
+        Dictionary<string, object?> processedObject = [];
         foreach (JsonProperty objectProperty in objectElement.EnumerateObject())
         {
             processedObject[objectProperty.Name] = ProcessJsonElement(objectProperty.Value);
@@ -57,7 +57,7 @@ public static class JsonConverterUtilities
 
     private static ReceivedDataList ProcessList(JsonElement listElement)
     {
-        List<object?> processedList = new();
+        List<object?> processedList = [];
         foreach (JsonElement listItem in listElement.EnumerateArray())
         {
             processedList.Add(ProcessJsonElement(listItem));

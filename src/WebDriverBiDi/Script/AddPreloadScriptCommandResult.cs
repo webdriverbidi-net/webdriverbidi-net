@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record AddPreloadScriptCommandResult : CommandResult
 {
-    private string preloadScriptId = string.Empty;
-
     [JsonConstructor]
     private AddPreloadScriptCommandResult()
     {
@@ -24,5 +22,5 @@ public record AddPreloadScriptCommandResult : CommandResult
     /// </summary>
     [JsonPropertyName("script")]
     [JsonInclude]
-    public string PreloadScriptId { get => this.preloadScriptId; private set => this.preloadScriptId = value; }
+    public string PreloadScriptId { get; private set; } = string.Empty;
 }

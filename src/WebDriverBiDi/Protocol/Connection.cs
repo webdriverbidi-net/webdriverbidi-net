@@ -16,13 +16,6 @@ public class Connection
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
     private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
-    private readonly int bufferSize = Convert.ToInt32(Math.Pow(2, 20));
-    private readonly ObservableEvent<ConnectionDataReceivedEventArgs> onDataReceivedEvent = new("connection.dataReceived");
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("connection.logMessage");
-    private TimeSpan startupTimeout = DefaultTimeout;
-    private TimeSpan shutdownTimeout = DefaultTimeout;
-    private TimeSpan socketTimeout = DefaultTimeout;
-    private string url = string.Empty;
     private Task? dataReceiveTask;
     private ClientWebSocket client = new();
     private CancellationTokenSource clientTokenSource = new();
@@ -42,37 +35,37 @@ public class Connection
     /// <summary>
     /// Gets the buffer size for communication used by this connection.
     /// </summary>
-    public int BufferSize => this.bufferSize;
+    public int BufferSize { get; } = Convert.ToInt32(Math.Pow(2, 20));
 
     /// <summary>
     /// Gets or sets the WebSocket URL to which the connection is connected.
     /// </summary>
-    public string ConnectedUrl { get => this.url; protected set => this.url = value; }
+    public string ConnectedUrl { get; protected set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the value of the timeout to wait before throwing an error when starting up the connection.
     /// </summary>
-    public TimeSpan StartupTimeout { get => this.startupTimeout; set => this.startupTimeout = value; }
+    public TimeSpan StartupTimeout { get; set; } = DefaultTimeout;
 
     /// <summary>
     /// Gets or sets the value of the timeout to wait before throwing an error when shutting down the connection.
     /// </summary>
-    public TimeSpan ShutdownTimeout { get => this.shutdownTimeout; set => this.shutdownTimeout = value; }
+    public TimeSpan ShutdownTimeout { get; set; } = DefaultTimeout;
 
     /// <summary>
     /// Gets or sets the value of the timeout to wait for exclusive access when sending to or receiving data from the ClientWebSocket.
     /// </summary>
-    public TimeSpan DataTimeout { get => this.socketTimeout; set => this.socketTimeout = value; }
+    public TimeSpan DataTimeout { get; set; } = DefaultTimeout;
 
     /// <summary>
     /// Gets an observable event that notifies when data is received from this connection.
     /// </summary>
-    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived => this.onDataReceivedEvent;
+    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived { get; } = new("connection.dataReceived");
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("connection.logMessage");
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -96,19 +89,19 @@ public class Connection
         {
             // Since we've already ruled out closed or aborted sockets in the above
             // code, ClientWebSocket in any state other than none is already connected.
-            throw new WebDriverBiDiException($"The WebSocket is already connected to {this.url}; call the Stop method to disconnect before calling Start");
+            throw new WebDriverBiDiException($"The WebSocket is already connected to {this.ConnectedUrl}; call the Stop method to disconnect before calling Start");
         }
 
         await this.LogAsync($"Opening connection to URL {url}");
         bool connected = false;
-        DateTime timeout = DateTime.Now.Add(this.startupTimeout);
+        DateTime timeout = DateTime.Now.Add(this.StartupTimeout);
         while (!connected && DateTime.Now <= timeout)
         {
             try
             {
                 await this.client.ConnectAsync(new Uri(url), this.clientTokenSource.Token).ConfigureAwait(false);
                 connected = true;
-                this.url = url;
+                this.ConnectedUrl = url;
             }
             catch (WebSocketException)
             {
@@ -121,7 +114,7 @@ public class Connection
 
         if (!connected)
         {
-            throw new TimeoutException($"Could not connect to remote WebSocket server within {this.startupTimeout.TotalSeconds} seconds");
+            throw new TimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
         }
 
         this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync().ConfigureAwait(false));
@@ -148,7 +141,7 @@ public class Connection
         // The finally block at the end of the processing loop will dispose of the ClientWebSocket object.
         this.clientTokenSource.Cancel();
         this.dataReceiveTask?.Wait();
-        this.url = string.Empty;
+        this.ConnectedUrl = string.Empty;
     }
 
     /// <summary>
@@ -166,12 +159,12 @@ public class Connection
         // Only one send operation at a time can be active on a ClientWebSocket instance,
         // so we must synchronize send access to the socket in case multiple threads are
         // attempting to send commands or other data simultaneously.
-        if (!await this.dataSendSemaphore.WaitAsync(this.socketTimeout).ConfigureAwait(false))
+        if (!await this.dataSendSemaphore.WaitAsync(this.DataTimeout).ConfigureAwait(false))
         {
             throw new WebDriverBiDiException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
 
-        if (this.onLogMessageEvent.CurrentObserverCount > 0)
+        if (this.OnLogMessage.CurrentObserverCount > 0)
         {
             await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug);
         }
@@ -197,7 +190,7 @@ public class Connection
     protected virtual async Task CloseClientWebSocketAsync()
     {
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-        CancellationTokenSource timeout = new(this.shutdownTimeout);
+        CancellationTokenSource timeout = new(this.ShutdownTimeout);
         try
         {
             // After this, the socket state which change to CloseSent
@@ -224,7 +217,7 @@ public class Connection
         try
         {
             MemoryStream? memoryStream = null;
-            ArraySegment<byte> buffer = WebSocket.CreateClientBuffer(this.bufferSize, this.bufferSize);
+            ArraySegment<byte> buffer = WebSocket.CreateClientBuffer(this.BufferSize, this.BufferSize);
             while (this.client.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
             {
                 // Only one receive operation at a time can be active on a ClientWebSocket instance,
@@ -264,12 +257,12 @@ public class Connection
                             memoryStream = null;
                             if (bytes.Length > 0)
                             {
-                                if (this.onLogMessageEvent.CurrentObserverCount > 0)
+                                if (this.OnLogMessage.CurrentObserverCount > 0)
                                 {
                                     await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(bytes)}", WebDriverBiDiLogLevel.Debug);
                                 }
 
-                                await this.onDataReceivedEvent.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(bytes));
+                                await this.OnDataReceived.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(bytes));
                             }
                         }
                     }
@@ -299,6 +292,6 @@ public class Connection
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.onLogMessageEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Connection"));
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Connection"));
     }
 }

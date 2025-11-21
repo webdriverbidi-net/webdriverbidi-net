@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record RealmDestroyedEventArgs : WebDriverBiDiEventArgs
 {
-    private string realmId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RealmDestroyedEventArgs"/> class.
     /// </summary>
@@ -21,7 +19,7 @@ public record RealmDestroyedEventArgs : WebDriverBiDiEventArgs
     [JsonConstructor]
     public RealmDestroyedEventArgs(string realmId)
     {
-        this.realmId = realmId;
+        this.RealmId = realmId;
     }
 
     /// <summary>
@@ -30,5 +28,5 @@ public record RealmDestroyedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get => this.realmId; private set => this.realmId = value; }
+    public string RealmId { get; private set; }
 }

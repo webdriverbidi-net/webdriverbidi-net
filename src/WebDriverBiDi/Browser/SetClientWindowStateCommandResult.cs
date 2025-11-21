@@ -18,14 +18,6 @@ using System.Text.Json.Serialization;
 /// </remarks>
 public record SetClientWindowStateCommandResult : CommandResult
 {
-    private string clientWindowId = string.Empty;
-    private bool isActive = false;
-    private ClientWindowState state = ClientWindowState.Normal;
-    private ulong x = 0;
-    private ulong y = 0;
-    private ulong width = 0;
-    private ulong height = 0;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetClientWindowStateCommandResult"/> class.
     /// </summary>
@@ -39,7 +31,7 @@ public record SetClientWindowStateCommandResult : CommandResult
     [JsonPropertyName("clientWindow")]
     [JsonInclude]
     [JsonRequired]
-    public string ClientWindowId { get => this.clientWindowId; private set => this.clientWindowId = value; }
+    public string ClientWindowId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets a value indicating whether a client window is active, usually implying it has focus in the operating system.
@@ -47,7 +39,7 @@ public record SetClientWindowStateCommandResult : CommandResult
     [JsonPropertyName("active")]
     [JsonInclude]
     [JsonRequired]
-    public bool IsActive { get => this.isActive; private set => this.isActive = value; }
+    public bool IsActive { get; private set; } = false;
 
     /// <summary>
     /// Gets a value indicating the state of the client window.
@@ -55,7 +47,7 @@ public record SetClientWindowStateCommandResult : CommandResult
     [JsonPropertyName("state")]
     [JsonInclude]
     [JsonRequired]
-    public ClientWindowState State { get => this.state;  private set => this.state = value; }
+    public ClientWindowState State { get; private set; } = ClientWindowState.Normal;
 
     /// <summary>
     /// Gets the value in CSS pixels of the left edge of the client window.
@@ -63,7 +55,7 @@ public record SetClientWindowStateCommandResult : CommandResult
     [JsonPropertyName("x")]
     [JsonInclude]
     [JsonRequired]
-    public ulong X { get => this.x; private set => this.x = value; }
+    public ulong X { get; private set; } = 0;
 
     /// <summary>
     /// Gets the value in CSS pixels of the top edge of the client window.
@@ -71,7 +63,7 @@ public record SetClientWindowStateCommandResult : CommandResult
     [JsonPropertyName("y")]
     [JsonInclude]
     [JsonRequired]
-    public ulong Y { get => this.y; private set => this.y = value; }
+    public ulong Y { get; private set; } = 0;
 
     /// <summary>
     /// Gets the value in CSS pixels of the width of the client window.
@@ -79,7 +71,7 @@ public record SetClientWindowStateCommandResult : CommandResult
     [JsonPropertyName("width")]
     [JsonInclude]
     [JsonRequired]
-    public ulong Width { get => this.width; private set => this.width = value; }
+    public ulong Width { get; private set; } = 0;
 
     /// <summary>
     /// Gets the value in CSS pixels of the height of the client window.
@@ -87,5 +79,5 @@ public record SetClientWindowStateCommandResult : CommandResult
     [JsonPropertyName("height")]
     [JsonInclude]
     [JsonRequired]
-    public ulong Height { get => this.height; private set => this.height = value; }
+    public ulong Height { get; private set; } = 0;
 }

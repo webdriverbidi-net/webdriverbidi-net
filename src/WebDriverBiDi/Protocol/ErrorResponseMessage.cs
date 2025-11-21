@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ErrorResponseMessage : Message
 {
-    private string error = string.Empty;
-    private string message = string.Empty;
-
     /// <summary>
     /// Gets the ID for the command causing this error during execution, if any.
     /// </summary>
@@ -29,7 +26,7 @@ public class ErrorResponseMessage : Message
     [JsonPropertyName("error")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorType { get => this.error; private set => this.error = value; }
+    public string ErrorType { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the message of the error.
@@ -37,7 +34,7 @@ public class ErrorResponseMessage : Message
     [JsonPropertyName("message")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorMessage { get => this.message; private set => this.message = value; }
+    public string ErrorMessage { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the stack trace associated with this error.

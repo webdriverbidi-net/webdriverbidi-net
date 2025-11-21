@@ -12,17 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ReloadCommandParameters : CommandParameters<ReloadCommandResult>
 {
-    private string browsingContextId;
-    private bool? ignoreCache;
-    private ReadinessState? wait;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ReloadCommandParameters" /> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context to reload.</param>
     public ReloadCommandParameters(string browsingContextId)
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -35,19 +31,19 @@ public class ReloadCommandParameters : CommandParameters<ReloadCommandResult>
     /// Gets or sets the ID of the browsing context to reload.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the browser cache should be ignored when reloading.
     /// </summary>
     [JsonPropertyName("ignoreCache")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? IgnoreCache { get => this.ignoreCache; set => this.ignoreCache = value; }
+    public bool? IgnoreCache { get; set; }
 
     /// <summary>
     /// Gets or sets the <see cref="ReadinessState" /> value for which to wait during the reload.
     /// </summary>
     [JsonPropertyName("wait")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ReadinessState? Wait { get => this.wait; set => this.wait = value; }
+    public ReadinessState? Wait { get; set; }
 }

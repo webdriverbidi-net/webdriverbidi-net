@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetGeolocationOverrideErrorCommandParameters : SetGeolocationOverrideCommandParameters
 {
-    private GeolocationPositionError error = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetGeolocationOverrideErrorCommandParameters"/> class.
     /// </summary>
@@ -27,5 +25,5 @@ public class SetGeolocationOverrideErrorCommandParameters : SetGeolocationOverri
     /// </summary>
     [JsonPropertyName("error")]
     [JsonInclude]
-    public GeolocationPositionError Error { get => this.error; set => this.error = value; }
+    public GeolocationPositionError Error { get; set; } = new();
 }

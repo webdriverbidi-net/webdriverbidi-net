@@ -318,7 +318,7 @@ public class TransportTests
     [Test]
     public async Task TestTransportLogsCommands()
     {
-        List<LogMessageEventArgs> logs = new();
+        List<LogMessageEventArgs> logs = [];
         TestConnection connection = new();
         Transport transport = new(connection);
         transport.OnLogMessage.AddObserver((e) =>
@@ -339,7 +339,7 @@ public class TransportTests
     [Test]
     public async Task TestTransportLogsSuccessfulCommandResponses()
     {
-        List<LogMessageEventArgs> logs = new();
+        List<LogMessageEventArgs> logs = [];
         TestConnection connection = new();
         Transport transport = new(connection);
         transport.OnLogMessage.AddObserver((e) =>
@@ -389,7 +389,7 @@ public class TransportTests
     public async Task TestTransportLogsMalformedJsonMessages()
     {
         ManualResetEventSlim syncEvent = new(false);
-        List<LogMessageEventArgs> logs = new();
+        List<LogMessageEventArgs> logs = [];
         TestConnection connection = new();
         Transport transport = new(connection);
         transport.OnLogMessage.AddObserver((e) =>
@@ -583,7 +583,7 @@ public class TransportTests
                       }
                       """;
         string loggedEvent = string.Empty;
-        List<LogMessageEventArgs> logs = new();
+        List<LogMessageEventArgs> logs = [];
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
@@ -627,7 +627,7 @@ public class TransportTests
                       }
                       """;
         string loggedEvent = string.Empty;
-        List<LogMessageEventArgs> logs = new();
+        List<LogMessageEventArgs> logs = [];
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
@@ -671,7 +671,7 @@ public class TransportTests
                       }
                       """;
         string loggedEvent = string.Empty;
-        List<LogMessageEventArgs> logs = new();
+        List<LogMessageEventArgs> logs = [];
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);
@@ -809,7 +809,7 @@ public class TransportTests
                       }
                       """;
         string loggedEvent = string.Empty;
-        List<LogMessageEventArgs> logs = new();
+        List<LogMessageEventArgs> logs = [];
         CountdownEvent signaler = new(2);
         TestConnection connection = new();
         Transport transport = new(connection);

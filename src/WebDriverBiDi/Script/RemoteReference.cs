@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record RemoteReference : ArgumentValue
 {
-    private readonly Dictionary<string, object?> additionalData = new();
-    private string? handle;
-    private string? sharedId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteReference"/> class.
     /// </summary>
@@ -23,15 +19,15 @@ public record RemoteReference : ArgumentValue
     /// <param name="sharedId">The shared ID of the remote object.</param>
     protected RemoteReference(string? handle, string? sharedId)
     {
-        this.handle = handle;
-        this.sharedId = sharedId;
+        this.InternalHandle = handle;
+        this.InternalSharedId = sharedId;
     }
 
     /// <summary>
     /// Gets the dictionary of additional data about the remote reference.
     /// </summary>
     [JsonExtensionData]
-    public Dictionary<string, object?> AdditionalData => this.additionalData;
+    public Dictionary<string, object?> AdditionalData { get; } = [];
 
     /// <summary>
     /// Gets or sets the internally accessible handle of the remote reference.
@@ -39,7 +35,7 @@ public record RemoteReference : ArgumentValue
     [JsonPropertyName("handle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    protected string? InternalHandle { get => this.handle; set => this.handle = value; }
+    protected string? InternalHandle { get; set; }
 
     /// <summary>
     /// Gets or sets the internally accessible shared ID of the remote reference.
@@ -47,5 +43,5 @@ public record RemoteReference : ArgumentValue
     [JsonPropertyName("sharedId")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    protected string? InternalSharedId { get => this.sharedId; set => this.sharedId = value; }
+    protected string? InternalSharedId { get; set; }
 }

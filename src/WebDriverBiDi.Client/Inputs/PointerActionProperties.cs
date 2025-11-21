@@ -10,61 +10,51 @@ namespace WebDriverBiDi.Client.Inputs;
 /// </summary>
 public class PointerActionProperties
 {
-    private ulong? width;
-    private ulong? height;
-    private double? pressure;
-    private double? tangentialPressure;
-    private ulong? twist;
-    private double? altitudeAngle;
-    private double? azimuthAngle;
-    private long? tiltX;
-    private long? tiltY;
-
     /// <summary>
     /// Gets or sets the width of the pointer in pixels. If omitted, defaults to 1.
     /// </summary>
-    public ulong? Width { get => this.width; set => this.width = value; }
+    public ulong? Width { get; set; }
 
     /// <summary>
     /// Gets or sets the height of the pointer in pixels. If omitted, defaults to 1.
     /// </summary>
-    public ulong? Height { get => this.height; set => this.height = value; }
+    public ulong? Height { get; set; }
 
     /// <summary>
     /// Gets or sets the pressure of the pointer on the surface. If omitted, defaults to 0.0.
     /// </summary>
-    public double? Pressure { get => this.pressure; set => this.pressure = value; }
+    public double? Pressure { get; set; }
 
     /// <summary>
     /// Gets or sets the tangential pressure of the pointer on the surface. If omitted, defaults to 0.0.
     /// </summary>
-    public double? TangentialPressure { get => this.tangentialPressure; set => this.tangentialPressure = value; }
+    public double? TangentialPressure { get; set; }
 
     /// <summary>
     /// Gets or sets the twist of the pointer in degrees, between 0 and 359, on the surface. If omitted, defaults to 0.
     /// </summary>
-    public ulong? Twist { get => this.twist; set => this.twist = value; }
+    public ulong? Twist { get; set; }
 
     /// <summary>
     /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device. If omitted, defaults to 0.0.
     /// </summary>
-    public double? AltitudeAngle { get => this.altitudeAngle; set => this.altitudeAngle = value; }
+    public double? AltitudeAngle { get; set; }
 
     /// <summary>
     /// Gets or sets the azimuth angle (angle from "north," or a line directly up from the point of contact)
     /// of the pointer device. If omitted, defaults to 0.0.
     /// </summary>
-    public double? AzimuthAngle { get => this.azimuthAngle; set => this.azimuthAngle = value; }
+    public double? AzimuthAngle { get; set; }
 
     /// <summary>
     /// Gets or sets the angle, in degrees, of the pointer device from left to right from the vertical.
     /// Must be between -90 and 90; if omitted, defaults to 0.
     /// </summary>
-    public long? TiltX { get => this.tiltX; set => this.tiltX = value; }
+    public long? TiltX { get; set; }
 
     /// <summary>
     /// Gets or sets the angle, in degrees, of the pointer device away from the user from the vertical.
     /// Must be between -90 and 90; if omitted, defaults to 0.
     /// </summary>
-    public long? TiltY { get => this.tiltY; set => this.tiltY = value; }
+    public long? TiltY { get; set; }
 }

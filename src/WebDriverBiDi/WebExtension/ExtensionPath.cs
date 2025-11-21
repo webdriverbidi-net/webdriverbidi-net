@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 public class ExtensionPath : ExtensionData
 {
     private readonly string extensionType = "path";
-    private string path = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionPath"/> class.
@@ -28,7 +27,7 @@ public class ExtensionPath : ExtensionData
     /// <param name="path">The full path to a directory containing the extension files.</param>
     public ExtensionPath(string path)
     {
-        this.path = path;
+        this.Path = path;
     }
 
     /// <summary>
@@ -41,5 +40,5 @@ public class ExtensionPath : ExtensionData
     /// Gets or sets the full path to a directory containing the extension files.
     /// </summary>
     [JsonPropertyName("path")]
-    public string Path { get => this.path; set => this.path = value; }
+    public string Path { get; set; } = string.Empty;
 }

@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PermissionDescriptor
 {
-    private string name;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PermissionDescriptor"/> class.
     /// </summary>
     /// <param name="name">The name of the permission.</param>
     public PermissionDescriptor(string name)
     {
-        this.name = name;
+        this.Name = name;
     }
 
     /// <summary>
@@ -28,5 +26,5 @@ public class PermissionDescriptor
     /// </summary>
     [JsonRequired]
     [JsonPropertyName("name")]
-    public string Name { get => this.name; set => this.name = value; }
+    public string Name { get; set; }
 }

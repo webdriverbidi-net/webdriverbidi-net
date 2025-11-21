@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GetDataCommandResult : CommandResult
 {
-    private BytesValue bytes = BytesValue.FromString(string.Empty);
-
     [JsonConstructor]
     private GetDataCommandResult()
     {
@@ -25,5 +23,5 @@ public record GetDataCommandResult : CommandResult
     [JsonPropertyName("bytes")]
     [JsonRequired]
     [JsonInclude]
-    public BytesValue Bytes { get => this.bytes; private set => this.bytes = value; }
+    public BytesValue Bytes { get; private set; } = BytesValue.FromString(string.Empty);
 }

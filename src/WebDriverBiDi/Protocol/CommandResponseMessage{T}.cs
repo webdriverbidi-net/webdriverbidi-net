@@ -14,13 +14,11 @@ using System.Text.Json.Serialization;
 public class CommandResponseMessage<T> : CommandResponseMessage
     where T : CommandResult
 {
-    private T? result;
-
     /// <summary>
     /// Gets the result of the command.
     /// </summary>
     [JsonIgnore]
-    public override CommandResult Result => this.result!;
+    public override CommandResult Result => this.SerializableResult!;
 
     /// <summary>
     /// Gets the result of the command for serialization purposes.
@@ -28,5 +26,5 @@ public class CommandResponseMessage<T> : CommandResponseMessage
     [JsonPropertyName("result")]
     [JsonRequired]
     [JsonInclude]
-    internal T? SerializableResult { get => this.result; private set => this.result = value; }
+    internal T? SerializableResult { get; private set; }
 }

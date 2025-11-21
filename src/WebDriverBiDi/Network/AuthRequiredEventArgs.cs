@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record AuthRequiredEventArgs : BaseNetworkEventArgs
 {
-    private ResponseData response = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthRequiredEventArgs"/> class.
     /// </summary>
@@ -28,5 +26,5 @@ public record AuthRequiredEventArgs : BaseNetworkEventArgs
     [JsonPropertyName("response")]
     [JsonRequired]
     [JsonInclude]
-    public ResponseData Response { get => this.response; private set => this.response = value; }
+    public ResponseData Response { get; private set; } = new();
 }

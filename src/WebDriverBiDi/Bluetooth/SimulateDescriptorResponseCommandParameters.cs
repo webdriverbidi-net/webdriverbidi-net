@@ -12,15 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SimulateDescriptorResponseCommandParameters : CommandParameters<SimulateDescriptorResponseCommandResult>
 {
-    private string browsingContextId;
-    private string address;
-    private string serviceUuid;
-    private string characteristicUuid;
-    private string descriptorUuid;
-    private SimulateDescriptorResponseType type;
-    private uint code;
-    private List<uint>? data;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateDescriptorResponseCommandParameters"/> class.
     /// </summary>
@@ -33,13 +24,13 @@ public class SimulateDescriptorResponseCommandParameters : CommandParameters<Sim
     /// <param name="code">The code of the simulated characteristic response.</param>
     public SimulateDescriptorResponseCommandParameters(string browsingContextId, string address, string serviceUuid, string characteristicUuid, string descriptorUuid, SimulateDescriptorResponseType type, uint code)
     {
-        this.browsingContextId = browsingContextId;
-        this.address = address;
-        this.serviceUuid = serviceUuid;
-        this.characteristicUuid = characteristicUuid;
-        this.descriptorUuid = descriptorUuid;
-        this.type = type;
-        this.code = code;
+        this.BrowsingContextId = browsingContextId;
+        this.Address = address;
+        this.ServiceUuid = serviceUuid;
+        this.CharacteristicUuid = characteristicUuid;
+        this.DescriptorUuid = descriptorUuid;
+        this.Type = type;
+        this.Code = code;
     }
 
     /// <summary>
@@ -52,48 +43,48 @@ public class SimulateDescriptorResponseCommandParameters : CommandParameters<Sim
     /// Gets or sets the ID of the browsing context for which to simulate a descriptor response on the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId;  set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the address of the device for which to simulate the descriptor response.
     /// </summary>
     [JsonPropertyName("address")]
-    public string Address { get => this.address; set => this.address = value; }
+    public string Address { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the service to simulate.
     /// </summary>
     [JsonPropertyName("serviceUuid")]
-    public string ServiceUuid { get => this.serviceUuid; set => this.serviceUuid = value; }
+    public string ServiceUuid { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the characteristic to simulate.
     /// </summary>
     [JsonPropertyName("characteristicUuid")]
-    public string CharacteristicUuid { get => this.characteristicUuid; set => this.characteristicUuid = value; }
+    public string CharacteristicUuid { get; set; }
 
     /// <summary>
     /// Gets or sets the UUID of the descriptor to simulate.
     /// </summary>
     [JsonPropertyName("descriptorUuid")]
-    public string DescriptorUuid { get => this.descriptorUuid; set => this.descriptorUuid = value; }
+    public string DescriptorUuid { get; set; }
 
     /// <summary>
     /// Gets or sets the type of simulation of the descriptor response.
     /// </summary>
     [JsonPropertyName("type")]
-    public SimulateDescriptorResponseType Type { get => this.type; set => this.type = value; }
+    public SimulateDescriptorResponseType Type { get; set; }
 
     /// <summary>
     /// Gets or sets the code of the simulated descriptor response.
     /// </summary>
     [JsonPropertyName("code")]
-    public uint Code { get => this.code; set => this.code = value; }
+    public uint Code { get; set; }
 
     /// <summary>
     /// Gets or sets the data for the simulated descriptor response.
     /// </summary>
     [JsonPropertyName("data")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<uint>? Data { get => this.data; set => this.data = value; }
+    public List<uint>? Data { get; set; }
 }

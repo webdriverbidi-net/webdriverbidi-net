@@ -12,17 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class HandleUserPromptCommandParameters : CommandParameters<HandleUserPromptCommandResult>
 {
-    private string browsingContextId;
-    private bool? accept;
-    private string? userText;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="HandleUserPromptCommandParameters" /> class.
     /// </summary>
     /// <param name="browsingContextId">The browsing context ID for which to handle the user prompt.</param>
     public HandleUserPromptCommandParameters(string browsingContextId)
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -36,19 +32,19 @@ public class HandleUserPromptCommandParameters : CommandParameters<HandleUserPro
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the user prompt should be accepted (if true) or canceled (if false).
     /// </summary>
     [JsonPropertyName("accept")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? Accept { get => this.accept; set => this.accept = value; }
+    public bool? Accept { get; set; }
 
     /// <summary>
     /// Gets or sets the text sent to the user prompt.
     /// </summary>
     [JsonPropertyName("userText")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? UserText { get => this.userText; set => this.userText = value; }
+    public string? UserText { get; set; }
 }

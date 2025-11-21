@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record AddInterceptCommandResult : CommandResult
 {
-    private string interceptId = string.Empty;
-
     [JsonConstructor]
     private AddInterceptCommandResult()
     {
@@ -25,5 +23,5 @@ public record AddInterceptCommandResult : CommandResult
     [JsonPropertyName("intercept")]
     [JsonRequired]
     [JsonInclude]
-    public string InterceptId { get => this.interceptId; private set => this.interceptId = value; }
+    public string InterceptId { get; private set; } = string.Empty;
 }

@@ -12,14 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class GeolocationCoordinates
 {
-    private double latitude;
-    private double longitude;
-    private double? accuracy;
-    private double? altitude;
-    private double? altitudeAccuracy;
-    private double? heading;
-    private double? speed;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="GeolocationCoordinates"/> class.
     /// </summary>
@@ -33,8 +25,8 @@ public class GeolocationCoordinates
     /// </param>
     public GeolocationCoordinates(double longitude, double latitude)
     {
-        this.longitude = longitude;
-        this.latitude = latitude;
+        this.Longitude = longitude;
+        this.Latitude = latitude;
     }
 
     /// <summary>
@@ -43,7 +35,7 @@ public class GeolocationCoordinates
     /// the equator.
     /// </summary>
     [JsonPropertyName("latitude")]
-    public double Latitude { get => this.latitude; set => this.latitude = value; }
+    public double Latitude { get; set; }
 
     /// <summary>
     /// Gets or sets the latitude of the geographic position in degrees.
@@ -51,28 +43,28 @@ public class GeolocationCoordinates
     /// of the prime meridian.
     /// </summary>
     [JsonPropertyName("longitude")]
-    public double Longitude { get => this.longitude; set => this.longitude = value; }
+    public double Longitude { get; set; }
 
     /// <summary>
     /// Gets or sets the accuracy of the geographic position to a 95% confidence level. If omitted, is interpreted as 1.0.
     /// </summary>
     [JsonPropertyName("accuracy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Accuracy { get => this.accuracy; set => this.accuracy = value; }
+    public double? Accuracy { get; set; }
 
     /// <summary>
     /// Gets or sets the altitude of the geographic position, in meters.
     /// </summary>
     [JsonPropertyName("altitude")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Altitude { get => this.altitude; set => this.altitude = value; }
+    public double? Altitude { get; set; }
 
     /// <summary>
     /// Gets or sets the accuracy of the altitude of the geographic position to a 95% confidence level.
     /// </summary>
     [JsonPropertyName("altitudeAccuracy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? AltitudeAccuracy { get => this.altitudeAccuracy; set => this.altitudeAccuracy = value; }
+    public double? AltitudeAccuracy { get; set; }
 
     /// <summary>
     /// Gets or sets the heading of the movement of the geographic position, in degrees. If the device is stationary, should be set to double.NaN.
@@ -80,12 +72,12 @@ public class GeolocationCoordinates
     [JsonPropertyName("heading")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonNumberHandling(JsonNumberHandling.AllowNamedFloatingPointLiterals)]
-    public double? Heading { get => this.heading; set => this.heading = value; }
+    public double? Heading { get; set; }
 
     /// <summary>
     /// Gets or sets the speed of the movement of the geographic position, in meters per second. If the device is stationary, should be set to 0.
     /// </summary>
     [JsonPropertyName("speed")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public double? Speed { get => this.speed; set => this.speed = value; }
+    public double? Speed { get; set; }
 }

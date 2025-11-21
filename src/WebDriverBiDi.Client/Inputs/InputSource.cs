@@ -12,8 +12,6 @@ using WebDriverBiDi.Input;
 /// </summary>
 public abstract class InputSource
 {
-    private readonly string sourceId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="InputSource"/> class.
     /// </summary>
@@ -25,16 +23,13 @@ public abstract class InputSource
             throw new ArgumentException("Device name must not be null or empty", nameof(sourceId));
         }
 
-        this.sourceId = sourceId;
+        this.SourceId = sourceId;
     }
 
     /// <summary>
     /// Gets the ID of this input source.
     /// </summary>
-    public string SourceId
-    {
-        get { return this.sourceId; }
-    }
+    public string SourceId { get; }
 
     /// <summary>
     /// Gets the kind of source for this input device.
@@ -67,7 +62,7 @@ public abstract class InputSource
             action.Duration = duration;
         }
 
-        return new Action(this.sourceId, action);
+        return new Action(this.SourceId, action);
     }
 
     /// <summary>
@@ -76,7 +71,7 @@ public abstract class InputSource
     /// <returns>A hash code for the current <see cref="InputSource"/>.</returns>
     public override int GetHashCode()
     {
-        return this.sourceId.GetHashCode();
+        return this.SourceId.GetHashCode();
     }
 
     /// <summary>
@@ -85,6 +80,6 @@ public abstract class InputSource
     /// <returns>A string that represents the current <see cref="InputSource"/>.</returns>
     public override string ToString()
     {
-        return $"{this.DeviceKind} input device [name: {this.sourceId}]";
+        return $"{this.DeviceKind} input device [name: {this.SourceId}]";
     }
 }

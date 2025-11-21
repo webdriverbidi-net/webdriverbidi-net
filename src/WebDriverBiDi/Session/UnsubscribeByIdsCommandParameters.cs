@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class UnsubscribeByIdsCommandParameters : UnsubscribeCommandParameters
 {
-    private readonly List<string> subscriptions = [];
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UnsubscribeByIdsCommandParameters"/> class.
     /// </summary>
@@ -26,5 +24,5 @@ public class UnsubscribeByIdsCommandParameters : UnsubscribeCommandParameters
     /// Gets the list of events to which to subscribe or unsubscribe.
     /// </summary>
     [JsonPropertyName("subscriptions")]
-    public List<string> SubscriptionIds => this.subscriptions;
+    public List<string> SubscriptionIds { get; } = [];
 }

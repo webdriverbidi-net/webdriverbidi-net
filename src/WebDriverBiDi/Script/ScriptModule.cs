@@ -19,10 +19,6 @@ public sealed class ScriptModule : Module
     private const string RealmDestroyedEventName = $"{ScriptModuleName}.realmDestroyed";
     private const string MessageEventName = $"{ScriptModuleName}.message";
 
-    private ObservableEvent<RealmCreatedEventArgs> onRealmCreatedEvent = new(RealmCreatedEventName);
-    private ObservableEvent<RealmDestroyedEventArgs> onRealmDestroyedEvent = new(RealmDestroyedEventName);
-    private ObservableEvent<MessageEventArgs> onMessageEvent = new(MessageEventName);
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ScriptModule"/> class.
     /// </summary>
@@ -38,17 +34,17 @@ public sealed class ScriptModule : Module
     /// <summary>
     /// Gets an observable event that notifies when a new script realm is created.
     /// </summary>
-    public ObservableEvent<RealmCreatedEventArgs> OnRealmCreated => this.onRealmCreatedEvent;
+    public ObservableEvent<RealmCreatedEventArgs> OnRealmCreated { get; } = new(RealmCreatedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies with a script realm is destroyed.
     /// </summary>
-    public ObservableEvent<RealmDestroyedEventArgs> OnRealmDestroyed => this.onRealmDestroyedEvent;
+    public ObservableEvent<RealmDestroyedEventArgs> OnRealmDestroyed { get; } = new(RealmDestroyedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a preload script sends data to the client.
     /// </summary>
-    public ObservableEvent<MessageEventArgs> OnMessage => this.onMessageEvent;
+    public ObservableEvent<MessageEventArgs> OnMessage { get; } = new(MessageEventName);
 
     /// <summary>
     /// Gets the module name.
@@ -123,18 +119,18 @@ public sealed class ScriptModule : Module
         // instance, the protocol transport will deserialize to a RealmInfo,
         // then use that here to create the appropriate EventArgs instance.
         RealmCreatedEventArgs eventArgs = eventData.ToEventArgs<RealmCreatedEventArgs>();
-        await this.onRealmCreatedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnRealmCreated.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnRealmDestroyedAsync(EventInfo<RealmDestroyedEventArgs> eventData)
     {
         RealmDestroyedEventArgs eventArgs = eventData.ToEventArgs<RealmDestroyedEventArgs>();
-        await this.onRealmDestroyedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnRealmDestroyed.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnMessageAsync(EventInfo<MessageEventArgs> eventData)
     {
         MessageEventArgs eventArgs = eventData.ToEventArgs<MessageEventArgs>();
-        await this.onMessageEvent.NotifyObserversAsync(eventArgs);
+        await this.OnMessage.NotifyObserversAsync(eventArgs);
     }
 }

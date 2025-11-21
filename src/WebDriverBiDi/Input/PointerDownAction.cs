@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PointerDownAction : PointerAction, IPointerSourceAction
 {
-    private readonly string actionType = "pointerDown";
-    private long button;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PointerDownAction"/> class.
     /// </summary>
@@ -22,18 +19,18 @@ public class PointerDownAction : PointerAction, IPointerSourceAction
     public PointerDownAction(long button)
         : base()
     {
-        this.button = button;
+        this.Button = button;
     }
 
     /// <summary>
     /// Gets the type of the action.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type => this.actionType;
+    public string Type { get; } = "pointerDown";
 
     /// <summary>
     /// Gets or sets the button to be pressed down.
     /// </summary>
     [JsonPropertyName("button")]
-    public long Button { get => this.button; set => this.button = value; }
+    public long Button { get; set; }
 }

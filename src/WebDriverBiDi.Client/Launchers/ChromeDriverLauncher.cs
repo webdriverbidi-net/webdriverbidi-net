@@ -74,7 +74,7 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
     /// <returns>A dictionary containing the capabilities.</returns>
     protected override Dictionary<string, object> CreateBrowserLaunchCapabilities()
     {
-        Dictionary<string, object> chromeOptions = new();
+        Dictionary<string, object> chromeOptions = [];
         if (!string.IsNullOrEmpty(this.BrowserExecutableLocation))
         {
             chromeOptions["binary"] = this.BrowserExecutableLocation;

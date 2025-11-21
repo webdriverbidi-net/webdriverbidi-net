@@ -13,12 +13,6 @@ using WebDriverBiDi.Script;
 /// </summary>
 public record Initiator
 {
-    private InitiatorType? type;
-    private ulong? columnNumber;
-    private ulong? lineNumber;
-    private StackTrace? stackTrace;
-    private string? requestId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Initiator"/> class.
     /// </summary>
@@ -32,33 +26,33 @@ public record Initiator
     /// </summary>
     [JsonPropertyName("type")]
     [JsonInclude]
-    public InitiatorType? Type { get => this.type; private set => this.type = value; }
+    public InitiatorType? Type { get; private set; }
 
     /// <summary>
     /// Gets the column number of the script initiating the request.
     /// </summary>
     [JsonPropertyName("columnNumber")]
     [JsonInclude]
-    public ulong? ColumnNumber { get => this.columnNumber; private set => this.columnNumber = value; }
+    public ulong? ColumnNumber { get; private set; }
 
     /// <summary>
     /// Gets the column number of the script initiating the request.
     /// </summary>
     [JsonPropertyName("lineNumber")]
     [JsonInclude]
-    public ulong? LineNumber { get => this.lineNumber; private set => this.lineNumber = value; }
+    public ulong? LineNumber { get; private set; }
 
     /// <summary>
     /// Gets the stack trace of the script initiating the request.
     /// </summary>
     [JsonPropertyName("stackTrace")]
     [JsonInclude]
-    public StackTrace? StackTrace { get => this.stackTrace; private set => this.stackTrace = value; }
+    public StackTrace? StackTrace { get; private set; }
 
     /// <summary>
     /// Gets the ID of the request.
     /// </summary>
     [JsonPropertyName("request")]
     [JsonInclude]
-    public string? RequestId { get => this.requestId; private set => this.requestId = value; }
+    public string? RequestId { get; private set; }
 }

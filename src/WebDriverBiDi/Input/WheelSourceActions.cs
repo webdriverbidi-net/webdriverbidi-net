@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class WheelSourceActions : SourceActions
 {
-    private readonly List<IWheelSourceAction> actions = new();
-
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
@@ -24,5 +22,5 @@ public class WheelSourceActions : SourceActions
     /// Gets the list of actions for this input device.
     /// </summary>
     [JsonPropertyName("actions")]
-    public List<IWheelSourceAction> Actions => this.actions;
+    public List<IWheelSourceAction> Actions { get; } = [];
 }

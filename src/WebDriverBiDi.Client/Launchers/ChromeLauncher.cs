@@ -357,8 +357,8 @@ public class ChromeLauncher : BrowserLauncher
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            List<string> linuxLocations = new()
-            {
+            List<string> linuxLocations =
+            [
                 "/usr/local/sbin",
                 "/usr/local/bin",
                 "/usr/sbin",
@@ -366,7 +366,7 @@ public class ChromeLauncher : BrowserLauncher
                 "/sbin",
                 "/bin",
                 "/opt/google/chrome",
-            };
+            ];
             foreach (string linuxLocation in linuxLocations)
             {
                 string fullPath = Path.Combine(linuxLocation, "chrome");

@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetScreenSettingsOverrideCommandParameters : CommandParameters<SetScreenSettingsOverrideCommandResult>
 {
-    private ScreenArea? screenArea;
-    private List<string>? contexts;
-    private List<string>? userContexts;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetScreenSettingsOverrideCommandParameters"/> class.
     /// </summary>
@@ -35,19 +31,19 @@ public class SetScreenSettingsOverrideCommandParameters : CommandParameters<SetS
     /// </summary>
     [JsonPropertyName("screenArea")]
     [JsonInclude]
-    public ScreenArea? ScreenArea { get => this.screenArea; set => this.screenArea = value; }
+    public ScreenArea? ScreenArea { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set the screen settings override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts; set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the user contexts for which to set the screen settings override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

@@ -13,8 +13,6 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class ElementClipRectangle : ClipRectangle
 {
-    private SharedReference element;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ElementClipRectangle"/> class.
     /// </summary>
@@ -22,7 +20,7 @@ public class ElementClipRectangle : ClipRectangle
     public ElementClipRectangle(SharedReference element)
         : base()
     {
-        this.element = element;
+        this.Element = element;
     }
 
     /// <summary>
@@ -37,5 +35,5 @@ public class ElementClipRectangle : ClipRectangle
     /// </summary>
     [JsonPropertyName("element")]
     [JsonInclude]
-    public SharedReference Element { get => this.element; set => this.element = value; }
+    public SharedReference Element { get; set; }
 }

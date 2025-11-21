@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record RequestDeviceInfo
 {
-    private string id = string.Empty;
-    private string? name;
-
     [JsonConstructor]
     private RequestDeviceInfo()
     {
@@ -26,7 +23,7 @@ public record RequestDeviceInfo
     [JsonPropertyName("id")]
     [JsonRequired]
     [JsonInclude]
-    public string DeviceId { get => this.id; private set => this.id = value; }
+    public string DeviceId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the name of the Bluetooth device, if specified.
@@ -34,5 +31,5 @@ public record RequestDeviceInfo
     [JsonPropertyName("name")]
     [JsonRequired]
     [JsonInclude]
-    public string? DeviceName { get => this.name; private set => this.name = value; }
+    public string? DeviceName { get; private set; }
 }

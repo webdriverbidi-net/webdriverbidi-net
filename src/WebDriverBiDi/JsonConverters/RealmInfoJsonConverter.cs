@@ -168,7 +168,7 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
             throw new JsonException($"DedicatedWorkerRealmInfo 'owners' property must be an array");
         }
 
-        List<string> owners = new();
+        List<string> owners = [];
         foreach (JsonElement ownerElement in ownersElement.EnumerateArray())
         {
             if (ownerElement.ValueKind != JsonValueKind.String)

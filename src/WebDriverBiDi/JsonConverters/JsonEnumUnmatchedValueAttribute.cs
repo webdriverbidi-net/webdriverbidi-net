@@ -16,8 +16,6 @@ namespace WebDriverBiDi.JsonConverters;
 public sealed class JsonEnumUnmatchedValueAttribute<T> : Attribute
     where T : struct, Enum
 {
-    private readonly T unmatchedValue;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonEnumUnmatchedValueAttribute{T}"/> class.
     /// </summary>
@@ -27,11 +25,11 @@ public sealed class JsonEnumUnmatchedValueAttribute<T> : Attribute
     /// </param>
     public JsonEnumUnmatchedValueAttribute(T unmatchedValue)
     {
-        this.unmatchedValue = unmatchedValue;
+        this.UnmatchedValue = unmatchedValue;
     }
 
     /// <summary>
     /// Gets the enumerated value to return if the serialized JSON value does not match one of the enumerated options.
     /// </summary>
-    public T UnmatchedValue => this.unmatchedValue;
+    public T UnmatchedValue { get; }
 }

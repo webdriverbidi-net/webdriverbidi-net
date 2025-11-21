@@ -12,12 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record ExceptionDetails
 {
-    private int columnNumber = -1;
-    private int lineNumber = -1;
-    private string text = string.Empty;
-    private StackTrace stackTrace = new();
-    private RemoteValue exception = new("null");
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ExceptionDetails"/> class.
     /// </summary>
@@ -32,7 +26,7 @@ public record ExceptionDetails
     [JsonPropertyName("text")]
     [JsonRequired]
     [JsonInclude]
-    public string Text { get => this.text; private set => this.text = value; }
+    public string Text { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the column number of the statement that caused the exception.
@@ -40,7 +34,7 @@ public record ExceptionDetails
     [JsonPropertyName("columnNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int ColumnNumber { get => this.columnNumber; private set => this.columnNumber = value; }
+    public int ColumnNumber { get; private set; } = -1;
 
     /// <summary>
     /// Gets the line number of the statement that caused the exception.
@@ -48,7 +42,7 @@ public record ExceptionDetails
     [JsonPropertyName("lineNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int LineNumber { get => this.lineNumber; private set => this.lineNumber = value; }
+    public int LineNumber { get; private set; } = -1;
 
     /// <summary>
     /// Gets the stack trace of the exception.
@@ -56,7 +50,7 @@ public record ExceptionDetails
     [JsonPropertyName("stackTrace")]
     [JsonRequired]
     [JsonInclude]
-    public StackTrace StackTrace { get => this.stackTrace; private set => this.stackTrace = value; }
+    public StackTrace StackTrace { get; private set; } = new();
 
     /// <summary>
     /// Gets the RemoteValue representing the value of the exception.
@@ -64,5 +58,5 @@ public record ExceptionDetails
     [JsonPropertyName("exception")]
     [JsonRequired]
     [JsonInclude]
-    public RemoteValue Exception { get => this.exception; private set => this.exception = value; }
+    public RemoteValue Exception { get; private set; } = new("null");
 }

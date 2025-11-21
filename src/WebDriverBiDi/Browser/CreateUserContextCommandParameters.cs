@@ -13,10 +13,6 @@ using WebDriverBiDi.Session;
 /// </summary>
 public class CreateUserContextCommandParameters : CommandParameters<CreateUserContextCommandResult>
 {
-    private bool? acceptInsecureCerts;
-    private ProxyConfiguration? proxyConfiguration;
-    private UserPromptHandler? unhandledPromptBehavior;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateUserContextCommandParameters"/> class.
     /// </summary>
@@ -35,19 +31,19 @@ public class CreateUserContextCommandParameters : CommandParameters<CreateUserCo
     /// </summary>
     [JsonPropertyName("acceptInsecureCerts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? AcceptInsecureCerts { get => this.acceptInsecureCerts; set => this.acceptInsecureCerts = value; }
+    public bool? AcceptInsecureCerts { get; set; }
 
     /// <summary>
     /// Gets or sets the proxy configuration used with the created user context.
     /// </summary>
     [JsonPropertyName("proxy")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ProxyConfiguration? Proxy { get => this.proxyConfiguration; set => this.proxyConfiguration = value; }
+    public ProxyConfiguration? Proxy { get; set; }
 
     /// <summary>
     /// Gets or sets the handler for unhandled user prompts.
     /// </summary>
     [JsonPropertyName("unhandledPromptBehavior")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public UserPromptHandler? UnhandledPromptBehavior { get => this.unhandledPromptBehavior; set => this.unhandledPromptBehavior = value; }
+    public UserPromptHandler? UnhandledPromptBehavior { get; set; }
 }

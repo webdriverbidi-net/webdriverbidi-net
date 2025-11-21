@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public abstract class CommandParameters
 {
-    private readonly Dictionary<string, object?> additionalData = new();
-
     /// <summary>
     /// Gets the method name of the command.
     /// </summary>
@@ -30,5 +28,5 @@ public abstract class CommandParameters
     /// Gets additional properties to be serialized with this command.
     /// </summary>
     [JsonIgnore]
-    public Dictionary<string, object?> AdditionalData => this.additionalData;
+    public Dictionary<string, object?> AdditionalData { get; } = [];
 }

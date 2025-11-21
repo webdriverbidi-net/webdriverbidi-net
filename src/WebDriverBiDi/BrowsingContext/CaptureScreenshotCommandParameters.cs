@@ -12,18 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScreenshotCommandResult>
 {
-    private string browsingContextId;
-    private ImageFormat? format;
-    private ClipRectangle? clip;
-    private ScreenshotOrigin? origin;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CaptureScreenshotCommandParameters" /> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context for which to capture the screenshot.</param>
     public CaptureScreenshotCommandParameters(string browsingContextId)
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -36,26 +31,26 @@ public class CaptureScreenshotCommandParameters : CommandParameters<CaptureScree
     /// Gets or sets the ID of the browsing context for which to capture the screenshot.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the format of the screenshot image.
     /// </summary>
     [JsonPropertyName("format")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ImageFormat? Format { get => this.format; set => this.format = value; }
+    public ImageFormat? Format { get; set; }
 
     /// <summary>
     /// Gets or sets the clip rectangle for the screenshot, if any.
     /// </summary>
     [JsonPropertyName("clip")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ClipRectangle? Clip { get => this.clip; set => this.clip = value; }
+    public ClipRectangle? Clip { get; set; }
 
     /// <summary>
     /// Gets or sets the origin of the clip rectangle for the screenshot, if any.
     /// </summary>
     [JsonPropertyName("origin")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ScreenshotOrigin? Origin { get => this.origin; set => this.origin = value; }
+    public ScreenshotOrigin? Origin { get; set; }
 }

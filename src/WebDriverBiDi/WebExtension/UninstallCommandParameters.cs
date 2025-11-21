@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class UninstallCommandParameters : CommandParameters<UninstallCommandResult>
 {
-    private string extensionId;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UninstallCommandParameters"/> class.
     /// </summary>
     /// <param name="extensionId">The ID of the extension to uninstall.</param>
     public UninstallCommandParameters(string extensionId)
     {
-        this.extensionId = extensionId;
+        this.ExtensionId = extensionId;
     }
 
     /// <summary>
@@ -33,5 +31,5 @@ public class UninstallCommandParameters : CommandParameters<UninstallCommandResu
     /// Gets or sets the data of the web extension to install.
     /// </summary>
     [JsonPropertyName("extension")]
-    public string ExtensionId { get => this.extensionId; set => this.extensionId = value; }
+    public string ExtensionId { get; set; }
 }

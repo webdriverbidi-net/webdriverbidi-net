@@ -10,8 +10,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class DownloadBehaviorAllowed : DownloadBehavior
 {
-    private string destinationFolder;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DownloadBehaviorAllowed"/> class.
     /// </summary>
@@ -19,12 +17,12 @@ public class DownloadBehaviorAllowed : DownloadBehavior
     public DownloadBehaviorAllowed(string destinationFolder)
         : base(DownloadBehaviorType.Allowed)
     {
-        this.destinationFolder = destinationFolder;
+        this.DestinationFolder = destinationFolder;
     }
 
     /// <summary>
     /// Gets or sets the destination folder for downloaded files.
     /// </summary>
     [JsonPropertyName("destinationFolder")]
-    public string DestinationFolder { get => this.destinationFolder; set => this.destinationFolder = value; }
+    public string DestinationFolder { get; set; }
 }

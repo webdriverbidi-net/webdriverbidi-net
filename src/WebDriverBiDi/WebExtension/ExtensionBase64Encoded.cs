@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 public class ExtensionBase64Encoded : ExtensionData
 {
     private readonly string extensionType = "base64";
-    private string extensionValue = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExtensionBase64Encoded"/> class.
@@ -28,7 +27,7 @@ public class ExtensionBase64Encoded : ExtensionData
     /// <param name="extensionValue">A web extension zip archive represented as a base64-encoded string.</param>
     public ExtensionBase64Encoded(string extensionValue)
     {
-        this.extensionValue = extensionValue;
+        this.Value = extensionValue;
     }
 
     /// <summary>
@@ -41,5 +40,5 @@ public class ExtensionBase64Encoded : ExtensionData
     /// Gets or sets a web extension zip archive represented as a base64-encoded string..
     /// </summary>
     [JsonPropertyName("value")]
-    public string Value { get => this.extensionValue; set => this.extensionValue = value; }
+    public string Value { get; set; } = string.Empty;
 }

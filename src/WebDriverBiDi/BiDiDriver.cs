@@ -25,14 +25,14 @@ using WebDriverBiDi.WebExtension;
 /// </summary>
 public class BiDiDriver
 {
+    private const string EventReceivedEventName = "driver.eventReceived";
+    private const string UnexpectedErrorReceivedEventName = "driver.unexpectedErrorReceived";
+    private const string UnknownMessageReceivedEventName = "driver.unknownMessageReceived";
+    private const string LogMessageEventName = "driver.logMessage";
+
     private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
-    private readonly Dictionary<string, Module> modules = new();
-
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("driver.logMessage");
-    private readonly ObservableEvent<UnknownMessageReceivedEventArgs> onUnknownMessageReceivedEvent = new("driver.unknownMessageReceived");
-    private readonly ObservableEvent<ErrorReceivedEventArgs> onUnexpectedErrorReceivedEvent = new("driver.unexpectedErrorReceived");
-    private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new("driver.eventReceived");
+    private readonly Dictionary<string, Module> modules = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.
@@ -84,22 +84,22 @@ public class BiDiDriver
     /// <summary>
     /// Gets an observable event that notifies when a protocol event is received from protocol transport.
     /// </summary>
-    public ObservableEvent<EventReceivedEventArgs> OnEventReceived => this.onEventReceivedEvent;
+    public ObservableEvent<EventReceivedEventArgs> OnEventReceived { get; } = new(EventReceivedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a protocol error is received from protocol transport.
     /// </summary>
-    public ObservableEvent<ErrorReceivedEventArgs> OnUnexpectedErrorReceived => this.onUnexpectedErrorReceivedEvent;
+    public ObservableEvent<ErrorReceivedEventArgs> OnUnexpectedErrorReceived { get; } = new(UnexpectedErrorReceivedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when an unknown message is received from protocol transport.
     /// </summary>
-    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived => this.onUnknownMessageReceivedEvent;
+    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; } = new(UnknownMessageReceivedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by this driver.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new(LogMessageEventName);
 
     /// <summary>
     /// Gets the bluetooth module as described in the W3C Web Bluetooth Specification.
@@ -289,21 +289,21 @@ public class BiDiDriver
 
     private async Task OnTransportEventReceived(EventReceivedEventArgs e)
     {
-        await this.onEventReceivedEvent.NotifyObserversAsync(e);
+        await this.OnEventReceived.NotifyObserversAsync(e);
     }
 
     private async Task OnTransportErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        await this.onUnexpectedErrorReceivedEvent.NotifyObserversAsync(e);
+        await this.OnUnexpectedErrorReceived.NotifyObserversAsync(e);
     }
 
     private async Task OnTransportUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
-        await this.onUnknownMessageReceivedEvent.NotifyObserversAsync(e);
+        await this.OnUnknownMessageReceived.NotifyObserversAsync(e);
     }
 
     private async Task OnTransportLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.onLogMessageEvent.NotifyObserversAsync(e);
+        await this.OnLogMessage.NotifyObserversAsync(e);
     }
 }

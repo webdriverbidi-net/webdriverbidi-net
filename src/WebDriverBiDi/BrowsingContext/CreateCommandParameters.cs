@@ -12,18 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class CreateCommandParameters : CommandParameters<CreateCommandResult>
 {
-    private CreateType createType;
-    private string? referenceContextId;
-    private string? userContextId;
-    private bool? background;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateCommandParameters" /> class.
     /// </summary>
     /// <param name="createType">The type of browsing context to create.</param>
     public CreateCommandParameters(CreateType createType)
     {
-        this.createType = createType;
+        this.CreateType = createType;
     }
 
     /// <summary>
@@ -36,26 +31,26 @@ public class CreateCommandParameters : CommandParameters<CreateCommandResult>
     /// Gets or sets the type of browsing context (tab or window) to create.
     /// </summary>
     [JsonPropertyName("type")]
-    public CreateType CreateType { get => this.createType; set => this.createType = value; }
+    public CreateType CreateType { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the browsing context to reference within the newly created context.
     /// </summary>
     [JsonPropertyName("referenceContext")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? ReferenceContextId { get => this.referenceContextId; set => this.referenceContextId = value; }
+    public string? ReferenceContextId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to create the new browsing context in the background.
     /// </summary>
     [JsonPropertyName("background")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? IsCreatedInBackground { get => this.background; set => this.background = value; }
+    public bool? IsCreatedInBackground { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the user context in which to create the new browsing context.
     /// </summary>
     [JsonPropertyName("userContext")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? UserContextId { get => this.userContextId; set => this.userContextId = value; }
+    public string? UserContextId { get; set; }
 }

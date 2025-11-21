@@ -12,15 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public abstract class CommandResponseMessage : Message
 {
-    private long id;
-
     /// <summary>
     /// Gets the ID for this command during execution.
     /// </summary>
     [JsonPropertyName("id")]
     [JsonInclude]
     [JsonRequired]
-    public long Id { get => this.id; private set => this.id = value; }
+    public long Id { get; private set; }
 
     /// <summary>
     /// Gets the result data for the command.

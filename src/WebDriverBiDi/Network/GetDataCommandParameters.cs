@@ -12,18 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
 {
-    private DataType dataType = DataType.Response;
-    private string requestId;
-    private string? collectorId;
-    private bool? disown;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="GetDataCommandParameters" /> class.
     /// </summary>
     /// <param name="requestId">The ID of the network request for which to fetch network data from the collector.</param>
     public GetDataCommandParameters(string requestId)
     {
-        this.requestId = requestId;
+        this.RequestId = requestId;
     }
 
     /// <summary>
@@ -38,7 +33,7 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     [JsonPropertyName("request")]
     [JsonInclude]
     [JsonRequired]
-    public string RequestId { get => this.requestId; set => this.requestId = value; }
+    public string RequestId { get; set; }
 
     /// <summary>
     /// Gets or sets the <see cref="DataType"/> of collected network data to get.
@@ -46,7 +41,7 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     [JsonPropertyName("dataType")]
     [JsonInclude]
     [JsonRequired]
-    public DataType DataType { get => this.dataType; set => this.dataType = value; }
+    public DataType DataType { get; set; } = DataType.Response;
 
     /// <summary>
     /// Gets or sets the ID of the data collector for which to get collected network data.
@@ -54,7 +49,7 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     [JsonPropertyName("collector")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? CollectorId { get => this.collectorId; set => this.collectorId = value; }
+    public string? CollectorId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the retrieved collected data should be removed from the collector after retrieval.
@@ -62,5 +57,5 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     [JsonPropertyName("disown")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? DisownCollectedData { get => this.disown; set => this.disown = value; }
+    public bool? DisownCollectedData { get; set; }
 }

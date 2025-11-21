@@ -13,11 +13,6 @@ using WebDriverBiDi.JsonConverters;
 /// </summary>
 public class SetViewportCommandParameters : CommandParameters<SetViewportCommandResult>
 {
-    private string? browsingContextId;
-    private Viewport? viewport;
-    private double? devicePixelRatio;
-    private List<string>? userContextIds;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetViewportCommandParameters"/> class.
     /// </summary>
@@ -46,7 +41,7 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// </summary>
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string? BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the viewport dimensions to set. A null value sets the viewport to the default dimensions.
@@ -54,7 +49,7 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     [JsonPropertyName("viewport")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<Viewport>))]
-    public Viewport? Viewport { get => this.viewport; set => this.viewport = value; }
+    public Viewport? Viewport { get; set; }
 
     /// <summary>
     /// Gets or sets the device pixel ratio of the viewport.
@@ -62,12 +57,12 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     [JsonPropertyName("devicePixelRatio")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<double>))]
-    public double? DevicePixelRatio { get => this.devicePixelRatio; set => this.devicePixelRatio = value; }
+    public double? DevicePixelRatio { get; set; }
 
     /// <summary>
     /// Gets or sets the user context IDs for which to set the viewport.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContextIds { get => this.userContextIds; set => this.userContextIds = value; }
+    public List<string>? UserContextIds { get; set; }
 }

@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PacProxyConfiguration : ProxyConfiguration
 {
-    private string proxyAutoConfigUrl;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PacProxyConfiguration"/> class.
     /// </summary>
@@ -21,7 +19,7 @@ public class PacProxyConfiguration : ProxyConfiguration
     public PacProxyConfiguration(string proxyAutoConfigUrl)
         : base(ProxyType.ProxyAutoConfig)
     {
-        this.proxyAutoConfigUrl = proxyAutoConfigUrl;
+        this.ProxyAutoConfigUrl = proxyAutoConfigUrl;
     }
 
     /// <summary>
@@ -29,5 +27,5 @@ public class PacProxyConfiguration : ProxyConfiguration
     /// </summary>
     [JsonPropertyName("proxyAutoconfigUrl")]
     [JsonRequired]
-    public string ProxyAutoConfigUrl { get => this.proxyAutoConfigUrl; set => this.proxyAutoConfigUrl = value; }
+    public string ProxyAutoConfigUrl { get; set; }
 }

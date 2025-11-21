@@ -10,9 +10,6 @@ namespace WebDriverBiDi.Protocol;
 /// </summary>
 public class UnhandledError
 {
-    private UnhandledErrorType errorType;
-    private Exception exception;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="UnhandledError"/> class.
     /// </summary>
@@ -20,17 +17,17 @@ public class UnhandledError
     /// <param name="exception">The <see cref="Exception"/> to be thrown by the unhandled error.</param>
     public UnhandledError(UnhandledErrorType errorType, Exception exception)
     {
-        this.errorType = errorType;
-        this.exception = exception;
+        this.ErrorType = errorType;
+        this.Exception = exception;
     }
 
     /// <summary>
     /// Gets the type of unhandled error.
     /// </summary>
-    public UnhandledErrorType ErrorType => this.errorType;
+    public UnhandledErrorType ErrorType { get; }
 
     /// <summary>
     /// Gets the exception thrown by the unhandled error.
     /// </summary>
-    public Exception Exception => this.exception;
+    public Exception Exception { get; }
 }

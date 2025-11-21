@@ -12,16 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class CloseCommandParameters : CommandParameters<CloseCommandResult>
 {
-    private string browsingContextId;
-    private bool? promptUnload;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CloseCommandParameters" /> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context to close.</param>
     public CloseCommandParameters(string browsingContextId)
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -34,12 +31,12 @@ public class CloseCommandParameters : CommandParameters<CloseCommandResult>
     /// Gets or sets the ID of the browsing context to close.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to prompt for unloading the page when closing the browsing context.
     /// </summary>
     [JsonPropertyName("promptUnload")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? PromptUnload { get => this.promptUnload; set => this.promptUnload = value; }
+    public bool? PromptUnload { get; set; }
 }

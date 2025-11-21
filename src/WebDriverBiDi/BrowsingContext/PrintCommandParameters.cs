@@ -12,22 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PrintCommandParameters : CommandParameters<PrintCommandResult>
 {
-    private string browsingContextId;
-    private bool? background;
-    private PrintMarginParameters? margins;
-    private PrintOrientation? orientation;
-    private PrintPageParameters? page;
-    private List<object> pageRanges = new();
-    private double? scale;
-    private bool? shrinkToFit;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PrintCommandParameters"/> class.
     /// </summary>
     /// <param name="browsingContextId">The ID of the browsing context to print.</param>
     public PrintCommandParameters(string browsingContextId)
     {
-        this.browsingContextId = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -40,35 +31,35 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// Gets or sets the ID of the browsing context for which to capture the screenshot.
     /// </summary>
     [JsonPropertyName("context")]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to print background images. Defaults to false.
     /// </summary>
     [JsonPropertyName("background")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? Background { get => this.background; set => this.background = value; }
+    public bool? Background { get; set; }
 
     /// <summary>
     /// Gets or sets a value containing the margins for the printed page.
     /// </summary>
     [JsonPropertyName("margin")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public PrintMarginParameters? Margins { get => this.margins; set => this.margins = value; }
+    public PrintMarginParameters? Margins { get; set; }
 
     /// <summary>
     /// Gets or sets the orientation of the printed page. If omitted, defaults to Portrait.
     /// </summary>
     [JsonPropertyName("orientation")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public PrintOrientation? Orientation { get => this.orientation; set => this.orientation = value; }
+    public PrintOrientation? Orientation { get; set; }
 
     /// <summary>
     /// Gets or sets a value containing information about the size of the printed page.
     /// </summary>
     [JsonPropertyName("page")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public PrintPageParameters? Page { get => this.page; set => this.page = value; }
+    public PrintPageParameters? Page { get; set; }
 
     /// <summary>
     /// Gets or sets the scale factor of the printed page.
@@ -78,11 +69,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public double? Scale
     {
-        get
-        {
-            return this.scale;
-        }
-
+        get;
         set
         {
             if (value is not null && (value.Value < 0.1 || value.Value > 2.0))
@@ -90,7 +77,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
                 throw new ArgumentOutOfRangeException(nameof(value), "Value must be between 0.1 and 2.0");
             }
 
-            this.scale = value;
+            field = value;
         }
     }
 
@@ -99,7 +86,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// </summary>
     [JsonPropertyName("shrinkToFit")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? ShrinkToFit { get => this.shrinkToFit; set => this.shrinkToFit = value; }
+    public bool? ShrinkToFit { get; set; }
 
     /// <summary>
     /// Gets or sets the list of page ranges to print in the resulting output.
@@ -107,7 +94,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// will cause an error when sending the browsingContext.print command.
     /// </summary>
     [JsonIgnore]
-    public List<object> PageRanges { get => this.pageRanges; set => this.pageRanges = value; }
+    public List<object> PageRanges { get; set; } = [];
 
     /// <summary>
     /// Gets the list of page ranges to print for serialization purposes.
@@ -119,13 +106,13 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     {
         get
         {
-            if (this.pageRanges.Count == 0)
+            if (this.PageRanges.Count == 0)
             {
                 return null;
             }
 
-            List<object> serializable = new();
-            foreach (object pageRange in this.pageRanges)
+            List<object> serializable = [];
+            foreach (object pageRange in this.PageRanges)
             {
                 if (pageRange is string || pageRange is long || pageRange is int || pageRange is short)
                 {

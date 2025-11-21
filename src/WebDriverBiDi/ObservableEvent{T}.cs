@@ -13,9 +13,7 @@ namespace WebDriverBiDi;
 public class ObservableEvent<T>
     where T : WebDriverBiDiEventArgs
 {
-    private readonly Dictionary<string, EventObserver<T>> observers = new();
-    private readonly int maxObserverCount;
-    private readonly string eventName;
+    private readonly Dictionary<string, EventObserver<T>> observers = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
@@ -33,20 +31,20 @@ public class ObservableEvent<T>
     /// <param name="maxObserverCount">The maximum number of handlers that may observe this event.</param>
     public ObservableEvent(string eventName, int maxObserverCount)
     {
-        this.eventName = eventName;
-        this.maxObserverCount = maxObserverCount;
+        this.EventName = eventName;
+        this.MaxObserverCount = maxObserverCount;
     }
 
     /// <summary>
     /// Gets the name of this observable event.
     /// </summary>
-    public string EventName => this.eventName;
+    public string EventName { get; }
 
     /// <summary>
     /// Gets the maximum number of observers that may observe this event.
     /// A value of zero (0) indicates an unlimited number of observers.
     /// </summary>
-    public int MaxObserverCount => this.maxObserverCount;
+    public int MaxObserverCount { get; }
 
     /// <summary>
     /// Gets the current number of observers that are observing this event.
@@ -99,9 +97,9 @@ public class ObservableEvent<T>
     /// </exception>
     public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None, string description = "")
     {
-        if (this.maxObserverCount > 0 && this.observers.Count == this.maxObserverCount)
+        if (this.MaxObserverCount > 0 && this.observers.Count == this.MaxObserverCount)
         {
-            throw new WebDriverBiDiException($"""This observable event only allows {this.maxObserverCount} {(this.maxObserverCount == 1 ? "handler" : "handlers")}.""");
+            throw new WebDriverBiDiException($"""This observable event only allows {this.MaxObserverCount} {(this.MaxObserverCount == 1 ? "handler" : "handlers")}.""");
         }
 
         EventObserver<T> observer = new(this, handler, handlerOptions, description);

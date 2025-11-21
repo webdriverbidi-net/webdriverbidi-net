@@ -106,7 +106,7 @@ public class NetworkModuleTests
 
         AddInterceptCommandParameters commandParameters = new()
         {
-            UrlPatterns = new List<UrlPattern>() { new UrlPatternString("https://example.com/*") }
+            UrlPatterns = [new UrlPatternString("https://example.com/*")]
         };
         commandParameters.Phases.Add(InterceptPhase.BeforeRequestSent);
         Task<AddInterceptCommandResult> task = module.AddInterceptAsync(commandParameters);

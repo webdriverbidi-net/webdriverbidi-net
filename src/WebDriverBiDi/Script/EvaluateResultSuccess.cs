@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record EvaluateResultSuccess : EvaluateResult
 {
-    private RemoteValue result = new("null");
-
     /// <summary>
     /// Initializes a new instance of the <see cref="EvaluateResultSuccess"/> class.
     /// </summary>
@@ -28,5 +26,5 @@ public record EvaluateResultSuccess : EvaluateResult
     /// </summary>
     [JsonPropertyName("result")]
     [JsonInclude]
-    public RemoteValue Result { get => this.result; private set => this.result = value; }
+    public RemoteValue Result { get; private set; } = new("null");
 }

@@ -15,9 +15,6 @@ public class InnerTextLocator : Locator
 {
     private readonly string type = "innerText";
     private readonly string value;
-    private bool? ignoreCase;
-    private InnerTextMatchType? matchType;
-    private ulong? maxDepth;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InnerTextLocator"/> class.
@@ -47,7 +44,7 @@ public class InnerTextLocator : Locator
     /// </summary>
     [JsonPropertyName("ignoreCase")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? IgnoreCase { get => this.ignoreCase; set => this.ignoreCase = value; }
+    public bool? IgnoreCase { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating the type of match for the text, partial or full.
@@ -55,7 +52,7 @@ public class InnerTextLocator : Locator
     /// </summary>
     [JsonPropertyName("matchType")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public InnerTextMatchType? MatchType { get => this.matchType; set => this.matchType = value; }
+    public InnerTextMatchType? MatchType { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating the maximum depth to which to search for nodes.
@@ -64,5 +61,5 @@ public class InnerTextLocator : Locator
     /// </summary>
     [JsonPropertyName("maxDepth")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? MaxDepth { get => this.maxDepth; set => this.maxDepth = value; }
+    public ulong? MaxDepth { get; set; }
 }

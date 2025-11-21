@@ -12,13 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
 {
-    private string browsingContextId = string.Empty;
-    private string address = string.Empty;
-    private string serviceUuid = string.Empty;
-    private string characteristicUuid = string.Empty;
-    private CharacteristicEventGeneratedType type = CharacteristicEventGeneratedType.Read;
-    private List<uint>? data;
-
     [JsonConstructor]
     private CharacteristicEventGeneratedEventArgs()
     {
@@ -30,7 +23,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId;  private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the address of the device generating the characteristic event..
@@ -38,7 +31,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("address")]
     [JsonRequired]
     [JsonInclude]
-    public string Address { get => this.address; private set => this.address = value; }
+    public string Address { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the service generating the characteristic event.
@@ -46,7 +39,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("serviceUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string ServiceUuid { get => this.serviceUuid; private set => this.serviceUuid = value; }
+    public string ServiceUuid { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the characteristic generating the characteristic event.
@@ -54,7 +47,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("characteristicUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string CharacteristicUuid { get => this.characteristicUuid; private set => this.characteristicUuid = value; }
+    public string CharacteristicUuid { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the type of the characteristic event.
@@ -62,18 +55,18 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public CharacteristicEventGeneratedType Type { get => this.type; private set => this.type = value; }
+    public CharacteristicEventGeneratedType Type { get; private set; } = CharacteristicEventGeneratedType.Read;
 
     /// <summary>
     /// Gets the read-only data for the event, if any.
     /// </summary>
     [JsonIgnore]
-    public IList<uint>? Data => this.data?.AsReadOnly();
+    public IList<uint>? Data => this.SerializableData?.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the read-only data for the event.
     /// </summary>
     [JsonPropertyName("data")]
     [JsonInclude]
-    internal List<uint>? SerializableData { get => this.data; set => this.data = value; }
+    internal List<uint>? SerializableData { get; set; }
 }

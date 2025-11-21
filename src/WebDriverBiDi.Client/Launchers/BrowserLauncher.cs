@@ -12,12 +12,6 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public abstract class BrowserLauncher
 {
-    private readonly string launcherPath;
-    private string browserExecutableLocation;
-    private TimeSpan initializationTimeout = TimeSpan.FromSeconds(20);
-    private string webSocketUrl = string.Empty;
-    private int launcherPort;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
     /// </summary>
@@ -26,9 +20,9 @@ public abstract class BrowserLauncher
     /// <param name="browserExecutableLocation">The path containing the directory and file name of the browser executable. Default to an empty string, indicating to use the default installed browser.</param>
     protected BrowserLauncher(string launcherExecutablePath, int port, string browserExecutableLocation)
     {
-        this.launcherPath = launcherExecutablePath;
-        this.launcherPort = port;
-        this.browserExecutableLocation = browserExecutableLocation;
+        this.LauncherPath = launcherExecutablePath;
+        this.Port = port;
+        this.BrowserExecutableLocation = browserExecutableLocation;
     }
 
     /// <summary>
@@ -39,17 +33,17 @@ public abstract class BrowserLauncher
     /// <summary>
     /// Gets or sets a value indicating the time to wait for an initial connection before timing out.
     /// </summary>
-    public TimeSpan InitializationTimeout { get => this.initializationTimeout; set => this.initializationTimeout = value; }
+    public TimeSpan InitializationTimeout { get; set; } = TimeSpan.FromSeconds(20);
 
     /// <summary>
     /// Gets or sets the WebSocket URL for communicating with the browser via the WebDriver BiDi protocol.
     /// </summary>
-    public string WebSocketUrl { get => this.webSocketUrl; protected set => this.webSocketUrl = value; }
+    public string WebSocketUrl { get; protected set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the port on which the launcher should listen.
     /// </summary>
-    public int Port { get => this.launcherPort; set => this.launcherPort = value; }
+    public int Port { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the launched browser has a provided WebDriver BiDi
@@ -60,12 +54,12 @@ public abstract class BrowserLauncher
     /// <summary>
     /// Gets or sets the location of the browser executable.
     /// </summary>
-    protected string BrowserExecutableLocation { get => this.browserExecutableLocation; set => this.browserExecutableLocation = value; }
+    protected string BrowserExecutableLocation { get; set; }
 
     /// <summary>
     /// Gets the path of the directory containing the launcher executable.
     /// </summary>
-    protected string LauncherPath => this.launcherPath;
+    protected string LauncherPath { get; }
 
     /// <summary>
     /// Creates a launcher for the specified browser.

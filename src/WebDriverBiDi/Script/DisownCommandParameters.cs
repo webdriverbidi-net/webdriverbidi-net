@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class DisownCommandParameters : CommandParameters<DisownCommandResult>
 {
-    private List<string> handles = new();
-    private Target target;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DisownCommandParameters"/> class.
     /// </summary>
@@ -22,8 +19,8 @@ public class DisownCommandParameters : CommandParameters<DisownCommandResult>
     /// <param name="handleValues">The handles to disown.</param>
     public DisownCommandParameters(Target target, params string[] handleValues)
     {
-        this.target = target;
-        this.handles.AddRange(handleValues);
+        this.Target = target;
+        this.Handles.AddRange(handleValues);
     }
 
     /// <summary>
@@ -36,11 +33,11 @@ public class DisownCommandParameters : CommandParameters<DisownCommandResult>
     /// Gets or sets the target for which to disown handles.
     /// </summary>
     [JsonPropertyName("target")]
-    public Target Target { get => this.target; set => this.target = value; }
+    public Target Target { get; set; }
 
     /// <summary>
     /// Gets or sets the list of handles to disown.
     /// </summary>
     [JsonPropertyName("handles")]
-    public List<string> Handles { get => this.handles; set => this.handles = value; }
+    public List<string> Handles { get; set; } = [];
 }

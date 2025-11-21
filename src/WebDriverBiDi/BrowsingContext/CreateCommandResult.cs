@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record CreateCommandResult : CommandResult
 {
-    private string contextId = string.Empty;
-
     [JsonConstructor]
     private CreateCommandResult()
     {
@@ -25,5 +23,5 @@ public record CreateCommandResult : CommandResult
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.contextId; private set => this.contextId = value; }
+    public string BrowsingContextId { get; private set; } = string.Empty;
 }

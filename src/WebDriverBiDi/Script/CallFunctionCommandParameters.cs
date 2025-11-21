@@ -12,15 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
 {
-    private readonly List<ArgumentValue> arguments = new();
-    private string functionDeclaration;
-    private Target scriptTarget;
-    private bool awaitPromise;
-    private ArgumentValue? thisObject;
-    private ResultOwnership? resultOwnership;
-    private SerializationOptions? serializationOptions;
-    private bool? userActivation;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CallFunctionCommandParameters"/> class.
     /// </summary>
@@ -29,9 +20,9 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// <param name="awaitPromise"><see langword="true" /> to await the script evaluation as a Promise; otherwise, <see langword="false" />.</param>
     public CallFunctionCommandParameters(string functionDeclaration, Target scriptTarget, bool awaitPromise)
     {
-        this.functionDeclaration = functionDeclaration;
-        this.scriptTarget = scriptTarget;
-        this.awaitPromise = awaitPromise;
+        this.FunctionDeclaration = functionDeclaration;
+        this.ScriptTarget = scriptTarget;
+        this.AwaitPromise = awaitPromise;
     }
 
     /// <summary>
@@ -44,53 +35,53 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// Gets or sets the function declaration.
     /// </summary>
     [JsonPropertyName("functionDeclaration")]
-    public string FunctionDeclaration { get => this.functionDeclaration; set => this.functionDeclaration = value; }
+    public string FunctionDeclaration { get; set; }
 
     /// <summary>
     /// Gets or sets the script target against which to call the function.
     /// </summary>
     [JsonPropertyName("target")]
-    public Target ScriptTarget { get => this.scriptTarget; set => this.scriptTarget = value; }
+    public Target ScriptTarget { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to wait for the function execution to complete.
     /// </summary>
     [JsonPropertyName("awaitPromise")]
-    public bool AwaitPromise { get => this.awaitPromise; set => this.awaitPromise = value; }
+    public bool AwaitPromise { get; set; }
 
     /// <summary>
     /// Gets or sets the item to use as the 'this' object when the function is called.
     /// </summary>
     [JsonPropertyName("this")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ArgumentValue? ThisObject { get => this.thisObject; set => this.thisObject = value; }
+    public ArgumentValue? ThisObject { get; set; }
 
     /// <summary>
     /// Gets the list of arguments to pass to the function.
     /// </summary>
     [JsonIgnore]
-    public List<ArgumentValue> Arguments => this.arguments;
+    public List<ArgumentValue> Arguments { get; } = [];
 
     /// <summary>
     /// Gets or sets the ownership model to use for objects in the function call.
     /// </summary>
     [JsonPropertyName("resultOwnership")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ResultOwnership? ResultOwnership { get => this.resultOwnership; set => this.resultOwnership = value; }
+    public ResultOwnership? ResultOwnership { get; set; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing results.
     /// </summary>
     [JsonPropertyName("serializationOptions")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
+    public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to activate the browsing context when calling the function. When omitted, is treated as if false.
     /// </summary>
     [JsonPropertyName("userActivation")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public bool? UserActivation { get => this.userActivation; set => this.userActivation = value; }
+    public bool? UserActivation { get; set; }
 
     /// <summary>
     /// Gets the list of arguments for serialization purposes.
@@ -102,12 +93,12 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     {
         get
         {
-            if (this.arguments.Count == 0)
+            if (this.Arguments.Count == 0)
             {
                 return null;
             }
 
-            return this.arguments.AsReadOnly();
+            return this.Arguments.AsReadOnly();
         }
     }
 }

@@ -18,8 +18,8 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     where T : struct, Enum
 {
     private readonly T? defaultValue;
-    private readonly Dictionary<T, string> enumValuesToStrings = new();
-    private readonly Dictionary<string, T> stringToEnumValues = new();
+    private readonly Dictionary<T, string> enumValuesToStrings = [];
+    private readonly Dictionary<string, T> stringToEnumValues = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EnumValueJsonConverter{T}"/> class.

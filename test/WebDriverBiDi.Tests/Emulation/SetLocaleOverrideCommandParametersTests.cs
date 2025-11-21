@@ -51,11 +51,11 @@ public class SetLocaleOverrideCoordinatesCommandParametersTests
     {
         SetLocaleOverrideCommandParameters properties = new()
         {
-            Contexts = new()
-            {
+            Contexts =
+            [
                 "context1",
                 "context2",
-            }
+            ]
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -81,11 +81,11 @@ public class SetLocaleOverrideCoordinatesCommandParametersTests
     {
         SetLocaleOverrideCommandParameters properties = new()
         {
-            UserContexts = new()
-            {
+            UserContexts =
+            [
                 "userContext1",
                 "userContext2",
-            }
+            ]
         };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

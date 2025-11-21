@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetDownloadBehaviorCommandParameters : CommandParameters<SetDownloadBehaviorCommandResult>
 {
-    private DownloadBehavior? downloadBehavior;
-    private List<string>? userContexts;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetDownloadBehaviorCommandParameters"/> class.
     /// </summary>
@@ -34,12 +31,12 @@ public class SetDownloadBehaviorCommandParameters : CommandParameters<SetDownloa
     /// </summary>
     [JsonPropertyName("downloadBehavior")]
     [JsonInclude]
-    public DownloadBehavior? DownloadBehavior { get => this.downloadBehavior; set => this.downloadBehavior = value; }
+    public DownloadBehavior? DownloadBehavior { get; set; }
 
     /// <summary>
     /// Gets or sets the list of user contexts for which to set the download behavior.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

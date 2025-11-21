@@ -10,7 +10,6 @@ namespace WebDriverBiDi.Client.Inputs;
 /// </summary>
 public class Action
 {
-    private readonly string sourceId;
     private readonly object action;
 
     /// <summary>
@@ -20,14 +19,14 @@ public class Action
     /// <param name="action">The object representing the action.</param>
     public Action(string sourceId, object action)
     {
-        this.sourceId = sourceId;
+        this.SourceId = sourceId;
         this.action = action;
     }
 
     /// <summary>
     /// Gets the ID of the <see cref="InputSource"/> for which this action applies.
     /// </summary>
-    public string SourceId => this.sourceId;
+    public string SourceId { get; }
 
     /// <summary>
     /// Converts this action into the appropriate type for adding to the input queue.

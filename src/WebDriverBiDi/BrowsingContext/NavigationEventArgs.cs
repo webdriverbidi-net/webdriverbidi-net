@@ -13,22 +13,13 @@ using WebDriverBiDi.Internal;
 /// </summary>
 public record NavigationEventArgs : WebDriverBiDiEventArgs
 {
-    private string? id;
-
-    private string browsingContextId = string.Empty;
-
-    private string url = string.Empty;
-
-    private long epochTimestamp = 0;
-
-    private DateTime timestamp;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="NavigationEventArgs" /> class.
     /// </summary>
     [JsonConstructor]
     public NavigationEventArgs()
     {
+        this.EpochTimestamp = 0;
     }
 
     /// <summary>
@@ -37,7 +28,7 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("navigation")]
     [JsonRequired]
     [JsonInclude]
-    public string? NavigationId { get => this.id; private set => this.id = value; }
+    public string? NavigationId { get; private set; }
 
     /// <summary>
     /// Gets the ID of the browsing context being navigated.
@@ -45,7 +36,7 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the URL to which the browsing context is being navigated.
@@ -53,13 +44,13 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get => this.url; private set => this.url = value; }
+    public string Url { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     [JsonIgnore]
-    public DateTime Timestamp => this.timestamp;
+    public DateTime Timestamp { get; private set; }
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
@@ -69,15 +60,11 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonInclude]
     public long EpochTimestamp
     {
-        get
-        {
-            return this.epochTimestamp;
-        }
-
+        get;
         private set
         {
-            this.epochTimestamp = value;
-            this.timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
+            field = value;
+            this.Timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
         }
     }
 }

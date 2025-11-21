@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ScreenArea
 {
-    private ulong height = 0;
-    private ulong width = 0;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ScreenArea"/> class.
     /// </summary>
@@ -27,11 +24,11 @@ public class ScreenArea
     /// Gets or sets the height of the screen.
     /// </summary>
     [JsonPropertyName("height")]
-    public ulong Height { get => this.height; set => this.height = value; }
+    public ulong Height { get; set; } = 0;
 
     /// <summary>
     /// Gets or sets the width of the screen.
     /// </summary>
     [JsonPropertyName("width")]
-    public ulong Width { get => this.width; set => this.width = value; }
+    public ulong Width { get; set; } = 0;
 }

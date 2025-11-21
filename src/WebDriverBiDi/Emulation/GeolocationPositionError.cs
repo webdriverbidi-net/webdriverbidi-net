@@ -12,11 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class GeolocationPositionError
 {
-    private readonly string type = "positionUnavailable";
-
     /// <summary>
     /// Gets the type of the error.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get => this.type; }
+    public string Type { get; } = "positionUnavailable";
 }

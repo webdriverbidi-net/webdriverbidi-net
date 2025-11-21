@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class CookieHeader
 {
-    private string name = string.Empty;
-    private BytesValue value = BytesValue.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CookieHeader"/> class.
     /// </summary>
@@ -30,8 +27,8 @@ public class CookieHeader
     /// <param name="value">The string value of the header.</param>
     public CookieHeader(string name, string value)
     {
-        this.name = name;
-        this.value = BytesValue.FromString(value);
+        this.Name = name;
+        this.Value = BytesValue.FromString(value);
     }
 
     /// <summary>
@@ -39,12 +36,12 @@ public class CookieHeader
     /// </summary>
     [JsonPropertyName("name")]
     [JsonRequired]
-    public string Name { get => this.name; set => this.name = value; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the value of the header.
     /// </summary>
     [JsonPropertyName("value")]
     [JsonRequired]
-    public BytesValue Value { get => this.value; set => this.value = value; }
+    public BytesValue Value { get; set; } = BytesValue.Empty;
 }

@@ -16,8 +16,6 @@ using System.Text.Json.Serialization;
 [JsonDerivedType(typeof(NoneSourceActions))]
 public abstract class SourceActions
 {
-    private readonly string id = Guid.NewGuid().ToString();
-
     /// <summary>
     /// Gets the type of the source actions.
     /// </summary>
@@ -28,5 +26,5 @@ public abstract class SourceActions
     /// Gets the ID of the device.
     /// </summary>
     [JsonPropertyName("id")]
-    public string Id => this.id;
+    public string Id { get; } = Guid.NewGuid().ToString();
 }

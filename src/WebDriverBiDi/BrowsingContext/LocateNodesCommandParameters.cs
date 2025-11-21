@@ -13,12 +13,6 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommandResult>
 {
-    private readonly List<SharedReference> contextNodes = new();
-    private string browsingContextId;
-    private Locator locator;
-    private ulong? maxNodeCount;
-    private SerializationOptions? serializationOptions;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="LocateNodesCommandParameters"/> class.
     /// </summary>
@@ -26,8 +20,8 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// <param name="locator">The locator used to locate nodes.</param>
     public LocateNodesCommandParameters(string browsingContextId, Locator locator)
     {
-        this.browsingContextId = browsingContextId;
-        this.locator = locator;
+        this.BrowsingContextId = browsingContextId;
+        this.Locator = locator;
     }
 
     /// <summary>
@@ -41,14 +35,14 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the locator used to locate nodes.
     /// </summary>
     [JsonPropertyName("locator")]
     [JsonRequired]
-    public Locator Locator { get => this.locator; set => this.locator = value; }
+    public Locator Locator { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of nodes to be returned by the command.
@@ -56,21 +50,21 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// </summary>
     [JsonPropertyName("maxNodeCount")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ulong? MaxNodeCount { get => this.maxNodeCount; set => this.maxNodeCount = value; }
+    public ulong? MaxNodeCount { get; set; }
 
     /// <summary>
     /// Gets or sets the serialization options for serializing located node references.
     /// </summary>
     [JsonPropertyName("serializationOptions")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public SerializationOptions? SerializationOptions { get => this.serializationOptions; set => this.serializationOptions = value; }
+    public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
     /// Gets the list of context nodes within which to locate child nodes.
     /// If empty, nodes will be located from the top-level document.
     /// </summary>
     [JsonIgnore]
-    public List<SharedReference> ContextNodes => this.contextNodes;
+    public List<SharedReference> ContextNodes { get; } = [];
 
     /// <summary>
     /// Gets the list of context nodes for serialization purposes.
@@ -82,12 +76,12 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     {
         get
         {
-            if (this.contextNodes.Count == 0)
+            if (this.ContextNodes.Count == 0)
             {
                 return null;
             }
 
-            return this.contextNodes.AsReadOnly();
+            return this.ContextNodes.AsReadOnly();
         }
     }
 }

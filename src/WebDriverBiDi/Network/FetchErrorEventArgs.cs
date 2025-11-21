@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record FetchErrorEventArgs : BaseNetworkEventArgs
 {
-    private string errorText = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="FetchErrorEventArgs"/> class.
     /// </summary>
@@ -28,5 +26,5 @@ public record FetchErrorEventArgs : BaseNetworkEventArgs
     [JsonPropertyName("errorText")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorText { get => this.errorText; private set => this.errorText = value; }
+    public string ErrorText { get; private set; } = string.Empty;
 }

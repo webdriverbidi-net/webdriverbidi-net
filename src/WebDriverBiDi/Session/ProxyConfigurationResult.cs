@@ -14,7 +14,6 @@ using WebDriverBiDi.Internal;
 public record ProxyConfigurationResult
 {
     private readonly ProxyConfiguration proxy;
-    private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProxyConfigurationResult"/> class.
@@ -23,6 +22,7 @@ public record ProxyConfigurationResult
     internal ProxyConfigurationResult(ProxyConfiguration proxy)
     {
         this.proxy = proxy;
+        this.AdditionalData = ReceivedDataDictionary.EmptyDictionary;
     }
 
     /// <summary>
@@ -37,13 +37,15 @@ public record ProxyConfigurationResult
     {
         get
         {
-            if (this.proxy.AdditionalData.Count > 0 && this.additionalData.Count == 0)
+            if (this.proxy.AdditionalData.Count > 0 && field.Count == 0)
             {
-                this.additionalData = JsonConverterUtilities.ConvertIncomingExtensionData(this.ConvertIncomingExtensionData());
+                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.ConvertIncomingExtensionData());
             }
 
-            return this.additionalData;
+            return field;
         }
+
+        private set;
     }
 
     /// <summary>
@@ -73,7 +75,7 @@ public record ProxyConfigurationResult
         // ASSUMPTION: Every object in the deserialized ProxyConfiguration is a
         // JsonElement. Since we control the deserialization, this should always
         // be true. If not, this will throw.
-        Dictionary<string, JsonElement> convertedData = new();
+        Dictionary<string, JsonElement> convertedData = [];
         foreach (KeyValuePair<string, object?> pair in this.proxy.AdditionalData)
         {
             convertedData[pair.Key] = (JsonElement)pair.Value!;

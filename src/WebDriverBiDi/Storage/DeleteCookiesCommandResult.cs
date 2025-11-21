@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record DeleteCookiesCommandResult : CommandResult
 {
-    private PartitionKey partitionKey = new();
-
     [JsonConstructor]
     private DeleteCookiesCommandResult()
     {
@@ -25,5 +23,5 @@ public record DeleteCookiesCommandResult : CommandResult
     [JsonPropertyName("partitionKey")]
     [JsonRequired]
     [JsonInclude]
-    public PartitionKey PartitionKey { get => this.partitionKey; private set => this.partitionKey = value; }
+    public PartitionKey PartitionKey { get; private set; } = new();
 }

@@ -12,13 +12,11 @@ namespace WebDriverBiDi;
 public class EventObserver<T>
     where T : WebDriverBiDiEventArgs
 {
-    private readonly string id = Guid.NewGuid().ToString();
     private readonly string description;
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
-    private readonly List<Task> capturedTasks = new();
-    private bool isCapturing = false;
+    private readonly List<Task> capturedTasks = [];
     private CountdownEvent synchronizationCounter = new(0);
 
     /// <summary>
@@ -35,7 +33,7 @@ public class EventObserver<T>
         this.handlerOptions = handlerOptions;
         if (string.IsNullOrEmpty(description))
         {
-            this.description = $"EventObserver<{typeof(T).Name}> (id: {this.id})";
+            this.description = $"EventObserver<{typeof(T).Name}> (id: {this.Id})";
         }
         else
         {
@@ -46,19 +44,19 @@ public class EventObserver<T>
     /// <summary>
     /// Gets a value indicating whether a checkpoint is set for this observer.
     /// </summary>
-    public bool IsCheckpointSet => this.isCapturing;
+    public bool IsCheckpointSet { get; private set; } = false;
 
     /// <summary>
     /// Gets the internal unique identifier of this observer.
     /// </summary>
-    internal string Id => this.id;
+    internal string Id { get; } = Guid.NewGuid().ToString();
 
     /// <summary>
     /// Stops observing the event.
     /// </summary>
     public void Unobserve()
     {
-        this.observableEvent.RemoveObserver(this.id);
+        this.observableEvent.RemoveObserver(this.Id);
     }
 
     /// <summary>
@@ -75,13 +73,13 @@ public class EventObserver<T>
             throw new ArgumentException("Number of notifications must be greater than 1.", nameof(numberOfNotifications));
         }
 
-        if (this.isCapturing)
+        if (this.IsCheckpointSet)
         {
             throw new WebDriverBiDiException("This observer already has a checkpoint set. It must be satisfied or unset before setting another.");
         }
 
         this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
-        this.isCapturing = true;
+        this.IsCheckpointSet = true;
     }
 
     /// <summary>
@@ -94,7 +92,7 @@ public class EventObserver<T>
     /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
     public bool WaitForCheckpoint(TimeSpan timeout)
     {
-        if (!this.isCapturing)
+        if (!this.IsCheckpointSet)
         {
             return true;
         }
@@ -127,7 +125,7 @@ public class EventObserver<T>
     /// </summary>
     public void UnsetCheckpoint()
     {
-        this.isCapturing = false;
+        this.IsCheckpointSet = false;
     }
 
     /// <summary>
@@ -152,7 +150,7 @@ public class EventObserver<T>
             await executingTask.ConfigureAwait(false);
         }
 
-        if (this.isCapturing && !this.synchronizationCounter.IsSet)
+        if (this.IsCheckpointSet && !this.synchronizationCounter.IsSet)
         {
             this.capturedTasks.Add(executingTask);
             this.synchronizationCounter.Signal();

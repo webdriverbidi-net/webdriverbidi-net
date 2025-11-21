@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class TraverseHistoryCommandParameters : CommandParameters<TraverseHistoryCommandResult>
 {
-    private string browsingContextId;
-    private long delta;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="TraverseHistoryCommandParameters"/> class.
     /// </summary>
@@ -22,8 +19,8 @@ public class TraverseHistoryCommandParameters : CommandParameters<TraverseHistor
     /// <param name="delta">The number of positions, forward or backward, to move in the browser history.</param>
     public TraverseHistoryCommandParameters(string browsingContextId, long delta)
     {
-        this.browsingContextId = browsingContextId;
-        this.delta = delta;
+        this.BrowsingContextId = browsingContextId;
+        this.Delta = delta;
     }
 
     /// <summary>
@@ -37,7 +34,7 @@ public class TraverseHistoryCommandParameters : CommandParameters<TraverseHistor
     /// </summary>
     [JsonPropertyName("context")]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId; set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the number of entries in the history to traverse in the browser history. Positive
@@ -45,5 +42,5 @@ public class TraverseHistoryCommandParameters : CommandParameters<TraverseHistor
     /// </summary>
     [JsonPropertyName("delta")]
     [JsonInclude]
-    public long Delta { get => this.delta; set => this.delta = value; }
+    public long Delta { get; set; }
 }

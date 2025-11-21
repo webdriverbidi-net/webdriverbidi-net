@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record RegularExpressionValue
 {
-    private string pattern;
-    private string? flags;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RegularExpressionValue"/> class with a given pattern.
     /// </summary>
@@ -32,8 +29,8 @@ public record RegularExpressionValue
     /// <param name="flags">The flags used in the regular expression.</param>
     public RegularExpressionValue(string pattern, string? flags)
     {
-        this.pattern = pattern;
-        this.flags = flags;
+        this.Pattern = pattern;
+        this.Flags = flags;
     }
 
     /// <summary>
@@ -42,7 +39,7 @@ public record RegularExpressionValue
     [JsonPropertyName("pattern")]
     [JsonRequired]
     [JsonInclude]
-    public string Pattern { get => this.pattern; private set => this.pattern = value; }
+    public string Pattern { get; private set; }
 
     /// <summary>
     /// Gets the flags used in the regular expression.
@@ -50,5 +47,5 @@ public record RegularExpressionValue
     [JsonPropertyName("flags")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Flags { get => this.flags; private set => this.flags = value; }
+    public string? Flags { get; private set; }
 }

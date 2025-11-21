@@ -115,7 +115,7 @@ public class ReceivedDataDictionaryTests
 
     private class OnlyOverflowData
     {
-        private Dictionary<string, JsonElement> overflowData = new();
+        private Dictionary<string, JsonElement> overflowData = [];
         private ReceivedDataDictionary receivedData = ReceivedDataDictionary.EmptyDictionary;
 
         [JsonIgnore]

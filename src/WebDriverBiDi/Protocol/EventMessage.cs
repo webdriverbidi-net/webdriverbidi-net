@@ -12,14 +12,12 @@ using System.Text.Json.Serialization;
 /// </summary>
 public abstract class EventMessage : Message
 {
-    private string eventName = string.Empty;
-
     /// <summary>
     /// Gets the name of the event.
     /// </summary>
     [JsonPropertyName("method")]
     [JsonInclude]
-    public string EventName { get => this.eventName; private set => this.eventName = value; }
+    public string EventName { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the data for the event.

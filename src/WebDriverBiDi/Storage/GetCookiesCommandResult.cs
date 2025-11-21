@@ -13,9 +13,6 @@ using WebDriverBiDi.Network;
 /// </summary>
 public record GetCookiesCommandResult : CommandResult
 {
-    private List<Cookie> cookies = new();
-    private PartitionKey partitionKey = new();
-
     [JsonConstructor]
     private GetCookiesCommandResult()
     {
@@ -25,7 +22,7 @@ public record GetCookiesCommandResult : CommandResult
     /// Gets the read-only list of cookies returned by the command.
     /// </summary>
     [JsonIgnore]
-    public IList<Cookie> Cookies => this.cookies.AsReadOnly();
+    public IList<Cookie> Cookies => this.SerializableCookies.AsReadOnly();
 
     /// <summary>
     /// Gets the partition key for the list of returned cookies.
@@ -33,7 +30,7 @@ public record GetCookiesCommandResult : CommandResult
     [JsonPropertyName("partitionKey")]
     [JsonRequired]
     [JsonInclude]
-    public PartitionKey PartitionKey { get => this.partitionKey; private set => this.partitionKey = value; }
+    public PartitionKey PartitionKey { get; private set; } = new();
 
     /// <summary>
     /// Gets or sets the list of cookies returned by the command for serialization purposes.
@@ -41,5 +38,5 @@ public record GetCookiesCommandResult : CommandResult
     [JsonPropertyName("cookies")]
     [JsonRequired]
     [JsonInclude]
-    internal List<Cookie> SerializableCookies { get => this.cookies; set => this.cookies = value; }
+    internal List<Cookie> SerializableCookies { get; set; } = [];
 }

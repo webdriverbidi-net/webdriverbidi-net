@@ -13,10 +13,6 @@ using WebDriverBiDi.Storage;
 /// </summary>
 public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
 {
-    private string browsingContextId = string.Empty;
-    private string prompt = string.Empty;
-    private List<RequestDeviceInfo> devices = new();
-
     [JsonConstructor]
     private RequestDevicePromptUpdatedEventArgs()
     {
@@ -28,7 +24,7 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get => this.browsingContextId;  private set => this.browsingContextId = value; }
+    public string BrowsingContextId { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the ID of the prompt.
@@ -36,12 +32,12 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("prompt")]
     [JsonRequired]
     [JsonInclude]
-    public string Prompt { get => this.prompt; private set => this.prompt = value; }
+    public string Prompt { get; private set; } = string.Empty;
 
     /// <summary>
     /// Gets the read-only list of devices being requested in the prompt.
     /// </summary>
-    public IList<RequestDeviceInfo> Devices => this.devices.AsReadOnly();
+    public IList<RequestDeviceInfo> Devices => this.SerializableDevices.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the read-only list of devices being requested in the prompt.
@@ -49,5 +45,5 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("devices")]
     [JsonRequired]
     [JsonInclude]
-    internal List<RequestDeviceInfo> SerializableDevices { get => this.devices; set => this.devices = value; }
+    internal List<RequestDeviceInfo> SerializableDevices { get; set; } = [];
 }

@@ -18,20 +18,18 @@ using WebDriverBiDi.JsonConverters;
 /// </summary>
 public class Transport
 {
+    private const string EventReceivedEventName = "transport.eventReceived";
+    private const string ErrorReceivedEventName = "transport.errorReceived";
+    private const string UnknownMessageReceivedEventName = "transport.unknownMessageReceived";
+    private const string LogMessageEventName = "transport.logMessage";
+
     private readonly JsonSerializerOptions options = new()
     {
         TypeInfoResolver = new PrivateConstructorContractResolver(),
     };
 
-    private readonly Connection connection;
-    private readonly Dictionary<string, Type> eventMessageTypes = new();
+    private readonly Dictionary<string, Type> eventMessageTypes = [];
     private readonly UnhandledErrorCollection unhandledErrors = new();
-
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("transport.logMessage");
-    private readonly ObservableEvent<UnknownMessageReceivedEventArgs> onUnknownMessageReceivedEvent = new("transport.unknownMessageReceived");
-    private readonly ObservableEvent<ErrorReceivedEventArgs> onErrorReceivedEvent = new("transport.errorReceived");
-    private readonly ObservableEvent<EventReceivedEventArgs> onEventReceivedEvent = new("transport.eventReceived");
-
     private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {
         SingleReader = true,
@@ -58,7 +56,7 @@ public class Transport
     /// <param name="connection">The connection used to communicate with the protocol remote end.</param>
     public Transport(Connection connection)
     {
-        this.connection = connection;
+        this.Connection = connection;
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         connection.OnLogMessage.AddObserver(this.OnConnectionLogMessageAsync);
     }
@@ -66,23 +64,23 @@ public class Transport
     /// <summary>
     /// Gets an observable event that notifies when an event is received from the protocol.
     /// </summary>
-    public ObservableEvent<EventReceivedEventArgs> OnEventReceived => this.onEventReceivedEvent;
+    public ObservableEvent<EventReceivedEventArgs> OnEventReceived { get; } = new(EventReceivedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when an error is received from the protocol
     /// that is not the result of a command execution.
     /// </summary>
-    public ObservableEvent<ErrorReceivedEventArgs> OnErrorEventReceived => this.onErrorReceivedEvent;
+    public ObservableEvent<ErrorReceivedEventArgs> OnErrorEventReceived { get; } = new(ErrorReceivedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when an unknown message is received from the protocol.
     /// </summary>
-    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived => this.onUnknownMessageReceivedEvent;
+    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; } = new(UnknownMessageReceivedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new(LogMessageEventName);
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
@@ -123,7 +121,7 @@ public class Transport
     /// <summary>
     /// Gets the connection used to communicate with the browser.
     /// </summary>
-    protected Connection Connection => this.connection;
+    protected Connection Connection { get; }
 
     /// <summary>
     /// Asynchronously connects to the remote end web socket.
@@ -134,7 +132,7 @@ public class Transport
     {
         if (this.isConnected)
         {
-            throw new WebDriverBiDiException($"The transport is already connected to {this.connection.ConnectedUrl}; you must disconnect before connecting to another URL");
+            throw new WebDriverBiDiException($"The transport is already connected to {this.Connection.ConnectedUrl}; you must disconnect before connecting to another URL");
         }
 
         if (!this.pendingCommands.IsAcceptingCommands)
@@ -153,10 +151,10 @@ public class Transport
         // Reset the command counter for each connection.
         this.nextCommandId = 0;
         this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
-        if (!this.connection.IsActive)
+        if (!this.Connection.IsActive)
         {
             // Allow for the possibility of the connection to already being opened.
-            await this.connection.StartAsync(websocketUri).ConfigureAwait(false);
+            await this.Connection.StartAsync(websocketUri).ConfigureAwait(false);
         }
 
         this.isConnected = true;
@@ -194,7 +192,7 @@ public class Transport
         Command command = new(commandId, commandData);
         this.pendingCommands.AddPendingCommand(command);
         byte[] commandJson = this.SerializeCommand(command);
-        await this.connection.SendDataAsync(commandJson).ConfigureAwait(false);
+        await this.Connection.SendDataAsync(commandJson).ConfigureAwait(false);
         return command;
     }
 
@@ -258,7 +256,7 @@ public class Transport
         // Close the pending command collection to further addition of commands,
         // and stop the connection from receiving further communication traffic.
         this.pendingCommands.Close();
-        await this.connection.StopAsync().ConfigureAwait(false);
+        await this.Connection.StopAsync().ConfigureAwait(false);
 
         // Mark the incoming message queue as complete for writing, indicating
         // no further messages will be written to the queue. Existing messages
@@ -293,7 +291,7 @@ public class Transport
     {
         try
         {
-            await this.onEventReceivedEvent.NotifyObserversAsync(e);
+            await this.OnEventReceived.NotifyObserversAsync(e);
         }
         catch (Exception ex)
         {
@@ -303,12 +301,12 @@ public class Transport
 
     private async Task OnProtocolErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        await this.onErrorReceivedEvent.NotifyObserversAsync(e);
+        await this.OnErrorEventReceived.NotifyObserversAsync(e);
     }
 
     private async Task OnProtocolUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
-        await this.onUnknownMessageReceivedEvent.NotifyObserversAsync(e);
+        await this.OnUnknownMessageReceived.NotifyObserversAsync(e);
     }
 
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
@@ -355,7 +353,7 @@ public class Transport
                 {
                     isProcessed = this.ProcessCommandResponseMessage(messageRootElement);
 
-                    if (this.onLogMessageEvent.CurrentObserverCount > 0)
+                    if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
                         await this.LogAsync($"Command response message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
                     }
@@ -364,7 +362,7 @@ public class Transport
                 {
                     isProcessed = await this.ProcessErrorMessageAsync(messageRootElement);
 
-                    if (this.onLogMessageEvent.CurrentObserverCount > 0)
+                    if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
                         await this.LogAsync($"Error response message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
                     }
@@ -373,7 +371,7 @@ public class Transport
                 {
                     isProcessed = await this.ProcessEventMessageAsync(messageRootElement);
 
-                    if (this.onLogMessageEvent.CurrentObserverCount > 0)
+                    if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
                         await this.LogAsync($"Event message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
                     }
@@ -507,12 +505,12 @@ public class Transport
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.onLogMessageEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Transport"));
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Transport"));
     }
 
     private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.onLogMessageEvent.NotifyObserversAsync(e);
+        await this.OnLogMessage.NotifyObserversAsync(e);
     }
 
     private Exception CreateTerminationException()

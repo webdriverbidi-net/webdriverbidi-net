@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record WindowProxyProperties
 {
-    private string context = string.Empty;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WindowProxyProperties"/> class.
     /// </summary>
@@ -28,5 +26,5 @@ public record WindowProxyProperties
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string Context { get => this.context; private set => this.context = value; }
+    public string Context { get; private set; } = string.Empty;
 }

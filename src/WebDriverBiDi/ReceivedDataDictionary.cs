@@ -28,7 +28,7 @@ public sealed class ReceivedDataDictionary : ReadOnlyDictionary<string, object?>
     /// <summary>
     /// Gets an empty dictionary.
     /// </summary>
-    public static ReceivedDataDictionary EmptyDictionary => new(new Dictionary<string, object?>());
+    public static ReceivedDataDictionary EmptyDictionary => new([]);
 
     /// <summary>
     /// Gets a writable copy of this dictionary.
@@ -36,7 +36,7 @@ public sealed class ReceivedDataDictionary : ReadOnlyDictionary<string, object?>
     /// <returns>A writable dictionary containing a copy of the data in this ReceivedDataDictionary.</returns>
     public Dictionary<string, object?> ToWritableCopy()
     {
-        Dictionary<string, object?> result = new();
+        Dictionary<string, object?> result = [];
         foreach (KeyValuePair<string, object?> pair in this.Dictionary)
         {
             if (pair.Value is ReceivedDataDictionary dictionary)

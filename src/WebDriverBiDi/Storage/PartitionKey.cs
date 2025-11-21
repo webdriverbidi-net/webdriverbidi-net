@@ -14,17 +14,13 @@ using WebDriverBiDi.Internal;
 /// </summary>
 public record PartitionKey
 {
-    private string? userContextId;
-    private string? sourceOrigin;
-    private Dictionary<string, JsonElement> writableAdditionalData = new();
-    private ReceivedDataDictionary additionalData = ReceivedDataDictionary.EmptyDictionary;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="PartitionKey"/> class.
     /// </summary>
     [JsonConstructor]
     internal PartitionKey()
     {
+        this.AdditionalData = ReceivedDataDictionary.EmptyDictionary;
     }
 
     /// <summary>
@@ -32,14 +28,14 @@ public record PartitionKey
     /// </summary>
     [JsonPropertyName("userContext")]
     [JsonInclude]
-    public string? UserContextId { get => this.userContextId; private set => this.userContextId = value; }
+    public string? UserContextId { get; private set; }
 
     /// <summary>
     /// Gets the source origin of the cookie partition key.
     /// </summary>
     [JsonPropertyName("sourceOrigin")]
     [JsonInclude]
-    public string? SourceOrigin { get => this.sourceOrigin; private set => this.sourceOrigin = value; }
+    public string? SourceOrigin { get; private set; }
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.
@@ -49,12 +45,12 @@ public record PartitionKey
     {
         get
         {
-            if (this.writableAdditionalData.Count > 0 && this.additionalData.Count == 0)
+            if (this.SerializableAdditionalData.Count > 0 && field.Count == 0)
             {
-                this.additionalData = JsonConverterUtilities.ConvertIncomingExtensionData(this.writableAdditionalData);
+                field = JsonConverterUtilities.ConvertIncomingExtensionData(this.SerializableAdditionalData);
             }
 
-            return this.additionalData;
+            return field;
         }
     }
 
@@ -63,5 +59,5 @@ public record PartitionKey
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalData { get => this.writableAdditionalData; private set => this.writableAdditionalData = value; }
+    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; private set; } = [];
 }

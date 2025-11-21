@@ -12,20 +12,18 @@ using System.Text.Json.Serialization;
 [JsonDerivedType(typeof(DownloadBehaviorDenied))]
 public class DownloadBehavior
 {
-    private DownloadBehaviorType type;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DownloadBehavior"/> class.
     /// </summary>
     /// <param name="type">The <see cref="DownloadBehaviorType"/> to which to set the download behavior.</param>
     protected DownloadBehavior(DownloadBehaviorType type)
     {
-        this.type = type;
+        this.Type = type;
     }
 
     /// <summary>
     /// Gets the type of download behavior, allowed or denied.
     /// </summary>
     [JsonPropertyName("type")]
-    public DownloadBehaviorType Type => this.type;
+    public DownloadBehaviorType Type { get; }
 }

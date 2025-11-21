@@ -17,8 +17,6 @@ public sealed class LogModule : Module
 
     private const string EntryAddedEventName = $"{LogModuleName}.entryAdded";
 
-    private ObservableEvent<EntryAddedEventArgs> onEntryAddedEvent = new(EntryAddedEventName);
-
     /// <summary>
     /// Initializes a new instance of the <see cref="LogModule"/> class.
     /// </summary>
@@ -32,7 +30,7 @@ public sealed class LogModule : Module
     /// <summary>
     /// Gets an observable event that notifies when an entry is added to the log.
     /// </summary>
-    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded => this.onEntryAddedEvent;
+    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new(EntryAddedEventName);
 
     /// <summary>
     /// Gets the module name.
@@ -47,6 +45,6 @@ public sealed class LogModule : Module
         // the protocol transport will deserialize to a LogEntry, then use that
         // here to create the appropriate EventArgs instance.
         EntryAddedEventArgs eventArgs = eventData.ToEventArgs<EntryAddedEventArgs>();
-        await this.onEntryAddedEvent.NotifyObserversAsync(eventArgs);
+        await this.OnEntryAdded.NotifyObserversAsync(eventArgs);
     }
 }

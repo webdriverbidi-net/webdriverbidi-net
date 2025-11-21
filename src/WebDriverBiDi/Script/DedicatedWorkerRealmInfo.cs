@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record DedicatedWorkerRealmInfo : RealmInfo
 {
-    private List<string> owners = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DedicatedWorkerRealmInfo"/> class.
     /// </summary>
@@ -25,11 +23,11 @@ public record DedicatedWorkerRealmInfo : RealmInfo
     /// <summary>
     /// Gets the read-only list of IDs of realms that are owners of this realm.
     /// </summary>
-    public IList<string> Owners => this.owners.AsReadOnly();
+    public IList<string> Owners => this.SerializableOwners.AsReadOnly();
 
     /// <summary>
     /// Gets the list of IDs of realms that are owners of this realm for serialization purposes.
     /// </summary>
     [JsonPropertyName("owners")]
-    internal List<string> SerializableOwners { get => this.owners; }
+    internal List<string> SerializableOwners { get; } = [];
 }

@@ -12,12 +12,10 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class PointerParameters
 {
-    private PointerType? pointerType;
-
     /// <summary>
     /// Gets or sets the type of pointer device.
     /// </summary>
     [JsonPropertyName("pointerType")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public PointerType? PointerType { get => this.pointerType; set => this.pointerType = value; }
+    public PointerType? PointerType { get; set; }
 }
