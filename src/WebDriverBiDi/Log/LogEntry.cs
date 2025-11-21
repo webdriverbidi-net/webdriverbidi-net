@@ -16,19 +16,12 @@ using WebDriverBiDi.Script;
 [JsonConverter(typeof(LogEntryJsonConverter))]
 public class LogEntry
 {
-    private string type = string.Empty;
-    private LogLevel level = LogLevel.Error;
-    private Source source = new();
-    private string? text;
-    private long epochTimestamp = -1;
-    private DateTime timestamp;
-    private StackTrace? stacktrace;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="LogEntry" /> class.
     /// </summary>
     internal LogEntry()
     {
+        this.EpochTimestamp = -1;
     }
 
     /// <summary>
@@ -37,7 +30,7 @@ public class LogEntry
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public string Type { get => this.type; internal set => this.type = value; }
+    public string Type { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the log level of the log entry.
@@ -45,7 +38,7 @@ public class LogEntry
     [JsonPropertyName("level")]
     [JsonRequired]
     [JsonInclude]
-    public LogLevel Level { get => this.level; internal set => this.level = value; }
+    public LogLevel Level { get; internal set; } = LogLevel.Error;
 
     /// <summary>
     /// Gets the source of the log entry.
@@ -53,7 +46,7 @@ public class LogEntry
     [JsonPropertyName("source")]
     [JsonRequired]
     [JsonInclude]
-    public Source Source { get => this.source; internal set => this.source = value; }
+    public Source Source { get; internal set; } = new();
 
     /// <summary>
     /// Gets the text of the log entry.
@@ -61,7 +54,7 @@ public class LogEntry
     [JsonPropertyName("text")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Text { get => this.text; internal set => this.text = value; }
+    public string? Text { get; internal set; }
 
     /// <summary>
     /// Gets the stack trace of the log entry.
@@ -69,13 +62,13 @@ public class LogEntry
     [JsonPropertyName("stackTrace")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public StackTrace? StackTrace { get => this.stacktrace; internal set => this.stacktrace = value; }
+    public StackTrace? StackTrace { get; internal set; }
 
     /// <summary>
     /// Gets the timestamp in UTC of the log entry.
     /// </summary>
     [JsonIgnore]
-    public DateTime Timestamp => this.timestamp;
+    public DateTime Timestamp { get; private set; }
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
@@ -85,15 +78,11 @@ public class LogEntry
     [JsonInclude]
     public long EpochTimestamp
     {
-        get
-        {
-            return this.epochTimestamp;
-        }
-
+        get;
         internal set
         {
-            this.epochTimestamp = value;
-            this.timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
+            field = value;
+            this.Timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
         }
     }
 }

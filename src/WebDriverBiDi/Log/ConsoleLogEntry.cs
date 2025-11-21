@@ -13,9 +13,6 @@ using WebDriverBiDi.Script;
 /// </summary>
 public class ConsoleLogEntry : LogEntry
 {
-    private string method = string.Empty;
-    private List<RemoteValue> args = new();
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsoleLogEntry" /> class.
     /// </summary>
@@ -30,13 +27,13 @@ public class ConsoleLogEntry : LogEntry
     [JsonPropertyName("method")]
     [JsonRequired]
     [JsonInclude]
-    public string Method { get => this.method; internal set => this.method = value; }
+    public string Method { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the read-only list of arguments for the console log entry.
     /// </summary>
     [JsonIgnore]
-    public IList<RemoteValue> Args => this.args.AsReadOnly();
+    public IList<RemoteValue> Args => this.SerializableArgs.AsReadOnly();
 
     /// <summary>
     /// Gets or sets the arguments of the console log entry for serialization purposes.
@@ -44,5 +41,5 @@ public class ConsoleLogEntry : LogEntry
     [JsonPropertyName("args")]
     [JsonRequired]
     [JsonInclude]
-    internal List<RemoteValue> SerializableArgs { get => this.args; set => this.args = value; }
+    internal List<RemoteValue> SerializableArgs { get; set; } = [];
 }
