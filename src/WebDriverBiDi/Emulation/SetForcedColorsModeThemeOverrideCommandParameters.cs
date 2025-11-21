@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetForcedColorsModeThemeOverrideCommandParameters : CommandParameters<SetForcedColorsModeThemeOverrideCommandResult>
 {
-    private ForcedColorsModeTheme? theme;
-    private List<string>? contexts;
-    private List<string>? userContexts;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetForcedColorsModeThemeOverrideCommandParameters"/> class.
     /// </summary>
@@ -34,19 +30,19 @@ public class SetForcedColorsModeThemeOverrideCommandParameters : CommandParamete
     /// </summary>
     [JsonPropertyName("theme")]
     [JsonInclude]
-    public ForcedColorsModeTheme? Theme { get => this.theme; set => this.theme = value; }
+    public ForcedColorsModeTheme? Theme { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set the geolocation override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts; set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the user contexts for which to set the geolocation override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

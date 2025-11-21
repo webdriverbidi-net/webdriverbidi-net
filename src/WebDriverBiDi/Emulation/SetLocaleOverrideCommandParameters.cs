@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetLocaleOverrideCommandParameters : CommandParameters<SetLocaleOverrideCommandResult>
 {
-    private string? locale;
-    private List<string>? contexts;
-    private List<string>? userContexts;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetLocaleOverrideCommandParameters"/> class.
     /// </summary>
@@ -35,19 +31,19 @@ public class SetLocaleOverrideCommandParameters : CommandParameters<SetLocaleOve
     /// </summary>
     [JsonPropertyName("locale")]
     [JsonInclude]
-    public string? Locale { get => this.locale; set => this.locale = value; }
+    public string? Locale { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set the geolocation override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts; set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the user contexts for which to set the geolocation override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

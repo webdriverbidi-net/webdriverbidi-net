@@ -12,17 +12,13 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetScriptingEnabledCommandParameters : CommandParameters<SetScriptingEnabledCommandResult>
 {
-    private bool isScriptingEnabled;
-    private List<string>? contexts;
-    private List<string>? userContexts;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetScriptingEnabledCommandParameters"/> class.
     /// </summary>
     /// <param name="isScriptingEnabled">Indicates whether scripting is enabled or disabled for the specified contexts.</param>
     public SetScriptingEnabledCommandParameters(bool isScriptingEnabled = false)
     {
-        this.isScriptingEnabled = isScriptingEnabled;
+        this.IsScriptingEnabled = isScriptingEnabled;
     }
 
     /// <summary>
@@ -37,19 +33,19 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// </summary>
     [JsonPropertyName("enabled")]
     [JsonInclude]
-    public bool IsScriptingEnabled { get => this.isScriptingEnabled; set => this.isScriptingEnabled = value; }
+    public bool IsScriptingEnabled { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set whether scripting is enabled.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts; set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the user contexts for which to set whether scripting is enabled.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

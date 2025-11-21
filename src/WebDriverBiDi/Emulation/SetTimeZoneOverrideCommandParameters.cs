@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
 {
-    private string? timezone;
-    private List<string>? contexts;
-    private List<string>? userContexts;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetTimeZoneOverrideCommandParameters"/> class.
     /// </summary>
@@ -37,19 +33,19 @@ public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZon
     /// </summary>
     [JsonPropertyName("timezone")]
     [JsonInclude]
-    public string? TimeZone { get => this.timezone; set => this.timezone = value; }
+    public string? TimeZone { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set the geolocation override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts; set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the user contexts for which to set the geolocation override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

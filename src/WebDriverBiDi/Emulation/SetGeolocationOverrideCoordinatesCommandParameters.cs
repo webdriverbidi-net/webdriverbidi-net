@@ -12,8 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetGeolocationOverrideCoordinatesCommandParameters : SetGeolocationOverrideCommandParameters
 {
-    private GeolocationCoordinates? coordinates;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetGeolocationOverrideCoordinatesCommandParameters"/> class.
     /// </summary>
@@ -27,5 +25,5 @@ public class SetGeolocationOverrideCoordinatesCommandParameters : SetGeolocation
     /// </summary>
     [JsonPropertyName("coordinates")]
     [JsonInclude]
-    public GeolocationCoordinates? Coordinates { get => this.coordinates; set => this.coordinates = value; }
+    public GeolocationCoordinates? Coordinates { get; set; }
 }

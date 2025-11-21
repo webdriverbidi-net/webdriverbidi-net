@@ -12,10 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class SetNetworkConditionsCommandParameters : CommandParameters<SetNetworkConditionsCommandResult>
 {
-    private NetworkConditions? networkConditions;
-    private List<string>? contexts;
-    private List<string>? userContexts;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="SetNetworkConditionsCommandParameters"/> class.
     /// </summary>
@@ -34,19 +30,19 @@ public class SetNetworkConditionsCommandParameters : CommandParameters<SetNetwor
     /// </summary>
     [JsonPropertyName("networkConditions")]
     [JsonInclude]
-    public NetworkConditions? NetworkConditions { get => this.networkConditions; set => this.networkConditions = value; }
+    public NetworkConditions? NetworkConditions { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set the emulated network conditions.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? Contexts { get => this.contexts; set => this.contexts = value; }
+    public List<string>? Contexts { get; set; }
 
     /// <summary>
     /// Gets or sets the user contexts for which to set the emulated network conditions.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContexts { get => this.userContexts; set => this.userContexts = value; }
+    public List<string>? UserContexts { get; set; }
 }

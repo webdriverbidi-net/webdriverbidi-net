@@ -12,9 +12,6 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ScreenOrientation
 {
-    private ScreenOrientationNatural naturalOrientation;
-    private ScreenOrientationType emulatedOrientationType;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ScreenOrientation"/> class.
     /// </summary>
@@ -22,19 +19,19 @@ public class ScreenOrientation
     /// <param name="emulatedOrientationType">The current orientation of the emulated display.</param>
     public ScreenOrientation(ScreenOrientationNatural naturalOrientation, ScreenOrientationType emulatedOrientationType)
     {
-        this.naturalOrientation = naturalOrientation;
-        this.emulatedOrientationType = emulatedOrientationType;
+        this.NaturalScreenOrientation = naturalOrientation;
+        this.ScreenOrientationType = emulatedOrientationType;
     }
 
     /// <summary>
     /// Gets or sets the natural screen orientation of the emulated display.
     /// </summary>
     [JsonPropertyName("natural")]
-    public ScreenOrientationNatural NaturalScreenOrientation { get => this.naturalOrientation; set => this.naturalOrientation = value; }
+    public ScreenOrientationNatural NaturalScreenOrientation { get; set; }
 
     /// <summary>
     /// Gets or sets the current orientation of the emulated display.
     /// </summary>
     [JsonPropertyName("type")]
-    public ScreenOrientationType ScreenOrientationType { get => this.emulatedOrientationType; set => this.emulatedOrientationType = value; }
+    public ScreenOrientationType ScreenOrientationType { get; set; }
 }
