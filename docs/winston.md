@@ -4,7 +4,7 @@
 
 ## A Wolf with a Mission
 
-Winston is not your average wolf. While his pack howls at the moon, Winston howls at inconsistent browser automation APIs. Born in the wilds of the open web, Winston discovered early on that his true calling wasn't hunting in the forest—it was hunting down bugs in browser automation code.
+Winston is not your average wolf. While his pack howls at the moon, Winston howls at inconsistent browser automation APIs. Born in the wilds of the open web, Winston discovered early on that his true calling wasn't hunting in the forest; it was hunting down bugs in browser automation code.
 
 ## Early Years
 
@@ -19,7 +19,7 @@ Winston's life changed forever when he first encountered the WebDriver BiDi prot
 He became the protocol's most passionate advocate, tirelessly promoting its benefits:
 
 - **Bidirectional by nature**: Just like wolves communicate within their pack, browsers and automation frameworks should communicate both ways
-- **Event-driven architecture**: Winston loves being notified immediately when something interesting happens—whether it's a rabbit in the forest or a network request in the browser
+- **Event-driven architecture**: Winston loves being notified immediately when something interesting happens, whether it's a rabbit in the forest or a network request in the browser
 - **Standardized and open**: No proprietary protocols in his pack! Winston believes everyone should have equal access to powerful browser automation capabilities
 
 ## Professional Career
@@ -28,7 +28,7 @@ Today, Winston serves as the official mascot for WebDriverBiDi.NET, where he ove
 
 - **Code reviews at 3 AM**: Winston operates on wolf time, which means he's most active when developers least expect it
 - **Sniffing out protocol violations**: His nose can detect a non-compliant WebDriver BiDi implementation from miles away
-- **Advocating for standards**: At conferences worldwide (though he prefers virtual attendance—airplane cargo holds are beneath his dignity), Winston spreads the word about open web standards
+- **Advocating for standards**: At conferences worldwide (though he prefers virtual attendance; airplane cargo holds are beneath his dignity), Winston spreads the word about open web standards
 - **Mentoring junior developers**: Despite his fierce appearance, Winston has a soft spot for newcomers learning browser automation
 
 ## Philosophy and Values
