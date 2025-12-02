@@ -423,12 +423,9 @@ try
     // This will timeout if it takes longer than 5 seconds
     await driver.BrowsingContext.NavigateAsync(params);
 }
-catch (WebDriverBiDiException ex)
+catch (WebDriverBiDiTimeoutException ex)
 {
-    if (ex.Message.Contains("Timed out"))
-    {
-        Console.WriteLine("Navigation took too long");
-    }
+    Console.WriteLine("Navigation took too long");
 }
 ```
 

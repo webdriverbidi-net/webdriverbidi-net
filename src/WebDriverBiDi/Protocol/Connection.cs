@@ -161,7 +161,7 @@ public class Connection
         // attempting to send commands or other data simultaneously.
         if (!await this.dataSendSemaphore.WaitAsync(this.DataTimeout).ConfigureAwait(false))
         {
-            throw new WebDriverBiDiException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
+            throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
 
         if (this.OnLogMessage.CurrentObserverCount > 0)

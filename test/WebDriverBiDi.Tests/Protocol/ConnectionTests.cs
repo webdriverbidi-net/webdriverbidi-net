@@ -506,7 +506,7 @@ public class ConnectionTests
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         _ = Task.Run(() => connection.SendDataAsync("first data"u8.ToArray()));
         syncEvent.Wait();
-        Assert.That(async () => await connection.SendDataAsync("second data"u8.ToArray()), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
+        Assert.That(async () => await connection.SendDataAsync("second data"u8.ToArray()), Throws.InstanceOf<WebDriverBiDiTimeoutException>().With.Message.EqualTo("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time."));
         await connection.StopAsync();
     }
 

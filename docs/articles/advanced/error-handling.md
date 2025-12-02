@@ -39,7 +39,7 @@ try
 {
     NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(navParams);
 }
-catch (WebDriverBiDiException ex) when (ex.Message.Contains("Timed out"))
+catch (WebDriverBiDiTimeoutException ex)
 {
     Console.WriteLine("Navigation timeout - page took too long to load");
     // Handle timeout specifically
@@ -695,7 +695,7 @@ public async Task TestNavigationTimeout()
         
         Assert.Fail("Expected timeout exception");
     }
-    catch (WebDriverBiDiException ex)
+    catch (WebDriverBiDiTimeoutException ex)
     {
         Assert.That(ex.Message, Does.Contain("Timed out"));
     }

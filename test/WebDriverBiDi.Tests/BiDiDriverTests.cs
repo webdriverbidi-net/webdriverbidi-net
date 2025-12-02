@@ -384,7 +384,7 @@ public class BiDiDriverTests
     {
         BiDiDriver driver = new(TimeSpan.Zero, new Transport(new TestConnection()));
         await driver.StartAsync("ws://localhost:5555");
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Timed out executing command test.command"));
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiTimeoutException>().With.Message.Contains("Timed out executing command test.command"));
     }
 
     [Test]
