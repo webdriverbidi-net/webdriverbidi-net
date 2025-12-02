@@ -61,7 +61,8 @@
       "author": "WebDriverBiDi.NET Committers",
       "copyright": "Copyright (c) 2022-2025 WebDriverBiDi.NET Committers. All rights reserved.",
       "version": "${VERSION}",
-      "_appLogoPath": "images/winston.png"
+      "_appLogoPath": "images/winston.png",
+      "_appFaviconPath": "images/favicon.ico"
     },
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
