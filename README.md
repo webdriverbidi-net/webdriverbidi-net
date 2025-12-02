@@ -1,8 +1,8 @@
 # webdriverbidi-net
 A .NET client library for the WebDriver BiDi protocol
 
-![Unit tests](https://github.com/jimevans/webdriverbidi-net/actions/workflows/dotnet.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/jimevans/webdriverbidi-net/badge.svg?branch=main&kill_cache=1)](https://coveralls.io/github/jimevans/webdriverbidi-net?branch=main)
+![Unit tests](https://github.com/webdriverbidi-net/webdriverbidi-net/actions/workflows/dotnet.yml/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/webdriverbidi-net/webdriverbidi-net/badge.svg?branch=main&kill_cache=1)](https://coveralls.io/github/webdriverbidi-net/webdriverbidi-net?branch=main)
 [![NuGet Version](https://img.shields.io/nuget/v/WebDriverBiDi)](https://www.nuget.org/packages/WebDriverBiDi)
 
 
@@ -97,10 +97,10 @@ The project has enabled Roslyn analyzers to help with code quality, and uses the
 PRs should contain no warnings from any of the analyzers. Use of warning suppression in the source code
 is mostly prohibited, and will only be allowed on a very strictly reviewed case-by-case basis.
 
-The project uses [GitHub Actions](https://github.com/jimevans/webdriverbidi-net/actions) for continuous
+The project uses [GitHub Actions](https://github.com/webdriverbidi-net/webdriverbidi-net/actions) for continuous
 integration (CI). Code coverage statistics are generated and gathered by
 [Coverlet](https://www.nuget.org/packages/coverlet.collector/), and uploaded to
-[coveralls.io](https://coveralls.io/github/jimevans/webdriverbidi-net?branch=main). PRs for which
+[coveralls.io](https://coveralls.io/github/webdriverbidi-net/webdriverbidi-net?branch=main). PRs for which
 the code coverage drops from the current percentage on the `main` branch will need to be carefully
 reviewed. For convenience, a task has been configured to collect code coverage statistics when the
 tests are executed, so to run code coverage locally, you can run the test task from the Command
