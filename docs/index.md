@@ -116,7 +116,7 @@ await driver.StopAsync();
 
 ## Meet Winston 🐺
 
-<img src="images/winston.png" alt="Winston, the WebDriver BiDi Wolf" height="250" align="left" style="margin-right: 20px; margin-bottom: 20px;">
+<img src="images/winston.png" alt="Winston, the WebDriver BiDi Wolf" class="mascot-image">
 
 Our friendly mascot Winston, the WebDriver BiDi wolf, is here to guide you on your browser automation journey! Learn about his passion for open web standards and bidirectional communication by reading [Winston's story](winston.md).
 

@@ -9,3 +9,11 @@
     width: auto; /* Maintain aspect ratio */
 }
 
+/* Mascot image styling */
+.mascot-image {
+    height: 250px;
+    float: left;
+    margin-right: 20px;
+    margin-bottom: 20px;
+}
+

@@ -1,6 +1,6 @@
 # About Winston, the WebDriver BiDi Wolf
 
-<img src="images/winston.png" alt="Winston, the WebDriver BiDi Wolf" style="max-height: 640px; max-width: 100%; height: auto; display: block; margin: 0 auto;">
+<img src="images/winston.png" alt="Winston, the WebDriver BiDi Wolf" class="mascot-image" />
 
 ## A Wolf with a Mission
 
