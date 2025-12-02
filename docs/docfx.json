@@ -4,16 +4,19 @@
       "src": [
         {
           "files": [
-            "src/WebDriverBiDi/**.csproj"
+            "WebDriverBiDi.dll"
           ],
-          "src": "../"
+          "src": "../src/WebDriverBiDi/bin/Release/netstandard2.0"
         }
       ],
       "dest": "api",
       "includePrivateMembers": false,
       "disableGitFeatures": false,
       "disableDefaultFilter": false,
-      "namespaceLayout": "flattened"
+      "namespaceLayout": "flattened",
+      "properties": {
+        "TargetFramework": "netstandard2.0"
+      }
     }
   ],
   "build": {
@@ -52,10 +55,20 @@
       }
     ],
     "dest": "_site",
+    "globalMetadata": {
+      "title": "WebDriverBiDi.NET Documentation",
+      "description": "Documentation for the WebDriverBiDi.NET library",
+      "author": "WebDriverBiDi.NET Committers",
+      "copyright": "Copyright (c) 2022-2025 WebDriverBiDi.NET Committers. All rights reserved.",
+      "version": "${VERSION}",
+      "_appLogoPath": "images/winston.png"
+    },
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
     "template": [
-      "default"
+      "default",
+      "modern",
+      "templates/webdriverbidi"
     ],
     "postProcessors": [],
     "noLangKeyword": false,

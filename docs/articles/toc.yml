@@ -1,2 +1,56 @@
-- name: Introduction
-  href: intro.md
+- name: Getting Started
+  href: getting-started.md
+- name: Browser Setup
+  href: browser-setup.md
+- name: Your First Application
+  href: first-application.md
+- name: Core Concepts
+  href: core-concepts.md
+- name: Architecture
+  href: architecture.md
+- name: Events and Observables
+  href: events-observables.md
+- name: Working with Remote Values
+  href: remote-values.md
+- name: Module Guides
+  items:
+    - name: Browser Module
+      href: modules/browser.md
+    - name: Browsing Context Module
+      href: modules/browsing-context.md
+    - name: Script Module
+      href: modules/script.md
+    - name: Network Module
+      href: modules/network.md
+    - name: Input Module
+      href: modules/input.md
+    - name: Log Module
+      href: modules/log.md
+    - name: Session Module
+      href: modules/session.md
+    - name: Storage Module
+      href: modules/storage.md
+    - name: Emulation Module
+      href: modules/emulation.md
+    - name: Additional Modules
+      href: modules/additional-modules.md
+- name: Examples
+  items:
+    - name: Common Scenarios
+      href: examples/common-scenarios.md
+    - name: Form Submission
+      href: examples/form-submission.md
+    - name: Network Interception
+      href: examples/network-interception.md
+    - name: Console Monitoring
+      href: examples/console-monitoring.md
+    - name: Preload Scripts
+      href: examples/preload-scripts.md
+- name: Advanced Topics
+  items:
+    - name: Error Handling
+      href: advanced/error-handling.md
+    - name: Performance Considerations
+      href: advanced/performance.md
+    - name: Custom Modules
+      href: advanced/custom-modules.md

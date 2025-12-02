@@ -1,0 +1,10 @@
+.navbar-brand {
+    height: 50px; /* Set height for the container */
+    display: flex;
+    align-items: center; /* Vertically align the logo */
+}
+
+.navbar-brand img {
+    height: 40px; /* Set a specific height */
+    width: auto; /* Maintain aspect ratio */
+}

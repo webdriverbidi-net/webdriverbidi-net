@@ -1,5 +1,14 @@
+- name: Home
+  href: index.md
 - name: Articles
   href: articles/
-- name: Api Documentation
+  homepage: articles/getting-started.md
+- name: API Documentation
   href: api/
   homepage: api/index.md
+- name: About Winston
+  href: winston.md
+- name: GitHub
+  href: https://github.com/webdriverbidi-net/webdriverbidi-net
+- name: NuGet
+  href: https://www.nuget.org/packages/WebDriverBiDi
