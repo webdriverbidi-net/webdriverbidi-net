@@ -75,4 +75,3 @@ Winston welcomes fellow travelers on the WebDriver BiDi journey! Whether you're 
 ---
 
 Ready to join Winston's pack? Head back to the [home page](index.md) to get started with WebDriverBiDi.NET, or dive into the [getting started guide](articles/getting-started.md) to begin your browser automation journey!
-

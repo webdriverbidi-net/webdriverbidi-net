@@ -57,6 +57,7 @@ jobs:
           cd docs
           docfx metadata docfx.json
           docfx build docfx.json
+          touch _site/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

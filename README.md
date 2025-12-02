@@ -110,3 +110,28 @@ choose the `Tasks: Run Task` entry, and choose the `dotnet: test with coverage` 
 Some useful plugins in your Visual Studio Code environment for this project are:
 * [Coverage Gutters](https://marketplace.visualstudio.com/items?itemName=ryanluker.vscode-coverage-gutters):
 This plugin allows visualization of code coverage directly within the IDE.
+
+## Documentation
+The project includes documentation, in the `docs` directory. The documentation is published
+to the [GitHub Pages site for this project](https://webdriverbidi-net.github.io/webdriverbidi-net).
+Documentation is built and maintained with [DocFx](https://dotnet.github.io/docfx/), the .NET
+documentation framework. To build the documentation, you will need to install the DocFx tooling
+using the following command:
+
+    dotnet tool install -g docfx
+
+To update the DocFx tooling, you can use the following command:
+
+    dotnet tool update -g docfx
+
+To build the documentation, use the following commands:
+
+    docfx metadata docs/docfx.json
+    docfx build docs/docfx.json
+
+To preview a local version of the documentation prior to publishing, you can do so with the
+following command:
+
+    docfx serve docs/_site
+
+This will serve a local copy of the documentation at http://localhost:8080.
