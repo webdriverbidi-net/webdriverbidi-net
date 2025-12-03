@@ -1,6 +1,10 @@
-namespace WebDriverBiDi.Demo;
+// <copyright file="InputBuilderExtensions.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-using WebDriverBiDi.Client.Inputs;
+namespace WebDriverBiDi.Client.Inputs;
+
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Script;
 
@@ -22,10 +26,10 @@ public static class InputBuilderExtensions
     }
 
     /// <summary>
-    /// Adds an action to send a series of keystrokes to a specified element.
+    /// Adds an action to send a series of keystrokes to the actively focused element.
     /// </summary>
     /// <param name="builder">The <see cref="InputBuilder"/> used to create proper payloads for action types.</param>
-    /// <param name="elementReference">The <see cref="SharedReference"/> representing the element to send the keystrokes to.</param>
+    /// <param name="keysToSend">The keys to send to the actively focused element.</param>
     public static void AddSendKeysToActiveElementAction(this InputBuilder builder, string keysToSend)
     {
         foreach (char character in keysToSend)

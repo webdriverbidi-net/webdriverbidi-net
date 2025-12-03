@@ -1,39 +1,24 @@
-namespace WebDriverBiDi.Demo;
+// <copyright file="NetworkTrafficMonitor.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+namespace WebDriverBiDi.Client.Network;
 
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Session;
-
-/// <summary>
-/// Values describing how to display base64 encoded binary data in requests and responses.
-/// </summary>
-public enum Base64DisplayBehavior
-{
-    /// <summary>
-    /// Do not display the data; instead display a message showing binary data was captured, and its length.
-    /// </summary>
-    NoDisplay,
-
-    /// <summary>
-    /// Display the base64 encoded data.
-    /// </summary>
-    Display,
-
-    /// <summary>
-    /// Decode the base64 data into a byte array and display the decoded data. This may include unprintable characters.
-    /// </summary>
-    Decode
-}
 
 /// <summary>
 /// A simple class for monitoring network traffic. This is a naive implementation, intended solely for illustrative purposes.
 /// </summary>
 public class NetworkTrafficMonitor
 {
-    private static readonly List<string> httpMethodsWithBodies = [
+    private static readonly List<string> HttpMethodsWithBodies = [
         "POST",
         "PUT",
         "PATCH"
     ];
+
     private readonly BiDiDriver driver;
     private readonly Dictionary<string, NetworkRequest> pendingRequests = [];
     private string eventSubscriptionId = string.Empty;
@@ -64,7 +49,7 @@ public class NetworkTrafficMonitor
         // Add a data collector to collect request and response bodies.
         AddDataCollectorCommandParameters addCollectorParameters = new(200000000, DataType.Request, DataType.Response);
         addCollectorParameters.BrowsingContexts.Add(browsingContextId);
-        AddDataCollectorCommandResult collectorResult = await driver.Network.AddDataCollectorAsync(addCollectorParameters);
+        AddDataCollectorCommandResult collectorResult = await this.driver.Network.AddDataCollectorAsync(addCollectorParameters);
         this.bodyCollectorId = collectorResult.CollectorId;
 
         // Subscribe to the events.
@@ -74,7 +59,7 @@ public class NetworkTrafficMonitor
         ];
         List<string> subscribedContexts = [browsingContextId];
         SubscribeCommandParameters subscribe = new(subscribedEvents, subscribedContexts);
-        SubscribeCommandResult subscribeResult = await driver.Session.SubscribeAsync(subscribe);
+        SubscribeCommandResult subscribeResult = await this.driver.Session.SubscribeAsync(subscribe);
         this.eventSubscriptionId = subscribeResult.SubscriptionId;
     }
 
@@ -99,7 +84,7 @@ public class NetworkTrafficMonitor
         {
             UnsubscribeByIdsCommandParameters unsubscribe = new();
             unsubscribe.SubscriptionIds.Add(this.eventSubscriptionId);
-            await driver.Session.UnsubscribeAsync(unsubscribe);
+            await this.driver.Session.UnsubscribeAsync(unsubscribe);
         }
     }
 
@@ -142,7 +127,7 @@ public class NetworkTrafficMonitor
     {
         string requestId = e.Request.RequestId;
         Task<GetDataCommandResult>? requestBodyTask = null;
-        if (httpMethodsWithBodies.Contains(e.Request.Method.ToUpperInvariant()))
+        if (HttpMethodsWithBodies.Contains(e.Request.Method.ToUpperInvariant()))
         {
             // Only POST, PUT, and PATCH requests should have bodies. Others
             // may, but that is incorrect, so we will ignore capturing it.
@@ -152,7 +137,7 @@ public class NetworkTrafficMonitor
                 DataType = DataType.Request,
                 DisownCollectedData = true,
             };
-            requestBodyTask = driver.Network.GetDataAsync(getBodyParameters);
+            requestBodyTask = this.driver.Network.GetDataAsync(getBodyParameters);
         }
 
         this.pendingRequests[requestId] = new NetworkRequest(e.Request, requestBodyTask);
@@ -167,7 +152,7 @@ public class NetworkTrafficMonitor
             DataType = DataType.Response,
             DisownCollectedData = true,
         };
-        Task<GetDataCommandResult> responseBodyTask = driver.Network.GetDataAsync(getBodyParameters);
+        Task<GetDataCommandResult> responseBodyTask = this.driver.Network.GetDataAsync(getBodyParameters);
         this.pendingRequests[requestId].SetResponseReceived(e.Response, responseBodyTask);
     }
 }

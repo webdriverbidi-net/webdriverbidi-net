@@ -31,4 +31,11 @@
       <LogicalName>chromium-bidi-mapper</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="$(ProjectDir)../../third_party/acquiescence/acquiescence.browser.js">
+      <Visible>False</Visible>
+      <LogicalName>acquiescence-library</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

@@ -1,8 +1,11 @@
 namespace WebDriverBiDi.Demo;
 
+using System.ComponentModel.Design;
 using System.Text;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Client.Elements;
 using WebDriverBiDi.Client.Inputs;
+using WebDriverBiDi.Client.Network;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
@@ -676,6 +679,10 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
+        // We will use a NetworkTrafficMonitor class from the WebDriverBidi client library.
+        // It encapsulates the logic for collecting the network traffic. All of the concepts
+        // used by that class are demonstrated in standalone form by other scenarios in this
+        // class, so they are not explicitly performed here.
         NetworkTrafficMonitor monitor = new(driver);
         await monitor.StartMonitoringAsync(contextId);
 
@@ -767,5 +774,86 @@ public static class DemoScenarios
         UnsubscribeByIdsCommandParameters unsubscribe = new();
         unsubscribe.SubscriptionIds.Add(navigationSubscriptionId);
         await driver.Session.UnsubscribeAsync(unsubscribe);
-    } 
+    }
+
+    /// <summary>
+    /// Sample scenario showing addition of a state inspector.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public static async Task InteractWithComplexWebPage(BiDiDriver driver, string baseUrl)
+    {
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        // We will use an ElementStateInspector class from the WebDriverBidi client library.
+        // It encapsulates the logic for querying element states. All of the concepts
+        // used by that class, including executing JavaScript functions, using a sandbox
+        // to isolate driver script execution from the DOM of the page, and using a preload
+        // script, are demonstrated in standalone form by other scenarios in this class,
+        // so they are not explicitly performed here.
+        ElementStateInspector inspector = new(driver);
+        await inspector.AddInspectorAsync();
+
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/complexContent.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
+
+        LocateNodesCommandResult locateButtonResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("#toggle-button")));
+        RemoteValue toggleButtonNode = locateButtonResult.Nodes[0];
+        SharedReference toggleButton = toggleButtonNode.ToSharedReference();
+
+        // This function will access the "webdriverInspector" object added to its window object
+        // and execute the defined function. We must use the sandbox for the global property
+        // name to be recognized. The function being called should not return unless the
+        // element being queried is available for interaction (has stable position, is visible,
+        // is enabled, and is in the view port).
+        Console.WriteLine("Executing function to wait for button to be ready for interaction");
+        try
+        {
+            await inspector.WaitForInteractionReadyAsync(contextId, toggleButton, InteractionType.Click, TimeSpan.FromSeconds(10));
+        }
+        catch (WebDriverBiDiException e)
+        {
+            Console.WriteLine($"Wait was unsuccessful, error returned was '{e.Message}'");
+            return;
+        }
+
+        Console.WriteLine("Wait for element ready for interaction was successful");
+
+        LocateNodesCommandResult locateImageResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("img")));
+        RemoteValue imageElementNode = locateImageResult.Nodes[0];
+        SharedReference imageElement = imageElementNode.ToSharedReference();
+
+        // Check the visibility of the image element on the page (it should be invisible).
+        // Note that we can reuse the ContextTarget that we used for interaction wait script.
+        Console.WriteLine("Executing first check for image element visibility");
+        bool isImageVisible = await inspector.IsElementVisibleAsync(contextId, imageElement);
+        Console.WriteLine($"Image element visible? {isImageVisible}");
+
+        // Click the button to toggle the image visibility.
+        InputBuilder inputBuilder = new();
+        inputBuilder.AddClickOnElementAction(toggleButton);
+
+        PerformActionsCommandParameters actionsParams = new(contextId);
+        actionsParams.Actions.AddRange(inputBuilder.Build());
+        await driver.Input.PerformActionsAsync(actionsParams);
+
+        // Check the visibility of the image element on the page again (it should be visible now).
+        // Note that we can simply reuse the parameters to CallFunctionAsync; no need to create
+        // another parameter object.
+        Console.WriteLine("Executing second check for image element visibility");
+        isImageVisible = await inspector.IsElementVisibleAsync(contextId, imageElement);
+        Console.WriteLine($"Image element visible? {isImageVisible}");
+
+        // Removing the preload script is optional, especially since this is the
+        // end of the demo method, but it's put here for completeness.
+        await inspector.RemoveInspectorAsync();
+    }
 }

@@ -1,7 +1,12 @@
+// <copyright file="NetworkRequest.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
 
-namespace WebDriverBiDi.Demo;
+namespace WebDriverBiDi.Client.Network;
 
 using System.Text;
+using System.Threading.Tasks;
 using WebDriverBiDi.Network;
 
 /// <summary>
@@ -14,7 +19,7 @@ public class NetworkRequest
     private readonly string requestMethod;
     private readonly List<ReadOnlyHeader> requestHeaders = [];
     private readonly Task<GetDataCommandResult>? requestBodyRetrieveTask;
-    private readonly TaskCompletionSource responseReceivedTaskCompletionSource = new();
+    private readonly TaskCompletionSource<bool> responseReceivedTaskCompletionSource = new();
     private string requestBody = string.Empty;
     private bool isRequestBodyBase64Encoded = false;
     private ulong responseStatusCode = 0;
@@ -53,7 +58,7 @@ public class NetworkRequest
     /// Asynchronously waits for the request to have received a response.
     /// </summary>
     /// <returns>A task representing information about the asynchronous operation.</returns>
-    public Task WaitForResponseReceivedAsync()
+    public Task<bool> WaitForResponseReceivedAsync()
     {
         return this.responseReceivedTaskCompletionSource.Task;
     }
@@ -170,6 +175,6 @@ public class NetworkRequest
         this.responseHeaders.AddRange(responseData.Headers);
         this.responseBodyAvailableTask = responseBodyRetrieveTask;
 
-        this.responseReceivedTaskCompletionSource.SetResult();
+        this.responseReceivedTaskCompletionSource.SetResult(true);
     }
 }
