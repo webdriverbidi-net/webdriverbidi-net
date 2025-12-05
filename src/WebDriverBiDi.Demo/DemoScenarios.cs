@@ -2,6 +2,7 @@ namespace WebDriverBiDi.Demo;
 
 using System.ComponentModel.Design;
 using System.Text;
+using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Client.Elements;
 using WebDriverBiDi.Client.Inputs;
@@ -855,5 +856,85 @@ public static class DemoScenarios
         // Removing the preload script is optional, especially since this is the
         // end of the demo method, but it's put here for completeness.
         await inspector.RemoveInspectorAsync();
+    }
+
+    /// <summary>
+    /// Demonstrates how a test would discriminate between events subscribed to by different
+    /// user contexts.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public static async Task HandleEventsInMultipleUserContexts(BiDiDriver driver, string baseUrl)
+    {
+        Dictionary<string, string> userContextMap = [];
+        EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver((e) => userContextMap[e.BrowsingContextId] = e.UserContextId);
+        SubscribeCommandResult contextCreatedSubscribeResult = await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.BrowsingContext.OnContextCreated.EventName]));
+        string contextCreatedSubscriptionId = contextCreatedSubscribeResult.SubscriptionId;
+
+        // Get default browsing context
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string defaultBrowsingContextId = tree.ContextTree[0].BrowsingContextId;
+
+        // Create first user context
+        CreateUserContextCommandResult createFirstUserContextResult = await driver.Browser.CreateUserContextAsync(new());
+        string firstUserContextId = createFirstUserContextResult.UserContextId;
+
+        // Create first browsing context
+        CreateCommandResult createFirstBrowsingContextResult = await driver.BrowsingContext.CreateAsync(new CreateCommandParameters(CreateType.Tab)
+        {
+            UserContextId = firstUserContextId,
+        });
+        string firstBrowsingContextId = createFirstBrowsingContextResult.BrowsingContextId;
+
+        // Create second user context
+        CreateUserContextCommandResult createSecondUserContextResult = await driver.Browser.CreateUserContextAsync(new());
+        string secondUserContextId = createSecondUserContextResult.UserContextId;
+
+        // Create second browsing context
+        CreateCommandResult createSecondBrowsingContextResult = await driver.BrowsingContext.CreateAsync(new CreateCommandParameters(CreateType.Tab)
+        {
+            UserContextId = secondUserContextId,
+        });
+        string secondBrowsingContextId = createSecondBrowsingContextResult.BrowsingContextId;
+
+        // Close the default browsing context; we don't need it anymore
+        await driver.BrowsingContext.CloseAsync(new BrowsingContext.CloseCommandParameters(defaultBrowsingContextId));
+
+        // Simulate first test event subscription
+        EventObserver<BeforeRequestSentEventArgs> firstNetworkObserver = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+        {
+            // Using the first browsing context ID, get the user context it belongs to.
+            // Limit the console writing to only the HTML page, so as not to clutter things up.
+            if (e.BrowsingContextId == firstBrowsingContextId && userContextMap.TryGetValue(e.BrowsingContextId, out string? value) && e.Request.Url.EndsWith(".html"))
+            {
+                Console.WriteLine($"I came from the first user context (ID: {value}). I'm navigating to {e.Request.Url}");
+            }
+        });
+        SubscribeCommandResult firstNetworkSubscriptionResult = await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.Network.OnBeforeRequestSent.EventName], null, [firstUserContextId]));
+        string firstNetworkSubscriptionId = firstNetworkSubscriptionResult.SubscriptionId;
+
+        // Simulate second test event subscription
+        EventObserver<BeforeRequestSentEventArgs> secondNetworkObserver = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+        {
+            // Using the second browsing context ID, get the user context it belongs to.
+            // Limit the console writing to only the HTML page, so as not to clutter things up.
+            if (e.BrowsingContextId == secondBrowsingContextId && userContextMap.TryGetValue(e.BrowsingContextId, out string? value) && e.Request.Url.EndsWith(".html"))
+            {
+                Console.WriteLine($"I came from the second user context (ID: {value}). I'm navigating to {e.Request.Url}");
+            }
+        });
+        SubscribeCommandResult secondNetworkSubscriptionResult = await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.Network.OnBeforeRequestSent.EventName], null, [secondUserContextId]));
+        string secondNetworkSubscriptionId = secondNetworkSubscriptionResult.SubscriptionId;
+
+        await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete,
+        });
+        await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(secondBrowsingContextId, $"{baseUrl}/inputForm.html")
+        {
+            Wait = ReadinessState.Complete,
+        });
     }
 }
