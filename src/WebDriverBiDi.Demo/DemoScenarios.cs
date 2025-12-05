@@ -873,34 +873,28 @@ public static class DemoScenarios
         SubscribeCommandResult contextCreatedSubscribeResult = await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.BrowsingContext.OnContextCreated.EventName]));
         string contextCreatedSubscriptionId = contextCreatedSubscribeResult.SubscriptionId;
 
-        // Get default browsing context
+        // Get default browsing context and close it (we want to demonstrate using fresh user contexts)
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         string defaultBrowsingContextId = tree.ContextTree[0].BrowsingContextId;
+        await driver.BrowsingContext.CloseAsync(new BrowsingContext.CloseCommandParameters(defaultBrowsingContextId));
 
-        // Create first user context
+        // Create first user context and a browsing context within that user context
         CreateUserContextCommandResult createFirstUserContextResult = await driver.Browser.CreateUserContextAsync(new());
         string firstUserContextId = createFirstUserContextResult.UserContextId;
-
-        // Create first browsing context
         CreateCommandResult createFirstBrowsingContextResult = await driver.BrowsingContext.CreateAsync(new CreateCommandParameters(CreateType.Tab)
         {
             UserContextId = firstUserContextId,
         });
         string firstBrowsingContextId = createFirstBrowsingContextResult.BrowsingContextId;
 
-        // Create second user context
+        // Create second user context and a browsing context within that user context
         CreateUserContextCommandResult createSecondUserContextResult = await driver.Browser.CreateUserContextAsync(new());
         string secondUserContextId = createSecondUserContextResult.UserContextId;
-
-        // Create second browsing context
         CreateCommandResult createSecondBrowsingContextResult = await driver.BrowsingContext.CreateAsync(new CreateCommandParameters(CreateType.Tab)
         {
             UserContextId = secondUserContextId,
         });
         string secondBrowsingContextId = createSecondBrowsingContextResult.BrowsingContextId;
-
-        // Close the default browsing context; we don't need it anymore
-        await driver.BrowsingContext.CloseAsync(new BrowsingContext.CloseCommandParameters(defaultBrowsingContextId));
 
         // Simulate first test event subscription
         EventObserver<BeforeRequestSentEventArgs> firstNetworkObserver = driver.Network.OnBeforeRequestSent.AddObserver((e) =>
