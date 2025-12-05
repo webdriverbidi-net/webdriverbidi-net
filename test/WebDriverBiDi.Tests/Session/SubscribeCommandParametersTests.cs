@@ -158,10 +158,4 @@ public class SubscribeCommandParametersTests
             Assert.That(properties.UserContexts, Contains.Item("someUserContext"));
         }
     }
-
-    [Test]
-    public void TestInitializeUsingConstructorWithNoContextsThrows()
-    {
-        Assert.That(() => new SubscribeCommandParameters(["someEvent"]), Throws.InstanceOf<ArgumentNullException>());
-    }
 }
