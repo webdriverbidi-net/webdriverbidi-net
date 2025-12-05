@@ -936,5 +936,22 @@ public static class DemoScenarios
             Wait = ReadinessState.Complete,
         });
         Task.WaitAll([firstNavigationTask, secondNavigationTask]);
+
+        // Unsubscribe from one of the user contexts, and validate the other event observer
+        // still processes the event from the other user context
+        UnsubscribeByIdsCommandParameters unsubscribeSecondObserverParameters = new();
+        unsubscribeSecondObserverParameters.SubscriptionIds.Add(secondNetworkSubscriptionId);
+        await driver.Session.UnsubscribeAsync(unsubscribeSecondObserverParameters);
+
+        // Perform the navigation operations asynchronously, to simulate parallel test runs.
+        Task thirdNavigationTask = driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/inputForm.html")
+        {
+            Wait = ReadinessState.Complete,
+        });
+        Task fourthNavigationTask = driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(secondBrowsingContextId, $"{baseUrl}/simpleContent.html")
+        {
+            Wait = ReadinessState.Complete,
+        });
+        Task.WaitAll([thirdNavigationTask, fourthNavigationTask]);
     }
 }
