@@ -912,7 +912,9 @@ public static class DemoScenarios
                 Console.WriteLine($"I came from the first user context (ID: {value}). I'm navigating to {e.Request.Url}");
             }
         });
-        SubscribeCommandResult firstNetworkSubscriptionResult = await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.Network.OnBeforeRequestSent.EventName], null, [firstUserContextId]));
+        SubscribeCommandParameters firstNetworkSubscribeParameters = new([driver.Network.OnBeforeRequestSent.EventName]);
+        firstNetworkSubscribeParameters.UserContexts.Add(firstUserContextId);
+        SubscribeCommandResult firstNetworkSubscriptionResult = await driver.Session.SubscribeAsync(firstNetworkSubscribeParameters);
         string firstNetworkSubscriptionId = firstNetworkSubscriptionResult.SubscriptionId;
 
         // Simulate second test event subscription
@@ -925,7 +927,9 @@ public static class DemoScenarios
                 Console.WriteLine($"I came from the second user context (ID: {value}). I'm navigating to {e.Request.Url}");
             }
         });
-        SubscribeCommandResult secondNetworkSubscriptionResult = await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.Network.OnBeforeRequestSent.EventName], null, [secondUserContextId]));
+        SubscribeCommandParameters secondNetworkSubscribeParameters = new([driver.Network.OnBeforeRequestSent.EventName]);
+        secondNetworkSubscribeParameters.UserContexts.Add(secondUserContextId);
+        SubscribeCommandResult secondNetworkSubscriptionResult = await driver.Session.SubscribeAsync(secondNetworkSubscribeParameters);
         string secondNetworkSubscriptionId = secondNetworkSubscriptionResult.SubscriptionId;
 
         await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/simpleContent.html")

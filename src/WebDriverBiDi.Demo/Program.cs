@@ -66,6 +66,7 @@ try
     // await DemoScenarios.ExecuteElementRoundtripInJavaScript(driver, baseDemoSiteUrl);
     // await DemoScenarios.CaptureNetworkResponse(driver, baseDemoSiteUrl);
     // await DemoScenarios.CaptureAllNetworkTraffic(driver, baseDemoSiteUrl);
+    // await DemoScenarios.HandleEventsInMultipleUserContexts(driver, baseDemoSiteUrl);
 
     Console.WriteLine($"Pausing {viewResultsDelayTimeSpan.TotalSeconds} seconds to view results");
     await Task.Delay(viewResultsDelayTimeSpan);
