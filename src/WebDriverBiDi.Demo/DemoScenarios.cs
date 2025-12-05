@@ -932,13 +932,15 @@ public static class DemoScenarios
         SubscribeCommandResult secondNetworkSubscriptionResult = await driver.Session.SubscribeAsync(secondNetworkSubscribeParameters);
         string secondNetworkSubscriptionId = secondNetworkSubscriptionResult.SubscriptionId;
 
-        await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/simpleContent.html")
+        // Perform the navigation operations asynchronously, to simulate parallel test runs.
+        Task firstNavigationTask = driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(firstBrowsingContextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete,
         });
-        await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(secondBrowsingContextId, $"{baseUrl}/inputForm.html")
+        Task secondNavigationTask = driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(secondBrowsingContextId, $"{baseUrl}/inputForm.html")
         {
             Wait = ReadinessState.Complete,
         });
+        Task.WaitAll([firstNavigationTask, secondNavigationTask]);
     }
 }
