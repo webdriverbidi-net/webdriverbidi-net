@@ -660,8 +660,7 @@ public class CapabilitiesResultTests
         Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
     }
 
-    // [Test]
-    // TODO (Issue #18): Restore this test when https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 is fixed.
+    [Test]
     public void TestDeserializingWithMissingSetWindowRectThrows()
     {
         string json = """

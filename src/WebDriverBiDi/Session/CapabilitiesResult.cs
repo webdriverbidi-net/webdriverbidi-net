@@ -59,8 +59,7 @@ public record CapabilitiesResult
     /// Gets a value indicating whether this session supports setting the size of the browser window.
     /// </summary>
     [JsonPropertyName("setWindowRect")]
-    // TODO (Issue #18): Uncomment the JsonRequired attribute once https://bugzilla.mozilla.org/show_bug.cgi?id=1916522 is fixed.
-    // [JsonRequired]
+    [JsonRequired]
     [JsonInclude]
     public bool SetWindowRect { get; private set; } = false;
 
