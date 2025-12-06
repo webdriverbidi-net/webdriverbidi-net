@@ -11,8 +11,8 @@ public class StorageModuleTests()
     public async Task TestGetCookiesCommand()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
-        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
-        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
+        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {

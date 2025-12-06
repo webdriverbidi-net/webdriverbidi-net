@@ -16,8 +16,8 @@ public class GetCookiesCommandResultTests
     public void TestCanDeserialize()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
-        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
-        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
+        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
         string json = $$"""
                       {
                         "cookies": [
@@ -94,8 +94,8 @@ public class GetCookiesCommandResultTests
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
-        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
-        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
+        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
         string json = $$"""
                       {
                         "cookies": [

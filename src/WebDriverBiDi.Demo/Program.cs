@@ -62,6 +62,7 @@ try
 
     await DemoScenarios.SubmitFormAsync(driver, baseDemoSiteUrl);
     // await DemoScenarios.WaitForDelayLoadAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.ManipulateCookies(driver, baseDemoSiteUrl);
     // await DemoScenarios.MonitorNetworkTraffic(driver, baseDemoSiteUrl);
     // await DemoScenarios.MonitorBrowserConsole(driver, baseDemoSiteUrl);
     // await DemoScenarios.ExecuteJavaScriptFunctions(driver, baseDemoSiteUrl);

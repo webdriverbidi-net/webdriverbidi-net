@@ -171,8 +171,8 @@ public class CookieTests
     public void TestCanDeserializeCookieWithExpiration()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
-        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
-        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
+        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
         string json = $$"""
                       {
                         "name": "cookieName",
@@ -253,8 +253,8 @@ public class CookieTests
     public void TestCanConvertDeserializeCookieToSetCookieHeader()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
-        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
-        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
+        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
         string json = $$"""
                       {
                         "name": "cookieName",

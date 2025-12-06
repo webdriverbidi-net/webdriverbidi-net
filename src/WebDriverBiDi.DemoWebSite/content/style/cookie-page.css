@@ -1,0 +1,25 @@
+thead tr {
+  background-color: #777777;
+  color: #ffffff;
+}
+
+tbody tr {
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 1rem;
+  padding: .5rem;
+}
+
+thead tr th {
+  font-size: 1rem;
+  padding: .5rem;
+}
+
+tbody tr td {
+  font-size: 1rem;
+  padding: .5rem;
+}
+
+tbody tr.server-cookie {
+  background-color: #9ddc9d;
+}

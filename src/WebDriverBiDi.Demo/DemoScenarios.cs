@@ -11,6 +11,7 @@ using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
+using WebDriverBiDi.Storage;
 
 public static class DemoScenarios
 {
@@ -141,6 +142,41 @@ public static class DemoScenarios
             Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type} (.NET type: {scriptSuccessResult.Result.Value!.GetType()})");
             RemoteValue scriptResultValue = scriptSuccessResult.Result;
             Console.WriteLine($"Element background color is {scriptResultValue.ValueAs<string>()}");
+        }
+    }
+
+    /// <summary>
+    /// Demonstrates the ability to manipulate cookies in the browser.
+    /// </summary>
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// It is assumed the driver is initialized and connected to the remote end.</param>
+    /// <param name="baseUrl">The base URL to the web server.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public static async Task ManipulateCookies(BiDiDriver driver, string baseUrl)
+    {
+        // IMPORTANT: For this demo to work properly, you will need to add an entry
+        // to your computer's hosts file. This typically requires administrative or
+        // sudo privileges. The required entry will map "web-platform.test" to the
+        // local loopback address (127.0.0.1 in IPv4).
+        string modifiedUrl = baseUrl.Replace("//localhost", "//web-platform.test");
+
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        PartialCookie setCookie = new("customCookieName", BytesValue.FromString("customCookieValue"), "web-platform.test");
+        await driver.Storage.SetCookieAsync(new SetCookieCommandParameters(setCookie));
+        NavigateCommandParameters navigateParams = new(contextId, $"{modifiedUrl}/cookiePage.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
+
+        GetCookiesCommandResult cookieResult = await driver.Storage.GetCookiesAsync(new GetCookiesCommandParameters());
+        foreach (Cookie cookie in cookieResult.Cookies)
+        {
+            Console.WriteLine($"Received cookie (name: {cookie.Name}, value: {cookie.Value.Value}, expires: {(cookie.Expires == null ? "<not set>" : cookie.Expires)})");
         }
     }
 
@@ -661,7 +697,7 @@ public static class DemoScenarios
     /// <summary>
     /// Demonstrates an approach to capturing all network traffic during a session, including request and response bodies.
     /// </summary>
-   /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
+    /// <param name="driver">The <see cref="BiDiDriver"/> instance to use to drive the browser.
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>

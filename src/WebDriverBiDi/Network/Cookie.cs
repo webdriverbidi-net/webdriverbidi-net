@@ -75,7 +75,7 @@ public record Cookie
             field = value;
             if (value.HasValue)
             {
-                this.Expires = DateTimeUtilities.UnixEpoch.AddMilliseconds(value.Value);
+                this.Expires = DateTimeUtilities.UnixEpoch.AddSeconds(value.Value);
             }
         }
     }

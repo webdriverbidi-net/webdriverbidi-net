@@ -28,6 +28,7 @@ public class DemoWebSiteServer
         StoredContentRegistrar.RegisterDirectory(webServer, string.Empty, Path.Combine(AppContext.BaseDirectory, contentDirectoryName));
         this.webServer.RegisterHandler("/", new RedirectRequestHandler("/index.html"));
         this.webServer.RegisterHandler("/processForm", HttpMethod.Post, new FormSubmitRequestHandler());
+        this.webServer.RegisterHandler("/cookiePage.html", HttpMethod.Get, new CookiePageRequestHandler());
         this.webServer.Start();
         Console.WriteLine($"Demo web server listening on port {this.Port}");
     }
