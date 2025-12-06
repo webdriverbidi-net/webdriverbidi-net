@@ -58,6 +58,12 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
     }
 
     /// <summary>
+    /// Gets a value indicating whether the launched browser has a provided WebDriver BiDi
+    /// session as part of its initialization.
+    /// </summary>
+    public override bool IsBrowserCloseAllowed => false;
+
+    /// <summary>
     /// Gets a value indicating the time to wait for the service to terminate before forcing it to terminate.
     /// </summary>
     protected override TimeSpan TerminationTimeout => TimeSpan.FromMilliseconds(100);
@@ -84,6 +90,11 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
         {
             { "level", "error" },
         };
+
+        if (this.IsBrowserHeadless)
+        {
+            firefoxOptions["args"] = new List<string>() { "--headless" };
+        }
 
         // TODO: Create a more fully-featured generation of capabilities.
         Dictionary<string, object> capabilities = new()

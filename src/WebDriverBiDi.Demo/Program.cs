@@ -30,11 +30,14 @@ BrowserType testBrowserType = BrowserType.Chrome;
 // installed location.
 string browserExecutableLocation = string.Empty;
 
+// Optionally run the tests headless.
+bool isHeadless = false;
+
 // The amount of time to pause after execution so that the browser can
 // be viewed to validate the results of the demo.
 TimeSpan viewResultsDelayTimeSpan = TimeSpan.FromSeconds(3);
 
-BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation);
+BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation, isHeadless);
 launcher.OnLogMessage.AddObserver(OnLogMessage);
 try
 {
@@ -71,7 +74,11 @@ try
     Console.WriteLine($"Pausing {viewResultsDelayTimeSpan.TotalSeconds} seconds to view results");
     await Task.Delay(viewResultsDelayTimeSpan);
 
-    await driver.Browser.CloseAsync(new CloseCommandParameters());
+    if (launcher.IsBrowserCloseAllowed)
+    {
+        await driver.Browser.CloseAsync(new CloseCommandParameters());
+    }
+
     await driver.StopAsync();
 }
 finally

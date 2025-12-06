@@ -12,6 +12,8 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public abstract class BrowserLauncher
 {
+    private bool isHeadless = false;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
     /// </summary>
@@ -52,6 +54,16 @@ public abstract class BrowserLauncher
     public virtual bool IsBiDiSessionInitialized => false;
 
     /// <summary>
+    /// Gets a value indicating whether the browser can be closed using WebDriver BiDi's browser.close command.
+    /// </summary>
+    public virtual bool IsBrowserCloseAllowed => true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to run the browser in an invisible (headless) mode.
+    /// </summary>
+    public bool IsBrowserHeadless { get => this.isHeadless; set => this.isHeadless = value; }
+
+    /// <summary>
     /// Gets or sets the location of the browser executable.
     /// </summary>
     protected string BrowserExecutableLocation { get; set; }
@@ -67,28 +79,45 @@ public abstract class BrowserLauncher
     /// <param name="browserType">The type of browser launcher to create.</param>
     /// <param name="launcherPath">The path to the browser launcher, not including the executable name.</param>
     /// <param name="browserExecutableLocation">The path and executable name of the browser executable.</param>
+    /// <param name="isHeadless"><see langword="true"/> if the browser should be launched invisibly (headless); otherwise <see langword="false"/>.</param>
     /// <returns>The launcher for the specified browser type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown when an invalid browser type is specified.</exception>
-    public static BrowserLauncher Create(BrowserType browserType, string launcherPath, string browserExecutableLocation = "")
+    public static BrowserLauncher Create(BrowserType browserType, string launcherPath, string browserExecutableLocation = "", bool isHeadless = false)
     {
         if (browserType == BrowserType.Chrome)
         {
-            return new ChromeLauncher(browserExecutableLocation);
+            ChromeLauncher chromeLauncher = new(browserExecutableLocation)
+            {
+                IsBrowserHeadless = isHeadless,
+            };
+            return chromeLauncher;
         }
 
         if (browserType == BrowserType.Firefox)
         {
-            return new FirefoxLauncher(browserExecutableLocation);
+            FirefoxLauncher firefoxLauncher = new(browserExecutableLocation)
+            {
+                IsBrowserHeadless = isHeadless,
+            };
+            return firefoxLauncher;
         }
 
         if (browserType == BrowserType.ChromeDriver)
         {
-            return new ChromeDriverLauncher(launcherPath, browserExecutableLocation);
+            ChromeDriverLauncher chromeDriverLauncher = new(launcherPath, browserExecutableLocation)
+            {
+                IsBrowserHeadless = isHeadless,
+            };
+            return chromeDriverLauncher;
         }
 
         if (browserType == BrowserType.GeckoDriver)
         {
-            return new GeckoDriverLauncher(launcherPath, browserExecutableLocation);
+            GeckoDriverLauncher geckoDriverLauncher = new(launcherPath, browserExecutableLocation)
+            {
+                IsBrowserHeadless = isHeadless,
+            };
+            return geckoDriverLauncher;
         }
 
         throw new WebDriverBiDiException("Invalid browser type");

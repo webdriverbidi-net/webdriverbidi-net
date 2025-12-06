@@ -96,6 +96,11 @@ public class FirefoxLauncher : BrowserLauncher
             args.Add(this.userDataDirectory);
             args.Add($"--remote-debugging-port");
             args.Add($"{this.Port}");
+            if (this.IsBrowserHeadless)
+            {
+                args.Add("--headless");
+            }
+
             return args.AsReadOnly();
         }
     }

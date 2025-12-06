@@ -80,6 +80,18 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
             chromeOptions["binary"] = this.BrowserExecutableLocation;
         }
 
+        if (this.IsBrowserHeadless)
+        {
+            List<string> chromeCommandLineArgs =
+            [
+                "--headless=new",
+                "--disable-dev-shm-usage",
+                "--no-sandbox",
+                "--disable-gpu",
+            ];
+            chromeOptions["args"] = chromeCommandLineArgs;
+        }
+
         // TODO: Create a more fully-featured generation of capabilities.
         Dictionary<string, object> capabilities = new()
         {

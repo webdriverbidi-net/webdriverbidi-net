@@ -127,6 +127,14 @@ public class ChromeLauncher : BrowserLauncher
             args.Add($"--enable-features=${string.Join(",", this.enabledFeatures)}");
             args.Add($"--user-data-dir={this.userDataDirectory}");
             args.Add($"--remote-debugging-port={this.Port}");
+            if (this.IsBrowserHeadless)
+            {
+                args.Add("--headless=new");
+                args.Add("--disable-dev-shm-usage");
+                args.Add("--no-sandbox");
+                args.Add("--disable-gpu");
+            }
+
             args.Add("about:blank");
             return args.AsReadOnly();
         }
