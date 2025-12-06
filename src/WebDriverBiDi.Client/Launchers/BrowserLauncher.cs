@@ -79,44 +79,31 @@ public abstract class BrowserLauncher
     /// <param name="browserType">The type of browser launcher to create.</param>
     /// <param name="launcherPath">The path to the browser launcher, not including the executable name.</param>
     /// <param name="browserExecutableLocation">The path and executable name of the browser executable.</param>
-    /// <param name="isHeadless"><see langword="true"/> if the browser should be launched invisibly (headless); otherwise <see langword="false"/>.</param>
     /// <returns>The launcher for the specified browser type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown when an invalid browser type is specified.</exception>
-    public static BrowserLauncher Create(BrowserType browserType, string launcherPath, string browserExecutableLocation = "", bool isHeadless = false)
+    public static BrowserLauncher Create(BrowserType browserType, string launcherPath, string browserExecutableLocation = "")
     {
         if (browserType == BrowserType.Chrome)
         {
-            ChromeLauncher chromeLauncher = new(browserExecutableLocation)
-            {
-                IsBrowserHeadless = isHeadless,
-            };
+            ChromeLauncher chromeLauncher = new(browserExecutableLocation);
             return chromeLauncher;
         }
 
         if (browserType == BrowserType.Firefox)
         {
-            FirefoxLauncher firefoxLauncher = new(browserExecutableLocation)
-            {
-                IsBrowserHeadless = isHeadless,
-            };
+            FirefoxLauncher firefoxLauncher = new(browserExecutableLocation);
             return firefoxLauncher;
         }
 
         if (browserType == BrowserType.ChromeDriver)
         {
-            ChromeDriverLauncher chromeDriverLauncher = new(launcherPath, browserExecutableLocation)
-            {
-                IsBrowserHeadless = isHeadless,
-            };
+            ChromeDriverLauncher chromeDriverLauncher = new(launcherPath, browserExecutableLocation);
             return chromeDriverLauncher;
         }
 
         if (browserType == BrowserType.GeckoDriver)
         {
-            GeckoDriverLauncher geckoDriverLauncher = new(launcherPath, browserExecutableLocation)
-            {
-                IsBrowserHeadless = isHeadless,
-            };
+            GeckoDriverLauncher geckoDriverLauncher = new(launcherPath, browserExecutableLocation);
             return geckoDriverLauncher;
         }
 

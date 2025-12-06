@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.Demo;
 
-using System.ComponentModel.Design;
 using System.Text;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;

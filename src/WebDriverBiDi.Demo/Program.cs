@@ -9,9 +9,9 @@ using WebDriverBiDi.Browser;
 
 DemoWebSiteServer demoSiteServer = new();
 
-// To use a specific port, uncomment the line below and modify it to
-// use the desired port.
-// int port = 38267;
+// To use a specific port, change the below to a non-zero value.
+// A value of zero (0) indicates to use a random port.
+int port = 0;
 
 // Path to the directory containing the browser launcher executables.
 // We use the WebDriver Classic browser drivers (chromedriver, geckodriver, etc.)
@@ -30,14 +30,16 @@ BrowserType testBrowserType = BrowserType.Chrome;
 // installed location.
 string browserExecutableLocation = string.Empty;
 
-// Optionally run the tests headless.
+// Optionally change the below value run the browsers invisibly (headless).
 bool isHeadless = false;
 
 // The amount of time to pause after execution so that the browser can
 // be viewed to validate the results of the demo.
 TimeSpan viewResultsDelayTimeSpan = TimeSpan.FromSeconds(3);
 
-BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation, isHeadless);
+BrowserLauncher launcher = BrowserLauncher.Create(testBrowserType, browserLauncherDirectory, browserExecutableLocation);
+launcher.Port = port;
+launcher.IsBrowserHeadless = isHeadless;
 launcher.OnLogMessage.AddObserver(OnLogMessage);
 try
 {
