@@ -12,8 +12,6 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public abstract class BrowserLauncher
 {
-    private bool isHeadless = false;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
     /// </summary>
@@ -45,7 +43,7 @@ public abstract class BrowserLauncher
     /// <summary>
     /// Gets or sets the port on which the launcher should listen.
     /// </summary>
-    public int Port { get; set; }
+    public int Port { get; set; } = 0;
 
     /// <summary>
     /// Gets a value indicating whether the launched browser has a provided WebDriver BiDi
@@ -61,7 +59,7 @@ public abstract class BrowserLauncher
     /// <summary>
     /// Gets or sets a value indicating whether to run the browser in an invisible (headless) mode.
     /// </summary>
-    public bool IsBrowserHeadless { get => this.isHeadless; set => this.isHeadless = value; }
+    public bool IsBrowserHeadless { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the location of the browser executable.
