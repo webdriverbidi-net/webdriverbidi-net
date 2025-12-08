@@ -219,7 +219,7 @@ public class CookieFilterTests
     public void TestSettingCookieFilterExpirationDate()
     {
         DateTime now = DateTime.UtcNow.AddDays(1);
-        DateTime expirationDate = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        DateTime expirationDate = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
         CookieFilter properties = new()
         {
             Expires = expirationDate

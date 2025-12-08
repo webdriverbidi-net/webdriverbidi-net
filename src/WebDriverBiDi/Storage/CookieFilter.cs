@@ -90,7 +90,7 @@ public class CookieFilter
         {
             if (this.EpochExpires.HasValue)
             {
-                return DateTimeUtilities.UnixEpoch.AddMilliseconds(this.EpochExpires.Value);
+                return DateTimeUtilities.UnixEpoch.AddSeconds(this.EpochExpires.Value);
             }
 
             return null;
@@ -100,7 +100,7 @@ public class CookieFilter
         {
             if (value.HasValue)
             {
-                this.EpochExpires = Convert.ToUInt64((value.Value - DateTimeUtilities.UnixEpoch).TotalMilliseconds);
+                this.EpochExpires = Convert.ToUInt64((value.Value - DateTimeUtilities.UnixEpoch).TotalSeconds);
             }
             else
             {

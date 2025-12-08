@@ -415,7 +415,7 @@ public class PartialCookieTests
     public void TestSettingPartialCookieExpirationDate()
     {
         DateTime now = DateTime.UtcNow.AddDays(1);
-        DateTime expirationDate = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        DateTime expirationDate = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
         PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
         {
             Expires = expirationDate
