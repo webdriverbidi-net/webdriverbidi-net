@@ -199,7 +199,7 @@ public class CookieFilterTests
     {
         DateTime now = DateTime.UtcNow;
         DateTime expirationDate = now.AddDays(1);
-        ulong milliseconds = Convert.ToUInt64(expirationDate.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        ulong seconds = Convert.ToUInt64(expirationDate.Subtract(DateTime.UnixEpoch).TotalSeconds);
         CookieFilter properties = new()
         {
             Expires = expirationDate
@@ -211,7 +211,7 @@ public class CookieFilterTests
             Assert.That(serialized, Has.Count.EqualTo(1));
             Assert.That(serialized, Contains.Key("expiry"));
             Assert.That(serialized["expiry"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["expiry"]!.Value<ulong>(), Is.EqualTo(milliseconds));
+            Assert.That(serialized["expiry"]!.Value<ulong>(), Is.EqualTo(seconds));
         }
     }
 

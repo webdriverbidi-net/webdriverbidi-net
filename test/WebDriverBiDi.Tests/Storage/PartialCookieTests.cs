@@ -346,7 +346,7 @@ public class PartialCookieTests
     {
         DateTime now = DateTime.UtcNow;
         DateTime expirationDate = now.AddDays(1);
-        ulong milliseconds = Convert.ToUInt64(expirationDate.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        ulong seconds = Convert.ToUInt64(expirationDate.Subtract(DateTime.UnixEpoch).TotalSeconds);
         PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
         {
             Expires = expirationDate
@@ -374,7 +374,7 @@ public class PartialCookieTests
             Assert.That(serialized["domain"]!.Value<string>(), Is.EqualTo("myCookieDomain"));
             Assert.That(serialized, Contains.Key("expiry"));
             Assert.That(serialized["expiry"]!.Type, Is.EqualTo(JTokenType.Integer));
-            Assert.That(serialized["expiry"]!.Value<ulong>(), Is.EqualTo(milliseconds));
+            Assert.That(serialized["expiry"]!.Value<ulong>(), Is.EqualTo(seconds));
         }
     }
 
@@ -383,7 +383,6 @@ public class PartialCookieTests
     {
         DateTime now = DateTime.UtcNow;
         DateTime expirationDate = now.AddDays(1);
-        ulong milliseconds = Convert.ToUInt64(expirationDate.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
         PartialCookie properties = new("myCookieName", BytesValue.FromString("myCookieValue"), "myCookieDomain")
         {
             Expires = null

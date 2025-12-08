@@ -12,7 +12,7 @@ public class StorageModuleTests()
     {
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
-        ulong milliseconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
+        ulong seconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
         TestConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
@@ -34,7 +34,7 @@ public class StorageModuleTests()
                                           "httpOnly": false,
                                           "secure": true,
                                           "sameSite": "lax",
-                                          "expiry": {{milliseconds}}
+                                          "expiry": {{seconds}}
                                         }
                                       ],
                                       "partitionKey": {
