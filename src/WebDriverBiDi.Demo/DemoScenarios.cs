@@ -176,7 +176,7 @@ public static class DemoScenarios
         GetCookiesCommandResult cookieResult = await driver.Storage.GetCookiesAsync(new GetCookiesCommandParameters());
         foreach (Cookie cookie in cookieResult.Cookies)
         {
-            Console.WriteLine($"Received cookie (name: {cookie.Name}, value: {cookie.Value.Value}, expires: {(cookie.Expires == null ? "<not set>" : cookie.Expires)})");
+            Console.WriteLine($"Received cookie (name: {cookie.Name}, value: {cookie.Value.Value}, expires: {(cookie.Expires == null ? "<not set>" : cookie.Expires.Value.ToLocalTime())})");
         }
     }
 
