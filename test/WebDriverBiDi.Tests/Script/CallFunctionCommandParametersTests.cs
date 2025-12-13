@@ -66,4 +66,37 @@ public class CallFunctionCommandParametersTests
             Assert.That(serialized["userActivation"]!.Type, Is.EqualTo(JTokenType.Boolean));
         }
     }
+
+    [Test]
+    public void TestCanSerializeParametersWithChannelValueArgument()
+    {
+        // This test verifies that ChannelValue can be serialized as an ArgumentValue
+        // in the Arguments list. This requires ChannelValue to be registered as a
+        // JsonDerivedType on ArgumentValue for proper polymorphic serialization.
+        CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), false);
+        var channelProperties = new ChannelProperties("myChannel")
+        {
+            ResultOwnership = ResultOwnership.Root,
+        };
+        properties.Arguments.Add(new ChannelValue(channelProperties));
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.Multiple(() =>
+        {
+            Assert.That(serialized, Contains.Key("arguments"));
+            Assert.That(serialized["arguments"]!.Type, Is.EqualTo(JTokenType.Array));
+            JArray args = (JArray)serialized["arguments"]!;
+            Assert.That(args, Has.Count.EqualTo(1));
+            JObject channelArg = (JObject)args[0]!;
+            Assert.That(channelArg, Contains.Key("type"));
+            Assert.That(channelArg["type"]!.Value<string>(), Is.EqualTo("channel"));
+            Assert.That(channelArg, Contains.Key("value"));
+            Assert.That(channelArg["value"]!.Type, Is.EqualTo(JTokenType.Object));
+            JObject channelValue = (JObject)channelArg["value"]!;
+            Assert.That(channelValue, Contains.Key("channel"));
+            Assert.That(channelValue["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
+            Assert.That(channelValue, Contains.Key("resultOwnership"));
+            Assert.That(channelValue["resultOwnership"]!.Value<string>(), Is.EqualTo("root"));
+        });
+    }
 }
