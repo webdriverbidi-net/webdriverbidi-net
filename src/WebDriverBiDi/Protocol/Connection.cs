@@ -20,6 +20,11 @@ public abstract class Connection
     public abstract bool IsActive { get; }
 
     /// <summary>
+    /// Gets a value indicating the type of data transport used by this connection.
+    /// </summary>
+    public abstract ConnectionType ConnectionType { get; }
+
+    /// <summary>
     /// Gets the buffer size for communication used by this connection.
     /// </summary>
     public int BufferSize { get; } = Convert.ToInt32(Math.Pow(2, 20));

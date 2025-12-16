@@ -71,13 +71,15 @@ public class ChromeLauncher : BrowserLauncher
         "--use-mock-keychain",
     ];
 
+    private Connection? connection;
+
     private Process? browserProcess;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ChromeLauncher"/> class.
     /// </summary>
     public ChromeLauncher()
-        : this(string.Empty, 0)
+        : this(string.Empty)
     {
     }
 
@@ -98,7 +100,7 @@ public class ChromeLauncher : BrowserLauncher
     public ChromeLauncher(string browserExecutableLocation, int port)
         : base(string.Empty, port, browserExecutableLocation)
     {
-        this.CreateConnection();
+        // this.CreateConnection();
         if (string.IsNullOrEmpty(browserExecutableLocation))
         {
             this.BrowserExecutableLocation = this.GetDefaultBrowserExecutableLocation();
@@ -119,6 +121,11 @@ public class ChromeLauncher : BrowserLauncher
     /// </summary>
     public bool IsRunning => this.browserProcess is not null && !this.browserProcess.HasExited;
 
+    /// <summary>
+    /// Gets or sets a value indicating the type of connection to use in communicating with the browser.
+    /// </summary>
+    public ConnectionType ConnectionType { get; set; } = ConnectionType.WebSocket;
+
     private IList<string> CommandLineArguments
     {
         get
@@ -127,7 +134,15 @@ public class ChromeLauncher : BrowserLauncher
             args.Add($"--disable-features=${string.Join(",", this.disabledFeatures)}");
             args.Add($"--enable-features=${string.Join(",", this.enabledFeatures)}");
             args.Add($"--user-data-dir={this.userDataDirectory}");
-            args.Add($"--remote-debugging-port={this.Port}");
+            if (this.ConnectionType == ConnectionType.Pipes)
+            {
+                args.Add("--remote-debugging-pipe");
+            }
+            else
+            {
+                args.Add($"--remote-debugging-port={this.Port}");
+            }
+
             if (this.IsBrowserHeadless)
             {
                 args.Add("--headless=new");
@@ -147,7 +162,7 @@ public class ChromeLauncher : BrowserLauncher
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
     public override Task StartAsync()
     {
-        // No operation required to start the launcher.
+        this.connection = this.CreateConnection();
         return Task.CompletedTask;
     }
 
@@ -176,13 +191,10 @@ public class ChromeLauncher : BrowserLauncher
 
             this.CreateUserDataDirectory();
 
-            this.browserProcess = new Process();
-            this.browserProcess.StartInfo.FileName = this.BrowserExecutableLocation;
-            this.browserProcess.StartInfo.Arguments = string.Join(" ", this.CommandLineArguments);
-            this.browserProcess.StartInfo.UseShellExecute = false;
-            this.browserProcess.StartInfo.RedirectStandardOutput = true;
-            this.browserProcess.StartInfo.RedirectStandardError = true;
-            this.browserProcess.StartInfo.CreateNoWindow = true;
+            this.browserProcess = new Process
+            {
+                StartInfo = this.CreateProcessStartInfo(),
+            };
             this.browserProcess.ErrorDataReceived += this.ReadStandardError;
             this.browserProcess.OutputDataReceived += this.ReadStandardOutput;
             this.browserProcess.Start();
@@ -201,20 +213,25 @@ public class ChromeLauncher : BrowserLauncher
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="CannotQuitBrowserException">Thrown when the browser could not be exited.</exception>
-    public override Task QuitBrowserAsync()
+    public override async Task QuitBrowserAsync()
     {
+        if (this.connection is not null && this.connection.IsActive && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection pipeConnection)
+        {
+            await pipeConnection.StopAsync().ConfigureAwait(false);
+            this.connection = null;
+        }
+
         if (this.browserProcess is not null)
         {
             if (!this.browserProcess.HasExited)
             {
                 this.browserProcess.Kill();
+                this.browserProcess.WaitForExit();
             }
 
             this.browserProcess = null;
             this.RemoveUserDataDirectory();
         }
-
-        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -233,7 +250,57 @@ public class ChromeLauncher : BrowserLauncher
     /// <returns>The <see cref="Transport"/> to be used in instantiating the driver.</returns>
     public override Transport CreateTransport()
     {
-        return new ChromiumTransport();
+        return new ChromiumTransport(this.connection ?? this.CreateConnection());
+    }
+
+    /// <summary>
+    /// Creates the <see cref="Connection"/> object to be used to communicate with the browser.
+    /// </summary>
+    /// <returns>The <see cref="Connection"/> object to be used to communicate with the browser.</returns>
+    protected override Connection CreateConnection()
+    {
+        if (this.ConnectionType == ConnectionType.Pipes)
+        {
+            return new PipeConnection();
+        }
+
+        return new WebSocketConnection();
+    }
+
+    private static string GetShellPath()
+    {
+        // Try common shell locations
+        string[] shellPaths = ["/bin/bash", "/usr/bin/bash", "/bin/sh", "/usr/bin/sh"];
+
+        foreach (string path in shellPaths)
+        {
+            if (File.Exists(path))
+            {
+                return path;
+            }
+        }
+
+        // Fall back to bash and hope it's in PATH
+        return "bash";
+    }
+
+    private static string EscapeShellArgument(string argument)
+    {
+        // Escape single quotes by ending the single-quoted string,
+        // adding an escaped single quote, and starting a new single-quoted string
+        return "'" + argument.Replace("'", "'\\''") + "'";
+    }
+
+    private static string EscapeWindowsArgument(string argument)
+    {
+        // If the argument contains spaces or special characters, wrap in quotes
+        if (argument.Contains(' ') || argument.Contains('"'))
+        {
+            // Escape internal quotes and wrap in quotes
+            return "\"" + argument.Replace("\"", "\\\"") + "\"";
+        }
+
+        return argument;
     }
 
     /// <summary>
@@ -265,6 +332,56 @@ public class ChromeLauncher : BrowserLauncher
         return listeningPort;
     }
 
+    private ProcessStartInfo CreateProcessStartInfo()
+    {
+        string fileName = this.BrowserExecutableLocation;
+        string args = string.Join(" ", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? this.CommandLineArguments.Select(EscapeWindowsArgument) : this.CommandLineArguments);
+        if (this.connection is not null && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection pipeConnection)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                this.CommandLineArguments.Add($"--remote-debugging-io-pipes={pipeConnection.ReadPipeHandle},{pipeConnection.WritePipeHandle}");
+                args = string.Join(" ", this.CommandLineArguments.Select(EscapeWindowsArgument));
+            }
+            else
+            {
+                // Escape the browser path and arguments for shell usage
+                string escapedBrowserPath = EscapeShellArgument(this.BrowserExecutableLocation);
+                string escapedArgs = string.Join(" ", this.CommandLineArguments.Select(EscapeShellArgument));
+
+                // For pipe connection in non-Windows OSes, create a bash command that:
+                // 1. Redirects FD 3 to read from our write pipe (browser reads commands)
+                // 2. Redirects FD 4 to write to our read pipe (browser writes responses)
+                // 3. Closes the original pipe FDs to avoid leaking them
+                // 4. Executes the browser with exec to replace the shell process
+                //
+                // The syntax is:
+                //   exec 3<&{fd} 4>&{fd} {fd}<&- {fd}>&- ; exec browser args
+                //
+                // Where:
+                //   3<&{fd}  - duplicate read pipe fd to fd 3
+                //   4>&{fd}  - duplicate write pipe fd to fd 4
+                //   {fd}<&-  - close the original read pipe fd
+                //   {fd}>&-  - close the original write pipe fd
+                string bashScript = $"exec 3<&{pipeConnection.ReadPipeHandle} 4>&{pipeConnection.WritePipeHandle} " +
+                                $"{pipeConnection.ReadPipeHandle}<&- {pipeConnection.WritePipeHandle}>&-; " +
+                                $"exec {escapedBrowserPath} {escapedArgs}";
+                fileName = GetShellPath();
+                args = $"-c \"{bashScript.Replace("\"", "\\\"")}\"";
+            }
+        }
+
+        return new ProcessStartInfo()
+        {
+            FileName = fileName,
+            Arguments = args,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+    }
+
     /// <summary>
     /// Asynchronously waits for the initialization of the browser launcher.
     /// </summary>
@@ -279,6 +396,12 @@ public class ChromeLauncher : BrowserLauncher
             if (!this.IsRunning)
             {
                 break;
+            }
+
+            if (this.browserProcess is not null && this.connection is not null && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection pipeConnection)
+            {
+                pipeConnection.SetExternalProcess(this.browserProcess);
+                this.WebSocketUrl = $"pipe://{this.BrowserExecutableLocation}:{this.browserProcess.Id}";
             }
 
             if (!string.IsNullOrEmpty(this.WebSocketUrl))
