@@ -21,6 +21,11 @@ public abstract class Connection : IAsyncDisposable
     public abstract bool IsActive { get; }
 
     /// <summary>
+    /// Gets a value indicating the type of data transport used by this connection.
+    /// </summary>
+    public abstract ConnectionType ConnectionType { get; }
+
+    /// <summary>
     /// Gets the buffer size for communication used by this connection.
     /// </summary>
     public int BufferSize { get; } = Convert.ToInt32(Math.Pow(2, 20));
@@ -111,10 +116,7 @@ public abstract class Connection : IAsyncDisposable
     /// Override this method in derived classes to add custom async cleanup logic.
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
-    protected virtual ValueTask DisposeAsyncCore()
-    {
-        return default;
-    }
+    protected abstract ValueTask DisposeAsyncCore();
 
     /// <summary>
     /// Marks this <see cref="Connection"/> as disposed. Use this method to ensure
