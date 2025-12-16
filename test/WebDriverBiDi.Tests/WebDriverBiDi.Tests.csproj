@@ -27,6 +27,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="PinchHitter" Version="0.0.13" />
+    <PackageReference Include="Tmds.ExecFunction" Version="0.8.0" />
   </ItemGroup>
 
   <ItemGroup>

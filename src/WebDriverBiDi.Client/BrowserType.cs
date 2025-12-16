@@ -21,6 +21,12 @@ public enum BrowserType
     Firefox,
 
     /// <summary>
+    /// The Chrome browser, using pipe-based communication via --remote-debugging-pipe.
+    /// This provides native BiDi support on Unix systems using file descriptors 3 and 4.
+    /// </summary>
+    ChromePipe,
+
+    /// <summary>
     /// The Chrome browser, using the chromedriver executable.
     /// </summary>
     ChromeDriver,

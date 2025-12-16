@@ -32,6 +32,11 @@ public class WebSocketConnection : Connection
     public override bool IsActive => this.client.State != WebSocketState.None && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted;
 
     /// <summary>
+    /// Gets a value indicating the type of data transport used by this connection, in this case, a WebSocket connection.
+    /// </summary>
+    public override ConnectionType ConnectionType => ConnectionType.WebSocket;
+
+    /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
     /// </summary>
     /// <param name="url">The URL used to connect to the remote end.</param>

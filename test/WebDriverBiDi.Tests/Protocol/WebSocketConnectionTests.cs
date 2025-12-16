@@ -49,6 +49,13 @@ public class WebSocketConnectionTests
     }
 
     [Test]
+    public void TestConnectionType()
+    {
+        WebSocketConnection connection = new();
+        Assert.That(connection.ConnectionType, Is.EqualTo(ConnectionType.WebSocket));
+    }
+
+    [Test]
     public void TestConnectionFailure()
     {
         int port = this.server.Port;
