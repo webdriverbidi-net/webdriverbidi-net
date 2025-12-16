@@ -111,6 +111,16 @@ public sealed class EmulationModule : Module
     }
 
     /// <summary>
+    /// Sets the emulated override for touch events for the specified contexts or user contexts.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<SetTouchOverrideCommandResult> SetTouchOverrideAsync(SetTouchOverrideCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<SetTouchOverrideCommandResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sets the emulated override for the user agent string for the specified contexts or user contexts.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
