@@ -8,7 +8,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteActivateCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -35,7 +35,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteCaptureScreenshotCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -65,7 +65,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteCloseCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -92,7 +92,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteCreateCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
            string responseJson = $$"""
@@ -122,7 +122,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteGetTreeCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
            string responseJson = $$"""
@@ -167,7 +167,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteHandleUserPromptCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -194,7 +194,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteLocateNodesCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
            string responseJson = $$"""
@@ -233,7 +233,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteNavigateCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -268,7 +268,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecutePrintCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -298,7 +298,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteReloadCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -333,7 +333,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteSetViewportCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -360,7 +360,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestExecuteTraverseHistoryCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -387,7 +387,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveContextCreatedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -428,7 +428,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveContextDestroyedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -467,7 +467,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveDomContentLoadedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -506,7 +506,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveDownloadWillBeginEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -547,7 +547,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveDownloadEndEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -590,7 +590,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveFragmentNavigatedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -629,7 +629,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveLoadEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -668,7 +668,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveNavigationAbortedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -707,7 +707,7 @@ public class BrowsingContextModuleTests
   [Test]
   public async Task TestCanReceiveNavigationCommittedEvent()
   {
-      TestConnection connection = new();
+      TestWebSocketConnection connection = new();
       BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
       await driver.StartAsync("ws:localhost");
       BrowsingContextModule module = new(driver);
@@ -747,7 +747,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveNavigationFailedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -786,7 +786,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveNavigationStartedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -825,7 +825,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveHistoryUpdatedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -859,7 +859,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveUserPromptClosedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);
@@ -894,7 +894,7 @@ public class BrowsingContextModuleTests
     [Test]
     public async Task TestCanReceiveUserPromptOpenedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BrowsingContextModule module = new(driver);

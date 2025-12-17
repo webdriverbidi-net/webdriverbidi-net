@@ -9,7 +9,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestExecuteCallFunctionCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -56,7 +56,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestExecuteCallFunctionCommandReturningError()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -114,7 +114,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestExecuteEvaluateCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -161,7 +161,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestExecuteEvaluateCommandReturningError()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -219,7 +219,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestExecuteGetRealmsCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -269,7 +269,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestExecuteDisownCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -297,7 +297,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestCanReceiveRealmCreatedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
@@ -335,7 +335,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestCanReceiveRealmCreatedEventForNonWindowRealm()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
@@ -372,7 +372,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestCanReceiveRealmDestroyedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
@@ -402,7 +402,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestCanReceiveMessageEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = new(driver);
         await driver.StartAsync("ws:localhost");
@@ -446,7 +446,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestCanAddPreloadScript()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -477,7 +477,7 @@ public class ScriptModuleTests
     [Test]
     public async Task TestCanRemovePreloadScript()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete +=  async (sender, e) =>
         {
             string responseJson = $$"""

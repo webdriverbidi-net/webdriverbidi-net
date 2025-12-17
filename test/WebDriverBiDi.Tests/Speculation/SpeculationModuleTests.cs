@@ -8,7 +8,7 @@ public class SpeculationModuleTests
      [Test]
     public async Task TestCanReceivePrefetchStatusUpdatedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         SpeculationModule module = new(driver);

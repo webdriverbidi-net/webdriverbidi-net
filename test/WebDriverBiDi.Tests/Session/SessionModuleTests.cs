@@ -8,7 +8,7 @@ public class SessionModuleTests
     [Test]
     public async Task TestExecuteStatusCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -43,7 +43,7 @@ public class SessionModuleTests
     [Test]
     public async Task TestExecuteStatusCommandWithNoArgument()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -78,7 +78,7 @@ public class SessionModuleTests
     [Test]
     public async Task TestExecuteSubscribeCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -110,7 +110,7 @@ public class SessionModuleTests
     [Test]
     public async Task TestExecuteUnsubscribeByAttributesCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -139,7 +139,7 @@ public class SessionModuleTests
     [Test]
     public async Task TestExecuteUnsubscribeBySubscriptionIdsCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -168,7 +168,7 @@ public class SessionModuleTests
     [Test]
     public async Task TestExecuteNewCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -226,7 +226,7 @@ public class SessionModuleTests
     [Test]
     public async Task TestExecuteEndCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -253,7 +253,7 @@ public class SessionModuleTests
     [Test]
     public async Task TestExecuteEndCommandWithNoArgument()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
