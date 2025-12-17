@@ -101,6 +101,23 @@ public class TestPipeServer
         }
     }
 
+    public bool WaitForDataSent(TimeSpan timeout)
+    {
+        Task timeoutTask = Task.Delay(timeout);
+        Task peekTask = Task.Run(async () =>
+        {
+            if (this.ServerProcess is not null)
+            {
+                while (this.ServerProcess.StandardOutput.Peek() < 0)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(50));
+                }
+            }
+        });
+        int completedTaskIndex = Task.WaitAny(peekTask, timeoutTask);
+        return completedTaskIndex == 0;
+    }
+
     public string GetSentData()
     {
         if (this.ServerProcess is not null)
