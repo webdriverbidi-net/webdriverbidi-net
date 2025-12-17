@@ -340,8 +340,9 @@ public class ChromeLauncher : BrowserLauncher
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                this.CommandLineArguments.Add($"--remote-debugging-io-pipes={pipeConnection.ReadPipeHandle},{pipeConnection.WritePipeHandle}");
-                args = string.Join(" ", this.CommandLineArguments.Select(EscapeWindowsArgument));
+                List<string> browserArgs = [.. this.CommandLineArguments];
+                browserArgs.Add($"--remote-debugging-io-pipes={pipeConnection.ReadPipeHandle},{pipeConnection.WritePipeHandle}");
+                args = string.Join(" ", browserArgs.Select(EscapeWindowsArgument));
             }
             else
             {
