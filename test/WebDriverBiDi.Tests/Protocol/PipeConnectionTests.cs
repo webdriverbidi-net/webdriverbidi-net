@@ -25,7 +25,9 @@ public class PipeConnectionTests
         connection.SetExternalProcess(testPipeServer.ServerProcess!);
         await connection.StartAsync("pipe://local");
         await connection.SendDataAsync(Encoding.UTF8.GetBytes("Hello"));
+        bool dataSendSuccess = testPipeServer.WaitForDataSent(TimeSpan.FromSeconds(1));
         testPipeServer.Stop();
+        Assert.That(dataSendSuccess, Is.True);
 
         string output = testPipeServer.GetSentData();
         Assert.That(output, Is.EqualTo("Hello"));
