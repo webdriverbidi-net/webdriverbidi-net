@@ -2,12 +2,12 @@ namespace WebDriverBiDi.TestUtilities;
 
 using WebDriverBiDi.Protocol;
 
-public class TestPipeConnection: PipeConnection
+public class TestPipeConnection : PipeConnection
 {
     public bool BypassDataSend { get; set; } = true;
 
     public TimeSpan? DataSendDelay { get; set; }
-    
+
     public event EventHandler? DataSendStarting;
 
     protected override Task SendPipeDataAsync(byte[] messageBuffer)
