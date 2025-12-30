@@ -60,28 +60,28 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
-    /// Gets the list of context nodes within which to locate child nodes.
+    /// Gets the list of nodes within which to locate child nodes.
     /// If empty, nodes will be located from the top-level document.
     /// </summary>
     [JsonIgnore]
-    public List<SharedReference> ContextNodes { get; } = [];
+    public List<SharedReference> StartNodes { get; } = [];
 
     /// <summary>
     /// Gets the list of context nodes for serialization purposes.
     /// </summary>
-    [JsonPropertyName("contextNodes")]
+    [JsonPropertyName("startNodes")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    internal IList<SharedReference>? SerializableContextNodes
+    internal IList<SharedReference>? SerializableStartNodes
     {
         get
         {
-            if (this.ContextNodes.Count == 0)
+            if (this.StartNodes.Count == 0)
             {
                 return null;
             }
 
-            return this.ContextNodes.AsReadOnly();
+            return this.StartNodes.AsReadOnly();
         }
     }
 }
