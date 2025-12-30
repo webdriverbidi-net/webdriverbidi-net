@@ -111,12 +111,12 @@ public class LocateNodesCommandParametersTests
     }
 
     [Test]
-    public void TestCanSerializeWithContextNode()
+    public void TestCanSerializeWithStartNode()
     {
         string nodeJson = @"{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
         RemoteValue nodeValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!;
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"));
-        properties.ContextNodes.Add(nodeValue.ToSharedReference());
+        properties.StartNodes.Add(nodeValue.ToSharedReference());
 
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
@@ -134,9 +134,9 @@ public class LocateNodesCommandParametersTests
             Assert.That(serialized["locator"]!, Contains.Key("value"));
             Assert.That(serialized["locator"]!["value"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["locator"]!["value"]!.Value<string>, Is.EqualTo(".selector"));
-            Assert.That(serialized, Contains.Key("contextNodes"));
-            Assert.That(serialized["contextNodes"]!.Type, Is.EqualTo(JTokenType.Array));
-            Assert.That(serialized["contextNodes"]! as JArray, Has.Count.EqualTo(1));
+            Assert.That(serialized, Contains.Key("startNodes"));
+            Assert.That(serialized["startNodes"]!.Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(serialized["startNodes"]! as JArray, Has.Count.EqualTo(1));
         }
     }
 }
