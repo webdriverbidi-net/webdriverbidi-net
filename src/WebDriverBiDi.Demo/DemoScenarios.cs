@@ -989,4 +989,52 @@ public static class DemoScenarios
         });
         Task.WaitAll([thirdNavigationTask, fourthNavigationTask]);
     }
+
+    public static async Task ManipulateShadowRoots(BiDiDriver driver, string baseUrl)
+    {
+        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+        string contextId = tree.ContextTree[0].BrowsingContextId;
+        Console.WriteLine($"Active context: {contextId}");
+
+        NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/shadow.html")
+        {
+            Wait = ReadinessState.Complete
+        };
+        NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
+        Console.WriteLine($"Performed navigation to {navigation.Url}");
+
+        Locator locator = new AccessibilityLocator()
+        {
+            Role = "button",
+            Name = "Open Shadow Button",
+        };
+        LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, locator));
+        IList<RemoteValue> locateValues = locateResult.Nodes;
+        Console.WriteLine($"Found {locateValues.Count} custom-button elements");
+        foreach(RemoteValue locateValue in locateValues)
+        {
+            NodeProperties properties = locateValue.ValueAs<NodeProperties>()!;
+            Console.WriteLine($"Custom button element (local name {properties.LocalName}, id {properties.Attributes?["id"]})");
+            if (properties.ShadowRoot is not null)
+            {
+               Locator shadowLocator = new AccessibilityLocator()
+                {
+                    Role = "button",
+                };
+                LocateNodesCommandParameters shadowLocateParams = new(contextId, shadowLocator);
+                shadowLocateParams.StartNodes.Add(properties.ShadowRoot.ToSharedReference());
+                LocateNodesCommandResult locateShadowResult = await driver.BrowsingContext.LocateNodesAsync(shadowLocateParams);
+                IList<RemoteValue> locateShadowValues = locateShadowResult.Nodes;
+                Console.WriteLine($"Found {locateShadowValues.Count} button elements in web component");
+                foreach(RemoteValue locateShadowValue in locateShadowValues)
+                {
+                    NodeProperties shadowProperties = locateShadowValue.ValueAs<NodeProperties>()!;
+                    if (shadowProperties.LocalName?.ToLower() != "script" && shadowProperties.LocalName?.ToLower() != "style")
+                    {
+                        Console.WriteLine($"Found button (local name {shadowProperties.LocalName}, id {shadowProperties.Attributes?["id"]} in web component)");
+                    }
+                }
+            }
+        }
+    }
 }
