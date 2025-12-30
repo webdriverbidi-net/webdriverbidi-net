@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Page with Web Components (Shadow Dom)</title>
+    <script src="script/custom-button.js"></script>
+  </head>
+  <body>
+    <div id="open">
+      <custom-button id="openShadowButton" text="Open Shadow Button" shadow-mode="open"></custom-button>
+    </div>
+    <div id="closed">
+      <custom-button id="closedShadowButton" text="Closed Shadow Button" shadow-mode="closed"></custom-button>
+    </div>
+    <div id="none">
+      <button id="noShadowButton">No Shadow Button</button>
+    </div>
+    <div id="clickText">
+    </div>
+    <script>
+      const resultDiv = document.querySelector('#clickText');
+      const openButton = document.querySelector('#openShadowButton');
+      openButton.addClickListener(function(event) {
+        resultDiv.innerText = 'Open shadow button clicked!';
+      });
+
+      const closedButton = document.querySelector('#closedShadowButton');
+      closedButton.addClickListener(function(event) {
+        resultDiv.innerText = 'Closed shadow button clicked!';
+      });
+
+      const noShadowButton = document.querySelector('#noShadowButton');
+      noShadowButton.addEventListener('click', function(event) {
+        resultDiv.innerText = 'No shadow button clicked!';
+      });
+    </script>
+  </body>
+</html>
