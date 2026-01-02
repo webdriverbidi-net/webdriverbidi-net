@@ -87,6 +87,15 @@ public abstract class BrowserLauncher
             return chromeLauncher;
         }
 
+        if (browserType == BrowserType.ChromePipe)
+        {
+            ChromeLauncher chromePipeLauncher = new(browserExecutableLocation)
+            {
+                ConnectionType = ConnectionType.Pipes,
+            };
+            return chromePipeLauncher;
+        }
+
         if (browserType == BrowserType.Firefox)
         {
             FirefoxLauncher firefoxLauncher = new(browserExecutableLocation);
@@ -135,11 +144,20 @@ public abstract class BrowserLauncher
     public abstract Task StopAsync();
 
     /// <summary>
-    /// Creates a Transport object that can be used to communicate with the browser.
+    /// Creates a <see cref="Transport"/> object that can be used to communicate with the browser.
     /// </summary>
     /// <returns>The <see cref="Transport"/> to be used in instantiating the driver.</returns>
     public virtual Transport CreateTransport()
     {
-        return new Transport();
+        return new Transport(this.CreateConnection());
+    }
+
+    /// <summary>
+    /// Creates the <see cref="Connection"/> object to be used to communicate with the browser.
+    /// </summary>
+    /// <returns>The <see cref="Connection"/> object to be used to communicate with the browser.</returns>
+    protected virtual Connection CreateConnection()
+    {
+        return new WebSocketConnection();
     }
 }

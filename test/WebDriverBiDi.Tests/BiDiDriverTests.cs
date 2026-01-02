@@ -24,7 +24,7 @@ public class BiDiDriverTests
     [Test]
     public async Task CanExecuteCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
             string eventJson = """
@@ -52,7 +52,7 @@ public class BiDiDriverTests
     [Test]
     public async Task CanExecuteCommandWithError()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
             string errorJson = """
@@ -78,7 +78,7 @@ public class BiDiDriverTests
     [Test]
     public async Task CanExecuteCommandThatReturnsThrownExceptionThrows()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
         {
             string exceptionJson = """
@@ -108,7 +108,7 @@ public class BiDiDriverTests
     {
         ErrorResult? response = null;
         ManualResetEvent syncEvent = new(false);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.OnUnexpectedErrorReceived.AddObserver((ErrorReceivedEventArgs e) =>
@@ -145,7 +145,7 @@ public class BiDiDriverTests
         ManualResetEvent syncEvent = new(false);
 
         string eventName = "module.event";
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterEvent<TestEventArgs>(eventName);
@@ -186,7 +186,7 @@ public class BiDiDriverTests
         ManualResetEvent syncEvent = new(false);
 
         string eventName = "module.event";
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         TestTransport transport = new(connection)
         {
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
@@ -229,7 +229,7 @@ public class BiDiDriverTests
         string receivedMessage = string.Empty;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.OnUnknownMessageReceived.AddObserver((e) =>
@@ -259,7 +259,7 @@ public class BiDiDriverTests
         string receivedMessage = string.Empty;
         ManualResetEvent syncEvent = new(false);
 
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.OnUnknownMessageReceived.AddObserver((e) =>
@@ -285,7 +285,7 @@ public class BiDiDriverTests
     [Test]
     public async Task TestModuleAvailability()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         await driver.StartAsync("ws://localhost:5555");
@@ -319,7 +319,7 @@ public class BiDiDriverTests
     {
         DateTime testStart = DateTime.UtcNow;
         List<LogMessageEventArgs> logs = [];
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(100), transport);
         driver.OnLogMessage.AddObserver((e) =>
@@ -341,7 +341,7 @@ public class BiDiDriverTests
     [Test]
     public void TestCanRegisterModule()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterModule(new TestProtocolModule(driver));
@@ -351,7 +351,7 @@ public class BiDiDriverTests
     [Test]
     public void TestGettingInvalidModuleNameThrows()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         Assert.That(() => driver.GetModule<TestProtocolModule>("protocol"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Module 'protocol' is not registered with this driver"));
@@ -360,7 +360,7 @@ public class BiDiDriverTests
     [Test]
     public void TestGettingInvalidModuleTypeThrows()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterModule(new TestProtocolModule(driver));
@@ -370,7 +370,7 @@ public class BiDiDriverTests
     [Test]
     public async Task TestReceivingNullValueFromSendingCommandThrows()
     {
-        TestTransport transport = new(new TestConnection())
+        TestTransport transport = new(new TestWebSocketConnection())
         {
             ReturnCustomValue = true
         };
@@ -382,7 +382,7 @@ public class BiDiDriverTests
     [Test]
     public async Task TestExecutingCommandWillThrowWhenTimeout()
     {
-        BiDiDriver driver = new(TimeSpan.Zero, new Transport(new TestConnection()));
+        BiDiDriver driver = new(TimeSpan.Zero, new Transport(new TestWebSocketConnection()));
         await driver.StartAsync("ws://localhost:5555");
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiTimeoutException>().With.Message.Contains("Timed out executing command test.command"));
     }
@@ -392,7 +392,7 @@ public class BiDiDriverTests
     {
         TestCommandResult result = new();
         result.SetIsErrorValue(true);
-        TestTransport transport = new(new TestConnection())
+        TestTransport transport = new(new TestWebSocketConnection())
         {
             ReturnCustomValue = true,
             CustomReturnValue = result
@@ -415,7 +415,7 @@ public class BiDiDriverTests
             Assert.That(result with { }, Is.EqualTo(result));
         }
 
-        TestTransport transport = new(new TestConnection())
+        TestTransport transport = new(new TestWebSocketConnection())
         {
             ReturnCustomValue = true,
             CustomReturnValue = result
@@ -658,7 +658,7 @@ public class BiDiDriverTests
     [Test]
     public async Task CanExecuteParallelCommands()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += (object? sender, TestConnectionDataSentEventArgs e) =>
         {
             Task.Run(async () =>

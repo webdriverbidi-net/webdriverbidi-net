@@ -8,7 +8,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetGeolocationOverrideCommandWithCoordinates()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -35,7 +35,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetLocaleOverrideCommandWithCoordinates()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -62,7 +62,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetForcedColorsModeThemeOverrideCommandWithCoordinates()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -89,7 +89,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetScreenOrientationOverrideCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -116,7 +116,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetScreenSettingsOverrideCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -143,7 +143,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetScriptingEnabledCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -170,7 +170,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetTimeZoneOverrideCommandWithCoordinates()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -197,7 +197,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetTouchOverrideCommandWithCoordinates()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -224,7 +224,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetNetworkConditionsCommandWithCoordinates()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -254,7 +254,7 @@ public class EmulationModuleTests
     [Test]
     public async Task TestSetUserAgentOverrideCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
