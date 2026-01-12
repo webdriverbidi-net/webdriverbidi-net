@@ -76,7 +76,7 @@ public class CallFunctionCommandParametersTests
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), false);
         var channelProperties = new ChannelProperties("myChannel")
         {
-            ResultOwnership = ResultOwnership.Root,
+            Ownership = ResultOwnership.Root,
         };
         properties.Arguments.Add(new ChannelValue(channelProperties));
         string json = JsonSerializer.Serialize(properties);
