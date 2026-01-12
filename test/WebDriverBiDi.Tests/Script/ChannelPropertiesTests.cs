@@ -21,11 +21,11 @@ public class ChannelPropertiesTests
     }
 
     [Test]
-    public void TestCanSerializeChannelPropertiesWithOptionalResultOwnership()
+    public void TestCanSerializeChannelPropertiesWithOptionalOwnership()
     {
         ChannelProperties properties = new("myChannel")
         {
-            ResultOwnership = ResultOwnership.Root
+            Ownership = ResultOwnership.Root
         };
         string json = JsonSerializer.Serialize(properties);
         JObject parsed = JObject.Parse(json);
@@ -35,9 +35,9 @@ public class ChannelPropertiesTests
             Assert.That(parsed, Contains.Key("channel"));
             Assert.That(parsed["channel"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(parsed["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
-            Assert.That(parsed, Contains.Key("resultOwnership"));
-            Assert.That(parsed["resultOwnership"]!.Type, Is.EqualTo(JTokenType.String));
-            Assert.That(parsed["resultOwnership"]!.Value<string>(), Is.EqualTo("root"));
+            Assert.That(parsed, Contains.Key("ownership"));
+            Assert.That(parsed["ownership"]!.Type, Is.EqualTo(JTokenType.String));
+            Assert.That(parsed["ownership"]!.Value<string>(), Is.EqualTo("root"));
         }
     }
 

@@ -36,10 +36,10 @@ public class ChannelProperties
     public SerializationOptions? SerializationOptions { get; set; }
 
     /// <summary>
-    /// Gets or sets the result ownership for the channel.
+    /// Gets or sets the ownership for the channel.
     /// </summary>
-    [JsonPropertyName("resultOwnership")]
+    [JsonPropertyName("ownership")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public ResultOwnership? ResultOwnership { get; set; }
+    public ResultOwnership? Ownership { get; set; }
 }

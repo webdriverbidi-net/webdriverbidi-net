@@ -76,7 +76,7 @@ public class CallFunctionCommandParametersTests
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), false);
         var channelProperties = new ChannelProperties("myChannel")
         {
-            ResultOwnership = ResultOwnership.Root,
+            Ownership = ResultOwnership.Root,
         };
         properties.Arguments.Add(new ChannelValue(channelProperties));
         string json = JsonSerializer.Serialize(properties);
@@ -95,8 +95,8 @@ public class CallFunctionCommandParametersTests
             JObject channelValue = (JObject)channelArg["value"]!;
             Assert.That(channelValue, Contains.Key("channel"));
             Assert.That(channelValue["channel"]!.Value<string>(), Is.EqualTo("myChannel"));
-            Assert.That(channelValue, Contains.Key("resultOwnership"));
-            Assert.That(channelValue["resultOwnership"]!.Value<string>(), Is.EqualTo("root"));
+            Assert.That(channelValue, Contains.Key("ownership"));
+            Assert.That(channelValue["ownership"]!.Value<string>(), Is.EqualTo("root"));
         });
     }
 }
