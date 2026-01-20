@@ -8,7 +8,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestDisableSimulation()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -35,7 +35,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestHandleRequestDevicePromptCommandAcceptingPrompt()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -62,7 +62,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestHandleRequestDevicePromptCommandCancelingPrompt()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -89,7 +89,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulateAdapterCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -108,15 +108,14 @@ public class BluetoothModuleTests
 
         Task<SimulateAdapterCommandResult> task = module.SimulateAdapterAsync(new SimulateAdapterCommandParameters("myContextId", AdapterState.PoweredOn));
         task.Wait(TimeSpan.FromSeconds(1));
-        SimulateAdapterCommandResult result = task.Result;
-        
+        SimulateAdapterCommandResult result = task.Result;        
         Assert.That(result, Is.Not.Null);
     }
 
     [Test]
     public async Task TestSimulateAdvertisementCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -143,7 +142,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulateCharacteristic()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -170,7 +169,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulateCharacteristicResponse()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -197,7 +196,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulateDescriptor()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -224,7 +223,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulateDescriptorResponse()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -251,7 +250,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulateGattConnectionResponse()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -278,7 +277,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulateGattDisconnection()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -305,7 +304,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulatePreconnectedPeripheralCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -332,7 +331,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestSimulateService()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -359,7 +358,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestCanReceiveCharacteristicEventGeneratedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
@@ -399,7 +398,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestCanReceiveDescriptorEventGeneratedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
@@ -441,7 +440,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestGattConnectionAttemptedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);
@@ -474,7 +473,7 @@ public class BluetoothModuleTests
     [Test]
     public async Task TestCanReceiveRequestDevicePromptUpdatedEvent()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
         BluetoothModule module = new(driver);

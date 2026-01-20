@@ -13,7 +13,7 @@ public class StorageModuleTests()
         DateTime now = DateTime.UtcNow.AddSeconds(10);
         DateTime expireTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerSecond));
         ulong seconds = Convert.ToUInt64(expireTime.Subtract(DateTime.UnixEpoch).TotalSeconds);
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -77,7 +77,7 @@ public class StorageModuleTests()
     [Test]
     public async Task TestSetCookieCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
@@ -114,7 +114,7 @@ public class StorageModuleTests()
     [Test]
     public async Task TestDeleteCookiesCommand()
     {
-        TestConnection connection = new();
+        TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
