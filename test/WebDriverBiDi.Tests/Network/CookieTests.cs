@@ -350,11 +350,6 @@ public class CookieTests
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value'"));
     }
 
-    /// <summary>
-    /// Tests deserialization of a partial cookie as sent by Firefox BiDi in network.beforeRequestSent events.
-    /// Firefox only sends name and value when cookies are attached to a request, omitting all other properties.
-    /// See: https://github.com/AventStack/webdriverbidi-net/issues/XXX
-    /// </summary>
     [Test]
     public void TestCanDeserializePartialCookieFromFirefoxBiDi()
     {
