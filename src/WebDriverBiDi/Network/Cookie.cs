@@ -43,7 +43,6 @@ public record Cookie
     /// Gets the domain of the cookie.
     /// </summary>
     [JsonPropertyName("domain")]
-    [JsonRequired]
     [JsonInclude]
     public string Domain { get; private set; } = string.Empty;
 
@@ -51,7 +50,6 @@ public record Cookie
     /// Gets the path of the cookie.
     /// </summary>
     [JsonPropertyName("path")]
-    [JsonRequired]
     [JsonInclude]
     public string Path { get; private set; } = string.Empty;
 
@@ -84,7 +82,6 @@ public record Cookie
     /// Gets the byte length of the cookie when serialized in an HTTP cookie header.
     /// </summary>
     [JsonPropertyName("size")]
-    [JsonRequired]
     [JsonInclude]
     public long Size { get; private set; } = 0;
 
@@ -93,7 +90,6 @@ public record Cookie
     /// encrypted connection like HTTPS.
     /// </summary>
     [JsonPropertyName("secure")]
-    [JsonRequired]
     [JsonInclude]
     public bool Secure { get; private set; }
 
@@ -103,7 +99,6 @@ public record Cookie
     /// via JavaScript (<see langword="false" />).
     /// </summary>
     [JsonPropertyName("httpOnly")]
-    [JsonRequired]
     [JsonInclude]
     public bool HttpOnly { get; private set; }
 
@@ -111,7 +106,6 @@ public record Cookie
     /// Gets a value indicating whether the cookie a same site cookie.
     /// </summary>
     [JsonPropertyName("sameSite")]
-    [JsonRequired]
     [JsonInclude]
     public CookieSameSiteValue SameSite { get; private set; } = CookieSameSiteValue.None;
 
