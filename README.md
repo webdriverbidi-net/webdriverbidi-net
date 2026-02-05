@@ -5,20 +5,20 @@ A .NET client library for the WebDriver BiDi protocol
 [![Coverage Status](https://coveralls.io/repos/github/hardkoded/webdriverbidi-net-relaxed/badge.svg?branch=main&kill_cache=1)](https://coveralls.io/github/hardkoded/webdriverbidi-net-relaxed?branch=main)
 [![NuGet Version](https://img.shields.io/nuget/v/WebDriverBiDi-Relaxed)](https://www.nuget.org/packages/WebDriverBiDi-Relaxed)
 
-# I DON'T NOW IF I WANT YOU TO USE THIS
+# I DON'T KNOW IF I WANT YOU TO USE THIS
 
 This is a fork of the great [webdriverbidi-net](https://github.com/webdriverbidi-net/webdriverbidi-net) library
 
-**WHY DID YOU CREATED THIS PROJECT?**
+**WHY DID YOU CREATE THIS PROJECT?**
 
-The webdriver spec can be quite bureaucratic, which is GOOD! But sometimes, puppeteer-sharp development can be delayed why browser and spec folks agreed on protocol stuff.
-So this project is a TEMPORAL swich for puppeteer-sharp, to keep launching features, while we wait for some agreements.
+The webdriver spec can be quite bureaucratic, which is GOOD! But sometimes, puppeteer-sharp development can be delayed when browser and spec folks agree on protocol stuff.
+So this project is a TEMPORARY switch for puppeteer-sharp, to keep launching features while we wait for some agreements.
 
 **What's the difference between this project and the official one?**
 
-Well, I will basically make changes to puppeteer-sharp can work on any browser regardless they comply with the spec or not.
+Well, I will basically make changes so puppeteer-sharp can work on any browser regardless they comply with the spec or not.
 
-This is repository contains a library that is a .NET client for the
+This repository contains a library that is a .NET client for the
 [WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). This spec is in progress,
 and features are added to the library as the specification changes. This package is also 
 [published to NuGet](https://www.nuget.org/packages/WebDriverBiDi-Relaxed).
