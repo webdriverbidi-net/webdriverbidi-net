@@ -1,6 +1,6 @@
 # Your First WebDriverBiDi Application
 
-This tutorial walks you through creating a complete WebDriverBiDi.NET application from scratch.
+This tutorial walks you through creating a complete WebDriverBiDi.NET-Relaxed application from scratch.
 
 ## Prerequisites
 
@@ -347,7 +347,7 @@ Try these modifications to deepen your understanding:
 ## Summary
 
 You've learned how to:
-- ✓ Set up a WebDriverBiDi.NET project
+- ✓ Set up a WebDriverBiDi.NET-Relaxed project
 - ✓ Connect to a browser
 - ✓ Navigate to websites
 - ✓ Execute JavaScript

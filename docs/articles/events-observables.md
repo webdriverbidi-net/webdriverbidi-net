@@ -1,6 +1,6 @@
 # Events and Observables
 
-WebDriver BiDi is an event-driven protocol. This guide explains how to work with events and the observable pattern in WebDriverBiDi.NET.
+WebDriver BiDi is an event-driven protocol. This guide explains how to work with events and the observable pattern in WebDriverBiDi.NET-Relaxed.
 
 ## Overview
 

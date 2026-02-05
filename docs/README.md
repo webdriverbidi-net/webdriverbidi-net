@@ -1,6 +1,6 @@
-# WebDriverBiDi.NET Documentation
+# WebDriverBiDi.NET-Relaxed Documentation
 
-This directory contains the documentation source for WebDriverBiDi.NET, built using [DocFX](https://dotnet.github.io/docfx/).
+This directory contains the documentation source for WebDriverBiDi.NET-Relaxed, built using [DocFX](https://dotnet.github.io/docfx/).
 
 ## Structure
 
@@ -247,6 +247,6 @@ Ensure all referenced files exist and paths are correct. Check:
 
 For questions about the documentation:
 
-- Open an issue: https://github.com/webdriverbidi-net/webdriverbidi-net/issues
+- Open an issue: https://github.com/hardkoded/webdriverbidi-net-relaxed/issues
 - Tag with `documentation` label
 

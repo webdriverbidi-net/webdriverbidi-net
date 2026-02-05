@@ -1,6 +1,6 @@
 # Network Interception Example
 
-This example demonstrates how to intercept, modify, and replace network requests and responses using WebDriverBiDi.NET.
+This example demonstrates how to intercept, modify, and replace network requests and responses using WebDriverBiDi.NET-Relaxed.
 
 ## Overview
 

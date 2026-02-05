@@ -1,6 +1,6 @@
 # Performance Considerations
 
-This guide covers strategies for optimizing the performance of your WebDriverBiDi.NET automation.
+This guide covers strategies for optimizing the performance of your WebDriverBiDi.NET-Relaxed automation.
 
 ## Overview
 

@@ -1,10 +1,10 @@
-# WebDriverBiDi.NET Documentation
+# WebDriverBiDi.NET-Relaxed Documentation
 
-Welcome to the official documentation for **WebDriverBiDi.NET**, a comprehensive .NET client library for the WebDriver BiDi protocol.
+Welcome to the official documentation for **WebDriverBiDi.NET-Relaxed**, a comprehensive .NET client library for the WebDriver BiDi protocol.
 
-## What is WebDriverBiDi.NET?
+## What is WebDriverBiDi.NET-Relaxed?
 
-WebDriverBiDi.NET is a low-level .NET implementation of the [W3C WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). It provides a robust foundation for browser automation by enabling bidirectional communication between your .NET application and web browsers through WebSocket connections.
+WebDriverBiDi.NET-Relaxed is a low-level .NET implementation of the [W3C WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). It provides a robust foundation for browser automation by enabling bidirectional communication between your .NET application and web browsers through WebSocket connections.
 
 The library is built on .NET Standard 2.0, ensuring broad compatibility across .NET Framework, .NET Core, and modern .NET versions.
 
@@ -22,7 +22,7 @@ The library is built on .NET Standard 2.0, ensuring broad compatibility across .
 
 ## What Can You Do?
 
-WebDriverBiDi.NET enables sophisticated browser automation scenarios:
+WebDriverBiDi.NET-Relaxed enables sophisticated browser automation scenarios:
 
 - 📝 **Console Logging**: Capture JavaScript console messages and errors
 - 🌐 **Network Monitoring**: Intercept and modify network requests and responses
@@ -104,7 +104,7 @@ await driver.StopAsync();
 
 ### What This Library Is NOT
 
-- **Not a high-level automation framework**: WebDriverBiDi.NET is a protocol implementation, not a complete automation framework like Selenium, Puppeteer, or Playwright. It can serve as a foundation for such frameworks.
+- **Not a high-level automation framework**: WebDriverBiDi.NET-Relaxed is a protocol implementation, not a complete automation framework like Selenium, Puppeteer, or Playwright. It can serve as a foundation for such frameworks.
 - **No browser management**: The library does not launch browsers or manage profiles. You must start the browser separately with WebDriver BiDi enabled.
 - **Protocol-level API**: The API closely follows the protocol specification, which may require more code for common tasks compared to higher-level frameworks.
 
@@ -124,7 +124,7 @@ Our friendly mascot Winston, the WebDriver BiDi wolf, is here to guide you on yo
 
 ## Getting Help
 
-- **GitHub Issues**: Report bugs or request features at [github.com/webdriverbidi-net/webdriverbidi-net](https://github.com/webdriverbidi-net/webdriverbidi-net)
+- **GitHub Issues**: Report bugs or request features at [github.com/hardkoded/webdriverbidi-net-relaxed](https://github.com/hardkoded/webdriverbidi-net-relaxed)
 - **Protocol Specification**: Refer to the [W3C WebDriver BiDi specification](https://w3c.github.io/webdriver-bidi/)
 
 ## Next Steps
@@ -137,4 +137,4 @@ Our friendly mascot Winston, the WebDriver BiDi wolf, is here to guide you on yo
 ---
 
 **License**: MIT License  
-**Package**: Available on [NuGet](https://www.nuget.org/packages/WebDriverBiDi)
+**Package**: Available on [NuGet](https://www.nuget.org/packages/WebDriverBiDi-Relaxed)

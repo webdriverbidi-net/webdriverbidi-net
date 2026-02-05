@@ -1,10 +1,10 @@
 # Error Handling
 
-This guide covers comprehensive error handling strategies for WebDriverBiDi.NET applications.
+This guide covers comprehensive error handling strategies for WebDriverBiDi.NET-Relaxed applications.
 
 ## Overview
 
-WebDriverBiDi.NET operations can fail for various reasons:
+WebDriverBiDi.NET-Relaxed operations can fail for various reasons:
 - Network connectivity issues
 - Browser crashes or disconnections
 - Invalid command parameters
@@ -18,7 +18,7 @@ Understanding how to handle these errors properly is crucial for building robust
 
 ### WebDriverBiDiException
 
-The primary exception type thrown by WebDriverBiDi.NET for protocol-level errors:
+The primary exception type thrown by WebDriverBiDi.NET-Relaxed for protocol-level errors:
 
 ```csharp
 try

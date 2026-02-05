@@ -1,6 +1,6 @@
 # Core Concepts
 
-Understanding the fundamental concepts of WebDriverBiDi.NET will help you use the library effectively. This guide covers the key architectural elements and design patterns.
+Understanding the fundamental concepts of WebDriverBiDi.NET-Relaxed will help you use the library effectively. This guide covers the key architectural elements and design patterns.
 
 ## The BiDiDriver
 
@@ -33,7 +33,7 @@ WebDriver BiDi organizes functionality into modules, each representing a specifi
 
 ### Available Modules
 
-WebDriverBiDi.NET includes the following modules:
+WebDriverBiDi.NET-Relaxed includes the following modules:
 
 | Module | Purpose | Access Property |
 |--------|---------|----------------|
@@ -338,7 +338,7 @@ EvaluateResult result = await driver.Script.CallFunctionAsync(params);
 
 ## Async/Await Pattern
 
-All WebDriverBiDi.NET operations are asynchronous.
+All WebDriverBiDi.NET-Relaxed operations are asynchronous.
 
 ### Best Practices
 

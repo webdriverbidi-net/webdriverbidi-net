@@ -1,10 +1,10 @@
 # Custom Modules
 
-This guide explains how to create custom modules to extend WebDriverBiDi.NET with your own commands and functionality.
+This guide explains how to create custom modules to extend WebDriverBiDi.NET-Relaxed with your own commands and functionality.
 
 ## Overview
 
-WebDriverBiDi.NET's module system is extensible, allowing you to:
+WebDriverBiDi.NET-Relaxed's module system is extensible, allowing you to:
 - Implement custom WebDriver BiDi commands
 - Create higher-level abstractions over protocol commands
 - Integrate experimental or browser-specific features
@@ -719,7 +719,7 @@ public class ExperimentalModule : Module
 ## Summary
 
 Custom modules allow you to:
-- Extend WebDriverBiDi.NET with reusable functionality
+- Extend WebDriverBiDi.NET-Relaxed with reusable functionality
 - Create domain-specific abstractions
 - Implement experimental features
 - Build shareable automation libraries

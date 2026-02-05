@@ -1,6 +1,6 @@
 # Preload Scripts Example
 
-This example demonstrates how to use preload scripts to inject JavaScript into pages before any other scripts execute using WebDriverBiDi.NET.
+This example demonstrates how to use preload scripts to inject JavaScript into pages before any other scripts execute using WebDriverBiDi.NET-Relaxed.
 
 ## Overview
 

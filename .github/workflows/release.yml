@@ -30,7 +30,7 @@ jobs:
     - name: Pack
       run: dotnet pack --configuration Release -p:Version=${VERSION} --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output .
     - name: Push
-      run: dotnet nuget push WebDriverBiDi.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
+      run: dotnet nuget push WebDriverBiDi-Relaxed.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

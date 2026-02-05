@@ -1,6 +1,6 @@
 # Common Scenarios
 
-This guide demonstrates common browser automation scenarios using WebDriverBiDi.NET.
+This guide demonstrates common browser automation scenarios using WebDriverBiDi.NET-Relaxed.
 
 ## Basic Page Navigation
 

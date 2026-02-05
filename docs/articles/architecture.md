@@ -1,6 +1,6 @@
 # Architecture Overview
 
-This document provides an architectural overview of WebDriverBiDi.NET, explaining how the library is organized and how data flows through the system.
+This document provides an architectural overview of WebDriverBiDi.NET-Relaxed, explaining how the library is organized and how data flows through the system.
 
 ## High-Level Architecture
 
@@ -181,7 +181,7 @@ NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(params
 
 ### Event System
 
-WebDriverBiDi.NET uses an observable event pattern for handling browser events.
+WebDriverBiDi.NET-Relaxed uses an observable event pattern for handling browser events.
 
 **Event Architecture:**
 
@@ -295,7 +295,7 @@ Your Code ◀────Events────── Browser
 
 ## Serialization
 
-WebDriverBiDi.NET uses `System.Text.Json` for JSON serialization.
+WebDriverBiDi.NET-Relaxed uses `System.Text.Json` for JSON serialization.
 
 ### Custom JSON Converters
 
@@ -330,7 +330,7 @@ This allows forward compatibility with new protocol versions.
 
 ## Threading Model
 
-WebDriverBiDi.NET is fully asynchronous and thread-safe for most operations.
+WebDriverBiDi.NET-Relaxed is fully asynchronous and thread-safe for most operations.
 
 ### Transport Thread
 
@@ -376,7 +376,7 @@ driver.Log.OnEntryAdded.AddObserver(
 
 ## Extension Points
 
-WebDriverBiDi.NET can be extended in several ways:
+WebDriverBiDi.NET-Relaxed can be extended in several ways:
 
 ### Custom Modules
 

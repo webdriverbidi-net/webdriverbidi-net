@@ -1,10 +1,10 @@
 # API Reference
 
-Welcome to the WebDriverBiDi.NET API reference documentation.
+Welcome to the WebDriverBiDi.NET-Relaxed API reference documentation.
 
 ## Overview
 
-This section contains detailed API documentation for all public types, methods, and properties in WebDriverBiDi.NET. The documentation is automatically generated from XML comments in the source code.
+This section contains detailed API documentation for all public types, methods, and properties in WebDriverBiDi.NET-Relaxed. The documentation is automatically generated from XML comments in the source code.
 
 ## Namespaces
 
@@ -281,7 +281,7 @@ See the [Examples](../articles/examples/common-scenarios.md) section for practic
 If you find errors in the API documentation or have suggestions for improvements:
 
 1. Check the XML comments in the source code
-2. Submit an issue on [GitHub](https://github.com/webdriverbidi-net/webdriverbidi-net/issues)
+2. Submit an issue on [GitHub](https://github.com/hardkoded/webdriverbidi-net-relaxed/issues)
 3. Submit a pull request with improvements
 
 ## Additional Resources
@@ -289,4 +289,4 @@ If you find errors in the API documentation or have suggestions for improvements
 - [Getting Started Guide](../articles/getting-started.md)
 - [Core Concepts](../articles/core-concepts.md)
 - [Module Guides](../articles/modules/browsing-context.md)
-- [GitHub Repository](https://github.com/webdriverbidi-net/webdriverbidi-net)
+- [GitHub Repository](https://github.com/hardkoded/webdriverbidi-net-relaxed)

@@ -56,10 +56,10 @@
     ],
     "dest": "_site",
     "globalMetadata": {
-      "title": "WebDriverBiDi.NET Documentation",
-      "description": "Documentation for the WebDriverBiDi.NET library",
-      "author": "WebDriverBiDi.NET Committers",
-      "copyright": "Copyright (c) 2022-2025 WebDriverBiDi.NET Committers. All rights reserved.",
+      "title": "WebDriverBiDi.NET-Relaxed Documentation",
+      "description": "Documentation for the WebDriverBiDi.NET-Relaxed library",
+      "author": "WebDriverBiDi.NET-Relaxed Committers",
+      "copyright": "Copyright (c) 2022-2025 WebDriverBiDi.NET-Relaxed Committers. All rights reserved.",
       "version": "${VERSION}",
       "_appLogoPath": "images/winston.png",
       "_appFaviconPath": "images/favicon.ico"

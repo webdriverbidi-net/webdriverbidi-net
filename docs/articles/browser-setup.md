@@ -1,10 +1,10 @@
 # Browser Setup Guide
 
-This guide explains how to set up different browsers for use with WebDriverBiDi.NET.
+This guide explains how to set up different browsers for use with WebDriverBiDi.NET-Relaxed.
 
 ## Overview
 
-WebDriverBiDi.NET requires a browser with WebDriver BiDi support running with remote debugging enabled. The library connects to the browser via a WebSocket connection.
+WebDriverBiDi.NET-Relaxed requires a browser with WebDriver BiDi support running with remote debugging enabled. The library connects to the browser via a WebSocket connection.
 
 ## Chrome / Chromium
 
@@ -157,7 +157,7 @@ Firefox's WebDriver BiDi implementation is actively being developed. Some featur
 If you're using Selenium, you can let Selenium Manager handle browser launching:
 
 ```csharp
-// This is conceptual - WebDriverBiDi.NET doesn't include Selenium Manager
+// This is conceptual - WebDriverBiDi.NET-Relaxed doesn't include Selenium Manager
 // But you can use them together
 var seleniumDriver = new ChromeDriver(chromeOptions);
 string wsUrl = (string)((ChromeDriver)seleniumDriver)

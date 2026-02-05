@@ -11,14 +11,14 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>WebDriverBiDi</PackageId>
-    <Authors>WebDriverBiDi.NET Committers</Authors>
-    <Company>WebDriverBiDi.NET Committers</Company>
-    <Title>WebDriver BiDirectional Client Library</Title>
-    <Description>A .NET client library for the WebDriver BiDi protocol.</Description>
+    <PackageId>WebDriverBiDi-Relaxed</PackageId>
+    <Authors>WebDriverBiDi.NET-Relaxed Committers</Authors>
+    <Company>WebDriverBiDi.NET-Relaxed Committers</Company>
+    <Title>WebDriver BiDirectional Client Library (Relaxed)</Title>
+    <Description>A .NET client library for the WebDriver BiDi protocol (Relaxed version).</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</RepositoryUrl>
+    <RepositoryUrl>https://github.com/hardkoded/webdriverbidi-net-relaxed</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

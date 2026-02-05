@@ -24,7 +24,7 @@ He became the protocol's most passionate advocate, tirelessly promoting its bene
 
 ## Professional Career
 
-Today, Winston serves as the official mascot for WebDriverBiDi.NET, where he oversees quality assurance with his trademark attention to detail. He's known for:
+Today, Winston serves as the official mascot for WebDriverBiDi.NET-Relaxed, where he oversees quality assurance with his trademark attention to detail. He's known for:
 
 - **Code reviews at 3 AM**: Winston operates on wolf time, which means he's most active when developers least expect it
 - **Sniffing out protocol violations**: His nose can detect a non-compliant WebDriver BiDi implementation from miles away
@@ -52,7 +52,7 @@ Winston lives by a simple philosophy: "The web should be open, accessible, and a
 
 ## Winston's Vision
 
-When Winston isn't busy promoting WebDriverBiDi.NET, he dreams of a future where:
+When Winston isn't busy promoting WebDriverBiDi.NET-Relaxed, he dreams of a future where:
 
 - All browsers implement WebDriver BiDi consistently and completely
 - Automation frameworks embrace bidirectional communication as the standard
@@ -63,7 +63,7 @@ When Winston isn't busy promoting WebDriverBiDi.NET, he dreams of a future where
 
 Winston welcomes fellow travelers on the WebDriver BiDi journey! Whether you're a seasoned automation expert or a curious newcomer, he invites you to:
 
-- Contribute to the WebDriverBiDi.NET project on [GitHub](https://github.com/webdriverbidi-net/webdriverbidi-net)
+- Contribute to the WebDriverBiDi.NET-Relaxed project on [GitHub](https://github.com/hardkoded/webdriverbidi-net-relaxed)
 - Report issues and suggest improvements (Winston personally reviews every GitHub issue)
 - Spread the word about open web standards and bidirectional communication
 - Join the WebDriver BiDi community and help shape the future of browser automation
@@ -74,4 +74,4 @@ Winston welcomes fellow travelers on the WebDriver BiDi journey! Whether you're 
 
 ---
 
-Ready to join Winston's pack? Head back to the [home page](index.md) to get started with WebDriverBiDi.NET, or dive into the [getting started guide](articles/getting-started.md) to begin your browser automation journey!
+Ready to join Winston's pack? Head back to the [home page](index.md) to get started with WebDriverBiDi.NET-Relaxed, or dive into the [getting started guide](articles/getting-started.md) to begin your browser automation journey!

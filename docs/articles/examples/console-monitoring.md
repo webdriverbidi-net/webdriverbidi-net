@@ -1,6 +1,6 @@
 # Console Monitoring Example
 
-This example demonstrates how to capture and monitor browser console logs, JavaScript errors, and warnings using WebDriverBiDi.NET.
+This example demonstrates how to capture and monitor browser console logs, JavaScript errors, and warnings using WebDriverBiDi.NET-Relaxed.
 
 ## Overview
 

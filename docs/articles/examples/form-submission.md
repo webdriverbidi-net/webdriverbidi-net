@@ -1,6 +1,6 @@
 # Form Submission Example
 
-This example demonstrates how to find form elements, fill them out, and submit forms using WebDriverBiDi.NET.
+This example demonstrates how to find form elements, fill them out, and submit forms using WebDriverBiDi.NET-Relaxed.
 
 ## Overview
 

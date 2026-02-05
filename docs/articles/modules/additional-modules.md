@@ -1,10 +1,10 @@
 # Additional Modules
 
-This guide covers additional specialized modules in WebDriverBiDi.NET that extend functionality beyond the core WebDriver BiDi specification.
+This guide covers additional specialized modules in WebDriverBiDi.NET-Relaxed that extend functionality beyond the core WebDriver BiDi specification.
 
 ## Overview
 
-WebDriverBiDi.NET includes support for several W3C specifications that use the WebDriver BiDi protocol:
+WebDriverBiDi.NET-Relaxed includes support for several W3C specifications that use the WebDriver BiDi protocol:
 
 - **Permissions Module** - Browser permission management
 - **Bluetooth Module** - Web Bluetooth API control

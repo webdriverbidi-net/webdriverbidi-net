@@ -1,5 +1,5 @@
 {
-    "dotnet.defaultSolution": "WebDriverBiDi.NET.sln",
+    "dotnet.defaultSolution": "WebDriverBiDi.NET-Relaxed.sln",
     "cSpell.words": [
         "arraybuffer",
         "autoconfig",

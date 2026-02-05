@@ -1,6 +1,6 @@
-# Getting Started with WebDriverBiDi.NET
+# Getting Started with WebDriverBiDi.NET-Relaxed
 
-This guide will walk you through installing WebDriverBiDi.NET and setting up your first browser automation project.
+This guide will walk you through installing WebDriverBiDi.NET-Relaxed and setting up your first browser automation project.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ Add this to your `.csproj` file:
 
 ## Browser Setup
 
-WebDriverBiDi.NET requires a browser with WebDriver BiDi support running and listening on a WebSocket endpoint.
+WebDriverBiDi.NET-Relaxed requires a browser with WebDriver BiDi support running and listening on a WebSocket endpoint.
 
 ### Chrome/Chromium
 
@@ -228,7 +228,7 @@ The third parameter (`true`) indicates whether to await promises in the JavaScri
 
 ## Next Steps
 
-Now that you have a working WebDriverBiDi.NET application, explore these topics:
+Now that you have a working WebDriverBiDi.NET-Relaxed application, explore these topics:
 
 1. **[Core Concepts](core-concepts.md)**: Understand modules, commands, and events
 2. **[Browser Module](modules/browser.md)**: Learn about browser-level operations
@@ -257,6 +257,6 @@ Now that you have a working WebDriverBiDi.NET application, explore these topics:
 ## Additional Resources
 
 - [WebDriver BiDi Specification](https://w3c.github.io/webdriver-bidi/)
-- [GitHub Repository](https://github.com/webdriverbidi-net/webdriverbidi-net)
-- [NuGet Package](https://www.nuget.org/packages/WebDriverBiDi)
+- [GitHub Repository](https://github.com/hardkoded/webdriverbidi-net-relaxed)
+- [NuGet Package](https://www.nuget.org/packages/WebDriverBiDi-Relaxed)
 

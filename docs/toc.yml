@@ -9,6 +9,6 @@
 - name: About Winston
   href: winston.md
 - name: GitHub
-  href: https://github.com/webdriverbidi-net/webdriverbidi-net
+  href: https://github.com/hardkoded/webdriverbidi-net-relaxed
 - name: NuGet
-  href: https://www.nuget.org/packages/WebDriverBiDi
+  href: https://www.nuget.org/packages/WebDriverBiDi-Relaxed
