@@ -351,123 +351,33 @@ public class CookieTests
     }
 
     [Test]
-    public void TestDeserializeWithMissingDomainThrows()
+    public void TestCanDeserializePartialCookieFromFirefoxBiDi()
     {
+        // This is the actual JSON structure Firefox sends in network.beforeRequestSent events
+        // when cookies are attached to the request. It only includes name and value.
         string json = """
                       {
-                        "name": "cookieName",
+                        "name": "foo",
                         "value": {
                           "type": "string",
-                          "value": "cookieValue"
-                        },
-                        "path": "/cookiePath",
-                        "secure": false,
-                        "httpOnly": false,
-                        "sameSite": "lax",
-                        "size": 100
+                          "value": "bar"
+                        }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'domain'"));
-    }
-
-    [Test]
-    public void TestDeserializeWithMissingPathThrows()
-    {
-        string json = """
-                      {
-                        "name": "cookieName",
-                        "value": {
-                          "type": "string",
-                          "value": "cookieValue"
-                        },
-                        "domain": "cookieDomain",
-                        "secure": false,
-                        "httpOnly": false,
-                        "sameSite": "lax",
-                        "size": 100
-                      }
-                      """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'path'"));
-    }
-
-    [Test]
-    public void TestDeserializeWithMissingSecureThrows()
-    {
-        string json = """
-                      {
-                        "name": "cookieName",
-                        "value": {
-                          "type": "string",
-                          "value": "cookieValue"
-                        },
-                        "domain": "cookieDomain",
-                        "path": "/cookiePath",
-                        "httpOnly": false,
-                        "sameSite": "lax",
-                        "size": 100
-                      }
-                      """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'secure'"));
-    }
-
-    [Test]
-    public void TestDeserializeWithMissingHttpOnlyThrows()
-    {
-        string json = """
-                      {
-                        "name": "cookieName",
-                        "value": {
-                          "type": "string",
-                          "value": "cookieValue"
-                        },
-                        "domain": "cookieDomain",
-                        "path": "/cookiePath",
-                        "secure": false,
-                        "sameSite": "lax",
-                        "size": 100
-                      }
-                      """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'httpOnly'"));
-    }
-
-    [Test]
-    public void TestDeserializeWithMissingSameSiteThrows()
-    {
-        string json = """
-                      {
-                        "name": "cookieName",
-                        "value": {
-                          "type": "string",
-                          "value": "cookieValue"
-                        },
-                        "domain": "cookieDomain",
-                        "path": "/cookiePath",
-                        "secure": false,
-                        "httpOnly": false,
-                        "size": 100
-                      }
-                      """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'sameSite'"));
-    }
-
-    [Test]
-    public void TestDeserializeWithMissingSizeThrows()
-    {
-        string json = """
-                      {
-                        "name": "cookieName",
-                        "value": {
-                          "type": "string",
-                          "value": "cookieValue"
-                        },
-                        "domain": "cookieDomain",
-                        "path": "/cookiePath",
-                        "secure": false,
-                        "httpOnly": false,
-                        "sameSite": "lax"
-                      }
-                      """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'size'"));
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Assert.That(cookie, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(cookie.Name, Is.EqualTo("foo"));
+            Assert.That(cookie.Value.Type, Is.EqualTo(BytesValueType.String));
+            Assert.That(cookie.Value.Value, Is.EqualTo("bar"));
+            Assert.That(cookie.Domain, Is.EqualTo(string.Empty));
+            Assert.That(cookie.Path, Is.EqualTo(string.Empty));
+            Assert.That(cookie.Secure, Is.False);
+            Assert.That(cookie.HttpOnly, Is.False);
+            Assert.That(cookie.SameSite, Is.EqualTo(CookieSameSiteValue.None));
+            Assert.That(cookie.Size, Is.EqualTo(0));
+        }
     }
 
     [Test]
