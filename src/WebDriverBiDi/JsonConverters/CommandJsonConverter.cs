@@ -42,12 +42,12 @@ public class CommandJsonConverter : JsonConverter<Command>
         writer.WritePropertyName("method");
         writer.WriteStringValue(value.CommandName);
         writer.WritePropertyName("params");
-        string serializedParams = JsonSerializer.Serialize(value.CommandParameters, value.CommandParameters.GetType());
+        string serializedParams = JsonSerializer.Serialize(value.CommandParameters, value.CommandParameters.GetType(), options);
         writer.WriteRawValue(serializedParams);
         foreach (KeyValuePair<string, object?> pair in value.AdditionalData)
         {
             writer.WritePropertyName(pair.Key);
-            writer.WriteRawValue(JsonSerializer.Serialize(pair.Value));
+            writer.WriteRawValue(JsonSerializer.Serialize(pair.Value, options));
         }
 
         writer.WriteEndObject();

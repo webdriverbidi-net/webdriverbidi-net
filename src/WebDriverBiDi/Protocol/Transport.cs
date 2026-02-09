@@ -222,7 +222,7 @@ public class Transport
     /// <returns>The serialized JSON string representing the command.</returns>
     protected virtual byte[] SerializeCommand(Command command)
     {
-        return JsonSerializer.SerializeToUtf8Bytes(command);
+        return JsonSerializer.SerializeToUtf8Bytes(command, this.options);
     }
 
     /// <summary>
