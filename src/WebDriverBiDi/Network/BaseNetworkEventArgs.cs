@@ -87,7 +87,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     public ulong EpochTimestamp
     {
         get;
-        private set
+        internal set
         {
             field = value;
             this.Timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);

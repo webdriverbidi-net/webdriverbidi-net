@@ -61,7 +61,7 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     public long EpochTimestamp
     {
         get;
-        private set
+        internal set
         {
             field = value;
             this.Timestamp = DateTimeUtilities.UnixEpoch.AddMilliseconds(value);
