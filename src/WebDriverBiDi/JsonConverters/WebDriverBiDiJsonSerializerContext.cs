@@ -22,6 +22,102 @@ using WebDriverBiDi.WebExtension;
 
 // ── Protocol ──
 [JsonSerializable(typeof(Command))]
+[JsonSerializable(typeof(ErrorResponseMessage))]
+
+// ── Bluetooth module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<DisableSimulationCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<HandleRequestDevicePromptCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateAdapterCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateAdvertisementCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateCharacteristicCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateCharacteristicResponseCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateDescriptorCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateDescriptorResponseCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateGattConnectionResponseCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateGattDisconnectionCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulatePreconnectedPeripheralCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SimulateServiceCommandResult>))]
+
+// ── Browser module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<Browser.CloseCommandResult>), TypeInfoPropertyName = "BrowserCloseCommandResponse")]
+[JsonSerializable(typeof(CommandResponseMessage<CreateUserContextCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<GetClientWindowsCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<GetUserContextsCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<RemoveUserContextCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetClientWindowStateCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetDownloadBehaviorCommandResult>))]
+
+// ── BrowsingContext module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<ActivateCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<CaptureScreenshotCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<BrowsingContext.CloseCommandResult>), TypeInfoPropertyName = "BrowsingContextCloseCommandResponse")]
+[JsonSerializable(typeof(CommandResponseMessage<CreateCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<GetTreeCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<HandleUserPromptCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<LocateNodesCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<NavigateCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<PrintCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<ReloadCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetViewportCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<TraverseHistoryCommandResult>))]
+
+// ── Emulation module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<SetForcedColorsModeThemeOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetGeolocationOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetLocaleOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetNetworkConditionsCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetScreenOrientationOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetScreenSettingsOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetScriptingEnabledCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetTimeZoneOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetTouchOverrideCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetUserAgentOverrideCommandResult>))]
+
+// ── Input module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<PerformActionsCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<ReleaseActionsCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetFilesCommandResult>))]
+
+// ── Network module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<AddDataCollectorCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<AddInterceptCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<ContinueRequestCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<ContinueResponseCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<ContinueWithAuthCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<DisownDataCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<FailRequestCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<GetDataCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<ProvideResponseCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<RemoveDataCollectorCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<RemoveInterceptCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetCacheBehaviorCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetExtraHeadersCommandResult>))]
+
+// ── Permissions module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<SetPermissionCommandResult>))]
+
+// ── Script module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<AddPreloadScriptCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<DisownCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<EvaluateResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<GetRealmsCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<RemovePreloadScriptCommandResult>))]
+
+// ── Session module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<EndCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<NewCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<StatusCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SubscribeCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<UnsubscribeCommandResult>))]
+
+// ── Storage module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<DeleteCookiesCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<GetCookiesCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetCookieCommandResult>))]
+
+// ── WebExtension module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<InstallCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<UninstallCommandResult>))]
 
 // ── Bluetooth module ──
 [JsonSerializable(typeof(DisableSimulationCommandParameters))]
