@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record AddDataCollectorCommandResult : CommandResult
 {
     [JsonConstructor]
-    private AddDataCollectorCommandResult()
+    internal AddDataCollectorCommandResult()
     {
     }
 

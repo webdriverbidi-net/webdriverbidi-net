@@ -18,7 +18,7 @@ public record Cookie
     /// Initializes a new instance of the <see cref="Cookie"/> class.
     /// </summary>
     [JsonConstructor]
-    private Cookie()
+    internal Cookie()
     {
         this.AdditionalData = ReceivedDataDictionary.EmptyDictionary;
     }

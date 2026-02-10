@@ -17,7 +17,7 @@ public record FetchTimingInfo
     /// Initializes a new instance of the <see cref="FetchTimingInfo"/> class.
     /// </summary>
     [JsonConstructor]
-    private FetchTimingInfo()
+    internal FetchTimingInfo()
     {
     }
 

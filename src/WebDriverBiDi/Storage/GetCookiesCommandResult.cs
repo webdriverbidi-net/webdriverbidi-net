@@ -14,7 +14,7 @@ using WebDriverBiDi.Network;
 public record GetCookiesCommandResult : CommandResult
 {
     [JsonConstructor]
-    private GetCookiesCommandResult()
+    internal GetCookiesCommandResult()
     {
     }
 

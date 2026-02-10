@@ -16,7 +16,7 @@ public record EvaluateResultSuccess : EvaluateResult
     /// Initializes a new instance of the <see cref="EvaluateResultSuccess"/> class.
     /// </summary>
     [JsonConstructor]
-    private EvaluateResultSuccess()
+    internal EvaluateResultSuccess()
         : base()
     {
     }

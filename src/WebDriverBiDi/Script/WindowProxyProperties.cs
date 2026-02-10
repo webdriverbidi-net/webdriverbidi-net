@@ -16,7 +16,7 @@ public record WindowProxyProperties
     /// Initializes a new instance of the <see cref="WindowProxyProperties"/> class.
     /// </summary>
     [JsonConstructor]
-    private WindowProxyProperties()
+    internal WindowProxyProperties()
     {
     }
 

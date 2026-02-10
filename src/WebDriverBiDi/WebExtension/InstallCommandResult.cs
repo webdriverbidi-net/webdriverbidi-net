@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record InstallCommandResult : CommandResult
 {
     [JsonConstructor]
-    private InstallCommandResult()
+    internal InstallCommandResult()
     {
     }
 

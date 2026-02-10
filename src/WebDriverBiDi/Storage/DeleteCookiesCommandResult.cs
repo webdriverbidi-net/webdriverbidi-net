@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record DeleteCookiesCommandResult : CommandResult
 {
     [JsonConstructor]
-    private DeleteCookiesCommandResult()
+    internal DeleteCookiesCommandResult()
     {
     }
 

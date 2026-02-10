@@ -16,7 +16,7 @@ public record NodeProperties
     /// Initializes a new instance of the <see cref="NodeProperties"/> class.
     /// </summary>
     [JsonConstructor]
-    private NodeProperties()
+    internal NodeProperties()
     {
     }
 

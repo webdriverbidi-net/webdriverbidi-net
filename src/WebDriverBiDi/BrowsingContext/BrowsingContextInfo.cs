@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record BrowsingContextInfo
 {
     [JsonConstructor]
-    private BrowsingContextInfo()
+    internal BrowsingContextInfo()
     {
     }
 

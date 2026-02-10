@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record AddInterceptCommandResult : CommandResult
 {
     [JsonConstructor]
-    private AddInterceptCommandResult()
+    internal AddInterceptCommandResult()
     {
     }
 

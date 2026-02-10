@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record AddPreloadScriptCommandResult : CommandResult
 {
     [JsonConstructor]
-    private AddPreloadScriptCommandResult()
+    internal AddPreloadScriptCommandResult()
     {
     }
 

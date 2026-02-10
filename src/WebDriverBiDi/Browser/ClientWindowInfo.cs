@@ -16,7 +16,7 @@ public record ClientWindowInfo
     /// Initializes a new instance of the <see cref="ClientWindowInfo"/> class.
     /// </summary>
     [JsonConstructor]
-    private ClientWindowInfo()
+    internal ClientWindowInfo()
     {
     }
 

@@ -14,7 +14,7 @@ using WebDriverBiDi.Script;
 public record FileDialogInfo
 {
     [JsonConstructor]
-    private FileDialogInfo()
+    internal FileDialogInfo()
     {
     }
 

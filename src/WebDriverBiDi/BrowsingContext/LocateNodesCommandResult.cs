@@ -14,7 +14,7 @@ using WebDriverBiDi.Script;
 public record LocateNodesCommandResult : CommandResult
 {
     [JsonConstructor]
-    private LocateNodesCommandResult()
+    internal LocateNodesCommandResult()
     {
     }
 

@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
 {
     [JsonConstructor]
-    private DescriptorEventGeneratedEventArgs()
+    internal DescriptorEventGeneratedEventArgs()
     {
     }
 

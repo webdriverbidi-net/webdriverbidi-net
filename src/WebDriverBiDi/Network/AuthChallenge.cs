@@ -16,7 +16,7 @@ public record AuthChallenge
     /// Initializes a new instance of the <see cref="AuthChallenge"/> class.
     /// </summary>
     [JsonConstructor]
-    private AuthChallenge()
+    internal AuthChallenge()
     {
     }
 

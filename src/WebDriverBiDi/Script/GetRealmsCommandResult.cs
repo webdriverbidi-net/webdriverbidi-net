@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record GetRealmsCommandResult : CommandResult
 {
     [JsonConstructor]
-    private GetRealmsCommandResult()
+    internal GetRealmsCommandResult()
     {
     }
 

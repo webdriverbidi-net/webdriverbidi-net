@@ -17,7 +17,7 @@ public record Initiator
     /// Initializes a new instance of the <see cref="Initiator"/> class.
     /// </summary>
     [JsonConstructor]
-    private Initiator()
+    internal Initiator()
     {
     }
 

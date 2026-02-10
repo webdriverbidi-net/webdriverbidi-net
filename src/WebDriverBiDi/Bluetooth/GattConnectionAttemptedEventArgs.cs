@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record GattConnectionAttemptedEventArgs : WebDriverBiDiEventArgs
 {
     [JsonConstructor]
-    private GattConnectionAttemptedEventArgs()
+    internal GattConnectionAttemptedEventArgs()
     {
     }
 

@@ -16,7 +16,7 @@ public record NavigateCommandResult : CommandResult
     /// Initializes a new instance of the <see cref="NavigateCommandResult"/> class.
     /// </summary>
     [JsonConstructor]
-    protected NavigateCommandResult()
+    internal NavigateCommandResult()
     {
     }
 

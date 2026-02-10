@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record CaptureScreenshotCommandResult : CommandResult
 {
     [JsonConstructor]
-    private CaptureScreenshotCommandResult()
+    internal CaptureScreenshotCommandResult()
     {
     }
 

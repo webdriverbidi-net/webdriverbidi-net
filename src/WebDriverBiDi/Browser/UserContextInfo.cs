@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record UserContextInfo
 {
     [JsonConstructor]
-    private UserContextInfo()
+    internal UserContextInfo()
     {
     }
 

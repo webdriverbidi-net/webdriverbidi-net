@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
 {
     [JsonConstructor]
-    private RequestDevicePromptUpdatedEventArgs()
+    internal RequestDevicePromptUpdatedEventArgs()
     {
     }
 

@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record ResponseContent
 {
     [JsonConstructor]
-    private ResponseContent()
+    internal ResponseContent()
     {
     }
 

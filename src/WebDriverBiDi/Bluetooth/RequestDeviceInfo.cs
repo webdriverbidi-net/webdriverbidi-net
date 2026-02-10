@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record RequestDeviceInfo
 {
     [JsonConstructor]
-    private RequestDeviceInfo()
+    internal RequestDeviceInfo()
     {
     }
 

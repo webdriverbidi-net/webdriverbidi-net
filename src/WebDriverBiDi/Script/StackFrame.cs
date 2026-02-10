@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record StackFrame
 {
     [JsonConstructor]
-    private StackFrame()
+    internal StackFrame()
     {
     }
 

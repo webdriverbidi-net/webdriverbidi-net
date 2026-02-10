@@ -25,7 +25,7 @@ public record BytesValue
     }
 
     [JsonConstructor]
-    private BytesValue()
+    internal BytesValue()
     {
     }
 

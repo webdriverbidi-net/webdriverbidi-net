@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
 {
     [JsonConstructor]
-    private PrefetchStatusUpdatedEventArgs()
+    internal PrefetchStatusUpdatedEventArgs()
     {
     }
 

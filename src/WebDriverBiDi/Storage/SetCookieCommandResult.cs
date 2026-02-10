@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record SetCookieCommandResult : CommandResult
 {
     [JsonConstructor]
-    private SetCookieCommandResult()
+    internal SetCookieCommandResult()
     {
     }
 
