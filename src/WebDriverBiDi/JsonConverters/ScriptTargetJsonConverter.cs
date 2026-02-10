@@ -52,7 +52,7 @@ public class ScriptTargetJsonConverter : JsonConverter<Target>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, Target value, JsonSerializerOptions options)
     {
-        string json = JsonSerializer.Serialize(value, value.GetType());
+        string json = JsonSerializer.Serialize(value, value.GetType(), options);
         writer.WriteRawValue(json);
         writer.Flush();
     }

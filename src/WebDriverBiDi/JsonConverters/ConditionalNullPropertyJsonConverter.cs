@@ -49,7 +49,7 @@ public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
             string json = "null";
             if (!this.ShouldSerializeToNull(value))
             {
-                json = JsonSerializer.Serialize(value, value.GetType());
+                json = JsonSerializer.Serialize(value, value.GetType(), options);
             }
 
             writer.WriteRawValue(json);
