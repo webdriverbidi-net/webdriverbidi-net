@@ -23,5 +23,5 @@ public record DeleteCookiesCommandResult : CommandResult
     [JsonPropertyName("partitionKey")]
     [JsonRequired]
     [JsonInclude]
-    public PartitionKey PartitionKey { get; private set; } = new();
+    public PartitionKey PartitionKey { get; internal set; } = new();
 }

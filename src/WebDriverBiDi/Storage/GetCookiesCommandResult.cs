@@ -30,7 +30,7 @@ public record GetCookiesCommandResult : CommandResult
     [JsonPropertyName("partitionKey")]
     [JsonRequired]
     [JsonInclude]
-    public PartitionKey PartitionKey { get; private set; } = new();
+    public PartitionKey PartitionKey { get; internal set; } = new();
 
     /// <summary>
     /// Gets or sets the list of cookies returned by the command for serialization purposes.

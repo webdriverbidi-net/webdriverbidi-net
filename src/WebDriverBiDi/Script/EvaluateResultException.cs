@@ -26,5 +26,5 @@ public record EvaluateResultException : EvaluateResult
     /// </summary>
     [JsonPropertyName("exceptionDetails")]
     [JsonInclude]
-    public ExceptionDetails ExceptionDetails { get; private set; } = new();
+    public ExceptionDetails ExceptionDetails { get; internal set; } = new();
 }

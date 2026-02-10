@@ -28,7 +28,7 @@ public class Message
     [JsonRequired]
     [JsonPropertyName("type")]
     [JsonInclude]
-    public string Type { get; private set; } = string.Empty;
+    public string Type { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.
@@ -52,5 +52,5 @@ public class Message
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; private set; } = [];
+    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; set; } = [];
 }

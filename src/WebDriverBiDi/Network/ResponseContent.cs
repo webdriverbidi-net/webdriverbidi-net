@@ -23,7 +23,7 @@ public record ResponseContent
     [JsonPropertyName("size")]
     [JsonRequired]
     [JsonInclude]
-    public ulong Size { get; private set; } = 0;
+    public ulong Size { get; internal set; } = 0;
 
     /// <summary>
     /// Gets an. empty <see cref="ResponseContent"/> object.

@@ -26,7 +26,7 @@ public record Source
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get; private set; } = string.Empty;
+    public string RealmId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the browsing context ID for a script.
@@ -34,5 +34,5 @@ public record Source
     [JsonPropertyName("context")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Context { get; private set; }
+    public string? Context { get; internal set; }
 }

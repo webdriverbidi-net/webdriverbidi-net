@@ -23,7 +23,7 @@ public record NewCommandResult : CommandResult
     [JsonPropertyName("sessionId")]
     [JsonRequired]
     [JsonInclude]
-    public string SessionId { get; private set; } = string.Empty;
+    public string SessionId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the actual capabilities used in this session.
@@ -31,5 +31,5 @@ public record NewCommandResult : CommandResult
     [JsonPropertyName("capabilities")]
     [JsonRequired]
     [JsonInclude]
-    public CapabilitiesResult Capabilities { get; private set; } = new();
+    public CapabilitiesResult Capabilities { get; internal set; } = new();
 }

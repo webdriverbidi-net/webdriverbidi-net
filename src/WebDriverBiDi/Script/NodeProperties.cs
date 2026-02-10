@@ -26,7 +26,7 @@ public record NodeProperties
     [JsonPropertyName("nodeType")]
     [JsonRequired]
     [JsonInclude]
-    public uint NodeType { get; private set; } = 0;
+    public uint NodeType { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the count of the child nodes.
@@ -34,7 +34,7 @@ public record NodeProperties
     [JsonPropertyName("childNodeCount")]
     [JsonRequired]
     [JsonInclude]
-    public uint ChildNodeCount { get; private set; } = 0;
+    public uint ChildNodeCount { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the value of the node.
@@ -42,7 +42,7 @@ public record NodeProperties
     [JsonPropertyName("nodeValue")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? NodeValue { get; private set; }
+    public string? NodeValue { get; internal set; }
 
     /// <summary>
     /// Gets the local name of the node.
@@ -50,7 +50,7 @@ public record NodeProperties
     [JsonPropertyName("localName")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? LocalName { get; private set; }
+    public string? LocalName { get; internal set; }
 
     /// <summary>
     /// Gets the namespace URI of the node.
@@ -58,7 +58,7 @@ public record NodeProperties
     [JsonPropertyName("namespaceURI")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? NamespaceUri { get; private set; }
+    public string? NamespaceUri { get; internal set; }
 
     /// <summary>
     /// Gets a read-only list of the children of the node.
@@ -101,7 +101,7 @@ public record NodeProperties
     [JsonPropertyName("mode")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public ShadowRootMode? Mode { get; private set; }
+    public ShadowRootMode? Mode { get; internal set; }
 
     /// <summary>
     /// Gets the RemoteValue representing the shadow root of this node, if available.
@@ -109,7 +109,7 @@ public record NodeProperties
     [JsonPropertyName("shadowRoot")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public RemoteValue? ShadowRoot { get; private set; }
+    public RemoteValue? ShadowRoot { get; internal set; }
 
     /// <summary>
     /// Gets or sets the list of child nodes for serialization purposes.

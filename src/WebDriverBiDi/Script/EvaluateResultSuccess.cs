@@ -26,5 +26,5 @@ public record EvaluateResultSuccess : EvaluateResult
     /// </summary>
     [JsonPropertyName("result")]
     [JsonInclude]
-    public RemoteValue Result { get; private set; } = new("null");
+    public RemoteValue Result { get; internal set; } = new("null");
 }

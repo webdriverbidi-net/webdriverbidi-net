@@ -27,7 +27,7 @@ public record ResponseData
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get; private set; } = string.Empty;
+    public string Url { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the protocol of the response.
@@ -35,7 +35,7 @@ public record ResponseData
     [JsonPropertyName("protocol")]
     [JsonRequired]
     [JsonInclude]
-    public string Protocol { get; private set; } = string.Empty;
+    public string Protocol { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the status code of the response.
@@ -43,7 +43,7 @@ public record ResponseData
     [JsonPropertyName("status")]
     [JsonRequired]
     [JsonInclude]
-    public ulong Status { get; private set; } = 0;
+    public ulong Status { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the status text of the response.
@@ -51,7 +51,7 @@ public record ResponseData
     [JsonPropertyName("statusText")]
     [JsonRequired]
     [JsonInclude]
-    public string StatusText { get; private set; } = string.Empty;
+    public string StatusText { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets a value indicating whether the response was retrieved from the cache.
@@ -59,7 +59,7 @@ public record ResponseData
     [JsonPropertyName("fromCache")]
     [JsonRequired]
     [JsonInclude]
-    public bool FromCache { get; private set; }
+    public bool FromCache { get; internal set; }
 
     /// <summary>
     /// Gets the headers of the response.
@@ -85,7 +85,7 @@ public record ResponseData
     [JsonPropertyName("mimeType")]
     [JsonRequired]
     [JsonInclude]
-    public string MimeType { get; private set; } = string.Empty;
+    public string MimeType { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the count of the bytes received in the response.
@@ -93,7 +93,7 @@ public record ResponseData
     [JsonPropertyName("bytesReceived")]
     [JsonRequired]
     [JsonInclude]
-    public ulong BytesReceived { get; private set; } = 0;
+    public ulong BytesReceived { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the size, in bytes, of the headers in the response.
@@ -101,7 +101,7 @@ public record ResponseData
     [JsonPropertyName("headersSize")]
     [JsonRequired]
     [JsonInclude]
-    public ulong? HeadersSize { get; private set; }
+    public ulong? HeadersSize { get; internal set; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the response.
@@ -109,7 +109,7 @@ public record ResponseData
     [JsonPropertyName("bodySize")]
     [JsonRequired]
     [JsonInclude]
-    public ulong? BodySize { get; private set; }
+    public ulong? BodySize { get; internal set; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the response.
@@ -117,14 +117,14 @@ public record ResponseData
     [JsonPropertyName("content")]
     [JsonRequired]
     [JsonInclude]
-    public ResponseContent Content { get; private set; } = ResponseContent.Empty;
+    public ResponseContent Content { get; internal set; } = ResponseContent.Empty;
 
     /// <summary>
     /// Gets the list of authorization challenges in the response, if any.
     /// </summary>
     [JsonPropertyName("authChallenges")]
     [JsonInclude]
-    public List<AuthChallenge>? AuthChallenges { get; private set; }
+    public List<AuthChallenge>? AuthChallenges { get; internal set; }
 
     /// <summary>
     /// Gets or sets the headers of the response for serialization purposes.

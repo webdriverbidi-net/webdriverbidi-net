@@ -26,5 +26,5 @@ public record BeforeRequestSentEventArgs : BaseNetworkEventArgs
     [JsonPropertyName("initiator")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public Initiator? Initiator { get; private set; }
+    public Initiator? Initiator { get; internal set; }
 }

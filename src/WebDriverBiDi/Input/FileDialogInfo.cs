@@ -24,7 +24,7 @@ public record FileDialogInfo
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; } = string.Empty;
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets a value indicating whether the file dialog supports multiple file names.
@@ -32,13 +32,13 @@ public record FileDialogInfo
     [JsonPropertyName("multiple")]
     [JsonRequired]
     [JsonInclude]
-    public bool Multiple { get; private set; }
+    public bool Multiple { get; internal set; }
 
     /// <summary>
     /// Gets the reference to the element that invoked the file dialog, if present.
     /// </summary>
     [JsonIgnore]
-    public SharedReference? Element { get; private set; }
+    public SharedReference? Element { get; internal set; }
 
     /// <summary>
     /// Sets a reference to the element that invoked the file dialog for serialization purposes.

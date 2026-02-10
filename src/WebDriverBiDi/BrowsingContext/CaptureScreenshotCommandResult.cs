@@ -23,5 +23,5 @@ public record CaptureScreenshotCommandResult : CommandResult
     [JsonPropertyName("data")]
     [JsonRequired]
     [JsonInclude]
-    public string Data { get; private set; } = string.Empty;
+    public string Data { get; internal set; } = string.Empty;
 }

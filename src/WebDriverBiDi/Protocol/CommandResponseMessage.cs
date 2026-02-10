@@ -18,7 +18,7 @@ public abstract class CommandResponseMessage : Message
     [JsonPropertyName("id")]
     [JsonInclude]
     [JsonRequired]
-    public long Id { get; private set; }
+    public long Id { get; internal set; }
 
     /// <summary>
     /// Gets the result data for the command.

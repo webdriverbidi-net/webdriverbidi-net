@@ -26,7 +26,7 @@ public record ClientWindowInfo
     [JsonPropertyName("clientWindow")]
     [JsonInclude]
     [JsonRequired]
-    public string ClientWindowId { get; private set; } = string.Empty;
+    public string ClientWindowId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets a value indicating whether a client window is active, usually implying it has focus in the operating system.
@@ -34,7 +34,7 @@ public record ClientWindowInfo
     [JsonPropertyName("active")]
     [JsonInclude]
     [JsonRequired]
-    public bool IsActive { get; private set; } = false;
+    public bool IsActive { get; internal set; } = false;
 
     /// <summary>
     /// Gets a value indicating the state of the client window.
@@ -42,7 +42,7 @@ public record ClientWindowInfo
     [JsonPropertyName("state")]
     [JsonInclude]
     [JsonRequired]
-    public ClientWindowState State { get; private set; } = ClientWindowState.Normal;
+    public ClientWindowState State { get; internal set; } = ClientWindowState.Normal;
 
     /// <summary>
     /// Gets the value in CSS pixels of the left edge of the client window.
@@ -50,7 +50,7 @@ public record ClientWindowInfo
     [JsonPropertyName("x")]
     [JsonInclude]
     [JsonRequired]
-    public ulong X { get; private set; } = 0;
+    public ulong X { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the value in CSS pixels of the top edge of the client window.
@@ -58,7 +58,7 @@ public record ClientWindowInfo
     [JsonPropertyName("y")]
     [JsonInclude]
     [JsonRequired]
-    public ulong Y { get; private set; } = 0;
+    public ulong Y { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the value in CSS pixels of the width of the client window.
@@ -66,7 +66,7 @@ public record ClientWindowInfo
     [JsonPropertyName("width")]
     [JsonInclude]
     [JsonRequired]
-    public ulong Width { get; private set; } = 0;
+    public ulong Width { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the value in CSS pixels of the height of the client window.
@@ -74,5 +74,5 @@ public record ClientWindowInfo
     [JsonPropertyName("height")]
     [JsonInclude]
     [JsonRequired]
-    public ulong Height { get; private set; } = 0;
+    public ulong Height { get; internal set; } = 0;
 }

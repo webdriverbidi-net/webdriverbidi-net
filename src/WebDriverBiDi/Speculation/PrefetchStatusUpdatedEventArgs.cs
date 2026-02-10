@@ -23,7 +23,7 @@ public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; } = string.Empty;
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the URL of the resource for which the prefetch status is updated..
@@ -31,7 +31,7 @@ public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get; private set; } = string.Empty;
+    public string Url { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the value of the updated prefetch status.
@@ -39,5 +39,5 @@ public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("status")]
     [JsonRequired]
     [JsonInclude]
-    public PreloadingStatus Status { get; private set; } = PreloadingStatus.Pending;
+    public PreloadingStatus Status { get; internal set; } = PreloadingStatus.Pending;
 }

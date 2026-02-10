@@ -23,7 +23,7 @@ public record StackFrame
     [JsonPropertyName("functionName")]
     [JsonRequired]
     [JsonInclude]
-    public string FunctionName { get; private set; } = string.Empty;
+    public string FunctionName { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the line number for this stack frame.
@@ -31,7 +31,7 @@ public record StackFrame
     [JsonPropertyName("lineNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int LineNumber { get; private set; } = -1;
+    public int LineNumber { get; internal set; } = -1;
 
     /// <summary>
     /// Gets the column number for this stack frame.
@@ -39,7 +39,7 @@ public record StackFrame
     [JsonPropertyName("columnNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int ColumnNumber { get; private set; } = -1;
+    public int ColumnNumber { get; internal set; } = -1;
 
     /// <summary>
     /// Gets the URL for this stack frame.
@@ -47,5 +47,5 @@ public record StackFrame
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get; private set; } = string.Empty;
+    public string Url { get; internal set; } = string.Empty;
 }

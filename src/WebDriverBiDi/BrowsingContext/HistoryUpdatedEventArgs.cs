@@ -32,7 +32,7 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; }
+    public string BrowsingContextId { get; internal set; }
 
     /// <summary>
     /// Gets the URL of the history entry.
@@ -40,13 +40,13 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get; private set; }
+    public string Url { get; internal set; }
 
     /// <summary>
     /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     [JsonIgnore]
-    public DateTime Timestamp { get; private set; } = DateTimeUtilities.UnixEpoch;
+    public DateTime Timestamp { get; internal set; } = DateTimeUtilities.UnixEpoch;
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).

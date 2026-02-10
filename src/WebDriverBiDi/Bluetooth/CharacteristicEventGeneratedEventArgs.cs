@@ -23,7 +23,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; } = string.Empty;
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the address of the device generating the characteristic event..
@@ -31,7 +31,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("address")]
     [JsonRequired]
     [JsonInclude]
-    public string Address { get; private set; } = string.Empty;
+    public string Address { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the service generating the characteristic event.
@@ -39,7 +39,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("serviceUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string ServiceUuid { get; private set; } = string.Empty;
+    public string ServiceUuid { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the characteristic generating the characteristic event.
@@ -47,7 +47,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("characteristicUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string CharacteristicUuid { get; private set; } = string.Empty;
+    public string CharacteristicUuid { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the type of the characteristic event.
@@ -55,7 +55,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public CharacteristicEventGeneratedType Type { get; private set; } = CharacteristicEventGeneratedType.Read;
+    public CharacteristicEventGeneratedType Type { get; internal set; } = CharacteristicEventGeneratedType.Read;
 
     /// <summary>
     /// Gets the read-only data for the event, if any.

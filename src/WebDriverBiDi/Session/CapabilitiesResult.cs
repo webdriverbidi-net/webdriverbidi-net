@@ -29,7 +29,7 @@ public record CapabilitiesResult
     [JsonPropertyName("acceptInsecureCerts")]
     [JsonRequired]
     [JsonInclude]
-    public bool AcceptInsecureCertificates { get; private set; } = false;
+    public bool AcceptInsecureCertificates { get; internal set; } = false;
 
     /// <summary>
     /// Gets the name of the browser.
@@ -37,7 +37,7 @@ public record CapabilitiesResult
     [JsonPropertyName("browserName")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowserName { get; private set; } = string.Empty;
+    public string BrowserName { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the version of the browser.
@@ -45,7 +45,7 @@ public record CapabilitiesResult
     [JsonPropertyName("browserVersion")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowserVersion { get; private set; } = string.Empty;
+    public string BrowserVersion { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the platform name.
@@ -53,7 +53,7 @@ public record CapabilitiesResult
     [JsonPropertyName("platformName")]
     [JsonRequired]
     [JsonInclude]
-    public string PlatformName { get; private set; } = string.Empty;
+    public string PlatformName { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets a value indicating whether this session supports setting the size of the browser window.
@@ -61,14 +61,14 @@ public record CapabilitiesResult
     [JsonPropertyName("setWindowRect")]
     [JsonRequired]
     [JsonInclude]
-    public bool SetWindowRect { get; private set; } = false;
+    public bool SetWindowRect { get; internal set; } = false;
 
     /// <summary>
     /// Gets a value indicating the WebSocket URL used by this connection.
     /// </summary>
     [JsonPropertyName("webSocketUrl")]
     [JsonInclude]
-    public string? WebSocketUrl { get; private set; }
+    public string? WebSocketUrl { get; internal set; }
 
     /// <summary>
     /// Gets a value containing the default user agent string for this browser.
@@ -76,7 +76,7 @@ public record CapabilitiesResult
     [JsonPropertyName("userAgent")]
     [JsonRequired]
     [JsonInclude]
-    public string UserAgent { get; private set; } = string.Empty;
+    public string UserAgent { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets a read-only dictionary of additional capabilities specified by this session.

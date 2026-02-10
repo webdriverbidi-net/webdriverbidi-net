@@ -32,7 +32,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string? BrowsingContextId { get; private set; }
+    public string? BrowsingContextId { get; internal set; }
 
     /// <summary>
     /// Gets the ID of the navigation initiating the request.
@@ -40,7 +40,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("navigation")]
     [JsonRequired]
     [JsonInclude]
-    public string? NavigationId { get; private set; }
+    public string? NavigationId { get; internal set; }
 
     /// <summary>
     /// Gets a value indicating whether this request is blocked by a network intercept.
@@ -48,7 +48,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("isBlocked")]
     [JsonRequired]
     [JsonInclude]
-    public bool IsBlocked { get; private set; } = false;
+    public bool IsBlocked { get; internal set; } = false;
 
     /// <summary>
     /// Gets the count of redirects for the request.
@@ -56,7 +56,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("redirectCount")]
     [JsonRequired]
     [JsonInclude]
-    public ulong RedirectCount { get; private set; } = 0;
+    public ulong RedirectCount { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the request data of the request.
@@ -64,7 +64,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("request")]
     [JsonRequired]
     [JsonInclude]
-    public RequestData Request { get; private set; } = new();
+    public RequestData Request { get; internal set; } = new();
 
     /// <summary>
     /// Gets the list of network intercepts for this request.
@@ -76,7 +76,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     [JsonIgnore]
-    public DateTime Timestamp { get; private set; } = DateTimeUtilities.UnixEpoch;
+    public DateTime Timestamp { get; internal set; } = DateTimeUtilities.UnixEpoch;
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).

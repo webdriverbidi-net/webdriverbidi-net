@@ -23,7 +23,7 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; } = string.Empty;
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the ID of the prompt.
@@ -31,7 +31,7 @@ public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("prompt")]
     [JsonRequired]
     [JsonInclude]
-    public string Prompt { get; private set; } = string.Empty;
+    public string Prompt { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the read-only list of devices being requested in the prompt.

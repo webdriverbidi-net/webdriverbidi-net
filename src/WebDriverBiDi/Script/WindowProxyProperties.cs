@@ -26,5 +26,5 @@ public record WindowProxyProperties
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string Context { get; private set; } = string.Empty;
+    public string Context { get; internal set; } = string.Empty;
 }

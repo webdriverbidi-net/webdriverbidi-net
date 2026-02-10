@@ -26,7 +26,7 @@ public record StatusCommandResult : CommandResult
     [JsonPropertyName("ready")]
     [JsonRequired]
     [JsonInclude]
-    public bool IsReady { get; private set; }
+    public bool IsReady { get; internal set; }
 
     /// <summary>
     /// Gets a message about the status from the remote end.
@@ -34,5 +34,5 @@ public record StatusCommandResult : CommandResult
     [JsonPropertyName("message")]
     [JsonRequired]
     [JsonInclude]
-    public string Message { get; private set; } = string.Empty;
+    public string Message { get; internal set; } = string.Empty;
 }

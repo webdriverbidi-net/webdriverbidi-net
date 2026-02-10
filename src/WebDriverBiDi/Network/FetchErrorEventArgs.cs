@@ -26,5 +26,5 @@ public record FetchErrorEventArgs : BaseNetworkEventArgs
     [JsonPropertyName("errorText")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorText { get; private set; } = string.Empty;
+    public string ErrorText { get; internal set; } = string.Empty;
 }

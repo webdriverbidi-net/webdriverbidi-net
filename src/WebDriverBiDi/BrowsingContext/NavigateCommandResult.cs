@@ -25,7 +25,7 @@ public record NavigateCommandResult : CommandResult
     /// </summary>
     [JsonPropertyName("navigation")]
     [JsonInclude]
-    public string? NavigationId { get; private set; }
+    public string? NavigationId { get; internal set; }
 
     /// <summary>
     /// Gets the URL of the navigation.
@@ -33,5 +33,5 @@ public record NavigateCommandResult : CommandResult
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get; private set; } = string.Empty;
+    public string Url { get; internal set; } = string.Empty;
 }

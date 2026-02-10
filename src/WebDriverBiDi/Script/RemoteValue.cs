@@ -58,7 +58,7 @@ public record RemoteValue
     /// Gets the type of this RemoteValue.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get; private set; }
+    public string Type { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.

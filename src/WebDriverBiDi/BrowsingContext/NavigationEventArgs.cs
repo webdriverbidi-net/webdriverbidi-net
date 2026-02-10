@@ -28,7 +28,7 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("navigation")]
     [JsonRequired]
     [JsonInclude]
-    public string? NavigationId { get; private set; }
+    public string? NavigationId { get; internal set; }
 
     /// <summary>
     /// Gets the ID of the browsing context being navigated.
@@ -36,7 +36,7 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; } = string.Empty;
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the URL to which the browsing context is being navigated.
@@ -44,13 +44,13 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get; private set; } = string.Empty;
+    public string Url { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     [JsonIgnore]
-    public DateTime Timestamp { get; private set; }
+    public DateTime Timestamp { get; internal set; }
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).

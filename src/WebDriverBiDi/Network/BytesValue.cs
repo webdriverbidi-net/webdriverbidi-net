@@ -35,7 +35,7 @@ public record BytesValue
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public BytesValueType Type { get; private set; } = BytesValueType.String;
+    public BytesValueType Type { get; internal set; } = BytesValueType.String;
 
     /// <summary>
     /// Gets the value of the value object.
@@ -43,7 +43,7 @@ public record BytesValue
     [JsonPropertyName("value")]
     [JsonRequired]
     [JsonInclude]
-    public string Value { get; private set; } = string.Empty;
+    public string Value { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the value of the value object as an array of bytes.

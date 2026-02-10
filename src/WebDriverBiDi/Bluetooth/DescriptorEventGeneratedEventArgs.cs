@@ -23,7 +23,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; } = string.Empty;
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the address of the device generating the descriptor event..
@@ -31,7 +31,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("address")]
     [JsonRequired]
     [JsonInclude]
-    public string Address { get; private set; } = string.Empty;
+    public string Address { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the service generating the descriptor event.
@@ -39,7 +39,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("serviceUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string ServiceUuid { get; private set; } = string.Empty;
+    public string ServiceUuid { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the characteristic generating the descriptor event.
@@ -47,7 +47,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("characteristicUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string CharacteristicUuid { get; private set; } = string.Empty;
+    public string CharacteristicUuid { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the UUID of the descriptor generating the descriptor event.
@@ -55,7 +55,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("descriptorUuid")]
     [JsonRequired]
     [JsonInclude]
-    public string DescriptorUuid { get; private set; } = string.Empty;
+    public string DescriptorUuid { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the type of the descriptor event.
@@ -63,7 +63,7 @@ public record DescriptorEventGeneratedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public DescriptorEventGeneratedType Type { get; private set; } = DescriptorEventGeneratedType.Read;
+    public DescriptorEventGeneratedType Type { get; internal set; } = DescriptorEventGeneratedType.Read;
 
     /// <summary>
     /// Gets the read-only data for the event, if any..

@@ -23,7 +23,7 @@ public record GattConnectionAttemptedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; } = string.Empty;
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the address of the device attempting the connection.
@@ -31,5 +31,5 @@ public record GattConnectionAttemptedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("address")]
     [JsonRequired]
     [JsonInclude]
-    public string Address { get; private set; } = string.Empty;
+    public string Address { get; internal set; } = string.Empty;
 }

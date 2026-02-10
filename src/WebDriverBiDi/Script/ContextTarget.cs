@@ -28,7 +28,7 @@ public record ContextTarget : Target
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; }
+    public string BrowsingContextId { get; internal set; }
 
     /// <summary>
     /// Gets or sets the name of the sandbox.

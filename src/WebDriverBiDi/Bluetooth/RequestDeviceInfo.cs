@@ -23,7 +23,7 @@ public record RequestDeviceInfo
     [JsonPropertyName("id")]
     [JsonRequired]
     [JsonInclude]
-    public string DeviceId { get; private set; } = string.Empty;
+    public string DeviceId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the name of the Bluetooth device, if specified.
@@ -31,5 +31,5 @@ public record RequestDeviceInfo
     [JsonPropertyName("name")]
     [JsonRequired]
     [JsonInclude]
-    public string? DeviceName { get; private set; }
+    public string? DeviceName { get; internal set; }
 }

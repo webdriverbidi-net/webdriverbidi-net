@@ -23,5 +23,5 @@ public record GetDataCommandResult : CommandResult
     [JsonPropertyName("bytes")]
     [JsonRequired]
     [JsonInclude]
-    public BytesValue Bytes { get; private set; } = BytesValue.FromString(string.Empty);
+    public BytesValue Bytes { get; internal set; } = BytesValue.FromString(string.Empty);
 }

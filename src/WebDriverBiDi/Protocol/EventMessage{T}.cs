@@ -25,5 +25,5 @@ public class EventMessage<T> : EventMessage
     [JsonPropertyName("params")]
     [JsonRequired]
     [JsonInclude]
-    internal T? SerializableData { get; private set; }
+    internal T? SerializableData { get; set; }
 }

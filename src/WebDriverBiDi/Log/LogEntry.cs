@@ -68,7 +68,7 @@ public class LogEntry
     /// Gets the timestamp in UTC of the log entry.
     /// </summary>
     [JsonIgnore]
-    public DateTime Timestamp { get; private set; }
+    public DateTime Timestamp { get; internal set; }
 
     /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).

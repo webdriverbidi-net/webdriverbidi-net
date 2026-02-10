@@ -32,7 +32,7 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("channel")]
     [JsonInclude]
     [JsonRequired]
-    public string ChannelId { get; private set; }
+    public string ChannelId { get; internal set; }
 
     /// <summary>
     /// Gets the data for this message.
@@ -40,7 +40,7 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("data")]
     [JsonInclude]
     [JsonRequired]
-    public RemoteValue Data { get; private set; }
+    public RemoteValue Data { get; internal set; }
 
     /// <summary>
     /// Gets the source for this message.
@@ -48,5 +48,5 @@ public record MessageEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("source")]
     [JsonInclude]
     [JsonRequired]
-    public Source Source { get; private set; }
+    public Source Source { get; internal set; }
 }

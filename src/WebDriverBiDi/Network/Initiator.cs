@@ -26,33 +26,33 @@ public record Initiator
     /// </summary>
     [JsonPropertyName("type")]
     [JsonInclude]
-    public InitiatorType? Type { get; private set; }
+    public InitiatorType? Type { get; internal set; }
 
     /// <summary>
     /// Gets the column number of the script initiating the request.
     /// </summary>
     [JsonPropertyName("columnNumber")]
     [JsonInclude]
-    public ulong? ColumnNumber { get; private set; }
+    public ulong? ColumnNumber { get; internal set; }
 
     /// <summary>
     /// Gets the column number of the script initiating the request.
     /// </summary>
     [JsonPropertyName("lineNumber")]
     [JsonInclude]
-    public ulong? LineNumber { get; private set; }
+    public ulong? LineNumber { get; internal set; }
 
     /// <summary>
     /// Gets the stack trace of the script initiating the request.
     /// </summary>
     [JsonPropertyName("stackTrace")]
     [JsonInclude]
-    public StackTrace? StackTrace { get; private set; }
+    public StackTrace? StackTrace { get; internal set; }
 
     /// <summary>
     /// Gets the ID of the request.
     /// </summary>
     [JsonPropertyName("request")]
     [JsonInclude]
-    public string? RequestId { get; private set; }
+    public string? RequestId { get; internal set; }
 }

@@ -45,7 +45,7 @@ public record ProxyConfigurationResult
             return field;
         }
 
-        private set;
+        internal set;
     }
 
     /// <summary>

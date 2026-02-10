@@ -26,5 +26,5 @@ public class CommandResponseMessage<T> : CommandResponseMessage
     [JsonPropertyName("result")]
     [JsonRequired]
     [JsonInclude]
-    internal T? SerializableResult { get; private set; }
+    internal T? SerializableResult { get; set; }
 }

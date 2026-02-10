@@ -29,7 +29,7 @@ public class ProxyConfiguration
     [JsonRequired]
     [JsonPropertyName("proxyType")]
     [JsonInclude]
-    public ProxyType ProxyType { get; private set; }
+    public ProxyType ProxyType { get; internal set; }
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.

@@ -28,7 +28,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double TimeOrigin { get; private set; } = 0;
+    public double TimeOrigin { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the request time of the fetch request.
@@ -37,7 +37,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double RequestTime { get; private set; } = 0;
+    public double RequestTime { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the redirect start time offset from the time origin of the fetch request.
@@ -46,7 +46,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double RedirectStart { get; private set; } = 0;
+    public double RedirectStart { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the redirect end time offset from the time origin of the fetch request.
@@ -55,7 +55,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double RedirectEnd { get; private set; } = 0;
+    public double RedirectEnd { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the fetch start time offset from the time origin of the fetch request.
@@ -64,7 +64,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double FetchStart { get; private set; } = 0;
+    public double FetchStart { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the DNS start time offset from the time origin of the fetch request.
@@ -73,7 +73,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double DnsStart { get; private set; } = 0;
+    public double DnsStart { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the DNS end time offset from the time origin of the fetch request.
@@ -82,7 +82,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double DnsEnd { get; private set; } = 0;
+    public double DnsEnd { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the connect start time offset from the time origin of the fetch request.
@@ -91,7 +91,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double ConnectStart { get; private set; } = 0;
+    public double ConnectStart { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the connect end time offset from the time origin of the fetch request.
@@ -100,7 +100,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double ConnectEnd { get; private set; } = 0;
+    public double ConnectEnd { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the TLS start time offset from the time origin of the fetch request.
@@ -109,7 +109,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double TlsStart { get; private set; } = 0;
+    public double TlsStart { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the request start time offset from the time origin of the fetch request.
@@ -118,7 +118,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double RequestStart { get; private set; } = 0;
+    public double RequestStart { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the response start time offset from the time origin of the fetch request.
@@ -127,7 +127,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double ResponseStart { get; private set; } = 0;
+    public double ResponseStart { get; internal set; } = 0;
 
     /// <summary>
     /// Gets the response end time offset from the time origin of the fetch request.
@@ -136,7 +136,7 @@ public record FetchTimingInfo
     [JsonRequired]
     [JsonInclude]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
-    public double ResponseEnd { get; private set; } = 0;
+    public double ResponseEnd { get; internal set; } = 0;
 
     /// <summary>
     /// Gets an empty <see cref="FetchTimingInfo"/> object.

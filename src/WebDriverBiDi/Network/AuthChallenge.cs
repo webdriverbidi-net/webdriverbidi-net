@@ -26,7 +26,7 @@ public record AuthChallenge
     [JsonPropertyName("scheme")]
     [JsonRequired]
     [JsonInclude]
-    public string Scheme { get; private set; } = string.Empty;
+    public string Scheme { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the realm of the authentication challenge.
@@ -34,5 +34,5 @@ public record AuthChallenge
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string Realm { get; private set; } = string.Empty;
+    public string Realm { get; internal set; } = string.Empty;
 }

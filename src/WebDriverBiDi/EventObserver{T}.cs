@@ -44,7 +44,7 @@ public class EventObserver<T>
     /// <summary>
     /// Gets a value indicating whether a checkpoint is set for this observer.
     /// </summary>
-    public bool IsCheckpointSet { get; private set; } = false;
+    public bool IsCheckpointSet { get; internal set; } = false;
 
     /// <summary>
     /// Gets the internal unique identifier of this observer.
