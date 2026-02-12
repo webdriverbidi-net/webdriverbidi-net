@@ -86,7 +86,27 @@ try
         throw new InvalidOperationException($"Expected page title to contain 'GitHub', but got: '{title}'");
     }
 
-    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to GitHub, verified page title.");
+    // Call a function with arguments — this exercises the CallFunctionCommandParameters
+    // serialization path, which resolves the ArgumentValue polymorphic type hierarchy
+    // including RemoteReference subtypes (RemoteObjectReference, SharedReference).
+    CallFunctionCommandParameters callParams = new("(name) => `Hello, ${name}!`", new ContextTarget(contextId), true);
+    callParams.Arguments.Add(LocalValue.String("World"));
+    EvaluateResult callResult = await driver.Script.CallFunctionAsync(callParams);
+
+    if (callResult is not EvaluateResultSuccess callSuccess)
+    {
+        throw new InvalidOperationException($"CallFunction failed: result type was {callResult.ResultType}");
+    }
+
+    string? greeting = callSuccess.Result.ValueAs<string>();
+    Console.WriteLine($"CallFunction result: {greeting}");
+
+    if (greeting != "Hello, World!")
+    {
+        throw new InvalidOperationException($"Expected 'Hello, World!' but got: '{greeting}'");
+    }
+
+    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to GitHub, verified page title and callFunction.");
     return 0;
 }
 catch (Exception ex)
