@@ -10,7 +10,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Text.Json;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
@@ -493,11 +493,24 @@ public class FirefoxLauncher : BrowserLauncher
         List<string> preferenceList = [];
         foreach (KeyValuePair<string, object> preferencePair in defaultPreferences)
         {
-            preferenceList.Add($"user_pref({JsonSerializer.Serialize(preferencePair.Key)}, {JsonSerializer.Serialize(preferencePair.Value)});");
+            preferenceList.Add($"user_pref({FormatJsValue(preferencePair.Key)}, {FormatJsValue(preferencePair.Value)});");
         }
 
         File.WriteAllText(Path.Combine(this.userDataDirectory, "user.js"), string.Join("\n", preferenceList));
         File.WriteAllText(Path.Combine(this.userDataDirectory, "prefs.js"), string.Empty);
+    }
+
+    private static string FormatJsValue(object value)
+    {
+        return value switch
+        {
+            string s => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"",
+            bool b => b ? "true" : "false",
+            int i => i.ToString(CultureInfo.InvariantCulture),
+            long l => l.ToString(CultureInfo.InvariantCulture),
+            double d => d.ToString(CultureInfo.InvariantCulture),
+            _ => throw new ArgumentException($"Unsupported preference value type: {value.GetType().Name}", nameof(value)),
+        };
     }
 
     /// <summary>

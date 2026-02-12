@@ -23,12 +23,20 @@ jobs:
           8.0.x
           9.0.x
           10.0.x
+    - name: Install Firefox Nightly
+      run: |
+        wget -q "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64&lang=en-US" -O firefox-nightly.tar.xz
+        tar xJf firefox-nightly.tar.xz
+        echo "$PWD/firefox" >> $GITHUB_PATH
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal -p:CollectCoverage=true -p:CoverletOutputFormat=lcov -p:CoverletOutput=../coverage/lcov
+      env:
+        FIREFOX_EXECUTABLE: firefox
+        CHROME_EXECUTABLE: google-chrome-stable
     - name: Upload code coverage
       uses: coverallsapp/github-action@master
       with:

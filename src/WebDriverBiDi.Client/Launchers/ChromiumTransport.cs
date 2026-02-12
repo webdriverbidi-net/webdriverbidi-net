@@ -5,10 +5,10 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
+using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
 
@@ -64,11 +64,11 @@ public class ChromiumTransport : Transport
         // carefully that this does double-convert from byte array to string
         // and back, and that is intentional given the usage here.
         byte[] commandBytes = base.SerializeCommand(command);
-        string serializedCommand = JsonSerializer.Serialize(Encoding.UTF8.GetString(commandBytes));
+        string serializedCommand = JsonEncodeString(Encoding.UTF8.GetString(commandBytes));
         DevToolsProtocolCommand wrapperCommand = new(this.GetNextCommandId(), "Runtime.evaluate");
         wrapperCommand.Parameters["expression"] = @$"window.onBidiMessage({serializedCommand})";
         wrapperCommand.SessionId = this.sessionId;
-        return JsonSerializer.SerializeToUtf8Bytes(wrapperCommand);
+        return wrapperCommand.SerializeToUtf8Bytes();
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public class ChromiumTransport : Transport
         DevToolsProtocolCommand command = new(this.GetNextCommandId(), "Target.createTarget");
         command.Parameters["url"] = "about:blank";
         command.Parameters["hidden"] = true;
-        await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
+        await this.Connection.SendDataAsync(command.SerializeToUtf8Bytes());
         syncEvent.Wait(TimeSpan.FromSeconds(3));
         syncEvent.Reset();
         if (document is not null)
@@ -144,7 +144,7 @@ public class ChromiumTransport : Transport
             command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.attachToTarget");
             command.Parameters["targetId"] = this.mapperTabTargetId;
             command.Parameters["flatten"] = true;
-            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+            await this.Connection.SendDataAsync(command.SerializeToUtf8Bytes()).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
 
@@ -156,14 +156,14 @@ public class ChromiumTransport : Transport
             command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.evaluate");
             command.Parameters["expression"] = "document.body.click()";
             command.Parameters["userGesture"] = true;
-            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+            await this.Connection.SendDataAsync(command.SerializeToUtf8Bytes()).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
 
             // Enable the Runtime CDP domain.
             command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.enable");
             command.SessionId = this.sessionId;
-            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+            await this.Connection.SendDataAsync(command.SerializeToUtf8Bytes()).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
 
@@ -171,7 +171,7 @@ public class ChromiumTransport : Transport
             command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Target.exposeDevToolsProtocol");
             command.Parameters["bindingName"] = "cdp";
             command.Parameters["targetId"] = this.mapperTabTargetId;
-            await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+            await this.Connection.SendDataAsync(command.SerializeToUtf8Bytes()).ConfigureAwait(false);
             syncEvent.Wait(TimeSpan.FromSeconds(3));
             syncEvent.Reset();
 
@@ -193,7 +193,7 @@ public class ChromiumTransport : Transport
                 command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.evaluate");
                 command.Parameters["expression"] = mapperScript;
                 command.SessionId = this.sessionId;
-                await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+                await this.Connection.SendDataAsync(command.SerializeToUtf8Bytes()).ConfigureAwait(false);
                 syncEvent.Wait(TimeSpan.FromSeconds(3));
                 syncEvent.Reset();
 
@@ -202,7 +202,7 @@ public class ChromiumTransport : Transport
                 command.Parameters["expression"] = @$"window.runMapperInstance(""{this.mapperTabTargetId}"")";
                 command.Parameters["awaitPromise"] = true;
                 command.SessionId = this.sessionId;
-                await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command)).ConfigureAwait(false);
+                await this.Connection.SendDataAsync(command.SerializeToUtf8Bytes()).ConfigureAwait(false);
                 syncEvent.Wait(TimeSpan.FromSeconds(3));
                 syncEvent.Reset();
 
@@ -210,13 +210,28 @@ public class ChromiumTransport : Transport
                 command = new DevToolsProtocolCommand(this.GetNextCommandId(), "Runtime.addBinding");
                 command.Parameters["name"] = "sendBidiResponse";
                 command.SessionId = this.sessionId;
-                await this.Connection.SendDataAsync(JsonSerializer.SerializeToUtf8Bytes(command));
+                await this.Connection.SendDataAsync(command.SerializeToUtf8Bytes());
                 syncEvent.Wait(TimeSpan.FromSeconds(3));
                 syncEvent.Reset();
             }
         }
 
         observer.Unobserve();
+    }
+
+    /// <summary>
+    /// Produces a JSON-encoded (quoted and escaped) string using Utf8JsonWriter,
+    /// replacing the AOT-incompatible <c>JsonSerializer.Serialize(string)</c>.
+    /// </summary>
+    private static string JsonEncodeString(string value)
+    {
+        using MemoryStream stream = new();
+        using (Utf8JsonWriter writer = new(stream))
+        {
+            writer.WriteStringValue(value);
+        }
+
+        return Encoding.UTF8.GetString(stream.ToArray());
     }
 
     private class DevToolsProtocolCommand
@@ -232,17 +247,56 @@ public class ChromiumTransport : Transport
             this.method = method;
         }
 
-        [JsonPropertyName("id")]
         public long Id => this.id;
 
-        [JsonPropertyName("method")]
         public string Method => this.method;
 
-        [JsonPropertyName("params")]
         public Dictionary<string, object> Parameters => this.parameters;
 
-        [JsonPropertyName("sessionId")]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? SessionId { get => this.sessionId; set => this.sessionId = value; }
+
+        /// <summary>
+        /// Serializes this command to UTF-8 JSON bytes using Utf8JsonWriter,
+        /// avoiding the AOT-incompatible <c>JsonSerializer.SerializeToUtf8Bytes</c>.
+        /// </summary>
+        public byte[] SerializeToUtf8Bytes()
+        {
+            using MemoryStream stream = new();
+            using (Utf8JsonWriter writer = new(stream))
+            {
+                writer.WriteStartObject();
+                writer.WriteNumber("id", this.id);
+                writer.WriteString("method", this.method);
+                writer.WriteStartObject("params");
+                foreach (KeyValuePair<string, object> kvp in this.parameters)
+                {
+                    switch (kvp.Value)
+                    {
+                        case string s:
+                            writer.WriteString(kvp.Key, s);
+                            break;
+                        case bool b:
+                            writer.WriteBoolean(kvp.Key, b);
+                            break;
+                        case long l:
+                            writer.WriteNumber(kvp.Key, l);
+                            break;
+                        default:
+                            writer.WriteString(kvp.Key, kvp.Value?.ToString() ?? string.Empty);
+                            break;
+                    }
+                }
+
+                writer.WriteEndObject();
+                if (this.sessionId is not null)
+                {
+                    writer.WriteString("sessionId", this.sessionId);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            return stream.ToArray();
+        }
     }
 }
