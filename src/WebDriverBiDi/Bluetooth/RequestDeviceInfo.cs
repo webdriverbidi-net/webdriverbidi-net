@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record RequestDeviceInfo
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RequestDeviceInfo"/> class.
+    /// </summary>
     [JsonConstructor]
     internal RequestDeviceInfo()
     {

@@ -13,6 +13,9 @@ using WebDriverBiDi.Script;
 /// </summary>
 public record FileDialogInfo
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FileDialogInfo"/> class.
+    /// </summary>
     [JsonConstructor]
     internal FileDialogInfo()
     {

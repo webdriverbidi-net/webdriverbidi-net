@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record CaptureScreenshotCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CaptureScreenshotCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal CaptureScreenshotCommandResult()
     {

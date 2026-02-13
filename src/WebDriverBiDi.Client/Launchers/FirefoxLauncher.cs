@@ -6,11 +6,11 @@
 namespace WebDriverBiDi.Client.Launchers;
 
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Globalization;
 using System.Text.RegularExpressions;
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
@@ -481,6 +481,19 @@ public class FirefoxLauncher : BrowserLauncher
         return prefs;
     }
 
+    private static string FormatJsValue(object value)
+    {
+        return value switch
+        {
+            string s => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"",
+            bool b => b ? "true" : "false",
+            int i => i.ToString(CultureInfo.InvariantCulture),
+            long l => l.ToString(CultureInfo.InvariantCulture),
+            double d => d.ToString(CultureInfo.InvariantCulture),
+            _ => throw new ArgumentException($"Unsupported preference value type: {value.GetType().Name}", nameof(value)),
+        };
+    }
+
     private void CreateProfile()
     {
         // If the tempUserDataDirectory begins and ends with a quote, remove the quote
@@ -498,19 +511,6 @@ public class FirefoxLauncher : BrowserLauncher
 
         File.WriteAllText(Path.Combine(this.userDataDirectory, "user.js"), string.Join("\n", preferenceList));
         File.WriteAllText(Path.Combine(this.userDataDirectory, "prefs.js"), string.Empty);
-    }
-
-    private static string FormatJsValue(object value)
-    {
-        return value switch
-        {
-            string s => "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"",
-            bool b => b ? "true" : "false",
-            int i => i.ToString(CultureInfo.InvariantCulture),
-            long l => l.ToString(CultureInfo.InvariantCulture),
-            double d => d.ToString(CultureInfo.InvariantCulture),
-            _ => throw new ArgumentException($"Unsupported preference value type: {value.GetType().Name}", nameof(value)),
-        };
     }
 
     /// <summary>

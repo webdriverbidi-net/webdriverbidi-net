@@ -107,6 +107,21 @@ public class ChromiumTransport : Transport
         return default;
     }
 
+    /// <summary>
+    /// Produces a JSON-encoded (quoted and escaped) string using Utf8JsonWriter,
+    /// replacing the AOT-incompatible <c>JsonSerializer.Serialize(string)</c>.
+    /// </summary>
+    private static string JsonEncodeString(string value)
+    {
+        using MemoryStream stream = new();
+        using (Utf8JsonWriter writer = new(stream))
+        {
+            writer.WriteStringValue(value);
+        }
+
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
     private async Task InitializeBiDi()
     {
         ManualResetEventSlim syncEvent = new(false);
@@ -217,21 +232,6 @@ public class ChromiumTransport : Transport
         }
 
         observer.Unobserve();
-    }
-
-    /// <summary>
-    /// Produces a JSON-encoded (quoted and escaped) string using Utf8JsonWriter,
-    /// replacing the AOT-incompatible <c>JsonSerializer.Serialize(string)</c>.
-    /// </summary>
-    private static string JsonEncodeString(string value)
-    {
-        using MemoryStream stream = new();
-        using (Utf8JsonWriter writer = new(stream))
-        {
-            writer.WriteStringValue(value);
-        }
-
-        return Encoding.UTF8.GetString(stream.ToArray());
     }
 
     private class DevToolsProtocolCommand

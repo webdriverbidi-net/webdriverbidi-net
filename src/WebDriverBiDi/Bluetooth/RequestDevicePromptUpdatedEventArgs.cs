@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record RequestDevicePromptUpdatedEventArgs : WebDriverBiDiEventArgs
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RequestDevicePromptUpdatedEventArgs"/> class.
+    /// </summary>
     [JsonConstructor]
     internal RequestDevicePromptUpdatedEventArgs()
     {

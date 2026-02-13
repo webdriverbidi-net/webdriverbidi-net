@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PrefetchStatusUpdatedEventArgs"/> class.
+    /// </summary>
     [JsonConstructor]
     internal PrefetchStatusUpdatedEventArgs()
     {

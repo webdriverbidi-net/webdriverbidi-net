@@ -48,7 +48,7 @@ public class Message
     }
 
     /// <summary>
-    /// Gets additional properties deserialized with this message.
+    /// Gets or sets additional properties deserialized with this message.
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]

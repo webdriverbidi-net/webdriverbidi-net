@@ -20,7 +20,7 @@ public class EventMessage<T> : EventMessage
     public override object EventData => this.SerializableData!;
 
     /// <summary>
-    /// Gets the data of the event for serialization purposes.
+    /// Gets or sets the data of the event for serialization purposes.
     /// </summary>
     [JsonPropertyName("params")]
     [JsonRequired]

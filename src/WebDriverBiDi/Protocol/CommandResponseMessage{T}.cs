@@ -21,7 +21,7 @@ public class CommandResponseMessage<T> : CommandResponseMessage
     public override CommandResult Result => this.SerializableResult!;
 
     /// <summary>
-    /// Gets the result of the command for serialization purposes.
+    /// Gets or sets the result of the command for serialization purposes.
     /// </summary>
     [JsonPropertyName("result")]
     [JsonRequired]

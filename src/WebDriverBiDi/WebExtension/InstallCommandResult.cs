@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record InstallCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InstallCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal InstallCommandResult()
     {

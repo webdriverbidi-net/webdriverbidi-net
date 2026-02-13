@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record BrowsingContextInfo
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BrowsingContextInfo"/> class.
+    /// </summary>
     [JsonConstructor]
     internal BrowsingContextInfo()
     {

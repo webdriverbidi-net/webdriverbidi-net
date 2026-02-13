@@ -16,17 +16,20 @@ public record BytesValue
     /// <summary>
     /// Initializes a new instance of the <see cref="BytesValue"/> class.
     /// </summary>
+    [JsonConstructor]
+    internal BytesValue()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BytesValue"/> class.
+    /// </summary>
     /// <param name="type">The type of value to initialize.</param>
     /// <param name="value">The value to use in the object.</param>
     private BytesValue(BytesValueType type, string value)
     {
         this.Type = type;
         this.Value = value;
-    }
-
-    [JsonConstructor]
-    internal BytesValue()
-    {
     }
 
     /// <summary>

@@ -13,6 +13,9 @@ using WebDriverBiDi.Network;
 /// </summary>
 public record GetCookiesCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetCookiesCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal GetCookiesCommandResult()
     {

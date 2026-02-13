@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.JsonConverters;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.Bluetooth;
@@ -20,6 +21,19 @@ using WebDriverBiDi.Session;
 using WebDriverBiDi.Storage;
 using WebDriverBiDi.WebExtension;
 
+/// <summary>
+/// Source-generated JSON serializer context providing AOT-compatible metadata
+/// for all types that flow through WebDriverBiDi command serialization.
+/// <para>
+/// AOT consumers should set this as their <c>TypeInfoResolver</c>:
+/// <code>
+/// var options = new JsonSerializerOptions
+/// {
+///     TypeInfoResolver = WebDriverBiDiJsonSerializerContext.Default,
+/// };
+/// </code>
+/// </para>
+/// </summary>
 // ── Protocol ──
 [JsonSerializable(typeof(Command))]
 [JsonSerializable(typeof(ErrorResponseMessage))]
@@ -149,6 +163,7 @@ using WebDriverBiDi.WebExtension;
 
 // ── Browser module ──
 [JsonSerializable(typeof(Browser.CloseCommandParameters), TypeInfoPropertyName = "BrowserCloseCommandParameters")]
+[JsonSerializable(typeof(Browser.CloseCommandResult), TypeInfoPropertyName = "BrowserCloseCommandResult")]
 [JsonSerializable(typeof(CreateUserContextCommandParameters))]
 [JsonSerializable(typeof(GetClientWindowsCommandParameters))]
 [JsonSerializable(typeof(GetUserContextsCommandParameters))]
@@ -165,6 +180,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(ActivateCommandParameters))]
 [JsonSerializable(typeof(CaptureScreenshotCommandParameters))]
 [JsonSerializable(typeof(BrowsingContext.CloseCommandParameters), TypeInfoPropertyName = "BrowsingContextCloseCommandParameters")]
+[JsonSerializable(typeof(BrowsingContext.CloseCommandResult), TypeInfoPropertyName = "BrowsingContextCloseCommandResult")]
 [JsonSerializable(typeof(CreateCommandParameters))]
 [JsonSerializable(typeof(GetTreeCommandParameters))]
 [JsonSerializable(typeof(HandleUserPromptCommandParameters))]
@@ -344,19 +360,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(ExtensionBase64Encoded))]
 [JsonSerializable(typeof(ExtensionPath))]
 
-/// <summary>
-/// Source-generated JSON serializer context providing AOT-compatible metadata
-/// for all types that flow through WebDriverBiDi command serialization.
-/// <para>
-/// AOT consumers should set this as their <c>TypeInfoResolver</c>:
-/// <code>
-/// var options = new JsonSerializerOptions
-/// {
-///     TypeInfoResolver = WebDriverBiDiJsonSerializerContext.Default,
-/// };
-/// </code>
-/// </para>
-/// </summary>
+[ExcludeFromCodeCoverage]
 public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
 {
     // Root enum array types for AOT. EnumValueJsonConverter<T> calls

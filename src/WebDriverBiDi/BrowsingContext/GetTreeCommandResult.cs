@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GetTreeCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetTreeCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal GetTreeCommandResult()
     {

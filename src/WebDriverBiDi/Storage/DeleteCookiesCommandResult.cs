@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record DeleteCookiesCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DeleteCookiesCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal DeleteCookiesCommandResult()
     {

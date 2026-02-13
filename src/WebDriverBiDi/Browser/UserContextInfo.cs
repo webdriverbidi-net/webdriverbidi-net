@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record UserContextInfo
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UserContextInfo"/> class.
+    /// </summary>
     [JsonConstructor]
     internal UserContextInfo()
     {

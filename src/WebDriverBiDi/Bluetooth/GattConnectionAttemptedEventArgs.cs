@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GattConnectionAttemptedEventArgs : WebDriverBiDiEventArgs
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GattConnectionAttemptedEventArgs"/> class.
+    /// </summary>
     [JsonConstructor]
     internal GattConnectionAttemptedEventArgs()
     {

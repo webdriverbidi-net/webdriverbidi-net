@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record SetCookieCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SetCookieCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal SetCookieCommandResult()
     {

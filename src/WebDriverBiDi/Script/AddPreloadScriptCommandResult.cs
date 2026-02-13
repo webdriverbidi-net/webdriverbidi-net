@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record AddPreloadScriptCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AddPreloadScriptCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal AddPreloadScriptCommandResult()
     {

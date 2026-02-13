@@ -13,6 +13,9 @@ using WebDriverBiDi.Script;
 /// </summary>
 public record LocateNodesCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LocateNodesCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal LocateNodesCommandResult()
     {

@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GetDataCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetDataCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal GetDataCommandResult()
     {

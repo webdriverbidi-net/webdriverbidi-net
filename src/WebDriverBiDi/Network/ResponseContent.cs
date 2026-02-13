@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record ResponseContent
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ResponseContent"/> class.
+    /// </summary>
     [JsonConstructor]
     internal ResponseContent()
     {

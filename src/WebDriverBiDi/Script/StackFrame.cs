@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record StackFrame
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StackFrame"/> class.
+    /// </summary>
     [JsonConstructor]
     internal StackFrame()
     {

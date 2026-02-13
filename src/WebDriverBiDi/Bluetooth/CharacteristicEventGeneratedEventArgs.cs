@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CharacteristicEventGeneratedEventArgs"/> class.
+    /// </summary>
     [JsonConstructor]
     internal CharacteristicEventGeneratedEventArgs()
     {

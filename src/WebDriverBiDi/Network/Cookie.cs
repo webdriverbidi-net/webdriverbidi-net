@@ -133,7 +133,7 @@ public record Cookie
     }
 
     /// <summary>
-    /// Gets additional properties deserialized with this cookie.
+    /// Gets or sets additional properties deserialized with this cookie.
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]

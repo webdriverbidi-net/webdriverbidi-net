@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record ReloadCommandResult : NavigateCommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReloadCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal ReloadCommandResult()
         : base()

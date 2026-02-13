@@ -12,6 +12,9 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record GetRealmsCommandResult : CommandResult
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetRealmsCommandResult"/> class.
+    /// </summary>
     [JsonConstructor]
     internal GetRealmsCommandResult()
     {
