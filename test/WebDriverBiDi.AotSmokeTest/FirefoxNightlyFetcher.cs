@@ -180,7 +180,7 @@ internal static class FirefoxNightlyFetcher
 
     private static async Task DownloadAndExtractLinuxAsync(HttpClient client, string url)
     {
-        string tarPath = Path.Combine(CacheDir, "firefox-nightly.tar.bz2");
+        string tarPath = Path.Combine(CacheDir, "firefox-nightly.tar.xz");
         await DownloadFileAsync(client, url, tarPath);
 
         try
@@ -191,7 +191,7 @@ internal static class FirefoxNightlyFetcher
                 Directory.Delete(firefoxDir, true);
             }
 
-            await RunProcessAsync("tar", $"xjf \"{tarPath}\" -C \"{CacheDir}\"");
+            await RunProcessAsync("tar", $"xJf \"{tarPath}\" -C \"{CacheDir}\"");
         }
         finally
         {
