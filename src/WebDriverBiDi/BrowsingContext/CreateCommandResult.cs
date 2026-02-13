@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record CreateCommandResult : CommandResult
 {
     [JsonConstructor]
-    private CreateCommandResult()
+    internal CreateCommandResult()
     {
     }
 
@@ -23,5 +23,5 @@ public record CreateCommandResult : CommandResult
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; } = string.Empty;
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 }

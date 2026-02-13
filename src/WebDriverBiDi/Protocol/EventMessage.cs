@@ -17,7 +17,7 @@ public abstract class EventMessage : Message
     /// </summary>
     [JsonPropertyName("method")]
     [JsonInclude]
-    public string EventName { get; private set; } = string.Empty;
+    public string EventName { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the data for the event.

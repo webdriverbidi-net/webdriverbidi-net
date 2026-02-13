@@ -35,7 +35,7 @@ public record RemoteReference : ArgumentValue
     [JsonPropertyName("handle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    protected string? InternalHandle { get; set; }
+    protected internal string? InternalHandle { get; set; }
 
     /// <summary>
     /// Gets or sets the internally accessible shared ID of the remote reference.
@@ -43,5 +43,5 @@ public record RemoteReference : ArgumentValue
     [JsonPropertyName("sharedId")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    protected string? InternalSharedId { get; set; }
+    protected internal string? InternalSharedId { get; set; }
 }

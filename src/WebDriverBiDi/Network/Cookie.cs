@@ -18,7 +18,7 @@ public record Cookie
     /// Initializes a new instance of the <see cref="Cookie"/> class.
     /// </summary>
     [JsonConstructor]
-    private Cookie()
+    internal Cookie()
     {
         this.AdditionalData = ReceivedDataDictionary.EmptyDictionary;
     }
@@ -29,7 +29,7 @@ public record Cookie
     [JsonPropertyName("name")]
     [JsonRequired]
     [JsonInclude]
-    public string Name { get; private set; } = string.Empty;
+    public string Name { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the value of the cookie.
@@ -37,7 +37,7 @@ public record Cookie
     [JsonPropertyName("value")]
     [JsonRequired]
     [JsonInclude]
-    public BytesValue Value { get; private set; } = BytesValue.Empty;
+    public BytesValue Value { get; internal set; } = BytesValue.Empty;
 
     /// <summary>
     /// Gets the domain of the cookie.
@@ -45,7 +45,7 @@ public record Cookie
     [JsonPropertyName("domain")]
     [JsonRequired]
     [JsonInclude]
-    public string Domain { get; private set; } = string.Empty;
+    public string Domain { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the path of the cookie.
@@ -53,13 +53,13 @@ public record Cookie
     [JsonPropertyName("path")]
     [JsonRequired]
     [JsonInclude]
-    public string Path { get; private set; } = string.Empty;
+    public string Path { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the expiration time of the cookie.
     /// </summary>
     [JsonIgnore]
-    public DateTime? Expires { get; private set; }
+    public DateTime? Expires { get; internal set; }
 
     /// <summary>
     /// Gets the expiration time of the cookie as the total number of milliseconds
@@ -86,7 +86,7 @@ public record Cookie
     [JsonPropertyName("size")]
     [JsonRequired]
     [JsonInclude]
-    public long Size { get; private set; } = 0;
+    public long Size { get; internal set; } = 0;
 
     /// <summary>
     /// Gets a value indicating whether the cookie is secure, delivered via an
@@ -95,7 +95,7 @@ public record Cookie
     [JsonPropertyName("secure")]
     [JsonRequired]
     [JsonInclude]
-    public bool Secure { get; private set; }
+    public bool Secure { get; internal set; }
 
     /// <summary>
     /// Gets a value indicating whether the cookie is only available via HTTP headers
@@ -105,7 +105,7 @@ public record Cookie
     [JsonPropertyName("httpOnly")]
     [JsonRequired]
     [JsonInclude]
-    public bool HttpOnly { get; private set; }
+    public bool HttpOnly { get; internal set; }
 
     /// <summary>
     /// Gets a value indicating whether the cookie a same site cookie.
@@ -113,7 +113,7 @@ public record Cookie
     [JsonPropertyName("sameSite")]
     [JsonRequired]
     [JsonInclude]
-    public CookieSameSiteValue SameSite { get; private set; } = CookieSameSiteValue.None;
+    public CookieSameSiteValue SameSite { get; internal set; } = CookieSameSiteValue.None;
 
     /// <summary>
     /// Gets the read-only dictionary containing extra data returned for this cookie.
@@ -137,7 +137,7 @@ public record Cookie
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get; private set; } = [];
+    internal Dictionary<string, JsonElement> SerializableAdditionalCapabilities { get; set; } = [];
 
     /// <summary>
     /// Converts this cookie to a <see cref="SetCookieHeader"/>.

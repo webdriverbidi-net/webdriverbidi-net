@@ -25,7 +25,9 @@ public class Transport
 
     private readonly JsonSerializerOptions options = new()
     {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
+        TypeInfoResolver = JsonSerializer.IsReflectionEnabledByDefault
+            ? new PrivateConstructorContractResolver()
+            : WebDriverBiDiJsonSerializerContext.Default,
     };
 
     private readonly Dictionary<string, Type> eventMessageTypes = [];
@@ -222,7 +224,7 @@ public class Transport
     /// <returns>The serialized JSON string representing the command.</returns>
     protected virtual byte[] SerializeCommand(Command command)
     {
-        return JsonSerializer.SerializeToUtf8Bytes(command);
+        return JsonSerializer.SerializeToUtf8Bytes(command, this.options);
     }
 
     /// <summary>

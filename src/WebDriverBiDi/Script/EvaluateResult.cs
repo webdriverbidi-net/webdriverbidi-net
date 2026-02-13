@@ -27,7 +27,7 @@ public record EvaluateResult : CommandResult
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public EvaluateResultType ResultType { get; private set; } = EvaluateResultType.Success;
+    public EvaluateResultType ResultType { get; internal set; } = EvaluateResultType.Success;
 
     /// <summary>
     /// Gets the ID of the realm in which the script was executed.
@@ -35,5 +35,5 @@ public record EvaluateResult : CommandResult
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get; private set; } = string.Empty;
+    public string RealmId { get; internal set; } = string.Empty;
 }

@@ -26,7 +26,7 @@ public record ExceptionDetails
     [JsonPropertyName("text")]
     [JsonRequired]
     [JsonInclude]
-    public string Text { get; private set; } = string.Empty;
+    public string Text { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the column number of the statement that caused the exception.
@@ -34,7 +34,7 @@ public record ExceptionDetails
     [JsonPropertyName("columnNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int ColumnNumber { get; private set; } = -1;
+    public int ColumnNumber { get; internal set; } = -1;
 
     /// <summary>
     /// Gets the line number of the statement that caused the exception.
@@ -42,7 +42,7 @@ public record ExceptionDetails
     [JsonPropertyName("lineNumber")]
     [JsonRequired]
     [JsonInclude]
-    public int LineNumber { get; private set; } = -1;
+    public int LineNumber { get; internal set; } = -1;
 
     /// <summary>
     /// Gets the stack trace of the exception.
@@ -50,7 +50,7 @@ public record ExceptionDetails
     [JsonPropertyName("stackTrace")]
     [JsonRequired]
     [JsonInclude]
-    public StackTrace StackTrace { get; private set; } = new();
+    public StackTrace StackTrace { get; internal set; } = new();
 
     /// <summary>
     /// Gets the RemoteValue representing the value of the exception.
@@ -58,5 +58,5 @@ public record ExceptionDetails
     [JsonPropertyName("exception")]
     [JsonRequired]
     [JsonInclude]
-    public RemoteValue Exception { get; private set; } = new("null");
+    public RemoteValue Exception { get; internal set; } = new("null");
 }

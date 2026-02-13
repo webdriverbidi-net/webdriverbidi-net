@@ -26,5 +26,5 @@ public record ResponseStartedEventArgs : BaseNetworkEventArgs
     [JsonPropertyName("response")]
     [JsonRequired]
     [JsonInclude]
-    public ResponseData Response { get; private set; } = new();
+    public ResponseData Response { get; internal set; } = new();
 }

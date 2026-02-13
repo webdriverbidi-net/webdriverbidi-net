@@ -16,7 +16,7 @@ public record EvaluateResultSuccess : EvaluateResult
     /// Initializes a new instance of the <see cref="EvaluateResultSuccess"/> class.
     /// </summary>
     [JsonConstructor]
-    private EvaluateResultSuccess()
+    internal EvaluateResultSuccess()
         : base()
     {
     }
@@ -26,5 +26,5 @@ public record EvaluateResultSuccess : EvaluateResult
     /// </summary>
     [JsonPropertyName("result")]
     [JsonInclude]
-    public RemoteValue Result { get; private set; } = new("null");
+    public RemoteValue Result { get; internal set; } = new("null");
 }

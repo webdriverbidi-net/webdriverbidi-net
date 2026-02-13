@@ -16,7 +16,7 @@ public record EvaluateResultException : EvaluateResult
     /// Initializes a new instance of the <see cref="EvaluateResultException"/> class.
     /// </summary>
     [JsonConstructor]
-    private EvaluateResultException()
+    internal EvaluateResultException()
         : base()
     {
     }
@@ -26,5 +26,5 @@ public record EvaluateResultException : EvaluateResult
     /// </summary>
     [JsonPropertyName("exceptionDetails")]
     [JsonInclude]
-    public ExceptionDetails ExceptionDetails { get; private set; } = new();
+    public ExceptionDetails ExceptionDetails { get; internal set; } = new();
 }

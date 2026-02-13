@@ -27,7 +27,7 @@ public record RequestData
     [JsonPropertyName("request")]
     [JsonRequired]
     [JsonInclude]
-    public string RequestId { get; private set; } = string.Empty;
+    public string RequestId { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the URL of the request.
@@ -35,7 +35,7 @@ public record RequestData
     [JsonPropertyName("url")]
     [JsonRequired]
     [JsonInclude]
-    public string Url { get; private set; } = string.Empty;
+    public string Url { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the method of the request.
@@ -43,7 +43,7 @@ public record RequestData
     [JsonPropertyName("method")]
     [JsonRequired]
     [JsonInclude]
-    public string Method { get; private set; } = string.Empty;
+    public string Method { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the destination of the request.
@@ -51,7 +51,7 @@ public record RequestData
     [JsonPropertyName("destination")]
     [JsonRequired]
     [JsonInclude]
-    public string Destination { get; private set; } = string.Empty;
+    public string Destination { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the initiator type of the request.
@@ -59,7 +59,7 @@ public record RequestData
     [JsonPropertyName("initiatorType")]
     [JsonRequired]
     [JsonInclude]
-    public string? InitiatorType { get; private set; }
+    public string? InitiatorType { get; internal set; }
 
     /// <summary>
     /// Gets the headers of the request.
@@ -91,7 +91,7 @@ public record RequestData
     [JsonPropertyName("headersSize")]
     [JsonRequired]
     [JsonInclude]
-    public ulong? HeadersSize { get; private set; }
+    public ulong? HeadersSize { get; internal set; }
 
     /// <summary>
     /// Gets the size, in bytes, of the body in the request.
@@ -99,7 +99,7 @@ public record RequestData
     [JsonPropertyName("bodySize")]
     [JsonRequired]
     [JsonInclude]
-    public ulong? BodySize { get; private set; }
+    public ulong? BodySize { get; internal set; }
 
     /// <summary>
     /// Gets the fetch timing info of the request.
@@ -107,7 +107,7 @@ public record RequestData
     [JsonPropertyName("timings")]
     [JsonRequired]
     [JsonInclude]
-    public FetchTimingInfo Timings { get; private set; } = FetchTimingInfo.Empty;
+    public FetchTimingInfo Timings { get; internal set; } = FetchTimingInfo.Empty;
 
     /// <summary>
     /// Gets or sets the headers of the request for serialization purposes.

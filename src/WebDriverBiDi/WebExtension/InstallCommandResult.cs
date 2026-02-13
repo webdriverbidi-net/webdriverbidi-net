@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record InstallCommandResult : CommandResult
 {
     [JsonConstructor]
-    private InstallCommandResult()
+    internal InstallCommandResult()
     {
     }
 
@@ -23,5 +23,5 @@ public record InstallCommandResult : CommandResult
     [JsonPropertyName("extension")]
     [JsonRequired]
     [JsonInclude]
-    public string ExtensionId { get; private set; } = string.Empty;
+    public string ExtensionId { get; internal set; } = string.Empty;
 }

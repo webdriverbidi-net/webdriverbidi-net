@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record PrintCommandResult : CommandResult
 {
     [JsonConstructor]
-    private PrintCommandResult()
+    internal PrintCommandResult()
     {
     }
 
@@ -23,5 +23,5 @@ public record PrintCommandResult : CommandResult
     [JsonPropertyName("data")]
     [JsonRequired]
     [JsonInclude]
-    public string Data { get; private set; } = string.Empty;
+    public string Data { get; internal set; } = string.Empty;
 }

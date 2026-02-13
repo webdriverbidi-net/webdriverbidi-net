@@ -33,7 +33,7 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; }
+    public string BrowsingContextId { get; internal set; }
 
     /// <summary>
     /// Gets the prompt handler type for this event.
@@ -41,7 +41,7 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("handler")]
     [JsonRequired]
     [JsonInclude]
-    public UserPromptHandlerType Handler { get; private set; }
+    public UserPromptHandlerType Handler { get; internal set; }
 
     /// <summary>
     /// Gets the type of user prompt opened.
@@ -49,7 +49,7 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("type")]
     [JsonRequired]
     [JsonInclude]
-    public UserPromptType PromptType { get; private set; }
+    public UserPromptType PromptType { get; internal set; }
 
     /// <summary>
     /// Gets the message displayed by the user prompt.
@@ -57,12 +57,12 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("message")]
     [JsonRequired]
     [JsonInclude]
-    public string Message { get; private set; }
+    public string Message { get; internal set; }
 
     /// <summary>
     /// Gets the default value of the user prompt, if any.
     /// </summary>
     [JsonPropertyName("defaultValue")]
     [JsonInclude]
-    public string? DefaultValue { get; private set; }
+    public string? DefaultValue { get; internal set; }
 }

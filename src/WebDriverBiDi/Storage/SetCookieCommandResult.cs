@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record SetCookieCommandResult : CommandResult
 {
     [JsonConstructor]
-    private SetCookieCommandResult()
+    internal SetCookieCommandResult()
     {
     }
 
@@ -23,5 +23,5 @@ public record SetCookieCommandResult : CommandResult
     [JsonPropertyName("partitionKey")]
     [JsonRequired]
     [JsonInclude]
-    public PartitionKey PartitionKey { get; private set; } = new();
+    public PartitionKey PartitionKey { get; internal set; } = new();
 }

@@ -26,5 +26,5 @@ public record SubscribeCommandResult : CommandResult
     [JsonPropertyName("subscription")]
     [JsonRequired]
     [JsonInclude]
-    public string SubscriptionId { get; private set; } = string.Empty;
+    public string SubscriptionId { get; internal set; } = string.Empty;
 }

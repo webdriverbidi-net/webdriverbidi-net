@@ -28,14 +28,14 @@ public record PartitionKey
     /// </summary>
     [JsonPropertyName("userContext")]
     [JsonInclude]
-    public string? UserContextId { get; private set; }
+    public string? UserContextId { get; internal set; }
 
     /// <summary>
     /// Gets the source origin of the cookie partition key.
     /// </summary>
     [JsonPropertyName("sourceOrigin")]
     [JsonInclude]
-    public string? SourceOrigin { get; private set; }
+    public string? SourceOrigin { get; internal set; }
 
     /// <summary>
     /// Gets read-only dictionary of additional properties deserialized with this message.
@@ -59,5 +59,5 @@ public record PartitionKey
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; private set; } = [];
+    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; set; } = [];
 }

@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record ReloadCommandResult : NavigateCommandResult
 {
     [JsonConstructor]
-    private ReloadCommandResult()
+    internal ReloadCommandResult()
         : base()
     {
     }

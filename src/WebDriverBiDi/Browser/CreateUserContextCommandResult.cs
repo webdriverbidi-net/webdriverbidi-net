@@ -18,5 +18,5 @@ public record CreateUserContextCommandResult : CommandResult
     [JsonPropertyName("userContext")]
     [JsonRequired]
     [JsonInclude]
-    public string UserContextId { get; private set; } = string.Empty;
+    public string UserContextId { get; internal set; } = string.Empty;
 }

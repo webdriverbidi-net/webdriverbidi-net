@@ -53,13 +53,13 @@ public record LocalValue : ArgumentValue
     /// Gets the type of this LocalValue.
     /// </summary>
     [JsonPropertyName("type")]
-    public string Type { get; private set; }
+    public string Type { get; internal set; }
 
     /// <summary>
     /// Gets the object containing the value of this LocalValue.
     /// </summary>
     [JsonIgnore]
-    public object? Value { get; private set; }
+    public object? Value { get; internal set; }
 
     /// <summary>
     /// Gets the object containing the value of this LocalValue for serialization purposes.

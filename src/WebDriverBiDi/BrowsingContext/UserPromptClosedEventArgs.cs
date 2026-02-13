@@ -30,7 +30,7 @@ public record UserPromptClosedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string BrowsingContextId { get; private set; }
+    public string BrowsingContextId { get; internal set; }
 
     /// <summary>
     /// Gets a value indicating whether the user prompt was accepted (true), or if it was canceled (false).
@@ -38,7 +38,7 @@ public record UserPromptClosedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("accepted")]
     [JsonRequired]
     [JsonInclude]
-    public bool IsAccepted { get; private set; }
+    public bool IsAccepted { get; internal set; }
 
     /// <summary>
     /// Gets the text of the user prompt.
@@ -46,5 +46,5 @@ public record UserPromptClosedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("userText")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? UserText { get; private set; }
+    public string? UserText { get; internal set; }
 }

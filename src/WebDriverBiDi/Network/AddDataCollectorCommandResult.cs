@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record AddDataCollectorCommandResult : CommandResult
 {
     [JsonConstructor]
-    private AddDataCollectorCommandResult()
+    internal AddDataCollectorCommandResult()
     {
     }
 
@@ -23,5 +23,5 @@ public record AddDataCollectorCommandResult : CommandResult
     [JsonPropertyName("collector")]
     [JsonRequired]
     [JsonInclude]
-    public string CollectorId { get; private set; } = string.Empty;
+    public string CollectorId { get; internal set; } = string.Empty;
 }

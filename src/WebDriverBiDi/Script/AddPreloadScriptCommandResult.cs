@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record AddPreloadScriptCommandResult : CommandResult
 {
     [JsonConstructor]
-    private AddPreloadScriptCommandResult()
+    internal AddPreloadScriptCommandResult()
     {
     }
 
@@ -22,5 +22,5 @@ public record AddPreloadScriptCommandResult : CommandResult
     /// </summary>
     [JsonPropertyName("script")]
     [JsonInclude]
-    public string PreloadScriptId { get; private set; } = string.Empty;
+    public string PreloadScriptId { get; internal set; } = string.Empty;
 }

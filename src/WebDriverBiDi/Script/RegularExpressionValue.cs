@@ -39,7 +39,7 @@ public record RegularExpressionValue
     [JsonPropertyName("pattern")]
     [JsonRequired]
     [JsonInclude]
-    public string Pattern { get; private set; }
+    public string Pattern { get; internal set; }
 
     /// <summary>
     /// Gets the flags used in the regular expression.
@@ -47,5 +47,5 @@ public record RegularExpressionValue
     [JsonPropertyName("flags")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    public string? Flags { get; private set; }
+    public string? Flags { get; internal set; }
 }

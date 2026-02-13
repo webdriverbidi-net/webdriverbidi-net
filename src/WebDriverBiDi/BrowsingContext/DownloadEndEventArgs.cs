@@ -26,12 +26,12 @@ public record DownloadEndEventArgs : NavigationEventArgs
     /// </summary>
     [JsonPropertyName("filepath")]
     [JsonInclude]
-    public string? FilePath { get; private set; }
+    public string? FilePath { get; internal set; }
 
     /// <summary>
     /// Gets the status of the download.
     /// </summary>
     [JsonPropertyName("status")]
     [JsonInclude]
-    public DownloadEndStatus Status { get; private set; } = DownloadEndStatus.Complete;
+    public DownloadEndStatus Status { get; internal set; } = DownloadEndStatus.Complete;
 }

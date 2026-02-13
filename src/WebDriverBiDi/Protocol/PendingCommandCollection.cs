@@ -18,7 +18,7 @@ public class PendingCommandCollection
     /// <summary>
     /// Gets a value indicating whether this collection is accepting commands.
     /// </summary>
-    public bool IsAcceptingCommands { get; private set; } = true;
+    public bool IsAcceptingCommands { get; internal set; } = true;
 
     /// <summary>
     /// Gets the number of commands currently in the collection.

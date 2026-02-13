@@ -27,5 +27,5 @@ public record DownloadWillBeginEventArgs : NavigationEventArgs
     [JsonPropertyName("suggestedFileName")]
     [JsonRequired]
     [JsonInclude]
-    public string SuggestedFileName { get; private set; } = string.Empty;
+    public string SuggestedFileName { get; internal set; } = string.Empty;
 }

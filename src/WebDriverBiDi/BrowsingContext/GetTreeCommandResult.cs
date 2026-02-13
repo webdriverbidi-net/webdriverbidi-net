@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record GetTreeCommandResult : CommandResult
 {
     [JsonConstructor]
-    private GetTreeCommandResult()
+    internal GetTreeCommandResult()
     {
     }
 

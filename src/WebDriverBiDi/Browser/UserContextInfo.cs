@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record UserContextInfo
 {
     [JsonConstructor]
-    private UserContextInfo()
+    internal UserContextInfo()
     {
     }
 
@@ -23,5 +23,5 @@ public record UserContextInfo
     [JsonPropertyName("userContext")]
     [JsonRequired]
     [JsonInclude]
-    public string UserContextId { get; private set; } = string.Empty;
+    public string UserContextId { get; internal set; } = string.Empty;
 }

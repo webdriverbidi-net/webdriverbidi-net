@@ -26,7 +26,7 @@ public class ErrorResponseMessage : Message
     [JsonPropertyName("error")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorType { get; private set; } = string.Empty;
+    public string ErrorType { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the message of the error.
@@ -34,7 +34,7 @@ public class ErrorResponseMessage : Message
     [JsonPropertyName("message")]
     [JsonRequired]
     [JsonInclude]
-    public string ErrorMessage { get; private set; } = string.Empty;
+    public string ErrorMessage { get; internal set; } = string.Empty;
 
     /// <summary>
     /// Gets the stack trace associated with this error.

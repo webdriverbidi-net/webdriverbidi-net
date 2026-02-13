@@ -28,5 +28,5 @@ public record RealmDestroyedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("realm")]
     [JsonRequired]
     [JsonInclude]
-    public string RealmId { get; private set; }
+    public string RealmId { get; internal set; }
 }

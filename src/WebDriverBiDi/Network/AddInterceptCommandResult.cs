@@ -13,7 +13,7 @@ using System.Text.Json.Serialization;
 public record AddInterceptCommandResult : CommandResult
 {
     [JsonConstructor]
-    private AddInterceptCommandResult()
+    internal AddInterceptCommandResult()
     {
     }
 
@@ -23,5 +23,5 @@ public record AddInterceptCommandResult : CommandResult
     [JsonPropertyName("intercept")]
     [JsonRequired]
     [JsonInclude]
-    public string InterceptId { get; private set; } = string.Empty;
+    public string InterceptId { get; internal set; } = string.Empty;
 }
