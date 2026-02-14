@@ -11,6 +11,7 @@ using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 
 string browser = args.Length > 0 ? args[0].ToLowerInvariant() : "firefox";
+string url = args.Length > 1 ? args[1].ToLowerInvariant() : "https://github.com";
 Console.WriteLine($"Browser: {browser}");
 
 BrowserLauncher launcher;
@@ -50,11 +51,14 @@ try
 
     Transport transport = launcher.CreateTransport();
     driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+    EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver((e) => Console.WriteLine($"Load event fired for {e.Url}"));
     await driver.StartAsync(launcher.WebSocketUrl);
     Console.WriteLine("BiDi connection established.");
 
     await driver.Session.NewSessionAsync(new NewCommandParameters());
     Console.WriteLine("Session created.");
+
+    await driver.Session.SubscribeAsync(new SubscribeCommandParameters([driver.BrowsingContext.OnLoad.EventName]));
 
     GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
     if (tree.ContextTree.Count == 0)
@@ -65,10 +69,14 @@ try
     string contextId = tree.ContextTree[0].BrowsingContextId;
     Console.WriteLine($"Browsing context: {contextId}");
 
-    NavigateCommandParameters navigateParams = new(contextId, "https://github.com");
-    navigateParams.Wait = ReadinessState.Complete;
+    observer.SetCheckpoint();
+    NavigateCommandParameters navigateParams = new(contextId, url)
+    {
+        Wait = ReadinessState.Complete
+    };
     await driver.BrowsingContext.NavigateAsync(navigateParams);
     Console.WriteLine("Navigation to github.com complete.");
+    observer.WaitForCheckpoint(TimeSpan.FromSeconds(1));
 
     EvaluateCommandParameters evalParams = new("document.title", new ContextTarget(contextId), true);
     EvaluateResult evalResult = await driver.Script.EvaluateAsync(evalParams);
