@@ -70,7 +70,7 @@ public record Cookie
     public ulong? EpochExpires
     {
         get;
-        private set
+        internal set
         {
             field = value;
             if (value.HasValue)

@@ -21,7 +21,8 @@ public record SetClientWindowStateCommandResult : CommandResult
     /// <summary>
     /// Initializes a new instance of the <see cref="SetClientWindowStateCommandResult"/> class.
     /// </summary>
-    private SetClientWindowStateCommandResult()
+    [JsonConstructor]
+    internal SetClientWindowStateCommandResult()
     {
     }
 

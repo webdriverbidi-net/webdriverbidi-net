@@ -21,6 +21,7 @@ public record BaseNetworkEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseNetworkEventArgs"/> class.
     /// </summary>
+    [JsonConstructor]
     internal BaseNetworkEventArgs()
     {
         this.EpochTimestamp = 0;

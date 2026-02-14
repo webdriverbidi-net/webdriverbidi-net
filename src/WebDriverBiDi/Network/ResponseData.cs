@@ -17,6 +17,7 @@ public record ResponseData
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseData"/> class.
     /// </summary>
+    [JsonConstructor]
     internal ResponseData()
     {
     }
