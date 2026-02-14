@@ -2,16 +2,11 @@ namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
-using WebDriverBiDi.JsonConverters;
+
 
 [TestFixture]
 public class UserPromptHandlerTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanSerialize()
     {
@@ -177,7 +172,7 @@ public class UserPromptHandlerTests
                       {
                       }
                       """;
-        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
+        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
         Assert.That(handler, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -206,7 +201,7 @@ public class UserPromptHandlerTests
                         "file": "ignore"
                       }
                       """;
-        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
+        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
         Assert.That(handler, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -230,7 +225,7 @@ public class UserPromptHandlerTests
                         "default": "accept"
                       }
                       """;
-        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
+        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
         Assert.That(handler, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -254,7 +249,7 @@ public class UserPromptHandlerTests
                         "alert": "accept"
                       }
                       """;
-        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
+        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
         Assert.That(handler, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -278,7 +273,7 @@ public class UserPromptHandlerTests
                         "confirm": "accept"
                       }
                       """;
-        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
+        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
         Assert.That(handler, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -302,7 +297,7 @@ public class UserPromptHandlerTests
                         "prompt": "accept"
                       }
                       """;
-        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
+        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
         Assert.That(handler, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -326,7 +321,7 @@ public class UserPromptHandlerTests
                         "beforeunload": "accept"
                       }
                       """;
-        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
+        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
         Assert.That(handler, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -350,7 +345,7 @@ public class UserPromptHandlerTests
                         "file": "accept"
                       }
                       """;
-        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions);
+        UserPromptHandler? handler = JsonSerializer.Deserialize<UserPromptHandler>(json);
         Assert.That(handler, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -374,6 +369,6 @@ public class UserPromptHandlerTests
                         "default": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserPromptHandler>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptHandler>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 }

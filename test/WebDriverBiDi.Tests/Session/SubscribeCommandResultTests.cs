@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class SubscribeCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class SubscribeCommandResultTests
                         "subscription": "mySubscription"
                       }
                       """;
-        SubscribeCommandResult? result = JsonSerializer.Deserialize<SubscribeCommandResult>(json, deserializationOptions);
+        SubscribeCommandResult? result = JsonSerializer.Deserialize<SubscribeCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result.SubscriptionId, Is.EqualTo("mySubscription"));
     }
@@ -32,7 +26,7 @@ public class SubscribeCommandResultTests
                         "subscription": "mySubscription"
                       }
                       """;
-        SubscribeCommandResult? result = JsonSerializer.Deserialize<SubscribeCommandResult>(json, deserializationOptions);
+        SubscribeCommandResult? result = JsonSerializer.Deserialize<SubscribeCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         SubscribeCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -45,7 +39,7 @@ public class SubscribeCommandResultTests
                       {
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -56,6 +50,6 @@ public class SubscribeCommandResultTests
                         "subscription": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<SubscribeCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

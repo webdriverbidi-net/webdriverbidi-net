@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class StackFrameTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -22,7 +16,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions);
+        StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json);
         Assert.That(stackFrame, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -44,7 +38,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions);
+        StackFrame? stackFrame = JsonSerializer.Deserialize<StackFrame>(json);
         Assert.That(stackFrame, Is.Not.Null);
         StackFrame copy = stackFrame with { };
         Assert.That(copy, Is.EqualTo(stackFrame));
@@ -60,7 +54,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -74,7 +68,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-       Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+       Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -87,7 +81,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -101,7 +95,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -114,7 +108,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -128,7 +122,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -141,7 +135,7 @@ public class StackFrameTests
                         "columnNumber": 5
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -155,6 +149,6 @@ public class StackFrameTests
                         "url": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 }

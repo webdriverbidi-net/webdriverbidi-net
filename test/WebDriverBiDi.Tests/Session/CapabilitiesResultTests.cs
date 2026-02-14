@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class CapabilitiesResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -25,7 +19,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -58,7 +52,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -98,7 +92,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -140,7 +134,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -177,7 +171,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -213,7 +207,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -249,7 +243,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -286,7 +280,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -322,7 +316,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         CapabilitiesResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -348,7 +342,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'proxyautoconfig' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'proxyautoconfig' is not valid for enum type"));
         // spell-checker: enable
     }
 
@@ -369,7 +363,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -402,7 +396,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a 'proxyType' property"));
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a 'proxyType' property"));
     }
 
     [Test]
@@ -426,7 +420,7 @@ public class CapabilitiesResultTests
                         }
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -461,7 +455,7 @@ public class CapabilitiesResultTests
                         "unhandledPromptBehavior": {}
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -497,7 +491,7 @@ public class CapabilitiesResultTests
                         }
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -531,7 +525,7 @@ public class CapabilitiesResultTests
                         "unhandledPromptBehavior": "accept"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -550,7 +544,7 @@ public class CapabilitiesResultTests
                         }
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -581,7 +575,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -600,7 +594,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -619,7 +613,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -638,7 +632,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -657,7 +651,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -676,7 +670,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -694,7 +688,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -712,7 +706,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -733,6 +727,6 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class RequestDeviceInfoTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -20,7 +14,7 @@ public class RequestDeviceInfoTests
                         "name": "myDeviceName"
                       }
                       """;
-        RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions);
+        RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json);
         Assert.That(info, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -38,7 +32,7 @@ public class RequestDeviceInfoTests
                         "name": null
                       }
                       """;
-        RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions);
+        RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json);
         Assert.That(info, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -56,7 +50,7 @@ public class RequestDeviceInfoTests
                         "name": "myDeviceName"
                       }
                       """;
-        RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions);
+        RequestDeviceInfo? info = JsonSerializer.Deserialize<RequestDeviceInfo>(json);
         Assert.That(info, Is.Not.Null);
         RequestDeviceInfo copy = info with { };
         Assert.That(copy, Is.EqualTo(info));
@@ -70,7 +64,7 @@ public class RequestDeviceInfoTests
                         "name": "myDeviceName"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -82,7 +76,7 @@ public class RequestDeviceInfoTests
                         "name": "myDeviceName"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -93,7 +87,7 @@ public class RequestDeviceInfoTests
                         "id": "myDeviceId",
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -105,6 +99,6 @@ public class RequestDeviceInfoTests
                         "name": 123
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<RequestDeviceInfo>(json), Throws.InstanceOf<JsonException>());
     }
 }

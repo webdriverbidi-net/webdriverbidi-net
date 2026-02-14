@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class BrowsingContextInfoTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -24,7 +18,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         using (Assert.EnterMultipleScope())
@@ -62,7 +56,7 @@ public class BrowsingContextInfoTests
                         ]
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         using (Assert.EnterMultipleScope())
@@ -91,7 +85,7 @@ public class BrowsingContextInfoTests
                         "parent": "parentContextId"
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         using (Assert.EnterMultipleScope())
@@ -120,7 +114,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         using (Assert.EnterMultipleScope())
@@ -149,7 +143,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         BrowsingContextInfo copy = info with { };
         Assert.That(copy, Is.EqualTo(info));
@@ -167,7 +161,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -182,7 +176,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -197,7 +191,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -212,7 +206,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -227,7 +221,7 @@ public class BrowsingContextInfoTests
                         "userContext": "myUserContextId"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -242,7 +236,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -258,7 +252,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -274,7 +268,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -290,7 +284,7 @@ public class BrowsingContextInfoTests
                         "children": [] 
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -306,7 +300,7 @@ public class BrowsingContextInfoTests
                         "children": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -322,7 +316,7 @@ public class BrowsingContextInfoTests
                         "children": [] 
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -337,7 +331,7 @@ public class BrowsingContextInfoTests
                         "children": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -353,6 +347,6 @@ public class BrowsingContextInfoTests
                         "parent": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BrowsingContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 }

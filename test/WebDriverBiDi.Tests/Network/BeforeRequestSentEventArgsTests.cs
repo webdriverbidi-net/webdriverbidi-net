@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class BeforeRequestSentEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     private readonly string requestDataJson = """
                                               {
                                                 "request": "myRequestId",
@@ -56,7 +50,7 @@ public class BeforeRequestSentEventArgsTests
                             "request": {{requestDataJson}}
                            }
                            """;
-        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions);
+        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -84,7 +78,7 @@ public class BeforeRequestSentEventArgsTests
                             }
                            }
                            """;
-        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions);
+        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -111,7 +105,7 @@ public class BeforeRequestSentEventArgsTests
                             "request": {{requestDataJson}}
                            }
                            """;
-        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions);
+        BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         BeforeRequestSentEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
@@ -134,6 +128,6 @@ public class BeforeRequestSentEventArgsTests
                             "initiator": []
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

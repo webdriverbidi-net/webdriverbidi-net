@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class AuthRequiredEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     private readonly string requestDataJson = """
                                               {
                                                 "request": "myRequestId",
@@ -79,7 +73,7 @@ public class AuthRequiredEventArgsTests
                              }
                            }
                            """;
-        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, deserializationOptions);
+        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -128,7 +122,7 @@ public class AuthRequiredEventArgsTests
                              }
                            }
                            """;
-        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, deserializationOptions);
+        AuthRequiredEventArgs? eventArgs = JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         AuthRequiredEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
@@ -150,6 +144,6 @@ public class AuthRequiredEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

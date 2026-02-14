@@ -2,7 +2,7 @@ namespace WebDriverBiDi.Input;
 
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
-using WebDriverBiDi.JsonConverters;
+
 using WebDriverBiDi.Script;
 
 [TestFixture]
@@ -163,11 +163,7 @@ public class PointerMoveActionTests
     [Test]
     public void TestCanSerializeParametersWithOptionalElementOrigin()
     {
-        JsonSerializerOptions deserializationOptions = new()
-        {
-            TypeInfoResolver = new PrivateConstructorContractResolver(),
-        };
-        string nodeJson = """
+       string nodeJson = """
                           {
                             "type": "node",
                             "value": {
@@ -177,7 +173,7 @@ public class PointerMoveActionTests
                             "sharedId": "testSharedId"
                           }
                           """;
-        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson, deserializationOptions)!.ToSharedReference();
+        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!.ToSharedReference();
         PointerMoveAction properties = new()
         {
             Origin = Origin.Element(new ElementOrigin(node))

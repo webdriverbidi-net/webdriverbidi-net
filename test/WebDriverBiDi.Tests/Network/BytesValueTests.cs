@@ -3,16 +3,11 @@ namespace WebDriverBiDi.Network;
 using System.Text;
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
-using WebDriverBiDi.JsonConverters;
+
 
 [TestFixture]
 public class BytesValueTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanSerializeStringValue()
     {
@@ -81,7 +76,7 @@ public class BytesValueTests
                         "value": "{{stringValue}}"
                       }
                       """;
-        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
+        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
         Assert.That(value, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -104,7 +99,7 @@ public class BytesValueTests
                         "value": "{{base64Value}}"
                       }
                       """;
-        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
+        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
         Assert.That(value, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -128,7 +123,7 @@ public class BytesValueTests
                         "value": "{{stringValue}}"
                       }
                       """;
-        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions);
+        BytesValue? value = JsonSerializer.Deserialize<BytesValue>(json);
         Assert.That(value, Is.Not.Null);
         BytesValue copy = value with { };
         Assert.That(copy, Is.EqualTo(value));
@@ -142,7 +137,7 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -154,7 +149,7 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -166,7 +161,7 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -177,7 +172,7 @@ public class BytesValueTests
                         "type": "string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -189,6 +184,6 @@ public class BytesValueTests
                         "value": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
     }
 }

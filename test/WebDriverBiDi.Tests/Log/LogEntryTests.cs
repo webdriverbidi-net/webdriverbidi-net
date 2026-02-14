@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Log;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class LogEntryTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeWithNullText()
     {
@@ -26,7 +20,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         using (Assert.EnterMultipleScope())
@@ -59,7 +53,7 @@ public class LogEntryTests
                         }
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<ConsoleLogEntry>());
         ConsoleLogEntry? consoleEntry = entry as ConsoleLogEntry;
@@ -101,7 +95,7 @@ public class LogEntryTests
                         ]
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<ConsoleLogEntry>());
         ConsoleLogEntry? consoleEntry = entry as ConsoleLogEntry;
@@ -137,7 +131,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         using (Assert.EnterMultipleScope())
@@ -166,7 +160,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         using (Assert.EnterMultipleScope())
@@ -195,7 +189,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         Assert.That(entry.Level, Is.EqualTo(LogLevel.Warn));
@@ -224,7 +218,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         Assert.That(entry, Is.InstanceOf<LogEntry>());
         using (Assert.EnterMultipleScope())
@@ -254,7 +248,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -272,7 +266,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -291,7 +285,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -309,7 +303,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -328,7 +322,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -347,7 +341,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -363,7 +357,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -380,7 +374,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -398,7 +392,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -417,7 +411,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -435,7 +429,7 @@ public class LogEntryTests
                         "text": "my log message"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -454,7 +448,7 @@ public class LogEntryTests
                         "timestamp": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -474,7 +468,7 @@ public class LogEntryTests
                         "args": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -495,7 +489,7 @@ public class LogEntryTests
                         "args": []
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -515,7 +509,7 @@ public class LogEntryTests
                         "method": "myMethod"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -536,7 +530,7 @@ public class LogEntryTests
                         "args": "invalidArgs"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -557,14 +551,14 @@ public class LogEntryTests
                         "args": [ "invalidArgs" ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
     public void TestDeserializingLogEntryWithAsNonObjectThrows()
     {
         string json = @"[ ""invalid log entry"" ]";
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -584,7 +578,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        LogEntry entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions)!;
+        LogEntry entry = JsonSerializer.Deserialize<LogEntry>(json)!;
         Assert.That(() => JsonSerializer.Serialize(entry), Throws.InstanceOf<NotImplementedException>());
     }
 }

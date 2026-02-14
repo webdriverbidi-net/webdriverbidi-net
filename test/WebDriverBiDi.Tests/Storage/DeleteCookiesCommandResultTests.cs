@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Storage;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class DeleteCookiesCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -23,7 +17,7 @@ public class DeleteCookiesCommandResultTests
                         }
                       }
                       """;
-        DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
+        DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -48,7 +42,7 @@ public class DeleteCookiesCommandResultTests
                         }
                       }
                       """;
-        DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
+        DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         DeleteCookiesCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -62,7 +56,7 @@ public class DeleteCookiesCommandResultTests
                         "partitionKey": {}
                       }
                       """;
-        DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions);
+        DeleteCookiesCommandResult? result = JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -77,7 +71,7 @@ public class DeleteCookiesCommandResultTests
     public void TestCanDeserializingWithMissingPartition()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -88,6 +82,6 @@ public class DeleteCookiesCommandResultTests
                         "partitionKey": "invalidPartitionType"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<DeleteCookiesCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

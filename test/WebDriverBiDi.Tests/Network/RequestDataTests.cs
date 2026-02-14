@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class RequestDataTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void CanDeserializeRequestData()
     {
@@ -42,7 +36,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -111,7 +105,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -189,7 +183,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -261,7 +255,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -322,7 +316,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -383,7 +377,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         RequestData copy = request with { };
         Assert.That(copy, Is.EqualTo(request));
@@ -419,7 +413,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'request"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'request"));
     }
 
     [Test]
@@ -452,7 +446,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'url"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'url"));
     }
 
     [Test]
@@ -485,7 +479,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'method"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'method"));
     }
 
     [Test]
@@ -518,7 +512,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headers"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headers"));
     }
 
     [Test]
@@ -551,7 +545,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'cookies"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'cookies"));
     }
 
     [Test]
@@ -584,7 +578,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headersSize"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'headersSize"));
     }
 
     [Test]
@@ -617,7 +611,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'bodySize"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'bodySize"));
     }
 
     [Test]
@@ -650,7 +644,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'destination"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'destination"));
     }
 
     [Test]
@@ -683,7 +677,7 @@ public class RequestDataTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'initiatorType"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'initiatorType"));
     }
 
     [Test]
@@ -702,6 +696,6 @@ public class RequestDataTests
                         "bodySize": 0
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'timings"));
+        Assert.That(() => JsonSerializer.Deserialize<RequestData>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'timings"));
     }
 }

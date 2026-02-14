@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class BaseNetworkEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     private readonly string requestDataJson = """
                                               {
                                                 "request": "myRequestId",
@@ -56,7 +50,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -90,7 +84,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -125,7 +119,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -158,7 +152,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         BaseNetworkEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
@@ -179,7 +173,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -198,7 +192,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -217,7 +211,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions);
+        BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -249,7 +243,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -268,7 +262,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -286,7 +280,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-       Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+       Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -305,7 +299,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -323,7 +317,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -342,7 +336,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -360,7 +354,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -379,7 +373,7 @@ public class BaseNetworkEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -397,7 +391,7 @@ public class BaseNetworkEventArgsTests
                              "timestamp": {{milliseconds}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -416,6 +410,6 @@ public class BaseNetworkEventArgsTests
                              "request": "requestData"
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

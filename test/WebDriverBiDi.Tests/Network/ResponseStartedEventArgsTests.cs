@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ResponseStartedEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     private readonly string requestDataJson = """
                                              {
                                                "request": "myRequestId",
@@ -79,7 +73,7 @@ public class ResponseStartedEventArgsTests
                              }
                            }
                            """;
-        ResponseStartedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseStartedEventArgs>(eventJson, deserializationOptions);
+        ResponseStartedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseStartedEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -137,7 +131,7 @@ public class ResponseStartedEventArgsTests
                              }
                            }
                            """;
-        ResponseStartedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseStartedEventArgs>(eventJson, deserializationOptions);
+        ResponseStartedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseStartedEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         ResponseStartedEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
@@ -159,6 +153,6 @@ public class ResponseStartedEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseStartedEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ResponseStartedEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

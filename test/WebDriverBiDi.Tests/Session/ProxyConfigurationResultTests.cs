@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ProxyConfigurationResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeManualProxyConfigurationResult()
     {
@@ -36,7 +30,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -79,7 +73,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -110,7 +104,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -145,7 +139,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -175,7 +169,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -208,7 +202,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -238,7 +232,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -274,7 +268,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -304,7 +298,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -337,7 +331,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);
@@ -368,7 +362,7 @@ public class ProxyConfigurationResultTests
                         "capName": "capValue"
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         ProxyConfigurationResult? proxyResult = result.Proxy;
         Assert.That(proxyResult, Is.Not.Null);

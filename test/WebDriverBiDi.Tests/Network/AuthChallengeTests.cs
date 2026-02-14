@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class AuthChallengeTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeAuthChallenge()
     {
@@ -20,7 +14,7 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions);
+        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json);
         Assert.That(challenge, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -38,7 +32,7 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions);
+        AuthChallenge? challenge = JsonSerializer.Deserialize<AuthChallenge>(json);
         Assert.That(challenge, Is.Not.Null);
         AuthChallenge copy = challenge with { };
         Assert.That(copy, Is.EqualTo(challenge));
@@ -52,7 +46,7 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -64,7 +58,7 @@ public class AuthChallengeTests
                         "realm": "example.com"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -75,7 +69,7 @@ public class AuthChallengeTests
                         "scheme": "basic"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -87,6 +81,6 @@ public class AuthChallengeTests
                         "realm": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<AuthChallenge>(json), Throws.InstanceOf<JsonException>());
     }
 }

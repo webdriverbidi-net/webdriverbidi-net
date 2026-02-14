@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class BrowsingContextEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -24,7 +18,7 @@ public class BrowsingContextEventArgsTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         BrowsingContextEventArgs eventArgs = new(info);
@@ -63,7 +57,7 @@ public class BrowsingContextEventArgsTests
                         ]
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         BrowsingContextEventArgs eventArgs = new(info);
@@ -93,7 +87,7 @@ public class BrowsingContextEventArgsTests
                         "parent": "parentContextId"
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         BrowsingContextEventArgs eventArgs = new(info);
@@ -123,7 +117,7 @@ public class BrowsingContextEventArgsTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<BrowsingContextInfo>());
         BrowsingContextEventArgs eventArgs = new(info);
@@ -153,7 +147,7 @@ public class BrowsingContextEventArgsTests
                         "children": []
                       }
                       """;
-        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json, deserializationOptions);
+        BrowsingContextInfo? info = JsonSerializer.Deserialize<BrowsingContextInfo>(json);
         Assert.That(info, Is.Not.Null);
         BrowsingContextEventArgs eventArgs = new(info);
         BrowsingContextEventArgs copy = eventArgs with { };

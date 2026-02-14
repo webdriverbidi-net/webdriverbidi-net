@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class CreateCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class CreateCommandResultTests
                         "context": "myContextId"
                       }
                       """;
-        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions);
+        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result.BrowsingContextId, Is.EqualTo("myContextId"));
     }
@@ -32,7 +26,7 @@ public class CreateCommandResultTests
                         "context": "myContextId"
                       }
                       """;
-        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions);
+        CreateCommandResult? result = JsonSerializer.Deserialize<CreateCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         CreateCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -42,7 +36,7 @@ public class CreateCommandResultTests
     public void TestDeserializingWithMissingContextThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -53,6 +47,6 @@ public class CreateCommandResultTests
                         "context": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CreateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Input;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class FileDialogInfoTests
 {
-  private JsonSerializerOptions deserializationOptions = new()
-  {
-    TypeInfoResolver = new PrivateConstructorContractResolver(),
-  };
-
     [Test]
     public void TestCanDeserializeWithMultipleTrue()
     {
@@ -20,7 +14,7 @@ public class FileDialogInfoTests
                             "multiple": true
                         }
                         """;
-        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         using (Assert.EnterMultipleScope())
@@ -40,7 +34,7 @@ public class FileDialogInfoTests
                             "multiple": false
                         }
                         """;
-        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         using (Assert.EnterMultipleScope())
@@ -69,7 +63,7 @@ public class FileDialogInfoTests
                         }
                       }
                       """;
-    FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+    FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
     Assert.That(info, Is.Not.Null);
     Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         using (Assert.EnterMultipleScope())
@@ -90,7 +84,7 @@ public class FileDialogInfoTests
                           "multiple": true
                         }
                         """;
-        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         FileDialogInfo copy = info with { };
@@ -105,7 +99,7 @@ public class FileDialogInfoTests
                         "multiple": true
                       }
                       """;
-    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json), Throws.InstanceOf<JsonException>());
   }
 
   [Test]
@@ -117,7 +111,7 @@ public class FileDialogInfoTests
                         "multiple": true
                       }
                       """;
-    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json), Throws.InstanceOf<JsonException>());
   }
 
   [Test]
@@ -128,7 +122,7 @@ public class FileDialogInfoTests
                         "context": "myContextId"
                       }
                       """;
-    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json), Throws.InstanceOf<JsonException>());
   }
 
   [Test]
@@ -140,7 +134,7 @@ public class FileDialogInfoTests
                         "multiple": "true"
                       }
                       """;
-    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json), Throws.InstanceOf<JsonException>());
   }
 
   [Test]
@@ -153,7 +147,7 @@ public class FileDialogInfoTests
                         "element": "invalid"
                       }
                       """;
-    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json), Throws.InstanceOf<JsonException>());
   }
 
   [Test]
@@ -173,6 +167,6 @@ public class FileDialogInfoTests
                         }
                       }
                       """;
-    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json), Throws.InstanceOf<WebDriverBiDiException>());
   }
 }

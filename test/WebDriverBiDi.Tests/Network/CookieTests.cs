@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class CookieTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeCookie()
     {
@@ -29,7 +23,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         Assert.That(cookie, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -69,7 +63,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         Assert.That(cookie, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -109,7 +103,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         Assert.That(cookie, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -148,7 +142,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         Assert.That(cookie, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -189,7 +183,7 @@ public class CookieTests
                         "expiry": {{milliseconds}}
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         Assert.That(cookie, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -227,7 +221,7 @@ public class CookieTests
                         "extraData": "myExtraData"
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         Assert.That(cookie, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -271,7 +265,7 @@ public class CookieTests
                         "expiry": {{milliseconds}}
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         Assert.That(cookie, Is.Not.Null);
         SetCookieHeader header = cookie.ToSetCookieHeader();
         using (Assert.EnterMultipleScope())
@@ -307,7 +301,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json, deserializationOptions);
+        Cookie? cookie = JsonSerializer.Deserialize<Cookie>(json);
         Assert.That(cookie, Is.Not.Null);
         Cookie copy = cookie with { };
         Assert.That(copy, Is.EqualTo(cookie));
@@ -330,7 +324,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'name'"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'name'"));
     }
 
     [Test]
@@ -347,7 +341,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value'"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value'"));
     }
 
     [Test]
@@ -367,7 +361,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'domain'"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'domain'"));
     }
 
     [Test]
@@ -387,7 +381,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'path'"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'path'"));
     }
 
     [Test]
@@ -407,7 +401,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'secure'"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'secure'"));
     }
 
     [Test]
@@ -427,7 +421,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'httpOnly'"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'httpOnly'"));
     }
 
     [Test]
@@ -447,7 +441,7 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'sameSite'"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'sameSite'"));
     }
 
     [Test]
@@ -467,7 +461,7 @@ public class CookieTests
                         "sameSite": "lax"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'size'"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'size'"));
     }
 
     [Test]
@@ -488,6 +482,6 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
     }
 }

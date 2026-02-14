@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class NodePropertiesTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -20,7 +14,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -45,7 +39,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         NodeProperties copy = nodeProperties with { };
         Assert.That(copy, Is.EqualTo(nodeProperties));
@@ -59,7 +53,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -71,7 +65,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -82,7 +76,7 @@ public class NodePropertiesTests
                         "nodeType": 1
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -94,7 +88,7 @@ public class NodePropertiesTests
                         "childNodeCount": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -107,7 +101,7 @@ public class NodePropertiesTests
                         "nodeValue": "myNodeValue"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -133,7 +127,7 @@ public class NodePropertiesTests
                         "nodeValue": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -146,7 +140,7 @@ public class NodePropertiesTests
                         "localName": "myLocalName"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -172,7 +166,7 @@ public class NodePropertiesTests
                         "localName": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -185,7 +179,7 @@ public class NodePropertiesTests
                         "namespaceURI": "myNamespace"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -211,7 +205,7 @@ public class NodePropertiesTests
                         "namespaceURI": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -226,7 +220,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -257,7 +251,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -272,7 +266,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -287,7 +281,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -309,7 +303,7 @@ public class NodePropertiesTests
                         ]
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -338,7 +332,7 @@ public class NodePropertiesTests
                         "children": []
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -365,7 +359,7 @@ public class NodePropertiesTests
                         "children": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -378,7 +372,7 @@ public class NodePropertiesTests
                         "children": [ "invalid" ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -391,7 +385,7 @@ public class NodePropertiesTests
                         "mode": "open"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -417,7 +411,7 @@ public class NodePropertiesTests
                         "mode": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -430,7 +424,7 @@ public class NodePropertiesTests
                         "mode": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -450,7 +444,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -478,6 +472,6 @@ public class NodePropertiesTests
                         "shadowRoot": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 }

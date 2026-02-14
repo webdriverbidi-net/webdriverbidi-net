@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Bluetooth;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class CharacteristicEventGeneratedEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeWithReadType()
     {
@@ -23,7 +17,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -48,7 +42,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "write-without-response"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -73,7 +67,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "write-with-response"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -98,7 +92,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "subscribe-to-notifications"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -123,7 +117,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "unsubscribe-from-notifications"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -149,7 +143,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "data": []
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -176,7 +170,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "data": [123, 456]
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -204,7 +198,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions);
+        CharacteristicEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         CharacteristicEventGeneratedEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
@@ -221,7 +215,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -236,7 +230,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -250,7 +244,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -265,7 +259,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -279,7 +273,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -294,7 +288,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -308,7 +302,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -323,7 +317,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "read"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -337,7 +331,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "characteristicUuid": "myCharacteristicUuid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -352,7 +346,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -367,7 +361,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -383,7 +377,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "data": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -399,6 +393,6 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "data": ["123", false]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 }

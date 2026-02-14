@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Log;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class EntryAddedEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeWithNullText()
     {
@@ -26,7 +20,7 @@ public class EntryAddedEventArgsTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         EntryAddedEventArgs eventArgs = new(entry!);
         using (Assert.EnterMultipleScope())
         {
@@ -61,7 +55,7 @@ public class EntryAddedEventArgsTests
                         }
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         EntryAddedEventArgs eventArgs = new(entry);
         using (Assert.EnterMultipleScope())
@@ -101,7 +95,7 @@ public class EntryAddedEventArgsTests
                         }
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         Assert.That(entry, Is.Not.Null);
         EntryAddedEventArgs eventArgs = new(entry);
         using (Assert.EnterMultipleScope())
@@ -135,7 +129,7 @@ public class EntryAddedEventArgsTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json, deserializationOptions);
+        LogEntry? entry = JsonSerializer.Deserialize<LogEntry>(json);
         EntryAddedEventArgs eventArgs = new(entry!);
         Assert.That(entry, Is.Not.Null);
         EntryAddedEventArgs copy = eventArgs with { };

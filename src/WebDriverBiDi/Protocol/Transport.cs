@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Protocol;
 
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Channels;
 using WebDriverBiDi.JsonConverters;
 
@@ -26,7 +27,7 @@ public class Transport
     private readonly JsonSerializerOptions options = new()
     {
         TypeInfoResolver = JsonSerializer.IsReflectionEnabledByDefault
-            ? new PrivateConstructorContractResolver()
+            ? new DefaultJsonTypeInfoResolver()
             : WebDriverBiDiJsonSerializerContext.Default,
     };
 

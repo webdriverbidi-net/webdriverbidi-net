@@ -47,13 +47,13 @@ public class AotSmokeTests
     [Test]
     public async Task AotSmokeTestPassesWithFirefox()
     {
-        await RunSmokeTestAsync("firefox");
+        await RunSmokeTestAsync("firefox http://github.com");
     }
 
     [Test]
     public async Task AotSmokeTestPassesWithChrome()
     {
-        await RunSmokeTestAsync("chrome");
+        await RunSmokeTestAsync("chrome http://github.com");
     }
 
     private static async Task RunSmokeTestAsync(string browserArg)

@@ -2,7 +2,7 @@ namespace WebDriverBiDi.Input;
 
 using System.Text.Json;
 using Newtonsoft.Json.Linq;
-using WebDriverBiDi.JsonConverters;
+
 using WebDriverBiDi.Script;
 
 [TestFixture]
@@ -11,11 +11,6 @@ public class ElementOriginTests
     [Test]
     public void TestCanSerializeOrigin()
     {
-        JsonSerializerOptions deserializationOptions = new()
-        {
-            TypeInfoResolver = new PrivateConstructorContractResolver(),
-        };
-
         string nodeJson = """
                           {
                             "type": "node",
@@ -26,7 +21,7 @@ public class ElementOriginTests
                             "sharedId": "testSharedId"
                           }
                           """;
-        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson, deserializationOptions)!.ToSharedReference();
+        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!.ToSharedReference();
         ElementOrigin origin = new(node);
         string json = JsonSerializer.Serialize(origin);
         JObject serialized = JObject.Parse(json);

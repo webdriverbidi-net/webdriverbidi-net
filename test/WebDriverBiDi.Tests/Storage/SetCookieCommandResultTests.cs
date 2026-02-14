@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Storage;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class SetCookieCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -23,7 +17,7 @@ public class SetCookieCommandResultTests
                         }
                       }
                       """;
-        SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions);
+        SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -44,7 +38,7 @@ public class SetCookieCommandResultTests
                         "partitionKey": {}
                       }
                       """;
-        SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions);
+        SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -59,7 +53,7 @@ public class SetCookieCommandResultTests
     public void TestCanDeserializingWithMissingPartition()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<SetCookieCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -74,7 +68,7 @@ public class SetCookieCommandResultTests
                         }
                       }
                       """;
-        SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions);
+        SetCookieCommandResult? result = JsonSerializer.Deserialize<SetCookieCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         SetCookieCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -88,6 +82,6 @@ public class SetCookieCommandResultTests
                         "partitionKey": "invalidPartitionType"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<SetCookieCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<SetCookieCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

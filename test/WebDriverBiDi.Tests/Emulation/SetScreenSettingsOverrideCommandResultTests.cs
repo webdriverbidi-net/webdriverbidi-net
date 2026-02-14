@@ -1,20 +1,14 @@
 namespace WebDriverBiDi.Emulation;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class SetScreenSettingsOverrideCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
-        SetScreenSettingsOverrideCommandResult? result = JsonSerializer.Deserialize<SetScreenSettingsOverrideCommandResult>("{}", deserializationOptions);
+        SetScreenSettingsOverrideCommandResult? result = JsonSerializer.Deserialize<SetScreenSettingsOverrideCommandResult>("{}");
         Assert.That(result, Is.Not.Null);
         Assert.That(result.AdditionalData, Is.Empty);
     }
@@ -22,7 +16,7 @@ public class SetScreenSettingsOverrideCommandResultTests
     [Test]
     public void TestCopySemantics()
     {
-        SetScreenSettingsOverrideCommandResult? result = JsonSerializer.Deserialize<SetScreenSettingsOverrideCommandResult>("{}", deserializationOptions);
+        SetScreenSettingsOverrideCommandResult? result = JsonSerializer.Deserialize<SetScreenSettingsOverrideCommandResult>("{}");
         Assert.That(result, Is.Not.Null);
         SetScreenSettingsOverrideCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));

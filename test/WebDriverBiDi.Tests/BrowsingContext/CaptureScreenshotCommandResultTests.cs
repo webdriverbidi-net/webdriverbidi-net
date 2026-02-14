@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class CaptureScreenshotCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class CaptureScreenshotCommandResultTests
                         "data": "some screenshot data"
                       }
                       """;
-        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, deserializationOptions);
+        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Data, Is.EqualTo("some screenshot data"));
     }
@@ -32,7 +26,7 @@ public class CaptureScreenshotCommandResultTests
                         "data": "some screenshot data"
                       }
                       """;
-        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, deserializationOptions);
+        CaptureScreenshotCommandResult? result = JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         CaptureScreenshotCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -42,7 +36,7 @@ public class CaptureScreenshotCommandResultTests
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -53,6 +47,6 @@ public class CaptureScreenshotCommandResultTests
                         "data": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<CaptureScreenshotCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

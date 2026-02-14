@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class InitiatorTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeInitiator()
     {
@@ -18,7 +12,7 @@ public class InitiatorTests
                       {
                       }
                       """;
-        Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json, deserializationOptions);
+        Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json);
         Assert.That(initiator, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -51,7 +45,7 @@ public class InitiatorTests
                         "request": "myRequestId"
                       }
                       """;
-        Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json, deserializationOptions);
+        Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json);
         Assert.That(initiator, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -71,7 +65,7 @@ public class InitiatorTests
                       {
                       }
                       """;
-        Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json, deserializationOptions);
+        Initiator? initiator = JsonSerializer.Deserialize<Initiator>(json);
         Assert.That(initiator, Is.Not.Null);
         Initiator copy = initiator with { };
         Assert.That(copy, Is.EqualTo(initiator));
@@ -85,6 +79,6 @@ public class InitiatorTests
                         "type": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Initiator>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<Initiator>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
     }
 }

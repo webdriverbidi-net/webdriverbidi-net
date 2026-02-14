@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ReadOnlyHeaderTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void CanDeserializeHeader()
     {
@@ -50,7 +44,7 @@ public class ReadOnlyHeaderTests
                         }
                       }
                       """;
-        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         ReadOnlyHeader header = request.Headers[0];
         using (Assert.EnterMultipleScope())
@@ -100,7 +94,7 @@ public class ReadOnlyHeaderTests
                         }
                       }
                       """;
-        RequestData? request = JsonSerializer.Deserialize<RequestData>(json, deserializationOptions);
+        RequestData? request = JsonSerializer.Deserialize<RequestData>(json);
         Assert.That(request, Is.Not.Null);
         ReadOnlyHeader header = request.Headers[0];
         ReadOnlyHeader copy = header with { };

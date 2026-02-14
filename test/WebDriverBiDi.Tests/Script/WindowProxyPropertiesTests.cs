@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class WindowProxyPropertiesTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class WindowProxyPropertiesTests
                         "context": "myContextId"
                       }
                       """;
-        WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions);
+        WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
         Assert.That(windowProxyProperties, Is.Not.Null);
         Assert.That(windowProxyProperties.Context, Is.EqualTo("myContextId"));
     }
@@ -32,7 +26,7 @@ public class WindowProxyPropertiesTests
                         "context": "myContextId"
                       }
                       """;
-        WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions);
+        WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
         Assert.That(windowProxyProperties, Is.Not.Null);
         WindowProxyProperties copy = windowProxyProperties with { };
         Assert.That(copy, Is.EqualTo(windowProxyProperties));
@@ -46,7 +40,7 @@ public class WindowProxyPropertiesTests
                         "context": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<WindowProxyProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -57,6 +51,6 @@ public class WindowProxyPropertiesTests
                         "nodeType": 1
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<WindowProxyProperties>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<WindowProxyProperties>(json), Throws.InstanceOf<JsonException>());
     }
 }

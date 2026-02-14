@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Browser;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class GetClientWindowsCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -29,7 +23,7 @@ public class GetClientWindowsCommandResultTests
                         ]
                       }
                       """;
-        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, deserializationOptions);
+        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -62,7 +56,7 @@ public class GetClientWindowsCommandResultTests
                         ]
                       }
                       """;
-        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, deserializationOptions);
+        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         GetClientWindowsCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -76,7 +70,7 @@ public class GetClientWindowsCommandResultTests
                         "clientWindows": []
                       }
                       """;
-        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json, deserializationOptions);
+        GetClientWindowsCommandResult? result = JsonSerializer.Deserialize<GetClientWindowsCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result.ClientWindows, Is.Empty);
     }

@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class HeaderTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanConstructHeader()
     {
@@ -31,7 +25,7 @@ public class HeaderTests
                         }
                       }
                       """;
-        Header? header = JsonSerializer.Deserialize<Header>(json, deserializationOptions);
+        Header? header = JsonSerializer.Deserialize<Header>(json);
         Assert.That(header, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -55,7 +49,7 @@ public class HeaderTests
                         }
                       }
                       """;
-        Header? header = JsonSerializer.Deserialize<Header>(json, deserializationOptions);
+        Header? header = JsonSerializer.Deserialize<Header>(json);
         Assert.That(header, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -76,7 +70,7 @@ public class HeaderTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Header>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'name"));
+        Assert.That(() => JsonSerializer.Deserialize<Header>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'name"));
     }
 
     [Test]
@@ -87,6 +81,6 @@ public class HeaderTests
                         "name": "headerName"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Header>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value"));
+        Assert.That(() => JsonSerializer.Deserialize<Header>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value"));
     }
 }

@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class SourceTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class SourceTests
                         "realm": "realmId"
                       }
                       """;
-        Source? source = JsonSerializer.Deserialize<Source>(json, deserializationOptions);
+        Source? source = JsonSerializer.Deserialize<Source>(json);
         Assert.That(source, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -36,7 +30,7 @@ public class SourceTests
                         "realm": "realmId"
                       }
                       """;
-        Source? source = JsonSerializer.Deserialize<Source>(json, deserializationOptions);
+        Source? source = JsonSerializer.Deserialize<Source>(json);
         Assert.That(source, Is.Not.Null);
         Source copy = source with { };
         Assert.That(copy, Is.EqualTo(source));
@@ -46,7 +40,7 @@ public class SourceTests
     public void TestDeserializeWithMissingRealmThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<Source>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -57,7 +51,7 @@ public class SourceTests
                         "realm": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<Source>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -69,7 +63,7 @@ public class SourceTests
                         "context": "contextId"
                       }
                       """;
-        Source? source = JsonSerializer.Deserialize<Source>(json, deserializationOptions);
+        Source? source = JsonSerializer.Deserialize<Source>(json);
         Assert.That(source, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -88,6 +82,6 @@ public class SourceTests
                         "context": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Source>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<Source>(json), Throws.InstanceOf<JsonException>());
     }
 }

@@ -2,16 +2,10 @@ namespace WebDriverBiDi.Script;
 
 using System.Numerics;
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class RemoteValueTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
    [Test]
     public void TestCanDeserializeStringRemoteValue()
     {
@@ -21,7 +15,7 @@ public class RemoteValueTests
                         "value": "myValue"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -43,7 +37,7 @@ public class RemoteValueTests
                         "value": 7
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("'value' property for string must be a non-null string"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'value' property for string must be a non-null string"));
     }
 
     [Test]
@@ -55,7 +49,7 @@ public class RemoteValueTests
                         "value": 1
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -77,7 +71,7 @@ public class RemoteValueTests
                         "value": 3.14
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -99,7 +93,7 @@ public class RemoteValueTests
                         "value": "NaN"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -121,7 +115,7 @@ public class RemoteValueTests
                         "value": "-0"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -143,7 +137,7 @@ public class RemoteValueTests
                         "value": "Infinity"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -165,7 +159,7 @@ public class RemoteValueTests
                         "value": "-Infinity"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -187,7 +181,7 @@ public class RemoteValueTests
                         "value": "myValue"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         RemoteValue copy = remoteValue with { };
         Assert.That(copy, Is.EqualTo(remoteValue));
@@ -202,7 +196,7 @@ public class RemoteValueTests
                         "value": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid value 'invalid' for 'value' property of number"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid value 'invalid' for 'value' property of number"));
     }
     
     [Test]
@@ -214,14 +208,14 @@ public class RemoteValueTests
                         "value": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Boolean for 'value' property of number"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Boolean for 'value' property of number"));
         json = """
                {
                  "type": "number",
                  "value": false
                }
                """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Boolean for 'value' property of number"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Boolean for 'value' property of number"));
         json = """
                {
                  "type": "number",
@@ -229,7 +223,7 @@ public class RemoteValueTests
                }
                """;
         json = @"{ ""type"": ""number"", ""value"": null }";
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Null for 'value' property of number"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid type Null for 'value' property of number"));
     }
 
     [Test]
@@ -241,7 +235,7 @@ public class RemoteValueTests
                         "value": true
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -263,7 +257,7 @@ public class RemoteValueTests
                         "value": "hello"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("'value' property for boolean must be a boolean value"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'value' property for boolean must be a boolean value"));
     }
 
     [Test]
@@ -275,7 +269,7 @@ public class RemoteValueTests
                         "value": "123"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -297,7 +291,7 @@ public class RemoteValueTests
                         "value": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("bigint must have a non-null 'value' property whose value is a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("bigint must have a non-null 'value' property whose value is a string"));
     }
 
     [Test]
@@ -309,7 +303,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("cannot parse invalid value 'some value' for bigint"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("cannot parse invalid value 'some value' for bigint"));
     }
 
     [Test]
@@ -321,7 +315,7 @@ public class RemoteValueTests
                         "value": "2020-07-19T23:47:26.056Z"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -343,7 +337,7 @@ public class RemoteValueTests
                         "value": true
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("date must have a non-null 'value' property whose value is a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("date must have a non-null 'value' property whose value is a string"));
     }
 
     [Test]
@@ -355,7 +349,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("cannot parse invalid value 'some value' for date"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("cannot parse invalid value 'some value' for date"));
     }
 
     [Test]
@@ -370,7 +364,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -394,7 +388,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -416,7 +410,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("regexp must have a non-null 'value' property whose value is an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("regexp must have a non-null 'value' property whose value is an object"));
     }
 
     [Test]
@@ -432,7 +426,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -466,7 +460,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -501,7 +495,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue 'sharedId' property, when present, must be a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue 'sharedId' property, when present, must be a string"));
     }
 
     [Test]
@@ -527,7 +521,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -557,7 +551,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("node must have a non-null 'value' property whose value is an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("node must have a non-null 'value' property whose value is an object"));
     }
 
     [Test]
@@ -582,7 +576,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -612,7 +606,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("array must have a non-null 'value' property whose value is an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("array must have a non-null 'value' property whose value is an array"));
     }
 
     [Test]
@@ -628,7 +622,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("each element for list must be an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("each element for list must be an object"));
     }
 
     [Test]
@@ -653,7 +647,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -683,7 +677,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("set must have a non-null 'value' property whose value is an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("set must have a non-null 'value' property whose value is an array"));
     }
 
     [Test]
@@ -699,7 +693,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("each element for list must be an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("each element for list must be an object"));
     }
 
     [Test]
@@ -719,7 +713,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -748,7 +742,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("nodelist must have a non-null 'value' property whose value is an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("nodelist must have a non-null 'value' property whose value is an array"));
     }
 
     [Test]
@@ -764,7 +758,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("each element for list must be an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("each element for list must be an object"));
     }
 
     [Test]
@@ -784,7 +778,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -813,7 +807,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("htmlcollection must have a non-null 'value' property whose value is an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("htmlcollection must have a non-null 'value' property whose value is an array"));
     }
 
     [Test]
@@ -829,7 +823,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("each element for list must be an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("each element for list must be an object"));
     }
 
     [Test]
@@ -863,7 +857,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -907,7 +901,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -950,7 +944,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -993,7 +987,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1036,7 +1030,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1078,7 +1072,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1120,7 +1114,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1163,7 +1157,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1206,7 +1200,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1249,7 +1243,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1281,7 +1275,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("map must have a non-null 'value' property whose value is an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("map must have a non-null 'value' property whose value is an array"));
     }
 
     [Test]
@@ -1297,7 +1291,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("map must have a non-null 'value' property whose value is an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("map must have a non-null 'value' property whose value is an array"));
     }
 
     [Test]
@@ -1313,7 +1307,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
     }
 
     [Test]
@@ -1331,7 +1325,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
         json = """
                {
                  "type": "map",
@@ -1342,7 +1336,7 @@ public class RemoteValueTests
                  ]
                }
                """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue array element for dictionary must be an array"));
     }
 
     [Test]
@@ -1359,7 +1353,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a first element (key) that is either a string or an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a first element (key) that is either a string or an object"));
     }
 
     [Test]
@@ -1376,7 +1370,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a second element (value) that is an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a second element (value) that is an object"));
     }
 
     [Test]
@@ -1410,7 +1404,7 @@ public class RemoteValueTests
                         ]
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1443,7 +1437,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("object must have a non-null 'value' property whose value is an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("object must have a non-null 'value' property whose value is an array"));
     }
 
     [Test]
@@ -1459,7 +1453,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("object must have a non-null 'value' property whose value is an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("object must have a non-null 'value' property whose value is an array"));
     }
 
     [Test]
@@ -1470,7 +1464,7 @@ public class RemoteValueTests
                         "type": "symbol"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1489,7 +1483,7 @@ public class RemoteValueTests
                         "type": "function"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1508,7 +1502,7 @@ public class RemoteValueTests
                         "type": "weakmap"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1527,7 +1521,7 @@ public class RemoteValueTests
                         "type": "weakset"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1546,7 +1540,7 @@ public class RemoteValueTests
                         "type": "generator"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1565,7 +1559,7 @@ public class RemoteValueTests
                         "type": "error"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1584,7 +1578,7 @@ public class RemoteValueTests
                         "type": "proxy"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1603,7 +1597,7 @@ public class RemoteValueTests
                         "type": "promise"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1622,7 +1616,7 @@ public class RemoteValueTests
                         "type": "typedarray"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1641,7 +1635,7 @@ public class RemoteValueTests
                         "type": "arraybuffer"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1663,7 +1657,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1691,7 +1685,7 @@ public class RemoteValueTests
                         "internalId": "123"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1714,7 +1708,7 @@ public class RemoteValueTests
                         "value": "some value"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("window must have a non-null 'value' property whose value is an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("window must have a non-null 'value' property whose value is an object"));
     }
 
     [Test]
@@ -1730,7 +1724,7 @@ public class RemoteValueTests
                         "internalId": 123
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -1746,7 +1740,7 @@ public class RemoteValueTests
                         "internalId": 123.45
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -1757,7 +1751,7 @@ public class RemoteValueTests
                         "value": "myValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'type' property"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'type' property"));
     }
 
     [Test]
@@ -1769,7 +1763,7 @@ public class RemoteValueTests
                         "value": "myValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("type property must be a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("type property must be a string"));
     }
 
     [Test]
@@ -1781,7 +1775,7 @@ public class RemoteValueTests
                         "value": "myValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("'type' property value 'invalid' is not a valid RemoteValue type"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'type' property value 'invalid' is not a valid RemoteValue type"));
     }
 
     [Test]
@@ -1793,7 +1787,7 @@ public class RemoteValueTests
                         "value": "myValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("non-empty 'type' property that is a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("non-empty 'type' property that is a string"));
     }
 
     [Test]
@@ -1805,7 +1799,7 @@ public class RemoteValueTests
                         "value": 1
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1821,7 +1815,7 @@ public class RemoteValueTests
                         "type": "null"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1837,7 +1831,7 @@ public class RemoteValueTests
                         "type": "null"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1849,7 +1843,7 @@ public class RemoteValueTests
     public void TestDeserializingNonObjectThrows()
     {
         string json = @"[ ""invalid remote value"" ]";
-        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue JSON must be an object"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("RemoteValue JSON must be an object"));
     }
 
     [Test]
@@ -1861,7 +1855,7 @@ public class RemoteValueTests
                         "value": "myValue"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(() => JsonSerializer.Serialize(remoteValue!), Throws.InstanceOf<NotImplementedException>());
     }
 
@@ -1875,7 +1869,7 @@ public class RemoteValueTests
                         "internalId": "123"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         RemoteReference reference = remoteValue.ToRemoteReference();
         Assert.That(reference, Is.InstanceOf<RemoteObjectReference>());
@@ -1890,7 +1884,7 @@ public class RemoteValueTests
                         "internalId": "123"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1912,7 +1906,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         RemoteReference reference = remoteValue.ToRemoteReference();
         Assert.That(reference, Is.InstanceOf<SharedReference>());
@@ -1931,7 +1925,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1948,7 +1942,7 @@ public class RemoteValueTests
                         "value": "myValue"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1970,7 +1964,7 @@ public class RemoteValueTests
                         }
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         SharedReference reference = remoteValue.ToSharedReference();
         Assert.That(reference, Is.InstanceOf<SharedReference>());
@@ -1986,7 +1980,7 @@ public class RemoteValueTests
                         "internalId": "123"
                       }
                       """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json, deserializationOptions);
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {

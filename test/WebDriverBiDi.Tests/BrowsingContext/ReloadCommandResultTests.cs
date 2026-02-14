@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ReloadCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class ReloadCommandResultTests
                         "url": "http://example.com"
                       }
                       """;
-        ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json, deserializationOptions);
+        ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -37,7 +31,7 @@ public class ReloadCommandResultTests
                         "navigation": "myNavigationId"
                       }
                       """;
-        ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json, deserializationOptions);
+        ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -54,7 +48,7 @@ public class ReloadCommandResultTests
                         "url": "http://example.com"
                       }
                       """;
-        ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json, deserializationOptions);
+        ReloadCommandResult? result = JsonSerializer.Deserialize<ReloadCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         ReloadCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -64,7 +58,7 @@ public class ReloadCommandResultTests
     public void TestDeserializingWithMissingUrlThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<ReloadCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ReloadCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -75,7 +69,7 @@ public class ReloadCommandResultTests
                         "url": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ReloadCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ReloadCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -87,6 +81,6 @@ public class ReloadCommandResultTests
                         "navigation": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ReloadCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ReloadCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

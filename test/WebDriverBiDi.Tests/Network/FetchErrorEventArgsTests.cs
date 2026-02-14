@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class FetchErrorEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     private readonly string requestDataJson = """
                                               {
                                                 "request": "myRequestId",
@@ -57,7 +51,7 @@ public class FetchErrorEventArgsTests
                              "errorText": "My error"
                            }
                            """;
-        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, deserializationOptions);
+        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -93,7 +87,7 @@ public class FetchErrorEventArgsTests
                              "errorText": "My error"
                            }
                            """;
-        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, deserializationOptions);
+        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -130,7 +124,7 @@ public class FetchErrorEventArgsTests
                              "errorText": "My error"
                            }
                            """;
-        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, deserializationOptions);
+        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -165,7 +159,7 @@ public class FetchErrorEventArgsTests
                              "errorText": "My error"
                            }
                            """;
-        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, deserializationOptions);
+        FetchErrorEventArgs? eventArgs = JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         FetchErrorEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
@@ -187,7 +181,7 @@ public class FetchErrorEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -207,6 +201,6 @@ public class FetchErrorEventArgsTests
                              "errorText": {}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

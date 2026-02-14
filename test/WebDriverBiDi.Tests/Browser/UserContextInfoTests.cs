@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Browser;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class UserContextInfoTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class UserContextInfoTests
                         "userContext": "default"
                       }
                       """;
-        UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json, deserializationOptions);
+        UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result.UserContextId, Is.EqualTo("default"));
     }
@@ -32,7 +26,7 @@ public class UserContextInfoTests
                         "userContext": "default"
                       }
                       """;
-        UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json, deserializationOptions);
+        UserContextInfo? result = JsonSerializer.Deserialize<UserContextInfo>(json);
         Assert.That(result, Is.Not.Null);
         UserContextInfo copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -45,7 +39,7 @@ public class UserContextInfoTests
                       {
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -56,6 +50,6 @@ public class UserContextInfoTests
                         "userContext": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserContextInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserContextInfo>(json), Throws.InstanceOf<JsonException>());
     }
 }

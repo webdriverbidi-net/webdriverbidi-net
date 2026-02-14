@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class UserPromptHandlerResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeUserPromptHandlerResult()
     {
@@ -35,7 +29,7 @@ public class UserPromptHandlerResultTests
                         }
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         UserPromptHandlerResult? handlerResult = result.UnhandledPromptBehavior;
         Assert.That(handlerResult, Is.Not.Null);
@@ -74,7 +68,7 @@ public class UserPromptHandlerResultTests
                         }
                       }
                       """;
-        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json, deserializationOptions);
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
         Assert.That(result, Is.Not.Null);
         UserPromptHandlerResult? handlerResult = result.UnhandledPromptBehavior;
         Assert.That(handlerResult, Is.Not.Null);

@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Session;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class NewCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -32,7 +26,7 @@ public class NewCommandResultTests
                         }
                       }
                       """;
-        NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
+        NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -75,7 +69,7 @@ public class NewCommandResultTests
                         }
                       }
                       """;
-        NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions);
+        NewCommandResult? result = JsonSerializer.Deserialize<NewCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         NewCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -101,7 +95,7 @@ public class NewCommandResultTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -112,6 +106,6 @@ public class NewCommandResultTests
                         "sessionId": "mySession"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NewCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

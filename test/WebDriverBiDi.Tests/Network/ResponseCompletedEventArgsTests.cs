@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ResponseCompletedEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     private readonly string requestDataJson = """
                                               {
                                                 "request": "myRequestId",
@@ -81,7 +75,7 @@ public class ResponseCompletedEventArgsTests
                              }
                            }
                            """;
-        ResponseCompletedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson, deserializationOptions);
+        ResponseCompletedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -141,7 +135,7 @@ public class ResponseCompletedEventArgsTests
                              }
                            }
                            """;
-        ResponseCompletedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson, deserializationOptions);
+        ResponseCompletedEventArgs? eventArgs = JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson);
         Assert.That(eventArgs, Is.Not.Null);
         ResponseCompletedEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
@@ -163,6 +157,6 @@ public class ResponseCompletedEventArgsTests
                              "request": {{requestDataJson}}
                            }
                            """;
-        Assert.That(() => JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 }

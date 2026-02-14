@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ExceptionDetailsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -28,7 +22,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions);
+        ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json);
         Assert.That(exceptionDetails, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -57,7 +51,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions);
+        ExceptionDetails? exceptionDetails = JsonSerializer.Deserialize<ExceptionDetails>(json);
         Assert.That(exceptionDetails, Is.Not.Null);
         ExceptionDetails copy = exceptionDetails with { };
         Assert.That(copy, Is.EqualTo(exceptionDetails));
@@ -79,7 +73,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -99,7 +93,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -118,7 +112,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -138,7 +132,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -157,7 +151,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -177,7 +171,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -193,7 +187,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -210,7 +204,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -227,7 +221,7 @@ public class ExceptionDetailsTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -245,6 +239,6 @@ public class ExceptionDetailsTests
                         "stackTrace": "stacktrace"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ExceptionDetails>(json), Throws.InstanceOf<JsonException>());
     }
 }

@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Browser;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class ClientWindowsInfoTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -25,7 +19,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -53,7 +47,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
         Assert.That(result, Is.Not.Null);
         ClientWindowInfo? copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -71,7 +65,7 @@ public class ClientWindowsInfoTests
                         "height": 400 
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -88,7 +82,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -105,7 +99,7 @@ public class ClientWindowsInfoTests
                         "height": 1024
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -133,7 +127,7 @@ public class ClientWindowsInfoTests
                         "height": 0
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -161,7 +155,7 @@ public class ClientWindowsInfoTests
                         "height": 1024
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -188,7 +182,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -205,7 +199,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -222,7 +216,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<WebDriverBiDiException>());
     }
 
     [Test]
@@ -239,7 +233,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions);
+        ClientWindowInfo? result = JsonSerializer.Deserialize<ClientWindowInfo>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -266,7 +260,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -283,7 +277,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -299,7 +293,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -316,7 +310,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -333,7 +327,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -349,7 +343,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -366,7 +360,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -383,7 +377,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -399,7 +393,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -416,7 +410,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -433,7 +427,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -449,7 +443,7 @@ public class ClientWindowsInfoTests
                         "width": 300
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -466,7 +460,7 @@ public class ClientWindowsInfoTests
                         "height": -1
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -483,6 +477,6 @@ public class ClientWindowsInfoTests
                         "height": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 }

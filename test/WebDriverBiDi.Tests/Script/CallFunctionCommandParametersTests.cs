@@ -74,7 +74,7 @@ public class CallFunctionCommandParametersTests
         // in the Arguments list. This requires ChannelValue to be registered as a
         // JsonDerivedType on ArgumentValue for proper polymorphic serialization.
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), false);
-        var channelProperties = new ChannelProperties("myChannel")
+        ChannelProperties channelProperties = new("myChannel")
         {
             Ownership = ResultOwnership.Root,
         };

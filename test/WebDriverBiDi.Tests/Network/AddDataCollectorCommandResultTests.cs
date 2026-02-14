@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Network;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class AddDataCollectorCommandResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class AddDataCollectorCommandResultTests
                         "collector": "myCollectorId"
                       }
                       """;
-        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, deserializationOptions);
+        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result.CollectorId, Is.EqualTo("myCollectorId"));
     }
@@ -32,7 +26,7 @@ public class AddDataCollectorCommandResultTests
                         "collector": "myCollectorId"
                       }
                       """;
-        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, deserializationOptions);
+        AddDataCollectorCommandResult? result = JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         AddDataCollectorCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -42,7 +36,7 @@ public class AddDataCollectorCommandResultTests
     public void TestDeserializingWithMissingDataThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -53,6 +47,6 @@ public class AddDataCollectorCommandResultTests
                         "collector": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<AddDataCollectorCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }

@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class StackTraceTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -26,7 +20,7 @@ public class StackTraceTests
                         ]
                       }
                       """;
-        StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions);
+        StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json);
         Assert.That(stacktrace, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -51,7 +45,7 @@ public class StackTraceTests
                         ]
                       }
                       """;
-        StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions);
+        StackTrace? stacktrace = JsonSerializer.Deserialize<StackTrace>(json);
         Assert.That(stacktrace, Is.Not.Null);
         StackTrace copy = stacktrace with { };
         Assert.That(copy, Is.EqualTo(stacktrace));
@@ -61,7 +55,7 @@ public class StackTraceTests
     public void TestDeserializeWithMissingCallFramesThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -79,6 +73,6 @@ public class StackTraceTests
                         }
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackTrace>(json), Throws.InstanceOf<JsonException>());
     }
 }

@@ -1,7 +1,7 @@
+namespace WebDriverBiDi;
+
 using System.Text.Json;
 using WebDriverBiDi.Protocol;
-
-namespace WebDriverBiDi;
 
 [TestFixture]
 public class ErrorResultTests

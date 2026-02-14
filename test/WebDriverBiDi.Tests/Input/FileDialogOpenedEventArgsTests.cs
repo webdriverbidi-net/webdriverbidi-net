@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.Input;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class FileDialogOpenedEventArgsTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserializeWithMultipleTrue()
     {
@@ -20,7 +14,7 @@ public class FileDialogOpenedEventArgsTests
                         "multiple": true
                       }
                       """;
-        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         FileDialogOpenedEventArgs eventArgs = new(info);
@@ -41,7 +35,7 @@ public class FileDialogOpenedEventArgsTests
                         "multiple": false
                       }
                       """;
-        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         FileDialogOpenedEventArgs eventArgs = new(info);
@@ -71,7 +65,7 @@ public class FileDialogOpenedEventArgsTests
                         }
                       }
                       """;
-        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         FileDialogOpenedEventArgs eventArgs = new(info);
@@ -93,7 +87,7 @@ public class FileDialogOpenedEventArgsTests
                         "multiple": true
                       }
                       """;
-        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json, deserializationOptions);
+        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         FileDialogOpenedEventArgs eventArgs = new(info);

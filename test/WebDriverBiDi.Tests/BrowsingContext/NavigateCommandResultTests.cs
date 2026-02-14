@@ -1,16 +1,10 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
-using WebDriverBiDi.JsonConverters;
 
 [TestFixture]
 public class NavigationResultTests
 {
-    private JsonSerializerOptions deserializationOptions = new()
-    {
-        TypeInfoResolver = new PrivateConstructorContractResolver(),
-    };
-
     [Test]
     public void TestCanDeserialize()
     {
@@ -19,7 +13,7 @@ public class NavigationResultTests
                         "url": "http://example.com"
                       }
                       """;
-        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions);
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -37,7 +31,7 @@ public class NavigationResultTests
                         "navigation": "myNavigationId"
                       }
                       """;
-        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions);
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -54,7 +48,7 @@ public class NavigationResultTests
                         "url": "http://example.com"
                       }
                       """;
-        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions);
+        NavigateCommandResult? result = JsonSerializer.Deserialize<NavigateCommandResult>(json);
         Assert.That(result, Is.Not.Null);
         NavigateCommandResult copy = result with { };
         Assert.That(copy, Is.EqualTo(result));
@@ -64,7 +58,7 @@ public class NavigationResultTests
     public void TestDeserializingWithMissingUrlThrows()
     {
         string json = "{}";
-        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -75,7 +69,7 @@ public class NavigationResultTests
                         "url": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -87,6 +81,6 @@ public class NavigationResultTests
                         "navigation": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json, deserializationOptions), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<NavigateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 }
