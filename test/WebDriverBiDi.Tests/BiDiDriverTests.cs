@@ -17,6 +17,7 @@ using WebDriverBiDi.WebExtension;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Speculation;
+using WebDriverBiDi.UserAgentClientHints;
 
 [TestFixture]
 public class BiDiDriverTests
@@ -305,6 +306,7 @@ public class BiDiDriverTests
                 Assert.That(driver.Session, Is.InstanceOf<SessionModule>());
                 Assert.That(driver.Speculation, Is.InstanceOf<SpeculationModule>());
                 Assert.That(driver.Storage, Is.InstanceOf<StorageModule>());
+                Assert.That(driver.UserAgentClientHints, Is.InstanceOf<UserAgentClientHintsModule>());
                 Assert.That(driver.WebExtension, Is.InstanceOf<WebExtensionModule>());
             }
         }

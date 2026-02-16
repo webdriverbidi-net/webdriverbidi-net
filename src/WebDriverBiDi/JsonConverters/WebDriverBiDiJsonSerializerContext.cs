@@ -21,6 +21,7 @@ using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Speculation;
 using WebDriverBiDi.Storage;
+using WebDriverBiDi.UserAgentClientHints;
 using WebDriverBiDi.WebExtension;
 
 /// <summary>
@@ -156,6 +157,9 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(CommandResponseMessage<DeleteCookiesCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<GetCookiesCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetCookieCommandResult>))]
+
+// -- UserAgentClientHints module (command responses) --
+[JsonSerializable(typeof(CommandResponseMessage<SetClientHintsOverrideCommandResult>))]
 
 // ── WebExtension module (command responses) ──
 [JsonSerializable(typeof(CommandResponseMessage<InstallCommandResult>))]
@@ -412,6 +416,11 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(SetCookieCommandParameters))]
 [JsonSerializable(typeof(StorageKeyPartitionDescriptor))]
 
+// -- UserAgentClientHints module (command responses) --
+[JsonSerializable(typeof(BrandVersion))]
+[JsonSerializable(typeof(ClientHintsMetadata))]
+[JsonSerializable(typeof(SetClientHintsOverrideCommandParameters))]
+
 // ── WebExtension module ──
 [JsonSerializable(typeof(ExtensionArchivePath))]
 [JsonSerializable(typeof(ExtensionBase64Encoded))]
@@ -488,6 +497,6 @@ public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
         RuntimeHelpers.RunClassConstructor(typeof(UserPromptHandlerType[]).TypeHandle);
 
         // Speculation enums
-        RuntimeHelpers.RunClassConstructor(typeof(Speculation.PreloadingStatus[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(PreloadingStatus[]).TypeHandle);
     }
 }

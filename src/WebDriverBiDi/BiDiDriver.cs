@@ -18,6 +18,7 @@ using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Speculation;
 using WebDriverBiDi.Storage;
+using WebDriverBiDi.UserAgentClientHints;
 using WebDriverBiDi.WebExtension;
 
 /// <summary>
@@ -78,6 +79,7 @@ public class BiDiDriver
         this.RegisterModule(new ScriptModule(this));
         this.RegisterModule(new SpeculationModule(this));
         this.RegisterModule(new StorageModule(this));
+        this.RegisterModule(new UserAgentClientHintsModule(this));
         this.RegisterModule(new WebExtensionModule(this));
     }
 
@@ -160,6 +162,11 @@ public class BiDiDriver
     /// Gets the storage module as described in the WebDriver BiDi protocol.
     /// </summary>
     public StorageModule Storage => this.GetModule<StorageModule>(StorageModule.StorageModuleName);
+
+    /// <summary>
+    /// Gets the user agent client hints module as described in the W3C Community Group User Agent Client Hints specification.
+    /// </summary>
+    public UserAgentClientHintsModule UserAgentClientHints => this.GetModule<UserAgentClientHintsModule>(UserAgentClientHintsModule.UserAgentClientHintsModuleName);
 
     /// <summary>
     /// Gets the web extension module as described in the WebDriver BiDi protocol.
