@@ -74,6 +74,25 @@ public class SourceTests
     }
 
     [Test]
+    public void TestCanDeserializeWithOptionalUserContext()
+    {
+        string json = """
+                      {
+                        "realm": "realmId",
+                        "userContext": "userContextId"
+                      }
+                      """;
+        Source? source = JsonSerializer.Deserialize<Source>(json);
+        Assert.That(source, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(source.RealmId, Is.EqualTo("realmId"));
+            Assert.That(source.UserContext, Is.Not.Null);
+            Assert.That(source.UserContext, Is.EqualTo("userContextId"));
+        }
+    }
+
+    [Test]
     public void TestDeserializeWithInvalidFlagsTypeThrows()
     {
         string json = """

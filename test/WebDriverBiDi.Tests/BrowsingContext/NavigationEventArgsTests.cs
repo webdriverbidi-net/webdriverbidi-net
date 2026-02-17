@@ -50,6 +50,30 @@ public class NavigationEventArgsTests
             Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
         }
     }
+
+    [Test]
+    public void TestCanDeserializeWithUserContext()
+    {
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": {{epochTimestamp}},
+                        "navigation": "myNavigationId",
+                        "userContext": "myUserContextId"
+                      }
+                      """;
+        NavigationEventArgs? eventArgs = JsonSerializer.Deserialize<NavigationEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
+            Assert.That(eventArgs.NavigationId, Is.EqualTo("myNavigationId"));
+            Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
+        }
+    }
     
     [Test]
     public void TestCopySemantics()

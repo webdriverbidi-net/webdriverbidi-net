@@ -47,4 +47,11 @@ public record UserPromptClosedEventArgs : WebDriverBiDiEventArgs
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? UserText { get; internal set; }
+
+    /// <summary>
+    /// Gets the ID of the user context where the user prompt was closed.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonInclude]
+    public string? UserContextId { get; internal set; }
 }

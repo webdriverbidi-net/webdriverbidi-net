@@ -153,6 +153,19 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
             windowRealmInfo.Sandbox = sandbox;
         }
 
+        if (rootElement.TryGetProperty("userContext", out JsonElement userContextElement))
+        {
+            if (userContextElement.ValueKind != JsonValueKind.String)
+            {
+                throw new JsonException("WindowRealmInfo 'userContext' property must be a string");
+            }
+
+            // We have already determined the value is a string, and
+            // therefore cannot be null.
+            string userContext = userContextElement.GetString()!;
+            windowRealmInfo.UserContext = userContext;
+        }
+
         return windowRealmInfo;
     }
 

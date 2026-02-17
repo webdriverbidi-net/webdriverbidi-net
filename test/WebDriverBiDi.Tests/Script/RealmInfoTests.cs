@@ -18,7 +18,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
-        RealmInfo realmInfo = (RealmInfo)info;
+        RealmInfo realmInfo = info;
         using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
@@ -57,7 +57,7 @@ public class RealmInfoTests
         RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<RealmInfo>());
-        RealmInfo realmInfo = (RealmInfo)info;
+        RealmInfo realmInfo = info;
         using (Assert.EnterMultipleScope())
         {
             Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
@@ -88,6 +88,33 @@ public class RealmInfoTests
             Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
             Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
             Assert.That(realmInfo.Sandbox, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestCanDeserializeWindowRealmInfoWithUserContext()
+    {
+        string json = """
+                      {
+                        "realm": "myRealm",
+                        "origin": "myOrigin",
+                        "type": "window",
+                        "context": "myContext",
+                        "userContext": "myUserContext"
+                      }
+                      """;
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<WindowRealmInfo>());
+        WindowRealmInfo realmInfo = (WindowRealmInfo)info;
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(realmInfo.RealmId, Is.EqualTo("myRealm"));
+            Assert.That(realmInfo.Origin, Is.EqualTo("myOrigin"));
+            Assert.That(realmInfo.Type, Is.EqualTo(RealmType.Window));
+            Assert.That(realmInfo.BrowsingContext, Is.EqualTo("myContext"));
+            Assert.That(realmInfo.Sandbox, Is.Null);
+            Assert.That(realmInfo.UserContext, Is.EqualTo("myUserContext"));
         }
     }
 
@@ -513,6 +540,21 @@ public class RealmInfoTests
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'sandbox' property must be a string"));
+    }
+
+    [Test]
+    public void TestDeserializingWindowRealmInfoWithInvalidUserContextTypeThrows()
+    {
+        string json = """
+                      {
+                        "realm": "myRealm",
+                        "origin": "myOrigin",
+                        "type": "window",
+                        "context": "myContext",
+                        "userContext": 2
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'userContext' property must be a string"));
     }
 
     [Test]

@@ -35,4 +35,12 @@ public record Source
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
     public string? Context { get; internal set; }
+
+    /// <summary>
+    /// Gets the browsing context ID for a script.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? UserContext { get; internal set; }
 }

@@ -53,6 +53,14 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     public DateTime Timestamp { get; internal set; }
 
     /// <summary>
+    /// Gets the ID of the user context where the navigation is taking place.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? UserContextId { get; internal set; }
+
+    /// <summary>
     /// Gets the timestamp as the total number of milliseconds elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
     /// </summary>
     [JsonPropertyName("timestamp")]

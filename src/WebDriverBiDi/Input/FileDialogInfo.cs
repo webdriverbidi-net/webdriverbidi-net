@@ -38,6 +38,14 @@ public record FileDialogInfo
     public bool Multiple { get; internal set; }
 
     /// <summary>
+    /// Gets the Id of the user context for which the user prompt was opened.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? UserContextId { get; internal set; }
+
+    /// <summary>
     /// Gets the reference to the element that invoked the file dialog, if present.
     /// </summary>
     [JsonIgnore]

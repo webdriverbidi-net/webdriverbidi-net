@@ -30,6 +30,32 @@ public class HistoryUpdatedEventArgsTests
     }
 
     [Test]
+    public void TestCanDeserializeWithUserContext()
+    {
+        DateTime now = DateTime.UtcNow;
+        DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
+        ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);
+        string json = $$"""
+                      {
+                        "context": "myContextId",
+                        "url": "http://example.com",
+                        "timestamp": {{milliseconds}},
+                        "userContext": "myUserContextId"
+                      }
+                      """;
+        HistoryUpdatedEventArgs? eventArgs = JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.Url, Is.EqualTo("http://example.com"));
+            Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
+            Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
+            Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
+         }
+    }
+
+    [Test]
     public void TestCopySemantics()
     {
         DateTime now = DateTime.UtcNow;

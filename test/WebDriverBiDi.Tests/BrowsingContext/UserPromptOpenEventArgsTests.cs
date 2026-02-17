@@ -191,6 +191,30 @@ public class UserPromptOpenedEventArgsTests
     }
 
     [Test]
+    public void TestCanDeserializeWithUserContext()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "type": "prompt",
+                        "handler": "accept",
+                        "message": "some prompt message",
+                        "userContext": "myUserContextId"
+                      }
+                      """;
+        UserPromptOpenedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.PromptType, Is.EqualTo(UserPromptType.Prompt));
+            Assert.That(eventArgs.Handler, Is.EqualTo(UserPromptHandlerType.Accept));
+            Assert.That(eventArgs.Message, Is.EqualTo("some prompt message"));
+            Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
+        }
+    }
+
+    [Test]
     public void TestCopySemantics()
     {
         string json = """

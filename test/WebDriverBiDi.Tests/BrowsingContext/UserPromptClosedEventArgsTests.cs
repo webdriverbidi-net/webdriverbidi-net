@@ -63,6 +63,26 @@ public class UserPromptClosedEventArgsTests
         }
     }
 
+    [Test]
+    public void TestCanDeserializeWithUserContext()
+    {
+        string json = """
+                      {
+                        "context": "myContextId",
+                        "accepted": true,
+                        "userContext": "myUserContextId"
+                      }
+                      """;
+        UserPromptClosedEventArgs? eventArgs = JsonSerializer.Deserialize<UserPromptClosedEventArgs>(json);
+        Assert.That(eventArgs, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(eventArgs.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(eventArgs.IsAccepted, Is.True);
+            Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
+        }
+    }
+
    [Test]
     public void TestCopySemantics()
     {

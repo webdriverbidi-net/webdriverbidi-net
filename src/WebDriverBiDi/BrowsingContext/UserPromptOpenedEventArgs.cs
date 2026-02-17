@@ -65,4 +65,11 @@ public record UserPromptOpenedEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("defaultValue")]
     [JsonInclude]
     public string? DefaultValue { get; internal set; }
+
+    /// <summary>
+    /// Gets the ID of the user context where the user prompt was opened.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonInclude]
+    public string? UserContextId { get; internal set; }
 }

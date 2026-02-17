@@ -43,6 +43,13 @@ public record HistoryUpdatedEventArgs : WebDriverBiDiEventArgs
     public string Url { get; internal set; }
 
     /// <summary>
+    /// Gets the ID of the user context where the history was updated.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonInclude]
+    public string? UserContextId { get; internal set; }
+
+    /// <summary>
     /// Gets the timestamp of the navigation in UTC.
     /// </summary>
     [JsonIgnore]

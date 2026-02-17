@@ -45,35 +45,57 @@ public class FileDialogInfoTests
         }
     }
 
-  [Test]
-  public void TestCanDeserializeWithElementReference()
-  {
-    string json = """
-                      {
-                        "context": "myContextId",
-                        "multiple": true,
-                        "element": {
-                          "type": "node",
-                          "sharedId": "mySharedId",
-                          "value": {
-                            "nodeType": 1,
-                            "nodeValue": "",
-                            "childNodeCount": 0
-                          }
+    [Test]
+    public void TestCanDeserializeWithUserContext()
+    {
+        string json = """
+                        {
+                            "context": "myContextId",
+                            "multiple": false,
+                            "userContext": "myUserContextId"
                         }
-                      }
-                      """;
-    FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
-    Assert.That(info, Is.Not.Null);
-    Assert.That(info, Is.InstanceOf<FileDialogInfo>());
+                        """;
+        FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<FileDialogInfo>());
         using (Assert.EnterMultipleScope())
         {
-        Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
-        Assert.That(info.Multiple, Is.True);
-        Assert.That(info.Element, Is.Not.Null);
-        Assert.That(info.Element!.SharedId, Is.EqualTo("mySharedId"));
+            Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
+            Assert.That(info.Multiple, Is.False);
+            Assert.That(info.Element, Is.Null);
+            Assert.That(info.UserContextId, Is.EqualTo("myUserContextId"));
+        }
     }
-  }
+
+    [Test]
+    public void TestCanDeserializeWithElementReference()
+    {
+      string json = """
+                    {
+                      "context": "myContextId",
+                      "multiple": true,
+                      "element": {
+                        "type": "node",
+                        "sharedId": "mySharedId",
+                        "value": {
+                          "nodeType": 1,
+                          "nodeValue": "",
+                          "childNodeCount": 0
+                        }
+                      }
+                    }
+                    """;
+      FileDialogInfo? info = JsonSerializer.Deserialize<FileDialogInfo>(json);
+      Assert.That(info, Is.Not.Null);
+      Assert.That(info, Is.InstanceOf<FileDialogInfo>());
+          using (Assert.EnterMultipleScope())
+          {
+          Assert.That(info.BrowsingContextId, Is.EqualTo("myContextId"));
+          Assert.That(info.Multiple, Is.True);
+          Assert.That(info.Element, Is.Not.Null);
+          Assert.That(info.Element!.SharedId, Is.EqualTo("mySharedId"));
+      }
+    }
 
     [Test]
     public void TestCopySemantics()
@@ -132,6 +154,19 @@ public class FileDialogInfoTests
                       {
                         "context": "myContextId",
                         "multiple": "true"
+                      }
+                      """;
+    Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json), Throws.InstanceOf<JsonException>());
+  }
+
+  [Test]
+  public void TestDeserializingWithInvalidUserContextTypeThrows()
+  {
+    string json = """
+                      {
+                        "context": "myContextId",
+                        "multiple": true,
+                        "userContext": {}
                       }
                       """;
     Assert.That(() => JsonSerializer.Deserialize<FileDialogInfo>(json), Throws.InstanceOf<JsonException>());

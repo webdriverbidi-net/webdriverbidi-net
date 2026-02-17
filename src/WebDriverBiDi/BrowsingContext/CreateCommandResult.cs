@@ -27,4 +27,12 @@ public record CreateCommandResult : CommandResult
     [JsonRequired]
     [JsonInclude]
     public string BrowsingContextId { get; internal set; } = string.Empty;
+
+    /// <summary>
+    /// Gets the ID of the user context where the browsing context is created.
+    /// </summary>
+    [JsonPropertyName("userContext")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? UserContextId { get; internal set; }
 }
