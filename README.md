@@ -17,6 +17,7 @@ also included in this library are:
 * [Permissions](https://www.w3.org/TR/permissions/)
 * [Web Bluetooth](https://webbluetoothcg.github.io/web-bluetooth/)
 * [Prefetch](https://wicg.github.io/nav-speculation/prefetch.html)
+* [User Agent Client Hints](https://wicg.github.io/ua-client-hints/)
 
 The library allows a user to automate a browser using WebDriver BiDi, standard protocol developed and maintained
 under the auspices of the World Wide Web Consortium (W3C). The protocol is implemented by browser vendors as part
