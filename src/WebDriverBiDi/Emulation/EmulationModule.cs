@@ -101,6 +101,16 @@ public sealed class EmulationModule : Module
     }
 
     /// <summary>
+    /// Sets the override for emulating the type of scroll bar displayed in the browser.
+    /// </summary>
+    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <returns>An empty command result.</returns>
+    public async Task<SetScrollbarTypeOverrideCommandResult> SetScrollbarTypeOverrideAsync(SetScrollbarTypeOverrideCommandParameters commandProperties)
+    {
+        return await this.Driver.ExecuteCommandAsync<SetScrollbarTypeOverrideCommandResult>(commandProperties).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Sets the emulated override for the time zone for the specified contexts or user contexts.
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>

@@ -97,6 +97,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(CommandResponseMessage<SetScreenOrientationOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetScreenSettingsOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetScriptingEnabledCommandResult>))]
+[JsonSerializable(typeof(CommandResponseMessage<SetScrollbarTypeOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetTimeZoneOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetTouchOverrideCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetUserAgentOverrideCommandResult>))]
@@ -268,6 +269,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(SetScreenOrientationOverrideCommandParameters))]
 [JsonSerializable(typeof(SetScreenSettingsOverrideCommandParameters))]
 [JsonSerializable(typeof(SetScriptingEnabledCommandParameters))]
+[JsonSerializable(typeof(SetScrollbarTypeOverrideCommandParameters))]
 [JsonSerializable(typeof(SetTimeZoneOverrideCommandParameters))]
 [JsonSerializable(typeof(SetTouchOverrideCommandParameters))]
 [JsonSerializable(typeof(SetUserAgentOverrideCommandParameters))]
@@ -464,6 +466,7 @@ public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
         RuntimeHelpers.RunClassConstructor(typeof(ForcedColorsModeTheme[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScreenOrientationNatural[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ScreenOrientationType[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(ScrollbarType[]).TypeHandle);
 
         // Input enums
         RuntimeHelpers.RunClassConstructor(typeof(PointerType[]).TypeHandle);
