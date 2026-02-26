@@ -12,6 +12,7 @@ namespace WebDriverBiDi;
 public class EventObserver<T>
     where T : WebDriverBiDiEventArgs
 {
+    private readonly object checkpointLock = new();
     private readonly string description;
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
@@ -73,13 +74,16 @@ public class EventObserver<T>
             throw new ArgumentException("Number of notifications must be greater than 1.", nameof(numberOfNotifications));
         }
 
-        if (this.IsCheckpointSet)
+        lock (this.checkpointLock)
         {
-            throw new WebDriverBiDiException("This observer already has a checkpoint set. It must be satisfied or unset before setting another.");
-        }
+            if (this.IsCheckpointSet)
+            {
+                throw new WebDriverBiDiException("This observer already has a checkpoint set. It must be satisfied or unset before setting another.");
+            }
 
-        this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
-        this.IsCheckpointSet = true;
+            this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
+            this.IsCheckpointSet = true;
+        }
     }
 
     /// <summary>
@@ -92,12 +96,18 @@ public class EventObserver<T>
     /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
     public bool WaitForCheckpoint(TimeSpan timeout)
     {
-        if (!this.IsCheckpointSet)
+        CountdownEvent counter;
+        lock (this.checkpointLock)
         {
-            return true;
+            if (!this.IsCheckpointSet)
+            {
+                return true;
+            }
+
+            counter = this.synchronizationCounter;
         }
 
-        bool waitSucceeded = this.synchronizationCounter.Wait(timeout);
+        bool waitSucceeded = counter.Wait(timeout);
         if (waitSucceeded)
         {
             this.UnsetCheckpoint();
@@ -114,10 +124,13 @@ public class EventObserver<T>
     /// <returns>An array of <see cref="Task"/> objects captured while waiting for the checkpoints to be fulfilled.</returns>
     public Task[] GetCheckpointTasks()
     {
-        this.UnsetCheckpoint();
-        Task[] capturedTasks = this.capturedTasks.ToArray();
-        this.capturedTasks.Clear();
-        return capturedTasks;
+        lock (this.checkpointLock)
+        {
+            this.IsCheckpointSet = false;
+            Task[] capturedTasks = this.capturedTasks.ToArray();
+            this.capturedTasks.Clear();
+            return capturedTasks;
+        }
     }
 
     /// <summary>
@@ -125,7 +138,10 @@ public class EventObserver<T>
     /// </summary>
     public void UnsetCheckpoint()
     {
-        this.IsCheckpointSet = false;
+        lock (this.checkpointLock)
+        {
+            this.IsCheckpointSet = false;
+        }
     }
 
     /// <summary>
@@ -150,10 +166,13 @@ public class EventObserver<T>
             await executingTask.ConfigureAwait(false);
         }
 
-        if (this.IsCheckpointSet && !this.synchronizationCounter.IsSet)
+        lock (this.checkpointLock)
         {
-            this.capturedTasks.Add(executingTask);
-            this.synchronizationCounter.Signal();
+            if (this.IsCheckpointSet && !this.synchronizationCounter.IsSet)
+            {
+                this.capturedTasks.Add(executingTask);
+                this.synchronizationCounter.Signal();
+            }
         }
     }
 }
