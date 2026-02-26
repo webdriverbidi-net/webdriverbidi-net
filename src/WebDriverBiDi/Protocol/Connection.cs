@@ -107,8 +107,10 @@ public class Connection
             catch (WebSocketException)
             {
                 // If the server-side socket is not yet ready, it leaves the client socket in a closed state,
-                // which sees the object as disposed, so we must create a new one to try again
+                // which sees the object as disposed, so we must create a new one to try again. Note that\
+                // we will also explicitly call Dispose on the object, to make sure resources are disposed.
                 await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+                this.client.Dispose();
                 this.client = new ClientWebSocket();
             }
         }
