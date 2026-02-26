@@ -8,7 +8,7 @@ namespace WebDriverBiDi;
 /// <summary>
 /// The exception thrown when a WebDriver Bidi operation exceeds its timeout.
 /// </summary>
-public class WebDriverBiDiTimeoutException : Exception
+public class WebDriverBiDiTimeoutException : WebDriverBiDiException
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBiDiTimeoutException" /> class with a given message.
