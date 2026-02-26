@@ -113,10 +113,11 @@ public class SetCookieHeader
 
     /// <summary>
     /// Gets the expiration time of the cookie as the total number of milliseconds
-    /// elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
+    /// elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC). Note
+    /// that this value is the formatted date string for the expiration.
     /// </summary>
     [JsonPropertyName("expiry")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal string? EpochExpires => this.Expires.HasValue ? $"{this.Expires.Value.ToUniversalTime():ddd, dd MMM yyyy HH:mm:ss} GMT" : null;
+    internal string? EpochExpiresAsFormattedDateString => this.Expires.HasValue ? $"{this.Expires.Value.ToUniversalTime():ddd, dd MMM yyyy HH:mm:ss} GMT" : null;
 }
