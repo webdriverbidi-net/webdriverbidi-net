@@ -524,8 +524,8 @@ public class FirefoxLauncher : BrowserLauncher
     private async Task<bool> WaitForInitializationAsync()
     {
         bool isInitialized = false;
-        DateTime timeout = DateTime.Now.Add(this.InitializationTimeout);
-        while (!isInitialized && DateTime.Now < timeout)
+        Stopwatch initializationStopwatch = Stopwatch.StartNew();
+        while (!isInitialized && initializationStopwatch.Elapsed < this.InitializationTimeout)
         {
             // If the driver service process has exited, we can exit early.
             if (!this.IsRunning)
@@ -539,6 +539,7 @@ public class FirefoxLauncher : BrowserLauncher
             }
         }
 
+        initializationStopwatch.Stop();
         return isInitialized;
     }
 

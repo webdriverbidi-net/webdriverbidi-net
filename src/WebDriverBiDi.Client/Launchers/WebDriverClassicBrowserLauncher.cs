@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -218,8 +219,8 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
     protected async Task<bool> WaitForInitializationAsync()
     {
         bool isInitialized = false;
-        DateTime timeout = DateTime.Now.Add(this.InitializationTimeout);
-        while (!isInitialized && DateTime.Now < timeout)
+        Stopwatch initializationStopwatch = Stopwatch.StartNew();
+        while (!isInitialized && initializationStopwatch.Elapsed < this.InitializationTimeout)
         {
             try
             {
@@ -239,6 +240,7 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
             }
         }
 
+        initializationStopwatch.Stop();
         return isInitialized;
     }
 

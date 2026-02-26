@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System;
+using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -95,8 +96,8 @@ public class Connection
 
         await this.LogAsync($"Opening connection to URL {url}");
         bool connected = false;
-        DateTime timeout = DateTime.Now.Add(this.StartupTimeout);
-        while (!connected && DateTime.Now <= timeout)
+        Stopwatch initializationStopwatch = Stopwatch.StartNew();
+        while (!connected && initializationStopwatch.Elapsed <= this.StartupTimeout)
         {
             try
             {
@@ -115,6 +116,7 @@ public class Connection
             }
         }
 
+        initializationStopwatch.Stop();
         if (!connected)
         {
             throw new TimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");

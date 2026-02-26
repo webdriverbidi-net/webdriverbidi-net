@@ -181,8 +181,8 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             await this.LogAsync("Shutting down browser launcher", WebDriverBiDiLogLevel.Info);
             if (this.HasShutdownApi)
             {
-                DateTime timeout = DateTime.Now.Add(this.TerminationTimeout);
-                while (this.IsRunning && DateTime.Now < timeout)
+                Stopwatch terminationStopwatch = Stopwatch.StartNew();
+                while (this.IsRunning && terminationStopwatch.Elapsed <= this.TerminationTimeout)
                 {
                     try
                     {
@@ -198,6 +198,8 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
                     {
                     }
                 }
+
+                terminationStopwatch.Stop();
             }
 
             // If at this point, the process still hasn't exited, wait for one
