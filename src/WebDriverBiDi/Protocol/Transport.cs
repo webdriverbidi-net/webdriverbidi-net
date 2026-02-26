@@ -117,6 +117,13 @@ public class Transport
     public TransportErrorBehavior UnexpectedErrorBehavior { get => this.unhandledErrors.UnexpectedErrorBehavior; set => this.unhandledErrors.UnexpectedErrorBehavior = value; }
 
     /// <summary>
+    /// Gets or sets the timeout to wait for message processing to complete during shutdown.
+    /// If message processing does not complete within this timeout, the shutdown will proceed
+    /// without waiting for the remaining processing to finish. The default is 10 seconds.
+    /// </summary>
+    public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>
     /// Gets the ID of the last command to be added.
     /// </summary>
     protected long LastCommandId => this.nextCommandId;
@@ -267,12 +274,14 @@ public class Transport
         // Clear the pending command collection. This will also cancel any tasks
         // associated with the remaining pending commands. Then wait for the
         // message processor to complete processing of the messages received from
-        // the message queue.
-        // CONSIDER: This may introduce a hang during shutdown, if an in-process
-        // event handler hangs. It might be worthwhile to introduce a timeout
-        // for this use case if it becomes a problem reported by users.
+        // the message queue, but with a timeout to prevent hanging if an
+        // in-process event handler is stuck.
         this.pendingCommands.Clear();
-        await this.messageQueueProcessingTask;
+        Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, Task.Delay(this.ShutdownTimeout)).ConfigureAwait(false);
+        if (completedTask != this.messageQueueProcessingTask)
+        {
+            await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn);
+        }
 
         // Finally, mark the transport as disconnected, and throw collected
         // exceptions if the user has specified that behavior.

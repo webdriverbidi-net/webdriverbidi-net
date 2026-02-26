@@ -1179,4 +1179,90 @@ public class TransportTests
         TestTransport transport = new(connection);
         Assert.That(transport.GetConnection(), Is.EqualTo(connection));
     }
+
+    [Test]
+    public void TestTransportShutdownTimeoutDefaultValue()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        Assert.That(transport.ShutdownTimeout, Is.EqualTo(TimeSpan.FromSeconds(10)));
+    }
+
+    [Test]
+    public void TestTransportShutdownTimeoutCanBeSet()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(1)
+        };
+        Assert.That(transport.ShutdownTimeout, Is.EqualTo(TimeSpan.FromSeconds(1)));
+    }
+
+    [Test]
+    public async Task TestTransportDisconnectTimesOutWithHangingEventHandler()
+    {
+        ManualResetEvent handlerStarted = new(false);
+        List<LogMessageEventArgs> logs = [];
+
+        TestConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        {
+            handlerStarted.Set();
+            return new TaskCompletionSource<bool>().Task;
+        });
+        transport.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        bool handlerDidStart = handlerStarted.WaitOne(TimeSpan.FromSeconds(1));
+        Assert.That(handlerDidStart, Is.True);
+
+        await transport.DisconnectAsync();
+
+        Assert.That(logs, Has.Some.Matches<LogMessageEventArgs>(
+            log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown")
+                   && log.Level == WebDriverBiDiLogLevel.Warn));
+    }
+
+    [Test]
+    public async Task TestTransportDisconnectCompletesWithinShutdownTimeout()
+    {
+        List<LogMessageEventArgs> logs = [];
+
+        TestConnection connection = new();
+        Transport transport = new(connection)
+        {
+            ShutdownTimeout = TimeSpan.FromSeconds(5),
+        };
+        transport.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+
+        await transport.ConnectAsync("ws:localhost");
+        await transport.DisconnectAsync();
+
+        Assert.That(logs, Has.None.Matches<LogMessageEventArgs>(
+            log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown")));
+    }
 }
