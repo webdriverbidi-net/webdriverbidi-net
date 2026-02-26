@@ -223,9 +223,9 @@ public class Connection
     private async Task ReceiveDataAsync()
     {
         CancellationToken cancellationToken = this.clientTokenSource.Token;
+        MemoryStream? memoryStream = null;
         try
         {
-            MemoryStream? memoryStream = null;
             ArraySegment<byte> buffer = WebSocket.CreateClientBuffer(this.BufferSize, this.BufferSize);
             while (this.client.State != WebSocketState.Closed && !cancellationToken.IsCancellationRequested)
             {
@@ -263,6 +263,7 @@ public class Connection
                         if (receiveResult.EndOfMessage)
                         {
                             byte[] bytes = memoryStream is null ? buffer.AsSpan(0, receiveResult.Count).ToArray() : memoryStream.ToArray();
+                            memoryStream?.Dispose();
                             memoryStream = null;
                             if (bytes.Length > 0)
                             {
@@ -290,6 +291,7 @@ public class Connection
         }
         finally
         {
+            memoryStream?.Dispose();
             this.client.Dispose();
         }
     }
