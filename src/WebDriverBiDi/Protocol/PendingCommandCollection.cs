@@ -26,16 +26,17 @@ public class PendingCommandCollection
     public int PendingCommandCount => this.pendingCommands.Count;
 
     /// <summary>
-    /// Adds a command to the collection.
+    /// Asynchronously adds a command to the collection.
     /// </summary>
     /// <param name="command">The command to add to the collection.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown if the collection is no longer accepting commands, or the collection already
     /// contains a command with the ID of the command being added.
     /// </exception>
-    public virtual void AddPendingCommand(Command command)
+    public virtual async Task AddPendingCommandAsync(Command command)
     {
-        this.commandAdditionSemaphore.Wait();
+        await this.commandAdditionSemaphore.WaitAsync().ConfigureAwait(false);
         try
         {
             if (!this.IsAcceptingCommands)
@@ -90,12 +91,19 @@ public class PendingCommandCollection
     }
 
     /// <summary>
-    /// Closes the collection, disallowing addition of any further commands to it.
+    /// Asynchronously closes the collection, disallowing addition of any further commands to it.
     /// </summary>
-    public virtual void Close()
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    public virtual async Task CloseAsync()
     {
-        this.commandAdditionSemaphore.Wait();
-        this.IsAcceptingCommands = false;
-        this.commandAdditionSemaphore.Release();
+        await this.commandAdditionSemaphore.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            this.IsAcceptingCommands = false;
+        }
+        finally
+        {
+            this.commandAdditionSemaphore.Release();
+        }
     }
 }

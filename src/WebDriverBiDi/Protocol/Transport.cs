@@ -200,7 +200,7 @@ public class Transport
 
         long commandId = this.GetNextCommandId();
         Command command = new(commandId, commandData);
-        this.pendingCommands.AddPendingCommand(command);
+        await this.pendingCommands.AddPendingCommandAsync(command).ConfigureAwait(false);
         byte[] commandJson = this.SerializeCommand(command);
         await this.Connection.SendDataAsync(commandJson).ConfigureAwait(false);
         return command;
@@ -258,7 +258,7 @@ public class Transport
     {
         // Close the pending command collection to further addition of commands,
         // and stop the connection from receiving further communication traffic.
-        this.pendingCommands.Close();
+        await this.pendingCommands.CloseAsync().ConfigureAwait(false);
         await this.Connection.StopAsync().ConfigureAwait(false);
 
         // Mark the incoming message queue as complete for writing, indicating
