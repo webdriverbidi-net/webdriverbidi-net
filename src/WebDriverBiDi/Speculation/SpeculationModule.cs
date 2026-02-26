@@ -12,7 +12,7 @@ namespace WebDriverBiDi.Speculation;
 public sealed class SpeculationModule : Module
 {
     /// <summary>
-    /// The name of the bluetooth module.
+    /// The name of the speculation module.
     /// </summary>
     public const string SpeculationModuleName = "speculation";
 

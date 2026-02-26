@@ -11,7 +11,7 @@ namespace WebDriverBiDi.Network;
 public sealed class NetworkModule : Module
 {
     /// <summary>
-    /// The name of the log module.
+    /// The name of the network module.
     /// </summary>
     public const string NetworkModuleName = "network";
 

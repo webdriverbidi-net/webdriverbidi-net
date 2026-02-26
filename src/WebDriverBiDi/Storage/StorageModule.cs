@@ -11,7 +11,7 @@ namespace WebDriverBiDi.Storage;
 public sealed class StorageModule : Module
 {
     /// <summary>
-    /// The name of the browsingContext module.
+    /// The name of the storage module.
     /// </summary>
     public const string StorageModuleName = "storage";
 
