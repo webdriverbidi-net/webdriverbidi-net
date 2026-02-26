@@ -86,7 +86,7 @@ public sealed class BrowsingContextModule : Module
     /// <summary>
     /// Gets an observable event that notifies when a download has ended.
     /// </summary>
-    public ObservableEvent<DownloadEndEventArgs> OnDownloadEndEvent { get; } = new(DownloadEndEventName);
+    public ObservableEvent<DownloadEndEventArgs> OnDownloadEnd { get; } = new(DownloadEndEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when the content in a browsing context is loaded.
@@ -307,7 +307,7 @@ public sealed class BrowsingContextModule : Module
     private async Task OnDownloadEndAsync(EventInfo<DownloadEndEventArgs> eventData)
     {
         DownloadEndEventArgs eventArgs = eventData.ToEventArgs<DownloadEndEventArgs>();
-        await this.OnDownloadEndEvent.NotifyObserversAsync(eventArgs);
+        await this.OnDownloadEnd.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnNavigationAbortedAsync(EventInfo<NavigationEventArgs> eventData)

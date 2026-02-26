@@ -554,7 +554,7 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDownloadEndEvent.AddObserver((DownloadEndEventArgs e) => {
+        module.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) => {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
