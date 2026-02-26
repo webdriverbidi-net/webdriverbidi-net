@@ -32,30 +32,30 @@ public sealed class StorageModule : Module
     /// <summary>
     /// Gets cookies from the browser session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<GetCookiesCommandResult> GetCookiesAsync(GetCookiesCommandParameters commandProperties)
+    public async Task<GetCookiesCommandResult> GetCookiesAsync(GetCookiesCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<GetCookiesCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<GetCookiesCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Sets a cookie in the browser session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<SetCookieCommandResult> SetCookieAsync(SetCookieCommandParameters commandProperties)
+    public async Task<SetCookieCommandResult> SetCookieAsync(SetCookieCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetCookieCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetCookieCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Deletes cookies from the browser session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<DeleteCookiesCommandResult> DeleteCookiesAsync(DeleteCookiesCommandParameters commandProperties)
+    public async Task<DeleteCookiesCommandResult> DeleteCookiesAsync(DeleteCookiesCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<DeleteCookiesCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<DeleteCookiesCommandResult>(commandParameters).ConfigureAwait(false);
     }
 }

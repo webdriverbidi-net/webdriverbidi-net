@@ -40,31 +40,31 @@ public sealed class InputModule : Module
     /// <summary>
     /// Performs a set of actions.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<PerformActionsCommandResult> PerformActionsAsync(PerformActionsCommandParameters commandProperties)
+    public async Task<PerformActionsCommandResult> PerformActionsAsync(PerformActionsCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<PerformActionsCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<PerformActionsCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Releases pending actions.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<ReleaseActionsCommandResult> ReleaseActionsAsync(ReleaseActionsCommandParameters commandProperties)
+    public async Task<ReleaseActionsCommandResult> ReleaseActionsAsync(ReleaseActionsCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ReleaseActionsCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ReleaseActionsCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Sets the files on a file upload element. The element must be of type {input type="file"}.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<SetFilesCommandResult> SetFilesAsync(SetFilesCommandParameters commandProperties)
+    public async Task<SetFilesCommandResult> SetFilesAsync(SetFilesCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetFilesCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetFilesCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     private async Task OnFileDialogOpenedAsync(EventInfo<FileDialogInfo> eventData)

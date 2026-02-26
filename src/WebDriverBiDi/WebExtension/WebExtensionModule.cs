@@ -32,20 +32,20 @@ public sealed class WebExtensionModule : Module
     /// <summary>
     /// Installs a web extension into the current driver session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>A Task containing the result of the command including the ID of the installed extension.</returns>
-    public async Task<InstallCommandResult> InstallAsync(InstallCommandParameters commandProperties)
+    public async Task<InstallCommandResult> InstallAsync(InstallCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<InstallCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<InstallCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Uninstalls a web extension from the current driver session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>A Task containing the result of the asynchronous operation.</returns>
-    public async Task<UninstallCommandResult> UninstallAsync(UninstallCommandParameters commandProperties)
+    public async Task<UninstallCommandResult> UninstallAsync(UninstallCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<UninstallCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<UninstallCommandResult>(commandParameters).ConfigureAwait(false);
     }
 }

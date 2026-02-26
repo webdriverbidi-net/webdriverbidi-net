@@ -131,61 +131,61 @@ public sealed class BrowsingContextModule : Module
     /// <summary>
     /// Activates a browsing context by bringing it to the foreground.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
-    public async Task<ActivateCommandResult> ActivateAsync(ActivateCommandParameters commandProperties)
+    public async Task<ActivateCommandResult> ActivateAsync(ActivateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ActivateCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ActivateCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Captures a screenshot of the current page in the browsing context.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
-    public async Task<CaptureScreenshotCommandResult> CaptureScreenshotAsync(CaptureScreenshotCommandParameters commandProperties)
+    public async Task<CaptureScreenshotCommandResult> CaptureScreenshotAsync(CaptureScreenshotCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<CaptureScreenshotCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<CaptureScreenshotCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Closes the browsing context.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<CloseCommandResult> CloseAsync(CloseCommandParameters commandProperties)
+    public async Task<CloseCommandResult> CloseAsync(CloseCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<CloseCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<CloseCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Creates a new browsing context.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command including the ID of the new context.</returns>
-    public async Task<CreateCommandResult> CreateAsync(CreateCommandParameters commandProperties)
+    public async Task<CreateCommandResult> CreateAsync(CreateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<CreateCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<CreateCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gets a tree of browsing contexts associated with a specified context.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The tree associated browsing contexts.</returns>
-    public async Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters commandProperties)
+    public async Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<GetTreeCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<GetTreeCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Handles a user prompt.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<HandleUserPromptCommandResult> HandleUserPromptAsync(HandleUserPromptCommandParameters commandProperties)
+    public async Task<HandleUserPromptCommandResult> HandleUserPromptAsync(HandleUserPromptCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<HandleUserPromptCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<HandleUserPromptCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -201,51 +201,51 @@ public sealed class BrowsingContextModule : Module
     /// <summary>
     /// Navigates a browsing context to a new URL.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters commandProperties)
+    public async Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<NavigateCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<NavigateCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Prints a PDF of the current page in the browsing context.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>>The result of the command containing a base64-encoded PDF of the current page.</returns>
-    public async Task<PrintCommandResult> PrintAsync(PrintCommandParameters commandProperties)
+    public async Task<PrintCommandResult> PrintAsync(PrintCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<PrintCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<PrintCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Reloads a browsing context to a new URL.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<ReloadCommandResult> ReloadAsync(ReloadCommandParameters commandProperties)
+    public async Task<ReloadCommandResult> ReloadAsync(ReloadCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ReloadCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ReloadCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Sets the viewport of a browsing context to the specified dimensions.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<SetViewportCommandResult> SetViewportAsync(SetViewportCommandParameters commandProperties)
+    public async Task<SetViewportCommandResult> SetViewportAsync(SetViewportCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetViewportCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetViewportCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Traverses the history entries of the browser.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<TraverseHistoryCommandResult> TraverseHistoryAsync(TraverseHistoryCommandParameters commandProperties)
+    public async Task<TraverseHistoryCommandResult> TraverseHistoryAsync(TraverseHistoryCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<TraverseHistoryCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<TraverseHistoryCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     private async Task OnContextCreatedAsync(EventInfo<BrowsingContextInfo> eventData)

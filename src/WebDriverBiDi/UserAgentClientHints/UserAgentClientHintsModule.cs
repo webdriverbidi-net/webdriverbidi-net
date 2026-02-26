@@ -32,10 +32,10 @@ public sealed class UserAgentClientHintsModule : Module
     /// <summary>
     /// Sets overrides for the user agent client hints.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<SetClientHintsOverrideCommandResult> SetClientHintsOverrideAsync(SetClientHintsOverrideCommandParameters? commandProperties = null)
+    public async Task<SetClientHintsOverrideCommandResult> SetClientHintsOverrideAsync(SetClientHintsOverrideCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<SetClientHintsOverrideCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetClientHintsOverrideCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
     }
 }

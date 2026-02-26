@@ -68,132 +68,132 @@ public sealed class NetworkModule : Module
     /// <summary>
     /// Adds an intercept for network traffic matching specific phases of the traffic and URL patterns.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing a network interception ID.</returns>
-    public async Task<AddInterceptCommandResult> AddInterceptAsync(AddInterceptCommandParameters commandProperties)
+    public async Task<AddInterceptCommandResult> AddInterceptAsync(AddInterceptCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<AddInterceptCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<AddInterceptCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Adds collector for network data like response bodies for specific phases of the traffic.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing a network interception ID.</returns>
-    public async Task<AddDataCollectorCommandResult> AddDataCollectorAsync(AddDataCollectorCommandParameters commandProperties)
+    public async Task<AddDataCollectorCommandResult> AddDataCollectorAsync(AddDataCollectorCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<AddDataCollectorCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<AddDataCollectorCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Continues a paused request intercepted by the driver.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<ContinueRequestCommandResult> ContinueRequestAsync(ContinueRequestCommandParameters commandProperties)
+    public async Task<ContinueRequestCommandResult> ContinueRequestAsync(ContinueRequestCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ContinueRequestCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ContinueRequestCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Continues a paused response intercepted by the driver after the response has been received from the server,
     /// but before presented to the browser.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<ContinueResponseCommandResult> ContinueResponseAsync(ContinueResponseCommandParameters commandProperties)
+    public async Task<ContinueResponseCommandResult> ContinueResponseAsync(ContinueResponseCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ContinueResponseCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ContinueResponseCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Continues a paused request intercepted by the driver with authentication information.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<ContinueWithAuthCommandResult> ContinueWithAuthAsync(ContinueWithAuthCommandParameters commandProperties)
+    public async Task<ContinueWithAuthCommandResult> ContinueWithAuthAsync(ContinueWithAuthCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ContinueWithAuthCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ContinueWithAuthCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Releases data from a network data collector for a specific request.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<DisownDataCommandResult> DisownDataAsync(DisownDataCommandParameters commandProperties)
+    public async Task<DisownDataCommandResult> DisownDataAsync(DisownDataCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<DisownDataCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<DisownDataCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Fails a paused request intercepted by the driver.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<FailRequestCommandResult> FailRequestAsync(FailRequestCommandParameters commandProperties)
+    public async Task<FailRequestCommandResult> FailRequestAsync(FailRequestCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<FailRequestCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<FailRequestCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gets the collected data from a network data collector for a specific network request.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing a network interception ID.</returns>
-    public async Task<GetDataCommandResult> GetDataAsync(GetDataCommandParameters commandProperties)
+    public async Task<GetDataCommandResult> GetDataAsync(GetDataCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<GetDataCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<GetDataCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Provides a full response for request intercepted by the driver without sending the request to the server.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<ProvideResponseCommandResult> ProvideResponseAsync(ProvideResponseCommandParameters commandProperties)
+    public async Task<ProvideResponseCommandResult> ProvideResponseAsync(ProvideResponseCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ProvideResponseCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<ProvideResponseCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Removes a network data collector.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<RemoveDataCollectorCommandResult> RemoveDataCollectorAsync(RemoveDataCollectorCommandParameters commandProperties)
+    public async Task<RemoveDataCollectorCommandResult> RemoveDataCollectorAsync(RemoveDataCollectorCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<RemoveDataCollectorCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<RemoveDataCollectorCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Removes an added intercept for network traffic matching specific phases of the traffic and URL patterns.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<RemoveInterceptCommandResult> RemoveInterceptAsync(RemoveInterceptCommandParameters commandProperties)
+    public async Task<RemoveInterceptCommandResult> RemoveInterceptAsync(RemoveInterceptCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<RemoveInterceptCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<RemoveInterceptCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Sets the cache behavior of the browser.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<SetCacheBehaviorCommandResult> SetCacheBehaviorAsync(SetCacheBehaviorCommandParameters commandProperties)
+    public async Task<SetCacheBehaviorCommandResult> SetCacheBehaviorAsync(SetCacheBehaviorCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetCacheBehaviorCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetCacheBehaviorCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Sets extra headers to be set for each request sent by the browser. This will overwrite existing header values for those requests.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<SetExtraHeadersCommandResult> SetExtraHeadersAsync(SetExtraHeadersCommandParameters commandProperties)
+    public async Task<SetExtraHeadersCommandResult> SetExtraHeadersAsync(SetExtraHeadersCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetExtraHeadersCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SetExtraHeadersCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     private async Task OnAuthRequiredAsync(EventInfo<AuthRequiredEventArgs> eventData)

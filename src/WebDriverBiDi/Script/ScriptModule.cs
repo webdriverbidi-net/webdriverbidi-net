@@ -54,61 +54,61 @@ public sealed class ScriptModule : Module
     /// <summary>
     /// Adds a preload script to each page before execution of other JavaScript included in the page source.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the ID of the created preload script.</returns>
-    public async Task<AddPreloadScriptCommandResult> AddPreloadScriptAsync(AddPreloadScriptCommandParameters commandProperties)
+    public async Task<AddPreloadScriptCommandResult> AddPreloadScriptAsync(AddPreloadScriptCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<AddPreloadScriptCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<AddPreloadScriptCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Calls a function in the specified script target.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the result of the function execution.</returns>
-    public async Task<EvaluateResult> CallFunctionAsync(CallFunctionCommandParameters commandProperties)
+    public async Task<EvaluateResult> CallFunctionAsync(CallFunctionCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Disowns the specified handles to allow the script engine to garbage collect objects.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<DisownCommandResult> DisownAsync(DisownCommandParameters commandProperties)
+    public async Task<DisownCommandResult> DisownAsync(DisownCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<DisownCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<DisownCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Evaluates a piece of JavaScript in the specified script target.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the result of the script evaluation.</returns>
-    public async Task<EvaluateResult> EvaluateAsync(EvaluateCommandParameters commandProperties)
+    public async Task<EvaluateResult> EvaluateAsync(EvaluateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Gets the realms associated with a given browsing context and realm type.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing IDs of the realms.</returns>
-    public async Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters commandProperties)
+    public async Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<GetRealmsCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<GetRealmsCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Removes a preload script from loading on each page before execution of other JavaScript included in the page source.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<RemovePreloadScriptCommandResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandProperties)
+    public async Task<RemovePreloadScriptCommandResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<RemovePreloadScriptCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<RemovePreloadScriptCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     private async Task OnRealmCreatedAsync(EventInfo<RealmInfo> eventData)

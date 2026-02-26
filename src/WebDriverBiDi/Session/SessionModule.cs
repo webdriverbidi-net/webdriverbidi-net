@@ -32,50 +32,50 @@ public sealed class SessionModule : Module
     /// <summary>
     /// Gets the status of the current connection.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the information about the remote end status.</returns>
-    public async Task<StatusCommandResult> StatusAsync(StatusCommandParameters? commandProperties = null)
+    public async Task<StatusCommandResult> StatusAsync(StatusCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<StatusCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<StatusCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Creates a new session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the information new session.</returns>
-    public async Task<NewCommandResult> NewSessionAsync(NewCommandParameters commandProperties)
+    public async Task<NewCommandResult> NewSessionAsync(NewCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<NewCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<NewCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Subscribes to events for this session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the subscription ID.</returns>
-    public async Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters commandProperties)
+    public async Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SubscribeCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<SubscribeCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Unsubscribes from events for this session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<UnsubscribeCommandResult> UnsubscribeAsync(UnsubscribeCommandParameters commandProperties)
+    public async Task<UnsubscribeCommandResult> UnsubscribeAsync(UnsubscribeCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<UnsubscribeCommandResult>(commandProperties).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<UnsubscribeCommandResult>(commandParameters).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Ends the current session.
     /// </summary>
-    /// <param name="commandProperties">The parameters for the command.</param>
+    /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EndCommandResult> EndAsync(EndCommandParameters? commandProperties = null)
+    public async Task<EndCommandResult> EndAsync(EndCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<EndCommandResult>(commandProperties ?? new()).ConfigureAwait(false);
+        return await this.Driver.ExecuteCommandAsync<EndCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
     }
 }
