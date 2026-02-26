@@ -13,6 +13,7 @@ namespace WebDriverBiDi;
 public class ObservableEvent<T>
     where T : WebDriverBiDiEventArgs
 {
+    private readonly object observerLock = new();
     private readonly Dictionary<string, EventObserver<T>> observers = [];
 
     /// <summary>
@@ -49,7 +50,16 @@ public class ObservableEvent<T>
     /// <summary>
     /// Gets the current number of observers that are observing this event.
     /// </summary>
-    public int CurrentObserverCount => this.observers.Count;
+    public int CurrentObserverCount
+    {
+        get
+        {
+            lock (this.observerLock)
+            {
+                return this.observers.Count;
+            }
+        }
+    }
 
     /// <summary>
     /// Adds a function to observe the event that takes an argument of type T and returns void.
@@ -97,14 +107,17 @@ public class ObservableEvent<T>
     /// </exception>
     public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None, string description = "")
     {
-        if (this.MaxObserverCount > 0 && this.observers.Count == this.MaxObserverCount)
+        lock (this.observerLock)
         {
-            throw new WebDriverBiDiException($"""This observable event only allows {this.MaxObserverCount} {(this.MaxObserverCount == 1 ? "handler" : "handlers")}.""");
-        }
+            if (this.MaxObserverCount > 0 && this.observers.Count == this.MaxObserverCount)
+            {
+                throw new WebDriverBiDiException($"""This observable event only allows {this.MaxObserverCount} {(this.MaxObserverCount == 1 ? "handler" : "handlers")}.""");
+            }
 
-        EventObserver<T> observer = new(this, handler, handlerOptions, description);
-        this.observers.Add(observer.Id, observer);
-        return observer;
+            EventObserver<T> observer = new(this, handler, handlerOptions, description);
+            this.observers.Add(observer.Id, observer);
+            return observer;
+        }
     }
 
     /// <summary>
@@ -113,7 +126,10 @@ public class ObservableEvent<T>
     /// <param name="observerId">The ID of the handler handling the event.</param>
     public void RemoveObserver(string observerId)
     {
-        this.observers.Remove(observerId);
+        lock (this.observerLock)
+        {
+            this.observers.Remove(observerId);
+        }
     }
 
     /// <summary>
@@ -123,7 +139,18 @@ public class ObservableEvent<T>
     /// <returns>The task object representing the asynchronous operation.</returns>
     public async Task NotifyObserversAsync(T notifyData)
     {
-        foreach (EventObserver<T> observer in this.observers.Values)
+        // Snapshot the observers under the lock so that iteration is safe
+        // even if observers are added or removed concurrently. The lock is
+        // released before invoking any handlers, so long-running handlers
+        // do not block observer registration. The copy is cheap because
+        // observer counts are typically very small (1–15 references).
+        EventObserver<T>[] snapshot;
+        lock (this.observerLock)
+        {
+            snapshot = [.. this.observers.Values];
+        }
+
+        foreach (EventObserver<T> observer in snapshot)
         {
             await observer.Notify(notifyData);
         }
@@ -135,6 +162,9 @@ public class ObservableEvent<T>
     /// <returns>A string that represents the current object.</returns>
     public override string ToString()
     {
-        return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", this.observers.Values)}";
+        lock (this.observerLock)
+        {
+            return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", this.observers.Values)}";
+        }
     }
 }
