@@ -1,4 +1,4 @@
-﻿// <copyright file="Connection.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="Connection.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -164,13 +164,19 @@ public class Connection
             throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
 
-        if (this.OnLogMessage.CurrentObserverCount > 0)
+        try
         {
-            await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug);
-        }
+            if (this.OnLogMessage.CurrentObserverCount > 0)
+            {
+                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug);
+            }
 
-        await this.SendWebSocketDataAsync(new ArraySegment<byte>(data)).ConfigureAwait(false);
-        this.dataSendSemaphore.Release();
+            await this.SendWebSocketDataAsync(new ArraySegment<byte>(data)).ConfigureAwait(false);
+        }
+        finally
+        {
+            this.dataSendSemaphore.Release();
+        }
     }
 
     /// <summary>
