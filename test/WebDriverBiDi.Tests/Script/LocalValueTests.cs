@@ -256,7 +256,7 @@ public class LocalValueTests
     public void TestCanSerializeDate()
     {
         DateTime actualValue = DateTime.Now;
-        string expectedValue = actualValue.ToString("YYYY-MM-ddTHH:mm:ss.fffZ");
+        string expectedValue = actualValue.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         LocalValue value = LocalValue.Date(actualValue);
         Assert.That(value.Value, Is.Not.Null);
         string json = JsonSerializer.Serialize(value);
@@ -267,7 +267,8 @@ public class LocalValueTests
             Assert.That(parsed, Contains.Key("type"));
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("date"));
             Assert.That(parsed, Contains.Key("value"));
-            Assert.That(parsed["value"]!.Value<string>(), Is.EqualTo(expectedValue));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Date));
+            Assert.That(parsed["value"]!.Value<DateTime>().ToString("yyyy-MM-ddTHH:mm:ss.fffZ"), Is.EqualTo(expectedValue));
         }
     }
 

@@ -87,7 +87,7 @@ public record LocalValue : ArgumentValue
             {
                 // Note that static methods creating DateTime values should
                 // not allow a null value in the argValue member.
-                return ((DateTime)this.Value!).ToString("YYYY-MM-ddTHH:mm:ss.fffZ");
+                return ((DateTime)this.Value!).ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
             }
 
             if (this.Type == "map" || this.Type == "object")
