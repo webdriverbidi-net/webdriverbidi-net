@@ -64,7 +64,7 @@ public sealed class EmulationModule : Module
     /// </summary>
     /// <param name="commandProperties">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<SetNetworkConditionsCommandResult> SetNetworkConditions(SetNetworkConditionsCommandParameters commandProperties)
+    public async Task<SetNetworkConditionsCommandResult> SetNetworkConditionsAsync(SetNetworkConditionsCommandParameters commandProperties)
     {
         return await this.Driver.ExecuteCommandAsync<SetNetworkConditionsCommandResult>(commandProperties).ConfigureAwait(false);
     }

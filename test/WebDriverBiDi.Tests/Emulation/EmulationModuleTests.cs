@@ -268,7 +268,7 @@ public class EmulationModuleTests
         await driver.StartAsync("ws:localhost");
         EmulationModule module = new(driver);
 
-        Task<SetNetworkConditionsCommandResult> task = module.SetNetworkConditions(new SetNetworkConditionsCommandParameters()
+        Task<SetNetworkConditionsCommandResult> task = module.SetNetworkConditionsAsync(new SetNetworkConditionsCommandParameters()
         {
             NetworkConditions = new NetworkConditionsOffline()
         });
