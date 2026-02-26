@@ -140,7 +140,10 @@ public class Connection
         // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket.
         // The finally block at the end of the processing loop will dispose of the ClientWebSocket object.
         this.clientTokenSource.Cancel();
-        this.dataReceiveTask?.Wait();
+        if (this.dataReceiveTask is not null)
+        {
+            await this.dataReceiveTask.ConfigureAwait(false);
+        }
         this.ConnectedUrl = string.Empty;
     }
 
