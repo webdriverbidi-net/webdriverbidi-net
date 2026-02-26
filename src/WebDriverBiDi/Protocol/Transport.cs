@@ -231,7 +231,17 @@ public class Transport
     /// <param name="eventName">The name of the event.</param>
     public virtual void RegisterEventMessage<T>(string eventName)
     {
-        this.eventMessageTypes[eventName] = typeof(EventMessage<T>);
+        this.AddEventMessageType(eventName, typeof(EventMessage<T>));
+    }
+
+    /// <summary>
+    /// Adds an event message type to the map of known event meessage types.
+    /// </summary>
+    /// <param name="eventName">The name of the event.</param>
+    /// <param name="eventMessageType">The type of data to be returned in the event.</param>
+    protected virtual void AddEventMessageType(string eventName, Type eventMessageType)
+    {
+        this.eventMessageTypes[eventName] = eventMessageType;
     }
 
     /// <summary>
@@ -481,10 +491,12 @@ public class Transport
             {
                 try
                 {
-                    // Deserialize will correctly throw if the type does not match, meaning
-                    // the eventMessageData variable can never be null.
-                    EventMessage? eventMessageData = message.Deserialize(eventMessageType, this.options) as EventMessage;
-                    await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData!));
+                    if (message.Deserialize(eventMessageType, this.options) is not EventMessage eventMessageData)
+                    {
+                        throw new WebDriverBiDiException($"Deserialization of event message returned null for event type {eventMessageType}");
+                    }
+
+                    await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData));
                     return true;
                 }
                 catch (Exception ex)

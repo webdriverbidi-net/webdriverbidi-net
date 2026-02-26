@@ -876,6 +876,53 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestTransportRaisesUnknownMessageEventForEventMessageDeserializingToNonEventMessageType()
+    {
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        string loggedEvent = string.Empty;
+        List<LogMessageEventArgs> logs = [];
+        CountdownEvent signaler = new(2);
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        transport.RegisterInvalidEventMessageType("protocol.event", typeof(object));
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        {
+            loggedEvent = e.Message;
+            signaler.Signal();
+            return Task.CompletedTask;
+        });
+        transport.OnLogMessage.AddObserver((e) =>
+        {
+            if (e.Level > WebDriverBiDiLogLevel.Trace)
+            {
+                logs.Add(e);
+                signaler.Signal();
+            }
+
+            return Task.CompletedTask;
+        });
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        bool eventRaised = signaler.Wait(TimeSpan.FromMilliseconds(100));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(eventRaised, Is.True);
+            Assert.That(loggedEvent, Is.EqualTo(json));
+            Assert.That(logs, Has.Count.EqualTo(1));
+            Assert.That(logs[0].Message, Contains.Substring("Deserialization of event message returned null"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Error));
+        }
+    }
+
+    [Test]
     public async Task TestTransportCanUseDefaultConnection()
     {
         ManualResetEvent connectionSyncEvent = new(false);

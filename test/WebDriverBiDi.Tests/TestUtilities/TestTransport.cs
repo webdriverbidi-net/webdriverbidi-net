@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.TestUtilities;
 
+using System.Reflection;
 using System.Threading.Tasks;
 using Protocol;
 using WebDriverBiDi;
@@ -54,5 +55,15 @@ public class TestTransport : Transport
     public Connection GetConnection()
     {
         return this.Connection;
+    }
+
+    /// <summary>
+    /// Registers an arbitrary type for an event name, bypassing the normal
+    /// EventMessage&lt;T&gt; wrapping. Used to test deserialization failure paths
+    /// where the deserialized type is not an EventMessage.
+    /// </summary>
+    public void RegisterInvalidEventMessageType(string eventName, Type type)
+    {
+        this.AddEventMessageType(eventName, type);
     }
 }
