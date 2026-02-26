@@ -42,7 +42,7 @@ public class Transport
     private PendingCommandCollection pendingCommands = new();
     private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
-    private bool isConnected;
+    private int isConnectedTypeSafeFlag = 0;
     private string terminationReason = "Normal shutdown";
 
     /// <summary>
@@ -134,13 +134,31 @@ public class Transport
     protected Connection Connection { get; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether this transport is connected to a connection.
+    /// Use this property to ensure thread-safe operations for checking connectivity.
+    /// </summary>
+    private bool IsConnected
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.isConnectedTypeSafeFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.isConnectedTypeSafeFlag, flagValue);
+        }
+    }
+
+    /// <summary>
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task ConnectAsync(string websocketUri)
     {
-        if (this.isConnected)
+        if (this.IsConnected)
         {
             throw new WebDriverBiDiException($"The transport is already connected to {this.Connection.ConnectedUrl}; you must disconnect before connecting to another URL");
         }
@@ -167,7 +185,7 @@ public class Transport
             await this.Connection.StartAsync(websocketUri).ConfigureAwait(false);
         }
 
-        this.isConnected = true;
+        this.IsConnected = true;
     }
 
     /// <summary>
@@ -193,7 +211,7 @@ public class Transport
             throw this.CreateTerminationException();
         }
 
-        if (!this.isConnected)
+        if (!this.IsConnected)
         {
             throw new WebDriverBiDiException("Transport must be connected to a remote end to execute commands.");
         }
@@ -285,7 +303,7 @@ public class Transport
 
         // Finally, mark the transport as disconnected, and throw collected
         // exceptions if the user has specified that behavior.
-        this.isConnected = false;
+        this.IsConnected = false;
         if (throwCollectedExceptions && this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect))
         {
             throw this.CreateTerminationException();
