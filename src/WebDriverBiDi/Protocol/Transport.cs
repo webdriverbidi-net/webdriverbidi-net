@@ -238,15 +238,8 @@ public class Transport
     /// </exception>
     protected virtual JsonElement DeserializeMessage(byte[] messageData)
     {
-        try
-        {
-            JsonDocument document = JsonDocument.Parse(messageData);
-            return document.RootElement;
-        }
-        catch
-        {
-            throw;
-        }
+        using JsonDocument document = JsonDocument.Parse(messageData);
+        return document.RootElement.Clone();
     }
 
     /// <summary>

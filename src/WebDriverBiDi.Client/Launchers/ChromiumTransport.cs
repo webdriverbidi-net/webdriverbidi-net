@@ -98,7 +98,8 @@ public class ChromiumTransport : Transport
                     string? payload = payloadElement.GetString();
                     if (payload is not null)
                     {
-                        return JsonDocument.Parse(payload).RootElement;
+                        using JsonDocument payloadDocument = JsonDocument.Parse(payload);
+                        return payloadDocument.RootElement.Clone();
                     }
                 }
             }
