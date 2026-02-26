@@ -122,4 +122,38 @@ public class UnhandledErrorCollectionTests()
             Assert.That(unhandledErrors.Exceptions[1], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("unexpected error"));
         }
     }
+
+    [Test]
+    public void TestSettingUnknownMessageBehaviorCollectsErrors()
+    {
+        UnhandledErrorCollection unhandledErrors = new()
+        {
+            UnknownMessageBehavior = TransportErrorBehavior.Collect
+        };
+        Assert.That(unhandledErrors.UnknownMessageBehavior, Is.EqualTo(TransportErrorBehavior.Collect));
+        unhandledErrors.AddUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException("unknown message"));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.True);
+            Assert.That(unhandledErrors.Exceptions, Has.Count.EqualTo(1));
+            Assert.That(unhandledErrors.Exceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("unknown message"));
+        }
+    }
+
+    [Test]
+    public void TestSettingEventHandlerExceptionBehaviorCollectsErrors()
+    {
+        UnhandledErrorCollection unhandledErrors = new()
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect
+        };
+        Assert.That(unhandledErrors.EventHandlerExceptionBehavior, Is.EqualTo(TransportErrorBehavior.Collect));
+        unhandledErrors.AddUnhandledError(UnhandledErrorType.EventHandlerException, new WebDriverBiDiException("event handler exception"));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect), Is.True);
+            Assert.That(unhandledErrors.Exceptions, Has.Count.EqualTo(1));
+            Assert.That(unhandledErrors.Exceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("event handler exception"));
+        }
+    }
 }

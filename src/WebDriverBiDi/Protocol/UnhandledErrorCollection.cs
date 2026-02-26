@@ -10,6 +10,7 @@ namespace WebDriverBiDi.Protocol;
 /// </summary>
 public class UnhandledErrorCollection
 {
+    private readonly object collectionLock = new();
     private readonly List<UnhandledError> unhandledErrors = [];
     private readonly Dictionary<UnhandledErrorType, TransportErrorBehavior> errorBehaviors = [];
 
@@ -27,25 +28,93 @@ public class UnhandledErrorCollection
     /// <summary>
     /// Gets or sets a value indicating the behavior for errors resulting from an improper protocol message.
     /// </summary>
-    public TransportErrorBehavior ProtocolErrorBehavior { get => this.errorBehaviors[UnhandledErrorType.ProtocolError]; set => this.errorBehaviors[UnhandledErrorType.ProtocolError] = value; }
+    public TransportErrorBehavior ProtocolErrorBehavior
+    {
+        get
+        {
+            lock (this.collectionLock)
+            {
+                return this.errorBehaviors[UnhandledErrorType.ProtocolError];
+            }
+        }
+
+        set
+        {
+            lock (this.collectionLock)
+            {
+                this.errorBehaviors[UnhandledErrorType.ProtocolError] = value;
+            }
+        }
+    }
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for errors resulting from a valid JSON message that
     /// corresponds to no defined protocol command response, error response, or event definition.
     /// </summary>
-    public TransportErrorBehavior UnknownMessageBehavior { get => this.errorBehaviors[UnhandledErrorType.UnknownMessage]; set => this.errorBehaviors[UnhandledErrorType.UnknownMessage] = value; }
+    public TransportErrorBehavior UnknownMessageBehavior
+    {
+        get
+        {
+            lock (this.collectionLock)
+            {
+                return this.errorBehaviors[UnhandledErrorType.UnknownMessage];
+            }
+        }
+
+        set
+        {
+            lock (this.collectionLock)
+            {
+                this.errorBehaviors[UnhandledErrorType.UnknownMessage] = value;
+            }
+        }
+    }
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for errors resulting from valid error responses
     /// that do not correspond to a command sent by the user.
     /// </summary>
-    public TransportErrorBehavior UnexpectedErrorBehavior { get => this.errorBehaviors[UnhandledErrorType.UnexpectedError]; set => this.errorBehaviors[UnhandledErrorType.UnexpectedError] = value; }
+    public TransportErrorBehavior UnexpectedErrorBehavior
+    {
+        get
+        {
+            lock (this.collectionLock)
+            {
+                return this.errorBehaviors[UnhandledErrorType.UnexpectedError];
+            }
+        }
+
+        set
+        {
+            lock (this.collectionLock)
+            {
+                this.errorBehaviors[UnhandledErrorType.UnexpectedError] = value;
+            }
+        }
+    }
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for errors resulting from unhandled exceptions
     /// in user-defined event handlers for protocol events.
     /// </summary>
-    public TransportErrorBehavior EventHandlerExceptionBehavior { get => this.errorBehaviors[UnhandledErrorType.EventHandlerException]; set => this.errorBehaviors[UnhandledErrorType.EventHandlerException] = value; }
+    public TransportErrorBehavior EventHandlerExceptionBehavior
+    {
+        get
+        {
+            lock (this.collectionLock)
+            {
+                return this.errorBehaviors[UnhandledErrorType.EventHandlerException];
+            }
+        }
+
+        set
+        {
+            lock (this.collectionLock)
+            {
+                this.errorBehaviors[UnhandledErrorType.EventHandlerException] = value;
+            }
+        }
+    }
 
     /// <summary>
     /// Gets the list of exceptions for the unhandled errors in the collection.
@@ -55,12 +124,15 @@ public class UnhandledErrorCollection
     {
         get
         {
-            if (this.unhandledErrors.Count == 0)
+            lock (this.collectionLock)
             {
-                throw new InvalidOperationException("No unhandled errors.");
-            }
+                if (this.unhandledErrors.Count == 0)
+                {
+                    throw new InvalidOperationException("No unhandled errors.");
+                }
 
-            return this.unhandledErrors.Select(error => error.Exception).ToList();
+                return this.unhandledErrors.Select(error => error.Exception).ToList();
+            }
         }
     }
 
@@ -71,12 +143,15 @@ public class UnhandledErrorCollection
     /// <param name="exception">The exception that causes the unhandled error.</param>
     public void AddUnhandledError(UnhandledErrorType errorType, Exception exception)
     {
-        if (this.errorBehaviors[errorType] == TransportErrorBehavior.Ignore)
+        lock (this.collectionLock)
         {
-            return;
-        }
+            if (this.errorBehaviors[errorType] == TransportErrorBehavior.Ignore)
+            {
+                return;
+            }
 
-        this.unhandledErrors.Add(new UnhandledError(errorType, exception));
+            this.unhandledErrors.Add(new UnhandledError(errorType, exception));
+        }
     }
 
     /// <summary>
@@ -84,7 +159,10 @@ public class UnhandledErrorCollection
     /// </summary>
     public void ClearUnhandledErrors()
     {
-        this.unhandledErrors.Clear();
+        lock (this.collectionLock)
+        {
+            this.unhandledErrors.Clear();
+        }
     }
 
     /// <summary>
@@ -99,9 +177,12 @@ public class UnhandledErrorCollection
             return false;
         }
 
-        List<UnhandledErrorType> behaviors = this.errorBehaviors
-            .Where(pair => pair.Value == errorBehavior)
-            .Select(pair => pair.Key).ToList();
-        return this.unhandledErrors.Count(error => behaviors.Contains(error.ErrorType)) > 0;
+        lock (this.collectionLock)
+        {
+            List<UnhandledErrorType> behaviors = this.errorBehaviors
+                .Where(pair => pair.Value == errorBehavior)
+                .Select(pair => pair.Key).ToList();
+            return this.unhandledErrors.Count(error => behaviors.Contains(error.ErrorType)) > 0;
+        }
     }
 }
