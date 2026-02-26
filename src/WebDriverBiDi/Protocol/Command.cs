@@ -16,7 +16,7 @@ public class Command
 {
     private readonly CommandParameters commandData;
     private readonly long commandId;
-    private readonly TaskCompletionSource<CommandResult> taskCompletionSource = new();
+    private readonly TaskCompletionSource<CommandResult> taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Command" /> class.
@@ -77,7 +77,7 @@ public class Command
 
         set
         {
-            Task.Run(() => this.taskCompletionSource.SetResult(value!)).ConfigureAwait(false);
+            this.taskCompletionSource.SetResult(value!);
         }
     }
 
