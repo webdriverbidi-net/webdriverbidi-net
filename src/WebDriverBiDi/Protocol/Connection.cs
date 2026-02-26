@@ -195,7 +195,7 @@ public class Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected virtual async Task SendWebSocketDataAsync(ArraySegment<byte> messageBuffer)
     {
-        await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, CancellationToken.None).ConfigureAwait(false);
+        await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, this.clientTokenSource.Token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -251,7 +251,7 @@ public class Connection
                     if (receiveResult.MessageType == WebSocketMessageType.Close && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.CloseSent)
                     {
                         await this.LogAsync($"Acknowledging Close frame received from server (client state: {this.client.State})");
-                        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", CancellationToken.None).ConfigureAwait(false);
+                        await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Acknowledge Close frame", cancellationToken).ConfigureAwait(false);
                     }
 
                     // Display text or binary data
