@@ -378,7 +378,31 @@ public class BiDiDriverTests
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
         await driver.StartAsync("ws:localhost");
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Result and thrown exception for command test.command with id 0 are both null"));
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Attempted to set a null result"));
+    }
+
+    [Test]
+    public async Task TestCanceledCommandThrows()
+    {
+        TestTransport transport = new(new TestConnection())
+        {
+            CancelCommand = true
+        };
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
+        await driver.StartAsync("ws:localhost");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("was canceled before a result was received"));
+    }
+
+    [Test]
+    public async Task TestUncompletedCommandThrows()
+    {
+        TestTransport transport = new(new TestConnection())
+        {
+            ReturnUncompletedCommand = true
+        };
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
+        await driver.StartAsync("ws:localhost");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("is unexpectedly null"));
     }
 
     [Test]

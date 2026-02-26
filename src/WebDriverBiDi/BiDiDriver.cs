@@ -226,12 +226,17 @@ public class BiDiDriver
 
         if (sentCommand.Result is null)
         {
-            if (sentCommand.ThrownException is null)
+            if (sentCommand.ThrownException is not null)
             {
-                throw new WebDriverBiDiException($"Result and thrown exception for command {command.MethodName} with id {sentCommand.CommandId} are both null");
+                throw sentCommand.ThrownException;
             }
 
-            throw sentCommand.ThrownException;
+            if (sentCommand.IsCanceled)
+            {
+                throw new WebDriverBiDiException($"Command {command.MethodName} with id {sentCommand.CommandId} was canceled before a result was received");
+            }
+
+            throw new WebDriverBiDiException($"Result for command {command.MethodName} with id {sentCommand.CommandId} is unexpectedly null");
         }
 
         CommandResult result = sentCommand.Result;

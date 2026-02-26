@@ -77,7 +77,15 @@ public class Command
 
         set
         {
-            this.taskCompletionSource.SetResult(value!);
+            if (value is null)
+            {
+                this.taskCompletionSource.TrySetException(
+                    new WebDriverBiDiException($"Attempted to set a null result on command {this.CommandName} with id {this.commandId}"));
+            }
+            else
+            {
+                this.taskCompletionSource.TrySetResult(value);
+            }
         }
     }
 
@@ -101,10 +109,16 @@ public class Command
         {
             if (value is not null)
             {
-                this.taskCompletionSource.SetException(value);
+                this.taskCompletionSource.TrySetException(value);
             }
         }
     }
+
+    /// <summary>
+    /// Gets a value indicating whether this command has been canceled.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsCanceled => this.taskCompletionSource.Task.IsCanceled;
 
     /// <summary>
     /// Waits for the command to complete or until the specified timeout elapses.
@@ -126,6 +140,6 @@ public class Command
     /// </summary>
     public virtual void Cancel()
     {
-        this.taskCompletionSource.SetCanceled();
+        this.taskCompletionSource.TrySetCanceled();
     }
 }

@@ -152,9 +152,106 @@ public class CommandTests
         Command command = new(1, commandParams);
         Assert.That(command.Result, Is.Null);
         Assert.That(command.ThrownException, Is.Null);
+        Assert.That(command.IsCanceled, Is.False);
         command.Cancel();
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
         Assert.That(command.Result, Is.Null);
         Assert.That(command.ThrownException, Is.Null);
+        Assert.That(command.IsCanceled, Is.True);
+    }
+
+    [Test]
+    public async Task TestSettingNullResultFaultsCommand()
+    {
+        string commandName = "module.command";
+        TestCommandParameters commandParams = new TestCommandParameters(commandName);
+        Command command = new(1, commandParams);
+
+        command.Result = null;
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(command.Result, Is.Null);
+        Assert.That(command.ThrownException, Is.Not.Null);
+        Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiException>());
+        Assert.That(command.ThrownException!.Message, Does.Contain("Attempted to set a null result"));
+        Assert.That(command.ThrownException!.Message, Does.Contain(commandName));
+        Assert.That(command.IsCanceled, Is.False);
+    }
+
+    [Test]
+    public async Task TestSettingResultAfterAlreadyCompletedDoesNotThrow()
+    {
+        string commandName = "module.command";
+        TestCommandParameters commandParams = new TestCommandParameters(commandName);
+        Command command = new(1, commandParams);
+
+        TestCommandResult firstResult = new();
+        command.Result = firstResult;
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(() => command.Result = new TestCommandResult(), Throws.Nothing);
+        Assert.That(command.Result, Is.EqualTo(firstResult with { }));
+    }
+
+    [Test]
+    public async Task TestSettingExceptionAfterAlreadyCompletedDoesNotThrow()
+    {
+        string commandName = "module.command";
+        TestCommandParameters commandParams = new TestCommandParameters(commandName);
+        Command command = new(1, commandParams);
+
+        TestCommandResult result = new();
+        command.Result = result;
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(() => command.ThrownException = new WebDriverBiDiException("late exception"), Throws.Nothing);
+        Assert.That(command.Result, Is.Not.Null);
+        Assert.That(command.ThrownException, Is.Null);
+    }
+
+    [Test]
+    public async Task TestCancelAfterAlreadyCompletedDoesNotThrow()
+    {
+        string commandName = "module.command";
+        TestCommandParameters commandParams = new TestCommandParameters(commandName);
+        Command command = new(1, commandParams);
+
+        TestCommandResult result = new();
+        command.Result = result;
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(() => command.Cancel(), Throws.Nothing);
+        Assert.That(command.Result, Is.Not.Null);
+        Assert.That(command.IsCanceled, Is.False);
+    }
+
+    [Test]
+    public async Task TestSettingResultAfterCancelDoesNotThrow()
+    {
+        string commandName = "module.command";
+        TestCommandParameters commandParams = new TestCommandParameters(commandName);
+        Command command = new(1, commandParams);
+
+        command.Cancel();
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(() => command.Result = new TestCommandResult(), Throws.Nothing);
+        Assert.That(command.Result, Is.Null);
+        Assert.That(command.IsCanceled, Is.True);
+    }
+
+    [Test]
+    public async Task TestSettingExceptionAfterCancelDoesNotThrow()
+    {
+        string commandName = "module.command";
+        TestCommandParameters commandParams = new TestCommandParameters(commandName);
+        Command command = new(1, commandParams);
+
+        command.Cancel();
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(() => command.ThrownException = new WebDriverBiDiException("late exception"), Throws.Nothing);
+        Assert.That(command.ThrownException, Is.Null);
+        Assert.That(command.IsCanceled, Is.True);
     }
 }
