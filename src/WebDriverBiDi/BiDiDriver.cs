@@ -24,7 +24,7 @@ using WebDriverBiDi.WebExtension;
 /// <summary>
 /// Object containing commands to drive a browser using the WebDriver BiDi protocol.
 /// </summary>
-public class BiDiDriver
+public class BiDiDriver : IAsyncDisposable
 {
     private const string EventReceivedEventName = "driver.eventReceived";
     private const string UnexpectedErrorReceivedEventName = "driver.unexpectedErrorReceived";
@@ -34,6 +34,7 @@ public class BiDiDriver
     private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
     private readonly Dictionary<string, Module> modules = [];
+    private bool disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.
@@ -180,6 +181,7 @@ public class BiDiDriver
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task StartAsync(string url)
     {
+        this.ThrowIfDisposed();
         await this.transport.ConnectAsync(url).ConfigureAwait(false);
     }
 
@@ -203,6 +205,7 @@ public class BiDiDriver
     public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command)
         where T : CommandResult
     {
+        this.ThrowIfDisposed();
         return await this.ExecuteCommandAsync<T>(command, this.defaultCommandWaitTimeout).ConfigureAwait(false);
     }
 
@@ -217,6 +220,7 @@ public class BiDiDriver
     public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command, TimeSpan commandTimeout)
         where T : CommandResult
     {
+        this.ThrowIfDisposed();
         Command sentCommand = await this.transport.SendCommandAsync(command).ConfigureAwait(false);
         bool commandCompleted = await sentCommand.WaitForCompletionAsync(commandTimeout).ConfigureAwait(false);
         if (!commandCompleted)
@@ -297,6 +301,46 @@ public class BiDiDriver
     public virtual void RegisterEvent<T>(string eventName)
     {
         this.transport.RegisterEventMessage<T>(eventName);
+    }
+
+    /// <summary>
+    /// Asynchronously releases the resources used by this driver instance.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await this.DisposeAsyncCore().ConfigureAwait(false);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Asynchronously releases the resources used by this driver instance.
+    /// Override this method in derived classes to add custom cleanup logic.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    protected virtual async ValueTask DisposeAsyncCore()
+    {
+        if (!this.disposed)
+        {
+            this.disposed = true;
+            try
+            {
+                await this.StopAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Suppress exceptions during disposal. StopAsync may throw if
+                // the driver has already been stopped or was never started.
+            }
+        }
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (this.disposed)
+        {
+            throw new ObjectDisposedException(this.GetType().FullName);
+        }
     }
 
     private async Task OnTransportEventReceived(EventReceivedEventArgs e)

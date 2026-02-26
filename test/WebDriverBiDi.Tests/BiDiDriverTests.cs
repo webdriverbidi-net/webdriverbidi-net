@@ -734,4 +734,99 @@ public class BiDiDriverTests
         Assert.That(parallelTasks[0].Result.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(240));
         Assert.That(parallelTasks[1].Result.Value, Is.EqualTo($"command result value for {commandName}"));
     }
+
+    [Test]
+    public async Task TestCanDisposeStartedDriver()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        Assert.That(async () => await driver.StartAsync("ws://localhost:5555"), Throws.InstanceOf<ObjectDisposedException>());
+    }
+
+    [Test]
+    public async Task TestCanDisposeDriverWithoutStarting()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.DisposeAsync();
+        Assert.That(async () => await driver.StartAsync("ws://localhost:5555"), Throws.InstanceOf<ObjectDisposedException>());
+    }
+
+    [Test]
+    public async Task TestDoubleDisposeDoesNotThrow()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        Assert.That(async () => await driver.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestStopThenDisposeDoesNotThrow()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.StopAsync();
+        Assert.That(async () => await driver.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestExecuteCommandAfterDisposeThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<ObjectDisposedException>());
+    }
+
+    [Test]
+    public async Task TestExecuteCommandWithTimeoutAfterDisposeThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command"), TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<ObjectDisposedException>());
+    }
+
+    [Test]
+    public async Task TestCanUseAwaitUsingPattern()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        string commandValue = string.Empty;
+        connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
+        {
+            string eventJson = """
+                               {
+                                 "type": "success",
+                                 "id": 1,
+                                 "result": {
+                                   "value": "command result value"
+                                 }
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(eventJson);
+        };
+
+        await using (BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport))
+        {
+            await driver.StartAsync("ws://localhost:5555");
+            TestCommandResult result = await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("module.command"));
+            commandValue = result.Value!;
+        }
+
+        Assert.That(commandValue, Is.EqualTo("command result value"));
+    }
 }
