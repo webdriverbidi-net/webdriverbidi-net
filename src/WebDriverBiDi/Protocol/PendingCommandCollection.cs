@@ -14,11 +14,12 @@ public class PendingCommandCollection
 {
     private readonly SemaphoreSlim commandAdditionSemaphore = new(1, 1);
     private readonly ConcurrentDictionary<long, Command> pendingCommands = new();
+    private int isAcceptingCommands = 1;
 
     /// <summary>
     /// Gets a value indicating whether this collection is accepting commands.
     /// </summary>
-    public bool IsAcceptingCommands { get; internal set; } = true;
+    public bool IsAcceptingCommands => Interlocked.CompareExchange(ref this.isAcceptingCommands, 0, 0) == 1;
 
     /// <summary>
     /// Gets the number of commands currently in the collection.
@@ -99,7 +100,7 @@ public class PendingCommandCollection
         await this.commandAdditionSemaphore.WaitAsync().ConfigureAwait(false);
         try
         {
-            this.IsAcceptingCommands = false;
+            Interlocked.Exchange(ref this.isAcceptingCommands, 0);
         }
         finally
         {
