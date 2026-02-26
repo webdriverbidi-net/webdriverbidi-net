@@ -82,6 +82,7 @@ public class Connection
             // replace that ClientWebSocket with a new one to allow for reuse of
             // the connection.
             this.client = new ClientWebSocket();
+            this.clientTokenSource.Dispose();
             this.clientTokenSource = new CancellationTokenSource();
         }
 
@@ -144,6 +145,7 @@ public class Connection
         {
             await this.dataReceiveTask.ConfigureAwait(false);
         }
+
         this.ConnectedUrl = string.Empty;
     }
 
@@ -199,7 +201,7 @@ public class Connection
     protected virtual async Task CloseClientWebSocketAsync()
     {
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-        CancellationTokenSource timeout = new(this.ShutdownTimeout);
+        using CancellationTokenSource timeout = new(this.ShutdownTimeout);
         try
         {
             // After this, the socket state which change to CloseSent
