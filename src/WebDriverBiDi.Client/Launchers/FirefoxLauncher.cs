@@ -154,6 +154,10 @@ public class FirefoxLauncher : BrowserLauncher
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
             bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
+            if (!launcherAvailable)
+            {
+                throw new BrowserNotLaunchedException($"Unable to launch Firefox browser. Browser process did not start within {this.InitializationTimeout.TotalSeconds} seconds.");
+            }
 
             this.WebSocketUrl = $"ws://localhost:{this.Port}/session";
         }

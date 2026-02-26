@@ -123,8 +123,8 @@ public class ChromeLauncher : BrowserLauncher
         get
         {
             List<string> args = [.. this.chromeArguments];
-            args.Add($"--disable-features=${string.Join(",", this.disabledFeatures)}");
-            args.Add($"--enable-features=${string.Join(",", this.enabledFeatures)}");
+            args.Add($"--disable-features={string.Join(",", this.disabledFeatures)}");
+            args.Add($"--enable-features={string.Join(",", this.enabledFeatures)}");
             args.Add($"--user-data-dir={this.userDataDirectory}");
             args.Add($"--remote-debugging-port={this.Port}");
             if (this.IsBrowserHeadless)
@@ -188,6 +188,10 @@ public class ChromeLauncher : BrowserLauncher
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
             bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
+            if (!launcherAvailable)
+            {
+                throw new BrowserNotLaunchedException($"Unable to launch Chrome browser. Browser process did not start within {this.InitializationTimeout.TotalSeconds} seconds.");
+            }
         }
         finally
         {

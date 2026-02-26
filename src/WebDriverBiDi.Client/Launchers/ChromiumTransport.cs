@@ -150,7 +150,6 @@ public class ChromiumTransport : Transport
             // Capture the session ID for the CDP session and the target ID of the created mapper tab.
             JsonElement result = document.RootElement.GetProperty("result");
             this.mapperTabTargetId = document.RootElement.GetProperty("result").GetProperty("targetId").GetString()!;
-            Console.WriteLine($"Created mapper tab with target id {this.mapperTabTargetId}");
         }
 
         if (!string.IsNullOrEmpty(this.mapperTabTargetId))
