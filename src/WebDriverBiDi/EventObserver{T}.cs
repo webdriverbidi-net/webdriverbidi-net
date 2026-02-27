@@ -81,6 +81,7 @@ public class EventObserver<T>
                 throw new WebDriverBiDiException("This observer already has a checkpoint set. It must be satisfied or unset before setting another.");
             }
 
+            this.synchronizationCounter.Dispose();
             this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
             this.IsCheckpointSet = true;
         }
@@ -127,6 +128,7 @@ public class EventObserver<T>
         lock (this.checkpointLock)
         {
             this.IsCheckpointSet = false;
+            this.synchronizationCounter.Dispose();
             Task[] capturedTasks = this.capturedTasks.ToArray();
             this.capturedTasks.Clear();
             return capturedTasks;
@@ -141,6 +143,7 @@ public class EventObserver<T>
         lock (this.checkpointLock)
         {
             this.IsCheckpointSet = false;
+            this.synchronizationCounter.Dispose();
         }
     }
 
