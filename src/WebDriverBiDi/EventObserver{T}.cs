@@ -9,7 +9,7 @@ namespace WebDriverBiDi;
 /// Implementation of an observer in the Observer pattern for events.
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
-public class EventObserver<T>
+public class EventObserver<T> : IDisposable
     where T : WebDriverBiDiEventArgs
 {
     private readonly object checkpointLock = new();
@@ -19,6 +19,7 @@ public class EventObserver<T>
     private readonly ObservableEvent<T> observableEvent;
     private readonly List<Task> capturedTasks = [];
     private CountdownEvent synchronizationCounter = new(0);
+    private bool isDisposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EventObserver{T}"/> class.
@@ -58,6 +59,16 @@ public class EventObserver<T>
     public void Unobserve()
     {
         this.observableEvent.RemoveObserver(this.Id);
+    }
+
+    /// <summary>
+    /// Removes this observer from its observable event and releases all resources.
+    /// Equivalent to calling <see cref="Unobserve"/> followed by resource cleanup.
+    /// </summary>
+    public void Dispose()
+    {
+        this.Dispose(true);
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -176,6 +187,28 @@ public class EventObserver<T>
                 this.capturedTasks.Add(executingTask);
                 this.synchronizationCounter.Signal();
             }
+        }
+    }
+
+    /// <summary>
+    /// Releases the resources used by this observer.
+    /// </summary>
+    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!this.isDisposed)
+        {
+            if (disposing)
+            {
+                this.Unobserve();
+                lock (this.checkpointLock)
+                {
+                    this.IsCheckpointSet = false;
+                    this.synchronizationCounter.Dispose();
+                }
+            }
+
+            this.isDisposed = true;
         }
     }
 }

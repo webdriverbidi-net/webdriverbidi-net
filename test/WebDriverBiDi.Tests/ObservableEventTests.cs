@@ -56,6 +56,50 @@ public class ObservableEventTests
     }
 
     [Test]
+    public async Task TestDisposeRemovesObserver()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        Assert.That(observedValue, Is.EqualTo("myValue1"));
+
+        observer.Dispose();
+        Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
+
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        Assert.That(observedValue, Is.EqualTo("myValue1"));
+    }
+
+    [Test]
+    public async Task TestUsingPatternRemovesObserver()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+
+        using (var observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue))
+        {
+            await testEventSource.RaiseTestEventAsync("myValue1");
+            Assert.That(observedValue, Is.EqualTo("myValue1"));
+            Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(1));
+        }
+
+        Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
+
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        Assert.That(observedValue, Is.EqualTo("myValue1"));
+    }
+
+    [Test]
+    public void TestDoubleDisposeDoesNotThrow()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.Dispose();
+        Assert.That(() => observer.Dispose(), Throws.Nothing);
+    }
+
+    [Test]
     public void TestCannotAddMoreThanMaxObservers()
     {
         TestEventSource testEventSource = new(1);
