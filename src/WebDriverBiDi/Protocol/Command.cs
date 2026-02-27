@@ -131,8 +131,16 @@ public class Command
         // returns the task that completes first. If that task is the task from
         // our TaskCompletionSource, the command completed. Otherwise, it timed
         // out.
-        Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, Task.Delay(timeout)).ConfigureAwait(false);
-        return completedTask == this.taskCompletionSource.Task;
+        CancellationTokenSource cancellationTokenSource = new();
+        Task timeoutTask = Task.Delay(timeout, cancellationTokenSource.Token);
+        Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, timeoutTask).ConfigureAwait(false);
+        bool commandTaskCompleted = completedTask == this.taskCompletionSource.Task;
+        if (commandTaskCompleted)
+        {
+            cancellationTokenSource.Cancel();
+        }
+
+        return commandTaskCompleted;
     }
 
     /// <summary>
