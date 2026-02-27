@@ -3,6 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
 
+namespace WebDriverBiDi.Browser;
+
 using System.Text.Json.Serialization;
 
 /// <summary>
