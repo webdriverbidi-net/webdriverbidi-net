@@ -50,7 +50,7 @@ public class EventObserver<T>
     /// <summary>
     /// Gets the internal unique identifier of this observer.
     /// </summary>
-    internal string Id { get; } = Guid.NewGuid().ToString();
+    public string Id { get; } = Guid.NewGuid().ToString();
 
     /// <summary>
     /// Stops observing the event.
