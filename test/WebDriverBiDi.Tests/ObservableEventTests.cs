@@ -106,7 +106,7 @@ public class ObservableEventTests
         string? observedValue = null;
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> handler = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
-        Assert.That(() => handler.SetCheckpoint(0), Throws.InstanceOf<ArgumentException>().With.Message.Contains("must be greater than 1"));
+        Assert.That(() => handler.SetCheckpoint(0), Throws.InstanceOf<ArgumentException>().With.Message.Contains("must be greater than 0"));
     }
 
     [Test]

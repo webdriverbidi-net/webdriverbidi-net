@@ -71,7 +71,7 @@ public class EventObserver<T>
     {
         if (numberOfNotifications < 1)
         {
-            throw new ArgumentException("Number of notifications must be greater than 1.", nameof(numberOfNotifications));
+            throw new ArgumentException("Number of notifications must be greater than 0.", nameof(numberOfNotifications));
         }
 
         lock (this.checkpointLock)
