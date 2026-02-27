@@ -305,6 +305,15 @@ public class Connection : IAsyncDisposable
                             }
                         }
                     }
+                    else
+                    {
+                        // A fragmented message was being assembled, but the socket
+                        // is no longer in the Open state or a Close frame arrived.
+                        // Discard the partial data to prevent it from corrupting a
+                        // subsequent message.
+                        memoryStream?.Dispose();
+                        memoryStream = null;
+                    }
                 }
             }
 
