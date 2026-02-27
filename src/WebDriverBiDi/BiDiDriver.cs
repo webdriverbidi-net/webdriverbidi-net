@@ -335,6 +335,8 @@ public class BiDiDriver : IAsyncDisposable
                 // Suppress exceptions during disposal. StopAsync may throw if
                 // the driver has already been stopped or was never started.
             }
+
+            await this.transport.DisposeAsync().ConfigureAwait(false);
         }
     }
 

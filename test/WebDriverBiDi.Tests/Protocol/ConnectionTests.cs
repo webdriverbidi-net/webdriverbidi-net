@@ -510,6 +510,48 @@ public class ConnectionTests
         await connection.StopAsync();
     }
 
+    [Test]
+    public void TestCanDisposeWithoutStarting()
+    {
+        Connection connection = new();
+        Assert.That(() => connection.Dispose(), Throws.Nothing);
+    }
+
+    [Test]
+    public void TestDoubleDisposeDoesNotThrow()
+    {
+        Connection connection = new();
+        connection.Dispose();
+        Assert.That(() => connection.Dispose(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestCanDisposeAfterStop()
+    {
+        Connection connection = new();
+        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await connection.StopAsync();
+        Assert.That(() => connection.Dispose(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestCanDisposeStartedConnectionAfterStop()
+    {
+        Connection connection = new();
+        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
+        string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.serverDataReceivedObserver = this.server.OnDataReceived.AddObserver(OnSocketDataReceived);
+
+        await connection.SendDataAsync("Hello world"u8.ToArray());
+        this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
+
+        await connection.StopAsync();
+        Assert.That(() => connection.Dispose(), Throws.Nothing);
+    }
+
     private void OnSocketDataReceived(ServerDataReceivedEventArgs e)
     {
         this.lastServerReceivedData = e.Data;

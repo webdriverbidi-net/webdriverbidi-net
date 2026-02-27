@@ -17,7 +17,7 @@ using WebDriverBiDi.JsonConverters;
 /// of the objects serialized or deserialized. Consumers of this class are expected to handle things like awaiting
 /// the response of a WebDriver BiDi command message.
 /// </summary>
-public class Transport
+public class Transport : IAsyncDisposable
 {
     private const string EventReceivedEventName = "transport.eventReceived";
     private const string ErrorReceivedEventName = "transport.errorReceived";
@@ -165,6 +165,7 @@ public class Transport
 
         if (!this.pendingCommands.IsAcceptingCommands)
         {
+            this.pendingCommands.Dispose();
             this.pendingCommands = new PendingCommandCollection();
         }
 
@@ -232,6 +233,16 @@ public class Transport
     public virtual void RegisterEventMessage<T>(string eventName)
     {
         this.AddEventMessageType(eventName, typeof(EventMessage<T>));
+    }
+
+    /// <summary>
+    /// Asynchronously releases the resources used by this <see cref="Transport"/>.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await this.DisposeAsyncCore().ConfigureAwait(false);
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -318,6 +329,28 @@ public class Transport
         {
             throw this.CreateTerminationException();
         }
+    }
+
+    /// <summary>
+    /// Asynchronously releases the resources used by this <see cref="Transport"/>.
+    /// Override this method in derived classes to add custom cleanup logic.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    protected virtual async ValueTask DisposeAsyncCore()
+    {
+        if (this.IsConnected)
+        {
+            try
+            {
+                await this.DisconnectAsync(false).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        this.pendingCommands.Dispose();
+        this.Connection.Dispose();
     }
 
     private async Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)

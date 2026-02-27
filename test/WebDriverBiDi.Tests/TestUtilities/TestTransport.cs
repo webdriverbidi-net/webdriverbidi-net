@@ -15,6 +15,10 @@ public class TestTransport : Transport
 
     public long LastTestCommandId => this.LastCommandId;
 
+    public bool IsDisposed { get; private set; }
+
+    public bool ThrowOnDisconnect { get; set; }
+
     public bool ReturnCustomValue { get; set; }
 
     public bool CancelCommand { get; set; }
@@ -65,5 +69,21 @@ public class TestTransport : Transport
     public void RegisterInvalidEventMessageType(string eventName, Type type)
     {
         this.AddEventMessageType(eventName, type);
+    }
+
+    protected override async Task DisconnectAsync(bool throwCollectedExceptions)
+    {
+        if (this.ThrowOnDisconnect)
+        {
+            throw new WebDriverBiDiException("Simulated disconnect failure");
+        }
+
+        await base.DisconnectAsync(throwCollectedExceptions).ConfigureAwait(false);
+    }
+
+    protected override async ValueTask DisposeAsyncCore()
+    {
+        this.IsDisposed = true;
+        await base.DisposeAsyncCore().ConfigureAwait(false);
     }
 }

@@ -10,7 +10,7 @@ using System.Collections.Concurrent;
 /// <summary>
 /// Object containing a thread-safe collection of pending commands.
 /// </summary>
-public class PendingCommandCollection
+public class PendingCommandCollection : IDisposable
 {
     private readonly SemaphoreSlim commandAdditionSemaphore = new(1, 1);
     private readonly ConcurrentDictionary<long, Command> pendingCommands = new();
@@ -105,6 +105,29 @@ public class PendingCommandCollection
         finally
         {
             this.commandAdditionSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Releases all resources used by this <see cref="PendingCommandCollection"/>.
+    /// </summary>
+    public void Dispose()
+    {
+        this.Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Releases the unmanaged resources used by this <see cref="PendingCommandCollection"/>
+    /// and optionally releases the managed resources.
+    /// </summary>
+    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources;
+    /// <see langword="false"/> to release only unmanaged resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            this.commandAdditionSemaphore.Dispose();
         }
     }
 }

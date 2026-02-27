@@ -93,4 +93,31 @@ public class PendingCommandCollectionTests
         await collection.CloseAsync();
         Assert.That(collection.IsAcceptingCommands, Is.False);
     }
+
+    [Test]
+    public void TestCanDispose()
+    {
+        PendingCommandCollection collection = new();
+        Assert.That(() => collection.Dispose(), Throws.Nothing);
+    }
+
+    [Test]
+    public void TestDoubleDisposeDoesNotThrow()
+    {
+        PendingCommandCollection collection = new();
+        collection.Dispose();
+        Assert.That(() => collection.Dispose(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestCanDisposeAfterUse()
+    {
+        Command testCommand = new(1, new TestCommandParameters("module.command"));
+        PendingCommandCollection collection = new();
+        await collection.AddPendingCommandAsync(testCommand);
+        collection.RemovePendingCommand(1, out _);
+        await collection.CloseAsync();
+        collection.Clear();
+        Assert.That(() => collection.Dispose(), Throws.Nothing);
+    }
 }

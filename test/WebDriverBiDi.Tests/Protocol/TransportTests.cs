@@ -1312,4 +1312,72 @@ public class TransportTests
         Assert.That(logs, Has.None.Matches<LogMessageEventArgs>(
             log => log.Message.Contains("Timed out waiting for message processing to complete during shutdown")));
     }
+
+    [Test]
+    public async Task TestCanDisposeWithoutConnecting()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        Assert.That(async () => await transport.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestCanDisposeAfterConnectAndDisconnect()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+        await transport.DisconnectAsync();
+        Assert.That(async () => await transport.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestCanDisposeWhileConnected()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+        Assert.That(async () => await transport.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestDoubleDisposeDoesNotThrow()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+        await transport.DisposeAsync();
+        Assert.That(async () => await transport.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestCanDisposeDefaultTransport()
+    {
+        Transport transport = new();
+        Assert.That(async () => await transport.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestDisposeDisposesOldPendingCommandsAfterReconnect()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+        await transport.DisconnectAsync();
+
+        await transport.ConnectAsync("ws:localhost");
+        await transport.DisconnectAsync();
+
+        Assert.That(async () => await transport.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestDisposeSuppressesDisconnectException()
+    {
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+        transport.ThrowOnDisconnect = true;
+        Assert.That(async () => await transport.DisposeAsync(), Throws.Nothing);
+    }
 }

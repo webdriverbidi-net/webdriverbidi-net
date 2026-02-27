@@ -829,4 +829,27 @@ public class BiDiDriverTests
 
         Assert.That(commandValue, Is.EqualTo("command result value"));
     }
+
+    [Test]
+    public async Task TestDisposeDisposesTransport()
+    {
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        Assert.That(transport.IsDisposed, Is.False);
+        await driver.DisposeAsync();
+        Assert.That(transport.IsDisposed, Is.True);
+    }
+
+    [Test]
+    public async Task TestDisposeDisposesTransportWithoutStarting()
+    {
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(transport.IsDisposed, Is.False);
+        await driver.DisposeAsync();
+        Assert.That(transport.IsDisposed, Is.True);
+    }
 }
