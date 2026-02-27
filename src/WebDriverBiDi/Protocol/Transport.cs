@@ -381,7 +381,7 @@ public class Transport : IAsyncDisposable
         }
 
         this.pendingCommands.Dispose();
-        this.Connection.Dispose();
+        await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
     }
 

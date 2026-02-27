@@ -511,33 +511,33 @@ public class ConnectionTests
     }
 
     [Test]
-    public void TestCanDisposeWithoutStarting()
+    public async Task TestCanDisposeAsyncWithoutStarting()
     {
         Connection connection = new();
-        Assert.That(() => connection.Dispose(), Throws.Nothing);
+        Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
     }
 
     [Test]
-    public void TestDoubleDisposeDoesNotThrow()
+    public async Task TestDoubleDisposeAsyncDoesNotThrow()
     {
         Connection connection = new();
-        connection.Dispose();
-        Assert.That(() => connection.Dispose(), Throws.Nothing);
+        await connection.DisposeAsync();
+        Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
     }
 
     [Test]
-    public async Task TestCanDisposeAfterStop()
+    public async Task TestCanDisposeAsyncAfterStop()
     {
         Connection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{this.server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.StopAsync();
-        Assert.That(() => connection.Dispose(), Throws.Nothing);
+        Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
     }
 
     [Test]
-    public async Task TestCanDisposeStartedConnectionAfterStop()
+    public async Task TestCanDisposeAsyncStartedConnectionAfterStop()
     {
         Connection connection = new();
         connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
@@ -549,7 +549,7 @@ public class ConnectionTests
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
 
         await connection.StopAsync();
-        Assert.That(() => connection.Dispose(), Throws.Nothing);
+        Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
     }
 
     private void OnSocketDataReceived(ServerDataReceivedEventArgs e)

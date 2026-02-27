@@ -13,7 +13,7 @@ using System.Text;
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end.
 /// </summary>
-public class Connection : IDisposable
+public class Connection : IAsyncDisposable
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
     private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
@@ -189,11 +189,12 @@ public class Connection : IDisposable
     }
 
     /// <summary>
-    /// Releases all resources used by this <see cref="Connection"/>.
+    /// Asynchronously releases the resources used by this <see cref="Connection"/>.
     /// </summary>
-    public void Dispose()
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
     {
-        this.Dispose(true);
+        await this.DisposeAsyncCore().ConfigureAwait(false);
         GC.SuppressFinalize(this);
     }
 
@@ -208,19 +209,16 @@ public class Connection : IDisposable
     }
 
     /// <summary>
-    /// Releases the unmanaged resources used by this <see cref="Connection"/>
-    /// and optionally releases the managed resources.
+    /// Asynchronously releases the resources used by this <see cref="Connection"/>.
+    /// Override this method in derived classes to add custom async cleanup logic.
     /// </summary>
-    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources;
-    /// <see langword="false"/> to release only unmanaged resources.</param>
-    protected virtual void Dispose(bool disposing)
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    protected virtual ValueTask DisposeAsyncCore()
     {
-        if (disposing)
-        {
-            this.dataSendSemaphore.Dispose();
-            this.clientTokenSource.Dispose();
-            this.client.Dispose();
-        }
+        this.dataSendSemaphore.Dispose();
+        this.clientTokenSource.Dispose();
+        this.client.Dispose();
+        return default;
     }
 
     /// <summary>
