@@ -250,27 +250,13 @@ public sealed class BrowsingContextModule : Module
 
     private async Task OnContextCreatedAsync(EventInfo<BrowsingContextInfo> eventData)
     {
-        // Special case here. The specification indicates that the parameters
-        // for this event are a BrowsingContextInfo object, so rather than
-        // duplicate the properties to directly deserialize the
-        // BrowsingContextEventArgs instance, the protocol transport will
-        // deserialize to a BrowsingContextInfo, then use that here to create
-        // the appropriate EventArgs instance.
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        BrowsingContextEventArgs eventArgs = eventData.ToEventArgs<BrowsingContextEventArgs>();
+        BrowsingContextEventArgs eventArgs = eventData.ToEventArgs(info => new BrowsingContextEventArgs(info));
         await this.OnContextCreated.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnContextDestroyedAsync(EventInfo<BrowsingContextInfo> eventData)
     {
-        // Special case here. The specification indicates that the parameters
-        // for this event are a BrowsingContextInfo object, so rather than
-        // duplicate the properties to directly deserialize the
-        // BrowsingContextEventArgs instance, the protocol transport will
-        // deserialize to a BrowsingContextInfo, then use that here to create
-        // the appropriate EventArgs instance.
-        BrowsingContextEventArgs eventArgs = eventData.ToEventArgs<BrowsingContextEventArgs>();
+        BrowsingContextEventArgs eventArgs = eventData.ToEventArgs(info => new BrowsingContextEventArgs(info));
         await this.OnContextDestroyed.NotifyObserversAsync(eventArgs);
     }
 

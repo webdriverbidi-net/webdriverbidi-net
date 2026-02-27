@@ -39,12 +39,7 @@ public sealed class LogModule : Module
 
     private async Task OnEntryAddedAsync(EventInfo<LogEntry> eventData)
     {
-        // Special case here. The specification indicates that the parameters
-        // for this event are a LogEntry object, so rather than duplicate the
-        // properties to directly deserialize the EntryAddedEventArgs instance,
-        // the protocol transport will deserialize to a LogEntry, then use that
-        // here to create the appropriate EventArgs instance.
-        EntryAddedEventArgs eventArgs = eventData.ToEventArgs<EntryAddedEventArgs>();
+        EntryAddedEventArgs eventArgs = eventData.ToEventArgs(entry => new EntryAddedEventArgs(entry));
         await this.OnEntryAdded.NotifyObserversAsync(eventArgs);
     }
 }

@@ -69,15 +69,7 @@ public sealed class InputModule : Module
 
     private async Task OnFileDialogOpenedAsync(EventInfo<FileDialogInfo> eventData)
     {
-        // Special case here. The specification indicates that the parameters
-        // for this event are a FileDialogInfo object, so rather than
-        // duplicate the properties to directly deserialize the
-        // FileDialogOpenedEventArgs instance, the protocol transport will
-        // deserialize to a FileDialogInfo, then use that here to create
-        // the appropriate EventArgs instance.
-        // Note that the base class for a protocol module should not allow
-        // eventData to be any other type than the expected type.
-        FileDialogOpenedEventArgs eventArgs = eventData.ToEventArgs<FileDialogOpenedEventArgs>();
+        FileDialogOpenedEventArgs eventArgs = eventData.ToEventArgs((info) => new FileDialogOpenedEventArgs(info));
         await this.OnFileDialogOpened.NotifyObserversAsync(eventArgs);
     }
 }

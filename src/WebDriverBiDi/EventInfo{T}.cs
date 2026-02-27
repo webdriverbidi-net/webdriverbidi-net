@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// Class containing information used in the invocation of an event invoker.
 /// </summary>
@@ -33,7 +35,25 @@ public class EventInfo<T>
     public ReceivedDataDictionary AdditionalData { get; }
 
     /// <summary>
+    /// Creates an object derived from WebDriverBiDiEventArgs using a factory function.
+    /// This overload avoids reflection and is safe for use in AOT and trimmed applications.
+    /// </summary>
+    /// <typeparam name="TEventArgs">A type derived from WebDriverBiDiEventArgs.</typeparam>
+    /// <param name="factory">A function that creates a TEventArgs instance from the event data.</param>
+    /// <returns>The object containing the information about the event.</returns>
+    public TEventArgs ToEventArgs<TEventArgs>(Func<T, TEventArgs> factory)
+        where TEventArgs : WebDriverBiDiEventArgs
+    {
+        TEventArgs result = factory(this.EventData);
+        result.AdditionalData = this.AdditionalData;
+        return result;
+    }
+
+    /// <summary>
     /// Creates an object derived from WebDriverBiDiEventArgs which contains information about an event.
+    /// When T and TEventArgs are different types, this method uses reflection to locate a public
+    /// constructor on TEventArgs that accepts an argument of type T. Prefer the overload accepting
+    /// a factory function for AOT and trimming compatibility.
     /// </summary>
     /// <typeparam name="TEventArgs">
     /// A type derived from WebDriverBiDiEventArgs. The type must be the same as type T of this class,
@@ -41,19 +61,7 @@ public class EventInfo<T>
     /// </typeparam>
     /// <returns>The object containing the information about the event.</returns>
     /// <exception cref="WebDriverBiDiException">
-    /// Thrown when either:
-    /// <list type="bulleted">
-    ///   <item>
-    ///     <description>
-    ///       The type of TEventArgs is not the same type as T
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///       The type TEventArgs does not have a public constructor that takes an argument of type T
-    ///     </description>
-    ///   </item>
-    /// </list>
+    /// Thrown when the type of TEventArgs is not the same type as T.
     /// </exception>
     public TEventArgs ToEventArgs<TEventArgs>()
         where TEventArgs : WebDriverBiDiEventArgs
@@ -63,32 +71,6 @@ public class EventInfo<T>
         {
             result = this.EventData as TEventArgs;
         }
-        else
-        {
-            // We are trying to create a new instance of TEventArgs here using a public
-            // constructor that takes an argument of type T. To do so, we will rely on
-            // the convenience of Activator.CreateInstance(). However, in the unlikely
-            // event that performance becomes an issue, we can create a dynamic lambda
-            // method and invoke it directly, which is known to be more performant in
-            // high-throughput situations. It is unlikely we will need this optimization,
-            // but the implementation is provided below for reference.
-            // ConstructorInfo constructorInfo = typeof(TEventArgs).GetConstructor(new Type[] { typeof(T) });
-            // if (constructorInfo is not null)
-            // {
-            //     ParameterExpression ctorArgExpression = Expression.Parameter(typeof(T), "eventData");
-            //     NewExpression ctorExpression = Expression.New(constructorInfo, ctorArgExpression);
-            //     Expression<Func<T, TEventArgs>> lambdaExpression = Expression.Lambda<Func<T, TEventArgs>>(ctorExpression, ctorArgExpression);
-            //     Func<T, TEventArgs> invoker = lambdaExpression.Compile();
-            //     result = invoker(this.EventData);
-            // }
-            try
-            {
-                result = Activator.CreateInstance(typeof(TEventArgs), this.EventData) as TEventArgs;
-            }
-            catch (MissingMethodException)
-            {
-            }
-        }
 
         if (result is null)
         {
@@ -96,6 +78,6 @@ public class EventInfo<T>
         }
 
         result.AdditionalData = this.AdditionalData;
-        return result!;
+        return result;
     }
 }

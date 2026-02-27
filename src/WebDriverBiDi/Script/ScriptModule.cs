@@ -113,12 +113,7 @@ public sealed class ScriptModule : Module
 
     private async Task OnRealmCreatedAsync(EventInfo<RealmInfo> eventData)
     {
-        // Special case here. The specification indicates that the parameters
-        // for this event are a RealmInfo object, so rather than duplicate
-        // the properties to directly deserialize the RealmCreatedEventArgs
-        // instance, the protocol transport will deserialize to a RealmInfo,
-        // then use that here to create the appropriate EventArgs instance.
-        RealmCreatedEventArgs eventArgs = eventData.ToEventArgs<RealmCreatedEventArgs>();
+        RealmCreatedEventArgs eventArgs = eventData.ToEventArgs(info => new RealmCreatedEventArgs(info));
         await this.OnRealmCreated.NotifyObserversAsync(eventArgs);
     }
 
