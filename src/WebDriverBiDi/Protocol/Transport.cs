@@ -423,7 +423,15 @@ public class Transport : IAsyncDisposable
         {
             while (this.queue.Reader.TryRead(out byte[]? incomingMessage))
             {
-                await this.ProcessMessageAsync(incomingMessage);
+                try
+                {
+                    await this.ProcessMessageAsync(incomingMessage);
+                }
+                catch (Exception ex)
+                {
+                    await this.LogAsync($"Unexpected error in message processing loop: {ex.Message}", WebDriverBiDiLogLevel.Error);
+                    this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, "Unexpected error in message processing loop");
+                }
             }
         }
     }

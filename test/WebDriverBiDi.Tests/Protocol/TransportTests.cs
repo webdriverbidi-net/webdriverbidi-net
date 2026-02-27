@@ -1430,4 +1430,91 @@ public class TransportTests
                    && log.Level == WebDriverBiDiLogLevel.Warn
                    && log.ComponentName == "Transport"));
     }
+
+    [Test]
+    public async Task TestMessageProcessingLoopContinuesAfterUnhandledException()
+    {
+        string commandName = "module.command";
+        ManualResetEventSlim syncEvent = new(false);
+        List<LogMessageEventArgs> logs = [];
+
+        TestConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+        };
+        transport.OnLogMessage.AddObserver((e) =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+        await transport.ConnectAsync("ws:localhost");
+
+        transport.DeserializeThrowCount = 1;
+
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
+
+        await connection.RaiseDataReceivedEventAsync("this message will cause the exception");
+
+        string responseJson = """
+                              {
+                                "type": "success",
+                                "id": 1,
+                                "result": {
+                                  "value": "response value"
+                                }
+                              }
+                              """;
+        _ = Task.Run(async () =>
+        {
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        });
+
+        await command.WaitForCompletionAsync(TimeSpan.FromSeconds(1));
+
+        Assert.That(command.Result, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(command.Result.IsError, Is.False);
+            Assert.That(command.Result, Is.TypeOf<TestCommandResult>());
+            Assert.That(logs, Has.Some.Matches<LogMessageEventArgs>(
+                log => log.Message.Contains("Unexpected error in message processing loop")
+                       && log.Message.Contains("Simulated deserialization failure")
+                       && log.Level == WebDriverBiDiLogLevel.Error));
+        }
+    }
+
+    [Test]
+    public async Task TestMessageProcessingLoopExceptionCapturedAsUnhandledError()
+    {
+        ManualResetEventSlim syncEvent = new(false);
+
+        TestConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+        };
+        transport.OnLogMessage.AddObserver((e) =>
+        {
+            if (e.Level == WebDriverBiDiLogLevel.Error)
+            {
+                syncEvent.Set();
+            }
+
+            return Task.CompletedTask;
+        });
+        await transport.ConnectAsync("ws:localhost");
+
+        transport.DeserializeThrowCount = 1;
+        await connection.RaiseDataReceivedEventAsync("this message will cause the exception");
+        syncEvent.Wait(TimeSpan.FromSeconds(1));
+
+        Assert.That(
+            async () => await transport.DisconnectAsync(),
+            Throws.InstanceOf<WebDriverBiDiException>()
+                .With.Message.Contains("Normal shutdown")
+                .And.InnerException.InstanceOf<InvalidOperationException>()
+                .And.InnerException.Message.Contains("Simulated deserialization failure"));
+    }
 }

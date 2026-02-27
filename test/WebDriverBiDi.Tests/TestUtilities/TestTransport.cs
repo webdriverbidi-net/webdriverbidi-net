@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.TestUtilities;
 
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Protocol;
 using WebDriverBiDi;
@@ -8,6 +9,7 @@ using WebDriverBiDi;
 public class TestTransport : Transport
 {
     private TimeSpan messageProcessingDelay = TimeSpan.Zero;
+    private int deserializeThrowCount;
 
     public TestTransport(Connection connection) : base(connection)
     {
@@ -28,6 +30,13 @@ public class TestTransport : Transport
     public TimeSpan MessageProcessingDelay { get => this.messageProcessingDelay; set => this.messageProcessingDelay = value; }
 
     public CommandResult? CustomReturnValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of remaining calls to <see cref="DeserializeMessage"/>
+    /// that should throw an <see cref="InvalidOperationException"/> instead of
+    /// deserializing normally. Each throwing call decrements the counter.
+    /// </summary>
+    public int DeserializeThrowCount { get => this.deserializeThrowCount; set => this.deserializeThrowCount = value; }
 
     public override async Task<Command> SendCommandAsync(CommandParameters commandParameters)
     {
@@ -69,6 +78,16 @@ public class TestTransport : Transport
     public void RegisterInvalidEventMessageType(string eventName, Type type)
     {
         this.AddEventMessageType(eventName, type);
+    }
+
+    protected override JsonElement DeserializeMessage(byte[] messageData)
+    {
+        if (Interlocked.Decrement(ref this.deserializeThrowCount) >= 0)
+        {
+            throw new InvalidOperationException("Simulated deserialization failure");
+        }
+
+        return base.DeserializeMessage(messageData);
     }
 
     protected override async Task DisconnectAsync(bool throwCollectedExceptions)
