@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Protocol;
 
+using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using PinchHitter;
@@ -550,6 +551,64 @@ public class ConnectionTests
 
         await connection.StopAsync();
         Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestConnectionDiscardsPartialFragmentedMessageOnClose()
+    {
+        ManualResetEventSlim closeReturned = new(false);
+        TestConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+        };
+        connection.ReceiveHandler = async (buffer, token, callNum) =>
+        {
+            if (callNum == 1)
+            {
+                return await Task.FromResult(new WebSocketReceiveResult(10, WebSocketMessageType.Text, endOfMessage: false));
+            }
+
+            if (callNum == 2)
+            {
+                return await Task.FromResult(new WebSocketReceiveResult(0, WebSocketMessageType.Close, endOfMessage: true));
+            }
+
+            closeReturned.Set();
+            await Task.Delay(Timeout.Infinite, token);
+            throw new OperationCanceledException(token);
+        };
+        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        closeReturned.Wait(TimeSpan.FromSeconds(3));
+        await connection.StopAsync();
+    }
+
+    [Test]
+    public async Task TestConnectionCleansUpPartialFragmentedMessageOnException()
+    {
+        ManualResetEventSlim exceptionThrown = new(false);
+        TestConnection connection = new()
+        {
+            BypassStart = false,
+            BypassStop = false,
+        };
+        connection.ReceiveHandler = (buffer, token, callNum) =>
+        {
+            if (callNum == 1)
+            {
+                return Task.FromResult(new WebSocketReceiveResult(10, WebSocketMessageType.Text, endOfMessage: false));
+            }
+
+            exceptionThrown.Set();
+            throw new OperationCanceledException();
+        };
+        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        exceptionThrown.Wait(TimeSpan.FromSeconds(3));
+        await connection.StopAsync();
     }
 
     private void OnSocketDataReceived(ServerDataReceivedEventArgs e)

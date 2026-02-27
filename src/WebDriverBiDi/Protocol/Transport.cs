@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -27,9 +28,7 @@ public class Transport : IAsyncDisposable
 
     private readonly JsonSerializerOptions options = new()
     {
-        TypeInfoResolver = JsonSerializer.IsReflectionEnabledByDefault
-            ? new DefaultJsonTypeInfoResolver()
-            : WebDriverBiDiJsonSerializerContext.Default,
+        TypeInfoResolver = CreateTypeInfoResolver(),
     };
 
     private readonly ConcurrentDictionary<string, Type> eventMessageTypes = [];
@@ -395,6 +394,14 @@ public class Transport : IAsyncDisposable
         this.pendingCommands.Dispose();
         await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
+    }
+
+    [ExcludeFromCodeCoverage]
+    private static IJsonTypeInfoResolver CreateTypeInfoResolver()
+    {
+        return JsonSerializer.IsReflectionEnabledByDefault
+            ? new DefaultJsonTypeInfoResolver()
+            : WebDriverBiDiJsonSerializerContext.Default;
     }
 
     private async Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)

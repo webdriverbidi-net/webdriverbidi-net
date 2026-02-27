@@ -143,13 +143,13 @@ public class Connection : IAsyncDisposable
         }
 
         // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket.
-        // The finally block at the end of the processing loop will dispose of the ClientWebSocket object.
         this.clientTokenSource.Cancel();
         if (this.dataReceiveTask is not null)
         {
             await this.dataReceiveTask.ConfigureAwait(false);
         }
 
+        this.client.Dispose();
         this.ConnectedUrl = string.Empty;
     }
 
@@ -209,6 +209,17 @@ public class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Asynchronously receives data from the underlying WebSocket of this connection.
+    /// </summary>
+    /// <param name="buffer">The buffer to receive the data into.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <returns>A task representing the asynchronous operation, with a result containing the receive result.</returns>
+    protected virtual async Task<WebSocketReceiveResult> ReceiveWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
+    {
+        return await this.client.ReceiveAsync(buffer, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Asynchronously releases the resources used by this <see cref="Connection"/>.
     /// Override this method in derived classes to add custom async cleanup logic.
     /// </summary>
@@ -264,7 +275,7 @@ public class Connection : IAsyncDisposable
                 // Task running this method, so we will forego use of a semaphore to serialize such
                 // access. If there is a use case where this could happen, we will resolve it at that
                 // time.
-                WebSocketReceiveResult receiveResult = await this.client.ReceiveAsync(buffer, cancellationToken).ConfigureAwait(false);
+                WebSocketReceiveResult receiveResult = await this.ReceiveWebSocketDataAsync(buffer, cancellationToken).ConfigureAwait(false);
 
                 // If the token is cancelled while ReceiveAsync is blocking, the socket state changes to aborted and it can't be used
                 if (!cancellationToken.IsCancellationRequested)
@@ -330,7 +341,6 @@ public class Connection : IAsyncDisposable
         finally
         {
             memoryStream?.Dispose();
-            this.client.Dispose();
         }
     }
 

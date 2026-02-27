@@ -1,10 +1,13 @@
 namespace WebDriverBiDi.TestUtilities;
 
+using System.Net.WebSockets;
 using System.Text;
 using WebDriverBiDi.Protocol;
 
 public class TestConnection : Connection
 {
+    private int receiveCallCount;
+
     public bool BypassStart { get; set; } = true;
 
     public bool BypassStop { get; set; } = true;
@@ -16,6 +19,8 @@ public class TestConnection : Connection
     public TimeSpan? DataSendDelay { get; set; }
 
     public TaskCompletionSource? StartBarrier { get; set; }
+
+    public Func<ArraySegment<byte>, CancellationToken, int, Task<WebSocketReceiveResult>>? ReceiveHandler { get; set; }
 
     public event EventHandler? DataSendStarting;
 
@@ -87,6 +92,17 @@ public class TestConnection : Connection
 
         this.OnDataSendComplete();
         return result;
+    }
+
+    protected override async Task<WebSocketReceiveResult> ReceiveWebSocketDataAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
+    {
+        int currentCall = Interlocked.Increment(ref this.receiveCallCount);
+        if (this.ReceiveHandler is not null)
+        {
+            return await this.ReceiveHandler(buffer, cancellationToken, currentCall);
+        }
+
+        return await base.ReceiveWebSocketDataAsync(buffer, cancellationToken);
     }
 
     protected override Task CloseClientWebSocketAsync()
