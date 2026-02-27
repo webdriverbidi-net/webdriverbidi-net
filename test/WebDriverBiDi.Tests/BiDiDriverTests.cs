@@ -852,4 +852,25 @@ public class BiDiDriverTests
         await driver.DisposeAsync();
         Assert.That(transport.IsDisposed, Is.True);
     }
+
+    [Test]
+    public async Task TestDisposeLogsExceptionFromStopAsync()
+    {
+        List<LogMessageEventArgs> logs = [];
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        driver.OnLogMessage.AddObserver((e) =>
+        {
+            logs.Add(e);
+        });
+        transport.ThrowOnDisconnect = true;
+        await driver.DisposeAsync();
+        Assert.That(logs, Has.Some.Matches<LogMessageEventArgs>(
+            log => log.Message.Contains("Unexpected exception during disposal")
+                   && log.Message.Contains("Simulated disconnect failure")
+                   && log.Level == WebDriverBiDiLogLevel.Warn
+                   && log.ComponentName == "BiDiDriver"));
+    }
 }

@@ -344,8 +344,9 @@ public class Transport : IAsyncDisposable
             {
                 await this.DisconnectAsync(false).ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn);
             }
         }
 

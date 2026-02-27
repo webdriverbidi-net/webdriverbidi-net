@@ -1380,4 +1380,25 @@ public class TransportTests
         transport.ThrowOnDisconnect = true;
         Assert.That(async () => await transport.DisposeAsync(), Throws.Nothing);
     }
+
+    [Test]
+    public async Task TestDisposeLogsExceptionFromDisconnect()
+    {
+        List<LogMessageEventArgs> logs = [];
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        transport.OnLogMessage.AddObserver((e) =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+        await transport.ConnectAsync("ws:localhost");
+        transport.ThrowOnDisconnect = true;
+        await transport.DisposeAsync();
+        Assert.That(logs, Has.Some.Matches<LogMessageEventArgs>(
+            log => log.Message.Contains("Unexpected exception during disposal")
+                   && log.Message.Contains("Simulated disconnect failure")
+                   && log.Level == WebDriverBiDiLogLevel.Warn
+                   && log.ComponentName == "Transport"));
+    }
 }

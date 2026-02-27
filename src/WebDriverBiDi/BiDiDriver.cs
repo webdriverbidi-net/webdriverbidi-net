@@ -336,10 +336,13 @@ public class BiDiDriver : IAsyncDisposable
             {
                 await this.StopAsync().ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Suppress exceptions during disposal. StopAsync may throw if
-                // the driver has already been stopped or was never started.
+                await this.OnLogMessage.NotifyObserversAsync(
+                    new LogMessageEventArgs(
+                        $"Unexpected exception during disposal: {ex.Message}",
+                        WebDriverBiDiLogLevel.Warn,
+                        "BiDiDriver"));
             }
 
             await this.transport.DisposeAsync().ConfigureAwait(false);
