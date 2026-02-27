@@ -178,7 +178,7 @@ public class Transport : IAsyncDisposable
         this.unhandledErrors.ClearUnhandledErrors();
 
         // Reset the command counter for each connection.
-        this.nextCommandId = 0;
+        Interlocked.Exchange(ref this.nextCommandId, 0);
         this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
         if (!this.Connection.IsActive)
         {
