@@ -35,7 +35,7 @@ public class BiDiDriver : IAsyncDisposable
     private readonly Transport transport;
     private readonly Dictionary<string, Module> modules = [];
     private readonly Dictionary<string, EventInvoker> eventInvokers = [];
-    private bool disposed;
+    private int isDisposedFlag = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.
@@ -174,6 +174,12 @@ public class BiDiDriver : IAsyncDisposable
     /// Gets the web extension module as described in the WebDriver BiDi protocol.
     /// </summary>
     public WebExtensionModule WebExtension => this.GetModule<WebExtensionModule>(WebExtensionModule.WebExtensionModuleName);
+
+    /// <summary>
+    /// Gets a value indicating whether this driver is disposed.
+    /// Use this property to ensure thread-safe operations for checking disposal state.
+    /// </summary>
+    protected bool IsDisposed => Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
 
     /// <summary>
     /// Asynchronously starts the communication with the remote end of the WebDriver BiDi protocol.
@@ -323,9 +329,9 @@ public class BiDiDriver : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
-        if (!this.disposed)
+        if (!this.IsDisposed)
         {
-            this.disposed = true;
+            this.SetDisposed();
             try
             {
                 await this.StopAsync().ConfigureAwait(false);
@@ -340,9 +346,18 @@ public class BiDiDriver : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Marks this <see cref="BiDiDriver"/> as disposed. Use this method to ensure
+    /// thread-safe operations for setting object being disposed.
+    /// </summary>
+    protected void SetDisposed()
+    {
+        Interlocked.Exchange(ref this.isDisposedFlag, 1);
+    }
+
     private void ThrowIfDisposed()
     {
-        if (this.disposed)
+        if (this.IsDisposed)
         {
             throw new ObjectDisposedException(this.GetType().FullName);
         }
