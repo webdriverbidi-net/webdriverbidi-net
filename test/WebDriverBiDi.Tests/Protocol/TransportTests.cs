@@ -1517,4 +1517,55 @@ public class TransportTests
                 .And.InnerException.InstanceOf<InvalidOperationException>()
                 .And.InnerException.Message.Contains("Simulated deserialization failure"));
     }
+
+    [Test]
+    public async Task TestCancelCommandRemovesFromPendingAndCancelsCommand()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"));
+        Assert.That(command.IsCanceled, Is.False);
+
+        transport.CancelCommand(command);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(command.IsCanceled, Is.True);
+            Assert.That(command.Result, Is.Null);
+        }
+    }
+
+    [Test]
+    public async Task TestCancelCommandIsIdempotent()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"));
+        transport.CancelCommand(command);
+        Assert.That(() => transport.CancelCommand(command), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestCancelCommandPreventsLateResponseFromSettingResult()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        Command command = await transport.SendCommandAsync(new TestCommandParameters("module.command"));
+        transport.CancelCommand(command);
+
+        string responseJson = $$$"""{"type":"success","id":{{{command.CommandId}}},"result":{"parameterName":"parameterValue"}}""";
+        await connection.RaiseDataReceivedEventAsync(responseJson);
+        await Task.Delay(50);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(command.IsCanceled, Is.True);
+            Assert.That(command.Result, Is.Null);
+        }
+    }
 }

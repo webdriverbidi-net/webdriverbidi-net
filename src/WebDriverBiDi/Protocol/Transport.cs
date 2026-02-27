@@ -236,6 +236,17 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Cancels a pending command and removes it from the pending command collection.
+    /// If the command has already completed or been removed, this method is a safe no-op.
+    /// </summary>
+    /// <param name="command">The command to cancel.</param>
+    public virtual void CancelCommand(Command command)
+    {
+        command.Cancel();
+        this.pendingCommands.RemovePendingCommand(command.CommandId, out _);
+    }
+
+    /// <summary>
     /// Registers an event message to be recognized when received from the connection.
     /// </summary>
     /// <typeparam name="T">The type of data to be returned in the event.</typeparam>

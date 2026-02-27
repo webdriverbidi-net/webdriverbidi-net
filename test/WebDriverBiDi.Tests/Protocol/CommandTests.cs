@@ -179,6 +179,22 @@ public class CommandTests
     }
 
     [Test]
+    public async Task TestWaitForCompletionReturnsFalseOnTimeout()
+    {
+        TestCommandParameters commandParams = new TestCommandParameters("module.command");
+        Command command = new(1, commandParams);
+
+        bool completed = await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(completed, Is.False);
+            Assert.That(command.Result, Is.Null);
+            Assert.That(command.ThrownException, Is.Null);
+            Assert.That(command.IsCanceled, Is.False);
+        }
+    }
+
+    [Test]
     public async Task TestSettingResultAfterAlreadyCompletedDoesNotThrow()
     {
         string commandName = "module.command";

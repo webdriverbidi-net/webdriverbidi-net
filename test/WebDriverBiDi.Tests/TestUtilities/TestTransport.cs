@@ -23,7 +23,7 @@ public class TestTransport : Transport
 
     public bool ReturnCustomValue { get; set; }
 
-    public bool CancelCommand { get; set; }
+    public bool ShouldCancelCommand { get; set; }
 
     public bool ReturnUncompletedCommand { get; set; }
 
@@ -45,7 +45,7 @@ public class TestTransport : Transport
             return new TestCommand(LastCommandId, commandParameters);
         }
 
-        if (this.CancelCommand)
+        if (this.ShouldCancelCommand)
         {
             Command returnedCommand = new Command(LastCommandId, commandParameters);
             returnedCommand.Cancel();

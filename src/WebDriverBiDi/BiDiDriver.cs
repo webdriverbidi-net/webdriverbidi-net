@@ -233,6 +233,7 @@ public class BiDiDriver : IAsyncDisposable
         bool commandCompleted = await sentCommand.WaitForCompletionAsync(commandTimeout).ConfigureAwait(false);
         if (!commandCompleted)
         {
+            this.transport.CancelCommand(sentCommand);
             throw new WebDriverBiDiTimeoutException($"Timed out executing command {command.MethodName} after {commandTimeout.TotalMilliseconds} milliseconds");
         }
 

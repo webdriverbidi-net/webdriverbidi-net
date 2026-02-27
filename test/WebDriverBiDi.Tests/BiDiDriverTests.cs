@@ -386,7 +386,7 @@ public class BiDiDriverTests
     {
         TestTransport transport = new(new TestConnection())
         {
-            CancelCommand = true
+            ShouldCancelCommand = true
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
         await driver.StartAsync("ws:localhost");
@@ -411,6 +411,22 @@ public class BiDiDriverTests
         BiDiDriver driver = new(TimeSpan.Zero, new Transport(new TestConnection()));
         await driver.StartAsync("ws://localhost:5555");
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiTimeoutException>().With.Message.Contains("Timed out executing command test.command"));
+    }
+
+    [Test]
+    public async Task TestTimedOutCommandIgnoresLateResponse()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(1), transport);
+        await driver.StartAsync("ws://localhost:5555");
+
+        Assert.That(
+            async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")),
+            Throws.InstanceOf<WebDriverBiDiTimeoutException>());
+
+        string lateResponse = """{"type":"success","id":1,"result":{"parameterName":"parameterValue"}}""";
+        Assert.That(async () => await connection.RaiseDataReceivedEventAsync(lateResponse), Throws.Nothing);
     }
 
     [Test]
