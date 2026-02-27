@@ -15,6 +15,8 @@ public class TestConnection : Connection
 
     public TimeSpan? DataSendDelay { get; set; }
 
+    public TaskCompletionSource? StartBarrier { get; set; }
+
     public event EventHandler? DataSendStarting;
 
     public event EventHandler<TestConnectionDataSentEventArgs>? DataSendComplete;
@@ -29,16 +31,17 @@ public class TestConnection : Connection
         await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "TestConnection"));
     }
 
-    public override Task StartAsync(string url)
+    public override async Task StartAsync(string url)
     {
         this.ConnectedUrl = url;
-        if (this.BypassStart)
+        if (this.StartBarrier is not null)
         {
-            return Task.CompletedTask;
+            await this.StartBarrier.Task.ConfigureAwait(false);
         }
-        else
+
+        if (!this.BypassStart)
         {
-            return base.StartAsync(url);
+            await base.StartAsync(url).ConfigureAwait(false);
         }
     }
 

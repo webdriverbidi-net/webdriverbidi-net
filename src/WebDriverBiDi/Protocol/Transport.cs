@@ -33,6 +33,7 @@ public class Transport : IAsyncDisposable
 
     private readonly Dictionary<string, Type> eventMessageTypes = [];
     private readonly UnhandledErrorCollection unhandledErrors = new();
+    private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
     private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {
         SingleReader = true,
@@ -158,35 +159,43 @@ public class Transport : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task ConnectAsync(string websocketUri)
     {
-        if (this.IsConnected)
+        await this.connectDisconnectSemaphore.WaitAsync().ConfigureAwait(false);
+        try
         {
-            throw new WebDriverBiDiException($"The transport is already connected to {this.Connection.ConnectedUrl}; you must disconnect before connecting to another URL");
+            if (this.IsConnected)
+            {
+                throw new WebDriverBiDiException($"The transport is already connected to {this.Connection.ConnectedUrl}; you must disconnect before connecting to another URL");
+            }
+
+            if (!this.pendingCommands.IsAcceptingCommands)
+            {
+                this.pendingCommands.Dispose();
+                this.pendingCommands = new PendingCommandCollection();
+            }
+
+            this.queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
+            {
+                SingleReader = true,
+                SingleWriter = true,
+            });
+
+            this.unhandledErrors.ClearUnhandledErrors();
+
+            // Reset the command counter for each connection.
+            Interlocked.Exchange(ref this.nextCommandId, 0);
+            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
+            if (!this.Connection.IsActive)
+            {
+                // Allow for the possibility of the connection to already being opened.
+                await this.Connection.StartAsync(websocketUri).ConfigureAwait(false);
+            }
+
+            this.IsConnected = true;
         }
-
-        if (!this.pendingCommands.IsAcceptingCommands)
+        finally
         {
-            this.pendingCommands.Dispose();
-            this.pendingCommands = new PendingCommandCollection();
+            this.connectDisconnectSemaphore.Release();
         }
-
-        this.queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
-        {
-            SingleReader = true,
-            SingleWriter = true,
-        });
-
-        this.unhandledErrors.ClearUnhandledErrors();
-
-        // Reset the command counter for each connection.
-        Interlocked.Exchange(ref this.nextCommandId, 0);
-        this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
-        if (!this.Connection.IsActive)
-        {
-            // Allow for the possibility of the connection to already being opened.
-            await this.Connection.StartAsync(websocketUri).ConfigureAwait(false);
-        }
-
-        this.IsConnected = true;
     }
 
     /// <summary>
@@ -295,39 +304,60 @@ public class Transport : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected virtual async Task DisconnectAsync(bool throwCollectedExceptions)
     {
-        // Close the pending command collection to further addition of commands,
-        // and stop the connection from receiving further communication traffic.
-        await this.pendingCommands.CloseAsync().ConfigureAwait(false);
-        await this.Connection.StopAsync().ConfigureAwait(false);
-
-        // Mark the incoming message queue as complete for writing, indicating
-        // no further messages will be written to the queue. Existing messages
-        // currently in the queue, however should still be processed. Then,
-        // wait for the incoming message queue to consume the remaining messages
-        // already in the queue. Note that having all items consumed from the
-        // queue does not imply that processing of all items has completed; that
-        // must be awaited separately.
-        this.queue.Writer.Complete();
-        await this.queue.Reader.Completion;
-
-        // Clear the pending command collection. This will also cancel any tasks
-        // associated with the remaining pending commands. Then wait for the
-        // message processor to complete processing of the messages received from
-        // the message queue, but with a timeout to prevent hanging if an
-        // in-process event handler is stuck.
-        this.pendingCommands.Clear();
-        Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, Task.Delay(this.ShutdownTimeout)).ConfigureAwait(false);
-        if (completedTask != this.messageQueueProcessingTask)
+        // Fast-path guard: if not connected, there is nothing to disconnect.
+        // This check runs before acquiring the semaphore to prevent a deadlock
+        // when an event handler processed during shutdown calls SendCommandAsync,
+        // which in turn calls DisconnectAsync on the thread that already holds
+        // the semaphore.
+        if (!this.IsConnected)
         {
-            await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn);
+            return;
         }
 
-        // Finally, mark the transport as disconnected, and throw collected
-        // exceptions if the user has specified that behavior.
-        this.IsConnected = false;
-        if (throwCollectedExceptions && this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect))
+        await this.connectDisconnectSemaphore.WaitAsync().ConfigureAwait(false);
+        try
         {
-            throw this.CreateTerminationException();
+            // Mark disconnected before performing teardown so that any
+            // re-entrant calls (e.g., from event handlers still executing
+            // during shutdown) see the transport as disconnected and
+            // short-circuit rather than attempting a redundant disconnect.
+            this.IsConnected = false;
+
+            // Close the pending command collection to further addition of commands,
+            // and stop the connection from receiving further communication traffic.
+            await this.pendingCommands.CloseAsync().ConfigureAwait(false);
+            await this.Connection.StopAsync().ConfigureAwait(false);
+
+            // Mark the incoming message queue as complete for writing, indicating
+            // no further messages will be written to the queue. Existing messages
+            // currently in the queue, however should still be processed. Then,
+            // wait for the incoming message queue to consume the remaining messages
+            // already in the queue. Note that having all items consumed from the
+            // queue does not imply that processing of all items has completed; that
+            // must be awaited separately.
+            this.queue.Writer.Complete();
+            await this.queue.Reader.Completion;
+
+            // Clear the pending command collection. This will also cancel any tasks
+            // associated with the remaining pending commands. Then wait for the
+            // message processor to complete processing of the messages received from
+            // the message queue, but with a timeout to prevent hanging if an
+            // in-process event handler is stuck.
+            this.pendingCommands.Clear();
+            Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, Task.Delay(this.ShutdownTimeout)).ConfigureAwait(false);
+            if (completedTask != this.messageQueueProcessingTask)
+            {
+                await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn);
+            }
+
+            if (throwCollectedExceptions && this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect))
+            {
+                throw this.CreateTerminationException();
+            }
+        }
+        finally
+        {
+            this.connectDisconnectSemaphore.Release();
         }
     }
 
@@ -352,6 +382,7 @@ public class Transport : IAsyncDisposable
 
         this.pendingCommands.Dispose();
         this.Connection.Dispose();
+        this.connectDisconnectSemaphore.Dispose();
     }
 
     private async Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)

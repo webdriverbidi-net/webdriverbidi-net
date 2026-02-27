@@ -953,6 +953,35 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestConcurrentConnectAsyncCallsAreSerialized()
+    {
+        TaskCompletionSource startBarrier = new();
+        TestConnection connection = new()
+        {
+            StartBarrier = startBarrier
+        };
+        Transport transport = new(connection);
+
+        Task firstConnect = transport.ConnectAsync("ws://localhost:1234");
+        Assert.That(firstConnect.IsCompleted, Is.False);
+
+        Task secondConnect = transport.ConnectAsync("ws://localhost:5678");
+
+        startBarrier.SetResult();
+        await firstConnect;
+
+        Assert.That(async () => await secondConnect, Throws.InstanceOf<WebDriverBiDiException>().With.Message.StartsWith("The transport is already connected"));
+    }
+
+    [Test]
+    public void TestDisconnectWhenNotConnectedDoesNotThrow()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        Assert.That(async () => await transport.DisconnectAsync(), Throws.Nothing);
+    }
+
+    [Test]
     public async Task TestTransportDisconnectWithPendingIncomingMessagesWillProcess()
     {
         string receivedName = string.Empty;
