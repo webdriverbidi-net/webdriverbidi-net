@@ -34,6 +34,7 @@ public class BiDiDriver : IAsyncDisposable
     private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
     private readonly Dictionary<string, Module> modules = [];
+    private readonly Dictionary<string, EventInvoker> eventInvokers = [];
     private bool disposed;
 
     /// <summary>
@@ -298,8 +299,10 @@ public class BiDiDriver : IAsyncDisposable
     /// </summary>
     /// <typeparam name="T">The type of data that will be raised by the event.</typeparam>
     /// <param name="eventName">The name of the event to raise.</param>
-    public virtual void RegisterEvent<T>(string eventName)
+    /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
+    public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
+        this.eventInvokers[eventName] = new EventInvoker<T>(eventInvoker);
         this.transport.RegisterEventMessage<T>(eventName);
     }
 
@@ -345,6 +348,11 @@ public class BiDiDriver : IAsyncDisposable
 
     private async Task OnTransportEventReceived(EventReceivedEventArgs e)
     {
+        if (this.eventInvokers.TryGetValue(e.EventName, out EventInvoker? invoker))
+        {
+            await invoker.InvokeEventAsync(e.EventData!, e.AdditionalData);
+        }
+
         await this.OnEventReceived.NotifyObserversAsync(e);
     }
 

@@ -1,5 +1,6 @@
 namespace WebDriverBiDi;
 
+using System.Globalization;
 using TestUtilities;
 using PinchHitter;
 using WebDriverBiDi.Browser;
@@ -12,7 +13,6 @@ using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Storage;
 using WebDriverBiDi.Permissions;
-using System.Globalization;
 using WebDriverBiDi.WebExtension;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Emulation;
@@ -149,7 +149,7 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.RegisterEvent<TestEventArgs>(eventName);
+        driver.RegisterEvent<TestEventArgs>(eventName, (e) => Task.CompletedTask);
         driver.OnEventReceived.AddObserver((e) =>
         {
             receivedEvent = e.EventName;
@@ -193,7 +193,7 @@ public class BiDiDriverTests
             MessageProcessingDelay = TimeSpan.FromMilliseconds(100)
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.RegisterEvent<TestEventArgs>(eventName);
+        driver.RegisterEvent<TestEventArgs>(eventName, (e) => Task.CompletedTask);
         driver.OnEventReceived.AddObserver((e) =>
         {
             receivedEvent = e.EventName;

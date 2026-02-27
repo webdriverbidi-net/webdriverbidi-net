@@ -12,8 +12,6 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 public abstract class Module
 {
-    private readonly Dictionary<string, EventInvoker> asyncEventInvokers = [];
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Module"/> class.
     /// </summary>
@@ -21,7 +19,6 @@ public abstract class Module
     protected Module(BiDiDriver driver)
     {
         this.Driver = driver;
-        this.Driver.OnEventReceived.AddObserver(this.OnDriverEventReceived);
     }
 
     /// <summary>
@@ -42,15 +39,6 @@ public abstract class Module
     /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
     protected virtual void RegisterAsyncEventInvoker<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
-        this.asyncEventInvokers[eventName] = new EventInvoker<T>(eventInvoker);
-        this.Driver.RegisterEvent<T>(eventName);
-    }
-
-    private async Task OnDriverEventReceived(EventReceivedEventArgs e)
-    {
-        if (this.asyncEventInvokers.TryGetValue(e.EventName, out EventInvoker? eventInvoker))
-        {
-            await eventInvoker.InvokeEventAsync(e.EventData!, e.AdditionalData);
-        }
+        this.Driver.RegisterEvent<T>(eventName, eventInvoker);
     }
 }
