@@ -210,8 +210,6 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(RemoveUserContextCommandParameters))]
 [JsonSerializable(typeof(SetClientWindowStateCommandParameters))]
 [JsonSerializable(typeof(SetDownloadBehaviorCommandParameters))]
-[JsonSerializable(typeof(DownloadBehaviorAllowed))]
-[JsonSerializable(typeof(DownloadBehaviorDenied))]
 [JsonSerializable(typeof(UserContextInfo))]
 
 // ── BrowsingContext module ──
