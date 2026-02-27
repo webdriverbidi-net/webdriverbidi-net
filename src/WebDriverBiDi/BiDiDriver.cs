@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using System.Collections.Concurrent;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
@@ -33,8 +34,8 @@ public class BiDiDriver : IAsyncDisposable
 
     private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
-    private readonly Dictionary<string, Module> modules = [];
-    private readonly Dictionary<string, EventInvoker> eventInvokers = [];
+    private readonly ConcurrentDictionary<string, Module> modules = [];
+    private readonly ConcurrentDictionary<string, EventInvoker> eventInvokers = [];
     private int isDisposedFlag = 0;
 
     /// <summary>

@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -31,7 +32,7 @@ public class Transport : IAsyncDisposable
             : WebDriverBiDiJsonSerializerContext.Default,
     };
 
-    private readonly Dictionary<string, Type> eventMessageTypes = [];
+    private readonly ConcurrentDictionary<string, Type> eventMessageTypes = [];
     private readonly UnhandledErrorCollection unhandledErrors = new();
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
     private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
