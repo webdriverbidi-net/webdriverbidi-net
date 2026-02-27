@@ -24,7 +24,7 @@ public class ScriptTargetJsonConverter : JsonConverter<Target>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override Target? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        JsonDocument doc = JsonDocument.ParseValue(ref reader);
+        using JsonDocument doc = JsonDocument.ParseValue(ref reader);
         JsonElement rootElement = doc.RootElement;
         if (rootElement.ValueKind != JsonValueKind.Object)
         {

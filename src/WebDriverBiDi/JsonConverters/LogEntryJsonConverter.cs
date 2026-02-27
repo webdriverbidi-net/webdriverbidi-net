@@ -26,7 +26,7 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
     public override LogEntry? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         LogEntry? entry;
-        JsonDocument doc = JsonDocument.ParseValue(ref reader);
+        using JsonDocument doc = JsonDocument.ParseValue(ref reader);
         JsonElement rootElement = doc.RootElement;
         if (rootElement.ValueKind != JsonValueKind.Object)
         {

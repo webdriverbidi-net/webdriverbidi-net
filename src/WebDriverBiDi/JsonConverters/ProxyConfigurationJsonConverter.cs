@@ -24,8 +24,8 @@ public class ProxyConfigurationJsonConverter : JsonConverter<ProxyConfiguration>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override ProxyConfiguration? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        JsonDocument doc = JsonDocument.ParseValue(ref reader);
-        JsonElement rootElement = doc.RootElement;
+        using JsonDocument doc = JsonDocument.ParseValue(ref reader);
+        JsonElement rootElement = doc.RootElement.Clone();
         if (rootElement.ValueKind != JsonValueKind.Object)
         {
             throw new JsonException($"Proxy JSON must be an object, but was {rootElement.ValueKind}");

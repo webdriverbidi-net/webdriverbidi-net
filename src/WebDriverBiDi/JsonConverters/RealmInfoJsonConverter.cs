@@ -25,7 +25,7 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
     public override RealmInfo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         RealmInfo? realmInfo;
-        JsonDocument doc = JsonDocument.ParseValue(ref reader);
+        using JsonDocument doc = JsonDocument.ParseValue(ref reader);
         JsonElement rootElement = doc.RootElement;
         if (rootElement.ValueKind != JsonValueKind.Object)
         {
