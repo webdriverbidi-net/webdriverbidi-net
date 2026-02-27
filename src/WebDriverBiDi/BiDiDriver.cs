@@ -41,7 +41,7 @@ public class BiDiDriver : IAsyncDisposable
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.
     /// </summary>
     public BiDiDriver()
-        : this(Timeout.InfiniteTimeSpan, new Transport())
+        : this(TimeSpan.FromMinutes(5), new Transport())
     {
     }
 
