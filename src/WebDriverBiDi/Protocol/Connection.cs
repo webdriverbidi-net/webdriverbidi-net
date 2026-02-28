@@ -91,7 +91,7 @@ public class Connection : IAsyncDisposable
         {
             // Since we've already ruled out closed or aborted sockets in the above
             // code, ClientWebSocket in any state other than none is already connected.
-            throw new WebDriverBiDiException($"The WebSocket is already connected to {this.ConnectedUrl}; call the Stop method to disconnect before calling Start");
+            throw new WebDriverBiDiConnectionException($"The WebSocket is already connected to {this.ConnectedUrl}; call the Stop method to disconnect before calling Start");
         }
 
         await this.LogAsync($"Opening connection to URL {url}");
@@ -119,7 +119,7 @@ public class Connection : IAsyncDisposable
         initializationStopwatch.Stop();
         if (!connected)
         {
-            throw new TimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
+            throw new WebDriverBiDiTimeoutException($"Could not connect to remote WebSocket server within {this.StartupTimeout.TotalSeconds} seconds");
         }
 
         this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync().ConfigureAwait(false));
@@ -162,7 +162,7 @@ public class Connection : IAsyncDisposable
     {
         if (!this.IsActive)
         {
-            throw new WebDriverBiDiException("The WebSocket has not been initialized; you must call the Start method before sending data");
+            throw new WebDriverBiDiConnectionException("The WebSocket has not been initialized; you must call the Start method before sending data");
         }
 
         // Only one send operation at a time can be active on a ClientWebSocket instance,

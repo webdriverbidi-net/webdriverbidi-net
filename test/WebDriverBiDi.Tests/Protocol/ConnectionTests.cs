@@ -58,7 +58,7 @@ public class ConnectionTests
         {
             StartupTimeout = TimeSpan.FromMilliseconds(250)
         };
-        Assert.That(async () => await connection.StartAsync($"ws://localhost:{port}"), Throws.InstanceOf<TimeoutException>().With.Message.Contains($"{0.25} seconds"));
+        Assert.That(async () => await connection.StartAsync($"ws://localhost:{port}"), Throws.InstanceOf<WebDriverBiDiTimeoutException>().With.Message.Contains($"{0.25} seconds"));
     }
 
     [Test]

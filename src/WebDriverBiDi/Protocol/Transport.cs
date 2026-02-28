@@ -164,7 +164,7 @@ public class Transport : IAsyncDisposable
         {
             if (this.IsConnected)
             {
-                throw new WebDriverBiDiException($"The transport is already connected to {this.Connection.ConnectedUrl}; you must disconnect before connecting to another URL");
+                throw new WebDriverBiDiConnectionException($"The transport is already connected to {this.Connection.ConnectedUrl}; you must disconnect before connecting to another URL");
             }
 
             if (!this.pendingCommands.IsAcceptingCommands)
@@ -259,7 +259,7 @@ public class Transport : IAsyncDisposable
     {
         if (this.IsConnected)
         {
-            throw new WebDriverBiDiException("Cannot register a type info resolver after the transport is connected");
+            throw new WebDriverBiDiConnectionException("Cannot register a type info resolver after the transport is connected");
         }
 
         this.options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
@@ -579,7 +579,7 @@ public class Transport : IAsyncDisposable
                 else
                 {
                     await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result));
-                    this.CaptureUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiException($"Received '{result.ErrorType}' error with no command ID: {result.ErrorMessage}"), "Received error with no command ID");
+                    this.CaptureUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiProtocolException($"Received '{result.ErrorType}' error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
                 }
             }
 

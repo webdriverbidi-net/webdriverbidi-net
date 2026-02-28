@@ -253,7 +253,9 @@ public class BiDiDriver : IAsyncDisposable
     /// <param name="command">The object containing settings for the command, including parameters.</param>
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiException">Thrown if an error occurs during the execution of the command.</exception>
+    /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
+    /// <exception cref="WebDriverBiDiException">Thrown if the command is cancelled, returns a null value, or does not return a result of the correct object type.</exception>
     public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command, TimeSpan commandTimeout)
         where T : CommandResult
     {
@@ -289,7 +291,7 @@ public class BiDiDriver : IAsyncDisposable
                 throw new WebDriverBiDiException("Could not convert error response from transport for SendCommandAndWait to ErrorResult");
             }
 
-            throw new WebDriverBiDiException($"Received '{errorResponse.ErrorType}' error executing command {command.MethodName}: {errorResponse.ErrorMessage}");
+            throw new WebDriverBiDiCommandException($"Received '{errorResponse.ErrorType}' error executing command {command.MethodName}: {errorResponse.ErrorMessage}", errorResponse);
         }
 
         if (result is not T convertedResult)

@@ -62,7 +62,8 @@ public class BiDiDriverTests
                                  "type": "error",
                                  "id": 1,
                                  "error": "unknown command", 
-                                 "message": "This is a test error message"
+                                 "message": "This is a test error message",
+                                 "stacktrace": "remote stack trace"
                                }
                                """;
             await connection.RaiseDataReceivedEventAsync(errorJson);
@@ -74,7 +75,19 @@ public class BiDiDriverTests
 
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("'unknown command' error executing command module.command: This is a test error message"));
+        WebDriverBiDiCommandException? caughtException = Assert.ThrowsAsync<WebDriverBiDiCommandException>(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command));
+        Assert.That(caughtException, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(caughtException!.Message, Does.Contain("'unknown command' error executing command module.command: This is a test error message"));
+            Assert.That(caughtException.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(caughtException.ProtocolErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(caughtException.RemoteStackTrace, Is.EqualTo("remote stack trace"));
+            Assert.That(caughtException.ErrorResult, Is.Not.Null);
+            Assert.That(caughtException.ErrorResult.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(caughtException.ErrorResult.ErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(caughtException.ErrorResult.StackTrace, Is.EqualTo("remote stack trace"));
+        }
     }
 
     [Test]
