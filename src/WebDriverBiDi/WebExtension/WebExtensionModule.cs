@@ -34,9 +34,9 @@ public sealed class WebExtensionModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>A Task containing the result of the command including the ID of the installed extension.</returns>
-    public async Task<InstallCommandResult> InstallAsync(InstallCommandParameters commandParameters)
+    public Task<InstallCommandResult> InstallAsync(InstallCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<InstallCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -44,8 +44,8 @@ public sealed class WebExtensionModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>A Task containing the result of the asynchronous operation.</returns>
-    public async Task<UninstallCommandResult> UninstallAsync(UninstallCommandParameters commandParameters)
+    public Task<UninstallCommandResult> UninstallAsync(UninstallCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<UninstallCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 }

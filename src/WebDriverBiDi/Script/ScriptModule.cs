@@ -56,9 +56,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the ID of the created preload script.</returns>
-    public async Task<AddPreloadScriptCommandResult> AddPreloadScriptAsync(AddPreloadScriptCommandParameters commandParameters)
+    public Task<AddPreloadScriptCommandResult> AddPreloadScriptAsync(AddPreloadScriptCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<AddPreloadScriptCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -66,9 +66,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the result of the function execution.</returns>
-    public async Task<EvaluateResult> CallFunctionAsync(CallFunctionCommandParameters commandParameters)
+    public Task<EvaluateResult> CallFunctionAsync(CallFunctionCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -76,9 +76,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<DisownCommandResult> DisownAsync(DisownCommandParameters commandParameters)
+    public Task<DisownCommandResult> DisownAsync(DisownCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<DisownCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -86,9 +86,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the result of the script evaluation.</returns>
-    public async Task<EvaluateResult> EvaluateAsync(EvaluateCommandParameters commandParameters)
+    public Task<EvaluateResult> EvaluateAsync(EvaluateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<EvaluateResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -96,9 +96,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing IDs of the realms.</returns>
-    public async Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters commandParameters)
+    public Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<GetRealmsCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -106,9 +106,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<RemovePreloadScriptCommandResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandParameters)
+    public Task<RemovePreloadScriptCommandResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<RemovePreloadScriptCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     private async Task OnRealmCreatedAsync(EventInfo<RealmInfo> eventData)

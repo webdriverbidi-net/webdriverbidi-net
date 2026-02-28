@@ -34,9 +34,9 @@ public sealed class StorageModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<GetCookiesCommandResult> GetCookiesAsync(GetCookiesCommandParameters commandParameters)
+    public Task<GetCookiesCommandResult> GetCookiesAsync(GetCookiesCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<GetCookiesCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -44,9 +44,9 @@ public sealed class StorageModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<SetCookieCommandResult> SetCookieAsync(SetCookieCommandParameters commandParameters)
+    public Task<SetCookieCommandResult> SetCookieAsync(SetCookieCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetCookieCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -54,8 +54,8 @@ public sealed class StorageModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<DeleteCookiesCommandResult> DeleteCookiesAsync(DeleteCookiesCommandParameters commandParameters)
+    public Task<DeleteCookiesCommandResult> DeleteCookiesAsync(DeleteCookiesCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<DeleteCookiesCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 }

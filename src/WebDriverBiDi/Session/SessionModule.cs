@@ -34,9 +34,9 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the information about the remote end status.</returns>
-    public async Task<StatusCommandResult> StatusAsync(StatusCommandParameters? commandParameters = null)
+    public Task<StatusCommandResult> StatusAsync(StatusCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<StatusCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
     }
 
     /// <summary>
@@ -44,9 +44,9 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the information new session.</returns>
-    public async Task<NewCommandResult> NewSessionAsync(NewCommandParameters commandParameters)
+    public Task<NewCommandResult> NewSessionAsync(NewCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<NewCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -54,9 +54,9 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the subscription ID.</returns>
-    public async Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters commandParameters)
+    public Task<SubscribeCommandResult> SubscribeAsync(SubscribeCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SubscribeCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -64,9 +64,9 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<UnsubscribeCommandResult> UnsubscribeAsync(UnsubscribeCommandParameters commandParameters)
+    public Task<UnsubscribeCommandResult> UnsubscribeAsync(UnsubscribeCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<UnsubscribeCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -74,8 +74,8 @@ public sealed class SessionModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<EndCommandResult> EndAsync(EndCommandParameters? commandParameters = null)
+    public Task<EndCommandResult> EndAsync(EndCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<EndCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
     }
 }

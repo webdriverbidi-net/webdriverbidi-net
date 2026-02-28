@@ -42,9 +42,9 @@ public sealed class InputModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<PerformActionsCommandResult> PerformActionsAsync(PerformActionsCommandParameters commandParameters)
+    public Task<PerformActionsCommandResult> PerformActionsAsync(PerformActionsCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<PerformActionsCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -52,9 +52,9 @@ public sealed class InputModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<ReleaseActionsCommandResult> ReleaseActionsAsync(ReleaseActionsCommandParameters commandParameters)
+    public Task<ReleaseActionsCommandResult> ReleaseActionsAsync(ReleaseActionsCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ReleaseActionsCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -62,9 +62,9 @@ public sealed class InputModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<SetFilesCommandResult> SetFilesAsync(SetFilesCommandParameters commandParameters)
+    public Task<SetFilesCommandResult> SetFilesAsync(SetFilesCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetFilesCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync<SetFilesCommandResult>(commandParameters);
     }
 
     private async Task OnFileDialogOpenedAsync(EventInfo<FileDialogInfo> eventData)

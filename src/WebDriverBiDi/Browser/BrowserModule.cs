@@ -34,9 +34,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<CloseCommandResult> CloseAsync(CloseCommandParameters? commandParameters = null)
+    public Task<CloseCommandResult> CloseAsync(CloseCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<CloseCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
     }
 
     /// <summary>
@@ -44,9 +44,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An object describing information about the user context created.</returns>
-    public async Task<CreateUserContextCommandResult> CreateUserContextAsync(CreateUserContextCommandParameters? commandParameters = null)
+    public Task<CreateUserContextCommandResult> CreateUserContextAsync(CreateUserContextCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<CreateUserContextCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
     }
 
     /// <summary>
@@ -54,9 +54,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandParameters">THe parameters for the command.</param>
     /// <returns>An read-only list of the client windows open in this browser.</returns>
-    public async Task<GetClientWindowsCommandResult> GetClientWindowsAsync(GetClientWindowsCommandParameters? commandParameters = null)
+    public Task<GetClientWindowsCommandResult> GetClientWindowsAsync(GetClientWindowsCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<GetClientWindowsCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
     }
 
     /// <summary>
@@ -64,9 +64,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>A read-only list of the user contexts open in this browser.</returns>
-    public async Task<GetUserContextsCommandResult> GetUserContextsAsync(GetUserContextsCommandParameters? commandParameters = null)
+    public Task<GetUserContextsCommandResult> GetUserContextsAsync(GetUserContextsCommandParameters? commandParameters = null)
     {
-        return await this.Driver.ExecuteCommandAsync<GetUserContextsCommandResult>(commandParameters ?? new()).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
     }
 
     /// <summary>
@@ -74,9 +74,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<RemoveUserContextCommandResult> RemoveUserContextAsync(RemoveUserContextCommandParameters commandParameters)
+    public Task<RemoveUserContextCommandResult> RemoveUserContextAsync(RemoveUserContextCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<RemoveUserContextCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -86,9 +86,9 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The actual state of the window after setting the state.</returns>
-    public async Task<SetClientWindowStateCommandResult> SetClientWindowStateAsync(SetClientWindowStateCommandParameters commandParameters)
+    public Task<SetClientWindowStateCommandResult> SetClientWindowStateAsync(SetClientWindowStateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetClientWindowStateCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -96,8 +96,8 @@ public sealed class BrowserModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<SetDownloadBehaviorCommandResult> SetDownloadBehaviorAsync(SetDownloadBehaviorCommandParameters commandParameters)
+    public Task<SetDownloadBehaviorCommandResult> SetDownloadBehaviorAsync(SetDownloadBehaviorCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetDownloadBehaviorCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 }

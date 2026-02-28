@@ -133,9 +133,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
-    public async Task<ActivateCommandResult> ActivateAsync(ActivateCommandParameters commandParameters)
+    public Task<ActivateCommandResult> ActivateAsync(ActivateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ActivateCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -143,9 +143,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
-    public async Task<CaptureScreenshotCommandResult> CaptureScreenshotAsync(CaptureScreenshotCommandParameters commandParameters)
+    public Task<CaptureScreenshotCommandResult> CaptureScreenshotAsync(CaptureScreenshotCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<CaptureScreenshotCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -153,9 +153,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<CloseCommandResult> CloseAsync(CloseCommandParameters commandParameters)
+    public Task<CloseCommandResult> CloseAsync(CloseCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<CloseCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -163,9 +163,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command including the ID of the new context.</returns>
-    public async Task<CreateCommandResult> CreateAsync(CreateCommandParameters commandParameters)
+    public Task<CreateCommandResult> CreateAsync(CreateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<CreateCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -173,9 +173,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The tree associated browsing contexts.</returns>
-    public async Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters commandParameters)
+    public Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<GetTreeCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -183,9 +183,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public async Task<HandleUserPromptCommandResult> HandleUserPromptAsync(HandleUserPromptCommandParameters commandParameters)
+    public Task<HandleUserPromptCommandResult> HandleUserPromptAsync(HandleUserPromptCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<HandleUserPromptCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -193,9 +193,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing the located nodes, if any.</returns>
-    public async Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters commandParameters)
+    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<LocateNodesCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -203,9 +203,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters commandParameters)
+    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<NavigateCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -213,9 +213,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>>The result of the command containing a base64-encoded PDF of the current page.</returns>
-    public async Task<PrintCommandResult> PrintAsync(PrintCommandParameters commandParameters)
+    public Task<PrintCommandResult> PrintAsync(PrintCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<PrintCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -223,9 +223,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<ReloadCommandResult> ReloadAsync(ReloadCommandParameters commandParameters)
+    public Task<ReloadCommandResult> ReloadAsync(ReloadCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<ReloadCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -233,9 +233,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<SetViewportCommandResult> SetViewportAsync(SetViewportCommandParameters commandParameters)
+    public Task<SetViewportCommandResult> SetViewportAsync(SetViewportCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<SetViewportCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
@@ -243,9 +243,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command.</returns>
-    public async Task<TraverseHistoryCommandResult> TraverseHistoryAsync(TraverseHistoryCommandParameters commandParameters)
+    public Task<TraverseHistoryCommandResult> TraverseHistoryAsync(TraverseHistoryCommandParameters commandParameters)
     {
-        return await this.Driver.ExecuteCommandAsync<TraverseHistoryCommandResult>(commandParameters).ConfigureAwait(false);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     private async Task OnContextCreatedAsync(EventInfo<BrowsingContextInfo> eventData)
