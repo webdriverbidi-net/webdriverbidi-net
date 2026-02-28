@@ -205,6 +205,35 @@ public class BiDiDriver : IAsyncDisposable
 
     /// <summary>
     /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for the
+    /// default command timeout. The result type is inferred from the command parameters.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the result of the command.</typeparam>
+    /// <param name="command">The object containing settings for the command, including parameters.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if an error occurs during the execution of the command.</exception>
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> command)
+        where T : CommandResult
+    {
+        return await this.ExecuteCommandAsync<T>(command, this.defaultCommandWaitTimeout).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for a response.
+    /// The result type is inferred from the command parameters.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the result of the command.</typeparam>
+    /// <param name="command">The object containing settings for the command, including parameters.</param>
+    /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if an error occurs during the execution of the command.</exception>
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> command, TimeSpan commandTimeout)
+        where T : CommandResult
+    {
+        return await this.ExecuteCommandAsync<T>((CommandParameters)command, commandTimeout).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for the
     /// default command timeout.
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
@@ -214,7 +243,6 @@ public class BiDiDriver : IAsyncDisposable
     public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command)
         where T : CommandResult
     {
-        this.ThrowIfDisposed();
         return await this.ExecuteCommandAsync<T>(command, this.defaultCommandWaitTimeout).ConfigureAwait(false);
     }
 

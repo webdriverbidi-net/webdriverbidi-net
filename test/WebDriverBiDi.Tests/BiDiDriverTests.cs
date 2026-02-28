@@ -919,4 +919,82 @@ public class BiDiDriverTests
         await driver.DisposeAsync();
         Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<ObjectDisposedException>());
     }
+
+    [Test]
+    public async Task CanExecuteCommandWithUntypedCommandParameters()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
+        {
+            string eventJson = """
+                               {
+                                 "type": "success",
+                                 "id": 1,
+                                 "result": {
+                                   "value": "command result value"
+                                 }
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(eventJson);
+        };
+
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+
+        CommandParameters command = new TestCommandParameters("module.command");
+        TestCommandResult result = await driver.ExecuteCommandAsync<TestCommandResult>(command);
+        Assert.That(result.Value, Is.EqualTo("command result value"));
+    }
+
+    [Test]
+    public async Task CanExecuteCommandWithUntypedCommandParametersAndTimeout()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (object? sender, TestConnectionDataSentEventArgs e) =>
+        {
+            string eventJson = """
+                               {
+                                 "type": "success",
+                                 "id": 1,
+                                 "result": {
+                                   "value": "command result value"
+                                 }
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(eventJson);
+        };
+
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+
+        CommandParameters command = new TestCommandParameters("module.command");
+        TestCommandResult result = await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromMilliseconds(1500));
+        Assert.That(result.Value, Is.EqualTo("command result value"));
+    }
+
+    [Test]
+    public async Task TestExecuteCommandWithUntypedParametersAfterDisposeThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        CommandParameters command = new TestCommandParameters("test.command");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command), Throws.InstanceOf<ObjectDisposedException>());
+    }
+
+    [Test]
+    public async Task TestExecuteCommandWithUntypedParametersAndTimeoutAfterDisposeThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        CommandParameters command = new TestCommandParameters("test.command");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<ObjectDisposedException>());
+    }
 }
