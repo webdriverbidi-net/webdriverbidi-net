@@ -33,6 +33,21 @@ public class BiDiDriver : IAsyncDisposable
     private const string UnknownMessageReceivedEventName = "driver.unknownMessageReceived";
     private const string LogMessageEventName = "driver.logMessage";
 
+    private readonly BluetoothModule bluetoothModule;
+    private readonly BrowserModule browserModule;
+    private readonly BrowsingContextModule browsingContextModule;
+    private readonly EmulationModule emulationModule;
+    private readonly InputModule inputModule;
+    private readonly LogModule logModule;
+    private readonly NetworkModule networkModule;
+    private readonly PermissionsModule permissionsModule;
+    private readonly ScriptModule scriptModule;
+    private readonly SessionModule sessionModule;
+    private readonly SpeculationModule speculationModule;
+    private readonly StorageModule storageModule;
+    private readonly UserAgentClientHintsModule userAgentClientHintsModule;
+    private readonly WebExtensionModule webExtensionModule;
+
     private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
     private readonly ConcurrentDictionary<string, Module> modules = [];
@@ -71,20 +86,48 @@ public class BiDiDriver : IAsyncDisposable
         this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
         this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
         this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
-        this.RegisterModule(new BluetoothModule(this));
-        this.RegisterModule(new BrowserModule(this));
-        this.RegisterModule(new BrowsingContextModule(this));
-        this.RegisterModule(new EmulationModule(this));
-        this.RegisterModule(new LogModule(this));
-        this.RegisterModule(new InputModule(this));
-        this.RegisterModule(new NetworkModule(this));
-        this.RegisterModule(new PermissionsModule(this));
-        this.RegisterModule(new SessionModule(this));
-        this.RegisterModule(new ScriptModule(this));
-        this.RegisterModule(new SpeculationModule(this));
-        this.RegisterModule(new StorageModule(this));
-        this.RegisterModule(new UserAgentClientHintsModule(this));
-        this.RegisterModule(new WebExtensionModule(this));
+
+        this.bluetoothModule = new BluetoothModule(this);
+        this.RegisterModule(this.bluetoothModule);
+
+        this.browserModule = new BrowserModule(this);
+        this.RegisterModule(this.browserModule);
+
+        this.browsingContextModule = new BrowsingContextModule(this);
+        this.RegisterModule(this.browsingContextModule);
+
+        this.emulationModule = new EmulationModule(this);
+        this.RegisterModule(this.emulationModule);
+
+        this.inputModule = new InputModule(this);
+        this.RegisterModule(this.inputModule);
+
+        this.logModule = new LogModule(this);
+        this.RegisterModule(this.logModule);
+
+        this.networkModule = new NetworkModule(this);
+        this.RegisterModule(this.networkModule);
+
+        this.permissionsModule = new PermissionsModule(this);
+        this.RegisterModule(this.permissionsModule);
+
+        this.scriptModule = new ScriptModule(this);
+        this.RegisterModule(this.scriptModule);
+
+        this.sessionModule = new SessionModule(this);
+        this.RegisterModule(this.sessionModule);
+
+        this.speculationModule = new SpeculationModule(this);
+        this.RegisterModule(this.speculationModule);
+
+        this.storageModule = new StorageModule(this);
+        this.RegisterModule(this.storageModule);
+
+        this.userAgentClientHintsModule = new UserAgentClientHintsModule(this);
+        this.RegisterModule(this.userAgentClientHintsModule);
+
+        this.webExtensionModule = new WebExtensionModule(this);
+        this.RegisterModule(this.webExtensionModule);
     }
 
     /// <summary>
@@ -110,72 +153,72 @@ public class BiDiDriver : IAsyncDisposable
     /// <summary>
     /// Gets the bluetooth module as described in the W3C Web Bluetooth Specification.
     /// </summary>
-    public BluetoothModule Bluetooth => this.GetModule<BluetoothModule>(BluetoothModule.BluetoothModuleName);
+    public BluetoothModule Bluetooth => this.bluetoothModule;
 
     /// <summary>
     /// Gets the browser module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public BrowserModule Browser => this.GetModule<BrowserModule>(BrowserModule.BrowserModuleName);
+    public BrowserModule Browser => this.browserModule;
 
     /// <summary>
     /// Gets the browsingContext module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public BrowsingContextModule BrowsingContext => this.GetModule<BrowsingContextModule>(BrowsingContextModule.BrowsingContextModuleName);
+    public BrowsingContextModule BrowsingContext => this.browsingContextModule;
 
     /// <summary>
     /// Gets the emulation module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public EmulationModule Emulation => this.GetModule<EmulationModule>(EmulationModule.EmulationModuleName);
+    public EmulationModule Emulation => this.emulationModule;
 
     /// <summary>
     /// Gets the input module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public InputModule Input => this.GetModule<InputModule>(InputModule.InputModuleName);
+    public InputModule Input => this.inputModule;
 
     /// <summary>
     /// Gets the log module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public LogModule Log => this.GetModule<LogModule>(LogModule.LogModuleName);
+    public LogModule Log => this.logModule;
 
     /// <summary>
     /// Gets the network module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public NetworkModule Network => this.GetModule<NetworkModule>(NetworkModule.NetworkModuleName);
+    public NetworkModule Network => this.networkModule;
 
     /// <summary>
     /// Gets the permissions module as described in the W3C Permissions Specification.
     /// </summary>
-    public PermissionsModule Permissions => this.GetModule<PermissionsModule>(PermissionsModule.PermissionsModuleName);
+    public PermissionsModule Permissions => this.permissionsModule;
 
     /// <summary>
     /// Gets the script module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public ScriptModule Script => this.GetModule<ScriptModule>(ScriptModule.ScriptModuleName);
+    public ScriptModule Script => this.scriptModule;
 
     /// <summary>
     /// Gets the session module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public SessionModule Session => this.GetModule<SessionModule>(SessionModule.SessionModuleName);
+    public SessionModule Session => this.sessionModule;
 
     /// <summary>
     /// Gets the speculation module as described in the W3C Community Group Prerendering specification.
     /// </summary>
-    public SpeculationModule Speculation => this.GetModule<SpeculationModule>(SpeculationModule.SpeculationModuleName);
+    public SpeculationModule Speculation => this.speculationModule;
 
     /// <summary>
     /// Gets the storage module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public StorageModule Storage => this.GetModule<StorageModule>(StorageModule.StorageModuleName);
+    public StorageModule Storage => this.storageModule;
 
     /// <summary>
     /// Gets the user agent client hints module as described in the W3C Community Group User Agent Client Hints specification.
     /// </summary>
-    public UserAgentClientHintsModule UserAgentClientHints => this.GetModule<UserAgentClientHintsModule>(UserAgentClientHintsModule.UserAgentClientHintsModuleName);
+    public UserAgentClientHintsModule UserAgentClientHints => this.userAgentClientHintsModule;
 
     /// <summary>
     /// Gets the web extension module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public WebExtensionModule WebExtension => this.GetModule<WebExtensionModule>(WebExtensionModule.WebExtensionModuleName);
+    public WebExtensionModule WebExtension => this.webExtensionModule;
 
     /// <summary>
     /// Gets a value indicating whether this driver is disposed.
@@ -323,8 +366,14 @@ public class BiDiDriver : IAsyncDisposable
     /// Registers a module for use with this driver.
     /// </summary>
     /// <param name="module">The module object.</param>
+    /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name tha has alreaey been registered.</exception>
     public virtual void RegisterModule(Module module)
     {
+        if (this.modules.ContainsKey(module.ModuleName))
+        {
+            throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
+        }
+
         this.modules[module.ModuleName] = module;
     }
 

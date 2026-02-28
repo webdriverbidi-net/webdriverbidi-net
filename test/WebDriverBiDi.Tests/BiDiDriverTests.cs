@@ -365,6 +365,16 @@ public class BiDiDriverTests
     }
 
     [Test]
+    public void TestRegisteringModuleWithDuplicateNameThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.RegisterModule(new TestProtocolModule(driver));
+        Assert.That(() => driver.RegisterModule(new TestProtocolModule(driver)), Throws.InstanceOf<ArgumentException>().With.Message.StartsWith("A module with the name 'protocol' has already been registered"));
+    }
+
+    [Test]
     public void TestGettingInvalidModuleNameThrows()
     {
         TestConnection connection = new();
