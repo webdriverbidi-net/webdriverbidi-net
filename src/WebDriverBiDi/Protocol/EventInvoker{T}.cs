@@ -39,6 +39,6 @@ public class EventInvoker<T> : EventInvoker
         }
 
         EventInfo<T> invocationData = new(typedEventData, additionalData);
-        await this.asyncInvokerDelegate(invocationData);
+        await this.asyncInvokerDelegate(invocationData).ConfigureAwait(false);
     }
 }
