@@ -12,6 +12,8 @@ using System.Collections.ObjectModel;
 /// </summary>
 public sealed class ReceivedDataDictionary : ReadOnlyDictionary<string, object?>
 {
+    private static readonly ReceivedDataDictionary BlankDictionary = new([]);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ReceivedDataDictionary"/> class.
     /// </summary>
@@ -28,7 +30,7 @@ public sealed class ReceivedDataDictionary : ReadOnlyDictionary<string, object?>
     /// <summary>
     /// Gets an empty dictionary.
     /// </summary>
-    public static ReceivedDataDictionary EmptyDictionary => new([]);
+    public static ReceivedDataDictionary EmptyDictionary => BlankDictionary;
 
     /// <summary>
     /// Gets a writable copy of this dictionary.
