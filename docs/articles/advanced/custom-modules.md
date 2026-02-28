@@ -667,6 +667,8 @@ Create a NuGet package for reusable modules:
 </Project>
 ```
 
+> **AOT support:** If your package will be used in AOT environments, include a source-generated `JsonSerializerContext` with `[JsonSerializable]` attributes for your custom types. See [AOT Compatibility](aot-compatibility.md) for details.
+
 ## Advanced: Implementing Protocol Extensions
 
 For actual protocol extensions (not just helper methods):
@@ -711,6 +713,7 @@ public class ExperimentalModule : Module
 
 ## Next Steps
 
+- [AOT Compatibility](aot-compatibility.md): Make custom modules work in AOT environments
 - [Architecture](../architecture.md): Understand the module system
 - [Core Concepts](../core-concepts.md): Learn about commands and events
 - [Error Handling](error-handling.md): Implement robust error handling

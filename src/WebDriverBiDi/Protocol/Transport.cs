@@ -246,6 +246,28 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Registers an additional <see cref="IJsonTypeInfoResolver"/> for JSON serialization
+    /// and deserialization. This allows custom types, such as those from user-defined modules,
+    /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
+    /// This method must be called before connecting to the remote end.
+    /// </summary>
+    /// <param name="resolver">The type info resolver to add.</param>
+    /// <exception cref="WebDriverBiDiException">
+    /// Thrown if the transport is already connected to a remote end.
+    /// </exception>
+    public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
+    {
+        if (this.IsConnected)
+        {
+            throw new WebDriverBiDiException("Cannot register a type info resolver after the transport is connected");
+        }
+
+        this.options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+            this.options.TypeInfoResolver!,
+            resolver);
+    }
+
+    /// <summary>
     /// Registers an event message to be recognized when received from the connection.
     /// </summary>
     /// <typeparam name="T">The type of data to be returned in the event.</typeparam>

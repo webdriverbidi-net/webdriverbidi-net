@@ -258,6 +258,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(ScreenOrientation))]
 [JsonSerializable(typeof(ScreenOrientationNatural))]
 [JsonSerializable(typeof(ScreenOrientationType))]
+[JsonSerializable(typeof(ScrollbarType))]
 [JsonSerializable(typeof(SetForcedColorsModeThemeOverrideCommandParameters))]
 [JsonSerializable(typeof(SetGeolocationOverrideCommandParameters))]
 [JsonSerializable(typeof(SetGeolocationOverrideCoordinatesCommandParameters))]
@@ -296,6 +297,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(WheelScrollAction))]
 
 // -- Log module --
+[JsonSerializable(typeof(ConsoleLogEntry))]
 [JsonSerializable(typeof(LogEntry))]
 [JsonSerializable(typeof(LogLevel))]
 
@@ -363,6 +365,9 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(LocalValue))]
 [JsonSerializable(typeof(NodeAttributes))]
 [JsonSerializable(typeof(NodeProperties))]
+[JsonSerializable(typeof(AudioWorkletRealmInfo))]
+[JsonSerializable(typeof(DedicatedWorkerRealmInfo))]
+[JsonSerializable(typeof(PaintWorkletRealmInfo))]
 [JsonSerializable(typeof(RealmInfo))]
 [JsonSerializable(typeof(RealmTarget))]
 [JsonSerializable(typeof(RealmType))]
@@ -379,12 +384,15 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(StackFrame))]
 [JsonSerializable(typeof(StackTrace))]
 [JsonSerializable(typeof(Target))]
+[JsonSerializable(typeof(ServiceWorkerRealmInfo))]
+[JsonSerializable(typeof(SharedWorkerRealmInfo))]
 [JsonSerializable(typeof(WindowProxyProperties))]
 [JsonSerializable(typeof(WindowRealmInfo))]
 
 // ── Session module ──
 [JsonSerializable(typeof(AutoDetectProxyConfiguration))]
 [JsonSerializable(typeof(CapabilitiesRequest))]
+[JsonSerializable(typeof(CapabilitiesResult))]
 [JsonSerializable(typeof(CapabilityRequest))]
 [JsonSerializable(typeof(DirectProxyConfiguration))]
 [JsonSerializable(typeof(EndCommandParameters))]

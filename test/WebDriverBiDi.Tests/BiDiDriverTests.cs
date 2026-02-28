@@ -1,6 +1,7 @@
 namespace WebDriverBiDi;
 
 using System.Globalization;
+using System.Text.Json.Serialization.Metadata;
 using TestUtilities;
 using PinchHitter;
 using WebDriverBiDi.Browser;
@@ -888,5 +889,34 @@ public class BiDiDriverTests
                    && log.Message.Contains("Simulated disconnect failure")
                    && log.Level == WebDriverBiDiLogLevel.Warn
                    && log.ComponentName == "BiDiDriver"));
+    }
+
+    [Test]
+    public void TestRegisterTypeInfoResolverBeforeStarting()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestRegisterTypeInfoResolverAfterStartingThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
+    }
+
+    [Test]
+    public async Task TestRegisterTypeInfoResolverAfterDisposeThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.DisposeAsync();
+        Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<ObjectDisposedException>());
     }
 }

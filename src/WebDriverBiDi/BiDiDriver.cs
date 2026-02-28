@@ -6,6 +6,7 @@
 namespace WebDriverBiDi;
 
 using System.Collections.Concurrent;
+using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
@@ -269,6 +270,23 @@ public class BiDiDriver : IAsyncDisposable
         }
 
         return convertedResult;
+    }
+
+    /// <summary>
+    /// Registers an additional <see cref="IJsonTypeInfoResolver"/> for JSON serialization
+    /// and deserialization. This allows custom types, such as those from user-defined modules,
+    /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
+    /// This method must be called before starting the driver.
+    /// </summary>
+    /// <param name="resolver">The type info resolver to add.</param>
+    /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
+    /// <exception cref="WebDriverBiDiException">
+    /// Thrown if the driver has already been started.
+    /// </exception>
+    public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
+    {
+        this.ThrowIfDisposed();
+        this.transport.RegisterTypeInfoResolver(resolver);
     }
 
     /// <summary>

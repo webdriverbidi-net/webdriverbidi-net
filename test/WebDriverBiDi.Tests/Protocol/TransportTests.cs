@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.Protocol;
 
+using System.Text.Json.Serialization.Metadata;
 using Newtonsoft.Json.Linq;
 using TestUtilities;
 using PinchHitter;
@@ -1567,5 +1568,31 @@ public class TransportTests
             Assert.That(command.IsCanceled, Is.True);
             Assert.That(command.Result, Is.Null);
         }
+    }
+
+    [Test]
+    public void TestRegisterTypeInfoResolverBeforeConnecting()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
+    }
+
+    [Test]
+    public void TestRegisterTypeInfoResolverMultipleTimesBeforeConnecting()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver());
+        Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestRegisterTypeInfoResolverAfterConnectingThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+        Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
     }
 }
