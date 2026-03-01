@@ -26,14 +26,14 @@ public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeader
     public List<string> Headers { get; } = [];
 
     /// <summary>
-    /// Gets or sets the browsing contexts, if any, for which to set the cache behavior.
+    /// Gets or sets the browsing contexts, if any, for which to set the extra headers.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }
 
     /// <summary>
-    /// Gets or sets the user contexts, if any, for which to set the cache behavior.
+    /// Gets or sets the user contexts, if any, for which to set the extra headers.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

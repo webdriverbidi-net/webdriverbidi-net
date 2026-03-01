@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object containing event data for events raised by before a network request is sent.
+/// Object containing event data for events raised when a network fetch error occurs.
 /// </summary>
 public record FetchErrorEventArgs : BaseNetworkEventArgs
 {

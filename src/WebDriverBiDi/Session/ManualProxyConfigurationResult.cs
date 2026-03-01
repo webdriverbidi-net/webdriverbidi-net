@@ -6,14 +6,14 @@
 namespace WebDriverBiDi.Session;
 
 /// <summary>
-/// Object representing a read only proxy autoconfig used by the browser for this session.
+/// Object representing a read-only manual proxy configuration used by the browser for this session.
 /// </summary>
 public record ManualProxyConfigurationResult : ProxyConfigurationResult
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ManualProxyConfigurationResult"/> class.
     /// </summary>
-    /// <param name="proxy">The proxy autoconfig proxy configuration.</param>
+    /// <param name="proxy">The manual proxy configuration.</param>
     public ManualProxyConfigurationResult(ManualProxyConfiguration proxy)
         : base(proxy)
     {

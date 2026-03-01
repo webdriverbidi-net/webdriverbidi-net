@@ -212,7 +212,7 @@ public sealed class BrowsingContextModule : Module
     /// Prints a PDF of the current page in the browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
-    /// <returns>>The result of the command containing a base64-encoded PDF of the current page.</returns>
+    /// <returns>The result of the command containing a base64-encoded PDF of the current page.</returns>
     public Task<PrintCommandResult> PrintAsync(PrintCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);

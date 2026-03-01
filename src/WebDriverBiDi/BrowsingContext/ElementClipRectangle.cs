@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
-/// The abstract base class for a clipping rectangle for a screenshot.
+/// Represents an element-based clipping rectangle for a screenshot.
 /// </summary>
 public class ElementClipRectangle : ClipRectangle
 {

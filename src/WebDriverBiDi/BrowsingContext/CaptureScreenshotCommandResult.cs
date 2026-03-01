@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result for capturing a screenshot using the browserContext.captureScreenshot command.
+/// Result for capturing a screenshot using the browsingContext.captureScreenshot command.
 /// </summary>
 public record CaptureScreenshotCommandResult : CommandResult
 {

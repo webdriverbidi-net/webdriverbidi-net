@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result for getting the status of a remote end using the session.status command.
+/// Result for subscribing to events using the session.subscribe command.
 /// </summary>
 public record SubscribeCommandResult : CommandResult
 {

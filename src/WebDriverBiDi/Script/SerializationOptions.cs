@@ -27,7 +27,7 @@ public class SerializationOptions
     public long? MaxObjectDepth { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating which shadow trees to serializes when serializing nodes from script execution.
+    /// Gets or sets a value indicating which shadow trees to serialize when serializing nodes from script execution.
     /// </summary>
     [JsonPropertyName("includeShadowTree")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

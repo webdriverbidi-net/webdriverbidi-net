@@ -10,7 +10,7 @@ using WebDriverBiDi.Internal;
 using WebDriverBiDi.Network;
 
 /// <summary>
-/// Object containing a data for querying for existing cookies.
+/// Object containing data for querying for existing cookies.
 /// </summary>
 public class CookieFilter
 {
@@ -74,7 +74,7 @@ public class CookieFilter
     public bool? Secure { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the cookie a same site cookie to use in querying for cookies.
+    /// Gets or sets a value indicating whether the cookie is a same-site cookie to use in querying for cookies.
     /// </summary>
     [JsonPropertyName("sameSite")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

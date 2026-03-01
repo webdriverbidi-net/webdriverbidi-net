@@ -8,7 +8,7 @@ namespace WebDriverBiDi.UserAgentClientHints;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the userAgentClientHints.setClientHintsOverrideCommandParameters command.
+/// Provides parameters for the userAgentClientHints.setClientHintsOverride command.
 /// </summary>
 public class SetClientHintsOverrideCommandParameters : CommandParameters<SetClientHintsOverrideCommandResult>
 {
@@ -33,14 +33,14 @@ public class SetClientHintsOverrideCommandParameters : CommandParameters<SetClie
     public ClientHintsMetadata? ClientHints { get; set; }
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to set whether scripting is enabled.
+    /// Gets or sets the browsing contexts for which to set the client hints override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }
 
     /// <summary>
-    /// Gets or sets the user contexts for which to set whether scripting is enabled.
+    /// Gets or sets the user contexts for which to set the client hints override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

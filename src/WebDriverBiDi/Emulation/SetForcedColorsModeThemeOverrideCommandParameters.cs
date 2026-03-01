@@ -26,21 +26,21 @@ public class SetForcedColorsModeThemeOverrideCommandParameters : CommandParamete
     public override string MethodName => "emulation.setForcedColorsModeThemeOverride";
 
     /// <summary>
-    /// Gets or sets the emulated color them mode for the browser. When <see langword="null"/>, clears the override.
+    /// Gets or sets the emulated color theme mode for the browser. When <see langword="null"/>, clears the override.
     /// </summary>
     [JsonPropertyName("theme")]
     [JsonInclude]
     public ForcedColorsModeTheme? Theme { get; set; }
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to set the geolocation override.
+    /// Gets or sets the browsing contexts for which to set the forced colors mode theme override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }
 
     /// <summary>
-    /// Gets or sets the user contexts for which to set the geolocation override.
+    /// Gets or sets the user contexts for which to set the forced colors mode theme override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

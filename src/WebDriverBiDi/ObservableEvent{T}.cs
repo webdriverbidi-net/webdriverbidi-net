@@ -6,7 +6,7 @@
 namespace WebDriverBiDi;
 
 /// <summary>
-/// Implementation of an subject in the Observer pattern for events. It can optionally be limited
+/// Implementation of a subject in the Observer pattern for events. It can optionally be limited
 /// to a specific number of observers.
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>

@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Values used for the type of characteristic event generated.
+/// Values used for the type of descriptor event generated.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<DescriptorEventGeneratedType>))]
 public enum DescriptorEventGeneratedType

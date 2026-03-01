@@ -28,13 +28,13 @@ public class SetCookieCommandParameters : CommandParameters<SetCookieCommandResu
     public override string MethodName => "storage.setCookie";
 
     /// <summary>
-    /// Gets or sets the filter to use when getting the cookies.
+    /// Gets or sets the cookie values to set.
     /// </summary>
     [JsonPropertyName("cookie")]
     public PartialCookie Cookie { get; set; }
 
     /// <summary>
-    /// Gets or sets the partition descriptor to use when getting the cookies.
+    /// Gets or sets the partition descriptor to use when setting the cookie.
     /// </summary>
     [JsonPropertyName("partition")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

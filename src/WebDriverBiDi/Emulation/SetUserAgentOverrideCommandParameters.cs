@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the emulation.setScreenOrientationOverride command.
+/// Provides parameters for the emulation.setUserAgentOverride command.
 /// </summary>
 public class SetUserAgentOverrideCommandParameters : CommandParameters<SetUserAgentOverrideCommandResult>
 {
@@ -33,14 +33,14 @@ public class SetUserAgentOverrideCommandParameters : CommandParameters<SetUserAg
     public string? UserAgent { get; set; }
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to set the geolocation override.
+    /// Gets or sets the browsing contexts for which to set the user agent override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }
 
     /// <summary>
-    /// Gets or sets the user contexts for which to set the geolocation override.
+    /// Gets or sets the user contexts for which to set the user agent override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

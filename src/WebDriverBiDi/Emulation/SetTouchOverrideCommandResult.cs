@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Emulation;
 
 /// <summary>
-/// Result of setting the screen orientation override using the emulation.setTouchOverride command.
+/// Result of setting the touch override using the emulation.setTouchOverride command.
 /// </summary>
 public record SetTouchOverrideCommandResult : EmptyResult
 {

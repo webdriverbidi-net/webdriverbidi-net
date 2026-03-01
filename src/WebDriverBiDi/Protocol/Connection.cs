@@ -73,7 +73,8 @@ public class Connection : IAsyncDisposable
     /// </summary>
     /// <param name="url">The URL used to connect to the remote end.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="TimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is already connected.</exception>
     public virtual async Task StartAsync(string url)
     {
         if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)
@@ -158,6 +159,8 @@ public class Connection : IAsyncDisposable
     /// </summary>
     /// <param name="data">The data to be sent to the remote end of this connection.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket has not been initialized.</exception>
+    /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the WebSocket for sending times out.</exception>
     public virtual async Task SendDataAsync(byte[] data)
     {
         if (!this.IsActive)

@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Script;
 
 /// <summary>
-/// Object containing event data for the event raised when a script realm is destroyed.
+/// Object containing event data for the event raised when a script realm is created.
 /// </summary>
 public record RealmCreatedEventArgs : WebDriverBiDiEventArgs
 {
@@ -40,7 +40,7 @@ public record RealmCreatedEventArgs : WebDriverBiDiEventArgs
     /// Gets this RealmCreatedEventArgs instance as a RealmInfo containing type-specific realm info.
     /// </summary>
     /// <typeparam name="T">The specific type of RealmInfo to return.</typeparam>
-    /// <returns>This RealmCreatedEventArgs instance cast to the specified correct type.</returns>
+    /// <returns>The underlying RealmInfo cast to the specified type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if this RealmInfo is not the specified type.</exception>
     public T As<T>()
         where T : RealmInfo

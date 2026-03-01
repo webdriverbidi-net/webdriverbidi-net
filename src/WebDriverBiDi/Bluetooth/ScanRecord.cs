@@ -34,14 +34,14 @@ public class ScanRecord
     public List<string>? UUIDs { get; set; }
 
     /// <summary>
-    /// Gets or sets the local name of the Bluetooth device, or a prefix of it.
+    /// Gets or sets the appearance value of the Bluetooth device.
     /// </summary>
     [JsonPropertyName("appearance")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public uint? Appearance { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of Service UUIDs that this scan record says the Bluetooth device's GATT server supports.
+    /// Gets or sets the list of manufacturer data for this scan record.
     /// </summary>
     [JsonPropertyName("manufacturerData")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

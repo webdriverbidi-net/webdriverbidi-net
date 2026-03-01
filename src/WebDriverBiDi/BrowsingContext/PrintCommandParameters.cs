@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the browsingContext.navigate command.
+/// Provides parameters for the browsingContext.print command.
 /// </summary>
 public class PrintCommandParameters : CommandParameters<PrintCommandResult>
 {
@@ -82,7 +82,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether or shrink the content to fit on a single page. If omitted, defaults to true.
+    /// Gets or sets a value indicating whether to shrink the content to fit on a single page. If omitted, defaults to true.
     /// </summary>
     [JsonPropertyName("shrinkToFit")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

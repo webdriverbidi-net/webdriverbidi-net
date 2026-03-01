@@ -20,7 +20,7 @@ public enum IncludeShadowTreeSerializationOption
     None,
 
     /// <summary>
-    /// Only include open shadow tress when serializing nodes.
+    /// Only include open shadow trees when serializing nodes.
     /// </summary>
     Open,
 

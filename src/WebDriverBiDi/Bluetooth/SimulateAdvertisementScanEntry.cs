@@ -32,13 +32,13 @@ public class SimulateAdvertisementScanEntry
     public string DeviceAddress { get; set; }
 
     /// <summary>
-    /// Gets or sets the list of Service UUIDs that this scan record says the Bluetooth device's GATT server supports.
+    /// Gets or sets the received signal strength indicator (RSSI) of the simulated Bluetooth device, in dBm.
     /// </summary>
     [JsonPropertyName("rssi")]
     public double Rssi { get; set; }
 
     /// <summary>
-    /// Gets or sets the local name of the Bluetooth device, or a prefix of it.
+    /// Gets or sets the scan record data for this advertisement scan entry.
     /// </summary>
     [JsonPropertyName("scanRecord")]
     public ScanRecord ScanRecord { get; set; }

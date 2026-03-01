@@ -13,8 +13,8 @@ public class HandleRequestDevicePromptCancelCommandParameters : HandleRequestDev
     /// <summary>
     /// Initializes a new instance of the <see cref="HandleRequestDevicePromptCancelCommandParameters"/> class to cancel the device prompt.
     /// </summary>
-    /// <param name="browsingContextId">The browsing context ID for which to accept the prompt.</param>
-    /// <param name="promptId">The ID of the prompt to accept.</param>
+    /// <param name="browsingContextId">The browsing context ID for which to cancel the prompt.</param>
+    /// <param name="promptId">The ID of the prompt to cancel.</param>
     public HandleRequestDevicePromptCancelCommandParameters(string browsingContextId, string promptId)
         : base(browsingContextId, promptId, false)
     {

@@ -29,7 +29,7 @@ public record ResponseContent
     public ulong Size { get; internal set; } = 0;
 
     /// <summary>
-    /// Gets an. empty <see cref="ResponseContent"/> object.
+    /// Gets an empty <see cref="ResponseContent"/> object.
     /// </summary>
     public static ResponseContent Empty => new();
 }

@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the emulation.setScreenOrientationOverride command.
+/// Represents the screen orientation settings for emulation.
 /// </summary>
 public class ScreenOrientation
 {

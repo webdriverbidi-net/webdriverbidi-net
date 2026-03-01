@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 /// <summary>
-/// Result closing the browsing context using the browserContext.close command.
+/// Result for closing the browsing context using the browsingContext.close command.
 /// </summary>
 public record CloseCommandResult : EmptyResult
 {

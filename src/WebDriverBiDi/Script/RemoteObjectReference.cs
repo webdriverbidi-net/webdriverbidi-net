@@ -28,7 +28,7 @@ public record RemoteObjectReference : RemoteReference
     public string Handle { get => this.InternalHandle!; set => this.InternalHandle = value; }
 
     /// <summary>
-    /// Gets or sets the shard ID of the remote object.
+    /// Gets or sets the shared ID of the remote object.
     /// </summary>
     [JsonIgnore]
     public string? SharedId { get => this.InternalSharedId; set => this.InternalSharedId = value; }

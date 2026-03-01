@@ -37,7 +37,7 @@ public class ExtensionBase64Encoded : ExtensionData
     public override string Type => this.extensionType;
 
     /// <summary>
-    /// Gets or sets a web extension zip archive represented as a base64-encoded string..
+    /// Gets or sets a web extension zip archive represented as a base64-encoded string.
     /// </summary>
     [JsonPropertyName("value")]
     public string Value { get; set; } = string.Empty;

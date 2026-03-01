@@ -79,7 +79,7 @@ public sealed class NetworkModule : Module
     /// Adds collector for network data like response bodies for specific phases of the traffic.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
-    /// <returns>The result of the command containing a network interception ID.</returns>
+    /// <returns>The result of the command containing a data collector ID.</returns>
     public Task<AddDataCollectorCommandResult> AddDataCollectorAsync(AddDataCollectorCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);
@@ -140,7 +140,7 @@ public sealed class NetworkModule : Module
     /// Gets the collected data from a network data collector for a specific network request.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
-    /// <returns>The result of the command containing a network interception ID.</returns>
+    /// <returns>The result of the command containing the collected network data.</returns>
     public Task<GetDataCommandResult> GetDataAsync(GetDataCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync<GetDataCommandResult>(commandParameters);

@@ -52,8 +52,8 @@ public sealed class BrowserModule : Module
     /// <summary>
     /// Gets the list of information about the client windows for the current browser.
     /// </summary>
-    /// <param name="commandParameters">THe parameters for the command.</param>
-    /// <returns>An read-only list of the client windows open in this browser.</returns>
+    /// <param name="commandParameters">The parameters for the command.</param>
+    /// <returns>A read-only list of the client windows open in this browser.</returns>
     public Task<GetClientWindowsCommandResult> GetClientWindowsAsync(GetClientWindowsCommandParameters? commandParameters = null)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters ?? new());

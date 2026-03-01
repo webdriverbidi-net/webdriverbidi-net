@@ -31,7 +31,7 @@ public class Message
     public string Type { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets read-only dictionary of additional properties deserialized with this message.
+    /// Gets a read-only dictionary of additional properties deserialized with this message.
     /// </summary>
     [JsonIgnore]
     public ReceivedDataDictionary AdditionalData

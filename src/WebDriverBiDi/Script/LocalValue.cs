@@ -221,11 +221,11 @@ public record LocalValue : ArgumentValue
     public static LocalValue Object(Dictionary<LocalValue, LocalValue> mapValue) => new("object") { Value = mapValue };
 
     /// <summary>
-    /// Creates a LocalValue for regular expression.
+    /// Creates a LocalValue for a regular expression.
     /// </summary>
     /// <param name="pattern">The pattern for the regular expression.</param>
     /// <param name="flags">The flags of the regular expression.</param>
-    /// <returns>A LocalValue for regular expression.</returns>
+    /// <returns>A LocalValue for a regular expression.</returns>
     public static LocalValue RegExp(string pattern, string? flags = null) => new("regexp") { Value = new RegularExpressionValue(pattern, flags) };
 
     private object? GetSerializedNumericValue()

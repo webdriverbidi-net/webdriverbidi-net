@@ -20,7 +20,7 @@ public enum ScreenshotOrigin
     Viewport,
 
     /// <summary>
-    /// The origin of the clip rectangle is relative to document origin.
+    /// The origin of the clip rectangle is relative to the document origin.
     /// </summary>
     Document,
 }

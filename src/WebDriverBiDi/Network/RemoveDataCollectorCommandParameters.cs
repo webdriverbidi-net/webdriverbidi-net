@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the network.disownData command.
+/// Provides parameters for the network.removeDataCollector command.
 /// </summary>
 public class RemoveDataCollectorCommandParameters : CommandParameters<RemoveDataCollectorCommandResult>
 {

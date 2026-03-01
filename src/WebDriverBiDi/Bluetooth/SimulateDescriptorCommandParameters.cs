@@ -15,12 +15,12 @@ public class SimulateDescriptorCommandParameters : CommandParameters<SimulateDes
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateDescriptorCommandParameters"/> class.
     /// </summary>
-    /// <param name="browsingContextId">The ID of the browsing context for which to simulation of the Bluetooth adapter.</param>
+    /// <param name="browsingContextId">The ID of the browsing context for which to simulate the descriptor on the Bluetooth adapter.</param>
     /// <param name="address">The address of the simulated device.</param>
     /// <param name="serviceUuid">The UUID of the service to simulate.</param>
     /// <param name="characteristicUuid">The UUID of the characteristic to simulate.</param>
     /// <param name="descriptorUuid">The UUID of the descriptor to simulate.</param>
-    /// <param name="type">The <see cref="SimulateCharacteristicType"/> value for the type of simulation for the characteristic.</param>
+    /// <param name="type">The <see cref="SimulateDescriptorType"/> value for the type of simulation for the descriptor.</param>
     public SimulateDescriptorCommandParameters(string browsingContextId, string address, string serviceUuid, string characteristicUuid, string descriptorUuid, SimulateDescriptorType type)
     {
         this.BrowsingContextId = browsingContextId;
@@ -38,13 +38,13 @@ public class SimulateDescriptorCommandParameters : CommandParameters<SimulateDes
     public override string MethodName => "bluetooth.simulateDescriptor";
 
     /// <summary>
-    /// Gets or sets the ID of the browsing context for which to simulate a characteristic on the Bluetooth adapter.
+    /// Gets or sets the ID of the browsing context for which to simulate a descriptor on the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
     public string BrowsingContextId { get; set; }
 
     /// <summary>
-    /// Gets or sets the address of the device for which to simulate the characteristic.
+    /// Gets or sets the address of the device for which to simulate the descriptor.
     /// </summary>
     [JsonPropertyName("address")]
     public string Address { get; set; }

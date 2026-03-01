@@ -113,7 +113,7 @@ public record Cookie
     public bool HttpOnly { get; internal set; }
 
     /// <summary>
-    /// Gets a value indicating whether the cookie a same site cookie.
+    /// Gets a value indicating whether the cookie is a same-site cookie.
     /// </summary>
     [JsonPropertyName("sameSite")]
     // TODO (Issue #53): Uncomment the below when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.

@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the setting the emulated area of a screen.
+/// Represents the emulated area of a screen.
 /// </summary>
 public class ScreenArea
 {

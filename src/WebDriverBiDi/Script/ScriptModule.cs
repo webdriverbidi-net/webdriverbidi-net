@@ -37,7 +37,7 @@ public sealed class ScriptModule : Module
     public ObservableEvent<RealmCreatedEventArgs> OnRealmCreated { get; } = new(RealmCreatedEventName);
 
     /// <summary>
-    /// Gets an observable event that notifies with a script realm is destroyed.
+    /// Gets an observable event that notifies when a script realm is destroyed.
     /// </summary>
     public ObservableEvent<RealmDestroyedEventArgs> OnRealmDestroyed { get; } = new(RealmDestroyedEventName);
 

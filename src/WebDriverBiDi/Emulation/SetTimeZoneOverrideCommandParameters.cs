@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the emulation.setScreenOrientationOverride command.
+/// Provides parameters for the emulation.setTimezoneOverride command.
 /// </summary>
 public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
 {
@@ -26,7 +26,7 @@ public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZon
     public override string MethodName => "emulation.setTimezoneOverride";
 
     /// <summary>
-    /// Gets or sets the emulated locale for the browser. The value should be a valid structurally correct
+    /// Gets or sets the emulated time zone for the browser. The value should be a valid structurally correct
     /// named time zone identifier (e.g., "America/New_York", "Europe/London", "Asia/Tokyo", "Asia/Kolkata" etc.),
     /// or a UTC offset time zone identifier (e.g., "-5:00", "+5:30", etc.). When <see langword="null"/>,
     /// clears the override.
@@ -36,14 +36,14 @@ public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZon
     public string? TimeZone { get; set; }
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to set the geolocation override.
+    /// Gets or sets the browsing contexts for which to set the time zone override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }
 
     /// <summary>
-    /// Gets or sets the user contexts for which to set the geolocation override.
+    /// Gets or sets the user contexts for which to set the time zone override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

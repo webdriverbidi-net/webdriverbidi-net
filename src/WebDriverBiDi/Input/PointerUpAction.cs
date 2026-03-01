@@ -15,7 +15,7 @@ public class PointerUpAction : IPointerSourceAction
     /// <summary>
     /// Initializes a new instance of the <see cref="PointerUpAction"/> class.
     /// </summary>
-    /// <param name="button">The button used for the pointer down.</param>
+    /// <param name="button">The button used for the pointer up.</param>
     public PointerUpAction(long button)
         : base()
     {
@@ -29,7 +29,7 @@ public class PointerUpAction : IPointerSourceAction
     public string Type { get; } = "pointerUp";
 
     /// <summary>
-    /// Gets or sets the button to be pressed down.
+    /// Gets or sets the button to be released.
     /// </summary>
     [JsonPropertyName("button")]
     public long Button { get; set; }

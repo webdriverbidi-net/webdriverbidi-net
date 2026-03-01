@@ -185,9 +185,10 @@ public record RemoteValue
     }
 
     /// <summary>
-    /// Converts this RemoteReference to a SharedReference.
+    /// Converts this RemoteValue to a SharedReference.
     /// </summary>
     /// <returns>The SharedReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if this RemoteValue cannot be converted to a SharedReference.</exception>
     public SharedReference ToSharedReference()
     {
         if (this.ToRemoteReference() is not SharedReference reference)

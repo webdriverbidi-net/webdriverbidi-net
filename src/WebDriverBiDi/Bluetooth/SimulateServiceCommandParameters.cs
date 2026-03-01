@@ -15,7 +15,7 @@ public class SimulateServiceCommandParameters : CommandParameters<SimulateServic
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateServiceCommandParameters"/> class.
     /// </summary>
-    /// <param name="browsingContextId">The ID of the browsing context for which to simulation of the Bluetooth adapter.</param>
+    /// <param name="browsingContextId">The ID of the browsing context for which to simulate the Bluetooth service.</param>
     /// <param name="address">The address of the simulated device.</param>
     /// <param name="serviceUuid">The UUID of the service to simulate.</param>
     /// <param name="type">The <see cref="SimulateServiceType"/> value for the type of simulation for the service.</param>

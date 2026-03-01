@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browser;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result for getting the current client windows for the browser.setClientWindowState command.
+/// Result for setting the client window state using the browser.setClientWindowState command.
 /// </summary>
 /// <remarks>
 /// This result class is essentially a copy of <see cref="ClientWindowInfo"/>, as that is the

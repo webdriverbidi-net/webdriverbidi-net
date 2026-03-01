@@ -15,12 +15,12 @@ using WebDriverBiDi.Session;
 public class ProxyConfigurationJsonConverter : JsonConverter<ProxyConfiguration>
 {
     /// <summary>
-    /// Deserializes the JSON string to an ProxyConfiguration value.
+    /// Deserializes the JSON string to a ProxyConfiguration value.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
-    /// <returns>An subclass of a ProxyConfiguration object as described by the JSON.</returns>
+    /// <returns>A subclass of a ProxyConfiguration object as described by the JSON.</returns>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override ProxyConfiguration? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -92,7 +92,7 @@ public class ProxyConfigurationJsonConverter : JsonConverter<ProxyConfiguration>
     }
 
     /// <summary>
-    /// Serializes an ProxyConfiguration object to a JSON string.
+    /// Serializes a ProxyConfiguration object to a JSON string.
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The value to be serialized.</param>

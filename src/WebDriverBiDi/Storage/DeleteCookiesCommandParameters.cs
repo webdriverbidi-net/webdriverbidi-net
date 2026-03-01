@@ -26,14 +26,14 @@ public class DeleteCookiesCommandParameters : CommandParameters<DeleteCookiesCom
     public override string MethodName => "storage.deleteCookies";
 
     /// <summary>
-    /// Gets or sets the filter to use when getting the cookies.
+    /// Gets or sets the filter to use when deleting cookies.
     /// </summary>
     [JsonPropertyName("filter")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public CookieFilter? Filter { get; set; }
 
     /// <summary>
-    /// Gets or sets the partition descriptor to use when getting the cookies.
+    /// Gets or sets the partition descriptor to use when deleting cookies.
     /// </summary>
     [JsonPropertyName("partition")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

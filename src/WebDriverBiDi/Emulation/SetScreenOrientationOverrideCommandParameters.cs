@@ -34,14 +34,14 @@ public class SetScreenOrientationOverrideCommandParameters : CommandParameters<S
     public ScreenOrientation? ScreenOrientation { get; set; }
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to set the geolocation override.
+    /// Gets or sets the browsing contexts for which to set the screen orientation override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }
 
     /// <summary>
-    /// Gets or sets the user contexts for which to set the geolocation override.
+    /// Gets or sets the user contexts for which to set the screen orientation override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

@@ -21,7 +21,7 @@ public class UnsubscribeByAttributesCommandParameters : UnsubscribeCommandParame
     }
 
     /// <summary>
-    /// Gets the list of events to which to subscribe or unsubscribe.
+    /// Gets the list of events to which to unsubscribe.
     /// </summary>
     [JsonPropertyName("events")]
     public List<string> Events { get; } = [];

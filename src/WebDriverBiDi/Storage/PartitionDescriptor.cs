@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Storage;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object containing a descriptor for a partition key for a browser cookie using a browsing context.
+/// Abstract base class for descriptors of partition keys for browser cookies.
 /// </summary>
 [JsonDerivedType(typeof(BrowsingContextPartitionDescriptor))]
 [JsonDerivedType(typeof(StorageKeyPartitionDescriptor))]

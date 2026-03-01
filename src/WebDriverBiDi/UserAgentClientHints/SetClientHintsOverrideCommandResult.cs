@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.UserAgentClientHints;
 
 /// <summary>
-/// Result of setting scripting enabled using the emulation.setScriptingEnabled command.
+/// Result of setting client hints override using the userAgentClientHints.setClientHintsOverride command.
 /// </summary>
 public record SetClientHintsOverrideCommandResult : EmptyResult
 {

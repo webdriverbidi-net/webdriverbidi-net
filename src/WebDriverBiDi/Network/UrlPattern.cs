@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// The abstract base class for a value that can contain either a string or a byte array.
+/// The abstract base class for a URL pattern used to match network traffic.
 /// </summary>
 [JsonDerivedType(typeof(UrlPatternPattern))]
 [JsonDerivedType(typeof(UrlPatternString))]

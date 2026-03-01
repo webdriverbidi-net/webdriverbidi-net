@@ -37,7 +37,7 @@ public record Source
     public string? Context { get; internal set; }
 
     /// <summary>
-    /// Gets the browsing context ID for a script.
+    /// Gets the user context ID for a script.
     /// </summary>
     [JsonPropertyName("userContext")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

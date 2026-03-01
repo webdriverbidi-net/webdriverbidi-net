@@ -10,7 +10,7 @@ using WebDriverBiDi.Internal;
 using WebDriverBiDi.Network;
 
 /// <summary>
-/// Object containing a data for setting values for cookies.
+/// Object containing data for setting values for cookies.
 /// </summary>
 public class PartialCookie
 {
@@ -28,41 +28,39 @@ public class PartialCookie
     }
 
     /// <summary>
-    /// Gets or sets the name to use in querying for cookies.
+    /// Gets or sets the name of the cookie.
     /// </summary>
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the value to use in querying for cookies.
+    /// Gets or sets the value of the cookie.
     /// </summary>
     [JsonPropertyName("value")]
     public BytesValue Value { get; set; } = BytesValue.Empty;
 
     /// <summary>
-    /// Gets or sets the domain to use in querying for cookies.
+    /// Gets or sets the domain of the cookie.
     /// </summary>
     [JsonPropertyName("domain")]
     public string Domain { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the path to use in querying for cookies.
+    /// Gets or sets the path of the cookie.
     /// </summary>
     [JsonPropertyName("path")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Path { get; set; }
 
     /// <summary>
-    /// Gets or sets the byte length of the cookie when serialized in an HTTP cookie header
-    /// to use in querying for cookies.
+    /// Gets or sets the byte length of the cookie when serialized in an HTTP cookie header.
     /// </summary>
     [JsonPropertyName("size")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? Size { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the cookie is only available via HTTP headers
-    /// to use in querying for cookies.
+    /// Gets or sets a value indicating whether the cookie is only available via HTTP headers.
     /// </summary>
     [JsonPropertyName("httpOnly")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -70,21 +68,21 @@ public class PartialCookie
 
     /// <summary>
     /// Gets or sets a value indicating whether the cookie is secure, delivered via an
-    /// encrypted connection like HTTPS to use in querying for cookies.
+    /// encrypted connection like HTTPS.
     /// </summary>
     [JsonPropertyName("secure")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Secure { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the cookie a same site cookie to use in querying for cookies.
+    /// Gets or sets a value indicating whether the cookie is a same-site cookie.
     /// </summary>
     [JsonPropertyName("sameSite")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CookieSameSiteValue? SameSite { get; set; }
 
     /// <summary>
-    /// Gets or sets the expiration time of the cookie for querying cookies.
+    /// Gets or sets the expiration time of the cookie.
     /// </summary>
     [JsonIgnore]
     public DateTime? Expires
@@ -113,15 +111,14 @@ public class PartialCookie
     }
 
     /// <summary>
-    /// Gets the dictionary containing extra data to use in querying for cookies.
+    /// Gets the dictionary containing extra data for the cookie.
     /// </summary>
     [JsonExtensionData]
     public Dictionary<string, object?> AdditionalData { get; } = [];
 
     /// <summary>
     /// Gets or sets the expiration time of the cookie as the total number of milliseconds
-    /// elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC) to use in
-    /// querying for cookies.
+    /// elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
     /// </summary>
     [JsonPropertyName("expiry")]
     [JsonInclude]

@@ -31,7 +31,7 @@ public abstract class Locator
     public abstract string Type { get; }
 
     /// <summary>
-    /// Gets the value of to use in locating nodes.
+    /// Gets the value to use in locating nodes.
     /// </summary>
     [JsonPropertyName("value")]
     public abstract object Value { get; }

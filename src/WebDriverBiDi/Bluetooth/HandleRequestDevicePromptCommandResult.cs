@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Bluetooth;
 
 /// <summary>
-/// Result for handling request device prompts for the the bluetooth.handleRequestDevicePrompt command.
+/// Result for handling request device prompts for the bluetooth.handleRequestDevicePrompt command.
 /// </summary>
 public record HandleRequestDevicePromptCommandResult : EmptyResult
 {

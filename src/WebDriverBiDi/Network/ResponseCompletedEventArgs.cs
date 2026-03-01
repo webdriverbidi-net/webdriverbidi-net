@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object containing event data for events raised by before a network request is sent.
+/// Object containing event data for events raised when a network response has completed.
 /// </summary>
 public record ResponseCompletedEventArgs : BaseNetworkEventArgs
 {
@@ -21,7 +21,7 @@ public record ResponseCompletedEventArgs : BaseNetworkEventArgs
     }
 
     /// <summary>
-    /// Gets the initiator of the request.
+    /// Gets the response data of the request.
     /// </summary>
     [JsonPropertyName("response")]
     [JsonRequired]

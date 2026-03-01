@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Values used for status of preloaded resources..
+/// Values used for status of preloaded resources.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<PreloadingStatus>))]
 public enum PreloadingStatus

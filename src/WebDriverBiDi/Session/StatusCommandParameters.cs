@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Session;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the session.new command.
+/// Provides parameters for the session.status command.
 /// </summary>
 public class StatusCommandParameters : CommandParameters<StatusCommandResult>
 {

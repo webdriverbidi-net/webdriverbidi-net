@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Bluetooth;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object containing event data for events raised when a Bluetooth GATT connection is attempted.
+/// Object containing event data for events raised when a Bluetooth characteristic event is generated.
 /// </summary>
 public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
 {
@@ -29,7 +29,7 @@ public record CharacteristicEventGeneratedEventArgs : WebDriverBiDiEventArgs
     public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the address of the device generating the characteristic event..
+    /// Gets the address of the device generating the characteristic event.
     /// </summary>
     [JsonPropertyName("address")]
     [JsonRequired]

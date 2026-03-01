@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 public abstract class NetworkConditions
 {
     /// <summary>
-    /// Gets the type of clip rectangle.
+    /// Gets the type of network conditions.
     /// </summary>
     [JsonPropertyName("type")]
     public abstract string Type { get; }

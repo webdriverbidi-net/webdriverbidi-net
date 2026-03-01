@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result for creating a new browsing context using the browserContext.create command.
+/// Result for creating a new browsing context using the browsingContext.create command.
 /// </summary>
 public record CreateCommandResult : CommandResult
 {

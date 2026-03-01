@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result reloading the browsing context using the browserContext.reload command.
+/// Result for reloading the browsing context using the browsingContext.reload command.
 /// </summary>
 public record ReloadCommandResult : NavigateCommandResult
 {

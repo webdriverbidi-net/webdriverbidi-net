@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Bluetooth;
 
 /// <summary>
-/// Result for simulation of GATT disconnection response of Bluetooth adapter for the bluetooth.simulateGattDisconnectionResponse command.
+/// Result for simulation of GATT disconnection of Bluetooth adapter for the bluetooth.simulateGattDisconnection command.
 /// </summary>
 public record SimulateGattDisconnectionCommandResult : EmptyResult
 {

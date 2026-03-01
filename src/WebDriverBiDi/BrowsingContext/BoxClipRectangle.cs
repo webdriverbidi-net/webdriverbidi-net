@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// The abstract base class for a clipping rectangle for a screenshot.
+/// Represents a box-based clipping rectangle for a screenshot.
 /// </summary>
 public class BoxClipRectangle : ClipRectangle
 {
@@ -36,7 +36,7 @@ public class BoxClipRectangle : ClipRectangle
     public double X { get; set; } = 0.0;
 
     /// <summary>
-    /// Gets or sets the Y coordinate of the clip rectangle relative to the left edge of the viewport.
+    /// Gets or sets the Y coordinate of the clip rectangle relative to the top edge of the viewport.
     /// </summary>
     [JsonPropertyName("y")]
     [JsonInclude]

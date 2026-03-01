@@ -36,7 +36,7 @@ public class SimulateAdapterCommandParameters : CommandParameters<SimulateAdapte
     public string BrowsingContextId { get; set; }
 
     /// <summary>
-    /// Gets or sets the simulated state the Bluetooth adapter.
+    /// Gets or sets the simulated state of the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("state")]
     public AdapterState State { get; set; }

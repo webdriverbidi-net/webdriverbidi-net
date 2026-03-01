@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browser;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Represents the user context info for a browser.
+/// Result for getting user contexts using the browser.getUserContexts command.
 /// </summary>
 public record GetUserContextsCommandResult : CommandResult
 {

@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// The enumerated value of types for a BytesValue.
+/// The enumerated values for cache behavior.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<CacheBehavior>))]
 public enum CacheBehavior

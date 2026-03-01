@@ -147,7 +147,7 @@ public class EventObserver<T> : IDisposable
     }
 
     /// <summary>
-    /// Unset an established checkpoint for this observer.
+    /// Unsets an established checkpoint for this observer.
     /// </summary>
     public void UnsetCheckpoint()
     {

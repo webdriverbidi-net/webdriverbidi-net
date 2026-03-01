@@ -28,7 +28,7 @@ public class DisableSimulationCommandParameters : CommandParameters<DisableSimul
     public override string MethodName => "bluetooth.disableSimulation";
 
     /// <summary>
-    /// Gets or sets the ID of the browsing context for which to simulate the Bluetooth adapter.
+    /// Gets or sets the ID of the browsing context for which to disable simulation of the Bluetooth adapter.
     /// </summary>
     [JsonPropertyName("context")]
     public string BrowsingContextId { get; set; }

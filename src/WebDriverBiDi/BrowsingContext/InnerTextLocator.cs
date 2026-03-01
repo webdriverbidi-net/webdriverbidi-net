@@ -33,7 +33,7 @@ public class InnerTextLocator : Locator
     public override string Type => this.type;
 
     /// <summary>
-    /// Gets the text to use to locating nodes.
+    /// Gets the text to use in locating nodes.
     /// </summary>
     [JsonPropertyName("value")]
     public override object Value => this.value;

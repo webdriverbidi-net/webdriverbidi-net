@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 /// <summary>
-/// Result setting the view port in the browsing context using the browserContext.setViewport command.
+/// Result for setting the viewport in the browsing context using the browsingContext.setViewport command.
 /// </summary>
 public record SetViewportCommandResult : EmptyResult
 {

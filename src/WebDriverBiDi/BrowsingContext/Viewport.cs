@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the browsingContext.create command.
+/// Represents the dimensions of a viewport.
 /// </summary>
 public class Viewport
 {

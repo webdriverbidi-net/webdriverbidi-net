@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Browser;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result for getting the current client windows for the browser.createUserContext command.
+/// Result for getting the current client windows for the browser.getClientWindows command.
 /// </summary>
 public record GetClientWindowsCommandResult : CommandResult
 {

@@ -119,7 +119,7 @@ public sealed class BluetoothModule : Module
     }
 
     /// <summary>
-    /// Simulates a descriptor response for a Bluetooth device.
+    /// Simulates a descriptor for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>

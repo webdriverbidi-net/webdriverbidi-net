@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Permissions;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the browsingContext.activate command.
+/// Provides parameters for the permissions.setPermission command.
 /// </summary>
 public class SetPermissionCommandParameters : CommandParameters<SetPermissionCommandResult>
 {
@@ -16,7 +16,7 @@ public class SetPermissionCommandParameters : CommandParameters<SetPermissionCom
     /// Initializes a new instance of the <see cref="SetPermissionCommandParameters"/> class.
     /// </summary>
     /// <param name="permissionName">The name of the permission to set.</param>
-    /// <param name="state">the state of the permission to set.</param>
+    /// <param name="state">The state of the permission to set.</param>
     /// <param name="origin">The origin, usually a URL, for which the permission will be set.</param>
     public SetPermissionCommandParameters(string permissionName, PermissionState state, string origin)
         : this(new PermissionDescriptor(permissionName), state, origin)
@@ -27,7 +27,7 @@ public class SetPermissionCommandParameters : CommandParameters<SetPermissionCom
     /// Initializes a new instance of the <see cref="SetPermissionCommandParameters"/> class.
     /// </summary>
     /// <param name="descriptor">The descriptor of the permission to set.</param>
-    /// <param name="state">the state of the permission to set.</param>
+    /// <param name="state">The state of the permission to set.</param>
     /// <param name="origin">The origin, usually a URL, for which the permission will be set.</param>
     public SetPermissionCommandParameters(PermissionDescriptor descriptor, PermissionState state, string origin)
     {

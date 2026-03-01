@@ -27,13 +27,13 @@ public enum ScreenOrientationType
     PortraitSecondary,
 
     /// <summary>
-    /// The emulated screen orientation is of a screen whose primary orientation is portrait.
+    /// The emulated screen orientation is of a screen whose primary orientation is landscape.
     /// </summary>
     [JsonEnumValue("landscape-primary")]
     LandscapePrimary,
 
     /// <summary>
-    /// The emulated screen orientation is of a screen whose secondary orientation is portrait.
+    /// The emulated screen orientation is of a screen whose secondary orientation is landscape.
     /// </summary>
     [JsonEnumValue("landscape-secondary")]
     LandscapeSecondary,

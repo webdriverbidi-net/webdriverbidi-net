@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the network.continueResponse command.
+/// Provides parameters for the network.continueWithAuth command.
 /// </summary>
 public class ContinueWithAuthCommandParameters : CommandParameters<ContinueWithAuthCommandResult>
 {

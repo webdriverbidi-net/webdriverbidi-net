@@ -8,7 +8,7 @@ namespace WebDriverBiDi.UserAgentClientHints;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the overriding client hints for the browser.
+/// Represents a brand and version pair for user agent client hints.
 /// </summary>
 public class BrandVersion
 {

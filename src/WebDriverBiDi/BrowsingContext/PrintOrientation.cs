@@ -15,12 +15,12 @@ using WebDriverBiDi.JsonConverters;
 public enum PrintOrientation
 {
     /// <summary>
-    /// Create the browsing context in a new tab.
+    /// The printed page uses portrait orientation.
     /// </summary>
     Portrait,
 
     /// <summary>
-    /// Create the browsing context in a new window.
+    /// The printed page uses landscape orientation.
     /// </summary>
     Landscape,
 }

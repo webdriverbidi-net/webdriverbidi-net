@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 /// <summary>
-/// Result handling a user prompt in the browsing context using the browserContext.handleUserPrompt command.
+/// Result for handling a user prompt in the browsing context using the browsingContext.handleUserPrompt command.
 /// </summary>
 public record HandleUserPromptCommandResult : EmptyResult
 {

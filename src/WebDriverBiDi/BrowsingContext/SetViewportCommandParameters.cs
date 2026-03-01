@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Provides parameters for the browsingContext.create command.
+/// Provides parameters for the browsingContext.setViewport command.
 /// </summary>
 public class SetViewportCommandParameters : CommandParameters<SetViewportCommandResult>
 {

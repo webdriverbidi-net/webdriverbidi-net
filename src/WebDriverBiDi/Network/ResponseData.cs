@@ -13,6 +13,7 @@ using System.Text.Json.Serialization;
 public record ResponseData
 {
     private List<ReadOnlyHeader>? readOnlyHeaders;
+    private List<AuthChallenge>? authChallenges;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResponseData"/> class.
@@ -116,7 +117,7 @@ public record ResponseData
     public ulong? BodySize { get; internal set; }
 
     /// <summary>
-    /// Gets the size, in bytes, of the body in the response.
+    /// Gets the content of the response.
     /// </summary>
     [JsonPropertyName("content")]
     [JsonRequired]
@@ -126,9 +127,26 @@ public record ResponseData
     /// <summary>
     /// Gets the list of authorization challenges in the response, if any.
     /// </summary>
+    [JsonIgnore]
+    public IList<AuthChallenge>? AuthChallenges
+    {
+        get
+        {
+            if (this.authChallenges is null && this.SerializableAuthChallenges is not null)
+            {
+                this.authChallenges = [..this.SerializableAuthChallenges];
+            }
+
+            return this.authChallenges?.AsReadOnly();
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the list of authorization challenges in the response, if any.
+    /// </summary>
     [JsonPropertyName("authChallenges")]
     [JsonInclude]
-    public List<AuthChallenge>? AuthChallenges { get; internal set; }
+    internal List<AuthChallenge>? SerializableAuthChallenges { get; set; }
 
     /// <summary>
     /// Gets or sets the headers of the response for serialization purposes.

@@ -30,7 +30,7 @@ public class GeolocationCoordinates
     }
 
     /// <summary>
-    /// Gets or sets the longitude of the geographic position in degrees.
+    /// Gets or sets the latitude of the geographic position in degrees.
     /// Positive values are north of the equator; negative values are south of
     /// the equator.
     /// </summary>
@@ -38,7 +38,7 @@ public class GeolocationCoordinates
     public double Latitude { get; set; }
 
     /// <summary>
-    /// Gets or sets the latitude of the geographic position in degrees.
+    /// Gets or sets the longitude of the geographic position in degrees.
     /// Positive values are east of the prime meridian; negative values are west
     /// of the prime meridian.
     /// </summary>

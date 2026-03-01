@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// A class providing credentials for authorization.
+/// Represents an authentication challenge in a network response.
 /// </summary>
 public record AuthChallenge
 {

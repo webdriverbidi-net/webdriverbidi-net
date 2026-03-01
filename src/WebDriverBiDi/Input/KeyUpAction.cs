@@ -16,6 +16,7 @@ public class KeyUpAction : IKeySourceAction
     /// Initializes a new instance of the <see cref="KeyUpAction"/> class.
     /// </summary>
     /// <param name="value">The text of keys to send for key up.</param>
+    /// <exception cref="ArgumentException">Thrown if the value is null or empty.</exception>
     public KeyUpAction(string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -33,7 +34,7 @@ public class KeyUpAction : IKeySourceAction
     public string Type { get; } = "keyUp";
 
     /// <summary>
-    /// Gets or sets the duration of the pause.
+    /// Gets or sets the value of the key up action.
     /// </summary>
     [JsonPropertyName("value")]
     public string Value { get; set; } = string.Empty;

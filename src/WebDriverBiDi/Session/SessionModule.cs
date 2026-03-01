@@ -43,7 +43,7 @@ public sealed class SessionModule : Module
     /// Creates a new session.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
-    /// <returns>The result of the command containing the information new session.</returns>
+    /// <returns>The result of the command containing the information about the new session.</returns>
     public Task<NewCommandResult> NewSessionAsync(NewCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);

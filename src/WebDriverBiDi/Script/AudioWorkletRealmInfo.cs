@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Script;
 
 /// <summary>
-/// Object representing a audio worklet realm for executing script.
+/// Object representing an audio worklet realm for executing script.
 /// </summary>
 public record AudioWorkletRealmInfo : RealmInfo
 {

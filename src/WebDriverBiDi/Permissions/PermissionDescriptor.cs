@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Permissions;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the browsingContext.activate command.
+/// Represents a descriptor for a browser permission.
 /// </summary>
 public class PermissionDescriptor
 {

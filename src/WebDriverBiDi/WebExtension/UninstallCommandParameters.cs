@@ -28,7 +28,7 @@ public class UninstallCommandParameters : CommandParameters<UninstallCommandResu
     public override string MethodName => "webExtension.uninstall";
 
     /// <summary>
-    /// Gets or sets the data of the web extension to install.
+    /// Gets or sets the ID of the web extension to uninstall.
     /// </summary>
     [JsonPropertyName("extension")]
     public string ExtensionId { get; set; }

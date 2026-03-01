@@ -30,13 +30,13 @@ public class SimulateAdvertisementCommandParameters : CommandParameters<Simulate
     public override string MethodName => "bluetooth.simulateAdvertisement";
 
     /// <summary>
-    /// Gets or sets the ID of the browsing context for which to simulate the already-connected Bluetooth peripheral.
+    /// Gets or sets the ID of the browsing context for which to simulate the Bluetooth advertisement.
     /// </summary>
     [JsonPropertyName("context")]
     public string BrowsingContextId { get; set; }
 
     /// <summary>
-    /// Gets or sets the address of the simulated already-connected Bluetooth peripheral.
+    /// Gets or sets the scan entry data for the simulated Bluetooth advertisement.
     /// </summary>
     [JsonPropertyName("scanEntry")]
     public SimulateAdvertisementScanEntry ScanEntry { get; set; }

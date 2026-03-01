@@ -32,7 +32,7 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     public List<InterceptPhase> Phases { get; } = [];
 
     /// <summary>
-    /// Gets or sets the list of top-level browsing context ID for which traffic will be intercepted.
+    /// Gets or sets the list of top-level browsing context IDs for which traffic will be intercepted.
     /// If present, it must contain at least one browsing context ID, and all IDs must represent top-level
     /// browsing contexts, or an error will be thrown by the remote end.
     /// </summary>
@@ -41,7 +41,7 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     public List<string>? BrowsingContextIds { get; set; }
 
     /// <summary>
-    /// Gets or sets list of URL patterns for which to intercept network traffic.
+    /// Gets or sets the list of URL patterns for which to intercept network traffic.
     /// </summary>
     [JsonPropertyName("urlPatterns")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Script;
 
 /// <summary>
-/// Result for removing a preload script using the script.removedPreloadScript command.
+/// Result for removing a preload script using the script.removePreloadScript command.
 /// </summary>
 public record RemovePreloadScriptCommandResult : EmptyResult
 {

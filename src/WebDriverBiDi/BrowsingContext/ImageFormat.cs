@@ -20,7 +20,7 @@ public class ImageFormat
     }
 
     /// <summary>
-    /// Gets or sets the MIME type of the image format. Default to "image/png".
+    /// Gets or sets the MIME type of the image format. Defaults to "image/png".
     /// </summary>
     [JsonPropertyName("type")]
     public string Type { get; set; } = "image/png";

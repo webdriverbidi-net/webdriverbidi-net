@@ -15,13 +15,13 @@ public class SimulateDescriptorResponseCommandParameters : CommandParameters<Sim
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateDescriptorResponseCommandParameters"/> class.
     /// </summary>
-    /// <param name="browsingContextId">The ID of the browsing context for which to simulation of the Bluetooth adapter.</param>
+    /// <param name="browsingContextId">The ID of the browsing context for which to simulate the descriptor response on the Bluetooth adapter.</param>
     /// <param name="address">The address of the simulated device.</param>
     /// <param name="serviceUuid">The UUID of the service to simulate.</param>
     /// <param name="characteristicUuid">The UUID of the characteristic to simulate.</param>
     /// <param name="descriptorUuid">The UUID of the descriptor to simulate.</param>
-    /// <param name="type">The <see cref="SimulateDescriptorResponseType"/> value for the type of simulation for the characteristic response.</param>
-    /// <param name="code">The code of the simulated characteristic response.</param>
+    /// <param name="type">The <see cref="SimulateDescriptorResponseType"/> value for the type of simulation for the descriptor response.</param>
+    /// <param name="code">The code of the simulated descriptor response.</param>
     public SimulateDescriptorResponseCommandParameters(string browsingContextId, string address, string serviceUuid, string characteristicUuid, string descriptorUuid, SimulateDescriptorResponseType type, uint code)
     {
         this.BrowsingContextId = browsingContextId;

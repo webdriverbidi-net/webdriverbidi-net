@@ -38,7 +38,7 @@ public record FileDialogInfo
     public bool Multiple { get; internal set; }
 
     /// <summary>
-    /// Gets the Id of the user context for which the user prompt was opened.
+    /// Gets the ID of the user context for which the user prompt was opened.
     /// </summary>
     [JsonPropertyName("userContext")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

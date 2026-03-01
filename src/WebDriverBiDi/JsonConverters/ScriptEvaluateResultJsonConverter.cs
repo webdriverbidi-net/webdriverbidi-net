@@ -20,7 +20,7 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
-    /// <returns>An subclass of an EvaluateResult object as described by the JSON.</returns>
+    /// <returns>A subclass of an EvaluateResult object as described by the JSON.</returns>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override EvaluateResult? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -60,7 +60,7 @@ public class ScriptEvaluateResultJsonConverter : JsonConverter<EvaluateResult>
     /// Serializes an EvaluateResult object to a JSON string.
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
-    /// <param name="value">The Command to be serialized.</param>
+    /// <param name="value">The EvaluateResult to be serialized.</param>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     /// <exception cref="NotImplementedException">Thrown when called, as this converter is only used for deserialization.</exception>
     public override void Write(Utf8JsonWriter writer, EvaluateResult value, JsonSerializerOptions options)

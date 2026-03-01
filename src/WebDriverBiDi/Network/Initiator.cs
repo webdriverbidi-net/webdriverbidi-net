@@ -36,7 +36,7 @@ public record Initiator
     public ulong? ColumnNumber { get; internal set; }
 
     /// <summary>
-    /// Gets the column number of the script initiating the request.
+    /// Gets the line number of the script initiating the request.
     /// </summary>
     [JsonPropertyName("lineNumber")]
     [JsonInclude]

@@ -28,7 +28,7 @@ public class FailRequestCommandParameters : CommandParameters<FailRequestCommand
     public override string MethodName => "network.failRequest";
 
     /// <summary>
-    /// Gets or sets the ID of the request to fail..
+    /// Gets or sets the ID of the request to fail.
     /// </summary>
     [JsonPropertyName("request")]
     public string RequestId { get; set; }

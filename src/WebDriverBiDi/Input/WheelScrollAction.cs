@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Input;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// An action so scroll a wheel device.
+/// An action to scroll a wheel device.
 /// </summary>
 public class WheelScrollAction : IWheelSourceAction
 {

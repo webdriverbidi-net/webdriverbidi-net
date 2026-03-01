@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 /// <summary>
-/// Result traversing the history in the browsing context using the browserContext.traverseHistory command.
+/// Result for traversing the history in the browsing context using the browsingContext.traverseHistory command.
 /// </summary>
 public record TraverseHistoryCommandResult : EmptyResult
 {

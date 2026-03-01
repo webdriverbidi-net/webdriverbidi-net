@@ -48,7 +48,7 @@ public class CharacteristicProperties
     public bool? IsWrite { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the characteristic is to write.
+    /// Gets or sets a value indicating whether the characteristic is to notify.
     /// </summary>
     [JsonPropertyName("notify")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

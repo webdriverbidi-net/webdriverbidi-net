@@ -53,6 +53,7 @@ public class PointerAction
     /// <summary>
     /// Gets or sets the twist of the pointer in degrees, between 0 and 359, on the surface. If omitted, defaults to 0.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the value is greater than 359.</exception>
     [JsonPropertyName("twist")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ulong? Twist
@@ -73,6 +74,7 @@ public class PointerAction
     /// Gets or sets the altitude angle (angle from the horizontal) of the pointer device.
     /// Must be between 0 and 1.5707963267948966 (pi / 2). If omitted, defaults to 0.0.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the value is not between 0 and pi / 2 inclusive.</exception>
     [JsonPropertyName("altitudeAngle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]
@@ -94,6 +96,7 @@ public class PointerAction
     /// Gets or sets the azimuth angle (angle from "north," or a line directly up from the point of contact)
     /// of the pointer device. Must be between 0 and 6.283185307179586 (2 *pi) If omitted, defaults to 0.0.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown if the value is not between 0 and 2 * pi inclusive.</exception>
     [JsonPropertyName("azimuthAngle")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(FixedDoubleJsonConverter))]

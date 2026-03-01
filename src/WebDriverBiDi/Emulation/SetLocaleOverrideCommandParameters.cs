@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Emulation;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the emulation.setScreenOrientationOverride command.
+/// Provides parameters for the emulation.setLocaleOverride command.
 /// </summary>
 public class SetLocaleOverrideCommandParameters : CommandParameters<SetLocaleOverrideCommandResult>
 {
@@ -34,14 +34,14 @@ public class SetLocaleOverrideCommandParameters : CommandParameters<SetLocaleOve
     public string? Locale { get; set; }
 
     /// <summary>
-    /// Gets or sets the browsing contexts for which to set the geolocation override.
+    /// Gets or sets the browsing contexts for which to set the locale override.
     /// </summary>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }
 
     /// <summary>
-    /// Gets or sets the user contexts for which to set the geolocation override.
+    /// Gets or sets the user contexts for which to set the locale override.
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

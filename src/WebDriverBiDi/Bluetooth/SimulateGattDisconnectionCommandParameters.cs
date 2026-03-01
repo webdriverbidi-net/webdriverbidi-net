@@ -15,7 +15,7 @@ public class SimulateGattDisconnectionCommandParameters : CommandParameters<Simu
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateGattDisconnectionCommandParameters"/> class.
     /// </summary>
-    /// <param name="browsingContextId">The ID of the browsing context for which to simulate the GATT connection response of the Bluetooth adapter.</param>
+    /// <param name="browsingContextId">The ID of the browsing context for which to simulate the GATT disconnection of the Bluetooth adapter.</param>
     /// <param name="address">The address of the simulated device.</param>
     public SimulateGattDisconnectionCommandParameters(string browsingContextId, string address)
     {

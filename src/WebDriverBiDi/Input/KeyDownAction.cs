@@ -16,6 +16,7 @@ public class KeyDownAction : IKeySourceAction
     /// Initializes a new instance of the <see cref="KeyDownAction"/> class.
     /// </summary>
     /// <param name="value">The text of keys to send for key down.</param>
+    /// <exception cref="ArgumentException">Thrown if the value is null or empty.</exception>
     public KeyDownAction(string value)
     {
         if (string.IsNullOrEmpty(value))

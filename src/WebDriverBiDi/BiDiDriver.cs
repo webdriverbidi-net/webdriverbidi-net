@@ -367,7 +367,7 @@ public class BiDiDriver : IAsyncDisposable
     /// Registers a module for use with this driver.
     /// </summary>
     /// <param name="module">The module object.</param>
-    /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name tha has already been registered.</exception>
+    /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name that has already been registered.</exception>
     public virtual void RegisterModule(Module module)
     {
         if (!this.modules.TryAdd(module.ModuleName, module))
@@ -382,6 +382,8 @@ public class BiDiDriver : IAsyncDisposable
     /// <typeparam name="T">A module object which is a subclass of <see cref="Module"/>.</typeparam>
     /// <param name="moduleName">The name of the module to return.</param>
     /// <returns>The protocol module object.</returns>
+    /// <exception cref="ArgumentException">Thrown when the specified module name is not registered with this driver.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the registered module object is not of the expected type.</exception>
     public virtual T GetModule<T>(string moduleName)
         where T : Module
     {

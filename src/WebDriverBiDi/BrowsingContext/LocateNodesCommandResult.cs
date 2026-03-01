@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
-/// Result for locating nodes using the browserContext.locateNodes command.
+/// Result for locating nodes using the browsingContext.locateNodes command.
 /// </summary>
 public record LocateNodesCommandResult : CommandResult
 {

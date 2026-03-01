@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Provides parameters for the browsingContext.create command.
+/// Provides parameters for the browsingContext.getTree command.
 /// </summary>
 public class GetTreeCommandParameters : CommandParameters<GetTreeCommandResult>
 {

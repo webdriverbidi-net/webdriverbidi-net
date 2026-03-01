@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// The abstract base class for a value that can contain either a string or a byte array.
+/// Represents a URL pattern defined by individual component patterns.
 /// </summary>
 public class UrlPatternPattern : UrlPattern
 {

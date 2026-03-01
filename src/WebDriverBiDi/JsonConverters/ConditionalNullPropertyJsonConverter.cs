@@ -29,7 +29,7 @@ public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
-    /// <returns>A value of the specified enum.</returns>
+    /// <returns>This method always throws; it does not return a value.</returns>
     /// <exception cref="NotImplementedException">Always thrown, as this converter does not support deserialization.</exception>
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -40,7 +40,7 @@ public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
     /// Conditionally serializes an object value to a JSON string, including null if the value meets criteria for the conversion.
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
-    /// <param name="value">The enum value to be serialized.</param>
+    /// <param name="value">The value to be serialized.</param>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {

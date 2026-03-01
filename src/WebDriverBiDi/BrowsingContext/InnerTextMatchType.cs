@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
-/// Values used for the creation of new browsing contexts.
+/// Values used for specifying the match type of an inner text locator.
 /// </summary>
 [JsonConverter(typeof(EnumValueJsonConverter<InnerTextMatchType>))]
 public enum InnerTextMatchType

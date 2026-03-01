@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result for getting the tree of browsing contexts using the browserContext.print command.
+/// Result for printing a browsing context using the browsingContext.print command.
 /// </summary>
 public record PrintCommandResult : CommandResult
 {

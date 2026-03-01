@@ -157,6 +157,7 @@ public class Transport : IAsyncDisposable
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is already connected to a remote end.</exception>
     public virtual async Task ConnectAsync(string websocketUri)
     {
         await this.connectDisconnectSemaphore.WaitAsync().ConfigureAwait(false);
@@ -217,6 +218,7 @@ public class Transport : IAsyncDisposable
     /// <param name="commandData">The command settings object containing all data required to execute the command.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is not connected to a remote end.</exception>
     public virtual async Task<Command> SendCommandAsync(CommandParameters commandData)
     {
         if (this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminationExceptions))
@@ -256,7 +258,7 @@ public class Transport : IAsyncDisposable
     /// This method must be called before connecting to the remote end.
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
-    /// <exception cref="WebDriverBiDiException">
+    /// <exception cref="WebDriverBiDiConnectionException">
     /// Thrown if the transport is already connected to a remote end.
     /// </exception>
     public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
@@ -292,7 +294,7 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
-    /// Adds an event message type to the map of known event meessage types.
+    /// Adds an event message type to the map of known event message types.
     /// </summary>
     /// <param name="eventName">The name of the event.</param>
     /// <param name="eventMessageType">The type of data to be returned in the event.</param>

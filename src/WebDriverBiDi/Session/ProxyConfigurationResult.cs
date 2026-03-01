@@ -63,7 +63,7 @@ public record ProxyConfigurationResult
     /// Gets the underlying proxy configuration as the type-specific proxy configuration type.
     /// </summary>
     /// <typeparam name="T">A <see cref="ProxyConfiguration"/> type.</typeparam>
-    /// <returns>The proxy configuration ad the type-specific proxy configuration type.</returns>
+    /// <returns>The proxy configuration as the type-specific proxy configuration type.</returns>
     protected T ProxyConfigurationAs<T>()
         where T : ProxyConfiguration
     {

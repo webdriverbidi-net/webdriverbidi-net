@@ -15,22 +15,22 @@ using System.Text.Json.Serialization;
 public class FixedDoubleJsonConverter : JsonConverter<double>
 {
     /// <summary>
-    /// Deserializes the JSON string to an double value.
+    /// Deserializes the JSON string to a double value.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
-    /// <returns>A value of the specified double.</returns>
+    /// <returns>The deserialized double value.</returns>
     public override double Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         return reader.GetDouble();
     }
 
     /// <summary>
-    /// Serializes an double value to a JSON string, preserving decimal places for integer values.
+    /// Serializes a double value to a JSON string, preserving decimal places for integer values.
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
-    /// <param name="value">The enum value to be serialized.</param>
+    /// <param name="value">The double value to be serialized.</param>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)
     {

@@ -105,7 +105,7 @@ public class SetCookieHeader
     public bool? HttpOnly { get; set; }
 
     /// <summary>
-    /// Gets or sets a value detailing whether the cookie is a sames site cookie.
+    /// Gets or sets a value detailing whether the cookie is a same-site cookie.
     /// </summary>
     [JsonPropertyName("sameSite")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Speculation;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object containing event data for events the prefetch status of a resource is updated.
+/// Object containing event data for events raised when the prefetch status of a resource is updated.
 /// </summary>
 public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
 {
@@ -29,7 +29,7 @@ public record PrefetchStatusUpdatedEventArgs : WebDriverBiDiEventArgs
     public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets the URL of the resource for which the prefetch status is updated..
+    /// Gets the URL of the resource for which the prefetch status is updated.
     /// </summary>
     [JsonPropertyName("url")]
     [JsonRequired]

@@ -15,12 +15,12 @@ using WebDriverBiDi.Script;
 public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
 {
     /// <summary>
-    /// Deserializes the JSON string to an RealmInfo value.
+    /// Deserializes the JSON string to a RealmInfo value.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
-    /// <returns>A LogEntry, including the proper subclasses.</returns>
+    /// <returns>A RealmInfo, including the proper subclasses.</returns>
     /// <exception cref="JsonException">Thrown when invalid JSON is encountered.</exception>
     public override RealmInfo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -114,7 +114,7 @@ public class RealmInfoJsonConverter : JsonConverter<RealmInfo>
     /// Serializes a RealmInfo object to a JSON string.
     /// </summary>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
-    /// <param name="value">The Command to be serialized.</param>
+    /// <param name="value">The RealmInfo to be serialized.</param>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     /// <exception cref="NotImplementedException">Thrown when called, as this converter is only used for deserialization.</exception>
     public override void Write(Utf8JsonWriter writer, RealmInfo value, JsonSerializerOptions options)

@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Network;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Object containing event data for events raised by before a network request is sent.
+/// Object containing event data for events raised before a network request is sent.
 /// </summary>
 public record BeforeRequestSentEventArgs : BaseNetworkEventArgs
 {

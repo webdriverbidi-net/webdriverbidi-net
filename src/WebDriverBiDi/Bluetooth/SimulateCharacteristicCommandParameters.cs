@@ -15,7 +15,7 @@ public class SimulateCharacteristicCommandParameters : CommandParameters<Simulat
     /// <summary>
     /// Initializes a new instance of the <see cref="SimulateCharacteristicCommandParameters"/> class.
     /// </summary>
-    /// <param name="browsingContextId">The ID of the browsing context for which to simulation of the Bluetooth adapter.</param>
+    /// <param name="browsingContextId">The ID of the browsing context for which to simulate the characteristic on the Bluetooth adapter.</param>
     /// <param name="address">The address of the simulated device.</param>
     /// <param name="serviceUuid">The UUID of the service to simulate.</param>
     /// <param name="characteristicUuid">The UUID of the characteristic to simulate.</param>
