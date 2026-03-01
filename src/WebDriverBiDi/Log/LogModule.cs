@@ -24,7 +24,7 @@ public sealed class LogModule : Module
     public LogModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<LogEntry>(EntryAddedEventName, this.OnEntryAddedAsync);
+        this.RegisterObservableEvent<LogEntry, EntryAddedEventArgs>(this.OnEntryAdded, entry => new EntryAddedEventArgs(entry));
     }
 
     /// <summary>
@@ -36,10 +36,4 @@ public sealed class LogModule : Module
     /// Gets the module name.
     /// </summary>
     public override string ModuleName => LogModuleName;
-
-    private async Task OnEntryAddedAsync(EventInfo<LogEntry> eventData)
-    {
-        EntryAddedEventArgs eventArgs = eventData.ToEventArgs(entry => new EntryAddedEventArgs(entry));
-        await this.OnEntryAdded.NotifyObserversAsync(eventArgs);
-    }
 }

@@ -28,11 +28,11 @@ public sealed class NetworkModule : Module
     public NetworkModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<AuthRequiredEventArgs>(AuthRequiredEventName, this.OnAuthRequiredAsync);
-        this.RegisterAsyncEventInvoker<BeforeRequestSentEventArgs>(BeforeRequestSentEventName, this.OnBeforeRequestSentAsync);
-        this.RegisterAsyncEventInvoker<FetchErrorEventArgs>(FetchErrorEventName, this.OnFetchErrorAsync);
-        this.RegisterAsyncEventInvoker<ResponseStartedEventArgs>(ResponseStartedEventName, this.OnResponseStartedAsync);
-        this.RegisterAsyncEventInvoker<ResponseCompletedEventArgs>(ResponseCompletedEventName, this.OnResponseCompletedAsync);
+        this.RegisterObservableEvent(this.OnAuthRequired);
+        this.RegisterObservableEvent(this.OnBeforeRequestSent);
+        this.RegisterObservableEvent(this.OnFetchError);
+        this.RegisterObservableEvent(this.OnResponseStarted);
+        this.RegisterObservableEvent(this.OnResponseCompleted);
     }
 
     /// <summary>
@@ -194,35 +194,5 @@ public sealed class NetworkModule : Module
     public Task<SetExtraHeadersCommandResult> SetExtraHeadersAsync(SetExtraHeadersCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);
-    }
-
-    private async Task OnAuthRequiredAsync(EventInfo<AuthRequiredEventArgs> eventData)
-    {
-        AuthRequiredEventArgs eventArgs = eventData.ToEventArgs<AuthRequiredEventArgs>();
-        await this.OnAuthRequired.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnBeforeRequestSentAsync(EventInfo<BeforeRequestSentEventArgs> eventData)
-    {
-        BeforeRequestSentEventArgs eventArgs = eventData.ToEventArgs<BeforeRequestSentEventArgs>();
-        await this.OnBeforeRequestSent.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnFetchErrorAsync(EventInfo<FetchErrorEventArgs> eventData)
-    {
-        FetchErrorEventArgs eventArgs = eventData.ToEventArgs<FetchErrorEventArgs>();
-        await this.OnFetchError.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnResponseStartedAsync(EventInfo<ResponseStartedEventArgs> eventData)
-    {
-        ResponseStartedEventArgs eventArgs = eventData.ToEventArgs<ResponseStartedEventArgs>();
-        await this.OnResponseStarted.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnResponseCompletedAsync(EventInfo<ResponseCompletedEventArgs> eventData)
-    {
-        ResponseCompletedEventArgs eventArgs = eventData.ToEventArgs<ResponseCompletedEventArgs>();
-        await this.OnResponseCompleted.NotifyObserversAsync(eventArgs);
     }
 }

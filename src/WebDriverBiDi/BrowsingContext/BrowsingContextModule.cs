@@ -37,20 +37,20 @@ public sealed class BrowsingContextModule : Module
     public BrowsingContextModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<BrowsingContextInfo>(ContextCreatedEventName, this.OnContextCreatedAsync);
-        this.RegisterAsyncEventInvoker<BrowsingContextInfo>(ContextDestroyedEventName, this.OnContextDestroyedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>(NavigationStartedEventName, this.OnNavigationStartedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>(FragmentNavigatedEventName, this.OnFragmentNavigatedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>(DomContentLoadedEventName, this.OnDomContentLoadedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>(LoadEventName, this.OnLoadAsync);
-        this.RegisterAsyncEventInvoker<DownloadWillBeginEventArgs>(DownloadWillBeginEventName, this.OnDownloadWillBeginAsync);
-        this.RegisterAsyncEventInvoker<DownloadEndEventArgs>(DownloadEndEventName, this.OnDownloadEndAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>(NavigationAbortedEventName, this.OnNavigationAbortedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>(NavigationCommittedEventName, this.OnNavigationCommittedAsync);
-        this.RegisterAsyncEventInvoker<NavigationEventArgs>(NavigationFailedEventName, this.OnNavigationFailedAsync);
-        this.RegisterAsyncEventInvoker<HistoryUpdatedEventArgs>(HistoryUpdatedEventName, this.OnHistoryUpdatedAsync);
-        this.RegisterAsyncEventInvoker<UserPromptClosedEventArgs>(UserPromptClosedEventName, this.OnUserPromptClosedAsync);
-        this.RegisterAsyncEventInvoker<UserPromptOpenedEventArgs>(UserPromptOpenedEventName, this.OnUserPromptOpenedAsync);
+        this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.OnContextCreated, info => new BrowsingContextEventArgs(info));
+        this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.OnContextDestroyed, info => new BrowsingContextEventArgs(info));
+        this.RegisterObservableEvent(this.OnNavigationStarted);
+        this.RegisterObservableEvent(this.OnFragmentNavigated);
+        this.RegisterObservableEvent(this.OnDomContentLoaded);
+        this.RegisterObservableEvent(this.OnLoad);
+        this.RegisterObservableEvent(this.OnDownloadWillBegin);
+        this.RegisterObservableEvent(this.OnDownloadEnd);
+        this.RegisterObservableEvent(this.OnNavigationAborted);
+        this.RegisterObservableEvent(this.OnNavigationCommitted);
+        this.RegisterObservableEvent(this.OnNavigationFailed);
+        this.RegisterObservableEvent(this.OnHistoryUpdated);
+        this.RegisterObservableEvent(this.OnUserPromptClosed);
+        this.RegisterObservableEvent(this.OnUserPromptOpened);
     }
 
     /// <summary>
@@ -246,89 +246,5 @@ public sealed class BrowsingContextModule : Module
     public Task<TraverseHistoryCommandResult> TraverseHistoryAsync(TraverseHistoryCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);
-    }
-
-    private async Task OnContextCreatedAsync(EventInfo<BrowsingContextInfo> eventData)
-    {
-        BrowsingContextEventArgs eventArgs = eventData.ToEventArgs(info => new BrowsingContextEventArgs(info));
-        await this.OnContextCreated.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnContextDestroyedAsync(EventInfo<BrowsingContextInfo> eventData)
-    {
-        BrowsingContextEventArgs eventArgs = eventData.ToEventArgs(info => new BrowsingContextEventArgs(info));
-        await this.OnContextDestroyed.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnNavigationStartedAsync(EventInfo<NavigationEventArgs> eventData)
-    {
-        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-        await this.OnNavigationStarted.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnFragmentNavigatedAsync(EventInfo<NavigationEventArgs> eventData)
-    {
-        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-        await this.OnFragmentNavigated.NotifyObserversAsync(eventArgs);
-     }
-
-    private async Task OnDomContentLoadedAsync(EventInfo<NavigationEventArgs> eventData)
-    {
-        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-        await this.OnDomContentLoaded.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnLoadAsync(EventInfo<NavigationEventArgs> eventData)
-    {
-        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-        await this.OnLoad.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnDownloadWillBeginAsync(EventInfo<DownloadWillBeginEventArgs> eventData)
-    {
-        DownloadWillBeginEventArgs eventArgs = eventData.ToEventArgs<DownloadWillBeginEventArgs>();
-        await this.OnDownloadWillBegin.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnDownloadEndAsync(EventInfo<DownloadEndEventArgs> eventData)
-    {
-        DownloadEndEventArgs eventArgs = eventData.ToEventArgs<DownloadEndEventArgs>();
-        await this.OnDownloadEnd.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnNavigationAbortedAsync(EventInfo<NavigationEventArgs> eventData)
-    {
-        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-        await this.OnNavigationAborted.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnNavigationCommittedAsync(EventInfo<NavigationEventArgs> eventData)
-    {
-        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-        await this.OnNavigationCommitted.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnNavigationFailedAsync(EventInfo<NavigationEventArgs> eventData)
-    {
-        NavigationEventArgs eventArgs = eventData.ToEventArgs<NavigationEventArgs>();
-        await this.OnNavigationFailed.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnHistoryUpdatedAsync(EventInfo<HistoryUpdatedEventArgs> eventData)
-    {
-        HistoryUpdatedEventArgs eventArgs = eventData.ToEventArgs<HistoryUpdatedEventArgs>();
-        await this.OnHistoryUpdated.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnUserPromptClosedAsync(EventInfo<UserPromptClosedEventArgs> eventData)
-    {
-        UserPromptClosedEventArgs eventArgs = eventData.ToEventArgs<UserPromptClosedEventArgs>();
-        await this.OnUserPromptClosed.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnUserPromptOpenedAsync(EventInfo<UserPromptOpenedEventArgs> eventData)
-    {
-        UserPromptOpenedEventArgs eventArgs = eventData.ToEventArgs<UserPromptOpenedEventArgs>();
-        await this.OnUserPromptOpened.NotifyObserversAsync(eventArgs);
     }
 }

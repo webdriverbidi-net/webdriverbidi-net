@@ -32,13 +32,43 @@ public abstract class Module
     protected BiDiDriver Driver { get; }
 
     /// <summary>
-    /// Registers an invoker for a given event.
+    /// Registers an event so that when it is received, the deserialized data is forwarded
+    /// directly to the given <see cref="ObservableEvent{T}"/>. Use this overload when the
+    /// deserialized type <typeparamref name="T"/> is the same as the event args type.
     /// </summary>
-    /// <typeparam name="T">The type of data used in the event.</typeparam>
-    /// <param name="eventName">The name of the event.</param>
-    /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
-    protected virtual void RegisterAsyncEventInvoker<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+    /// <typeparam name="T">The type of event args, which must also be the deserialized event data type.</typeparam>
+    /// <param name="observableEvent">The <see cref="ObservableEvent{T}"/> to notify when the event is received.</param>
+    protected void RegisterObservableEvent<T>(ObservableEvent<T> observableEvent)
+        where T : WebDriverBiDiEventArgs
     {
-        this.Driver.RegisterEvent<T>(eventName, eventInvoker);
+        async Task EventInvoker(EventInfo<T> eventData)
+        {
+            T eventArgs = eventData.ToEventArgs<T>();
+            await observableEvent.NotifyObserversAsync(eventArgs);
+        }
+
+        this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);
+    }
+
+    /// <summary>
+    /// Registers an event so that when it is received, the deserialized data is converted
+    /// using the provided factory and forwarded to the given <see cref="ObservableEvent{TEventArgs}"/>.
+    /// Use this overload when the deserialized type <typeparamref name="T"/> differs from the
+    /// event args type <typeparamref name="TEventArgs"/>.
+    /// </summary>
+    /// <typeparam name="T">The deserialized event data type.</typeparam>
+    /// <typeparam name="TEventArgs">The event args type to produce and forward.</typeparam>
+    /// <param name="observableEvent">The <see cref="ObservableEvent{T}"/> to notify when the event is received.</param>
+    /// <param name="eventArgsConverter">A function that creates a <typeparamref name="TEventArgs"/> from the deserialized data.</param>
+    protected void RegisterObservableEvent<T, TEventArgs>(ObservableEvent<TEventArgs> observableEvent, Func<T, TEventArgs> eventArgsConverter)
+        where TEventArgs : WebDriverBiDiEventArgs
+    {
+        async Task EventInvoker(EventInfo<T> eventData)
+        {
+            TEventArgs eventArgs = eventData.ToEventArgs(eventArgsConverter);
+            await observableEvent.NotifyObserversAsync(eventArgs);
+        }
+
+        this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);
     }
 }

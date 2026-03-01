@@ -2,7 +2,7 @@ namespace WebDriverBiDi.TestUtilities;
 
 public sealed class TestProtocolModule : Module
 {
-    private ObservableEvent<TestEventArgs> onEventInvokedEvent;
+    private const string EventName = "protocol.event";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TestProtocolModule"/> class.
@@ -11,20 +11,13 @@ public sealed class TestProtocolModule : Module
     public TestProtocolModule(BiDiDriver driver, int maxObserverCount = 0)
         : base(driver)
     {
-        this.onEventInvokedEvent = new ObservableEvent<TestEventArgs>("protocol.event", maxObserverCount);
-        this.RegisterAsyncEventInvoker<TestEventArgs>("protocol.event", this.OnEventInvokedAsync);
+        this.OnEventInvoked = new ObservableEvent<TestEventArgs>(EventName, maxObserverCount);
+        this.RegisterObservableEvent(this.OnEventInvoked);
     }
 
-    public ObservableEvent<TestEventArgs> OnEventInvoked => this.onEventInvokedEvent;
+    public ObservableEvent<TestEventArgs> OnEventInvoked { get; }
 
     public override string ModuleName => "protocol";
 
     public BiDiDriver HostingDriver => this.Driver;
-
-    private async Task OnEventInvokedAsync(EventInfo<TestEventArgs> eventData)
-    {
-        TestEventArgs eventArgs = eventData.EventData;
-        eventArgs.AdditionalData = eventData.AdditionalData;
-        await this.onEventInvokedEvent.NotifyObserversAsync(eventArgs);
-    }
 }

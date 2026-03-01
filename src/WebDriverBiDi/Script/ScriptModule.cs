@@ -26,9 +26,9 @@ public sealed class ScriptModule : Module
     public ScriptModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<RealmInfo>(RealmCreatedEventName, this.OnRealmCreatedAsync);
-        this.RegisterAsyncEventInvoker<RealmDestroyedEventArgs>(RealmDestroyedEventName, this.OnRealmDestroyedAsync);
-        this.RegisterAsyncEventInvoker<MessageEventArgs>(MessageEventName, this.OnMessageAsync);
+        this.RegisterObservableEvent<RealmInfo, RealmCreatedEventArgs>(this.OnRealmCreated, info => new RealmCreatedEventArgs(info));
+        this.RegisterObservableEvent(this.OnRealmDestroyed);
+        this.RegisterObservableEvent(this.OnMessage);
     }
 
     /// <summary>
@@ -109,23 +109,5 @@ public sealed class ScriptModule : Module
     public Task<RemovePreloadScriptCommandResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);
-    }
-
-    private async Task OnRealmCreatedAsync(EventInfo<RealmInfo> eventData)
-    {
-        RealmCreatedEventArgs eventArgs = eventData.ToEventArgs(info => new RealmCreatedEventArgs(info));
-        await this.OnRealmCreated.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnRealmDestroyedAsync(EventInfo<RealmDestroyedEventArgs> eventData)
-    {
-        RealmDestroyedEventArgs eventArgs = eventData.ToEventArgs<RealmDestroyedEventArgs>();
-        await this.OnRealmDestroyed.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnMessageAsync(EventInfo<MessageEventArgs> eventData)
-    {
-        MessageEventArgs eventArgs = eventData.ToEventArgs<MessageEventArgs>();
-        await this.OnMessage.NotifyObserversAsync(eventArgs);
     }
 }

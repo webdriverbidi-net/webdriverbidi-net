@@ -24,8 +24,8 @@ public sealed class InputModule : Module
     public InputModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<FileDialogInfo>(FileDialogOpenedEventName, this.OnFileDialogOpenedAsync);
-     }
+        this.RegisterObservableEvent<FileDialogInfo, FileDialogOpenedEventArgs>(this.OnFileDialogOpened, info => new FileDialogOpenedEventArgs(info));
+    }
 
     /// <summary>
     /// Gets the module name.
@@ -65,11 +65,5 @@ public sealed class InputModule : Module
     public Task<SetFilesCommandResult> SetFilesAsync(SetFilesCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync<SetFilesCommandResult>(commandParameters);
-    }
-
-    private async Task OnFileDialogOpenedAsync(EventInfo<FileDialogInfo> eventData)
-    {
-        FileDialogOpenedEventArgs eventArgs = eventData.ToEventArgs((info) => new FileDialogOpenedEventArgs(info));
-        await this.OnFileDialogOpened.NotifyObserversAsync(eventArgs);
     }
 }

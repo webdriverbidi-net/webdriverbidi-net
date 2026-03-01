@@ -27,10 +27,10 @@ public sealed class BluetoothModule : Module
     public BluetoothModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<RequestDevicePromptUpdatedEventArgs>(RequestDevicePromptUpdatedEventName, this.OnRequestDevicePromptUpdatedAsync);
-        this.RegisterAsyncEventInvoker<GattConnectionAttemptedEventArgs>(GattConnectionAttemptedEventName, this.OnGattConnectionAttemptedAsync);
-        this.RegisterAsyncEventInvoker<CharacteristicEventGeneratedEventArgs>(CharacteristicEventGeneratedEventName, this.OnCharacteristicEventGeneratedAsync);
-        this.RegisterAsyncEventInvoker<DescriptorEventGeneratedEventArgs>(DescriptorEventGeneratedEventName, this.OnDescriptorGeneratedEventAsync);
+        this.RegisterObservableEvent(this.OnRequestDevicePromptUpdated);
+        this.RegisterObservableEvent(this.OnGattConnectionAttempted);
+        this.RegisterObservableEvent(this.OnCharacteristicGeneratedEvent);
+        this.RegisterObservableEvent(this.OnDescriptorGeneratedEvent);
     }
 
     /// <summary>
@@ -176,29 +176,5 @@ public sealed class BluetoothModule : Module
     public Task<SimulateServiceCommandResult> SimulateServiceAsync(SimulateServiceCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);
-    }
-
-    private async Task OnCharacteristicEventGeneratedAsync(EventInfo<CharacteristicEventGeneratedEventArgs> eventData)
-    {
-        CharacteristicEventGeneratedEventArgs eventArgs = eventData.ToEventArgs<CharacteristicEventGeneratedEventArgs>();
-        await this.OnCharacteristicGeneratedEvent.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnDescriptorGeneratedEventAsync(EventInfo<DescriptorEventGeneratedEventArgs> eventData)
-    {
-        DescriptorEventGeneratedEventArgs eventArgs = eventData.ToEventArgs<DescriptorEventGeneratedEventArgs>();
-        await this.OnDescriptorGeneratedEvent.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnGattConnectionAttemptedAsync(EventInfo<GattConnectionAttemptedEventArgs> eventData)
-    {
-        GattConnectionAttemptedEventArgs eventArgs = eventData.ToEventArgs<GattConnectionAttemptedEventArgs>();
-        await this.OnGattConnectionAttempted.NotifyObserversAsync(eventArgs);
-    }
-
-    private async Task OnRequestDevicePromptUpdatedAsync(EventInfo<RequestDevicePromptUpdatedEventArgs> eventData)
-    {
-        RequestDevicePromptUpdatedEventArgs eventArgs = eventData.ToEventArgs<RequestDevicePromptUpdatedEventArgs>();
-        await this.OnRequestDevicePromptUpdated.NotifyObserversAsync(eventArgs);
     }
 }

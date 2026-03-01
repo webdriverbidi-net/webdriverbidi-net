@@ -25,7 +25,7 @@ public sealed class SpeculationModule : Module
     public SpeculationModule(BiDiDriver driver)
         : base(driver)
     {
-        this.RegisterAsyncEventInvoker<PrefetchStatusUpdatedEventArgs>(PrefetchStatusUpdatedEventName, this.OnPrefetchStatusUpdatedAsync);
+        this.RegisterObservableEvent(this.OnPrefetchStatusUpdated);
     }
 
     /// <summary>
@@ -37,10 +37,4 @@ public sealed class SpeculationModule : Module
     /// Gets the module name.
     /// </summary>
     public override string ModuleName => SpeculationModuleName;
-
-    private async Task OnPrefetchStatusUpdatedAsync(EventInfo<PrefetchStatusUpdatedEventArgs> eventData)
-    {
-        PrefetchStatusUpdatedEventArgs eventArgs = eventData.ToEventArgs<PrefetchStatusUpdatedEventArgs>();
-        await this.OnPrefetchStatusUpdated.NotifyObserversAsync(eventArgs);
-    }
 }
