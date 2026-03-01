@@ -143,7 +143,7 @@ public sealed class NetworkModule : Module
     /// <returns>The result of the command containing the collected network data.</returns>
     public Task<GetDataCommandResult> GetDataAsync(GetDataCommandParameters commandParameters)
     {
-        return this.Driver.ExecuteCommandAsync<GetDataCommandResult>(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 
     /// <summary>
