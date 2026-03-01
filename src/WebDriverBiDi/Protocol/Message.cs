@@ -11,6 +11,9 @@ using WebDriverBiDi.Internal;
 
 /// <summary>
 /// Object containing data about a WebDriver Bidi message.
+/// This class is not thread-safe. Instances are created and consumed
+/// on the single message-processing loop and should not be shared
+/// across threads.
 /// </summary>
 public class Message
 {
@@ -32,6 +35,9 @@ public class Message
 
     /// <summary>
     /// Gets a read-only dictionary of additional properties deserialized with this message.
+    /// The conversion from the raw JSON extension data is performed lazily on first access.
+    /// This property is not thread-safe; however, in practice the owning <see cref="Message"/>
+    /// is only accessed on the single message-processing loop, so concurrent access does not occur.
     /// </summary>
     [JsonIgnore]
     public ReceivedDataDictionary AdditionalData
