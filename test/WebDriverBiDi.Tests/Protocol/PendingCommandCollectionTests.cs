@@ -77,6 +77,33 @@ public class PendingCommandCollectionTests
     }
 
     [Test]
+    public async Task TestCanFailAllPendingCommands()
+    {
+        Command testCommand1 = new(1, new TestCommandParameters("module.command1"));
+        Command testCommand2 = new(2, new TestCommandParameters("module.command2"));
+        PendingCommandCollection collection = new();
+        await collection.AddPendingCommandAsync(testCommand1);
+        await collection.AddPendingCommandAsync(testCommand2);
+        await collection.CloseAsync();
+
+        Exception exception = new("connection lost");
+        collection.FailAllPendingCommands(exception);
+        Assert.That(collection.PendingCommandCount, Is.EqualTo(0));
+        Assert.That(testCommand1.ThrownException, Is.SameAs(exception));
+        Assert.That(testCommand2.ThrownException, Is.SameAs(exception));
+    }
+
+    [Test]
+    public async Task TestCannotFailAllPendingCommandsUnlessClosed()
+    {
+        Command testCommand = new(1, new TestCommandParameters("module.command"));
+        PendingCommandCollection collection = new();
+        await collection.AddPendingCommandAsync(testCommand);
+        Exception exception = new("connection lost");
+        Assert.That(() => collection.FailAllPendingCommands(exception), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("Cannot fail commands while the collection can accept new incoming commands; close it with the Close method first"));
+    }
+
+    [Test]
     public async Task TestCannotClearCollectionUnlessClosed()
     {
         Command testCommand = new(1, new TestCommandParameters("module.command"));

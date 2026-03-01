@@ -51,6 +51,11 @@ public class TestConnection : Connection
         await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "TestConnection"));
     }
 
+    public async Task RaiseConnectionErrorEventAsync(Exception exception)
+    {
+        await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(exception));
+    }
+
     public override async Task StartAsync(string url)
     {
         this.ConnectedUrl = url;

@@ -62,6 +62,7 @@ public class Transport : IAsyncDisposable
     {
         this.Connection = connection;
         connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+        connection.OnConnectionError.AddObserver(this.OnConnectionErrorAsync);
         connection.OnLogMessage.AddObserver(this.OnConnectionLogMessageAsync);
     }
 
@@ -462,6 +463,22 @@ public class Transport : IAsyncDisposable
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
         await this.queue.Writer.WriteAsync(e.Data);
+    }
+
+    private async Task OnConnectionErrorAsync(ConnectionErrorEventArgs e)
+    {
+        // Mark the transport as disconnected so that subsequent SendCommandAsync
+        // calls fail immediately rather than queuing commands that can never
+        // receive a response.
+        this.IsConnected = false;
+
+        // Close the pending command collection and fail every in-flight command
+        // with an exception that wraps the original connection error.
+        await this.pendingCommands.CloseAsync().ConfigureAwait(false);
+        WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
+        this.pendingCommands.FailAllPendingCommands(connectionException);
+
+        await this.LogAsync($"Connection error; pending commands failed: {e.Exception.Message}", WebDriverBiDiLogLevel.Error);
     }
 
     private async Task ReadIncomingMessages()

@@ -64,6 +64,11 @@ public class Connection : IAsyncDisposable
     public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived { get; } = new("connection.dataReceived");
 
     /// <summary>
+    /// Gets an observable event that notifies when an error occurs on this connection.
+    /// </summary>
+    public ObservableEvent<ConnectionErrorEventArgs> OnConnectionError { get; } = new("connection.connectionError");
+
+    /// <summary>
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
     public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("connection.logMessage");
@@ -370,6 +375,7 @@ public class Connection : IAsyncDisposable
         catch (WebSocketException e)
         {
             await this.LogAsync($"Unexpected error during receive of data: {e.Message}");
+            await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(e));
         }
         finally
         {

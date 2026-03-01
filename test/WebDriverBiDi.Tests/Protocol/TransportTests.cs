@@ -1595,4 +1595,84 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
     }
+
+    [Test]
+    public async Task TestConnectionErrorFailsPendingCommands()
+    {
+        string commandName = "module.command";
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        TestCommandParameters commandParameters = new(commandName);
+        Command command = await transport.SendCommandAsync(commandParameters);
+
+        Exception simulatedError = new("WebSocket connection dropped");
+        await connection.RaiseConnectionErrorEventAsync(simulatedError);
+        await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
+
+        Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiConnectionException>());
+        Assert.That(command.ThrownException!.Message, Does.Contain("Unexpected connection error"));
+        Assert.That(command.ThrownException!.InnerException, Is.SameAs(simulatedError));
+    }
+
+    [Test]
+    public async Task TestConnectionErrorPreventsNewCommands()
+    {
+        string commandName = "module.command";
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        Exception simulatedError = new("WebSocket connection dropped");
+        await connection.RaiseConnectionErrorEventAsync(simulatedError);
+
+        TestCommandParameters commandParameters = new(commandName);
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("Transport must be connected"));
+    }
+
+    [Test]
+    public async Task TestConnectionErrorLogsMessage()
+    {
+        List<LogMessageEventArgs> logs = [];
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        transport.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+        await transport.ConnectAsync("ws:localhost");
+
+        Exception simulatedError = new("WebSocket connection dropped");
+        await connection.RaiseConnectionErrorEventAsync(simulatedError);
+
+        Assert.That(logs, Has.Some.Matches<LogMessageEventArgs>(
+            log => log.Message.Contains("Connection error; pending commands failed")
+                   && log.Message.Contains("WebSocket connection dropped")
+                   && log.Level == WebDriverBiDiLogLevel.Error));
+    }
+
+    [Test]
+    public async Task TestConnectionErrorFailsMultiplePendingCommands()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        Command command1 = await transport.SendCommandAsync(new TestCommandParameters("module.command1"));
+        Command command2 = await transport.SendCommandAsync(new TestCommandParameters("module.command2"));
+
+        Exception simulatedError = new("connection lost");
+        await connection.RaiseConnectionErrorEventAsync(simulatedError);
+
+        await command1.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
+        await command2.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(command1.ThrownException, Is.InstanceOf<WebDriverBiDiConnectionException>());
+            Assert.That(command2.ThrownException, Is.InstanceOf<WebDriverBiDiConnectionException>());
+        }
+    }
 }

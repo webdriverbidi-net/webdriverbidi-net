@@ -361,6 +361,34 @@ public class ConnectionTests
     }
 
     [Test]
+    public async Task TestConnectionRaisesErrorEventOnWebSocketException()
+    {
+        ConnectionErrorEventArgs? receivedErrorArgs = null;
+        ManualResetEventSlim errorReceivedEvent = new(false);
+        Connection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromSeconds(1),
+            ShutdownTimeout = TimeSpan.FromSeconds(1),
+        };
+        connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
+        {
+            receivedErrorArgs = e;
+            errorReceivedEvent.Set();
+            return Task.CompletedTask;
+        });
+
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        this.server.IgnoreCloseConnectionRequest(this.connectionId, true);
+        await connection.StopAsync();
+
+        bool errorReceived = errorReceivedEvent.Wait(TimeSpan.FromSeconds(3));
+        Assert.That(errorReceived, Is.True);
+        Assert.That(receivedErrorArgs, Is.Not.Null);
+        Assert.That(receivedErrorArgs.Exception, Is.InstanceOf<WebSocketException>());
+    }
+
+    [Test]
     public async Task TestConnectionCanBeReusedAfterBeingShutDown()
     {
         Connection connection = new()

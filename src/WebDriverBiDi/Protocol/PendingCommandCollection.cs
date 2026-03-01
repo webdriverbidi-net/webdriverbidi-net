@@ -92,6 +92,29 @@ public class PendingCommandCollection : IDisposable
     }
 
     /// <summary>
+    /// Fails all pending commands in the collection with the specified exception.
+    /// The collection must have been closed before calling this method.
+    /// </summary>
+    /// <param name="exception">The exception to set on each pending command.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if the collection has not been closed to the addition of new commands.
+    /// </exception>
+    public virtual void FailAllPendingCommands(Exception exception)
+    {
+        if (this.IsAcceptingCommands)
+        {
+            throw new InvalidOperationException("Cannot fail commands while the collection can accept new incoming commands; close it with the Close method first");
+        }
+
+        foreach (Command pendingCommand in this.pendingCommands.Values)
+        {
+            pendingCommand.ThrownException = exception;
+        }
+
+        this.pendingCommands.Clear();
+    }
+
+    /// <summary>
     /// Asynchronously closes the collection, disallowing addition of any further commands to it.
     /// </summary>
     /// <returns>The task object representing the asynchronous operation.</returns>
