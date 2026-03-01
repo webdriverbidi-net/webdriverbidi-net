@@ -42,7 +42,7 @@ public record ManualProxyConfigurationResult : ProxyConfigurationResult
     /// <summary>
     /// Gets a list of addresses to be bypassed by the proxy.
     /// </summary>
-    public List<string>? NoProxyAddresses => this.ProxyConfiguration.NoProxyAddresses;
+    public IList<string>? NoProxyAddresses => this.ProxyConfiguration.NoProxyAddresses?.AsReadOnly();
 
     private ManualProxyConfiguration ProxyConfiguration => this.ProxyConfigurationAs<ManualProxyConfiguration>();
 }

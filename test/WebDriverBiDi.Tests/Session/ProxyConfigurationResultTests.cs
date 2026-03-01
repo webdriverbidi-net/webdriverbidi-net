@@ -49,6 +49,48 @@ public class ProxyConfigurationResultTests
     }
 
     [Test]
+    public void TestCanDeserializeManualProxyConfigurationResultWithNullNoProxyList()
+    {
+        // ProxyConfigurationResult constructor is internal, and the only
+        // place it is called is in the deserialization of a CapabilitiesResult,
+        // so we will go through that mechanism to get the ProxyConfigurationResult.
+        string json = """
+                      {
+                        "browserName": "greatBrowser",
+                        "browserVersion": "101.5b",
+                        "platformName": "otherOS",
+                        "userAgent": "WebDriverBidi.NET/1.0",
+                        "acceptInsecureCerts": true,
+                        "proxy": {
+                          "proxyType": "manual",
+                          "httpProxy": "http.proxy",
+                          "sslProxy": "ssl.proxy",
+                          "socksProxy": "socks.proxy",
+                          "socksVersion": 5
+                        },
+                        "setWindowRect": true,
+                        "capName": "capValue"
+                      }
+                      """;
+        CapabilitiesResult? result = JsonSerializer.Deserialize<CapabilitiesResult>(json);
+        Assert.That(result, Is.Not.Null);
+        ProxyConfigurationResult? proxyResult = result.Proxy;
+        Assert.That(proxyResult, Is.Not.Null);
+        Assert.That(proxyResult, Is.InstanceOf<ManualProxyConfigurationResult>());
+        ManualProxyConfigurationResult proxyConfig = proxyResult.ProxyConfigurationResultAs<ManualProxyConfigurationResult>();
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(proxyConfig.ProxyType, Is.EqualTo(ProxyType.Manual));
+            Assert.That(proxyConfig.HttpProxy, Is.EqualTo("http.proxy"));
+            Assert.That(proxyConfig.SslProxy, Is.EqualTo("ssl.proxy"));
+            Assert.That(proxyConfig.SocksProxy, Is.EqualTo("socks.proxy"));
+            Assert.That(proxyConfig.SocksVersion, Is.EqualTo(5));
+            Assert.That(proxyConfig.NoProxyAddresses, Is.Null);
+            Assert.That(proxyConfig.AdditionalData, Is.Empty);
+        }
+    }
+
+    [Test]
     public void TestManualProxyConfigurationResultCopySemantics()
     {
         // ProxyConfigurationResult constructor is internal, and the only
