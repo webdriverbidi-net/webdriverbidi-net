@@ -183,13 +183,17 @@ public class Transport : IAsyncDisposable
 
             // Reset the command counter for each connection.
             Interlocked.Exchange(ref this.nextCommandId, 0);
-            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
             if (!this.Connection.IsActive)
             {
                 // Allow for the possibility of the connection to already being opened.
                 await this.Connection.StartAsync(websocketUri).ConfigureAwait(false);
             }
 
+            // Delaying starting the processing loop until after establishing the connection
+            // shouldn't be an issue, as we are using a Channel for processing the data, which
+            // should buffer the data until the first read. If the underlying data structure
+            // changes, this logic may need to be refactored.
+            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
             this.IsConnected = true;
         }
         finally
