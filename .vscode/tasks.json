@@ -18,7 +18,7 @@
             "command": "dotnet",
             "args": [
                 "test",
-                "${workspaceFolder}/test/WebDriverBidi.Tests"
+                "${workspaceFolder}/test/WebDriverBiDi.Tests"
             ],
             "problemMatcher": "$msCompile",
             "group": {
@@ -32,7 +32,7 @@
             "command": "dotnet",
             "args": [
                 "test",
-                "${workspaceFolder}/test/WebDriverBidi.Tests",
+                "${workspaceFolder}/test/WebDriverBiDi.Tests",
                 "/p:CollectCoverage=true",
                 "/p:CoverletOutputFormat=lcov",
                 "/p:CoverletOutput=${workspaceFolder}/test/coverage/lcov"
