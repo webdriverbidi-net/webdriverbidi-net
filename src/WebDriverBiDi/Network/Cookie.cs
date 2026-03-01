@@ -64,7 +64,7 @@ public record Cookie
     public DateTime? Expires { get; internal set; }
 
     /// <summary>
-    /// Gets the expiration time of the cookie as the total number of milliseconds
+    /// Gets the expiration time of the cookie as the total number of seconds
     /// elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC).
     /// </summary>
     [JsonPropertyName("expiry")]

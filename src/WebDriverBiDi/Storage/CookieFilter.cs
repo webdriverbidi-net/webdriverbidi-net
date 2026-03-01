@@ -116,7 +116,7 @@ public class CookieFilter
     public Dictionary<string, object?> AdditionalData { get; } = [];
 
     /// <summary>
-    /// Gets or sets the expiration time of the cookie as the total number of milliseconds
+    /// Gets or sets the expiration time of the cookie as the total number of seconds
     /// elapsed since the start of the Unix epoch (1 January 1970 12:00AM UTC) to use in
     /// querying for cookies.
     /// </summary>
