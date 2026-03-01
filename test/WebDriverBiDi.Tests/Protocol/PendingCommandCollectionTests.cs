@@ -82,7 +82,7 @@ public class PendingCommandCollectionTests
         Command testCommand = new(1, new TestCommandParameters("module.command"));
         PendingCommandCollection collection = new();
         await collection.AddPendingCommandAsync(testCommand);
-        Assert.That(() => collection.Clear(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first"));
+        Assert.That(() => collection.Clear(), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first"));
     }
 
     [Test]

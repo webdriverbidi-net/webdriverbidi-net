@@ -69,6 +69,6 @@ public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
             return doubleValue < 0;
         }
 
-        throw new WebDriverBiDiException($"Converter cannot be used on type {typeof(T)}");
+        throw new WebDriverBiDiSerializationException($"Converter cannot be used on type {typeof(T)}");
     }
 }

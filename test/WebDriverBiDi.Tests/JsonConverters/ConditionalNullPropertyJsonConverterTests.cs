@@ -80,7 +80,7 @@ public class ConditionalNullPropertyJsonConverterTests
         {
             StringProperty = "hello",
         };
-        Assert.That(() => JsonSerializer.Serialize(instance), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Serialize(instance), Throws.InstanceOf<WebDriverBiDiSerializationException>());
     }
 
     [Test]

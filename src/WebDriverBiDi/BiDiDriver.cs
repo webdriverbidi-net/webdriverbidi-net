@@ -367,7 +367,7 @@ public class BiDiDriver : IAsyncDisposable
     /// Registers a module for use with this driver.
     /// </summary>
     /// <param name="module">The module object.</param>
-    /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name tha has alreaey been registered.</exception>
+    /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name tha has already been registered.</exception>
     public virtual void RegisterModule(Module module)
     {
         if (!this.modules.TryAdd(module.ModuleName, module))
@@ -387,12 +387,12 @@ public class BiDiDriver : IAsyncDisposable
     {
         if (!this.modules.TryGetValue(moduleName, out Module? module))
         {
-            throw new WebDriverBiDiException($"Module '{moduleName}' is not registered with this driver");
+            throw new ArgumentException($"Module '{moduleName}' is not registered with this driver", nameof(moduleName));
         }
 
         if (module is not T)
         {
-            throw new WebDriverBiDiException($"Module '{moduleName}' is registered with this driver, but the module object is not of type {typeof(T)}");
+            throw new InvalidOperationException($"Module '{moduleName}' is registered with this driver, but the module object is not of type {typeof(T)}");
         }
 
         return (T)module;

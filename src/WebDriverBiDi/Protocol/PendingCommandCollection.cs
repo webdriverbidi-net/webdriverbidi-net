@@ -73,14 +73,14 @@ public class PendingCommandCollection : IDisposable
     /// <summary>
     /// Clears the collection, canceling all pending tasks of commands in the collection.
     /// </summary>
-    /// <exception cref="WebDriverBiDiException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown if the collection has not been closed to the addition of new commands.
     /// </exception>
     public virtual void Clear()
     {
         if (this.IsAcceptingCommands)
         {
-            throw new WebDriverBiDiException("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first");
+            throw new InvalidOperationException("Cannot clear the collection while it can accept new incoming commands; close it with the Close method first");
         }
 
         foreach (Command pendingCommand in this.pendingCommands.Values)

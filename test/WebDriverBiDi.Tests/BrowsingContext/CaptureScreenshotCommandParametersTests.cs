@@ -273,7 +273,7 @@ public class CaptureScreenshotCommandParametersTests
 
         // Also test that Quality property can be explicitly set to null.
         format.Quality = null;
-        Assert.That(() => format.Quality = -.01, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Quality must be between 0 and 1 inclusive."));
-        Assert.That(() => format.Quality = 1.01, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Quality must be between 0 and 1 inclusive."));
+        Assert.That(() => format.Quality = -.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Quality must be between 0 and 1 inclusive."));
+        Assert.That(() => format.Quality = 1.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Quality must be between 0 and 1 inclusive."));
     }
 }

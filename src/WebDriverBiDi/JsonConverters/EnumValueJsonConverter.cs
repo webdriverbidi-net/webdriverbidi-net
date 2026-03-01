@@ -61,7 +61,7 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     {
         if (reader.TokenType != JsonTokenType.String)
         {
-            throw new WebDriverBiDiException("Deserialization error reading enumerated string value");
+            throw new WebDriverBiDiSerializationException("Deserialization error reading enumerated string value");
         }
 
         // We can rely on the string not being null because we know the
@@ -82,7 +82,7 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
 
         // There is no match, and no default value for unmatched
         // strings is provided. Throw an exception.
-        throw new WebDriverBiDiException($"Deserialization error: value '{stringValue}' is not valid for enum type {typeof(T)}");
+        throw new WebDriverBiDiSerializationException($"Deserialization error: value '{stringValue}' is not valid for enum type {typeof(T)}");
     }
 
     /// <summary>

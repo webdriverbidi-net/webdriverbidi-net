@@ -305,7 +305,7 @@ public class PointerMoveActionTests
     public void TestSettingTwistPropertyToInvalidValueThrows()
     {
         PointerMoveAction properties = new();
-        Assert.That(() => properties.Twist = 360, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Twist value must be between 0 and 359"));
+        Assert.That(() => properties.Twist = 360, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("Twist value must be between 0 and 359"));
     }
 
     [Test]
@@ -345,10 +345,10 @@ public class PointerMoveActionTests
         PointerDownAction properties = new(0);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => properties.AltitudeAngle = -0.01, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
-            Assert.That(() => properties.AltitudeAngle = 1.58, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
-            Assert.That(() => properties.AzimuthAngle = -0.01, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
-            Assert.That(() => properties.AzimuthAngle = 6.29, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
+            Assert.That(() => properties.AltitudeAngle = -0.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
+            Assert.That(() => properties.AltitudeAngle = 1.58, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive"));
+            Assert.That(() => properties.AzimuthAngle = -0.01, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
+            Assert.That(() => properties.AzimuthAngle = 6.29, Throws.InstanceOf<ArgumentOutOfRangeException>().With.Message.Contains("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive"));
         }
     }
 }

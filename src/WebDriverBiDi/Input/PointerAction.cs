@@ -62,7 +62,7 @@ public class PointerAction
         {
             if (value > 359)
             {
-                throw new WebDriverBiDiException("Twist value must be between 0 and 359");
+                throw new ArgumentOutOfRangeException(nameof(value), "Twist value must be between 0 and 359");
             }
 
             field = value;
@@ -83,7 +83,7 @@ public class PointerAction
         {
             if (value < 0 || value > Math.PI / 2)
             {
-                throw new WebDriverBiDiException("AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive");
+                throw new ArgumentOutOfRangeException(nameof(value), "AltitudeAngle value must be between 0 and 1.5707963267948966 (pi / 2) inclusive");
             }
 
             field = value;
@@ -104,7 +104,7 @@ public class PointerAction
         {
             if (value < 0 || value > Math.PI * 2)
             {
-                throw new WebDriverBiDiException("AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive");
+                throw new ArgumentOutOfRangeException(nameof(value), "AzimuthAngle value must be between 0 and 6.283185307179586 (2 * pi) inclusive");
             }
 
             field = value;

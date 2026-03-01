@@ -115,7 +115,7 @@ public class BiDiDriverTests
 
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command), Throws.InstanceOf<WebDriverBiDiSerializationException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
     }
 
     [Test]
@@ -380,7 +380,7 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.That(() => driver.GetModule<TestProtocolModule>("protocol"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Module 'protocol' is not registered with this driver"));
+        Assert.That(() => driver.GetModule<TestProtocolModule>("protocol"), Throws.InstanceOf<ArgumentException>().With.Message.Contains("Module 'protocol' is not registered with this driver"));
     }
 
     [Test]
@@ -390,7 +390,7 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterModule(new TestProtocolModule(driver));
-        Assert.That(() => driver.GetModule<SessionModule>("protocol"), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Module 'protocol' is registered with this driver, but the module object is not of type WebDriverBiDi.Session.SessionModule"));
+        Assert.That(() => driver.GetModule<SessionModule>("protocol"), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("Module 'protocol' is registered with this driver, but the module object is not of type WebDriverBiDi.Session.SessionModule"));
     }
 
     [Test]

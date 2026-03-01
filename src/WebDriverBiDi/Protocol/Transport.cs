@@ -227,7 +227,7 @@ public class Transport : IAsyncDisposable
 
         if (!this.IsConnected)
         {
-            throw new WebDriverBiDiException("Transport must be connected to a remote end to execute commands.");
+            throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
         }
 
         long commandId = this.GetNextCommandId();
@@ -555,7 +555,7 @@ public class Transport : IAsyncDisposable
                 }
                 catch (Exception ex)
                 {
-                    executedCommand.ThrownException = new WebDriverBiDiException($"Response did not contain properly formed JSON for response type (response JSON:{message})", ex);
+                    executedCommand.ThrownException = new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for response type (response JSON:{message})", ex);
                 }
 
                 return true;
@@ -611,7 +611,7 @@ public class Transport : IAsyncDisposable
                 {
                     if (message.Deserialize(eventMessageType, this.options) is not EventMessage eventMessageData)
                     {
-                        throw new WebDriverBiDiException($"Deserialization of event message returned null for event type {eventMessageType}");
+                        throw new WebDriverBiDiSerializationException($"Deserialization of event message returned null for event type {eventMessageType}");
                     }
 
                     await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData));

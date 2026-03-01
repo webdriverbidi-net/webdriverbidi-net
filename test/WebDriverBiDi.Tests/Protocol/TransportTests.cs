@@ -208,7 +208,7 @@ public class TransportTests
             await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
-        Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
+        Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiSerializationException>().With.Message.Contains("Response did not contain properly formed JSON for response type"));
     }
 
     [Test]
@@ -219,7 +219,7 @@ public class TransportTests
         Transport transport = new(connection);
 
         TestCommandParameters commandParameters = new(commandName);
-        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Transport must be connected to a remote end to execute commands."));
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("Transport must be connected to a remote end to execute commands."));
     }
 
     [Test]
