@@ -33,12 +33,12 @@ public class ScriptTargetJsonConverter : JsonConverter<Target>
 
         if (rootElement.TryGetProperty("realm", out JsonElement realmTargetElement))
         {
-            return rootElement.Deserialize<RealmTarget>();
+            return rootElement.Deserialize<RealmTarget>(options);
         }
 
         if (rootElement.TryGetProperty("context", out JsonElement contextTargetElement))
         {
-            return rootElement.Deserialize<ContextTarget>();
+            return rootElement.Deserialize<ContextTarget>(options);
         }
 
         throw new JsonException("Malformed response: ScriptTarget must contain either a 'realm' or a 'context' property");
