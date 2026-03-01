@@ -48,7 +48,7 @@ public class StorageModuleTests()
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        StorageModule module = new(driver);
+        StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost");
 
         Task<GetCookiesCommandResult> task = module.GetCookiesAsync(new GetCookiesCommandParameters());
@@ -96,7 +96,7 @@ public class StorageModuleTests()
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        StorageModule module = new(driver);
+        StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost");
 
         Task<SetCookieCommandResult> task = module.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie("cookieName", BytesValue.FromString("cookieValue"), "cookieDomain")));
@@ -133,7 +133,7 @@ public class StorageModuleTests()
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        StorageModule module = new(driver);
+        StorageModule module = driver.Storage;
         await driver.StartAsync("ws:localhost");
 
         Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync(new DeleteCookiesCommandParameters());

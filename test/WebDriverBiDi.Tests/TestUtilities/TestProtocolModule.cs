@@ -8,11 +8,14 @@ public sealed class TestProtocolModule : Module
     /// Initializes a new instance of the <see cref="TestProtocolModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
-    public TestProtocolModule(BiDiDriver driver, int maxObserverCount = 0)
+    public TestProtocolModule(BiDiDriver driver, int maxObserverCount = 0, bool registerEvents = true)
         : base(driver)
     {
         this.OnEventInvoked = new ObservableEvent<TestEventArgs>(EventName, maxObserverCount);
-        this.RegisterObservableEvent(this.OnEventInvoked);
+        if (registerEvents)
+        {
+            this.RegisterObservableEvent(this.OnEventInvoked);
+        }
     }
 
     public ObservableEvent<TestEventArgs> OnEventInvoked { get; }

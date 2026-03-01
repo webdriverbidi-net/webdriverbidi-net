@@ -194,6 +194,17 @@ public class BiDiDriverTests
     }
 
     [Test]
+    public void TestRegisteringDuplicateEventThrows()
+    {
+        string eventName = "module.event";
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        driver.RegisterEvent<TestEventArgs>(eventName, (e) => Task.CompletedTask);
+        Assert.That(() => driver.RegisterEvent<TestEventArgs>(eventName, (e) => Task.CompletedTask), Throws.InstanceOf<ArgumentException>().With.Message.StartsWith("An event named 'module.event' has already been registered."));
+    }
+
+    [Test]
     public async Task TestDriverWillProcessPendingMessagesOnStop()
     {
         string receivedEvent = string.Empty;
@@ -370,7 +381,7 @@ public class BiDiDriverTests
         TestConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        driver.RegisterModule(new TestProtocolModule(driver));
+        driver.RegisterModule(new TestProtocolModule(driver, 0, false));
         Assert.That(() => driver.RegisterModule(new TestProtocolModule(driver)), Throws.InstanceOf<ArgumentException>().With.Message.StartsWith("A module with the name 'protocol' has already been registered"));
     }
 

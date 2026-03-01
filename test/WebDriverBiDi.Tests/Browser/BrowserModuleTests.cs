@@ -23,7 +23,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -50,7 +50,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<CloseCommandResult> task = module.CloseAsync();
         task.Wait(TimeSpan.FromSeconds(1));
@@ -79,7 +79,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync(new CreateUserContextCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -109,7 +109,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<CreateUserContextCommandResult> task = module.CreateUserContextAsync();
         task.Wait(TimeSpan.FromSeconds(1));
@@ -158,7 +158,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync(new GetClientWindowsCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -224,7 +224,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<GetClientWindowsCommandResult> task = module.GetClientWindowsAsync();
         task.Wait(TimeSpan.FromSeconds(1));
@@ -278,7 +278,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync(new GetUserContextsCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -321,7 +321,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<GetUserContextsCommandResult> task = module.GetUserContextsAsync();
         task.Wait(TimeSpan.FromSeconds(1));
@@ -354,7 +354,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<RemoveUserContextCommandResult> task = module.RemoveUserContextAsync(new RemoveUserContextCommandParameters("myUserContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -389,7 +389,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<SetClientWindowStateCommandResult> task = module.SetClientWindowStateAsync(new SetClientWindowStateCommandParameters("myClientWindow")
         {
@@ -433,7 +433,7 @@ public class BrowserModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowserModule module = new(driver);
+        BrowserModule module = driver.Browser;
 
         Task<SetDownloadBehaviorCommandResult> task = module.SetDownloadBehaviorAsync(new SetDownloadBehaviorCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));

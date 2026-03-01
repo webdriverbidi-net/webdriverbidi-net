@@ -11,7 +11,7 @@ public class SpeculationModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        SpeculationModule module = new(driver);
+        SpeculationModule module = driver.Speculation;
 
         ManualResetEvent syncEvent = new(false);
         module.OnPrefetchStatusUpdated.AddObserver((PrefetchStatusUpdatedEventArgs e) => {

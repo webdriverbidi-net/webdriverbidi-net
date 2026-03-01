@@ -30,7 +30,7 @@ public class ScriptModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -85,7 +85,7 @@ public class ScriptModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         Task<EvaluateResult> task = module.CallFunctionAsync(new CallFunctionCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -135,7 +135,7 @@ public class ScriptModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
         
         Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -190,7 +190,7 @@ public class ScriptModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
@@ -242,7 +242,7 @@ public class ScriptModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         Task<GetRealmsCommandResult> task = module.GetRealmsAsync(new GetRealmsCommandParameters());
@@ -283,7 +283,7 @@ public class ScriptModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         Task<DisownCommandResult> task = module.DisownAsync(new DisownCommandParameters(new ContextTarget("myContextId"), new string[] { "myValue" }));
@@ -299,7 +299,7 @@ public class ScriptModuleTests
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
@@ -337,7 +337,7 @@ public class ScriptModuleTests
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
@@ -374,7 +374,7 @@ public class ScriptModuleTests
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
@@ -404,7 +404,7 @@ public class ScriptModuleTests
     {
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
@@ -462,7 +462,7 @@ public class ScriptModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
 
         Task<AddPreloadScriptCommandResult> task = module.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters("window.foo = false;"));
@@ -491,7 +491,7 @@ public class ScriptModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
-        ScriptModule module = new(driver);
+        ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
         
         Task<RemovePreloadScriptCommandResult> task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));

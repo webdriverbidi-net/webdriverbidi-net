@@ -23,7 +23,7 @@ public class UserAgentClientHintsModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        UserAgentClientHintsModule module = new(driver);
+        UserAgentClientHintsModule module = driver.UserAgentClientHints;
 
         Task<SetClientHintsOverrideCommandResult> task = module.SetClientHintsOverrideAsync(new SetClientHintsOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -50,7 +50,7 @@ public class UserAgentClientHintsModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        UserAgentClientHintsModule module = new(driver);
+        UserAgentClientHintsModule module = driver.UserAgentClientHints;
 
         Task<SetClientHintsOverrideCommandResult> task = module.SetClientHintsOverrideAsync();
         task.Wait(TimeSpan.FromSeconds(1));

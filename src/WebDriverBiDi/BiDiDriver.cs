@@ -413,7 +413,11 @@ public class BiDiDriver : IAsyncDisposable
     /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
     public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
-        this.eventInvokers[eventName] = new EventInvoker<T>(eventInvoker);
+        if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
+        {
+            throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
+        }
+
         this.transport.RegisterEventMessage<T>(eventName);
     }
 

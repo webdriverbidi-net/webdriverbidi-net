@@ -23,7 +23,7 @@ public class PermissionsModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        PermissionsModule module = new(driver);
+        PermissionsModule module = driver.Permissions;
 
         Task<SetPermissionCommandResult> task = module.SetPermissionAsync(new SetPermissionCommandParameters("myPermission", PermissionState.Granted, "https://example.com"));
         task.Wait(TimeSpan.FromSeconds(1));

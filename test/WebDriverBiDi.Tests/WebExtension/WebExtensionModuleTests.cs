@@ -25,7 +25,7 @@ public class WebExtensionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        WebExtensionModule module = new(driver);
+        WebExtensionModule module = driver.WebExtension;
 
         Task<InstallCommandResult> task = module.InstallAsync(new InstallCommandParameters(new ExtensionPath("myExtensionPath")));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -53,7 +53,7 @@ public class WebExtensionModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        WebExtensionModule module = new(driver);
+        WebExtensionModule module = driver.WebExtension;
         
         Task<UninstallCommandResult> task = module.UninstallAsync(new UninstallCommandParameters("myExtensionPath"));
         task.Wait(TimeSpan.FromSeconds(1));

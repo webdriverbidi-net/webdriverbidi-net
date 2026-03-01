@@ -102,7 +102,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         AddInterceptCommandParameters commandParameters = new()
         {
@@ -138,7 +138,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         AddDataCollectorCommandParameters commandParameters = new(1024 * 1024);
         Task<AddDataCollectorCommandResult> task = module.AddDataCollectorAsync(commandParameters);
@@ -168,7 +168,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         Task<ContinueRequestCommandResult> task = module.ContinueRequestAsync(new ContinueRequestCommandParameters("requestId"));
 
@@ -196,7 +196,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         Task<ContinueResponseCommandResult> task = module.ContinueResponseAsync(new ContinueResponseCommandParameters("requestId"));
 
@@ -224,7 +224,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         Task<ContinueWithAuthCommandResult> task = module.ContinueWithAuthAsync(new ContinueWithAuthCommandParameters("requestId")
         {
@@ -256,7 +256,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         DisownDataCommandParameters commandParameters = new("myCollectorId", "myRequestId");
         Task<DisownDataCommandResult> task = module.DisownDataAsync(commandParameters);
@@ -285,7 +285,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         Task<FailRequestCommandResult> task = module.FailRequestAsync(new FailRequestCommandParameters("requestId"));
 
@@ -318,7 +318,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         GetDataCommandParameters commandParameters = new("myRequestId");
         Task<GetDataCommandResult> task = module.GetDataAsync(commandParameters);
@@ -349,7 +349,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         Task<ProvideResponseCommandResult> task = module.ProvideResponseAsync(new ProvideResponseCommandParameters("requestId"));
 
@@ -377,7 +377,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         RemoveDataCollectorCommandParameters commandParameters = new("myCollectorId");
         Task<RemoveDataCollectorCommandResult> task = module.RemoveDataCollectorAsync(commandParameters);
@@ -406,7 +406,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         Task<RemoveInterceptCommandResult> task = module.RemoveInterceptAsync(new RemoveInterceptCommandParameters("interceptId"));
 
@@ -434,7 +434,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         Task<SetCacheBehaviorCommandResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters());
 
@@ -462,7 +462,7 @@ public class NetworkModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         SetExtraHeadersCommandParameters commandParameters = new();
         commandParameters.Headers.Add("X-Extra-Header: headerValue");
@@ -484,7 +484,7 @@ public class NetworkModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         ManualResetEvent syncEvent = new(false);
         module.OnAuthRequired.AddObserver((AuthRequiredEventArgs e) =>
@@ -565,7 +565,7 @@ public class NetworkModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         ManualResetEvent syncEvent = new(false);
         module.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
@@ -635,7 +635,7 @@ public class NetworkModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         ManualResetEvent syncEvent = new(false);
         module.OnFetchError.AddObserver((FetchErrorEventArgs e) =>
@@ -703,7 +703,7 @@ public class NetworkModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         ManualResetEvent syncEvent = new(false);
         module.OnResponseStarted.AddObserver((ResponseStartedEventArgs e) =>
@@ -784,7 +784,7 @@ public class NetworkModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        NetworkModule module = new(driver);
+        NetworkModule module = driver.Network;
 
         ManualResetEvent syncEvent = new(false);
         module.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>

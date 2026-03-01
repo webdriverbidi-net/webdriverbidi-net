@@ -23,7 +23,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetGeolocationOverrideCommandResult> task = module.SetGeolocationOverrideAsync(new SetGeolocationOverrideCoordinatesCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -50,7 +50,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetLocaleOverrideCommandResult> task = module.SetLocaleOverrideAsync(new SetLocaleOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -77,7 +77,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetForcedColorsModeThemeOverrideCommandResult> task = module.SetForcedColorsModeThemeOverrideAsync(new SetForcedColorsModeThemeOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -104,7 +104,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetScreenOrientationOverrideCommandResult> task = module.SetScreenOrientationOverrideAsync(new SetScreenOrientationOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -131,7 +131,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetScreenSettingsOverrideCommandResult> task = module.SetScreenSettingsOverrideAsync(new SetScreenSettingsOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -158,7 +158,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetScriptingEnabledCommandResult> task = module.SetScriptingEnabledAsync(new SetScriptingEnabledCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -185,7 +185,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetTimeZoneOverrideCommandResult> task = module.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -212,7 +212,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetScrollbarTypeOverrideCommandResult> task = module.SetScrollbarTypeOverrideAsync(new SetScrollbarTypeOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -239,7 +239,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetTouchOverrideCommandResult> task = module.SetTouchOverrideAsync(new SetTouchOverrideCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -266,7 +266,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetNetworkConditionsCommandResult> task = module.SetNetworkConditionsAsync(new SetNetworkConditionsCommandParameters()
         {
@@ -296,7 +296,7 @@ public class EmulationModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        EmulationModule module = new(driver);
+        EmulationModule module = driver.Emulation;
 
         Task<SetUserAgentOverrideCommandResult> task = module.SetUserAgentOverrideAsync(new SetUserAgentOverrideCommandParameters()
         {

@@ -23,7 +23,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<ActivateCommandResult> task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -52,7 +52,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<CaptureScreenshotCommandResult> task = module.CaptureScreenshotAsync(new CaptureScreenshotCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -80,7 +80,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -109,7 +109,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<CreateCommandResult> task = module.CreateAsync(new CreateCommandParameters(CreateType.Tab));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -148,7 +148,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<GetTreeCommandResult> task = module.GetTreeAsync(new GetTreeCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -182,7 +182,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<HandleUserPromptCommandResult> task = module.HandleUserPromptAsync(new HandleUserPromptCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -221,7 +221,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<LocateNodesCommandResult> task = module.LocateNodesAsync(new LocateNodesCommandParameters("myContextId", new CssLocator(".selector")));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -251,7 +251,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<NavigateCommandResult> task = module.NavigateAsync(new NavigateCommandParameters("myContext", "https://example.com") { Wait = ReadinessState.Complete });
         task.Wait(TimeSpan.FromSeconds(1));
@@ -285,7 +285,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<PrintCommandResult> task = module.PrintAsync(new PrintCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -316,7 +316,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<ReloadCommandResult> task = module.ReloadAsync(new ReloadCommandParameters("myContext"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -348,7 +348,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<SetViewportCommandResult> task = module.SetViewportAsync(new SetViewportCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
@@ -375,7 +375,7 @@ public class BrowsingContextModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         Task<TraverseHistoryCommandResult> task = module.TraverseHistoryAsync(new TraverseHistoryCommandParameters("myContextId", -3));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -390,7 +390,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         module.OnContextCreated.AddObserver((BrowsingContextEventArgs e) => {
@@ -431,7 +431,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         module.OnContextDestroyed.AddObserver((BrowsingContextEventArgs e) => {
@@ -470,7 +470,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -509,7 +509,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -550,7 +550,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -593,7 +593,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -632,7 +632,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -671,7 +671,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -710,7 +710,7 @@ public class BrowsingContextModuleTests
       TestConnection connection = new();
       BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
       await driver.StartAsync("ws:localhost");
-      BrowsingContextModule module = new(driver);
+      BrowsingContextModule module = driver.BrowsingContext;
 
       ManualResetEvent syncEvent = new(false);
       long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -750,7 +750,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -789,7 +789,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
@@ -828,7 +828,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         module.OnHistoryUpdated.AddObserver((HistoryUpdatedEventArgs e) => {
@@ -862,7 +862,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         module.OnUserPromptClosed.AddObserver((UserPromptClosedEventArgs e) => {
@@ -897,7 +897,7 @@ public class BrowsingContextModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        BrowsingContextModule module = new(driver);
+        BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
         module.OnUserPromptOpened.AddObserver((UserPromptOpenedEventArgs e) => {

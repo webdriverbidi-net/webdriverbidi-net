@@ -11,7 +11,7 @@ public class LogModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        LogModule module = new(driver);
+        LogModule module = driver.Log;
 
         ManualResetEvent syncEvent = new(false);
         module.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
@@ -59,7 +59,7 @@ public class LogModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        LogModule module = new(driver);
+        LogModule module = driver.Log;
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);

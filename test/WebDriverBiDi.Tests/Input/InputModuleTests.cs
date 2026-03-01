@@ -24,7 +24,7 @@ public class InputModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        InputModule module = new(driver);
+        InputModule module = driver.Input;
 
         Task<PerformActionsCommandResult> task = module.PerformActionsAsync(new PerformActionsCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -51,7 +51,7 @@ public class InputModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        InputModule module = new(driver);
+        InputModule module = driver.Input;
 
         Task<ReleaseActionsCommandResult> task = module.ReleaseActionsAsync(new ReleaseActionsCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
@@ -78,7 +78,7 @@ public class InputModuleTests
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        InputModule module = new(driver);
+        InputModule module = driver.Input;
 
         SharedReference element = new("mySharedId");
         Task<SetFilesCommandResult> task = module.SetFilesAsync(new SetFilesCommandParameters("myContextId", element));
@@ -94,7 +94,7 @@ public class InputModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        InputModule module = new(driver);
+        InputModule module = driver.Input;
 
         ManualResetEvent syncEvent = new(false);
         module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) => {
@@ -128,7 +128,7 @@ public class InputModuleTests
         TestConnection connection = new();
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
         await driver.StartAsync("ws:localhost");
-        InputModule module = new(driver);
+        InputModule module = driver.Input;
 
         ManualResetEvent syncEvent = new(false);
         module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) => {

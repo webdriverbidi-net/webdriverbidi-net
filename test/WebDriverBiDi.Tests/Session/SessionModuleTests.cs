@@ -25,7 +25,7 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        SessionModule module = new(driver);
+        SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
         Task<StatusCommandResult> task = module.StatusAsync(new StatusCommandParameters());
@@ -60,7 +60,7 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        SessionModule module = new(driver);
+        SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
         Task<StatusCommandResult> task = module.StatusAsync();
@@ -94,7 +94,7 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        SessionModule module = new(driver);
+        SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
         SubscribeCommandParameters subscribeParameters = new();
@@ -124,7 +124,7 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        SessionModule module = new(driver);
+        SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
         UnsubscribeByAttributesCommandParameters unsubscribeParameters = new();
@@ -153,7 +153,7 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        SessionModule module = new(driver);
+        SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
         UnsubscribeByIdsCommandParameters unsubscribeParameters = new();
@@ -196,7 +196,7 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        SessionModule module = new(driver);
+        SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
         NewCommandParameters newCommandParameters = new();
@@ -240,7 +240,7 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        SessionModule module = new(driver);
+        SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
         EndCommandParameters endParameters = new();
@@ -267,7 +267,7 @@ public class SessionModuleTests
         };
 
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        SessionModule module = new(driver);
+        SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
         Task<EndCommandResult> task = module.EndAsync();
