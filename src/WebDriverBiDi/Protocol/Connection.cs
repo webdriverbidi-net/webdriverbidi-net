@@ -239,17 +239,23 @@ public class Connection : IAsyncDisposable
     protected virtual async Task CloseClientWebSocketAsync()
     {
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
-        using CancellationTokenSource timeout = new(this.ShutdownTimeout);
+        using CancellationTokenSource timeoutTokenSource = new(this.ShutdownTimeout);
         try
         {
-            // After this, the socket state which change to CloseSent
-            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeout.Token).ConfigureAwait(false);
+            // After this, the socket state will change to CloseSent
+            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeoutTokenSource.Token).ConfigureAwait(false);
 
-            // Now we wait for the server response, which will close the socket
-            while (this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted && !timeout.Token.IsCancellationRequested)
+            // Wait for the receive loop to process the server's close response, which will transition the
+            // socket to the Closed state. If the server does not respond within the shutdown timeout,
+            // proceed anyway; StopAsync will cancel the token to abort the socket.
+            //
+            // The infinite delay is intentional: its sole purpose is to convert the CancellationToken defined
+            // earlier in this method into a Task that Task.WhenAny can race against dataReceiveTask. The delay
+            // itself never elapses; it completes only when timeout.Token fires (i.e., ShutdownTimeout expires),
+            // which is the desired fallback behavior.
+            if (this.dataReceiveTask is not null)
             {
-                // The loop may be too tight for the cancellation token to get triggered, so add a small delay
-                await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
+                await Task.WhenAny(this.dataReceiveTask, Task.Delay(Timeout.InfiniteTimeSpan, timeoutTokenSource.Token)).ConfigureAwait(false);
             }
 
             await this.LogAsync($"Client state is {this.client.State}");
