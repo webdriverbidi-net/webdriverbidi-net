@@ -93,6 +93,11 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
-        writer.WriteStringValue(this.enumValuesToStrings[value]);
+        if (!this.enumValuesToStrings.TryGetValue(value, out string? stringValue))
+        {
+            throw new WebDriverBiDiSerializationException($"Serialization error: value {value} is not valid for the enum type {typeof(T)}");
+        }
+
+        writer.WriteStringValue(stringValue);
     }
 }

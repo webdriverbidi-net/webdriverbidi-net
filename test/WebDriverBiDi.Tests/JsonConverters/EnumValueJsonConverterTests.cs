@@ -1,5 +1,6 @@
 namespace WebDriverBiDi.JsonConverters;
 
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -53,6 +54,12 @@ public class EnumValueJsonConverterTests
         Assert.That(() => JsonSerializer.Deserialize<BasicEnum>("\"invalid\""), Throws.InstanceOf<WebDriverBiDiSerializationException>().With.Message.EqualTo($"Deserialization error: value 'invalid' is not valid for enum type WebDriverBiDi.JsonConverters.EnumValueJsonConverterTests+BasicEnum"));
     }
 
+    [Test]
+    public void SerializeInvalidValueThrows()
+    {
+        Assert.That(() => JsonSerializer.Serialize(FlagEnum.FirstValue | FlagEnum.SecondValue), Throws.InstanceOf<WebDriverBiDiSerializationException>().With.Message.StartsWith("Serialization error: value"));
+    }
+
     [JsonConverter(typeof(EnumValueJsonConverter<BasicEnum>))]
     private enum BasicEnum
     {
@@ -71,5 +78,13 @@ public class EnumValueJsonConverterTests
 
         [JsonEnumValue("non-default-value")]
         NonDefaultValue
+    }
+
+    [JsonConverter(typeof(EnumValueJsonConverter<FlagEnum>))]
+    [Flags]
+    private enum FlagEnum
+    {
+        FirstValue = 1,
+        SecondValue = 2
     }
 }
