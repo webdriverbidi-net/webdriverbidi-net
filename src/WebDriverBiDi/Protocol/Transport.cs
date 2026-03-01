@@ -383,10 +383,15 @@ public class Transport : IAsyncDisposable
             // the message queue, but with a timeout to prevent hanging if an
             // in-process event handler is stuck.
             this.pendingCommands.Clear();
-            Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, Task.Delay(this.ShutdownTimeout)).ConfigureAwait(false);
+            using CancellationTokenSource commandDelayCancelTokenSource = new();
+            Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, Task.Delay(this.ShutdownTimeout, commandDelayCancelTokenSource.Token)).ConfigureAwait(false);
             if (completedTask != this.messageQueueProcessingTask)
             {
                 await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn);
+            }
+            else
+            {
+                commandDelayCancelTokenSource.Cancel();
             }
 
             if (throwCollectedExceptions && this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
@@ -502,13 +507,14 @@ public class Transport : IAsyncDisposable
             if (messageRootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
             {
                 string messageType = messageTypeToken.GetString()!;
+                string loggingMessageData = Encoding.UTF8.GetString(messageData);
                 if (messageType == "success")
                 {
                     isProcessed = this.ProcessCommandResponseMessage(messageRootElement);
 
                     if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
-                        await this.LogAsync($"Command response message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
+                        await this.LogAsync($"Command response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
                     }
                 }
                 else if (messageType == "error")
@@ -517,7 +523,7 @@ public class Transport : IAsyncDisposable
 
                     if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
-                        await this.LogAsync($"Error response message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
+                        await this.LogAsync($"Error response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
                     }
                 }
                 else if (messageType == "event")
@@ -526,7 +532,7 @@ public class Transport : IAsyncDisposable
 
                     if (this.OnLogMessage.CurrentObserverCount > 0)
                     {
-                        await this.LogAsync($"Event message processed {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Trace);
+                        await this.LogAsync($"Event message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
                     }
                 }
             }
