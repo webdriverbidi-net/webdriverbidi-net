@@ -172,6 +172,19 @@ public class UnhandledErrorCollection
     /// <returns><see langword="true"/> if the collection contains errors for the specified behavior; otherwise, <see langword="false"/>.</returns>
     public bool HasUnhandledErrors(TransportErrorBehavior errorBehavior)
     {
+        return this.TryGetExceptions(errorBehavior, out _);
+    }
+
+    /// <summary>
+    /// Atomically checks whether the collection contains errors for the specified error behavior,
+    /// and if so, returns a snapshot of the matching exceptions.
+    /// </summary>
+    /// <param name="errorBehavior">The error behavior for which to determine if errors exist.</param>
+    /// <param name="exceptions">When this method returns <see langword="true"/>, contains a snapshot of the exceptions; otherwise, an empty list.</param>
+    /// <returns><see langword="true"/> if the collection contains errors for the specified behavior; otherwise, <see langword="false"/>.</returns>
+    public bool TryGetExceptions(TransportErrorBehavior errorBehavior, out IList<Exception> exceptions)
+    {
+        exceptions = [];
         if (errorBehavior == TransportErrorBehavior.Ignore)
         {
             return false;
@@ -182,7 +195,10 @@ public class UnhandledErrorCollection
             List<UnhandledErrorType> behaviors = this.errorBehaviors
                 .Where(pair => pair.Value == errorBehavior)
                 .Select(pair => pair.Key).ToList();
-            return this.unhandledErrors.Count(error => behaviors.Contains(error.ErrorType)) > 0;
+            exceptions = this.unhandledErrors
+                .Where(error => behaviors.Contains(error.ErrorType))
+                .Select(error => error.Exception).ToList();
+            return exceptions.Count > 0;
         }
     }
 }

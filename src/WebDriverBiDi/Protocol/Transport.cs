@@ -219,10 +219,10 @@ public class Transport : IAsyncDisposable
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
     public virtual async Task<Command> SendCommandAsync(CommandParameters commandData)
     {
-        if (this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Terminate))
+        if (this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminationExceptions))
         {
             await this.DisconnectAsync(false).ConfigureAwait(false);
-            throw this.CreateTerminationException();
+            throw this.CreateTerminationException(terminationExceptions);
         }
 
         if (!this.IsConnected)
@@ -387,9 +387,9 @@ public class Transport : IAsyncDisposable
                 await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn);
             }
 
-            if (throwCollectedExceptions && this.unhandledErrors.HasUnhandledErrors(TransportErrorBehavior.Collect))
+            if (throwCollectedExceptions && this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
             {
-                throw this.CreateTerminationException();
+                throw this.CreateTerminationException(collectedExceptions);
             }
         }
         finally
@@ -666,14 +666,14 @@ public class Transport : IAsyncDisposable
         await this.OnLogMessage.NotifyObserversAsync(e);
     }
 
-    private Exception CreateTerminationException()
+    private Exception CreateTerminationException(IList<Exception> exceptions)
     {
         string message = $"Unhandled exception during transport operations. Transport was terminated with the following reason: {this.terminationReason}";
-        if (this.unhandledErrors.Exceptions.Count == 1)
+        if (exceptions.Count == 1)
         {
-            return new WebDriverBiDiException(message, this.unhandledErrors.Exceptions[0]);
+            return new WebDriverBiDiException(message, exceptions[0]);
         }
 
-        return new AggregateException(message, this.unhandledErrors.Exceptions);
+        return new AggregateException(message, exceptions);
     }
 }

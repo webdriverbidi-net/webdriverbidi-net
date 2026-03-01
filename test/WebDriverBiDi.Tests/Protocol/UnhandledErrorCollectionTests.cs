@@ -156,4 +156,55 @@ public class UnhandledErrorCollectionTests()
             Assert.That(unhandledErrors.Exceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("event handler exception"));
         }
     }
+
+    [Test]
+    public void TestTryGetExceptionsReturnsFalseForIgnoreBehavior()
+    {
+        UnhandledErrorCollection unhandledErrors = new();
+        bool result = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Ignore, out IList<Exception> exceptions);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result, Is.False);
+            Assert.That(exceptions, Is.Empty);
+        }
+    }
+
+    [Test]
+    public void TestTryGetExceptionsReturnsFalseWhenNoMatchingErrors()
+    {
+        UnhandledErrorCollection unhandledErrors = new()
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect
+        };
+        bool result = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> exceptions);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result, Is.False);
+            Assert.That(exceptions, Is.Empty);
+        }
+    }
+
+    [Test]
+    public void TestTryGetExceptionsReturnsMatchingExceptions()
+    {
+        UnhandledErrorCollection unhandledErrors = new()
+        {
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+            UnexpectedErrorBehavior = TransportErrorBehavior.Terminate
+        };
+        unhandledErrors.AddUnhandledError(UnhandledErrorType.ProtocolError, new WebDriverBiDiException("collected error"));
+        unhandledErrors.AddUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiException("terminal error"));
+
+        bool collectResult = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectExceptions);
+        bool terminateResult = unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminateExceptions);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(collectResult, Is.True);
+            Assert.That(collectExceptions, Has.Count.EqualTo(1));
+            Assert.That(collectExceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("collected error"));
+            Assert.That(terminateResult, Is.True);
+            Assert.That(terminateExceptions, Has.Count.EqualTo(1));
+            Assert.That(terminateExceptions[0], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("terminal error"));
+        }
+    }
 }
