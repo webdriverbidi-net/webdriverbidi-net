@@ -21,7 +21,7 @@ public record AddInterceptCommandResult : CommandResult
     }
 
     /// <summary>
-    /// Gets the screenshot image data as a base64-encoded string.
+    /// Gets the ID of the added network intercept.
     /// </summary>
     [JsonPropertyName("intercept")]
     [JsonRequired]

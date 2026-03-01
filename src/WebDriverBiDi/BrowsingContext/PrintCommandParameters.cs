@@ -28,7 +28,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     public override string MethodName => "browsingContext.print";
 
     /// <summary>
-    /// Gets or sets the ID of the browsing context for which to capture the screenshot.
+    /// Gets or sets the ID of the browsing context to print.
     /// </summary>
     [JsonPropertyName("context")]
     public string BrowsingContextId { get; set; }
@@ -120,7 +120,7 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
                 }
                 else
                 {
-                    throw new WebDriverBiDiException("Page range must be a string or an integer value.");
+                    throw new ArgumentException("Page range must be a string or an integer value.", nameof(this.PageRanges));
                 }
             }
 

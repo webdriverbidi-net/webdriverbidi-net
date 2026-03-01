@@ -455,6 +455,6 @@ public class PrintCommandParametersTests
                 true
             ]
         };
-        Assert.That(() => JsonSerializer.Serialize(properties), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Page range must be a string or an integer value"));
+        Assert.That(() => JsonSerializer.Serialize(properties), Throws.InstanceOf<ArgumentException>().With.Message.Contains("Page range must be a string or an integer value"));
     }
 }

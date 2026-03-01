@@ -15,7 +15,7 @@ public class TraverseHistoryCommandParameters : CommandParameters<TraverseHistor
     /// <summary>
     /// Initializes a new instance of the <see cref="TraverseHistoryCommandParameters"/> class.
     /// </summary>
-    /// <param name="browsingContextId">The ID of the browsing context for which to capture the screenshot.</param>
+    /// <param name="browsingContextId">The ID of the browsing context for which to traverse the history.</param>
     /// <param name="delta">The number of positions, forward or backward, to move in the browser history.</param>
     public TraverseHistoryCommandParameters(string browsingContextId, long delta)
     {

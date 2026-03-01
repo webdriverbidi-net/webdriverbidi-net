@@ -37,7 +37,7 @@ public class ImageFormat
         {
             if (value is not null && (value < 0 || value > 1))
             {
-                throw new WebDriverBiDiException("Quality must be between 0 and 1 inclusive.");
+                throw new ArgumentOutOfRangeException(nameof(value), "Quality must be between 0 and 1 inclusive.");
             }
 
             field = value;

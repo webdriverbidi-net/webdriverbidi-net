@@ -34,7 +34,7 @@ public sealed class PermissionsModule : Module
     /// Sets a permission for a given web site.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>An empty command result.</returns>
     public Task<SetPermissionCommandResult> SetPermissionAsync(SetPermissionCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);

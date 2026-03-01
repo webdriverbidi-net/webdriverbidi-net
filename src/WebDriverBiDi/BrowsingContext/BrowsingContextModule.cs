@@ -132,7 +132,7 @@ public sealed class BrowsingContextModule : Module
     /// Activates a browsing context by bringing it to the foreground.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
-    /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
+    /// <returns>An empty command result.</returns>
     public Task<ActivateCommandResult> ActivateAsync(ActivateCommandParameters commandParameters)
     {
         return this.Driver.ExecuteCommandAsync(commandParameters);

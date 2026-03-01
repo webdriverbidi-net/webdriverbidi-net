@@ -8,7 +8,7 @@ namespace WebDriverBiDi.BrowsingContext;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Result for getting the tree of browsing contexts using the browserContext.getTree command.
+/// Result for getting the tree of browsing contexts using the browserContext.print command.
 /// </summary>
 public record PrintCommandResult : CommandResult
 {
@@ -21,7 +21,7 @@ public record PrintCommandResult : CommandResult
     }
 
     /// <summary>
-    /// Gets the screenshot image data as a base64-encoded string.
+    /// Gets the print data as a base64-encoded string.
     /// </summary>
     [JsonPropertyName("data")]
     [JsonRequired]

@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 /// <summary>
-/// Result activating the browsing context using the browserContext.captureScreenshot command.
+/// Result activating the browsing context using the browserContext.activate command.
 /// </summary>
 public record ActivateCommandResult : EmptyResult
 {
