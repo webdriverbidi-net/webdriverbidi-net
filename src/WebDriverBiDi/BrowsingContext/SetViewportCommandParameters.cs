@@ -64,5 +64,5 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// </summary>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<string>? UserContextIds { get; set; }
+    public List<string>? UserContexts { get; set; }
 }

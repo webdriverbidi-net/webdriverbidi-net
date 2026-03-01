@@ -18,7 +18,7 @@ public class PerformActionsCommandParameters : CommandParameters<PerformActionsC
     /// <param name="browsingContextId">The ID of the browsing context in which to perform actions.</param>
     public PerformActionsCommandParameters(string browsingContextId)
     {
-        this.Context = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -31,7 +31,7 @@ public class PerformActionsCommandParameters : CommandParameters<PerformActionsC
     /// Gets or sets the browsing context ID on which to perform actions.
     /// </summary>
     [JsonPropertyName("context")]
-    public string Context { get; set; }
+    public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets the list of actions to perform.

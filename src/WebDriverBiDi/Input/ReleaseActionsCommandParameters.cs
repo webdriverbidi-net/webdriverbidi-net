@@ -18,7 +18,7 @@ public class ReleaseActionsCommandParameters : CommandParameters<ReleaseActionsC
     /// <param name="browsingContextId">The ID of the browsing context for which to release the pending actions.</param>
     public ReleaseActionsCommandParameters(string browsingContextId)
     {
-        this.Context = browsingContextId;
+        this.BrowsingContextId = browsingContextId;
     }
 
     /// <summary>
@@ -31,5 +31,5 @@ public class ReleaseActionsCommandParameters : CommandParameters<ReleaseActionsC
     /// Gets or sets the browsing context ID for which to release pending actions.
     /// </summary>
     [JsonPropertyName("context")]
-    public string Context { get; set; }
+    public string BrowsingContextId { get; set; }
 }
