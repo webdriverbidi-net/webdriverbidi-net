@@ -18,6 +18,7 @@ public class EventObserver<T> : IDisposable
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
     private readonly List<Task> capturedTasks = [];
+    private TaskCompletionSource<bool>? checkpointCompletionSource;
     private CountdownEvent synchronizationCounter = new(0);
     private bool isDisposed;
 
@@ -94,6 +95,7 @@ public class EventObserver<T> : IDisposable
 
             this.synchronizationCounter.Dispose();
             this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
+            this.checkpointCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             this.IsCheckpointSet = true;
         }
     }
@@ -129,6 +131,42 @@ public class EventObserver<T> : IDisposable
     }
 
     /// <summary>
+    /// Asynchronously waits for a checkpoint to be satisfied by having this event observer notified the number of
+    /// times specified when the checkpoint was set. If the wait is successful, it means only that
+    /// this observer was notified to execute the handler, not that the handler has necessarily
+    /// completed execution.
+    /// </summary>
+    /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied.</param>
+    /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
+    public async Task<bool> WaitForCheckpointAsync(TimeSpan timeout)
+    {
+        Task<bool> completionTask;
+        lock (this.checkpointLock)
+        {
+            if (!this.IsCheckpointSet)
+            {
+                return true;
+            }
+
+            // Note use of the null-forgiving operator (!) here, as SetCheckpoint always
+            // assigns checkpointCompletionSource before setting IsCheckpointSet to true.
+            completionTask = this.checkpointCompletionSource!.Task;
+        }
+
+        using CancellationTokenSource timeoutTokenSource = new();
+        Task timeoutTask = Task.Delay(timeout, timeoutTokenSource.Token);
+        Task completedTask = await Task.WhenAny(completionTask, timeoutTask).ConfigureAwait(false);
+        bool checkpointFulfilled = completedTask == completionTask;
+        if (checkpointFulfilled)
+        {
+            timeoutTokenSource.Cancel();
+            this.UnsetCheckpoint();
+        }
+
+        return checkpointFulfilled;
+    }
+
+    /// <summary>
     /// Gets the <see cref="Task"/> objects captured while waiting for the checkpoint to be fulfilled.
     /// Calling this method unsets the checkpoint, and transfers the ownership of the captured
     ///  <see cref="Task"/>s to the calling method.
@@ -140,6 +178,8 @@ public class EventObserver<T> : IDisposable
         {
             this.IsCheckpointSet = false;
             this.synchronizationCounter.Dispose();
+            this.checkpointCompletionSource?.TrySetCanceled();
+            this.checkpointCompletionSource = null;
             Task[] capturedTasks = this.capturedTasks.ToArray();
             this.capturedTasks.Clear();
             return capturedTasks;
@@ -155,6 +195,8 @@ public class EventObserver<T> : IDisposable
         {
             this.IsCheckpointSet = false;
             this.synchronizationCounter.Dispose();
+            this.checkpointCompletionSource?.TrySetCanceled();
+            this.checkpointCompletionSource = null;
         }
     }
 
@@ -186,6 +228,12 @@ public class EventObserver<T> : IDisposable
             {
                 this.capturedTasks.Add(executingTask);
                 this.synchronizationCounter.Signal();
+                if (this.synchronizationCounter.IsSet)
+                {
+                    // Note use of the null-forgiving operator (!) here, as SetCheckpoint always
+                    // assigns checkpointCompletionSource before setting IsCheckpointSet to true.
+                    this.checkpointCompletionSource!.TrySetResult(true);
+                }
             }
         }
     }
@@ -205,6 +253,8 @@ public class EventObserver<T> : IDisposable
                 {
                     this.IsCheckpointSet = false;
                     this.synchronizationCounter.Dispose();
+                    this.checkpointCompletionSource?.TrySetCanceled();
+                    this.checkpointCompletionSource = null;
                 }
             }
 
