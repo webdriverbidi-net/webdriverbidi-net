@@ -29,6 +29,11 @@ using WebDriverBiDi.WebExtension;
 /// </summary>
 public class BiDiDriver : IAsyncDisposable
 {
+    /// <summary>
+    /// Gets the default command timeout if a timeout is not specified in the constructor.
+    /// </summary>
+    public static readonly TimeSpan DefaultCommandTimeout = TimeSpan.FromMinutes(5);
+
     private const string EventReceivedEventName = "driver.eventReceived";
     private const string UnexpectedErrorReceivedEventName = "driver.unexpectedErrorReceived";
     private const string UnknownMessageReceivedEventName = "driver.unknownMessageReceived";
@@ -59,7 +64,7 @@ public class BiDiDriver : IAsyncDisposable
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.
     /// </summary>
     public BiDiDriver()
-        : this(TimeSpan.FromMinutes(5), new Transport())
+        : this(DefaultCommandTimeout, new Transport())
     {
     }
 
