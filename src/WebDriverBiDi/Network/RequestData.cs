@@ -71,7 +71,7 @@ public record RequestData
         get
         {
             this.readOnlyHeaders ??= [];
-            if (this.SerializableHeaders.Count != 0)
+            if (this.readOnlyHeaders.Count == 0 && this.SerializableHeaders.Count != 0)
             {
                 foreach (Header header in this.SerializableHeaders)
                 {
