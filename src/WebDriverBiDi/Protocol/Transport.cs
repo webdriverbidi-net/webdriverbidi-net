@@ -194,8 +194,8 @@ public class Transport : IAsyncDisposable
             // shouldn't be an issue, as we are using a Channel for processing the data, which
             // should buffer the data until the first read. If the underlying data structure
             // changes, this logic may need to be refactored.
-            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
             this.IsConnected = true;
+            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
         }
         finally
         {
