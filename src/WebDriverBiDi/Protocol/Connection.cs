@@ -291,20 +291,33 @@ public class Connection : IAsyncDisposable
                     // Display text or binary data
                     if (this.client.State == WebSocketState.Open && receiveResult.MessageType != WebSocketMessageType.Close)
                     {
-                        if (memoryStream is null && !receiveResult.EndOfMessage)
+                        if (!receiveResult.EndOfMessage)
                         {
-                            memoryStream = new MemoryStream();
+                            // Intermediate frame of a multi-frame message; accumulate data into a MemoryStream.
+                            // Note use of the null-forgiving operator (!) here, as the Array property of tbe buffer
+                            // ArraySegment should never be null.
+                            memoryStream ??= new MemoryStream();
+                            memoryStream.Write(buffer.Array!, 0, receiveResult.Count);
                         }
-
-                        // Note: Use the null-forgiving operator here, as the Array
-                        // property of the buffer ArraySegment should never be null.
-                        memoryStream?.Write(buffer.Array!, 0, receiveResult.Count);
-
-                        if (receiveResult.EndOfMessage)
+                        else
                         {
-                            byte[] bytes = memoryStream is null ? buffer.AsSpan(0, receiveResult.Count).ToArray() : memoryStream.ToArray();
-                            memoryStream?.Dispose();
-                            memoryStream = null;
+                            byte[] bytes;
+                            if (memoryStream is not null)
+                            {
+                                // Final frame of a multi-frame message; write the last frame and extract the assembled message.
+                                // Note use of the null-forgiving operator (!) here, as the Array property of tbe buffer
+                                // ArraySegment should never be null.
+                                memoryStream.Write(buffer.Array!, 0, receiveResult.Count);
+                                bytes = memoryStream.ToArray();
+                                memoryStream.Dispose();
+                                memoryStream = null;
+                            }
+                            else
+                            {
+                                // Single-frame message; take data directly from the buffer.
+                                bytes = buffer.AsSpan(0, receiveResult.Count).ToArray();
+                            }
+
                             if (bytes.Length > 0)
                             {
                                 if (this.OnLogMessage.CurrentObserverCount > 0)
