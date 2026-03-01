@@ -174,7 +174,7 @@ public class Connection : IAsyncDisposable
     /// </summary>
     /// <param name="data">The data to be sent to the remote end of this connection.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket has not been initialized.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is not active.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the WebSocket for sending times out.</exception>
     public virtual async Task SendDataAsync(byte[] data)
     {
@@ -193,12 +193,24 @@ public class Connection : IAsyncDisposable
 
         try
         {
+            if (!this.IsActive)
+            {
+                throw new WebDriverBiDiConnectionException("The WebSocket connection was closed before the send could be completed");
+            }
+
             if (this.OnLogMessage.CurrentObserverCount > 0)
             {
                 await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug);
             }
 
-            await this.SendWebSocketDataAsync(new ArraySegment<byte>(data)).ConfigureAwait(false);
+            try
+            {
+                await this.SendWebSocketDataAsync(new ArraySegment<byte>(data)).ConfigureAwait(false);
+            }
+            catch (WebSocketException ex)
+            {
+                throw new WebDriverBiDiConnectionException($"An error occurred while sending data: {ex.Message}", ex);
+            }
         }
         finally
         {

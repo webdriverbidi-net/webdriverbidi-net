@@ -672,6 +672,45 @@ public class ConnectionTests
         await connection.StopAsync();
     }
 
+    [Test]
+    public async Task TestSendDataThrowsWhenConnectionBecomesInactiveAfterSemaphoreAcquired()
+    {
+        int isActiveCallCount = 0;
+        TestConnection connection = new()
+        {
+            IsActiveOverride = () =>
+            {
+                int count = Interlocked.Increment(ref isActiveCallCount);
+                return count <= 1;
+            },
+        };
+        await connection.StartAsync("ws:localhost");
+        connection.BypassStart = false;
+
+        Assert.That(
+            async () => await connection.SendDataAsync("data"u8.ToArray()),
+            Throws.InstanceOf<WebDriverBiDiConnectionException>()
+                .With.Message.EqualTo("The WebSocket connection was closed before the send could be completed"));
+    }
+
+    [Test]
+    public async Task TestSendDataWrapsWebSocketExceptionInConnectionException()
+    {
+        TestConnection connection = new()
+        {
+            IsActiveOverride = () => true,
+            SendWebSocketDataOverride = _ => throw new WebSocketException("Simulated WebSocket failure"),
+        };
+        await connection.StartAsync("ws:localhost");
+        connection.BypassStart = false;
+
+        Assert.That(
+            async () => await connection.SendDataAsync("data"u8.ToArray()),
+            Throws.InstanceOf<WebDriverBiDiConnectionException>()
+                .With.Message.Contains("Simulated WebSocket failure")
+                .And.InnerException.InstanceOf<WebSocketException>());
+    }
+
     private void OnSocketDataReceived(ServerDataReceivedEventArgs e)
     {
         this.lastServerReceivedData = e.Data;

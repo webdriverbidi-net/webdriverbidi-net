@@ -24,10 +24,19 @@ public class TestConnection : Connection
 
     public Func<ArraySegment<byte>, CancellationToken, int, Task<WebSocketReceiveResult>>? ReceiveHandler { get; set; }
 
+    public Func<bool>? IsActiveOverride { get; set; }
+
+    public Func<ArraySegment<byte>, Task>? SendWebSocketDataOverride { get; set; }
+
     public override bool IsActive
     {
         get
         {
+            if (this.IsActiveOverride is not null)
+            {
+                return this.IsActiveOverride();
+            }
+
             if (this.ThrowOnStop)
             {
                 return true;
@@ -101,6 +110,11 @@ public class TestConnection : Connection
 
     protected override Task SendWebSocketDataAsync(ArraySegment<byte> data)
     {
+        if (this.SendWebSocketDataOverride is not null)
+        {
+            return this.SendWebSocketDataOverride(data);
+        }
+
         this.OnDataSendStarting();
         this.DataSent = Encoding.UTF8.GetString(data);
         Task result = Task.CompletedTask;
