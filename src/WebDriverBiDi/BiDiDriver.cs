@@ -321,7 +321,7 @@ public class BiDiDriver : IAsyncDisposable
         {
             if (sentCommand.ThrownException is not null)
             {
-                throw sentCommand.ThrownException;
+                ExceptionDispatchInfo.Capture(sentCommand.ThrownException).Throw();
             }
 
             if (sentCommand.IsCanceled)
