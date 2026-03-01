@@ -369,12 +369,10 @@ public class BiDiDriver : IAsyncDisposable
     /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name tha has alreaey been registered.</exception>
     public virtual void RegisterModule(Module module)
     {
-        if (this.modules.ContainsKey(module.ModuleName))
+        if (!this.modules.TryAdd(module.ModuleName, module))
         {
             throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
         }
-
-        this.modules[module.ModuleName] = module;
     }
 
     /// <summary>
