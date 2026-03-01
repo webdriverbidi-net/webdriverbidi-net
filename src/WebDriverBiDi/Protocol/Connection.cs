@@ -80,8 +80,9 @@ public class Connection : IAsyncDisposable
         {
             // A ClientWebSocket in a closed or aborted state means that we had
             // a connection at one time that was in use, and is no longer valid.
-            // replace that ClientWebSocket with a new one to allow for reuse of
-            // the connection.
+            // Replace that ClientWebSocket with a new one to allow for reuse of
+            // the connection, disposing the old one first.
+            this.client.Dispose();
             this.client = new ClientWebSocket();
             this.clientTokenSource.Dispose();
             this.clientTokenSource = new CancellationTokenSource();
@@ -149,7 +150,6 @@ public class Connection : IAsyncDisposable
             await this.dataReceiveTask.ConfigureAwait(false);
         }
 
-        this.client.Dispose();
         this.ConnectedUrl = string.Empty;
     }
 
