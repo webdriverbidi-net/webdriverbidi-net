@@ -104,11 +104,10 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = driver.Network;
 
-        AddInterceptCommandParameters commandParameters = new()
+        AddInterceptCommandParameters commandParameters = new(InterceptPhase.BeforeRequestSent)
         {
             UrlPatterns = [new UrlPatternString("https://example.com/*")]
         };
-        commandParameters.Phases.Add(InterceptPhase.BeforeRequestSent);
         Task<AddInterceptCommandResult> task = module.AddInterceptAsync(commandParameters);
 
         task.Wait(TimeSpan.FromSeconds(1));
