@@ -538,6 +538,39 @@ public class ConnectionTests
     }
 
     [Test]
+    public async Task TestCanDisposeAsyncWithoutStoping()
+    {
+        Connection connection = new();
+        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
+        Assert.That(connection.IsActive, Is.False);
+    }
+
+    [Test]
+    public async Task TestDisposeLogsExceptionFromStop()
+    {
+        List<LogMessageEventArgs> logs = [];
+        TestConnection connection = new();
+        connection.OnLogMessage.AddObserver((e) =>
+        {
+            logs.Add(e);
+            return Task.CompletedTask;
+        });
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        connection.ThrowOnStop = true;
+        connection.BypassStop = false;
+        await connection.DisposeAsync();
+        Assert.That(logs, Has.Some.Matches<LogMessageEventArgs>(
+            log => log.Message.Contains("Unexpected exception during disposal")
+                   && log.Message.Contains("Simulated stop failure")
+                   && log.Level == WebDriverBiDiLogLevel.Warn
+                   && log.ComponentName == "Connection"));
+    }
+
+    [Test]
     public async Task TestCanDisposeAsyncStartedConnectionAfterStop()
     {
         Connection connection = new();

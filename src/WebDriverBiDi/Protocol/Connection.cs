@@ -31,7 +31,7 @@ public class Connection : IAsyncDisposable
     /// <summary>
     /// Gets a value indicating whether this connection is active.
     /// </summary>
-    public bool IsActive => this.client.State != WebSocketState.None && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted;
+    public virtual bool IsActive => this.client.State != WebSocketState.None && this.client.State != WebSocketState.Closed && this.client.State != WebSocketState.Aborted;
 
     /// <summary>
     /// Gets the buffer size for communication used by this connection.
@@ -155,6 +155,16 @@ public class Connection : IAsyncDisposable
     }
 
     /// <summary>
+    /// Asynchronously releases the resources used by this <see cref="Connection"/>.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await this.DisposeAsyncCore().ConfigureAwait(false);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
     /// Asynchronously sends data to the remote end of this connection.
     /// </summary>
     /// <param name="data">The data to be sent to the remote end of this connection.</param>
@@ -192,16 +202,6 @@ public class Connection : IAsyncDisposable
     }
 
     /// <summary>
-    /// Asynchronously releases the resources used by this <see cref="Connection"/>.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous dispose operation.</returns>
-    public async ValueTask DisposeAsync()
-    {
-        await this.DisposeAsyncCore().ConfigureAwait(false);
-        GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
     /// Asynchronously sends data to the underlying WebSocket of this connection.
     /// </summary>
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the WebSocket.</param>
@@ -227,12 +227,23 @@ public class Connection : IAsyncDisposable
     /// Override this method in derived classes to add custom async cleanup logic.
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
-    protected virtual ValueTask DisposeAsyncCore()
+    protected virtual async ValueTask DisposeAsyncCore()
     {
+        try
+        {
+            if (this.IsActive)
+            {
+                await this.StopAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn);
+        }
+
         this.dataSendSemaphore.Dispose();
         this.clientTokenSource.Dispose();
         this.client.Dispose();
-        return default;
     }
 
     /// <summary>

@@ -14,6 +14,8 @@ public class TestConnection : Connection
 
     public bool BypassDataSend { get; set; } = true;
 
+    public bool ThrowOnStop { get; set; }
+
     public string? DataSent { get; set; }
 
     public TimeSpan? DataSendDelay { get; set; }
@@ -21,6 +23,19 @@ public class TestConnection : Connection
     public TaskCompletionSource? StartBarrier { get; set; }
 
     public Func<ArraySegment<byte>, CancellationToken, int, Task<WebSocketReceiveResult>>? ReceiveHandler { get; set; }
+
+    public override bool IsActive
+    {
+        get
+        {
+            if (this.ThrowOnStop)
+            {
+                return true;
+            }
+
+            return base.IsActive;
+        }
+    }
 
     public event EventHandler? DataSendStarting;
 
@@ -55,6 +70,10 @@ public class TestConnection : Connection
         if (this.BypassStop)
         {
             return Task.CompletedTask;
+        }
+        else if (this.ThrowOnStop)
+        {
+            throw new WebDriverBiDiException("Simulated stop failure");
         }
         else
         {
