@@ -6,6 +6,7 @@
 namespace WebDriverBiDi;
 
 using System.Collections.Concurrent;
+using System.Runtime.ExceptionServices;
 using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
@@ -315,7 +316,7 @@ public class BiDiDriver : IAsyncDisposable
         {
             if (sentCommand.ThrownException is not null)
             {
-                throw sentCommand.ThrownException;
+                ExceptionDispatchInfo.Capture(sentCommand.ThrownException).Throw();
             }
 
             if (sentCommand.IsCanceled)
