@@ -716,7 +716,7 @@ public class BiDiDriverTests
                                }
                                """;
             await server.SendDataAsync(connectionId, unparsableJson);
-            bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
+            bool eventsRaised = WaitHandle.WaitAll([logSyncEvent, unknownMessageSyncEvent], TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             using (Assert.EnterMultipleScope())
             {

@@ -515,8 +515,8 @@ public class Transport : IAsyncDisposable
         }
         catch (JsonException e)
         {
+            // We return from this block to avoid double-reporting this error.
             await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error);
-            this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, e, $"Invalid JSON in protocol message: {Encoding.UTF8.GetString(messageData)}");
         }
 
         if (messageRootElement.ValueKind != JsonValueKind.Undefined)
