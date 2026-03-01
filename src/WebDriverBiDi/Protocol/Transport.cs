@@ -452,12 +452,26 @@ public class Transport : IAsyncDisposable
 
     private async Task OnProtocolErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        await this.OnErrorEventReceived.NotifyObserversAsync(e);
+        try
+        {
+            await this.OnErrorEventReceived.NotifyObserversAsync(e);
+        }
+        catch (Exception ex)
+        {
+            this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for error event");
+        }
     }
 
     private async Task OnProtocolUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
-        await this.OnUnknownMessageReceived.NotifyObserversAsync(e);
+        try
+        {
+            await this.OnUnknownMessageReceived.NotifyObserversAsync(e);
+        }
+        catch (Exception ex)
+        {
+            this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for unknown message event");
+        }
     }
 
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)

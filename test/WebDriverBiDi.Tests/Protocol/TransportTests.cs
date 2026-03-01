@@ -1675,4 +1675,169 @@ public class TransportTests
             Assert.That(command2.ThrownException, Is.InstanceOf<WebDriverBiDiConnectionException>());
         }
     }
+
+    [Test]
+    public async Task TestExceptionInErrorEventHandlerIsIgnoredByDefault()
+    {
+        ManualResetEvent syncEvent = new(false);
+
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        {
+            syncEvent.Set();
+            throw new WebDriverBiDiException("Error handler exception");
+        });
+        string json = """
+                      {
+                        "type": "error",
+                        "id": null,
+                        "error": "unknown error",
+                        "message": "This is a test error message"
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        await transport.DisconnectAsync();
+    }
+
+    [Test]
+    public async Task TestExceptionInErrorEventHandlerCanCollect()
+    {
+        ManualResetEvent syncEvent = new(false);
+
+        TestConnection connection = new();
+        Transport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+        };
+        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        {
+            syncEvent.Set();
+            throw new WebDriverBiDiException("Error handler exception");
+        });
+        string json = """
+                      {
+                        "type": "error",
+                        "id": null,
+                        "error": "unknown error",
+                        "message": "This is a test error message"
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Error handler exception"));
+    }
+
+    [Test]
+    public async Task TestExceptionInErrorEventHandlerCanTerminate()
+    {
+        ManualResetEvent syncEvent = new(false);
+
+        TestConnection connection = new();
+        Transport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
+        };
+        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        {
+            syncEvent.Set();
+            throw new WebDriverBiDiException("Error handler exception");
+        });
+        string json = """
+                      {
+                        "type": "error",
+                        "id": null,
+                        "error": "unknown error",
+                        "message": "This is a test error message"
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+
+        string commandName = "module.command";
+        TestCommandParameters commandParameters = new(commandName);
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("error event").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Error handler exception"));
+    }
+
+    [Test]
+    public async Task TestExceptionInUnknownMessageHandlerIsIgnoredByDefault()
+    {
+        ManualResetEvent syncEvent = new(false);
+
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        {
+            syncEvent.Set();
+            throw new WebDriverBiDiException("Unknown message handler exception");
+        });
+        string json = """
+                      {
+                        "type": "unknown"
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        await transport.DisconnectAsync();
+    }
+
+    [Test]
+    public async Task TestExceptionInUnknownMessageHandlerCanCollect()
+    {
+        ManualResetEvent syncEvent = new(false);
+
+        TestConnection connection = new();
+        Transport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+        };
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        {
+            syncEvent.Set();
+            throw new WebDriverBiDiException("Unknown message handler exception");
+        });
+        string json = """
+                      {
+                        "type": "unknown"
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Unknown message handler exception"));
+    }
+
+    [Test]
+    public async Task TestExceptionInUnknownMessageHandlerCanTerminate()
+    {
+        ManualResetEvent syncEvent = new(false);
+
+        TestConnection connection = new();
+        Transport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
+        };
+        transport.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        {
+            syncEvent.Set();
+            throw new WebDriverBiDiException("Unknown message handler exception");
+        });
+        string json = """
+                      {
+                        "type": "unknown"
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        syncEvent.WaitOne(TimeSpan.FromSeconds(1));
+
+        string commandName = "module.command";
+        TestCommandParameters commandParameters = new(commandName);
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("unknown message event").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Unknown message handler exception"));
+    }
 }
