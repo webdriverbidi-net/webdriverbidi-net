@@ -9,7 +9,7 @@ namespace WebDriverBiDi;
 /// Implementation of an observer in the Observer pattern for events.
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
-public class EventObserver<T> : IDisposable
+public class EventObserver<T> : IDisposable, IAsyncDisposable
     where T : WebDriverBiDiEventArgs
 {
     private readonly object checkpointLock = new();
@@ -69,6 +69,17 @@ public class EventObserver<T> : IDisposable
     public void Dispose()
     {
         this.Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Asynchronously removes this observer from its observable event and releases all resources.
+    /// </summary>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await this.DisposeAsyncCore().ConfigureAwait(false);
+        this.Dispose(false);
         GC.SuppressFinalize(this);
     }
 
@@ -284,6 +295,25 @@ public class EventObserver<T> : IDisposable
 
             this.isDisposed = true;
         }
+    }
+
+    /// <summary>
+    /// Asynchronously releases the managed resources used by this observer.
+    /// Override this method in derived classes to add custom async cleanup logic.
+    /// </summary>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
+    protected virtual ValueTask DisposeAsyncCore()
+    {
+        if (!this.isDisposed)
+        {
+            this.Unobserve();
+            lock (this.checkpointLock)
+            {
+                this.ResetCheckpointState();
+            }
+        }
+
+        return default;
     }
 
     /// <summary>

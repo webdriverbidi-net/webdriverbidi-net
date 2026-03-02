@@ -100,6 +100,79 @@ public class ObservableEventTests
     }
 
     [Test]
+    public async Task TestDisposeAsyncRemovesObserver()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        Assert.That(observedValue, Is.EqualTo("myValue1"));
+
+        await observer.DisposeAsync();
+        Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
+
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        Assert.That(observedValue, Is.EqualTo("myValue1"));
+    }
+
+    [Test]
+    public async Task TestAwaitUsingPatternRemovesObserver()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+
+        await using (var observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue))
+        {
+            await testEventSource.RaiseTestEventAsync("myValue1");
+            Assert.That(observedValue, Is.EqualTo("myValue1"));
+            Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(1));
+        }
+
+        Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
+
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        Assert.That(observedValue, Is.EqualTo("myValue1"));
+    }
+
+    [Test]
+    public async Task TestDoubleDisposeAsyncDoesNotThrow()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        await observer.DisposeAsync();
+        Assert.That(async () => await observer.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestDisposeAsyncAfterDisposeDoesNotThrow()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.Dispose();
+        Assert.That(async () => await observer.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestDisposeAfterDisposeAsyncDoesNotThrow()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        await observer.DisposeAsync();
+        Assert.That(() => observer.Dispose(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestDisposeAsyncWithActiveCheckpointDoesNotThrow()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.SetCheckpoint();
+        Assert.That(observer.IsCheckpointSet, Is.True);
+        Assert.That(async () => await observer.DisposeAsync(), Throws.Nothing);
+        Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
+    }
+
+    [Test]
     public void TestCannotAddMoreThanMaxObservers()
     {
         TestEventSource testEventSource = new(1);
