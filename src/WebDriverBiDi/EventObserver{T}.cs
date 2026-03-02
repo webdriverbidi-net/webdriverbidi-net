@@ -176,10 +176,7 @@ public class EventObserver<T> : IDisposable
     {
         lock (this.checkpointLock)
         {
-            this.IsCheckpointSet = false;
-            this.synchronizationCounter.Dispose();
-            this.checkpointCompletionSource?.TrySetCanceled();
-            this.checkpointCompletionSource = null;
+            this.ResetCheckpointState();
             Task[] capturedTasks = this.capturedTasks.ToArray();
             this.capturedTasks.Clear();
             return capturedTasks;
@@ -193,10 +190,7 @@ public class EventObserver<T> : IDisposable
     {
         lock (this.checkpointLock)
         {
-            this.IsCheckpointSet = false;
-            this.synchronizationCounter.Dispose();
-            this.checkpointCompletionSource?.TrySetCanceled();
-            this.checkpointCompletionSource = null;
+            this.ResetCheckpointState();
         }
     }
 
@@ -251,14 +245,24 @@ public class EventObserver<T> : IDisposable
                 this.Unobserve();
                 lock (this.checkpointLock)
                 {
-                    this.IsCheckpointSet = false;
-                    this.synchronizationCounter.Dispose();
-                    this.checkpointCompletionSource?.TrySetCanceled();
-                    this.checkpointCompletionSource = null;
+                    this.ResetCheckpointState();
                 }
             }
 
             this.isDisposed = true;
         }
+    }
+
+    /// <summary>
+    /// Resets the checkpoint state, disposing the synchronization counter and
+    /// canceling the completion source. Must be called while holding the
+    /// <see cref="checkpointLock"/>.
+    /// </summary>
+    private void ResetCheckpointState()
+    {
+        this.IsCheckpointSet = false;
+        this.synchronizationCounter.Dispose();
+        this.checkpointCompletionSource?.TrySetCanceled();
+        this.checkpointCompletionSource = null;
     }
 }
