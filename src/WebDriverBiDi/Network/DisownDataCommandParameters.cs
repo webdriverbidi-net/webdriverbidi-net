@@ -34,7 +34,6 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     /// </summary>
     [JsonPropertyName("dataType")]
     [JsonInclude]
-    [JsonRequired]
     public DataType DataType { get; set; } = DataType.Response;
 
     /// <summary>
@@ -42,7 +41,6 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     /// </summary>
     [JsonPropertyName("collector")]
     [JsonInclude]
-    [JsonRequired]
     public string CollectorId { get; set; }
 
     /// <summary>
@@ -50,6 +48,5 @@ public class DisownDataCommandParameters : CommandParameters<DisownDataCommandRe
     /// </summary>
     [JsonPropertyName("request")]
     [JsonInclude]
-    [JsonRequired]
     public string RequestId { get; set; }
 }

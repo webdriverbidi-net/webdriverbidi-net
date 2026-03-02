@@ -34,14 +34,12 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// Gets or sets the ID of the browsing context in which to locate nodes.
     /// </summary>
     [JsonPropertyName("context")]
-    [JsonRequired]
     public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the locator used to locate nodes.
     /// </summary>
     [JsonPropertyName("locator")]
-    [JsonRequired]
     public Locator Locator { get; set; }
 
     /// <summary>

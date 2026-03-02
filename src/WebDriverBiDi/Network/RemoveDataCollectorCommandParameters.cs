@@ -32,6 +32,5 @@ public class RemoveDataCollectorCommandParameters : CommandParameters<RemoveData
     /// </summary>
     [JsonPropertyName("collector")]
     [JsonInclude]
-    [JsonRequired]
     public string CollectorId { get; set; }
 }

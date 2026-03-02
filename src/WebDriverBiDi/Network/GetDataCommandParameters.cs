@@ -32,7 +32,6 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     /// </summary>
     [JsonPropertyName("request")]
     [JsonInclude]
-    [JsonRequired]
     public string RequestId { get; set; }
 
     /// <summary>
@@ -40,14 +39,12 @@ public class GetDataCommandParameters : CommandParameters<GetDataCommandResult>
     /// </summary>
     [JsonPropertyName("dataType")]
     [JsonInclude]
-    [JsonRequired]
     public DataType DataType { get; set; } = DataType.Response;
 
     /// <summary>
     /// Gets or sets the ID of the data collector for which to get collected network data.
     /// </summary>
     [JsonPropertyName("collector")]
-    [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CollectorId { get; set; }
 

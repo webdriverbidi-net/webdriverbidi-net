@@ -33,14 +33,12 @@ public class NavigateCommandParameters : CommandParameters<NavigateCommandResult
     /// Gets or sets the ID of the browsing context to navigate.
     /// </summary>
     [JsonPropertyName("context")]
-    [JsonRequired]
     public string BrowsingContextId { get; set; }
 
     /// <summary>
     /// Gets or sets the URL to which to navigate.
     /// </summary>
     [JsonPropertyName("url")]
-    [JsonRequired]
     public string Url { get; set; }
 
     /// <summary>

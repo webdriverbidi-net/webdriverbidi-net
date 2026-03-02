@@ -45,21 +45,18 @@ public class SetPermissionCommandParameters : CommandParameters<SetPermissionCom
     /// <summary>
     /// Gets or sets the descriptor of the permission to set.
     /// </summary>
-    [JsonRequired]
     [JsonPropertyName("descriptor")]
     public PermissionDescriptor Descriptor { get; set; }
 
     /// <summary>
     /// Gets or sets the state of the permission to set.
     /// </summary>
-    [JsonRequired]
     [JsonPropertyName("state")]
     public PermissionState State { get; set; }
 
     /// <summary>
     /// Gets or sets the origin, usually a URL, for which to set the permission.
     /// </summary>
-    [JsonRequired]
     [JsonPropertyName("origin")]
     public string Origin { get; set; }
 

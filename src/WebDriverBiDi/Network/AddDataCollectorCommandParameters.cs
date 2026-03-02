@@ -49,7 +49,6 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// </summary>
     [JsonPropertyName("dataTypes")]
     [JsonInclude]
-    [JsonRequired]
     public HashSet<DataType> DataTypes { get; set; } = [];
 
     /// <summary>
@@ -57,7 +56,6 @@ public class AddDataCollectorCommandParameters : CommandParameters<AddDataCollec
     /// </summary>
     [JsonPropertyName("maxEncodedDataSize")]
     [JsonInclude]
-    [JsonRequired]
     public ulong MaxEncodedDataSize { get; set; }
 
     /// <summary>

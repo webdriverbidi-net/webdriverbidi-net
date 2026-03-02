@@ -31,7 +31,6 @@ public class HandleUserPromptCommandParameters : CommandParameters<HandleUserPro
     /// Gets or sets the ID of the browsing context for which to handle the user prompt.
     /// </summary>
     [JsonPropertyName("context")]
-    [JsonRequired]
     public string BrowsingContextId { get; set; }
 
     /// <summary>
