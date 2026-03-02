@@ -41,8 +41,11 @@ public class ChromiumTransport : Transport
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public override async Task ConnectAsync(string websocketUri)
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is already connected to a remote end.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public override async Task ConnectAsync(string websocketUri, CancellationToken cancellationToken = default)
     {
         await base.ConnectAsync(websocketUri);
         await this.InitializeBiDi();
