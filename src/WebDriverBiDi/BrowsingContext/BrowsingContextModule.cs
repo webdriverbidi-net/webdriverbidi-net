@@ -173,9 +173,9 @@ public sealed class BrowsingContextModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The tree associated browsing contexts.</returns>
-    public Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters commandParameters)
+    public Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters? commandParameters = null)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
     }
 
     /// <summary>

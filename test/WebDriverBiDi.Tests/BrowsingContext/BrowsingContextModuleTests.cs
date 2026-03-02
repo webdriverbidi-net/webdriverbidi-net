@@ -165,6 +165,36 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
+    public async Task TestExecuteGetTreeCommandWithNoArgument()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+           string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "contexts": []
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        BrowsingContextModule module = driver.BrowsingContext;
+
+        Task<GetTreeCommandResult> task = module.GetTreeAsync();
+        task.Wait(TimeSpan.FromSeconds(1));
+        GetTreeCommandResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.ContextTree, Has.Count.EqualTo(0));
+    }
+
+    [Test]
     public async Task TestExecuteHandleUserPromptCommand()
     {
         TestConnection connection = new();

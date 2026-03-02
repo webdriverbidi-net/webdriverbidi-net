@@ -267,6 +267,36 @@ public class ScriptModuleTests
     }
 
     [Test]
+    public async Task TestExecuteGetRealmsCommandWithNoArgument()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "realms": []
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        ScriptModule module = driver.Script;
+        await driver.StartAsync("ws:localhost");
+
+        Task<GetRealmsCommandResult> task = module.GetRealmsAsync();
+        task.Wait(TimeSpan.FromSeconds(1));
+        GetRealmsCommandResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Realms, Has.Count.EqualTo(0));
+    }
+
+    [Test]
     public async Task TestExecuteDisownCommand()
     {
         TestConnection connection = new();

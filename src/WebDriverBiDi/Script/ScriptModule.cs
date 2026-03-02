@@ -96,9 +96,9 @@ public sealed class ScriptModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>The result of the command containing IDs of the realms.</returns>
-    public Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters commandParameters)
+    public Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters? commandParameters = null)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
     }
 
     /// <summary>

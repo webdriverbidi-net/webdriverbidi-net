@@ -75,6 +75,66 @@ public class StorageModuleTests()
     }
 
     [Test]
+    public async Task TestGetCookiesCommandWithNoArgument()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "cookies": [],
+                                      "partitionKey": {}
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        StorageModule module = driver.Storage;
+        await driver.StartAsync("ws:localhost");
+
+        Task<GetCookiesCommandResult> task = module.GetCookiesAsync();
+        task.Wait(TimeSpan.FromSeconds(1));
+        GetCookiesCommandResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Cookies, Has.Count.EqualTo(0));
+    }
+
+    [Test]
+    public async Task TestDeleteCookiesCommandWithNoArgument()
+    {
+        TestConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {
+                                      "partitionKey": {}
+                                    }
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
+        StorageModule module = driver.Storage;
+        await driver.StartAsync("ws:localhost");
+
+        Task<DeleteCookiesCommandResult> task = module.DeleteCookiesAsync();
+        task.Wait(TimeSpan.FromSeconds(1));
+        DeleteCookiesCommandResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
     public async Task TestSetCookieCommand()
     {
         TestConnection connection = new();
