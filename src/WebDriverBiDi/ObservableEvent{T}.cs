@@ -79,10 +79,6 @@ public class ObservableEvent<T>
     {
         Func<T, Task> wrappedHandler = (T args) =>
         {
-            // Note that if an exception is thrown during the execution of
-            // the handler, it will bubble up when NotifyObserversAsync is
-            // called, and the Task will be set to Faulted, so no need to
-            // add code for that here.
             TaskCompletionSource<bool> taskCompletionSource = new();
             handler(args);
             taskCompletionSource.SetResult(true);
@@ -133,10 +129,15 @@ public class ObservableEvent<T>
     }
 
     /// <summary>
-    /// Asynchronously notifies observers when this observable event occurs.
+    /// Asynchronously notifies observers when this observable event occurs. Each observer is
+    /// notified independently; an exception thrown by one observer does not prevent subsequent
+    /// observers from being notified. If exactly one observer throws, the original exception is
+    /// rethrown. If multiple observers throw, an <see cref="AggregateException"/> containing all
+    /// caught exceptions is thrown after all observers have been notified.
     /// </summary>
     /// <param name="notifyData">The data of the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="AggregateException">Thrown when multiple observer handlers throw an exception.</exception>
     public async Task NotifyObserversAsync(T notifyData)
     {
         // Snapshot the observers under the lock so that iteration is safe
@@ -150,9 +151,28 @@ public class ObservableEvent<T>
             snapshot = [.. this.observers.Values];
         }
 
+        List<Exception>? exceptions = null;
         foreach (EventObserver<T> observer in snapshot)
         {
-            await observer.Notify(notifyData);
+            try
+            {
+                await observer.Notify(notifyData);
+            }
+            catch (Exception ex)
+            {
+                exceptions ??= [];
+                exceptions.Add(ex);
+            }
+        }
+
+        if (exceptions is not null)
+        {
+            if (exceptions.Count == 1)
+            {
+                throw exceptions[0];
+            }
+
+            throw new AggregateException("One or more observer handlers threw an exception.", exceptions);
         }
     }
 

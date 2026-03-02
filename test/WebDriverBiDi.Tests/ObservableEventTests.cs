@@ -317,6 +317,78 @@ public class ObservableEventTests
     }
 
     [Test]
+    public async Task TestThrowingObserverDoesNotPreventSubsequentObserversFromBeingNotified()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => throw new InvalidOperationException("observer failure"));
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+
+        Assert.That(async () => await testEventSource.RaiseTestEventAsync("myValue"), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("observer failure"));
+        Assert.That(observedValue, Is.EqualTo("myValue"));
+    }
+
+    [Test]
+    public async Task TestMultipleThrowingObserversProduceAggregateException()
+    {
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => throw new InvalidOperationException("first failure"));
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => throw new ArgumentException("second failure"));
+
+        AggregateException? caught = null;
+        try
+        {
+            await testEventSource.RaiseTestEventAsync("myValue");
+        }
+        catch (AggregateException ex)
+        {
+            caught = ex;
+        }
+
+        Assert.That(caught, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(caught!.InnerExceptions, Has.Count.EqualTo(2));
+            Assert.That(caught.InnerExceptions[0], Is.InstanceOf<InvalidOperationException>());
+            Assert.That(caught.InnerExceptions[0].Message, Is.EqualTo("first failure"));
+            Assert.That(caught.InnerExceptions[1], Is.InstanceOf<ArgumentException>());
+            Assert.That(caught.InnerExceptions[1].Message, Is.EqualTo("second failure"));
+        }
+    }
+
+    [Test]
+    public async Task TestThrowingAsyncObserverDoesNotPreventSubsequentObserversFromBeingNotified()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) =>
+        {
+            return Task.FromException(new InvalidOperationException("async observer failure"));
+        });
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+
+        Assert.That(async () => await testEventSource.RaiseTestEventAsync("myValue"), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("async observer failure"));
+        Assert.That(observedValue, Is.EqualTo("myValue"));
+    }
+
+    [Test]
+    public async Task TestNoExceptionThrownWhenAllObserversSucceed()
+    {
+        string? firstValue = null;
+        string? secondValue = null;
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => firstValue = e.EventValue);
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => secondValue = e.EventValue);
+
+        Assert.That(async () => await testEventSource.RaiseTestEventAsync("myValue"), Throws.Nothing);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(firstValue, Is.EqualTo("myValue"));
+            Assert.That(secondValue, Is.EqualTo("myValue"));
+        }
+    }
+
+    [Test]
     public void TestEventArgsCopySemantics()
     {
         TestObservableEventArgs testEventArgs = new("foo");
