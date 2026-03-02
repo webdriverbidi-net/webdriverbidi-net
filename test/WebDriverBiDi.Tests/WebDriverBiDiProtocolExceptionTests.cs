@@ -40,6 +40,14 @@ public class WebDriverBiDiProtocolExceptionTests
     }
 
     [Test]
+    public void TestIsWebDriverBiDiErrorResponseException()
+    {
+        ErrorResult errorResult = CreateErrorResult("no such frame", "Frame not found", null);
+        WebDriverBiDiProtocolException exception = new("Test exception message", errorResult);
+        Assert.That(exception, Is.InstanceOf<WebDriverBiDiErrorResponseException>());
+    }
+
+    [Test]
     public void TestIsWebDriverBiDiException()
     {
         ErrorResult errorResult = CreateErrorResult("no such frame", "Frame not found", null);
