@@ -549,12 +549,17 @@ public class Transport : IAsyncDisposable
             if (messageRootElement.TryGetProperty("type", out JsonElement messageTypeToken) && messageTypeToken.ValueKind == JsonValueKind.String)
             {
                 string messageType = messageTypeToken.GetString()!;
-                string loggingMessageData = Encoding.UTF8.GetString(messageData);
+                bool isLogging = this.OnLogMessage.CurrentObserverCount > 0;
+                string loggingMessageData = string.Empty;
+                if (isLogging)
+                {
+                    loggingMessageData = Encoding.UTF8.GetString(messageData);
+                }
+
                 if (messageType == "success")
                 {
                     isProcessed = this.ProcessCommandResponseMessage(messageRootElement);
-
-                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    if (isLogging)
                     {
                         await this.LogAsync($"Command response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
                     }
@@ -562,8 +567,7 @@ public class Transport : IAsyncDisposable
                 else if (messageType == "error")
                 {
                     isProcessed = await this.ProcessErrorMessageAsync(messageRootElement);
-
-                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    if (isLogging)
                     {
                         await this.LogAsync($"Error response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
                     }
@@ -571,8 +575,7 @@ public class Transport : IAsyncDisposable
                 else if (messageType == "event")
                 {
                     isProcessed = await this.ProcessEventMessageAsync(messageRootElement);
-
-                    if (this.OnLogMessage.CurrentObserverCount > 0)
+                    if (isLogging)
                     {
                         await this.LogAsync($"Event message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
                     }
