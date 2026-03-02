@@ -60,7 +60,8 @@ public class Command
     public Type ResponseType => this.commandData.ResponseType;
 
     /// <summary>
-    /// Gets or sets the result of the command.
+    /// Gets the result of the command, or <see langword="null"/> if the command has not
+    /// completed successfully.
     /// </summary>
     [JsonIgnore]
     public virtual CommandResult? Result
@@ -74,23 +75,11 @@ public class Command
 
             return null;
         }
-
-        set
-        {
-            if (value is null)
-            {
-                this.taskCompletionSource.TrySetException(
-                    new WebDriverBiDiException($"Attempted to set a null result on command {this.CommandName} with id {this.commandId}"));
-            }
-            else
-            {
-                this.taskCompletionSource.TrySetResult(value);
-            }
-        }
     }
 
     /// <summary>
-    /// Gets or sets the exception thrown during execution of the command, if any.
+    /// Gets the exception thrown during execution of the command, or <see langword="null"/>
+    /// if the command has not faulted.
     /// </summary>
     [JsonIgnore]
     public virtual Exception? ThrownException
@@ -103,14 +92,6 @@ public class Command
             }
 
             return null;
-        }
-
-        set
-        {
-            if (value is not null)
-            {
-                this.taskCompletionSource.TrySetException(value);
-            }
         }
     }
 
@@ -147,6 +128,27 @@ public class Command
         }
 
         return commandTaskCompleted;
+    }
+
+    /// <summary>
+    /// Sets the result of the command, completing the underlying task. If the command has
+    /// already been completed, faulted, or canceled, this method is a safe no-op.
+    /// </summary>
+    /// <param name="result">The result of the command.</param>
+    public virtual void SetResult(CommandResult result)
+    {
+        this.taskCompletionSource.TrySetResult(result);
+    }
+
+    /// <summary>
+    /// Faults the command with the specified exception, completing the underlying task.
+    /// If the command has already been completed, faulted, or canceled, this method is
+    /// a safe no-op.
+    /// </summary>
+    /// <param name="exception">The exception that caused the command to fail.</param>
+    public virtual void SetException(Exception exception)
+    {
+        this.taskCompletionSource.TrySetException(exception);
     }
 
     /// <summary>

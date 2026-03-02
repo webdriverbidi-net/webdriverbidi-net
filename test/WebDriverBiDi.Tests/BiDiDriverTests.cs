@@ -413,7 +413,7 @@ public class BiDiDriverTests
         };
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
         await driver.StartAsync("ws:localhost");
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Attempted to set a null result"));
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("is unexpectedly null"));
     }
 
     [Test]

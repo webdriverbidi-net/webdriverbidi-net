@@ -111,7 +111,7 @@ public class PendingCommandCollection : IDisposable
 
         foreach (Command pendingCommand in this.pendingCommands.Values)
         {
-            pendingCommand.ThrownException = exception;
+            pendingCommand.SetException(exception);
         }
 
         this.pendingCommands.Clear();

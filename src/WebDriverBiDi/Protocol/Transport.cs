@@ -600,12 +600,12 @@ public class Transport : IAsyncDisposable
                     {
                         CommandResult commandResult = response.Result;
                         commandResult.AdditionalData = response.AdditionalData;
-                        executedCommand.Result = commandResult;
+                        executedCommand.SetResult(commandResult);
                     }
                 }
                 catch (Exception ex)
                 {
-                    executedCommand.ThrownException = new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for response type (response JSON:{message})", ex);
+                    executedCommand.SetException(new WebDriverBiDiSerializationException($"Response did not contain properly formed JSON for response type (response JSON:{message})", ex));
                 }
 
                 return true;
@@ -628,7 +628,7 @@ public class Transport : IAsyncDisposable
                 ErrorResult result = errorMessage.GetErrorResponseData();
                 if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command executedCommand))
                 {
-                    executedCommand.Result = result;
+                    executedCommand.SetResult(result);
                 }
                 else
                 {
