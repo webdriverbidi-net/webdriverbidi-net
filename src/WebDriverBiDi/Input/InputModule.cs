@@ -64,6 +64,6 @@ public sealed class InputModule : Module
     /// <returns>An empty command result.</returns>
     public Task<SetFilesCommandResult> SetFilesAsync(SetFilesCommandParameters commandParameters)
     {
-        return this.Driver.ExecuteCommandAsync<SetFilesCommandResult>(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 }
