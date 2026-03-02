@@ -389,6 +389,146 @@ public class ObservableEventTests
     }
 
     [Test]
+    public async Task TestHandlerRunAsynchronouslyWithSynchronousExceptionPropagates()
+    {
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(
+            (TestObservableEventArgs e) => Task.FromException(new InvalidOperationException("sync fire-and-forget failure")),
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        Assert.That(
+            async () => await testEventSource.RaiseTestEventAsync("myValue"),
+            Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("sync fire-and-forget failure"));
+    }
+
+    [Test]
+    public async Task TestHandlerRunAsynchronouslyWithSynchronousExceptionDoesNotPreventSubsequentObservers()
+    {
+        string? observedValue = null;
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(
+            (TestObservableEventArgs e) => Task.FromException(new InvalidOperationException("sync fire-and-forget failure")),
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue);
+
+        Assert.That(
+            async () => await testEventSource.RaiseTestEventAsync("myValue"),
+            Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("sync fire-and-forget failure"));
+        Assert.That(observedValue, Is.EqualTo("myValue"));
+    }
+
+    [Test]
+    public async Task TestHandlerRunAsynchronouslyWithSynchronousExceptionCapturedByCheckpoint()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            (TestObservableEventArgs e) => Task.FromException(new InvalidOperationException("checkpoint failure")),
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.SetCheckpoint();
+        try
+        {
+            await testEventSource.RaiseTestEventAsync("myValue");
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(1));
+        Assert.That(tasks[0].IsFaulted, Is.True);
+        Assert.That(tasks[0].Exception!.InnerException, Is.InstanceOf<InvalidOperationException>().With.Message.EqualTo("checkpoint failure"));
+    }
+
+    [Test]
+    public async Task TestHandlerRunAsynchronouslyWithAsyncExceptionDoesNotCauseUnobservedTaskException()
+    {
+        bool unobservedExceptionRaised = false;
+        EventHandler<UnobservedTaskExceptionEventArgs> handler = (sender, e) =>
+        {
+            unobservedExceptionRaised = true;
+            e.SetObserved();
+        };
+        TaskScheduler.UnobservedTaskException += handler;
+        try
+        {
+            TestEventSource testEventSource = new();
+            testEventSource.TestObservableEvent.AddObserver(
+                async (TestObservableEventArgs e) =>
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(50));
+                    throw new InvalidOperationException("async fire-and-forget failure");
+                },
+                ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+            await testEventSource.RaiseTestEventAsync("myValue");
+
+            // Allow time for the handler to complete and fault.
+            await Task.Delay(TimeSpan.FromMilliseconds(250));
+
+            // Force garbage collection to trigger UnobservedTaskException
+            // for any task whose exception was not observed.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            // Allow time for the unobserved exception event to fire.
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+
+            Assert.That(unobservedExceptionRaised, Is.False);
+        }
+        finally
+        {
+            TaskScheduler.UnobservedTaskException -= handler;
+        }
+    }
+
+    [Test]
+    public async Task TestHandlerRunAsynchronouslyWithAsyncSuccessCompletesWithoutError()
+    {
+        bool handlerCompleted = false;
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(
+            async (TestObservableEventArgs e) =>
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(50));
+                handlerCompleted = true;
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        Assert.That(handlerCompleted, Is.False, "Fire-and-forget handler should not have completed synchronously");
+        await Task.Delay(TimeSpan.FromMilliseconds(150));
+        Assert.That(handlerCompleted, Is.True, "Fire-and-forget handler should have completed asynchronously");
+    }
+
+    [Test]
+    public async Task TestHandlerRunAsynchronouslyWithAsyncSuccessCapturedByCheckpoint()
+    {
+        bool handlerCompleted = false;
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async (TestObservableEventArgs e) =>
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(50));
+                handlerCompleted = true;
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.SetCheckpoint();
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(1));
+        Assert.That(tasks[0].IsCompleted, Is.False, "Captured task should still be running");
+
+        await Task.Delay(TimeSpan.FromMilliseconds(150));
+        Assert.That(tasks[0].IsCompletedSuccessfully, Is.True, "Captured task should have completed successfully");
+        Assert.That(handlerCompleted, Is.True);
+    }
+
+    [Test]
     public void TestEventArgsCopySemantics()
     {
         TestObservableEventArgs testEventArgs = new("foo");

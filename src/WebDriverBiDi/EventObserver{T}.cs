@@ -211,9 +211,31 @@ public class EventObserver<T> : IDisposable
     internal async Task Notify(T notifyData)
     {
         Task executingTask = this.handler(notifyData);
-        if (!this.handlerOptions.HasFlag(ObservableEventHandlerOptions.RunHandlerAsynchronously))
+        bool isFireAndForget = this.handlerOptions.HasFlag(ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        // Capture the faulted state immediately after the handler returns,
+        // before any other code runs, to distinguish synchronous failures
+        // (e.g., Task.FromException or throwing before the first await)
+        // from truly asynchronous ones that complete later.
+        bool isSynchronouslyFaulted = false;
+        if (!isFireAndForget)
         {
             await executingTask.ConfigureAwait(false);
+        }
+        else if (executingTask.IsFaulted)
+        {
+            isSynchronouslyFaulted = true;
+        }
+        else if (!executingTask.IsCompleted)
+        {
+            // The handler is still running asynchronously. Attach a continuation
+            // to observe any eventual exception, preventing UnobservedTaskException
+            // from being raised when the task is garbage-collected.
+            _ = executingTask.ContinueWith(
+                static t => { _ = t.Exception; },
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
         }
 
         lock (this.checkpointLock)
@@ -230,6 +252,17 @@ public class EventObserver<T> : IDisposable
                 }
             }
         }
+
+        if (!isSynchronouslyFaulted)
+        {
+            return;
+        }
+
+        // The handler was already faulted when it returned (synchronous
+        // failure); propagate so NotifyObserversAsync can capture it through
+        // its normal exception path. Truly asynchronous failures are observed
+        // by the continuation above to prevent UnobservedTaskException.
+        await executingTask.ConfigureAwait(false);
     }
 
     /// <summary>
