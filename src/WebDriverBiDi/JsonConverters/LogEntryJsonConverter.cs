@@ -122,7 +122,7 @@ public class LogEntryJsonConverter : JsonConverter<LogEntry>
         // properly deserialized into a Source object, so will never
         // be null.
         entry.Source = sourceElement.Deserialize<Source>(options)!;
-        entry.EpochTimestamp = timestampElement.GetInt64();
+        entry.EpochTimestamp = timestampElement.GetUInt64();
         if (hasStackTrace)
         {
             entry.StackTrace = stackTraceElement.Deserialize<StackTrace>(options);

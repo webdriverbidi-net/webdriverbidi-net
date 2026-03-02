@@ -21,7 +21,7 @@ public class LogEntry
     /// </summary>
     internal LogEntry()
     {
-        this.EpochTimestamp = -1;
+        this.EpochTimestamp = 0;
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public class LogEntry
     [JsonPropertyName("timestamp")]
     [JsonRequired]
     [JsonInclude]
-    public long EpochTimestamp
+    public ulong EpochTimestamp
     {
         get;
         internal set

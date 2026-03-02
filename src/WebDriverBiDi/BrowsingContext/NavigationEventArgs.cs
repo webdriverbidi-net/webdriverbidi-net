@@ -66,7 +66,7 @@ public record NavigationEventArgs : WebDriverBiDiEventArgs
     [JsonPropertyName("timestamp")]
     [JsonRequired]
     [JsonInclude]
-    public long EpochTimestamp
+    public ulong EpochTimestamp
     {
         get;
         internal set
