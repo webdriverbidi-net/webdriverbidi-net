@@ -1085,4 +1085,15 @@ public class BiDiDriverTests
 
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromSeconds(30), cts.Token), Throws.InstanceOf<OperationCanceledException>());
     }
+
+    [Test]
+    public async Task TestNullCommandParametersThrows()
+    {
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+#pragma warning disable CS8625 // Converting null literal or possible null value to non-nullable type.
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(null), Throws.InstanceOf<ArgumentNullException>());
+#pragma warning restore CS8625 // Converting null literal or possible null value to non-nullable type.
+    }
 }
