@@ -54,6 +54,11 @@ public class BiDiDriver : IAsyncDisposable
     private readonly UserAgentClientHintsModule userAgentClientHintsModule;
     private readonly WebExtensionModule webExtensionModule;
 
+    private readonly EventObserver<EventReceivedEventArgs> transportEventReceivedObserver;
+    private readonly EventObserver<ErrorReceivedEventArgs> transportErrorReceivedObserver;
+    private readonly EventObserver<UnknownMessageReceivedEventArgs> transportUnknownMessageReceivedObserver;
+    private readonly EventObserver<LogMessageEventArgs> transportLogMessageObserver;
+
     private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
     private readonly ConcurrentDictionary<string, Module> modules = [];
@@ -88,10 +93,10 @@ public class BiDiDriver : IAsyncDisposable
     {
         this.defaultCommandWaitTimeout = defaultCommandWaitTimeout;
         this.transport = transport;
-        this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceived);
-        this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
-        this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
-        this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
+        this.transportEventReceivedObserver = this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceived);
+        this.transportErrorReceivedObserver = this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
+        this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
+        this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
 
         this.bluetoothModule = new BluetoothModule(this);
         this.RegisterModule(this.bluetoothModule);
@@ -472,6 +477,10 @@ public class BiDiDriver : IAsyncDisposable
                         "BiDiDriver"));
             }
 
+            this.transportEventReceivedObserver.Dispose();
+            this.transportErrorReceivedObserver.Dispose();
+            this.transportUnknownMessageReceivedObserver.Dispose();
+            this.transportLogMessageObserver.Dispose();
             await this.transport.DisposeAsync().ConfigureAwait(false);
         }
     }
