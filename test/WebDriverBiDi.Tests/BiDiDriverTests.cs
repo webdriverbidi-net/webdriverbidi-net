@@ -1031,4 +1031,58 @@ public class BiDiDriverTests
         CommandParameters command = new TestCommandParameters("test.command");
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<ObjectDisposedException>());
     }
+
+    [Test]
+    public void TestStartAsyncThrowsWhenCancellationTokenIsCanceled()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        Assert.That(async () => await driver.StartAsync("ws://localhost:5555", cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public async Task TestExecuteCommandThrowsWhenCancellationTokenIsCanceled()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        TestCommandParameters commandParams = new("module.command");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(commandParams, cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public async Task TestExecuteCommandWithTimeoutThrowsWhenCancellationTokenIsCanceled()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        TestCommandParameters commandParams = new("module.command");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(commandParams, TimeSpan.FromSeconds(5), cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public async Task TestExecuteCommandCancelsCommandOnCancellation()
+    {
+        TestConnection connection = new();
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync("ws://localhost:5555");
+
+        using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(50));
+        CommandParameters command = new TestCommandParameters("module.command");
+
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromSeconds(30), cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
 }

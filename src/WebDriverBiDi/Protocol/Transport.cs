@@ -157,11 +157,13 @@ public class Transport : IAsyncDisposable
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is already connected to a remote end.</exception>
-    public virtual async Task ConnectAsync(string websocketUri)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task ConnectAsync(string websocketUri, CancellationToken cancellationToken = default)
     {
-        await this.connectDisconnectSemaphore.WaitAsync().ConfigureAwait(false);
+        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (this.IsConnected)
@@ -188,7 +190,7 @@ public class Transport : IAsyncDisposable
             if (!this.Connection.IsActive)
             {
                 // Allow for the possibility of the connection to already being opened.
-                await this.Connection.StartAsync(websocketUri).ConfigureAwait(false);
+                await this.Connection.StartAsync(websocketUri, cancellationToken).ConfigureAwait(false);
             }
 
             // Delaying starting the processing loop until after establishing the connection
@@ -207,20 +209,23 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Asynchronously disconnects from the remote end web socket.
     /// </summary>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task DisconnectAsync()
+    public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
-        await this.DisconnectAsync(true);
+        await this.DisconnectAsync(true, cancellationToken);
     }
 
     /// <summary>
     /// Asynchronously sends a command to the remote end.
     /// </summary>
     /// <param name="commandData">The command settings object containing all data required to execute the command.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if the command ID is already in use.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the transport is not connected to a remote end.</exception>
-    public virtual async Task<Command> SendCommandAsync(CommandParameters commandData)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task<Command> SendCommandAsync(CommandParameters commandData, CancellationToken cancellationToken = default)
     {
         if (this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminationExceptions))
         {
@@ -235,9 +240,9 @@ public class Transport : IAsyncDisposable
 
         long commandId = this.GetNextCommandId();
         Command command = new(commandId, commandData);
-        await this.pendingCommands.AddPendingCommandAsync(command).ConfigureAwait(false);
+        await this.pendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
         byte[] commandJson = this.SerializeCommand(command);
-        await this.Connection.SendDataAsync(commandJson).ConfigureAwait(false);
+        await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
         return command;
     }
 
@@ -341,8 +346,9 @@ public class Transport : IAsyncDisposable
     /// Asynchronously disconnects from the remote end web socket.
     /// </summary>
     /// <param name="throwCollectedExceptions"> A value indicating whether to throw the collected exceptions.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task DisconnectAsync(bool throwCollectedExceptions)
+    protected virtual async Task DisconnectAsync(bool throwCollectedExceptions, CancellationToken cancellationToken = default)
     {
         // Fast-path guard: if not connected, there is nothing to disconnect.
         // This check runs before acquiring the semaphore to prevent a deadlock
@@ -354,7 +360,7 @@ public class Transport : IAsyncDisposable
             return;
         }
 
-        await this.connectDisconnectSemaphore.WaitAsync().ConfigureAwait(false);
+        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             // Mark disconnected before performing teardown so that any
@@ -366,7 +372,7 @@ public class Transport : IAsyncDisposable
             // Close the pending command collection to further addition of commands,
             // and stop the connection from receiving further communication traffic.
             await this.pendingCommands.CloseAsync().ConfigureAwait(false);
-            await this.Connection.StopAsync().ConfigureAwait(false);
+            await this.Connection.StopAsync(cancellationToken).ConfigureAwait(false);
 
             // Mark the incoming message queue as complete for writing, indicating
             // no further messages will be written to the queue. Existing messages

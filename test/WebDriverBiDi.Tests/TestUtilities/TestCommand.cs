@@ -16,7 +16,7 @@ public class TestCommand : Command
     {
     }
 
-    public override Task<bool> WaitForCompletionAsync(TimeSpan timeout)
+    public override Task<bool> WaitForCompletionAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(true);
     }

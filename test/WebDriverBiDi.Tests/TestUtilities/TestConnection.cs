@@ -65,7 +65,7 @@ public class TestConnection : Connection
         await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(exception));
     }
 
-    public override async Task StartAsync(string url)
+    public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
         this.ConnectedUrl = url;
         if (this.StartBarrier is not null)
@@ -75,11 +75,11 @@ public class TestConnection : Connection
 
         if (!this.BypassStart)
         {
-            await base.StartAsync(url).ConfigureAwait(false);
+            await base.StartAsync(url, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    public override Task StopAsync()
+    public override Task StopAsync(CancellationToken cancellationToken = default)
     {
         if (this.BypassStop)
         {
@@ -91,24 +91,24 @@ public class TestConnection : Connection
         }
         else
         {
-            return base.StopAsync();
+            return base.StopAsync(cancellationToken);
         }
     }
 
-    public override Task SendDataAsync(byte[] data)
+    public override Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default)
     {
         if (this.BypassStart)
         {
             // Bypass the check to see if the connection has been started,
             // so that we can test the plumbing without needing an actual
             // WebSocket server active.
-            return this.SendWebSocketDataAsync(data);
+            return this.SendWebSocketDataAsync(data, cancellationToken);
         }
 
-        return base.SendDataAsync(data);
+        return base.SendDataAsync(data, cancellationToken);
     }
 
-    protected override Task SendWebSocketDataAsync(ArraySegment<byte> data)
+    protected override Task SendWebSocketDataAsync(ArraySegment<byte> data, CancellationToken cancellationToken = default)
     {
         if (this.SendWebSocketDataOverride is not null)
         {
@@ -120,7 +120,7 @@ public class TestConnection : Connection
         Task result = Task.CompletedTask;
         if (!this.BypassDataSend)
         {
-            result = base.SendWebSocketDataAsync(data);
+            result = base.SendWebSocketDataAsync(data, cancellationToken);
         }
 
         if (this.DataSendDelay.HasValue)
@@ -143,7 +143,7 @@ public class TestConnection : Connection
         return await base.ReceiveWebSocketDataAsync(buffer, cancellationToken);
     }
 
-    protected override Task CloseClientWebSocketAsync()
+    protected override Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }

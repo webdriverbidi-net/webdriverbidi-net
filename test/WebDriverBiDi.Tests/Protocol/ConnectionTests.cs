@@ -747,4 +747,18 @@ public class ConnectionTests
         this.serverReceiveSyncEvent.WaitOne(timeout);
         return this.lastServerReceivedData;
     }
+
+    [Test]
+    public void TestSendDataThrowsWhenCancellationTokenIsCanceled()
+    {
+        TestConnection connection = new()
+        {
+            BypassStart = false,
+            IsActiveOverride = () => true,
+        };
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        Assert.That(async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("test"), cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
 }

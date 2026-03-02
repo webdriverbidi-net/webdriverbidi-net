@@ -147,4 +147,16 @@ public class PendingCommandCollectionTests
         collection.Clear();
         Assert.That(() => collection.Dispose(), Throws.Nothing);
     }
+
+    [Test]
+    public void TestAddPendingCommandThrowsWhenCancellationTokenIsCanceled()
+    {
+        Command testCommand = new(1, new TestCommandParameters("module.command"));
+        PendingCommandCollection collection = new();
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        Assert.That(async () => await collection.AddPendingCommandAsync(testCommand, cts.Token), Throws.InstanceOf<OperationCanceledException>());
+        Assert.That(collection.PendingCommandCount, Is.EqualTo(0));
+    }
 }

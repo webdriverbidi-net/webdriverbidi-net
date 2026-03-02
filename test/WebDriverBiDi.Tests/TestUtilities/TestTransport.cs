@@ -38,7 +38,7 @@ public class TestTransport : Transport
     /// </summary>
     public int DeserializeThrowCount { get => this.deserializeThrowCount; set => this.deserializeThrowCount = value; }
 
-    public override async Task<Command> SendCommandAsync(CommandParameters commandParameters)
+    public override async Task<Command> SendCommandAsync(CommandParameters commandParameters, CancellationToken cancellationToken = default)
     {
         if (this.ReturnUncompletedCommand)
         {
@@ -62,7 +62,7 @@ public class TestTransport : Transport
             return returnedCommand;
         }
 
-        return await base.SendCommandAsync(commandParameters);
+        return await base.SendCommandAsync(commandParameters, cancellationToken);
     }
 
     public Connection GetConnection()
@@ -90,14 +90,14 @@ public class TestTransport : Transport
         return base.DeserializeMessage(messageData);
     }
 
-    protected override async Task DisconnectAsync(bool throwCollectedExceptions)
+    protected override async Task DisconnectAsync(bool throwCollectedExceptions, CancellationToken cancellationToken = default)
     {
         if (this.ThrowOnDisconnect)
         {
             throw new WebDriverBiDiException("Simulated disconnect failure");
         }
 
-        await base.DisconnectAsync(throwCollectedExceptions).ConfigureAwait(false);
+        await base.DisconnectAsync(throwCollectedExceptions, cancellationToken).ConfigureAwait(false);
     }
 
     protected override async ValueTask DisposeAsyncCore()

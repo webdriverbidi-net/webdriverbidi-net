@@ -30,14 +30,16 @@ public class PendingCommandCollection : IDisposable
     /// Asynchronously adds a command to the collection.
     /// </summary>
     /// <param name="command">The command to add to the collection.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown if the collection is no longer accepting commands, or the collection already
     /// contains a command with the ID of the command being added.
     /// </exception>
-    public virtual async Task AddPendingCommandAsync(Command command)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task AddPendingCommandAsync(Command command, CancellationToken cancellationToken = default)
     {
-        await this.commandAdditionSemaphore.WaitAsync().ConfigureAwait(false);
+        await this.commandAdditionSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (!this.IsAcceptingCommands)

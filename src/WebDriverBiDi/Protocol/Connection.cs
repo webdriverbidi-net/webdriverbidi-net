@@ -77,10 +77,12 @@ public class Connection : IAsyncDisposable
     /// Asynchronously starts communication with the remote end of this connection.
     /// </summary>
     /// <param name="url">The URL used to connect to the remote end.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is already connected.</exception>
-    public virtual async Task StartAsync(string url)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
         if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)
         {
@@ -106,9 +108,11 @@ public class Connection : IAsyncDisposable
         Stopwatch initializationStopwatch = Stopwatch.StartNew();
         while (!connected && initializationStopwatch.Elapsed <= this.StartupTimeout)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                await this.client.ConnectAsync(new Uri(url), this.clientTokenSource.Token).ConfigureAwait(false);
+                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.clientTokenSource.Token);
+                await this.client.ConnectAsync(new Uri(url), linkedTokenSource.Token).ConfigureAwait(false);
                 connected = true;
                 this.ConnectedUrl = url;
             }
@@ -117,7 +121,7 @@ public class Connection : IAsyncDisposable
                 // If the server-side socket is not yet ready, it leaves the client socket in a closed state,
                 // which sees the object as disposed, so we must create a new one to try again. Note that
                 // we will also explicitly call Dispose on the object, to make sure resources are disposed.
-                await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken).ConfigureAwait(false);
                 this.client.Dispose();
                 this.client = new ClientWebSocket();
             }
@@ -136,8 +140,9 @@ public class Connection : IAsyncDisposable
     /// <summary>
     /// Asynchronously stops communication with the remote end of this connection.
     /// </summary>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task StopAsync()
+    public virtual async Task StopAsync(CancellationToken cancellationToken = default)
     {
         await this.LogAsync($"Closing connection");
         if (this.client.State != WebSocketState.Open)
@@ -146,7 +151,7 @@ public class Connection : IAsyncDisposable
         }
         else
         {
-            await this.CloseClientWebSocketAsync().ConfigureAwait(false);
+            await this.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
         }
 
         // Whether we closed the socket or timed out, we cancel the token causing ReceiveAsync to abort the socket.
@@ -173,10 +178,12 @@ public class Connection : IAsyncDisposable
     /// Asynchronously sends data to the remote end of this connection.
     /// </summary>
     /// <param name="data">The data to be sent to the remote end of this connection.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is not active.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when exclusive access to the WebSocket for sending times out.</exception>
-    public virtual async Task SendDataAsync(byte[] data)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default)
     {
         if (!this.IsActive)
         {
@@ -186,7 +193,7 @@ public class Connection : IAsyncDisposable
         // Only one send operation at a time can be active on a ClientWebSocket instance,
         // so we must synchronize send access to the socket in case multiple threads are
         // attempting to send commands or other data simultaneously.
-        if (!await this.dataSendSemaphore.WaitAsync(this.DataTimeout).ConfigureAwait(false))
+        if (!await this.dataSendSemaphore.WaitAsync(this.DataTimeout, cancellationToken).ConfigureAwait(false))
         {
             throw new WebDriverBiDiTimeoutException("Timed out waiting to access WebSocket for sending; only one send operation is permitted at a time.");
         }
@@ -205,7 +212,8 @@ public class Connection : IAsyncDisposable
 
             try
             {
-                await this.SendWebSocketDataAsync(new ArraySegment<byte>(data)).ConfigureAwait(false);
+                using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.clientTokenSource.Token);
+                await this.SendWebSocketDataAsync(new ArraySegment<byte>(data), linkedTokenSource.Token).ConfigureAwait(false);
             }
             catch (WebSocketException ex)
             {
@@ -222,10 +230,11 @@ public class Connection : IAsyncDisposable
     /// Asynchronously sends data to the underlying WebSocket of this connection.
     /// </summary>
     /// <param name="messageBuffer">The buffer containing the data to be sent to the remote end of this connection via the WebSocket.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task SendWebSocketDataAsync(ArraySegment<byte> messageBuffer)
+    protected virtual async Task SendWebSocketDataAsync(ArraySegment<byte> messageBuffer, CancellationToken cancellationToken = default)
     {
-        await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, this.clientTokenSource.Token).ConfigureAwait(false);
+        await this.client.SendAsync(messageBuffer, WebSocketMessageType.Text, endOfMessage: true, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -266,15 +275,17 @@ public class Connection : IAsyncDisposable
     /// <summary>
     /// Asynchronously closes the client WebSocket.
     /// </summary>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    protected virtual async Task CloseClientWebSocketAsync()
+    protected virtual async Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
     {
         // Close the socket first, because ReceiveAsync leaves an invalid socket (state = aborted) when the token is cancelled
         using CancellationTokenSource timeoutTokenSource = new(this.ShutdownTimeout);
+        using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutTokenSource.Token);
         try
         {
             // After this, the socket state will change to CloseSent
-            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", timeoutTokenSource.Token).ConfigureAwait(false);
+            await this.client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Closing", linkedTokenSource.Token).ConfigureAwait(false);
 
             // Wait for the receive loop to process the server's close response, which will transition the
             // socket to the Closed state. If the server does not respond within the shutdown timeout,
@@ -282,11 +293,11 @@ public class Connection : IAsyncDisposable
             //
             // The infinite delay is intentional: its sole purpose is to convert the CancellationToken defined
             // earlier in this method into a Task that Task.WhenAny can race against dataReceiveTask. The delay
-            // itself never elapses; it completes only when timeout.Token fires (i.e., ShutdownTimeout expires),
-            // which is the desired fallback behavior.
+            // itself never elapses; it completes only when the linked token fires (i.e., ShutdownTimeout expires
+            // or the external cancellation token is canceled), which is the desired fallback behavior.
             if (this.dataReceiveTask is not null)
             {
-                await Task.WhenAny(this.dataReceiveTask, Task.Delay(Timeout.InfiniteTimeSpan, timeoutTokenSource.Token)).ConfigureAwait(false);
+                await Task.WhenAny(this.dataReceiveTask, Task.Delay(Timeout.InfiniteTimeSpan, linkedTokenSource.Token)).ConfigureAwait(false);
             }
 
             await this.LogAsync($"Client state is {this.client.State}");

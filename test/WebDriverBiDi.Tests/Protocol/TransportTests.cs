@@ -1840,4 +1840,28 @@ public class TransportTests
         TestCommandParameters commandParameters = new(commandName);
         Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("unknown message event").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Unknown message handler exception"));
     }
+
+    [Test]
+    public void TestConnectAsyncThrowsWhenCancellationTokenIsCanceled()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        Assert.That(async () => await transport.ConnectAsync("ws://localhost", cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public async Task TestSendCommandAsyncThrowsWhenCancellationTokenIsCanceled()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws://localhost");
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        TestCommandParameters commandParameters = new("module.command");
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters, cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
 }

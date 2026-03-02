@@ -270,4 +270,40 @@ public class CommandTests
         Assert.That(command.ThrownException, Is.Null);
         Assert.That(command.IsCanceled, Is.True);
     }
+
+    [Test]
+    public async Task TestWaitForCompletionReturnsTrueWhenCompletedBeforeCancellation()
+    {
+        TestCommandParameters commandParams = new TestCommandParameters("module.command");
+        Command command = new(1, commandParams);
+
+        command.Result = new TestCommandResult();
+        using CancellationTokenSource cts = new();
+
+        bool completed = await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), cts.Token);
+        Assert.That(completed, Is.True);
+    }
+
+    [Test]
+    public void TestWaitForCompletionThrowsWhenCancellationTokenIsCanceled()
+    {
+        TestCommandParameters commandParams = new TestCommandParameters("module.command");
+        Command command = new(1, commandParams);
+
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+
+        Assert.That(async () => await command.WaitForCompletionAsync(TimeSpan.FromSeconds(5), cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void TestWaitForCompletionThrowsWhenCancellationTokenIsCanceledDuringWait()
+    {
+        TestCommandParameters commandParams = new TestCommandParameters("module.command");
+        Command command = new(1, commandParams);
+
+        using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(async () => await command.WaitForCompletionAsync(TimeSpan.FromSeconds(30), cts.Token), Throws.InstanceOf<OperationCanceledException>());
+    }
 }

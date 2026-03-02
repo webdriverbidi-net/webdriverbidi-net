@@ -124,20 +124,26 @@ public class Command
     /// Waits for the command to complete or until the specified timeout elapses.
     /// </summary>
     /// <param name="timeout">The timeout to wait for the command to complete.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns><see langword="true"/> if the command completes before the timeout; otherwise <see langword="false"/>.</returns>
-    public virtual async Task<bool> WaitForCompletionAsync(TimeSpan timeout)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task<bool> WaitForCompletionAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         // Task.WhenAny returns when any of the tasks passed in completes, and
         // returns the task that completes first. If that task is the task from
         // our TaskCompletionSource, the command completed. Otherwise, it timed
-        // out.
-        using CancellationTokenSource cancellationTokenSource = new();
-        Task timeoutTask = Task.Delay(timeout, cancellationTokenSource.Token);
+        // out or was externally canceled.
+        using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        Task timeoutTask = Task.Delay(timeout, linkedTokenSource.Token);
         Task completedTask = await Task.WhenAny(this.taskCompletionSource.Task, timeoutTask).ConfigureAwait(false);
         bool commandTaskCompleted = completedTask == this.taskCompletionSource.Task;
         if (commandTaskCompleted)
         {
-            cancellationTokenSource.Cancel();
+            linkedTokenSource.Cancel();
+        }
+        else
+        {
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
         return commandTaskCompleted;

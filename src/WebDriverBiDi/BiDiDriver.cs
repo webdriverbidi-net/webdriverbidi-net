@@ -236,20 +236,23 @@ public class BiDiDriver : IAsyncDisposable
     /// Asynchronously starts the communication with the remote end of the WebDriver BiDi protocol.
     /// </summary>
     /// <param name="url">The URL of the remote end.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task StartAsync(string url)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
-        await this.transport.ConnectAsync(url).ConfigureAwait(false);
+        await this.transport.ConnectAsync(url, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Asynchronously stops the communication with the remote end of the WebDriver BiDi protocol.
     /// </summary>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public virtual async Task StopAsync()
+    public virtual async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        await this.transport.DisconnectAsync().ConfigureAwait(false);
+        await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -258,12 +261,14 @@ public class BiDiDriver : IAsyncDisposable
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="command">The object containing settings for the command, including parameters.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if an error occurs during the execution of the command.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> command)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> command, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
-        return await this.ExecuteCommandAsync<T>(command, this.defaultCommandWaitTimeout).ConfigureAwait(false);
+        return await this.ExecuteCommandAsync<T>(command, this.defaultCommandWaitTimeout, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -273,12 +278,14 @@ public class BiDiDriver : IAsyncDisposable
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="command">The object containing settings for the command, including parameters.</param>
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if an error occurs during the execution of the command.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> command, TimeSpan commandTimeout)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> command, TimeSpan commandTimeout, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
-        return await this.ExecuteCommandAsync<T>((CommandParameters)command, commandTimeout).ConfigureAwait(false);
+        return await this.ExecuteCommandAsync<T>((CommandParameters)command, commandTimeout, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -287,12 +294,14 @@ public class BiDiDriver : IAsyncDisposable
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="command">The object containing settings for the command, including parameters.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if an error occurs during the execution of the command.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
-        return await this.ExecuteCommandAsync<T>(command, this.defaultCommandWaitTimeout).ConfigureAwait(false);
+        return await this.ExecuteCommandAsync<T>(command, this.defaultCommandWaitTimeout, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -301,20 +310,30 @@ public class BiDiDriver : IAsyncDisposable
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="command">The object containing settings for the command, including parameters.</param>
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
     /// <exception cref="WebDriverBiDiException">Thrown if the command is cancelled, returns a null value, or does not return a result of the correct object type.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command, TimeSpan commandTimeout)
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters command, TimeSpan commandTimeout, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
         this.ThrowIfDisposed();
-        Command sentCommand = await this.transport.SendCommandAsync(command).ConfigureAwait(false);
-        bool commandCompleted = await sentCommand.WaitForCompletionAsync(commandTimeout).ConfigureAwait(false);
-        if (!commandCompleted)
+        Command sentCommand = await this.transport.SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            bool commandCompleted = await sentCommand.WaitForCompletionAsync(commandTimeout, cancellationToken).ConfigureAwait(false);
+            if (!commandCompleted)
+            {
+                this.transport.CancelCommand(sentCommand);
+                throw new WebDriverBiDiTimeoutException($"Timed out executing command {command.MethodName} after {commandTimeout.TotalMilliseconds} milliseconds");
+            }
+        }
+        catch (OperationCanceledException)
         {
             this.transport.CancelCommand(sentCommand);
-            throw new WebDriverBiDiTimeoutException($"Timed out executing command {command.MethodName} after {commandTimeout.TotalMilliseconds} milliseconds");
+            throw;
         }
 
         if (sentCommand.Result is null)
