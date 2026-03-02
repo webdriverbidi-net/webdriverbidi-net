@@ -29,13 +29,13 @@ public class DeleteCookiesCommandParameters : CommandParameters<DeleteCookiesCom
     /// Gets or sets the filter to use when deleting cookies.
     /// </summary>
     [JsonPropertyName("filter")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public CookieFilter? Filter { get; set; }
 
     /// <summary>
     /// Gets or sets the partition descriptor to use when deleting cookies.
     /// </summary>
     [JsonPropertyName("partition")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PartitionDescriptor? Partition { get; set; }
 }

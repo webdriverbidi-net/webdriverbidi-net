@@ -37,6 +37,6 @@ public class SetCookieCommandParameters : CommandParameters<SetCookieCommandResu
     /// Gets or sets the partition descriptor to use when setting the cookie.
     /// </summary>
     [JsonPropertyName("partition")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PartitionDescriptor? Partition { get; set; }
 }
