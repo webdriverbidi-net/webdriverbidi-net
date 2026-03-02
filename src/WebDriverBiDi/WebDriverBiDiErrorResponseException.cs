@@ -16,6 +16,15 @@ public abstract class WebDriverBiDiErrorResponseException : WebDriverBiDiExcepti
     /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBiDiErrorResponseException"/> class.
     /// </summary>
+    protected WebDriverBiDiErrorResponseException()
+        : base()
+    {
+        this.ErrorResult = new ErrorResult();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiErrorResponseException"/> class.
+    /// </summary>
     /// <param name="message">The message of the exception.</param>
     /// <param name="errorResult">The error result returned by the remote end.</param>
     protected WebDriverBiDiErrorResponseException(string message, ErrorResult errorResult)

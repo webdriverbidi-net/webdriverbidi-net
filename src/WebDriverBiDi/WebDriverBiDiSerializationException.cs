@@ -12,6 +12,14 @@ namespace WebDriverBiDi;
 public class WebDriverBiDiSerializationException : WebDriverBiDiException
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiSerializationException" /> class.
+    /// </summary>
+    public WebDriverBiDiSerializationException()
+        : base()
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBiDiSerializationException" /> class with a given message.
     /// </summary>
     /// <param name="message">The message of the exception.</param>

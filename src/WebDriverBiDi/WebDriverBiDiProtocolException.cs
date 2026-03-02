@@ -14,6 +14,14 @@ public class WebDriverBiDiProtocolException : WebDriverBiDiErrorResponseExceptio
     /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBiDiProtocolException"/> class.
     /// </summary>
+    public WebDriverBiDiProtocolException()
+        : base()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiProtocolException"/> class.
+    /// </summary>
     /// <param name="message">The message of the exception.</param>
     /// <param name="errorResult">The error result returned by the remote end.</param>
     public WebDriverBiDiProtocolException(string message, ErrorResult errorResult)

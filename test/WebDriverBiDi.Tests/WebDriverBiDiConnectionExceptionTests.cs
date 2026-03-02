@@ -7,6 +7,17 @@ using WebDriverBiDi.Protocol;
 public class WebDriverBiDiConnectionExceptionTests
 {
     [Test]
+    public void TestCanCreateWithNoArguments()
+    {
+        WebDriverBiDiConnectionException exception = new();
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exception.Message, Is.Not.Null);
+            Assert.That(exception.InnerException, Is.Null);
+        }
+    }
+
+    [Test]
     public void TestCanCreate()
     {
         WebDriverBiDiConnectionException exception = new("Test exception message");

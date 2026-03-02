@@ -13,6 +13,14 @@ public class WebDriverBiDiCommandException : WebDriverBiDiErrorResponseException
     /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBiDiCommandException"/> class.
     /// </summary>
+    public WebDriverBiDiCommandException()
+        : base()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiCommandException"/> class.
+    /// </summary>
     /// <param name="message">The message of the exception.</param>
     /// <param name="errorResult">The error result returned by the remote end.</param>
     public WebDriverBiDiCommandException(string message, ErrorResult errorResult)

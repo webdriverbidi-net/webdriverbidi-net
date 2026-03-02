@@ -11,6 +11,14 @@ namespace WebDriverBiDi;
 public class WebDriverBiDiConnectionException : WebDriverBiDiException
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiConnectionException" /> class.
+    /// </summary>
+    public WebDriverBiDiConnectionException()
+        : base()
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBiDiConnectionException" /> class with a given message.
     /// </summary>
     /// <param name="message">The message of the exception.</param>

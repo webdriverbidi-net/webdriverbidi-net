@@ -11,6 +11,14 @@ namespace WebDriverBiDi;
 public class WebDriverBiDiTimeoutException : WebDriverBiDiException
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiTimeoutException" /> class.
+    /// </summary>
+    public WebDriverBiDiTimeoutException()
+        : base()
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverBiDiTimeoutException" /> class with a given message.
     /// </summary>
     /// <param name="message">The message of the exception.</param>

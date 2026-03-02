@@ -13,6 +13,13 @@ using WebDriverBiDi.Protocol;
 public record ErrorResult : CommandResult
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="ErrorResult"/> class with default values.
+    /// </summary>
+    internal ErrorResult()
+    {
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="ErrorResult"/> class.
     /// </summary>
     /// <param name="response">The error response containing the error data.</param>

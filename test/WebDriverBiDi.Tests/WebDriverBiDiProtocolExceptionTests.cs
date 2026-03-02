@@ -7,6 +7,21 @@ using WebDriverBiDi.Protocol;
 public class WebDriverBiDiProtocolExceptionTests
 {
     [Test]
+    public void TestCanCreateWithNoArguments()
+    {
+        WebDriverBiDiProtocolException exception = new();
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exception.Message, Is.Not.Null);
+            Assert.That(exception.ErrorResult, Is.Not.Null);
+            Assert.That(exception.ErrorType, Is.EqualTo(string.Empty));
+            Assert.That(exception.ProtocolErrorMessage, Is.EqualTo(string.Empty));
+            Assert.That(exception.RemoteStackTrace, Is.Null);
+            Assert.That(exception.InnerException, Is.Null);
+        }
+    }
+
+    [Test]
     public void TestCanCreateWithErrorResult()
     {
         ErrorResult errorResult = CreateErrorResult("invalid argument", "This is a test error message", "remote stack trace");

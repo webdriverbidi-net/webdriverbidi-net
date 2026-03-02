@@ -1,12 +1,12 @@
 namespace WebDriverBiDi;
 
 [TestFixture]
-public class WebDriverBiDiTimeoutExceptionTests
+public class WebDriverBiDiSerializationExceptionTests
 {
     [Test]
     public void TestCanCreateWithNoArguments()
     {
-        WebDriverBiDiTimeoutException exception = new();
+        WebDriverBiDiSerializationException exception = new();
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exception.Message, Is.Not.Null);
@@ -17,7 +17,7 @@ public class WebDriverBiDiTimeoutExceptionTests
     [Test]
     public void TestCanCreate()
     {
-        WebDriverBiDiTimeoutException exception = new("Test exception message");
+        WebDriverBiDiSerializationException exception = new("Test exception message");
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exception.Message, Is.EqualTo("Test exception message"));
@@ -29,7 +29,7 @@ public class WebDriverBiDiTimeoutExceptionTests
     public void TestCanCreateWithInnerException()
     {
         InvalidOperationException innerException = new("inner exception message");
-        WebDriverBiDiTimeoutException exception = new("Test exception message", innerException);
+        WebDriverBiDiSerializationException exception = new("Test exception message", innerException);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exception.Message, Is.EqualTo("Test exception message"));
@@ -40,7 +40,7 @@ public class WebDriverBiDiTimeoutExceptionTests
     [Test]
     public void TestIsWebDriverBiDiException()
     {
-        WebDriverBiDiTimeoutException exception = new("Test exception message");
+        WebDriverBiDiSerializationException exception = new("Test exception message");
         Assert.That(exception, Is.InstanceOf<WebDriverBiDiException>());
     }
 }
