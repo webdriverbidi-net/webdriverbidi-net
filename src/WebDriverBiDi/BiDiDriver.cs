@@ -434,6 +434,7 @@ public class BiDiDriver : IAsyncDisposable
     /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name that has already been registered.</exception>
     public virtual void RegisterModule(Module module)
     {
+        this.ThrowIfDisposed();
         if (!this.modules.TryAdd(module.ModuleName, module))
         {
             throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
@@ -451,6 +452,7 @@ public class BiDiDriver : IAsyncDisposable
     public virtual T GetModule<T>(string moduleName)
         where T : Module
     {
+        this.ThrowIfDisposed();
         if (!this.modules.TryGetValue(moduleName, out Module? module))
         {
             throw new ArgumentException($"Module '{moduleName}' is not registered with this driver", nameof(moduleName));
@@ -472,6 +474,7 @@ public class BiDiDriver : IAsyncDisposable
     /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
     public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
+        this.ThrowIfDisposed();
         if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
         {
             throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));

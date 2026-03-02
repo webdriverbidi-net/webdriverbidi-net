@@ -19,6 +19,8 @@ using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Speculation;
 using WebDriverBiDi.UserAgentClientHints;
+using System.Reflection.Metadata.Ecma335;
+using NUnit.Framework.Internal;
 
 [TestFixture]
 public class BiDiDriverTests
@@ -923,6 +925,42 @@ public class BiDiDriverTests
         }
 
         Assert.That(commandValue, Is.EqualTo("command result value"));
+    }
+
+    [Test]
+    public async Task TestRegisteringModuleAfterDisposeThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        Assert.That(() => driver.RegisterModule(new TestProtocolModule(driver)), Throws.InstanceOf<ObjectDisposedException>());
+    }
+
+    [Test]
+    public async Task TestGettingModuleAfterDisposeThrows()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        TestProtocolModule module = new(driver);
+        driver.RegisterModule(module);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        Assert.That(() => driver.GetModule<TestProtocolModule>(module.ModuleName), Throws.InstanceOf<ObjectDisposedException>());
+    }
+
+    [Test]
+    public async Task TestRegisteringEventAfterDisposeThrows()
+    {
+        Func<EventInfo<TestEventArgs>, Task> eventInvoker = (eventData) => Task.CompletedTask;
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        await driver.DisposeAsync();
+        Assert.That(() => driver.RegisterEvent("protocol.event", eventInvoker), Throws.InstanceOf<ObjectDisposedException>());
     }
 
     [Test]
