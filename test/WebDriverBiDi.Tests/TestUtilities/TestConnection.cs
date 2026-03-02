@@ -28,6 +28,8 @@ public class TestConnection : Connection
 
     public Func<ArraySegment<byte>, Task>? SendWebSocketDataOverride { get; set; }
 
+    public bool Disposed => this.IsDisposed;
+
     public override bool IsActive
     {
         get

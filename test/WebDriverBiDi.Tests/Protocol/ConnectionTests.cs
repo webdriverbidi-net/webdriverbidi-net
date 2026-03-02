@@ -555,6 +555,26 @@ public class ConnectionTests
     }
 
     [Test]
+    public async Task TestDoubleDisposeAsyncAfterStartDoesNotThrow()
+    {
+        Connection connection = new();
+        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        await connection.StartAsync($"ws://localhost:{this.server.Port}");
+        this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
+        await connection.DisposeAsync();
+        Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestIsDisposedPropertyIsSetAfterDispose()
+    {
+        TestConnection connection = new();
+        Assert.That(connection.Disposed, Is.False);
+        await connection.DisposeAsync();
+        Assert.That(connection.Disposed, Is.True);
+    }
+
+    [Test]
     public async Task TestCanDisposeAsyncAfterStop()
     {
         Connection connection = new();

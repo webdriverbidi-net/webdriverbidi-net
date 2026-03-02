@@ -15,6 +15,7 @@ public class PendingCommandCollection : IDisposable
     private readonly SemaphoreSlim commandAdditionSemaphore = new(1, 1);
     private readonly ConcurrentDictionary<long, Command> pendingCommands = new();
     private int isAcceptingCommands = 1;
+    private bool isDisposed;
 
     /// <summary>
     /// Gets a value indicating whether this collection is accepting commands.
@@ -150,9 +151,14 @@ public class PendingCommandCollection : IDisposable
     /// <see langword="false"/> to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing)
     {
-        if (disposing)
+        if (!this.isDisposed)
         {
-            this.commandAdditionSemaphore.Dispose();
+            if (disposing)
+            {
+                this.commandAdditionSemaphore.Dispose();
+            }
+
+            this.isDisposed = true;
         }
     }
 }

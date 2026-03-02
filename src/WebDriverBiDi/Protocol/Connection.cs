@@ -20,6 +20,7 @@ public class Connection : IAsyncDisposable
     private Task? dataReceiveTask;
     private ClientWebSocket client = new();
     private CancellationTokenSource clientTokenSource = new();
+    private int isDisposedFlag;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Connection" /> class.
@@ -72,6 +73,11 @@ public class Connection : IAsyncDisposable
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
     public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("connection.logMessage");
+
+    /// <summary>
+    /// Gets a value indicating whether this connection has been disposed.
+    /// </summary>
+    protected bool IsDisposed => Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -255,21 +261,34 @@ public class Connection : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
-        try
+        if (this.SetDisposed())
         {
-            if (this.IsActive)
+            try
             {
-                await this.StopAsync();
+                if (this.IsActive)
+                {
+                    await this.StopAsync();
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn);
-        }
+            catch (Exception ex)
+            {
+                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn);
+            }
 
-        this.dataSendSemaphore.Dispose();
-        this.clientTokenSource.Dispose();
-        this.client.Dispose();
+            this.dataSendSemaphore.Dispose();
+            this.clientTokenSource.Dispose();
+            this.client.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Marks this <see cref="Connection"/> as disposed. Use this method to ensure
+    /// thread-safe operations for setting object being disposed.
+    /// </summary>
+    /// <returns><see langword="true"/> if the object was not already disposed before calling this method; otherwise, <see langword="false"/>.</returns>
+    protected bool SetDisposed()
+    {
+        return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
     }
 
     /// <summary>
