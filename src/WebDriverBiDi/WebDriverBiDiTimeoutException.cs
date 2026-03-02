@@ -18,4 +18,14 @@ public class WebDriverBiDiTimeoutException : WebDriverBiDiException
         : base(message)
     {
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiTimeoutException"/> class.
+    /// </summary>
+    /// <param name="message">The message of the exception.</param>
+    /// <param name="innerException">The inner exception causing this exception.</param>
+    public WebDriverBiDiTimeoutException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }

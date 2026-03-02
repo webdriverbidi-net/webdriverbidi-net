@@ -23,6 +23,23 @@ public class WebDriverBiDiCommandExceptionTests
     }
 
     [Test]
+    public void TestCanCreateWithInnerException()
+    {
+        ErrorResult errorResult = CreateErrorResult("unknown command", "This is a test error message", null);
+        InvalidOperationException innerException = new("inner exception message");
+        WebDriverBiDiCommandException exception = new("Test exception message", errorResult, innerException);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(exception.Message, Is.EqualTo("Test exception message"));
+            Assert.That(exception.ErrorResult, Is.SameAs(errorResult));
+            Assert.That(exception.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(exception.ProtocolErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(exception.RemoteStackTrace, Is.Null);
+            Assert.That(exception.InnerException, Is.SameAs(innerException));
+        }
+    }
+
+    [Test]
     public void TestIsWebDriverBiDiException()
     {
         ErrorResult errorResult = CreateErrorResult("no such frame", "Frame not found", null);

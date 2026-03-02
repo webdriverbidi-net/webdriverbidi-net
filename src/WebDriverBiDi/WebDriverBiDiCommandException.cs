@@ -24,6 +24,18 @@ public class WebDriverBiDiCommandException : WebDriverBiDiException
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="WebDriverBiDiCommandException"/> class.
+    /// </summary>
+    /// <param name="message">The message of the exception.</param>
+    /// <param name="errorResult">The error result returned by the remote end.</param>
+    /// <param name="innerException">The inner exception causing this exception.</param>
+    public WebDriverBiDiCommandException(string message, ErrorResult errorResult, Exception innerException)
+        : base(message, innerException)
+    {
+        this.ErrorResult = errorResult;
+    }
+
+    /// <summary>
     /// Gets the error result data from the remote end, containing the error type, error message,
     /// and optional stack trace.
     /// </summary>
