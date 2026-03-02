@@ -535,7 +535,12 @@ public class Transport : IAsyncDisposable
         }
         catch (JsonException e)
         {
-            // We return from this block to avoid double-reporting this error.
+            // JSON parsing errors are regarded as "unknown message" errors, rather than
+            // "protocol errors." Protocol errors are defined as valid JSON messages that
+            // resemble protocol data structures, but do not fit the payload definitions
+            // of the protocol. Here, we just log the error; the error will be processed
+            // to be added to the proper unhandled error collection in the "if (!isProcessed)"
+            // block below.
             await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error);
         }
 
