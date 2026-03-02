@@ -481,6 +481,13 @@ public class ConnectionTests
     }
 
     [Test]
+    public void TestStartAsyncThrowsForInvalidUrl()
+    {
+        Connection connection = new();
+        Assert.That(async () => await connection.StartAsync("not-a-valid-url"), Throws.InstanceOf<ArgumentException>().With.Message.Contains("not a valid absolute URI"));
+    }
+
+    [Test]
     public void TestCannotSendDataOnAConnectionNotYetStarted()
     {
         Connection connection = new()

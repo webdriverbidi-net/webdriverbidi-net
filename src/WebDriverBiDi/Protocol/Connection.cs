@@ -87,9 +87,15 @@ public class Connection : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is already connected.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="url"/> is not a valid absolute URI.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? websocketUri))
+        {
+            throw new ArgumentException($"The value '{url}' is not a valid absolute URI", nameof(url));
+        }
+
         if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)
         {
             // A ClientWebSocket in a closed or aborted state means that we had
@@ -118,7 +124,7 @@ public class Connection : IAsyncDisposable
             try
             {
                 using CancellationTokenSource linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.clientTokenSource.Token);
-                await this.client.ConnectAsync(new Uri(url), linkedTokenSource.Token).ConfigureAwait(false);
+                await this.client.ConnectAsync(websocketUri, linkedTokenSource.Token).ConfigureAwait(false);
                 connected = true;
                 this.ConnectedUrl = url;
             }
