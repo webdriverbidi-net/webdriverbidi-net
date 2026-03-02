@@ -457,9 +457,8 @@ public class BiDiDriver : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
-        if (!this.IsDisposed)
+        if (this.SetDisposed())
         {
-            this.SetDisposed();
             try
             {
                 await this.StopAsync().ConfigureAwait(false);
@@ -481,9 +480,10 @@ public class BiDiDriver : IAsyncDisposable
     /// Marks this <see cref="BiDiDriver"/> as disposed. Use this method to ensure
     /// thread-safe operations for setting object being disposed.
     /// </summary>
-    protected void SetDisposed()
+    /// <returns><see langword="true"/> if the object was not already disposed before calling this method; otherwise, <see langword="false"/>.</returns>
+    protected bool SetDisposed()
     {
-        Interlocked.Exchange(ref this.isDisposedFlag, 1);
+        return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
     }
 
     private void ThrowIfDisposed()
