@@ -12,6 +12,8 @@ using System.Collections.ObjectModel;
 /// </summary>
 public sealed class ReceivedDataList : ReadOnlyCollection<object?>
 {
+    private static readonly ReceivedDataList BlankList = new([]);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ReceivedDataList"/> class.
     /// </summary>
@@ -28,7 +30,7 @@ public sealed class ReceivedDataList : ReadOnlyCollection<object?>
     /// <summary>
     /// Gets an empty list.
     /// </summary>
-    public static ReceivedDataList EmptyList => new([]);
+    public static ReceivedDataList EmptyList => BlankList;
 
     /// <summary>
     /// Gets a writable copy of this list.
