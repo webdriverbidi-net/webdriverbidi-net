@@ -114,4 +114,13 @@ public class ProxyConfigurationJsonConverterTests
         Assert.That(serialized["httpProxy"]!.Value<string>(), Is.EqualTo("http://proxy:8080"));
         Assert.That(serialized["sslProxy"]!.Value<string>(), Is.EqualTo("https://proxy:8443"));
     }
+
+    [Test]
+    public void TestWriteWithNullValueThrowsArgumentNullException()
+    {
+        ProxyConfigurationJsonConverter converter = new();
+        using MemoryStream stream = new();
+        using Utf8JsonWriter writer = new(stream);
+        Assert.That(() => converter.Write(writer, null!, new JsonSerializerOptions()), Throws.InstanceOf<ArgumentNullException>());
+    }
 }

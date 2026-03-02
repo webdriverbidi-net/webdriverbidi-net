@@ -99,6 +99,11 @@ public class ProxyConfigurationJsonConverter : JsonConverter<ProxyConfiguration>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, ProxyConfiguration value, JsonSerializerOptions options)
     {
+        if (value is null)
+        {
+            throw new ArgumentNullException(nameof(value));
+        }
+
         string json = JsonSerializer.Serialize(value, value.GetType(), options);
         writer.WriteRawValue(json);
         writer.Flush();

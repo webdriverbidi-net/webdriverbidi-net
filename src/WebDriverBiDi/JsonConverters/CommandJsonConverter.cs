@@ -36,6 +36,11 @@ public class CommandJsonConverter : JsonConverter<Command>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, Command value, JsonSerializerOptions options)
     {
+        if (value is null)
+        {
+            throw new ArgumentNullException(nameof(value));
+        }
+
         writer.WriteStartObject();
         writer.WritePropertyName("id");
         writer.WriteNumberValue(value.CommandId);

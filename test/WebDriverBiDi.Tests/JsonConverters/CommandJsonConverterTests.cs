@@ -45,4 +45,13 @@ public class CommandJsonConverterTests
         Assert.That(serialized, Contains.Key("extraKey"));
         Assert.That(serialized["extraKey"]!.Value<string>(), Is.EqualTo("extraValue"));
     }
+
+    [Test]
+    public void TestWriteWithNullValueThrowsArgumentNullException()
+    {
+        CommandJsonConverter converter = new();
+        using MemoryStream stream = new();
+        using Utf8JsonWriter writer = new(stream);
+        Assert.That(() => converter.Write(writer, null!, new JsonSerializerOptions()), Throws.InstanceOf<ArgumentNullException>());
+    }
 }

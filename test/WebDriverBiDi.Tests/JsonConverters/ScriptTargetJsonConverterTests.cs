@@ -62,4 +62,13 @@ public class ScriptTargetJsonConverterTests
         Assert.That(deserialized, Contains.Key("context"));
         Assert.That(deserialized["context"]!.Value<string>(), Is.EqualTo("myContext"));
     }
+
+    [Test]
+    public void TestWriteWithNullValueThrowsArgumentNullException()
+    {
+        ScriptTargetJsonConverter converter = new();
+        using MemoryStream stream = new();
+        using Utf8JsonWriter writer = new(stream);
+        Assert.That(() => converter.Write(writer, null!, new JsonSerializerOptions()), Throws.InstanceOf<ArgumentNullException>());
+    }
 }
