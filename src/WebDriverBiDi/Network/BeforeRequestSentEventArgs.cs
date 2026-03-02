@@ -15,7 +15,8 @@ public record BeforeRequestSentEventArgs : BaseNetworkEventArgs
     /// <summary>
     /// Initializes a new instance of the <see cref="BeforeRequestSentEventArgs"/> class.
     /// </summary>
-    public BeforeRequestSentEventArgs()
+    [JsonConstructor]
+    internal BeforeRequestSentEventArgs()
         : base()
     {
     }
