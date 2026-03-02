@@ -48,7 +48,7 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// </summary>
     [JsonPropertyName("viewport")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<Viewport>))]
+    [JsonConverter(typeof(SentinelNullJsonConverter<Viewport, ViewportSentinelChecker>))]
     public Viewport? Viewport { get; set; }
 
     /// <summary>
@@ -56,7 +56,7 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     /// </summary>
     [JsonPropertyName("devicePixelRatio")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<double>))]
+    [JsonConverter(typeof(SentinelNullJsonConverter<double, NegativeDoubleSentinelChecker>))]
     public double? DevicePixelRatio { get; set; }
 
     /// <summary>

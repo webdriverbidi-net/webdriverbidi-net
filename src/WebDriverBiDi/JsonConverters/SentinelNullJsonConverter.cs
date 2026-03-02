@@ -1,4 +1,4 @@
-// <copyright file="ConditionalNullPropertyJsonConverter.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="SentinelNullJsonConverter.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -8,18 +8,30 @@ namespace WebDriverBiDi.JsonConverters;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using WebDriverBiDi.BrowsingContext;
 
 /// <summary>
-/// Custom JSON serializer for properties that can be both missing and null, but with different semantics for each case.
+/// Custom JSON serializer for properties that can be both missing and null, but with
+/// different semantics for each case. When the property value equals a type-specific
+/// sentinel (as determined by <typeparamref name="TSentinelChecker"/>), the converter
+/// writes JSON <c>null</c> instead of the normal serialized form. Pair with
+/// <c>[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]</c> so that
+/// an absent C# <see langword="null"/> omits the property entirely while the sentinel
+/// value emits an explicit JSON <c>null</c>.
 /// </summary>
 /// <typeparam name="T">The type to serialize.</typeparam>
-public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
+/// <typeparam name="TSentinelChecker">
+/// A <see cref="SentinelValueChecker{T}"/> subclass that decides whether a
+/// given value is the sentinel. Must have a parameterless constructor.
+/// </typeparam>
+public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
+    where TSentinelChecker : SentinelValueChecker<T>, new()
 {
+    private readonly TSentinelChecker sentinelChecker = new();
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="ConditionalNullPropertyJsonConverter{T}"/> class.
+    /// Initializes a new instance of the <see cref="SentinelNullJsonConverter{T, TSentinelChecker}"/> class.
     /// </summary>
-    public ConditionalNullPropertyJsonConverter()
+    public SentinelNullJsonConverter()
     {
     }
 
@@ -47,7 +59,7 @@ public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
         if (value is not null)
         {
             string json = "null";
-            if (!this.ShouldSerializeToNull(value))
+            if (!this.sentinelChecker.IsSentinelValue(value))
             {
                 json = JsonSerializer.Serialize(value, value.GetType(), options);
             }
@@ -55,20 +67,5 @@ public class ConditionalNullPropertyJsonConverter<T> : JsonConverter<T>
             writer.WriteRawValue(json);
             writer.Flush();
         }
-    }
-
-    private bool ShouldSerializeToNull(T value)
-    {
-        if (value is Viewport viewport)
-        {
-            return viewport.IsResetViewport;
-        }
-
-        if (value is double doubleValue)
-        {
-            return doubleValue < 0;
-        }
-
-        throw new WebDriverBiDiSerializationException($"Converter cannot be used on type {typeof(T)}");
     }
 }

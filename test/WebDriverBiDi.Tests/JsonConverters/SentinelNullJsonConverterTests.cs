@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 using WebDriverBiDi.BrowsingContext;
 
 [TestFixture]
-public class ConditionalNullPropertyJsonConverterTests
+public class SentinelNullJsonConverterTests
 {
     [Test]
     public void TestCanSerialize()
@@ -74,16 +74,6 @@ public class ConditionalNullPropertyJsonConverterTests
     }
 
     [Test]
-    public void TestCanSerializeWithUnaffectedProperty()
-    {
-        TestClass instance = new()
-        {
-            StringProperty = "hello",
-        };
-        Assert.That(() => JsonSerializer.Serialize(instance), Throws.InstanceOf<WebDriverBiDiSerializationException>());
-    }
-
-    [Test]
     public void TestCannotDeserialize()
     {
         string json = """{ "double": 3 }""";
@@ -92,19 +82,14 @@ public class ConditionalNullPropertyJsonConverterTests
 
     private class TestClass
     {
-        [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<Viewport>))]
+        [JsonConverter(typeof(SentinelNullJsonConverter<Viewport, ViewportSentinelChecker>))]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("viewport")]
         public Viewport? ViewportProperty { get; set; }
 
-        [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<double>))]
+        [JsonConverter(typeof(SentinelNullJsonConverter<double, NegativeDoubleSentinelChecker>))]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("double")]
         public double? DoubleProperty { get; set; }
-
-        [JsonConverter(typeof(ConditionalNullPropertyJsonConverter<string>))]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonPropertyName("string")]
-        public string? StringProperty { get; set; }
     }
 }
