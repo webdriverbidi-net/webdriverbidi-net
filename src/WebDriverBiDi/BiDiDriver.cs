@@ -232,6 +232,38 @@ public class BiDiDriver : IAsyncDisposable
     public WebExtensionModule WebExtension => this.webExtensionModule;
 
     /// <summary>
+    /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers
+    /// invoked by this driver. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that
+    /// exceptions from event handlers will be caught and logged but will not cause the driver to stop
+    /// processing messages from the transport.
+    /// </summary>
+    public TransportErrorBehavior EventHandlerExceptionBehavior { get => this.transport.EventHandlerExceptionBehavior; set => this.transport.EventHandlerExceptionBehavior = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating the behavior for handling exceptions when a protocol error is
+    /// received from the remote end. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning
+    /// that exceptions from protocol errors will be caught and logged but will not cause the driver to
+    /// stop processing messages from the transport.
+    /// </summary>
+    public TransportErrorBehavior ProtocolErrorBehavior { get => this.transport.ProtocolErrorBehavior; set => this.transport.ProtocolErrorBehavior = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating the behavior for handling exceptions when an unknown message is
+    /// encountered, such as valid JSON that does not match any protocol data structure. Defaults to
+    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unknown messages will
+    /// be caught and logged, but will not cause the driver to stop processing messages from the transport.
+    /// </summary>
+    public TransportErrorBehavior UnknownMessageBehavior { get => this.transport.UnknownMessageBehavior; set => this.transport.UnknownMessageBehavior = value; }
+
+    /// <summary>
+    /// Gets or sets a value indicating the behavior for handling exceptions when an unexpected error is
+    /// encountered, such as an error response received with no corresponding command. Defaults to
+    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unexpected errors will
+    /// be caught and logged but will not cause the driver to stop processing messages from the transport.
+    /// </summary>
+    public TransportErrorBehavior UnexpectedErrorBehavior { get => this.transport.UnexpectedErrorBehavior; set => this.transport.UnexpectedErrorBehavior = value; }
+
+    /// <summary>
     /// Gets a value indicating whether this driver is disposed.
     /// Use this property to ensure thread-safe operations for checking disposal state.
     /// </summary>
@@ -388,9 +420,7 @@ public class BiDiDriver : IAsyncDisposable
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
     /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown if the driver has already been started.
-    /// </exception>
+    /// <exception cref="WebDriverBiDiException">Thrown if the driver has already been started.</exception>
     public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
     {
         this.ThrowIfDisposed();

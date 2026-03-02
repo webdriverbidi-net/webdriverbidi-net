@@ -342,30 +342,6 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task TestDriverCanEmitLogMessagesFromProtocol()
-    {
-        DateTime testStart = DateTime.UtcNow;
-        List<LogMessageEventArgs> logs = [];
-        TestConnection connection = new();
-        Transport transport = new(connection);
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(100), transport);
-        driver.OnLogMessage.AddObserver((e) =>
-        {
-            logs.Add(e);
-        });
-        await driver.StartAsync("ws:localhost");
-        await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
-        Assert.That(logs, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(logs[0].Message, Is.EqualTo("test log message"));
-            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Warn));
-            Assert.That(logs[0].Timestamp, Is.GreaterThanOrEqualTo(testStart));
-            Assert.That(logs[0].ComponentName, Is.EqualTo("TestConnection"));
-        }
-    }
-
-    [Test]
     public void TestCanRegisterModule()
     {
         TestConnection connection = new();
@@ -500,6 +476,30 @@ public class BiDiDriverTests
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
         await driver.StartAsync("ws://localhost:5555");
         Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(new TestCommandParameters("test.command")), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Could not convert response from transport for SendCommandAndWait to WebDriverBiDi.TestUtilities.TestCommandResult"));
+    }
+
+    [Test]
+    public async Task TestDriverCanEmitLogMessagesFromProtocol()
+    {
+        DateTime testStart = DateTime.UtcNow;
+        List<LogMessageEventArgs> logs = [];
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(100), transport);
+        driver.OnLogMessage.AddObserver((e) =>
+        {
+            logs.Add(e);
+        });
+        await driver.StartAsync("ws:localhost");
+        await connection.RaiseLogMessageEventAsync("test log message", WebDriverBiDiLogLevel.Warn);
+        Assert.That(logs, Has.Count.EqualTo(1));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(logs[0].Message, Is.EqualTo("test log message"));
+            Assert.That(logs[0].Level, Is.EqualTo(WebDriverBiDiLogLevel.Warn));
+            Assert.That(logs[0].Timestamp, Is.GreaterThanOrEqualTo(testStart));
+            Assert.That(logs[0].ComponentName, Is.EqualTo("TestConnection"));
+        }
     }
 
     [Test]
@@ -730,6 +730,50 @@ public class BiDiDriverTests
             await driver.StopAsync();
             server.Stop();
         }
+    }
+
+    [Test]
+    public async Task TestCanModifyEventHandlerExceptionBehavior()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(driver.EventHandlerExceptionBehavior, Is.EqualTo(TransportErrorBehavior.Ignore));
+        driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+        Assert.That(transport.EventHandlerExceptionBehavior, Is.EqualTo(TransportErrorBehavior.Collect));
+    }
+
+    [Test]
+    public async Task TestCanModifyUnexpectedErrorExceptionBehavior()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(driver.UnexpectedErrorBehavior, Is.EqualTo(TransportErrorBehavior.Ignore));
+        driver.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;
+        Assert.That(transport.UnexpectedErrorBehavior, Is.EqualTo(TransportErrorBehavior.Collect));
+    }
+
+    [Test]
+    public async Task TestCanModifyProtocolErrorExceptionBehavior()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(driver.ProtocolErrorBehavior, Is.EqualTo(TransportErrorBehavior.Ignore));
+        driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+        Assert.That(transport.ProtocolErrorBehavior, Is.EqualTo(TransportErrorBehavior.Collect));
+    }
+
+    [Test]
+    public async Task TestCanModifyUnknownMessageExceptionBehavior()
+    {
+        TestConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(driver.UnknownMessageBehavior, Is.EqualTo(TransportErrorBehavior.Ignore));
+        driver.UnknownMessageBehavior = TransportErrorBehavior.Collect;
+        Assert.That(transport.UnknownMessageBehavior, Is.EqualTo(TransportErrorBehavior.Collect));
     }
 
     [Test]
