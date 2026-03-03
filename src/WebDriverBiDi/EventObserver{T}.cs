@@ -104,6 +104,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                 throw new WebDriverBiDiException("This observer already has a checkpoint set. It must be satisfied or unset before setting another.");
             }
 
+            this.capturedTasks.Clear();
             this.synchronizationCounter.Dispose();
             this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
             this.checkpointCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -188,7 +189,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         lock (this.checkpointLock)
         {
             this.ResetCheckpointState();
-            Task[] capturedTasks = this.capturedTasks.ToArray();
+            Task[] capturedTasks = [.. this.capturedTasks];
             this.capturedTasks.Clear();
             return capturedTasks;
         }
@@ -286,11 +287,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         {
             if (disposing)
             {
-                this.Unobserve();
-                lock (this.checkpointLock)
-                {
-                    this.ResetCheckpointState();
-                }
+                this.DisposeObserver();
             }
 
             this.isDisposed = true;
@@ -306,11 +303,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     {
         if (!this.isDisposed)
         {
-            this.Unobserve();
-            lock (this.checkpointLock)
-            {
-                this.ResetCheckpointState();
-            }
+            this.DisposeObserver();
         }
 
         return default;
@@ -327,5 +320,15 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         this.synchronizationCounter.Dispose();
         this.checkpointCompletionSource?.TrySetCanceled();
         this.checkpointCompletionSource = null;
+    }
+
+    private void DisposeObserver()
+    {
+        this.Unobserve();
+        lock (this.checkpointLock)
+        {
+            this.ResetCheckpointState();
+            this.capturedTasks.Clear();
+        }
     }
 }
