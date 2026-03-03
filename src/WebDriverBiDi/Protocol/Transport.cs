@@ -233,17 +233,25 @@ public class Transport : IAsyncDisposable
             throw this.CreateTerminationException(terminationExceptions);
         }
 
-        if (!this.IsConnected)
+        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
-        }
+            if (!this.IsConnected)
+            {
+                throw new WebDriverBiDiConnectionException("Transport must be connected to a remote end to execute commands.");
+            }
 
-        long commandId = this.GetNextCommandId();
-        Command command = new(commandId, commandData);
-        await this.pendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        byte[] commandJson = this.SerializeCommand(command);
-        await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
-        return command;
+            long commandId = this.GetNextCommandId();
+            Command command = new(commandId, commandData);
+            await this.pendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
+            byte[] commandJson = this.SerializeCommand(command);
+            await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
+            return command;
+        }
+        finally
+        {
+            this.connectDisconnectSemaphore.Release();
+        }
     }
 
     /// <summary>
