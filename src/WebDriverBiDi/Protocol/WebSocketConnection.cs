@@ -45,13 +45,17 @@ public class WebSocketConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown when the connection is not established within the startup timeout.</exception>
     /// <exception cref="WebDriverBiDiConnectionException">Thrown when the WebSocket is already connected.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="url"/> is not a valid absolute URI.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="url"/> is not a valid absolute URI, or does not have a WebSocket scheme.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? websocketUri))
         {
             throw new ArgumentException($"The value '{url}' is not a valid absolute URI", nameof(url));
+        }
+        else if (websocketUri.Scheme != Uri.UriSchemeWs && websocketUri.Scheme != Uri.UriSchemeWss)
+        {
+            throw new ArgumentException($"The URI scheme must be '{Uri.UriSchemeWs}' or '{Uri.UriSchemeWss}'; received '{websocketUri.Scheme}'", nameof(url));
         }
 
         if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)

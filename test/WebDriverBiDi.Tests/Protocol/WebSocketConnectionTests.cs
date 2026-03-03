@@ -495,6 +495,27 @@ public class WebSocketConnectionTests
     }
 
     [Test]
+    public void TestStartAsyncThrowsForNonWebSocketUrl()
+    {
+        WebSocketConnection connection = new();
+        Assert.That(async () => await connection.StartAsync("http://localhost:8080"), Throws.InstanceOf<ArgumentException>().With.Message.Contains("The URI scheme must be 'ws' or 'wss'; received 'http'"));
+    }
+
+    [Test]
+    public void TestCanStartWithSecuredWebSocketUrl()
+    {
+        WebSocketConnection connection = new()
+        {
+            StartupTimeout = TimeSpan.FromMilliseconds(10),
+        };
+
+        // Since the test server does not support secure WebSocket connections,
+        // we expect this to fail with a timeout, but it verifies that the connection
+        // attempts to connect to the correct URL and that the URL is accepted as valid.
+        Assert.That(async () => await connection.StartAsync($"wss://localhost:{this.server.Port}"), Throws.InstanceOf<WebDriverBiDiTimeoutException>());
+    }
+
+    [Test]
     public void TestCannotSendDataOnAConnectionNotYetStarted()
     {
         WebSocketConnection connection = new()
