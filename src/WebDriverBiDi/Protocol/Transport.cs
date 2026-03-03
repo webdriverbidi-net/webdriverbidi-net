@@ -126,20 +126,10 @@ public class Transport : IAsyncDisposable
     public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// Gets the ID of the last command to be added.
-    /// </summary>
-    protected long LastCommandId => this.nextCommandId;
-
-    /// <summary>
-    /// Gets the connection used to communicate with the browser.
-    /// </summary>
-    protected Connection Connection { get; }
-
-    /// <summary>
     /// Gets or sets a value indicating whether this transport is connected to a connection.
     /// Use this property to ensure thread-safe operations for checking connectivity.
     /// </summary>
-    private bool IsConnected
+    internal bool IsConnected
     {
         get
         {
@@ -152,6 +142,16 @@ public class Transport : IAsyncDisposable
             Interlocked.Exchange(ref this.isConnectedTypeSafeFlag, flagValue);
         }
     }
+
+    /// <summary>
+    /// Gets the ID of the last command to be added.
+    /// </summary>
+    protected long LastCommandId => this.nextCommandId;
+
+    /// <summary>
+    /// Gets the connection used to communicate with the browser.
+    /// </summary>
+    protected Connection Connection { get; }
 
     /// <summary>
     /// Asynchronously connects to the remote end web socket.

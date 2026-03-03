@@ -19,12 +19,26 @@ using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Speculation;
 using WebDriverBiDi.UserAgentClientHints;
-using System.Reflection.Metadata.Ecma335;
 using NUnit.Framework.Internal;
 
 [TestFixture]
 public class BiDiDriverTests
 {
+    [Test]
+    public async Task TestCanDetermineIsStarted()
+    {
+        TestTransport transport = new(new TestWebSocketConnection())
+        {
+            ReturnCustomValue = true
+        };
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(250), transport);
+        Assert.That(driver.IsStarted, Is.False);
+        await driver.StartAsync("ws:localhost");
+        Assert.That(driver.IsStarted, Is.True);
+        await driver.StopAsync();
+        Assert.That(driver.IsStarted, Is.False);
+    }
+
     [Test]
     public async Task CanExecuteCommand()
     {

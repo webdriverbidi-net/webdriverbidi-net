@@ -231,6 +231,11 @@ public class BiDiDriver : IAsyncDisposable
     public WebExtensionModule WebExtension => this.webExtensionModule;
 
     /// <summary>
+    /// Gets a value indicating whether the driver has started communication with the remote end of the WebDriver BiDi protocol.
+    /// </summary>
+    public bool IsStarted => this.transport.IsConnected;
+
+    /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers
     /// invoked by this driver. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that
     /// exceptions from event handlers will be caught and logged but will not cause the driver to stop
