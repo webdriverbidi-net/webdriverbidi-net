@@ -445,7 +445,7 @@ public class BiDiDriver : IAsyncDisposable
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
     /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
-    /// <exception cref="WebDriverBiDiException">Thrown if the driver has already been started.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the driver has already been started.</exception>
     public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
     {
         this.ThrowIfDisposed();
@@ -458,9 +458,15 @@ public class BiDiDriver : IAsyncDisposable
     /// <param name="module">The module object.</param>
     /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name that has already been registered.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when attempting to call this method after the driver has been started.</exception>
     public virtual void RegisterModule(Module module)
     {
         this.ThrowIfDisposed();
+        if (this.IsStarted)
+        {
+            throw new InvalidOperationException("Cannot register a type info resolver after the driver has started");
+        }
+
         if (!this.modules.TryAdd(module.ModuleName, module))
         {
             throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
@@ -501,9 +507,15 @@ public class BiDiDriver : IAsyncDisposable
     /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
     /// <exception cref="ArgumentException">Thrown when the specified event name is already registered with this driver.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when attempting to call this method after the driver has been started.</exception>
     public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
         this.ThrowIfDisposed();
+        if (this.IsStarted)
+        {
+            throw new InvalidOperationException("Cannot register an event after the driver has started");
+        }
+
         if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
         {
             throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));

@@ -221,6 +221,17 @@ public class BiDiDriverTests
     }
 
     [Test]
+    public async Task TestRegisteringEventAfterStartingDriverThrows()
+    {
+        string eventName = "module.event";
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        Assert.That(() => driver.RegisterEvent<TestEventArgs>(eventName, (e) => Task.CompletedTask), Throws.InstanceOf<InvalidOperationException>());
+    }
+
+    [Test]
     public async Task TestDriverWillProcessPendingMessagesOnStop()
     {
         string receivedEvent = string.Empty;
@@ -375,6 +386,16 @@ public class BiDiDriverTests
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterModule(new TestProtocolModule(driver, 0, false));
         Assert.That(() => driver.RegisterModule(new TestProtocolModule(driver)), Throws.InstanceOf<ArgumentException>().With.Message.StartsWith("A module with the name 'protocol' has already been registered"));
+    }
+
+    [Test]
+    public async Task TestRegisteringModuleAfterStartingDriverThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        Assert.That(() => driver.RegisterModule(new TestProtocolModule(driver, 0, false)), Throws.InstanceOf<InvalidOperationException>());
     }
 
     [Test]
@@ -822,8 +843,8 @@ public class BiDiDriverTests
        };
 
         Transport transport = new(connection);
-        await transport.ConnectAsync("ws://localhost:5555");
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);
+        await driver.StartAsync("ws://localhost:5555");
 
         string delayCommandName = "module.delayCommand";
         TestCommandParameters delayCommand = new(delayCommandName);
