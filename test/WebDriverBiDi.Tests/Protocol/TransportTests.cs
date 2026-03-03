@@ -983,6 +983,149 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestConcurrentDisconnectCallsAreThreadSafe()
+    {
+        // This test verifies the double-checked locking fix for the race condition
+        // where multiple threads could pass the fast-path IsConnected check simultaneously
+        // and then all proceed to execute disconnect logic.
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            // Add a small delay to increase the likelihood of threads overlapping
+            DisconnectDelay = TimeSpan.FromMilliseconds(50)
+        };
+
+        await transport.ConnectAsync("ws://localhost");
+
+        // Launch multiple concurrent disconnect calls
+        const int concurrentCalls = 5;
+        Task[] disconnectTasks = new Task[concurrentCalls];
+
+        for (int i = 0; i < concurrentCalls; i++)
+        {
+            disconnectTasks[i] = Task.Run(async () => await transport.DisconnectAsync());
+        }
+
+        // Wait for all disconnect calls to complete
+        await Task.WhenAll(disconnectTasks);
+
+        // Verify that:
+        // 1. All disconnect tasks completed successfully (no exceptions)
+        Assert.That(disconnectTasks, Has.All.Property("IsCompletedSuccessfully").True);
+
+        // 2. The connection's StopAsync was only called once (not multiple times)
+        // This verifies that the double-checked locking prevented redundant disconnect logic
+        Assert.That(connection.StopCallCount, Is.EqualTo(1), "Connection.StopAsync should only be called once despite concurrent disconnect calls");
+    }
+
+    [Test]
+    public async Task TestDisconnectSecondCallHitsDoubleCheckAndReturnsEarly()
+    {
+        // This test specifically exercises the double-check branch where a thread
+        // acquires the semaphore but finds IsConnected = false
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            // Add a delay to simulate long disconnect operation
+            DisconnectDelay = TimeSpan.FromMilliseconds(100)
+        };
+
+        await transport.ConnectAsync("ws://localhost");
+
+        // Start first disconnect (will take 100ms)
+        Task firstDisconnect = Task.Run(async () => await transport.DisconnectAsync());
+
+        // Give first disconnect time to start and set IsConnected = false
+        await Task.Delay(TimeSpan.FromMilliseconds(20));
+
+        // Start second disconnect while first is still running
+        // This should:
+        // 1. Pass the fast-path check (IsConnected was true when checked)
+        // 2. Wait for semaphore
+        // 3. Acquire semaphore after first disconnect completes
+        // 4. Hit the double-check and find IsConnected = false
+        // 5. Return early without executing disconnect logic
+        Task secondDisconnect = Task.Run(async () => await transport.DisconnectAsync());
+
+        // Wait for both to complete
+        await Task.WhenAll(firstDisconnect, secondDisconnect);
+
+        // Verify both completed successfully
+        Assert.That(firstDisconnect.IsCompletedSuccessfully, Is.True);
+        Assert.That(secondDisconnect.IsCompletedSuccessfully, Is.True);
+
+        // Verify disconnect logic only executed once (the double-check prevented the second execution)
+        Assert.That(connection.StopCallCount, Is.EqualTo(1), "Connection.StopAsync should only be called once due to double-check");
+    }
+
+    [Test]
+    public async Task TestDisconnectWithMultipleConcurrentCallsOperatesCorrectly()
+    {
+        int concurrentDisconnect = 0;
+        ManualResetEventSlim task1InLock = new(false);
+        ManualResetEventSlim task2InLock = new(false);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        
+        await transport.ConnectAsync("ws://localhost");
+        transport.BeforeAcquireLockCallback = async () =>
+        {
+            // Thread-safe increment to track how many tasks have entered disconnect
+            int currentTask = Interlocked.Increment(ref concurrentDisconnect);
+            if (currentTask == 1)
+            {
+                // Signal that the first task is in the lock, then wait for the
+                // second task to enter the lock before proceeding.
+                task1InLock.Set();
+                await Task.Run(() => task2InLock.Wait());
+            }
+            else if (currentTask == 2)
+            {
+                // Signal that the second task is in the lock, then wait for the
+                // first task to signal it's entered the lock, and wait a small
+                // delay to make sure the semaphore is held by the first task.
+                task2InLock.Set();
+                await Task.Run(() => task1InLock.Wait());
+                await Task.Delay(TimeSpan.FromMilliseconds(50));
+            }
+        };
+
+        Task task1 = transport.DisconnectAsync();
+        Task task2 = transport.DisconnectAsync();
+        await Task.WhenAll(task1, task2);
+        Assert.That(connection.StopCallCount, Is.EqualTo(1));
+        Assert.That(concurrentDisconnect, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task TestDisconnectMultipleTimesAfterAlreadyDisconnectedHitsFastPath()
+    {
+        // This test verifies that calling disconnect on an already-disconnected transport
+        // returns immediately via the fast-path check without acquiring the semaphore
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+
+        await transport.ConnectAsync("ws://localhost");
+
+        // First disconnect - this will set IsConnected = false
+        await transport.DisconnectAsync();
+
+        // Verify the first disconnect executed fully
+        Assert.That(connection.StopCallCount, Is.EqualTo(1));
+
+        // Second disconnect - should hit the fast-path check and return immediately
+        await transport.DisconnectAsync();
+
+        // The fast-path check prevents the disconnect logic from executing
+        Assert.That(connection.StopCallCount, Is.EqualTo(1), "Connection.StopAsync should only be called once");
+
+        // Third call for good measure
+        await transport.DisconnectAsync();
+        Assert.That(connection.StopCallCount, Is.EqualTo(1), "Connection.StopAsync should still only be called once after third disconnect");
+    }
+
+    [Test]
     public async Task TestTransportDisconnectWithPendingIncomingMessagesWillProcess()
     {
         string receivedName = string.Empty;

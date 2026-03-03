@@ -7,6 +7,7 @@ using WebDriverBiDi.Protocol;
 public class TestConnection : Connection
 {
     private int receiveCallCount;
+    private int stopCallCount;
 
     public bool BypassStart { get; set; } = true;
 
@@ -16,9 +17,13 @@ public class TestConnection : Connection
 
     public bool ThrowOnStop { get; set; }
 
+    public int StopCallCount => this.stopCallCount;
+
     public string? DataSent { get; set; }
 
     public TimeSpan? DataSendDelay { get; set; }
+
+    public TimeSpan? StopDelay { get; set; }
 
     public TaskCompletionSource? StartBarrier { get; set; }
 
@@ -81,11 +86,13 @@ public class TestConnection : Connection
         }
     }
 
-    public override Task StopAsync(CancellationToken cancellationToken = default)
+    public override async Task StopAsync(CancellationToken cancellationToken = default)
     {
+        Interlocked.Increment(ref this.stopCallCount);
+
         if (this.BypassStop)
         {
-            return Task.CompletedTask;
+            return;
         }
         else if (this.ThrowOnStop)
         {
@@ -93,7 +100,12 @@ public class TestConnection : Connection
         }
         else
         {
-            return base.StopAsync(cancellationToken);
+            if (this.StopDelay.HasValue && this.StopDelay.Value > TimeSpan.Zero)
+            {
+                await Task.Delay(this.StopDelay.Value, cancellationToken).ConfigureAwait(false);
+            }
+
+            await base.StopAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 

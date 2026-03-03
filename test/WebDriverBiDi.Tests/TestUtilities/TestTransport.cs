@@ -10,6 +10,7 @@ public class TestTransport : Transport
 {
     private TimeSpan messageProcessingDelay = TimeSpan.Zero;
     private int deserializeThrowCount;
+    private int disconnectCallCount;
 
     public TestTransport(Connection connection) : base(connection)
     {
@@ -30,6 +31,22 @@ public class TestTransport : Transport
     public TimeSpan MessageProcessingDelay { get => this.messageProcessingDelay; set => this.messageProcessingDelay = value; }
 
     public CommandResult? CustomReturnValue { get; set; }
+
+    public int DisconnectCallCount => this.disconnectCallCount;
+
+    public TimeSpan DisconnectDelay { get; set; } = TimeSpan.Zero;
+
+    /// <summary>
+    /// Optional callback invoked before acquiring the connection lock.
+    /// Used for precise test synchronization.
+    /// </summary>
+    public Func<Task>? BeforeAcquireLockCallback { get; set; }
+
+    /// <summary>
+    /// Optional callback invoked after acquiring the connection lock.
+    /// Used for precise test synchronization.
+    /// </summary>
+    public Action? AfterAcquireLockCallback { get; set; }
 
     /// <summary>
     /// Gets or sets the number of remaining calls to <see cref="DeserializeMessage"/>
@@ -94,7 +111,28 @@ public class TestTransport : Transport
             throw new WebDriverBiDiException("Simulated disconnect failure");
         }
 
+        if (this.DisconnectDelay > TimeSpan.Zero)
+        {
+            await Task.Delay(this.DisconnectDelay, cancellationToken).ConfigureAwait(false);
+        }
+
         await base.DisconnectAsync(throwCollectedExceptions, cancellationToken).ConfigureAwait(false);
+
+        // Only increment after base.DisconnectAsync completes, which means the disconnect
+        // logic actually executed (didn't return early via fast-path or double-check)
+        Interlocked.Increment(ref this.disconnectCallCount);
+    }
+
+    protected override async Task AcquireConnectionLockAsync(CancellationToken cancellationToken = default)
+    {
+        if (this.BeforeAcquireLockCallback is not null)
+        {
+            await this.BeforeAcquireLockCallback().ConfigureAwait(false);
+        }
+
+        await base.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
+
+        this.AfterAcquireLockCallback?.Invoke();
     }
 
     protected override async ValueTask DisposeAsyncCore()

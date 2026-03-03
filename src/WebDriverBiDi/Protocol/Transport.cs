@@ -163,7 +163,7 @@ public class Transport : IAsyncDisposable
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task ConnectAsync(string websocketUri, CancellationToken cancellationToken = default)
     {
-        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (this.IsConnected)
@@ -202,7 +202,7 @@ public class Transport : IAsyncDisposable
         }
         finally
         {
-            this.connectDisconnectSemaphore.Release();
+            this.ReleaseConnectionLock();
         }
     }
 
@@ -233,7 +233,7 @@ public class Transport : IAsyncDisposable
             throw this.CreateTerminationException(terminationExceptions);
         }
 
-        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (!this.IsConnected)
@@ -250,7 +250,7 @@ public class Transport : IAsyncDisposable
         }
         finally
         {
-            this.connectDisconnectSemaphore.Release();
+            this.ReleaseConnectionLock();
         }
     }
 
@@ -368,9 +368,17 @@ public class Transport : IAsyncDisposable
             return;
         }
 
-        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            // Double-check the connection state after acquiring the semaphore to prevent
+            // race conditions where multiple threads pass the fast-path check simultaneously.
+            // If another thread has already disconnected, we can safely return.
+            if (!this.IsConnected)
+            {
+                return;
+            }
+
             // Mark disconnected before performing teardown so that any
             // re-entrant calls (e.g., from event handlers still executing
             // during shutdown) see the transport as disconnected and
@@ -416,7 +424,7 @@ public class Transport : IAsyncDisposable
         }
         finally
         {
-            this.connectDisconnectSemaphore.Release();
+            this.ReleaseConnectionLock();
         }
     }
 
@@ -442,6 +450,24 @@ public class Transport : IAsyncDisposable
         this.pendingCommands.Dispose();
         await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
+    }
+
+    /// <summary>
+    /// Asynchronously acquires the connection lock to ensure thread-safe operations for connection-related actions.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous acquire operation.</returns>
+    protected virtual async Task AcquireConnectionLockAsync(CancellationToken cancellationToken = default)
+    {
+        await this.connectDisconnectSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Releases the connection lock to allow other threads to perform connection-related actions.
+    /// </summary>
+    protected virtual void ReleaseConnectionLock()
+    {
+        this.connectDisconnectSemaphore.Release();
     }
 
     [ExcludeFromCodeCoverage]
