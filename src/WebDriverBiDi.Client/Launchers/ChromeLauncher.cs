@@ -18,7 +18,7 @@ using WebDriverBiDi.Protocol;
 /// Object for launching a Chrome browser to connect to using a WebDriverBiDi session.
 /// This browser launcher does not rely on any external executable except for the browser itself.
 /// </summary>
-public class ChromeLauncher : BrowserLauncher
+public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 {
     private static readonly SemaphoreSlim LockObject = new(1, 1);
     private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("chromeLauncher.logMessage");
@@ -125,6 +125,8 @@ public class ChromeLauncher : BrowserLauncher
     /// Gets or sets a value indicating the type of connection to use in communicating with the browser.
     /// </summary>
     public ConnectionType ConnectionType { get; set; } = ConnectionType.WebSocket;
+
+    public Process? PipeServerProcess => this.browserProcess;
 
     private IList<string> CommandLineArguments
     {
@@ -257,6 +259,11 @@ public class ChromeLauncher : BrowserLauncher
         return new ChromiumTransport(this.connection ?? this.CreateConnection());
     }
 
+    public Process CreatePipeServerProcess(string inputPipeHandle, string outputPipeHandle)
+    {
+        throw new NotImplementedException();
+    }
+
     /// <summary>
     /// Creates the <see cref="Connection"/> object to be used to communicate with the browser.
     /// </summary>
@@ -265,7 +272,7 @@ public class ChromeLauncher : BrowserLauncher
     {
         if (this.ConnectionType == ConnectionType.Pipes)
         {
-            return new PipeConnection();
+            return new PipeConnection(this);
         }
 
         return new WebSocketConnection();
@@ -405,7 +412,6 @@ public class ChromeLauncher : BrowserLauncher
 
             if (this.browserProcess is not null && this.connection is not null && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection pipeConnection)
             {
-                pipeConnection.SetExternalProcess(this.browserProcess);
                 this.WebSocketUrl = $"pipe://{this.BrowserExecutableLocation}:{this.browserProcess.Id}";
             }
 

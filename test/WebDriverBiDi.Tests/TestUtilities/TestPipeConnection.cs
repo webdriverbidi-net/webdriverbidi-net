@@ -8,6 +8,11 @@ public class TestPipeConnection : PipeConnection
 {
     private int receiveCallCount;
 
+    public TestPipeConnection(IPipeServerProcessProvider pipeServerProcessProvider)
+        : base(pipeServerProcessProvider)
+    {
+    }
+
     public bool BypassDataSend { get; set; } = true;
 
     public bool ThrowOnStop { get; set; }

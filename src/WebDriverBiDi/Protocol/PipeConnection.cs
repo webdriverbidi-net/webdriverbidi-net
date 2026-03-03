@@ -19,16 +19,17 @@ public class PipeConnection : Connection
     private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);
     private readonly AnonymousPipeServerStream pipeToProcess;
     private readonly AnonymousPipeServerStream pipeFromProcess;
+    private readonly IPipeServerProcessProvider processProvider;
     private Task? dataReceiveTask;
     private CancellationTokenSource connectionTokenSource = new();
-    private Process? externalProcess;
     private bool isConnectionActive;
     private bool clientHandlesDisposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PipeConnection"/> class.
     /// </summary>
-    public PipeConnection()
+    /// <param name="processProvider">An implementation of <see cref="IPipeServerProcessProvider"/> that provides a <see cref="Process"/> that is able to send and receive messages over pipe connections.</param>
+    public PipeConnection(IPipeServerProcessProvider processProvider)
     {
         // PipeDirection.Out means WE write to this pipe (browser will read from FD 3)
         this.pipeToProcess = new AnonymousPipeServerStream(
@@ -39,12 +40,14 @@ public class PipeConnection : Connection
         this.pipeFromProcess = new AnonymousPipeServerStream(
             PipeDirection.In,
             HandleInheritability.Inheritable);
+
+        this.processProvider = processProvider;
     }
 
     /// <summary>
     /// Gets a value indicating whether this connection is active.
     /// </summary>
-    public override bool IsActive => this.isConnectionActive && this.externalProcess is not null && !this.externalProcess.HasExited;
+    public override bool IsActive => this.isConnectionActive && this.processProvider.PipeServerProcess is not null && !this.processProvider.PipeServerProcess.HasExited;
 
     /// <summary>
     /// Gets a value indicating the type of data transport used by this connection, in this case, pipes.
@@ -62,16 +65,6 @@ public class PipeConnection : Connection
     public string WritePipeHandle => this.clientHandlesDisposed ? string.Empty : this.pipeFromProcess.GetClientHandleAsString();
 
     /// <summary>
-    /// Sets the external process that this connection will communicate with.
-    /// This must be called before StartAsync.
-    /// </summary>
-    /// <param name="process">The browser process.</param>
-    public void SetExternalProcess(Process process)
-    {
-        this.externalProcess = process;
-    }
-
-    /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
     /// </summary>
     /// <param name="connectionString">The connection string used to connect to the remote end.</param>
@@ -81,7 +74,7 @@ public class PipeConnection : Connection
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
-        if (this.externalProcess is null)
+        if (this.processProvider.PipeServerProcess is null)
         {
             throw new WebDriverBiDiConnectionException("External process has not been set. Call SetExternalProcess before StartAsync.");
         }

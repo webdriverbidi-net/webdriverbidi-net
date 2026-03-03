@@ -4,12 +4,15 @@ using System.Diagnostics;
 using System.IO.Pipes;
 using System.Text;
 using Tmds.Utils;
+using WebDriverBiDi.Protocol;
 
-public class TestPipeServer
+public class TestPipeServer : IPipeServerProcessProvider
 {
     public Process? ServerProcess { get; private set; }
 
     public List<string> Responses { get; } = [];
+
+    public Process? PipeServerProcess => this.ServerProcess;
 
     public void Start(string readPipeHandle, string writePipeHandle)
     {
