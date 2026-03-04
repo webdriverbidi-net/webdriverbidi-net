@@ -83,9 +83,9 @@ public class WebSocketConnection : Connection
         {
             throw new ArgumentException($"The value '{url}' is not a valid absolute URI", nameof(url));
         }
-        else if (websocketUri.Scheme != Uri.UriSchemeWs && websocketUri.Scheme != Uri.UriSchemeWss)
+        else if (websocketUri.Scheme != "ws" && websocketUri.Scheme != "wss")
         {
-            throw new ArgumentException($"The URI scheme must be '{Uri.UriSchemeWs}' or '{Uri.UriSchemeWss}'; received '{websocketUri.Scheme}'", nameof(url));
+            throw new ArgumentException($"The URI scheme must be 'ws' or 'wss'; received '{websocketUri.Scheme}'", nameof(url));
         }
 
         if (this.client.State == WebSocketState.Closed || this.client.State == WebSocketState.Aborted)
