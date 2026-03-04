@@ -52,6 +52,8 @@
       href: advanced/error-handling.md
     - name: Performance Considerations
       href: advanced/performance.md
+    - name: Connection Management
+      href: advanced/connection-management.md
     - name: Custom Modules
       href: advanced/custom-modules.md
     - name: AOT Compatibility

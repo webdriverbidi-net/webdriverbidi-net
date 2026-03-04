@@ -31,10 +31,25 @@ This document provides an architectural overview of WebDriverBiDi.NET, explainin
 │  │         ┌──────────┐                        │   │
 │  │         │Transport │                        │   │
 │  │         └────┬─────┘                        │   │
-│  └──────────────┼──────────────────────────────┘   │
-└─────────────────┼────────────────────────────────┘
-                  │ WebSocket (JSON messages)
-                  ▼
+│  │              │                               │   │
+│  │         ┌────▼─────────┐                    │   │
+│  │         │  Connection  │  (Abstract)        │   │
+│  │         └────┬─────────┘                    │   │
+│  │              │                               │   │
+│  │      ┌───────┴────────┐                     │   │
+│  │      ▼                ▼                     │   │
+│  │  ┌────────────┐  ┌──────────┐              │   │
+│  │  │  WebSocket │  │  Pipes   │              │   │
+│  │  │ Connection │  │Connection│              │   │
+│  │  └─────┬──────┘  └────┬─────┘              │   │
+│  └────────┼──────────────┼──────────────────────┘
+└───────────┼──────────────┼────────────────────────┘
+            │              │
+            ▼              ▼
+       WebSocket        Pipes
+   (JSON messages)  (Null-terminated)
+            │              │
+            ▼              ▼
 ┌─────────────────────────────────────────────────────┐
 │              Browser (Remote End)                   │
 │         Chrome / Edge / Firefox / etc.              │
@@ -62,14 +77,15 @@ The `BiDiDriver` class is the facade that provides access to all functionality.
 
 ### Transport Layer
 
-The `Transport` class handles low-level WebSocket communication.
+The `Transport` class handles low-level communication with the browser through an abstract `Connection`.
 
 **Responsibilities:**
-- Manages WebSocket connection
+- Manages connection lifecycle through the Connection abstraction
 - Serializes commands to JSON
 - Deserializes responses and events from JSON
 - Correlates responses with sent commands
 - Routes events to appropriate handlers
+- Supports multiple transport types (WebSocket, Pipes)
 
 **Message Flow:**
 
@@ -137,6 +153,181 @@ public class BrowsingContextModule : Module
 - `BluetoothModule`: Web Bluetooth API
 - `WebExtensionModule`: Extension management
 - `SpeculationModule`: Navigation prefetching
+
+## Connection Types
+
+WebDriverBiDi.NET uses an abstract `Connection` class to support multiple transport layers, allowing communication with browsers through different mechanisms.
+
+### Connection Architecture
+
+The `Connection` abstract class defines the contract for all transport implementations:
+
+```csharp
+public abstract class Connection : IAsyncDisposable
+{
+    // Abstract members that implementations must provide
+    public abstract bool IsActive { get; }
+    public abstract ConnectionType ConnectionType { get; }
+    public abstract Task StartAsync(string connectionString, CancellationToken cancellationToken);
+    public abstract Task StopAsync(CancellationToken cancellationToken);
+    public abstract Task SendDataAsync(byte[] data, CancellationToken cancellationToken);
+
+    // Observable events for connection lifecycle
+    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived { get; }
+    public ObservableEvent<ConnectionErrorEventArgs> OnConnectionError { get; }
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
+
+    // Configurable timeouts
+    public TimeSpan StartupTimeout { get; set; }  // Default: 10 seconds
+    public TimeSpan ShutdownTimeout { get; set; } // Default: 10 seconds
+    public TimeSpan DataTimeout { get; set; }     // Default: 10 seconds
+}
+```
+
+### WebSocket Connection
+
+**When to Use:**
+- Development and debugging scenarios
+- Remote browser control
+- Multiple clients connecting to the same browser
+- Browser launched separately from your application
+- Cross-machine communication
+
+**Implementation Details:**
+- Uses `System.Net.WebSockets.ClientWebSocket`
+- Validates URL scheme (must be `ws://` or `wss://`)
+- Supports secure WebSocket connections
+- Text-based JSON message protocol
+- Handles multi-frame WebSocket messages
+
+**Example:**
+
+```csharp
+using WebDriverBiDi;
+
+// Connect to browser at WebSocket URL
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
+
+try
+{
+    // Use the driver
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+finally
+{
+    await driver.StopAsync();
+}
+```
+
+**Browser Launch:**
+```bash
+chrome --remote-debugging-port=9222
+```
+
+The browser provides the WebSocket URL in its output or via the `/json/version` endpoint.
+
+### Pipe Connection
+
+**When to Use:**
+- Automation frameworks controlling browser lifecycle
+- Programmatic browser management
+- Single-client scenarios
+- Enhanced process isolation
+- Lower latency requirements
+
+**Implementation Details:**
+- Uses anonymous pipes (`AnonymousPipeServerStream`)
+- Protocol: Null-terminated JSON messages
+- Windows: Anonymous pipes via `CreatePipe` API
+- Unix/Linux/macOS: File descriptors 3 (browser reads) and 4 (browser writes)
+- Requires `IPipeServerProcessProvider` for process management
+- Direct process-to-process communication
+
+**Example:**
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Protocol;
+
+// Launcher implements IPipeServerProcessProvider
+ChromeLauncher launcher = new ChromeLauncher()
+{
+    ConnectionType = ConnectionType.Pipes
+};
+
+await launcher.StartAsync();
+
+try
+{
+    // Create driver with launcher's connection
+    BiDiDriver driver = new BiDiDriver(
+        TimeSpan.FromSeconds(30),
+        launcher.Transport);
+
+    await driver.StartAsync("pipes");
+
+    // Use the driver
+    await driver.BrowsingContext.NavigateAsync(navParams);
+
+    await driver.StopAsync();
+}
+finally
+{
+    await launcher.StopAsync();
+}
+```
+
+**Browser Launch:**
+```bash
+chrome --remote-debugging-pipe
+```
+
+The `--remote-debugging-pipe` flag instructs the browser to communicate via stdin/stdout/file descriptors instead of opening a TCP port.
+
+### IPipeServerProcessProvider Interface
+
+The `IPipeServerProcessProvider` interface enables dependency injection for pipe connections:
+
+```csharp
+public interface IPipeServerProcessProvider
+{
+    Process? PipeServerProcess { get; }
+}
+```
+
+This allows `PipeConnection` to access the browser process and its stdin/stdout handles. Implementations (like `ChromeLauncher`) manage the browser process lifecycle and provide it to the connection.
+
+### ConnectionType Enum
+
+The `ConnectionType` enum identifies which transport mechanism is being used:
+
+```csharp
+public enum ConnectionType
+{
+    WebSocket,  // WebSocket-based communication
+    Pipes       // Pipe-based communication
+}
+```
+
+Launchers use this to determine which browser flags to use (`--remote-debugging-port` vs `--remote-debugging-pipe`).
+
+### Choosing a Connection Type
+
+| Factor | WebSocket | Pipes |
+|--------|-----------|-------|
+| **Latency** | Moderate (TCP overhead) | Lower (direct IPC) |
+| **Remote Access** | ✓ Yes | ✗ No (same machine only) |
+| **Multi-Client** | ✓ Yes | ✗ No (single client) |
+| **Process Coupling** | Loose | Tight |
+| **Debugging** | Easy (can inspect traffic) | Moderate |
+| **Platform Support** | Universal | Universal |
+| **Setup Complexity** | Simple | Moderate |
+
+**Recommendation:**
+- Use **WebSocket** for development, debugging, and flexible deployment scenarios
+- Use **Pipes** for automation frameworks and when you control the browser lifecycle
 
 ### Command Pattern
 
@@ -374,6 +565,156 @@ driver.Log.OnEntryAdded.AddObserver(
 );
 ```
 
+## Error Handling Configuration
+
+WebDriverBiDi.NET provides configurable error handling behavior at multiple levels of the system.
+
+### Transport Error Behavior
+
+The `Transport` class can be configured with different error behaviors:
+
+```csharp
+public enum TransportErrorBehavior
+{
+    Ignore,     // Silently ignore transport errors
+    Collect,    // Store errors for later inspection
+    Terminate   // Throw exception immediately (default)
+}
+```
+
+### Terminate Mode (Default)
+
+Throws an exception on the first transport error:
+
+```csharp
+// Default: throws on first error
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+try
+{
+    await driver.StartAsync("ws://localhost:9222/session");
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"Connection failed: {ex.Message}");
+}
+```
+
+**Use When:**
+- You want fast failure on errors
+- Errors indicate unrecoverable conditions
+- You prefer explicit error handling
+
+### Collect Mode
+
+Stores transport errors in a list for later inspection:
+
+```csharp
+using WebDriverBiDi.Protocol;
+
+WebSocketConnection connection = new WebSocketConnection();
+Transport transport = new Transport(connection, TransportErrorBehavior.Collect);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+await driver.StartAsync("ws://localhost:9222/session");
+
+// Perform operations...
+await driver.BrowsingContext.NavigateAsync(navParams);
+
+// Check for collected errors
+if (transport.Errors.Count > 0)
+{
+    Console.WriteLine($"Encountered {transport.Errors.Count} transport errors:");
+    foreach (Exception error in transport.Errors)
+    {
+        Console.WriteLine($"  - {error.Message}");
+    }
+}
+
+await driver.StopAsync();
+```
+
+**Use When:**
+- You want to continue operation despite errors
+- Collecting diagnostics for troubleshooting
+- Errors might be transient or non-critical
+
+### Ignore Mode
+
+Silently discards transport errors without notification:
+
+```csharp
+using WebDriverBiDi.Protocol;
+
+WebSocketConnection connection = new WebSocketConnection();
+Transport transport = new Transport(connection, TransportErrorBehavior.Ignore);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+await driver.StartAsync("ws://localhost:9222/session");
+
+// Errors won't be thrown or collected
+await driver.BrowsingContext.NavigateAsync(navParams);
+
+await driver.StopAsync();
+```
+
+**Use When:**
+- Operating in fire-and-forget mode
+- Errors are expected and acceptable
+- You have alternative error detection mechanisms
+
+**Warning:** Use this mode cautiously—it can mask real problems.
+
+### Connection-Level Error Handling
+
+Connections provide observable events for error monitoring:
+
+```csharp
+using WebDriverBiDi.Protocol;
+
+WebSocketConnection connection = new WebSocketConnection();
+
+// Subscribe to connection errors
+connection.OnConnectionError.AddObserver((errorArgs) =>
+{
+    Console.WriteLine($"Connection error: {errorArgs.Exception.Message}");
+});
+
+// Subscribe to log messages
+connection.OnLogMessage.AddObserver((logArgs) =>
+{
+    Console.WriteLine($"[{logArgs.Level}] {logArgs.Message}");
+});
+
+Transport transport = new Transport(connection);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+await driver.StartAsync("ws://localhost:9222/session");
+```
+
+### Event Handler Error Behavior
+
+Event handlers can also throw exceptions. Control this with `ObservableEventHandlerOptions`:
+
+```csharp
+// Synchronous handler: exceptions bubble up immediately
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    ProcessLogEntry(e);  // If this throws, exception propagates
+});
+
+// Asynchronous handler: exceptions are captured
+driver.Network.OnBeforeRequestSent.AddObserver(
+    async (e) =>
+    {
+        await ProcessRequestAsync(e);  // Exceptions captured
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+```
+
+See the [Error Handling Guide](advanced/error-handling.md) for comprehensive error management strategies.
+
 ## Extension Points
 
 WebDriverBiDi.NET can be extended in several ways:
@@ -487,6 +828,9 @@ await driver.StopAsync();
 ## Next Steps
 
 - [Core Concepts](core-concepts.md): Understand modules, commands, and events
+- [Browser Setup](browser-setup.md): Configure browsers for WebSocket or Pipe connections
+- [Connection Management](advanced/connection-management.md): Deep dive into connection architecture
 - [Events and Observables](events-observables.md): Deep dive into event handling
+- [Error Handling](advanced/error-handling.md): Comprehensive error management strategies
 - [Module Guides](modules/browser.md): Learn each module in detail
 

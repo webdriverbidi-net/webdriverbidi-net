@@ -13,6 +13,63 @@ Performance in browser automation involves multiple factors:
 
 Understanding and optimizing these factors can significantly improve automation speed and reliability.
 
+## Connection Type Performance
+
+WebDriverBiDi.NET primarily uses WebSocket connections for browser communication. An alternative pipe-based connection is available for specialized scenarios.
+
+### WebSocket Connections (Recommended)
+
+WebSocket connections are the standard transport mechanism for WebDriver BiDi:
+
+**Characteristics:**
+- **Universal compatibility**: Supported by all browsers with WebDriver BiDi
+- **Network flexibility**: Connect to local or remote browsers
+- **Simple setup**: Just provide a WebSocket URL
+- **Low latency**: Typically 1-3ms per command for local connections
+
+**Performance:**
+- Command execution: 5-15ms average (including browser processing)
+- Event delivery: Real-time with minimal overhead
+- Suitable for all automation scenarios
+
+```csharp
+// Standard WebSocket connection
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
+```
+
+### Pipe Connections (Advanced)
+
+For specific scenarios where the browser and test runner are co-located, pipe connections provide an alternative transport:
+
+**When to consider:**
+- Browser implementation supports pipe protocol (currently only Chromium-based browsers)
+- Both browser and tests run on the same machine
+- Absolute minimum latency is critical
+
+**Trade-offs:**
+- Slightly lower latency (~0.5-1ms reduction per message)
+- No network stack overhead
+- Requires process lifecycle management
+- Limited browser support
+- No remote debugging capability
+
+```csharp
+// Pipe connection (Chromium only)
+using WebDriverBiDi.Client;
+
+ChromeLauncher launcher = new ChromeLauncher()
+{
+    ConnectionType = ConnectionType.Pipes
+};
+
+await launcher.StartAsync();
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.Transport);
+await driver.StartAsync("pipes");
+```
+
+**Recommendation**: Use WebSocket connections unless you have specific requirements for pipe-based transport and are using a compatible browser implementation.
+
 ## Command Optimization
 
 ### Parallel Command Execution

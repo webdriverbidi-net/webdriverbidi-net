@@ -8,6 +8,31 @@ namespace WebDriverBiDi.Protocol;
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The <see cref="Connection"/> class is an abstract base class that defines the contract for
+/// transport-layer communication with a browser. It is wrapped by the <see cref="Transport"/> class,
+/// which handles protocol-level concerns like JSON serialization and command/response correlation.
+/// </para>
+/// <para>
+/// Most users will never need to interact with <see cref="Connection"/> objects directly.
+/// The <see cref="BiDiDriver"/> class manages connections automatically. Custom connection
+/// implementations are only needed for specialized transport mechanisms.
+/// </para>
+/// <para>
+/// Available implementations:
+/// <list type="bullet">
+/// <item><term><see cref="WebSocketConnection"/></term><description>Standard WebSocket transport (recommended for all scenarios)</description></item>
+/// <item><term><see cref="PipeConnection"/></term><description>Anonymous pipes transport (specialized for high-performance local Chromium automation)</description></item>
+/// </list>
+/// </para>
+/// <para>
+/// Thread safety: Connection implementations use internal synchronization to ensure thread-safe operation.
+/// Multiple threads can safely call <see cref="SendDataAsync"/> concurrently. The <see cref="Transport"/>
+/// class that wraps connections provides additional synchronization for <see cref="StartAsync"/> and
+/// <see cref="StopAsync"/> operations.
+/// </para>
+/// </remarks>
 public abstract class Connection : IAsyncDisposable
 {
     private const string DataReceivedEventName = "connection.dataReceived";

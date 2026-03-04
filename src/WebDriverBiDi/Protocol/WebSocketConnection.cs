@@ -13,6 +13,36 @@ using System.Text;
 /// <summary>
 /// Represents a connection to a WebDriver Bidi remote end over a WebSocket.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <see cref="WebSocketConnection"/> is the standard and recommended transport mechanism for WebDriver BiDi.
+/// It uses the <see cref="System.Net.WebSockets.ClientWebSocket"/> class to communicate with the browser
+/// over the WebSocket protocol (ws:// or wss:// schemes).
+/// </para>
+/// <para>
+/// <strong>When to use WebSocket connections:</strong>
+/// <list type="bullet">
+/// <item><description>All standard automation scenarios (local or remote browsers)</description></item>
+/// <item><description>Containerized browser environments</description></item>
+/// <item><description>Cross-machine browser debugging</description></item>
+/// <item><description>Any browser supporting WebDriver BiDi (Chrome, Edge, Firefox)</description></item>
+/// </list>
+/// </para>
+/// <para>
+/// <strong>Key characteristics:</strong>
+/// <list type="bullet">
+/// <item><description>Universal browser support</description></item>
+/// <item><description>Network flexibility (local and remote)</description></item>
+/// <item><description>Low latency (1-3ms per message for local connections)</description></item>
+/// <item><description>Automatic retry on startup (retries every 500ms within StartupTimeout)</description></item>
+/// <item><description>Supports reconnection after calling StopAsync</description></item>
+/// </list>
+/// </para>
+/// <para>
+/// Most users will never create a <see cref="WebSocketConnection"/> directly. The <see cref="BiDiDriver"/>
+/// creates one automatically when constructed without a custom transport.
+/// </para>
+/// </remarks>
 public class WebSocketConnection : Connection
 {
     private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);

@@ -4,7 +4,12 @@ This guide explains how to set up different browsers for use with WebDriverBiDi.
 
 ## Overview
 
-WebDriverBiDi.NET requires a browser with WebDriver BiDi support running with remote debugging enabled. The library connects to the browser via a WebSocket connection.
+WebDriverBiDi.NET requires a browser with WebDriver BiDi support running with remote debugging enabled. The library supports two connection types:
+
+- **WebSocket Connection** (default): Connects to browsers via `--remote-debugging-port`
+- **Pipe Connection**: Connects to browsers via `--remote-debugging-pipe`
+
+This guide covers both approaches, with WebSocket being the recommended starting point for most users.
 
 ## Chrome / Chromium
 
@@ -119,6 +124,130 @@ microsoft-edge --remote-debugging-port=9222 --user-data-dir=/tmp/edge-profile
 ```
 
 WebSocket URL discovery is the same as Chrome - visit `http://localhost:9222/json/version`.
+
+## Connection Types
+
+WebDriverBiDi.NET supports two transport mechanisms for communicating with browsers:
+
+### WebSocket Connection (Default)
+
+**How it Works:**
+- Browser launches with `--remote-debugging-port=PORT`
+- Browser listens on a TCP port for WebSocket connections
+- Your application connects via `ws://localhost:PORT/devtools/browser/ID`
+- Multiple clients can connect to the same browser
+
+**Best For:**
+- Development and debugging
+- Remote browser control
+- Flexible deployment scenarios
+- When you need to connect from outside your process
+
+**Example:**
+
+```csharp
+using WebDriverBiDi;
+
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+// Connect to browser at WebSocket URL
+await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
+
+try
+{
+    // Use the driver
+    var result = await driver.BrowsingContext.NavigateAsync(navParams);
+}
+finally
+{
+    await driver.StopAsync();
+}
+```
+
+### Pipe Connection
+
+**How it Works:**
+- Browser launches with flags to enable pipe communication
+- Browser communicates via anonymous pipes (stdin/stdout)
+- Protocol uses null-terminated JSON messages
+- On Unix-like systems: File descriptors 3 (browser reads) and 4 (browser writes)
+- Single client can connect (the process that launched the browser)
+
+**Best For:**
+- Automation frameworks
+- Programmatic browser control
+- Lower latency requirements
+- When you control the browser lifecycle
+
+**Platform Support:**
+- Windows: Anonymous pipes
+- macOS/Linux: File descriptor-based pipes
+
+**Example:**
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Protocol;
+
+// Launcher implements IPipeServerProcessProvider
+ChromeLauncher launcher = new ChromeLauncher()
+{
+    ConnectionType = ConnectionType.Pipes
+};
+
+await launcher.StartAsync();
+
+try
+{
+    // Create driver with launcher's transport
+    BiDiDriver driver = new BiDiDriver(
+        TimeSpan.FromSeconds(30),
+        launcher.Transport);
+
+    await driver.StartAsync("pipes");
+
+    // Use the driver
+    var result = await driver.BrowsingContext.NavigateAsync(navParams);
+
+    await driver.StopAsync();
+}
+finally
+{
+    await launcher.StopAsync();
+}
+```
+
+### Using BrowserType Presets
+
+The WebDriverBiDi.Client library provides convenient presets:
+
+```csharp
+using WebDriverBiDi.Client.Launchers;
+
+// WebSocket connection (default)
+BrowserLauncher wsLauncher = BrowserLauncher.Create(
+    BrowserType.Chrome,
+    "/path/to/chrome");
+
+// Pipe connection
+BrowserLauncher pipeLauncher = BrowserLauncher.Create(
+    BrowserType.ChromePipe,
+    "/path/to/chrome");
+```
+
+### Comparison
+
+| Feature | WebSocket | Pipes |
+|---------|-----------|-------|
+| **Latency** | Moderate (TCP overhead) | Lower (direct IPC) |
+| **Remote Access** | ✓ Yes | ✗ No |
+| **Multi-Client** | ✓ Yes | ✗ No |
+| **Setup Complexity** | Simple | Moderate |
+| **Debugging** | Easy (inspect traffic) | Moderate |
+| **Use Case** | Development, debugging | Automation, testing |
+
+**Recommendation:** Start with WebSocket connections for simplicity, switch to Pipes if you need lower latency or are building automation frameworks.
 
 ## Firefox
 
@@ -284,25 +413,70 @@ chromeProcess.Kill();
 
 ## Helper Libraries
 
-The `WebDriverBiDi.Client` project in this repository includes launcher helpers:
+The `WebDriverBiDi.Client` project in this repository includes launcher helpers that support both connection types:
+
+### Using ChromeLauncher with WebSocket
 
 ```csharp
+using WebDriverBiDi;
 using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Protocol;
 
-// Launch Chrome and get WebSocket URL
-ChromeLauncher launcher = new ChromeLauncher();
-string wsUrl = await launcher.LaunchAsync(new ChromeLaunchOptions
+// Launch Chrome with WebSocket (default)
+ChromeLauncher launcher = new ChromeLauncher()
 {
+    ConnectionType = ConnectionType.WebSocket,
     Port = 9222,
-    Headless = true,
-    UserDataDir = "/tmp/chrome-profile"
-});
+    Headless = true
+};
 
-await driver.StartAsync(wsUrl);
+await launcher.StartAsync();
+
+// Create driver with launcher's transport
+BiDiDriver driver = new BiDiDriver(
+    TimeSpan.FromSeconds(30),
+    launcher.Transport);
+
+await driver.StartAsync(launcher.WebSocketUrl);
+
+// Use the driver...
 
 // Clean up
+await driver.StopAsync();
 await launcher.StopAsync();
 ```
+
+### Using ChromeLauncher with Pipes
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Client.Launchers;
+using WebDriverBiDi.Protocol;
+
+// Launch Chrome with Pipes
+ChromeLauncher launcher = new ChromeLauncher()
+{
+    ConnectionType = ConnectionType.Pipes,
+    Headless = true
+};
+
+await launcher.StartAsync();
+
+// Create driver with launcher's transport
+BiDiDriver driver = new BiDiDriver(
+    TimeSpan.FromSeconds(30),
+    launcher.Transport);
+
+await driver.StartAsync("pipes");
+
+// Use the driver...
+
+// Clean up
+await driver.StopAsync();
+await launcher.StopAsync();
+```
+
+See [Programmatic Browser Launch](examples/programmatic-browser-launch.md) for more examples.
 
 ## Troubleshooting
 
@@ -370,4 +544,7 @@ For production use:
 - [Getting Started](getting-started.md): Create your first application
 - [Your First Application](first-application.md): Complete tutorial
 - [Core Concepts](core-concepts.md): Understand the library
+- [Architecture](architecture.md): Deep dive into connection types
+- [Connection Management](advanced/connection-management.md): Advanced connection scenarios
+- [Programmatic Browser Launch](examples/programmatic-browser-launch.md): Complete launch examples
 

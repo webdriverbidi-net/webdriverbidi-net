@@ -4,7 +4,7 @@ Welcome to the official documentation for **WebDriverBiDi.NET**, a comprehensive
 
 ## What is WebDriverBiDi.NET?
 
-WebDriverBiDi.NET is a low-level .NET implementation of the [W3C WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). It provides a robust foundation for browser automation by enabling bidirectional communication between your .NET application and web browsers through WebSocket connections.
+WebDriverBiDi.NET is a low-level .NET implementation of the [W3C WebDriver BiDi protocol specification](https://w3c.github.io/webdriver-bidi/). It provides a robust foundation for browser automation by enabling bidirectional communication between your .NET application and web browsers.
 
 The library is built on .NET Standard 2.0, ensuring broad compatibility across .NET Framework, .NET Core, and modern .NET versions.
 
@@ -18,6 +18,7 @@ The library is built on .NET Standard 2.0, ensuring broad compatibility across .
 - **Event-Driven Architecture**: Asynchronous event handling for browser events
 - **Type-Safe API**: Strongly-typed commands and responses with full IntelliSense support
 - **JSON Serialization**: Built on System.Text.Json for efficient communication
+- **Flexible Transport**: Support for WebSocket and Pipe connections for different deployment scenarios
 - **Extensible Design**: Module-based architecture allows for custom extensions
 
 ## What Can You Do?

@@ -61,6 +61,370 @@ catch (WebDriverBiDiException ex)
 }
 ```
 
+## Transport Error Behavior Configuration
+
+WebDriverBiDi.NET allows you to configure how transport-layer errors are handled using the `TransportErrorBehavior` enum. This controls errors that occur in event handlers and protocol-level errors (like invalid JSON or incorrect payloads).
+
+**Important:** Command errors always throw exceptions immediately, regardless of this setting. This behavior only affects:
+- Exceptions thrown by event handlers
+- Protocol errors (invalid JSON, malformed messages)
+- Unexpected error responses without matching commands
+
+```csharp
+public enum TransportErrorBehavior
+{
+    Ignore,     // Silently ignore transport errors
+    Collect,    // Store errors for later inspection
+    Terminate   // Throw exception on next command (default)
+}
+```
+
+### Understanding Event Handler Error Propagation
+
+Event handlers run on separate threads from your main application code. This means exceptions in event handlers don't directly propagate to the calling code. The transport error behavior determines what happens when event handler exceptions occur:
+
+- **Terminate (default)**: Exception is stored and thrown when you send the next command
+- **Collect**: Exception is stored in a list for later inspection
+- **Ignore**: Exception is discarded
+
+### Terminate Mode (Default)
+
+The default behavior stores exceptions from event handlers and throws them when you send the next command:
+
+```csharp
+using WebDriverBiDi;
+
+// Default: throws event handler exceptions on next command
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+try
+{
+    await driver.StartAsync("ws://localhost:9222/session");
+
+    // Subscribe to events
+    driver.Log.OnEntryAdded.AddObserver((e) =>
+    {
+        // This runs on a separate thread
+        if (e.Level == LogLevel.Error)
+        {
+            throw new InvalidOperationException("Error log entry received");
+        }
+    });
+
+    await driver.Session.SubscribeAsync(subscribeParams);
+
+    // If an error log event occurs, the exception won't throw immediately
+    // because the event handler runs on a separate thread
+
+    // The exception will be thrown here when we send the next command
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"Transport error: {ex.Message}");
+    // This catch block will receive the event handler exception
+}
+finally
+{
+    await driver.StopAsync();
+}
+```
+
+**Why This Matters:**
+- Event handlers execute asynchronously on the transport thread
+- Your main code doesn't directly wait for event handlers to complete
+- Terminate mode ensures errors are eventually reported to your code
+- The error surfaces when you send the next command, which is a natural synchronization point
+
+**Use Terminate Mode When:**
+- You want event handler errors to be reported (recommended)
+- You need fast failure on protocol errors
+- Operating in production with error visibility
+- You prefer explicit error handling
+
+### Collect Mode
+
+Collect mode stores transport errors in a list without ever throwing them:
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Protocol;
+
+// Create transport with Collect behavior
+WebSocketConnection connection = new WebSocketConnection();
+Transport transport = new Transport(connection, TransportErrorBehavior.Collect);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+try
+{
+    await driver.StartAsync("ws://localhost:9222/session");
+
+    // Subscribe to events with potentially failing handlers
+    driver.Log.OnEntryAdded.AddObserver((e) =>
+    {
+        // This runs on a separate thread
+        // If it throws, error is collected but never thrown
+        ProcessLogEntry(e);
+    });
+
+    driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+    {
+        // If this throws, error is collected
+        ProcessNetworkRequest(e);
+    });
+
+    await driver.Session.SubscribeAsync(subscribeParams);
+
+    // Send commands - event handler errors won't be thrown
+    await driver.BrowsingContext.NavigateAsync(navParams);
+    await driver.Script.EvaluateAsync(evalParams);
+
+    // Explicitly check for collected errors when ready
+    if (transport.Errors.Count > 0)
+    {
+        Console.WriteLine($"\nCollected {transport.Errors.Count} transport errors:");
+        foreach (Exception error in transport.Errors)
+        {
+            Console.WriteLine($"  [{error.GetType().Name}] {error.Message}");
+            Console.WriteLine($"    From: {error.StackTrace?.Split('\n')[0].Trim()}");
+        }
+
+        // Analyze error types
+        var eventHandlerErrors = transport.Errors
+            .Where(e => e.StackTrace?.Contains("AddObserver") == true)
+            .ToList();
+
+        var protocolErrors = transport.Errors
+            .OfType<WebDriverBiDiProtocolException>()
+            .ToList();
+
+        Console.WriteLine($"  Event handler errors: {eventHandlerErrors.Count}");
+        Console.WriteLine($"  Protocol errors: {protocolErrors.Count}");
+    }
+}
+finally
+{
+    await driver.StopAsync();
+}
+```
+
+**Use Collect Mode When:**
+- Diagnosing flaky or failing event handlers
+- You want to continue operation despite event handler errors
+- Testing error resilience of your event handling code
+- You need a complete error report after operations
+- Protocol errors might be transient
+
+**Important:** Your code continues normally—errors never throw, only accumulate in the list.
+
+### Ignore Mode
+
+Ignore mode silently discards all transport errors:
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Protocol;
+
+// Create transport with Ignore behavior
+WebSocketConnection connection = new WebSocketConnection();
+Transport transport = new Transport(connection, TransportErrorBehavior.Ignore);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+try
+{
+    await driver.StartAsync("ws://localhost:9222/session");
+
+    // Event handler errors will be silently ignored
+    driver.Log.OnEntryAdded.AddObserver((e) =>
+    {
+        // This runs on a separate thread
+        // If it throws, error is completely discarded
+        ProcessLogEntry(e);
+    });
+
+    await driver.Session.SubscribeAsync(subscribeParams);
+
+    // Commands proceed normally, event handler errors are invisible
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+finally
+{
+    await driver.StopAsync();
+}
+```
+
+**Use Ignore Mode When:**
+- Event handler errors are expected and acceptable
+- You handle all errors within event handlers themselves
+- Operating in fire-and-forget mode for events
+- You have alternative error detection mechanisms
+
+**⚠️ Warning:** Use Ignore mode with extreme caution. Silent failures in event handlers can:
+- Hide bugs in your code
+- Make debugging very difficult
+- Lead to incomplete or incorrect application state
+- Mask protocol issues
+
+### Behavior Comparison
+
+| Mode | Event Handler Exceptions | Protocol Errors | Command Errors | When Error Surfaces |
+|------|-------------------------|-----------------|----------------|---------------------|
+| **Terminate** | Throws on next command | Throws on next command | Always throws immediately | Synchronization point (next command) |
+| **Collect** | Stored in list | Stored in list | Always throws immediately | Never (inspect list manually) |
+| **Ignore** | Discarded | Discarded | Always throws immediately | Never |
+
+### Threading Model and Error Propagation
+
+Understanding the threading model is crucial for error handling:
+
+```csharp
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+await driver.StartAsync("ws://localhost:9222/session");
+
+// Main thread (your code)
+Console.WriteLine("Main thread: Setting up event handler");
+
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    // Transport thread (separate from main thread)
+    Console.WriteLine($"Transport thread: Processing event {e.Type}");
+
+    // If this throws, the exception occurs on the transport thread
+    if (e.Level == LogLevel.Error)
+    {
+        throw new InvalidOperationException("Error log entry");
+    }
+});
+
+await driver.Session.SubscribeAsync(subscribeParams);
+
+Console.WriteLine("Main thread: Executing command");
+
+try
+{
+    // Main thread (your code)
+    // With Terminate mode: event handler exceptions from transport thread
+    // are surfaced here when we synchronize via this command
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+catch (WebDriverBiDiException ex)
+{
+    // Main thread catches the exception that originated on transport thread
+    Console.WriteLine($"Main thread: Caught exception from transport: {ex.Message}");
+}
+```
+
+### Connection-Level Error Monitoring
+
+For real-time error visibility without affecting behavior, use connection events:
+
+```csharp
+using WebDriverBiDi.Protocol;
+
+WebSocketConnection connection = new WebSocketConnection();
+
+// These run on the transport thread but don't throw to main thread
+connection.OnConnectionError.AddObserver((errorArgs) =>
+{
+    Console.WriteLine($"[Connection Error] {errorArgs.Exception.Message}");
+    LogToFile($"Transport error: {errorArgs.Exception}");
+});
+
+connection.OnLogMessage.AddObserver((logArgs) =>
+{
+    if (logArgs.Level == WebDriverBiDiLogLevel.Error)
+    {
+        Console.WriteLine($"[Transport Error Log] {logArgs.Message}");
+    }
+});
+
+Transport transport = new Transport(connection);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+await driver.StartAsync("ws://localhost:9222/session");
+```
+
+### Complete Error Handling Pattern
+
+Combine all approaches for comprehensive error management:
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Protocol;
+
+// Use Collect mode to gather all errors
+WebSocketConnection connection = new WebSocketConnection();
+Transport transport = new Transport(connection, TransportErrorBehavior.Collect);
+
+// Monitor errors in real-time via connection events
+connection.OnConnectionError.AddObserver((errorArgs) =>
+{
+    LogErrorAsync($"Transport error occurred: {errorArgs.Exception.Message}");
+});
+
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+try
+{
+    await driver.StartAsync("ws://localhost:9222/session");
+
+    // Set up event handlers with internal error handling
+    driver.Log.OnEntryAdded.AddObserver((e) =>
+    {
+        try
+        {
+            ProcessLogEntry(e);
+        }
+        catch (Exception ex)
+        {
+            // Handle error in handler itself
+            LogError($"Error in log handler: {ex.Message}");
+            throw;  // Still collected by transport
+        }
+    });
+
+    await driver.Session.SubscribeAsync(subscribeParams);
+
+    // Execute commands (errors always throw immediately)
+    try
+    {
+        await driver.BrowsingContext.NavigateAsync(navParams);
+    }
+    catch (WebDriverBiDiException ex)
+    {
+        Console.WriteLine($"Command failed: {ex.Message}");
+        throw;
+    }
+
+    // Check collected transport errors at appropriate checkpoints
+    if (transport.Errors.Count > 0)
+    {
+        Console.WriteLine($"\nTransport errors collected during operation:");
+        ReportCollectedErrors(transport.Errors);
+
+        // Decide how to handle
+        if (transport.Errors.Any(e => e is WebDriverBiDiProtocolException))
+        {
+            Console.WriteLine("Protocol errors detected - connection may be unstable");
+        }
+    }
+}
+finally
+{
+    await driver.StopAsync();
+}
+```
+
+### Best Practices
+
+1. **Use Terminate mode (default) in production**: Ensures errors are reported
+2. **Handle errors inside event handlers**: Use try-catch within handlers when possible
+3. **Use Collect mode for diagnostics**: Helpful for troubleshooting event handler issues
+4. **Monitor connection events**: Use OnConnectionError for real-time error visibility
+5. **Remember the threading model**: Event handlers run on separate threads
+6. **Check for errors at logical points**: With Collect mode, inspect errors after operations
+7. **Never rely on Ignore mode**: Always prefer explicit error handling
+
 ## Script Execution Errors
 
 ### Handling JavaScript Exceptions
@@ -349,16 +713,73 @@ public async Task<bool> WaitForElementAsync(
 
 ## Event Handler Errors
 
-### Handling Exceptions in Observers
+### Observable Event Handler Options
+
+Event handlers can be configured with `ObservableEventHandlerOptions` to control execution behavior:
 
 ```csharp
-// Bad: Unhandled exception crashes the observer
+[Flags]
+public enum ObservableEventHandlerOptions
+{
+    None = 0,                      // Synchronous execution (default)
+    RunHandlerAsynchronously = 1   // Asynchronous execution
+}
+```
+
+### Synchronous vs. Asynchronous Handlers
+
+By default (`None`), event handlers run synchronously on the transport thread, which blocks message processing:
+
+```csharp
+// ❌ Bad: Synchronous handler blocks transport thread
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    // This runs on the transport thread, blocking it
+    Thread.Sleep(1000);  // Blocks ALL message processing for 1 second!
+    ProcessLogEntry(e);
+});
+
+// ❌ Also bad: Default (None) still blocks
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    ProcessLogEntry(e);  // Blocks transport thread until complete
+}, ObservableEventHandlerOptions.None);
+
+// ✅ Good: Asynchronous handler doesn't block transport
+driver.Log.OnEntryAdded.AddObserver(
+    async (e) =>
+    {
+        // This runs on a Task pool thread
+        await Task.Delay(1000);  // Doesn't block transport thread
+        await ProcessLogEntryAsync(e);
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+```
+
+**When to Use Asynchronous Handlers:**
+- Handler performs I/O operations (file, network, database)
+- Handler does CPU-intensive work
+- Handler calls async APIs
+- You want to avoid blocking message processing
+- **Recommended for most scenarios where handler does more than trivial work**
+
+### Exception Handling in Event Handlers
+
+Event handler exceptions are subject to the `TransportErrorBehavior` setting:
+
+```csharp
+// Unhandled exception - behavior depends on TransportErrorBehavior
 driver.Log.OnEntryAdded.AddObserver((e) =>
 {
     ProcessLogEntry(e);  // May throw
+    // If throws:
+    //   Terminate mode: Exception thrown on next command
+    //   Collect mode: Exception stored in transport.Errors
+    //   Ignore mode: Exception discarded
 });
 
-// Good: Exception handling in observer
+// ✅ Better: Handle exceptions within the handler
 driver.Log.OnEntryAdded.AddObserver((e) =>
 {
     try
@@ -368,29 +789,194 @@ driver.Log.OnEntryAdded.AddObserver((e) =>
     catch (Exception ex)
     {
         Console.WriteLine($"Error processing log entry: {ex.Message}");
-        // Log error but don't crash
+        // Error handled, won't be reported to TransportErrorBehavior
     }
 });
 
-// Good: Async handler with error handling
-driver.Network.OnBeforeRequestSent.AddObserver(async (e) =>
+// ✅ Best: Async handler with error handling
+driver.Network.OnBeforeRequestSent.AddObserver(
+    async (e) =>
+    {
+        try
+        {
+            await ProcessNetworkRequestAsync(e);
+        }
+        catch (Exception ex)
+        {
+            await LogErrorAsync($"Error processing request: {ex.Message}");
+            // Error handled within handler
+        }
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+```
+
+### Handler Execution Behavior
+
+```csharp
+using WebDriverBiDi;
+
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+await driver.StartAsync("ws://localhost:9222/session");
+
+// Synchronous handler (default)
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    // Runs on transport thread
+    // Blocks transport until complete
+    // Other messages wait for this to finish
+    ProcessLogEntry(e);
+});
+
+// Explicit synchronous
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    ProcessLogEntry(e);
+}, ObservableEventHandlerOptions.None);
+
+// Asynchronous handler
+driver.Network.OnResponseCompleted.AddObserver(
+    async (e) =>
+    {
+        // Starts on transport thread, continues on task pool
+        // Transport thread returns immediately
+        // Other messages processed concurrently
+        await AnalyzeResponseAsync(e);
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+```
+
+### Multiple Handlers for Same Event
+
+When multiple handlers are registered, they all execute in sequence:
+
+```csharp
+// Handler 1 (synchronous)
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    Console.WriteLine($"Handler 1: {e.Text}");
+});
+
+// Handler 2 (synchronous)
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    Console.WriteLine($"Handler 2: {e.Text}");
+});
+
+// With synchronous handlers:
+// - Handler 1 executes completely, then Handler 2 executes
+// - If Handler 1 throws, TransportErrorBehavior determines what happens
+// - With Terminate: Exception thrown on next command
+// - With Collect: Exception collected, Handler 2 still executes
+// - With Ignore: Exception ignored, Handler 2 still executes
+```
+
+```csharp
+// Handler 1 (asynchronous)
+driver.Network.OnBeforeRequestSent.AddObserver(
+    async (e) =>
+    {
+        await LogRequestAsync(e.Request.Url);
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+
+// Handler 2 (asynchronous)
+driver.Network.OnBeforeRequestSent.AddObserver(
+    async (e) =>
+    {
+        await AnalyzeSecurityHeadersAsync(e.Request);
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+
+// With asynchronous handlers:
+// - Both handlers start and run concurrently
+// - Transport thread doesn't wait for either to complete
+// - Exceptions handled according to TransportErrorBehavior
+```
+
+### Complete Event Handler Pattern
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Protocol;
+
+// Use Collect mode to see all handler errors
+WebSocketConnection connection = new WebSocketConnection();
+Transport transport = new Transport(connection, TransportErrorBehavior.Collect);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+
+await driver.StartAsync("ws://localhost:9222/session");
+
+// Synchronous handler for quick operations
+driver.Log.OnEntryAdded.AddObserver((e) =>
 {
     try
     {
-        if (e.IsBlocked)
+        // Quick, synchronous operation
+        if (e.Level == LogLevel.Error || e.Level == LogLevel.Warn)
         {
-            await driver.Network.ContinueRequestAsync(
-                new ContinueRequestCommandParameters(e.Request.RequestId));
+            Console.WriteLine($"[{e.Level}] {e.Text}");
         }
     }
-    catch (WebDriverBiDiException ex)
+    catch (Exception ex)
     {
-        Console.WriteLine($"Error handling request: {ex.Message}");
-        // Continue execution, don't crash
+        Console.WriteLine($"Error in log handler: {ex.Message}");
     }
-},
-ObservableEventHandlerOptions.RunHandlerAsynchronously);
+});
+
+// Asynchronous handler for I/O operations
+driver.Network.OnResponseCompleted.AddObserver(
+    async (e) =>
+    {
+        try
+        {
+            // Async operation doesn't block transport
+            await SaveResponseToFileAsync(e.Response);
+        }
+        catch (Exception ex)
+        {
+            await LogErrorAsync($"Failed to save response: {ex.Message}");
+        }
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+
+await driver.Session.SubscribeAsync(subscribeParams);
+
+// After operations, check for any unhandled handler errors
+if (transport.Errors.Count > 0)
+{
+    Console.WriteLine($"Transport errors occurred: {transport.Errors.Count}");
+    foreach (var error in transport.Errors)
+    {
+        Console.WriteLine($"  - {error.Message}");
+    }
+}
 ```
+
+### Handler Options Decision Guide
+
+| Handler Does | Use Option | Why |
+|--------------|------------|-----|
+| Quick in-memory work (<10ms) | None (default) | Minimal overhead, acceptable blocking |
+| File I/O | RunHandlerAsynchronously | Don't block transport on disk operations |
+| Network requests | RunHandlerAsynchronously | Don't block transport on network |
+| Database queries | RunHandlerAsynchronously | Don't block transport on DB operations |
+| CPU-intensive work | RunHandlerAsynchronously | Don't block transport thread |
+| Logging to console | None | Quick operation, synchronous is fine |
+| Updating counters/state | None | Quick operation, synchronous is fine |
+
+### Best Practices for Event Handlers
+
+1. **Use async handlers for I/O**: Prevent blocking the transport thread
+2. **Handle exceptions internally**: Use try-catch within handlers when possible
+3. **Keep handlers fast**: Even async handlers should complete quickly
+4. **Don't perform long operations**: Offload heavy work to background services
+5. **Test handler error paths**: Verify your error handling works correctly
+6. **Monitor handler performance**: Track execution time to identify bottlenecks
 
 ## Validation and Defensive Programming
 

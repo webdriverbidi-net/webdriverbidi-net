@@ -286,42 +286,142 @@ observer.WaitForCheckpoint(TimeSpan.FromSeconds(5));
 
 ## Async Event Handlers
 
-When event handlers perform async operations, special care is needed.
+When event handlers perform async operations or I/O, you must use asynchronous handler execution to avoid blocking the transport thread.
 
-### The Problem
+### Observable Event Handler Options
+
+The `ObservableEventHandlerOptions` enum controls how event handlers execute:
 
 ```csharp
-// ❌ WRONG: Handler blocks message processing
+[Flags]
+public enum ObservableEventHandlerOptions
+{
+    None = 0,                      // Synchronous execution (default)
+    RunHandlerAsynchronously = 1   // Asynchronous execution
+}
+```
+
+### Synchronous Handlers (Default)
+
+By default, event handlers run synchronously on the transport thread:
+
+```csharp
+// Default behavior - runs synchronously
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    // This runs on the transport thread
+    // Blocks all message processing until complete
+    Console.WriteLine(e.Text);
+});
+```
+
+**Use When:**
+- Handler completes quickly (<10ms)
+- Performing simple, in-memory operations (counters, collections)
+- No I/O operations
+- Order of execution matters
+
+### The Blocking Problem
+
+```csharp
+// ❌ BAD: Handler blocks message processing
 driver.Network.OnBeforeRequestSent.AddObserver((e) =>
 {
     // This blocks the Transport thread for 5 seconds!
     Thread.Sleep(5000);
     Console.WriteLine($"Request: {e.Request.Url}");
+
+    // During these 5 seconds:
+    // - No other events are processed
+    // - No responses are received
+    // - Commands may timeout
+    // - Browser may become unresponsive
 });
 ```
 
-### The Solution
+### Asynchronous Handlers
+
+Use `RunHandlerAsynchronously` for I/O operations or long-running work:
 
 ```csharp
-// ✓ CORRECT: Handler runs asynchronously
-EventObserver<BeforeRequestSentEventArgs> observer = 
+// ✅ GOOD: Handler runs asynchronously
+EventObserver<BeforeRequestSentEventArgs> observer =
     driver.Network.OnBeforeRequestSent.AddObserver(
         async (e) =>
         {
             // Doesn't block message processing
             await Task.Delay(5000);
             Console.WriteLine($"Request: {e.Request.Url}");
+
+            // During these 5 seconds:
+            // - Transport thread continues processing
+            // - Other events are handled normally
+            // - Handler runs on Task pool thread
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously
     );
 ```
 
-### Waiting for Async Handlers
+**Use When:**
+- Handler performs I/O (file, network, database)
+- Handler does CPU-intensive work
+- You need to call driver commands from the handler
+- Handler might take more than a few milliseconds
 
-When handlers are async, use `GetCheckpointTasks()` to wait for them:
+### Practical Examples
+
+#### Quick Operations (Synchronous)
 
 ```csharp
-EventObserver<BeforeRequestSentEventArgs> observer = 
+// Counter - quick in-memory operation
+int requestCount = 0;
+driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+{
+    requestCount++;  // Fast, synchronous is fine
+});
+
+// List collection - quick in-memory operation
+List<string> urls = new List<string>();
+driver.Network.OnResponseCompleted.AddObserver((e) =>
+{
+    urls.Add(e.Response.Url);  // Quick, synchronous is fine
+});
+```
+
+#### I/O Operations (Asynchronous)
+
+```csharp
+// File I/O - use async
+driver.Log.OnEntryAdded.AddObserver(
+    async (e) =>
+    {
+        await File.AppendAllTextAsync("log.txt", $"{e.Text}\n");
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+
+// Database operations - use async
+driver.Log.OnEntryAdded.AddObserver(
+    async (e) =>
+    {
+        await dbContext.Logs.AddAsync(new LogEntry
+        {
+            Level = e.Level,
+            Message = e.Text,
+            Timestamp = e.Timestamp
+        });
+        await dbContext.SaveChangesAsync();
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+```
+
+### Synchronizing with Async Handlers
+
+When handlers are async, you need to synchronize if you want to ensure they complete before continuing:
+
+```csharp
+EventObserver<BeforeRequestSentEventArgs> observer =
     driver.Network.OnBeforeRequestSent.AddObserver(
         async (e) =>
         {
@@ -346,6 +446,114 @@ if (occurred)
     await Task.WhenAll(handlerTasks);
     Console.WriteLine("All handlers completed");
 }
+```
+
+### Using TaskCompletionSource for Complex Synchronization
+
+For long-running handlers, use `TaskCompletionSource` to track completion:
+
+```csharp
+List<Task> handlerTasks = new();
+
+EventObserver<BeforeRequestSentEventArgs> observer =
+    driver.Network.OnBeforeRequestSent.AddObserver(
+        async (e) =>
+        {
+            TaskCompletionSource taskCompletionSource = new();
+            handlerTasks.Add(taskCompletionSource.Task);
+
+            try
+            {
+                Console.WriteLine($"Processing request: {e.Request.Url}");
+
+                // Long-running operation
+                await Task.Delay(TimeSpan.FromSeconds(4));
+                await ProcessRequestAsync(e);
+
+                Console.WriteLine($"Completed request: {e.Request.Url}");
+                taskCompletionSource.SetResult();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Handler error: {ex.Message}");
+                taskCompletionSource.SetException(ex);
+            }
+        },
+        ObservableEventHandlerOptions.RunHandlerAsynchronously
+    );
+
+// Subscribe to events
+SubscribeCommandParameters subscribe = new();
+subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+await driver.Session.SubscribeAsync(subscribe);
+
+// Set checkpoint for expected number of events (e.g., 5 requests)
+observer.SetCheckpoint(5);
+
+// Trigger navigation
+NavigateCommandParameters navParams = new(contextId, "https://example.com")
+{
+    Wait = ReadinessState.Complete
+};
+NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navParams);
+Console.WriteLine("Navigation command completed");
+
+// Important: The navigation command completes before handlers finish
+// Wait for all events to occur
+observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+
+// Wait for all async handlers to complete
+Task.WaitAll(handlerTasks.ToArray());
+Console.WriteLine("All event handlers completed");
+```
+
+**Why This Matters:**
+
+Without synchronization, your main code might exit before async handlers complete:
+
+```csharp
+// ❌ PROBLEM: Main thread may exit before handlers complete
+EventObserver<BeforeRequestSentEventArgs> observer =
+    driver.Network.OnBeforeRequestSent.AddObserver(
+        async (e) =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));  // Long operation
+            Console.WriteLine($"Request: {e.Request.Url}");
+        },
+        ObservableEventHandlerOptions.RunHandlerAsynchronously
+    );
+
+observer.SetCheckpoint(5);
+await driver.BrowsingContext.NavigateAsync(params);
+
+// Navigation completes...
+// Main code continues...
+// Application might exit before handlers finish!
+
+// ✅ SOLUTION: Use TaskCompletionSource and wait
+List<Task> handlerTasks = new();
+
+EventObserver<BeforeRequestSentEventArgs> observer =
+    driver.Network.OnBeforeRequestSent.AddObserver(
+        async (e) =>
+        {
+            TaskCompletionSource tcs = new();
+            handlerTasks.Add(tcs.Task);
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            Console.WriteLine($"Request: {e.Request.Url}");
+
+            tcs.SetResult();
+        },
+        ObservableEventHandlerOptions.RunHandlerAsynchronously
+    );
+
+observer.SetCheckpoint(5);
+await driver.BrowsingContext.NavigateAsync(params);
+observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+
+// Wait for all handlers to complete before continuing
+Task.WaitAll(handlerTasks.ToArray());
 ```
 
 ### Calling Commands in Event Handlers

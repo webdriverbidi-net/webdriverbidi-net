@@ -14,6 +14,42 @@ using System.Text;
 /// This is used with Chromium's --remote-debugging-pipe flag, which on non-Windows
 /// systems communicates via file descriptors 3 (browser reads) and 4 (browser writes).
 /// </summary>
+/// <remarks>
+/// <para>
+/// <see cref="PipeConnection"/> provides a specialized transport mechanism for browser communication
+/// using anonymous pipes instead of WebSockets. This offers slightly lower latency but requires
+/// the browser and application to be on the same machine.
+/// </para>
+/// <para>
+/// <strong>When to consider pipe connections:</strong>
+/// <list type="bullet">
+/// <item><description>High-performance local test suites where latency is critical</description></item>
+/// <item><description>Browser implementation supports --remote-debugging-pipe (currently only Chromium-based browsers)</description></item>
+/// <item><description>Browser and tests run on the same machine</description></item>
+/// </list>
+/// </para>
+/// <para>
+/// <strong>Protocol details:</strong>
+/// <list type="bullet">
+/// <item><description>Messages are null-terminated JSON strings (each message ends with \0)</description></item>
+/// <item><description>On Unix systems: Browser reads from file descriptor 3, writes to file descriptor 4</description></item>
+/// <item><description>On Windows: Uses named pipe handles</description></item>
+/// <item><description>Requires <see cref="IPipeServerProcessProvider"/> for process lifecycle management</description></item>
+/// </list>
+/// </para>
+/// <para>
+/// <strong>Limitations:</strong>
+/// <list type="bullet">
+/// <item><description>Only supported by Chromium-based browsers (Chrome, Edge)</description></item>
+/// <item><description>Cannot connect to remote browsers</description></item>
+/// <item><description>More complex setup than WebSocket connections</description></item>
+/// </list>
+/// </para>
+/// <para>
+/// <strong>Recommendation:</strong> Most users should use <see cref="WebSocketConnection"/> instead.
+/// Pipe connections are only beneficial for specialized high-performance scenarios with Chromium browsers.
+/// </para>
+/// </remarks>
 public class PipeConnection : Connection
 {
     private readonly SemaphoreSlim dataSendSemaphore = new(1, 1);

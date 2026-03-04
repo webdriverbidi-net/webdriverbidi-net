@@ -22,10 +22,200 @@ await driver.StopAsync();
 
 ### Key Responsibilities
 
-- Manages the WebSocket connection to the browser
+- Manages the connection to the browser (WebSocket or Pipes)
 - Provides access to all protocol modules
 - Handles command execution and response correlation
 - Dispatches events to registered observers
+
+### Driver Lifecycle
+
+The `BiDiDriver` has a well-defined lifecycle with important timing restrictions:
+
+```csharp
+// 1. Create driver
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+// 2. Register modules and event handlers BEFORE starting
+driver.RegisterModule(customModule);
+driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
+
+// 3. Start the driver
+await driver.StartAsync("ws://localhost:9222/session");
+
+// 4. Check if started
+if (driver.IsStarted)
+{
+    // Execute commands...
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+
+// 5. Stop when done
+await driver.StopAsync();
+```
+
+#### IsStarted Property
+
+The `IsStarted` property indicates whether the driver is currently connected:
+
+```csharp
+if (!driver.IsStarted)
+{
+    await driver.StartAsync(webSocketUrl);
+}
+
+// Execute commands only when started
+if (driver.IsStarted)
+{
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+```
+
+**Use Cases:**
+- Check driver state before operations
+- Verify connection before executing commands
+- Safe disposal patterns
+
+#### Timing Restrictions
+
+**Critical:** Module and event registration must happen BEFORE calling `StartAsync()`:
+
+```csharp
+// ✅ CORRECT: Register before starting
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+driver.RegisterModule(new CustomModule(driver));
+driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
+
+await driver.StartAsync("ws://localhost:9222/session");
+
+// ❌ WRONG: Cannot register after starting
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+await driver.StartAsync("ws://localhost:9222/session");
+
+// This will throw an exception!
+driver.RegisterModule(new CustomModule(driver));
+driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
+```
+
+**Why This Restriction Exists:**
+- Ensures all handlers are in place before events start flowing
+- Prevents race conditions
+- Maintains predictable initialization order
+
+#### Command Timeout Configuration
+
+Configure command timeout when creating the driver:
+
+```csharp
+// Default timeout (5 minutes)
+BiDiDriver driver = new BiDiDriver();
+
+// Custom timeout (30 seconds)
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+// Short timeout for fast operations
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(5));
+
+// Long timeout for slow operations
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromMinutes(10));
+```
+
+The timeout applies to all command executions by default, but can be overridden per-command:
+
+```csharp
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+// Use driver's default timeout (30 seconds)
+await driver.BrowsingContext.NavigateAsync(navParams);
+
+// Override with custom timeout for this command
+await driver.ExecuteCommandAsync<NavigateCommandResult>(
+    navParams,
+    TimeSpan.FromSeconds(60)  // Use 60 seconds for this command
+);
+```
+
+#### Proper Disposal
+
+Always dispose of the driver when done:
+
+```csharp
+// Using statement (recommended)
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+try
+{
+    await driver.StartAsync(webSocketUrl);
+    // Use driver...
+}
+finally
+{
+    await driver.StopAsync();
+}
+
+// Or with async disposal
+await using BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+await driver.StartAsync(webSocketUrl);
+// Use driver...
+// Automatically disposed at end of scope
+```
+
+#### Complete Lifecycle Example
+
+```csharp
+using WebDriverBiDi;
+using WebDriverBiDi.Protocol;
+
+// Create driver with custom timeout
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+try
+{
+    // Register event handlers before starting
+    driver.Log.OnEntryAdded.AddObserver((e) =>
+    {
+        Console.WriteLine($"[{e.Level}] {e.Text}");
+    });
+
+    driver.BrowsingContext.OnLoad.AddObserver((e) =>
+    {
+        Console.WriteLine($"Page loaded: {e.Url}");
+    });
+
+    // Start the driver
+    await driver.StartAsync("ws://localhost:9222/session");
+
+    // Verify driver is started
+    if (!driver.IsStarted)
+    {
+        throw new InvalidOperationException("Driver failed to start");
+    }
+
+    // Subscribe to events
+    SubscribeCommandParameters subscribe = new();
+    subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+    subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+    await driver.Session.SubscribeAsync(subscribe);
+
+    // Execute commands
+    GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
+        new GetTreeCommandParameters());
+    string contextId = tree.ContextTree[0].BrowsingContextId;
+
+    NavigateCommandParameters navParams = new(contextId, "https://example.com")
+    {
+        Wait = ReadinessState.Complete
+    };
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+finally
+{
+    // Always stop the driver
+    if (driver.IsStarted)
+    {
+        await driver.StopAsync();
+    }
+}
+```
 
 ## Modules
 

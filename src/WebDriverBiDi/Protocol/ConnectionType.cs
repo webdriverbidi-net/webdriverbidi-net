@@ -13,10 +13,19 @@ public enum ConnectionType
     /// <summary>
     /// The connection communicates with the browser over a WebSocket.
     /// </summary>
+    /// <remarks>
+    /// WebSocket connections are the standard and recommended transport for all scenarios.
+    /// They support all browsers with WebDriver BiDi and work for both local and remote connections.
+    /// </remarks>
     WebSocket,
 
     /// <summary>
-    /// The connection communicates with the browser over named pipes.
+    /// The connection communicates with the browser over anonymous pipes.
     /// </summary>
+    /// <remarks>
+    /// Pipe connections provide slightly lower latency for local automation scenarios but are only
+    /// supported by Chromium-based browsers and require the browser and tests to be on the same machine.
+    /// Use only for specialized high-performance scenarios.
+    /// </remarks>
     Pipes,
 }

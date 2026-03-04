@@ -80,6 +80,15 @@ geckodriver --port 4444
 
 For Chromium-based browsers, navigate to `http://localhost:9222/json/version` to find the `webSocketDebuggerUrl`.
 
+### Connection Methods
+
+WebDriverBiDi.NET supports two ways to connect to browsers:
+
+- **WebSocket Connection** (used in this guide): Browser listens on a port, your application connects via WebSocket URL
+- **Pipe Connection**: Browser communicates via anonymous pipes for lower latency
+
+For getting started, WebSocket connections are recommended as they're simpler to configure and supported by most browsers. See [Browser Setup](browser-setup.md#connection-types) for more details about connection methods.
+
 ## Creating Your First Application
 
 ### 1. Create a New Console Application
@@ -103,6 +112,7 @@ using WebDriverBiDi.Script;
 string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID";
 
 // Create a driver with a 10-second command timeout
+// Using default WebSocket connection
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
 
 try
@@ -231,9 +241,11 @@ The third parameter (`true`) indicates whether to await promises in the JavaScri
 Now that you have a working WebDriverBiDi.NET application, explore these topics:
 
 1. **[Core Concepts](core-concepts.md)**: Understand modules, commands, and events
-2. **[Browser Module](modules/browser.md)**: Learn about browser-level operations
-3. **[Events and Observables](events-observables.md)**: Handle browser events asynchronously
-4. **[Common Scenarios](examples/common-scenarios.md)**: See practical examples
+2. **[Browser Setup](browser-setup.md)**: Learn about connection types and browser configuration
+3. **[Architecture](architecture.md)**: Understand the library's design and connection architecture
+4. **[Browser Module](modules/browser.md)**: Learn about browser-level operations
+5. **[Events and Observables](events-observables.md)**: Handle browser events asynchronously
+6. **[Common Scenarios](examples/common-scenarios.md)**: See practical examples
 
 ## Troubleshooting
 

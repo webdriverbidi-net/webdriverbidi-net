@@ -88,6 +88,21 @@ public class BiDiDriver : IAsyncDisposable
     /// </summary>
     /// <param name="defaultCommandWaitTimeout">The default timeout to wait for a command to complete.</param>
     /// <param name="transport">The protocol transport object used to communicate with the browser.</param>
+    /// <remarks>
+    /// <para>
+    /// This constructor is used when you need to provide a custom <see cref="Transport"/> instance,
+    /// typically for advanced scenarios such as:
+    /// <list type="bullet">
+    /// <item><description>Using a custom <see cref="Connection"/> implementation with specific timeout configurations</description></item>
+    /// <item><description>Sharing a transport across multiple driver instances (not recommended for typical usage)</description></item>
+    /// <item><description>Integrating with specialized connection management frameworks</description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// Most users should use the simpler <see cref="BiDiDriver(TimeSpan)"/> constructor instead,
+    /// which creates a default WebSocket-based transport automatically.
+    /// </para>
+    /// </remarks>
     public BiDiDriver(TimeSpan defaultCommandWaitTimeout, Transport transport)
     {
         this.defaultCommandWaitTimeout = defaultCommandWaitTimeout;
@@ -233,6 +248,20 @@ public class BiDiDriver : IAsyncDisposable
     /// <summary>
     /// Gets a value indicating whether the driver has started communication with the remote end of the WebDriver BiDi protocol.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This property returns <see langword="true"/> after <see cref="StartAsync(string, CancellationToken)"/> completes successfully
+    /// and remains <see langword="true"/> until <see cref="StopAsync(CancellationToken)"/> is called or the connection is lost.
+    /// </para>
+    /// <para>
+    /// Use this property to check driver state before executing commands or during cleanup operations.
+    /// </para>
+    /// <para>
+    /// <strong>Important timing restriction:</strong> Modules and event handlers must be registered
+    /// <em>before</em> calling <see cref="StartAsync(string, CancellationToken)"/>. Attempting to call
+    /// <see cref="RegisterModule(Module)"/> after the driver has started will throw an <see cref="InvalidOperationException"/>.
+    /// </para>
+    /// </remarks>
     public bool IsStarted => this.transport.IsConnected;
 
     /// <summary>
@@ -459,6 +488,26 @@ public class BiDiDriver : IAsyncDisposable
     /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name that has already been registered.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown when attempting to call this method after the driver has been started.</exception>
+    /// <remarks>
+    /// <para>
+    /// <strong>Critical timing restriction:</strong> Modules must be registered <em>before</em> calling
+    /// <see cref="StartAsync(string, CancellationToken)"/>. Once the driver has started, module registration
+    /// is locked to prevent race conditions with event handling.
+    /// </para>
+    /// <para>
+    /// This method is used for registering custom modules that extend the WebDriver BiDi protocol.
+    /// All standard modules (Browser, BrowsingContext, Script, Network, etc.) are registered automatically
+    /// during driver construction and do not need explicit registration.
+    /// </para>
+    /// <para>
+    /// Example usage:
+    /// <code>
+    /// BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+    /// driver.RegisterModule(new CustomModule(driver));  // Must be before StartAsync
+    /// await driver.StartAsync(webSocketUrl);
+    /// </code>
+    /// </para>
+    /// </remarks>
     public virtual void RegisterModule(Module module)
     {
         this.ThrowIfDisposed();
