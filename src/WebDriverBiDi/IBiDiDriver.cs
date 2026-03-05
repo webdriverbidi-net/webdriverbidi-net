@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
@@ -13,14 +14,13 @@ using WebDriverBiDi.Protocol;
 /// driver classes. It extends <see cref="IAsyncDisposable"/> to allow for proper asynchronous
 /// disposal of resources.
 /// </summary>
-/// <remorks>
+/// <remarks>
 /// This interface is not intended to be implemented by users of this library. It is exposed publicly
 /// to allow for testing and to allow users to implement their own driver classes if they choose.
-/// Critically, not all implementations will choose to use the module-based architecture of the primary
-/// implementation in <see cref="BiDiDriver"/>, so this interface allows for flexibility in how a driver
-/// can be implemented while still providing the core functionality needed to interact with the WebDriver
-/// BiDi protocol.
-/// </remorks>
+/// Normal usage of this library should involve using the <see cref="BiDiDriver"/> class, which
+/// provides a complete implementation. This interface should be used only by advanced users who
+/// are implementing custom driver behavior or for testing purposes.
+/// </remarks>
 public interface IBiDiDriver : IAsyncDisposable
 {
     /// <summary>
@@ -115,4 +115,27 @@ public interface IBiDiDriver : IAsyncDisposable
     /// <param name="eventName">The name of the event to raise.</param>
     /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
     void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker);
+
+    /// <summary>
+    /// Registers a module for use with this driver.
+    /// </summary>
+    /// <param name="module">The module object.</param>
+    void RegisterModule(Module module);
+
+    /// <summary>
+    /// Gets a module from the set of registered modules for this driver.
+    /// </summary>
+    /// <typeparam name="T">A module object which is a subclass of <see cref="Module"/>.</typeparam>
+    /// <param name="moduleName">The name of the module to return.</param>
+    /// <returns>The protocol module object.</returns>
+    T GetModule<T>(string moduleName)
+        where T : Module;
+
+    /// <summary>
+    /// Registers an additional <see cref="IJsonTypeInfoResolver"/> for JSON serialization
+    /// and deserialization. This allows custom types, such as those from user-defined modules,
+    /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
+    /// </summary>
+    /// <param name="resolver">The type info resolver to add.</param>
+    void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
 }

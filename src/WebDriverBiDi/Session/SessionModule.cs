@@ -19,7 +19,7 @@ public sealed class SessionModule : Module
     /// Initializes a new instance of the <see cref="SessionModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
-    public SessionModule(BiDiDriver driver)
+    public SessionModule(IBiDiDriver driver)
         : base(driver)
     {
     }

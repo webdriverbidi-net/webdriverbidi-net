@@ -19,8 +19,8 @@ public sealed class PermissionsModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="PermissionsModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
-    public PermissionsModule(BiDiDriver driver)
+    /// <param name="driver">The <see cref="IBiDiDriver"/> used in the module commands and events.</param>
+    public PermissionsModule(IBiDiDriver driver)
         : base(driver)
     {
     }
