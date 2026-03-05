@@ -21,6 +21,12 @@ public sealed class ReceivedDataDictionary : ReadOnlyDictionary<string, object?>
     /// Initializes a new instance of the <see cref="ReceivedDataDictionary"/> class.
     /// </summary>
     /// <param name="dictionary">The dictionary of additional data.</param>
+    /// <remarks>
+    /// Use of this constructor is not thread-safe, as it mutates the entries in the
+    /// input dictionary. Internal use within the WebDriver BiDi library is thread-safe,
+    /// as the library ensures that this constructor is only called in a single-threaded
+    /// context.
+    /// </remarks>
     public ReceivedDataDictionary(Dictionary<string, object?> dictionary)
         : base(dictionary)
     {
