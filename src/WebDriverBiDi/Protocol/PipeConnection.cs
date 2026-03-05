@@ -256,11 +256,8 @@ public class PipeConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected virtual async Task SendPipeDataAsync(byte[] messageBuffer, CancellationToken cancellationToken = default)
     {
-        // Note use of the null-forgiving operator (!) here, as the pipeToProcess
-        // should never be null when this method is called (it's only called after
-        // IsActive check in SendDataAsync).
         // Write the data followed by a null terminator
-        await this.pipeToProcess!.WriteAsync(messageBuffer, 0, messageBuffer.Length, cancellationToken).ConfigureAwait(false);
+        await this.pipeToProcess.WriteAsync(messageBuffer, 0, messageBuffer.Length, cancellationToken).ConfigureAwait(false);
         byte[] nullTerminator = [0];
         await this.pipeToProcess.WriteAsync(nullTerminator, 0, 1, cancellationToken).ConfigureAwait(false);
         await this.pipeToProcess.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -276,10 +273,7 @@ public class PipeConnection : Connection
     /// <returns>A task representing the asynchronous operation, with a result containing the number of bytes read.</returns>
     protected virtual async Task<int> ReadPipeDataAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken = default)
     {
-        // Note use of the null-forgiving operator (!) here, as the pipeFromProcess
-        // should never be null when this method is called (it's only called after
-        // StartAsync which ensures the pipes are initialized).
-        return await this.pipeFromProcess!.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+        return await this.pipeFromProcess.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

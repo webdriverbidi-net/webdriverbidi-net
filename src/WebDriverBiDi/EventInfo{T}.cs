@@ -51,13 +51,9 @@ public class EventInfo<T>
 
     /// <summary>
     /// Creates an object derived from WebDriverBiDiEventArgs which contains information about an event.
-    /// When T and TEventArgs are different types, this method uses reflection to locate a public
-    /// constructor on TEventArgs that accepts an argument of type T. Prefer the overload accepting
-    /// a factory function for AOT and trimming compatibility.
     /// </summary>
     /// <typeparam name="TEventArgs">
-    /// A type derived from WebDriverBiDiEventArgs. The type must be the same as type T of this class,
-    /// or must have a public constructor that takes an argument of type T.
+    /// A type derived from WebDriverBiDiEventArgs. The type must be the same as type T of this class.
     /// </typeparam>
     /// <returns>The object containing the information about the event.</returns>
     /// <exception cref="WebDriverBiDiException">

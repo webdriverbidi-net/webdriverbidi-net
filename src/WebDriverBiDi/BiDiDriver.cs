@@ -663,7 +663,7 @@ public class BiDiDriver : IBiDiDriver
     {
         if (this.eventInvokers.TryGetValue(e.EventName, out EventInvoker? invoker))
         {
-            await invoker.InvokeEventAsync(e.EventData!, e.AdditionalData);
+            await invoker.InvokeEventAsync(e.EventData, e.AdditionalData);
         }
 
         await this.OnEventReceived.NotifyObserversAsync(e);
