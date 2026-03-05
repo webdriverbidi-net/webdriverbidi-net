@@ -72,6 +72,11 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     /// <summary>
     /// Gets the list of browsing context IDs for which to subscribe to the specified events for serialization purposes.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
@@ -91,6 +96,11 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     /// <summary>
     /// Gets the list of user context IDs for which to subscribe to the specified events for serialization purposes.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]

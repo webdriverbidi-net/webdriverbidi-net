@@ -43,6 +43,11 @@ public class ContinueResponseCommandParameters : CommandParameters<ContinueRespo
     /// <summary>
     /// Gets or sets the headers of the response.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("headers")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<Header>? Headers { get; set; }
@@ -50,6 +55,11 @@ public class ContinueResponseCommandParameters : CommandParameters<ContinueRespo
     /// <summary>
     /// Gets or sets the cookies of the response.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("cookies")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<SetCookieHeader>? Cookies { get; set; }

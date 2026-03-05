@@ -27,6 +27,11 @@ public class SetCacheBehaviorCommandParameters : CommandParameters<SetCacheBehav
     /// <summary>
     /// Gets or sets the contexts, if any, for which to set the cache behavior.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }

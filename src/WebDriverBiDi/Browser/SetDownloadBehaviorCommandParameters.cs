@@ -36,6 +36,11 @@ public class SetDownloadBehaviorCommandParameters : CommandParameters<SetDownloa
     /// <summary>
     /// Gets or sets the list of user contexts for which to set the download behavior.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? UserContexts { get; set; }

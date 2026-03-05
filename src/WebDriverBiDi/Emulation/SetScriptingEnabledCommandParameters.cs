@@ -38,6 +38,11 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// <summary>
     /// Gets or sets the browsing contexts for which to set whether scripting is enabled.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? Contexts { get; set; }
@@ -45,6 +50,11 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// <summary>
     /// Gets or sets the user contexts for which to set whether scripting is enabled.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("userContexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? UserContexts { get; set; }

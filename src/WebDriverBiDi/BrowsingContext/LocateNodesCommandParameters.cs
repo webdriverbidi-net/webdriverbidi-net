@@ -67,6 +67,11 @@ public class LocateNodesCommandParameters : CommandParameters<LocateNodesCommand
     /// <summary>
     /// Gets the list of context nodes for serialization purposes.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("startNodes")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

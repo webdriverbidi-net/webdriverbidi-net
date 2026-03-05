@@ -58,6 +58,11 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// If present, it must contain at least one browsing context ID, and all IDs must represent top-level
     /// browsing contexts, or an error will be thrown by the remote end.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("contexts")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? BrowsingContextIds { get; set; }
@@ -65,6 +70,11 @@ public class AddInterceptCommandParameters : CommandParameters<AddInterceptComma
     /// <summary>
     /// Gets or sets the list of URL patterns for which to intercept network traffic.
     /// </summary>
+    /// <remarks>
+    /// This property is nullable to distinguish between omitting the property from the JSON payload (null)
+    /// and sending an empty array (empty list). When null, the property is not included in the command;
+    /// when an empty list, an empty array is sent to the remote end.
+    /// </remarks>
     [JsonPropertyName("urlPatterns")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
