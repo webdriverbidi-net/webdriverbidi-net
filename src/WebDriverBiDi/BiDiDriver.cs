@@ -26,7 +26,7 @@ using WebDriverBiDi.WebExtension;
 /// <summary>
 /// Object containing commands to drive a browser using the WebDriver BiDi protocol.
 /// </summary>
-public class BiDiDriver : IAsyncDisposable
+public class BiDiDriver : IBiDiDriver
 {
     /// <summary>
     /// Gets the default command timeout if a timeout is not specified in the constructor.
@@ -262,7 +262,7 @@ public class BiDiDriver : IAsyncDisposable
     /// <see cref="RegisterModule(Module)"/> after the driver has started will throw an <see cref="InvalidOperationException"/>.
     /// </para>
     /// </remarks>
-    public bool IsStarted => this.transport.IsConnected;
+    public virtual bool IsStarted => this.transport.IsConnected;
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers
@@ -270,7 +270,7 @@ public class BiDiDriver : IAsyncDisposable
     /// exceptions from event handlers will be caught and logged but will not cause the driver to stop
     /// processing messages from the transport.
     /// </summary>
-    public TransportErrorBehavior EventHandlerExceptionBehavior { get => this.transport.EventHandlerExceptionBehavior; set => this.transport.EventHandlerExceptionBehavior = value; }
+    public virtual TransportErrorBehavior EventHandlerExceptionBehavior { get => this.transport.EventHandlerExceptionBehavior; set => this.transport.EventHandlerExceptionBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions when a protocol error is
@@ -278,7 +278,7 @@ public class BiDiDriver : IAsyncDisposable
     /// that exceptions from protocol errors will be caught and logged but will not cause the driver to
     /// stop processing messages from the transport.
     /// </summary>
-    public TransportErrorBehavior ProtocolErrorBehavior { get => this.transport.ProtocolErrorBehavior; set => this.transport.ProtocolErrorBehavior = value; }
+    public virtual TransportErrorBehavior ProtocolErrorBehavior { get => this.transport.ProtocolErrorBehavior; set => this.transport.ProtocolErrorBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions when an unknown message is
@@ -286,7 +286,7 @@ public class BiDiDriver : IAsyncDisposable
     /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unknown messages will
     /// be caught and logged, but will not cause the driver to stop processing messages from the transport.
     /// </summary>
-    public TransportErrorBehavior UnknownMessageBehavior { get => this.transport.UnknownMessageBehavior; set => this.transport.UnknownMessageBehavior = value; }
+    public virtual TransportErrorBehavior UnknownMessageBehavior { get => this.transport.UnknownMessageBehavior; set => this.transport.UnknownMessageBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions when an unexpected error is
@@ -294,7 +294,7 @@ public class BiDiDriver : IAsyncDisposable
     /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unexpected errors will
     /// be caught and logged but will not cause the driver to stop processing messages from the transport.
     /// </summary>
-    public TransportErrorBehavior UnexpectedErrorBehavior { get => this.transport.UnexpectedErrorBehavior; set => this.transport.UnexpectedErrorBehavior = value; }
+    public virtual TransportErrorBehavior UnexpectedErrorBehavior { get => this.transport.UnexpectedErrorBehavior; set => this.transport.UnexpectedErrorBehavior = value; }
 
     /// <summary>
     /// Gets a value indicating whether this driver is disposed.
@@ -305,15 +305,15 @@ public class BiDiDriver : IAsyncDisposable
     /// <summary>
     /// Asynchronously starts the communication with the remote end of the WebDriver BiDi protocol.
     /// </summary>
-    /// <param name="url">The URL of the remote end.</param>
+    /// <param name="connectionString">The connection string used to connect to the remote end. Usually the URL to the WebSocket used to communicate with the remote end.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
-    public virtual async Task StartAsync(string url, CancellationToken cancellationToken = default)
+    public virtual async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
-        await this.transport.ConnectAsync(url, cancellationToken).ConfigureAwait(false);
+        await this.transport.ConnectAsync(connectionString, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -332,7 +332,7 @@ public class BiDiDriver : IAsyncDisposable
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
@@ -353,7 +353,7 @@ public class BiDiDriver : IAsyncDisposable
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
@@ -373,7 +373,7 @@ public class BiDiDriver : IAsyncDisposable
     /// </summary>
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
@@ -393,7 +393,7 @@ public class BiDiDriver : IAsyncDisposable
     /// <typeparam name="T">The expected type of the result of the command.</typeparam>
     /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
