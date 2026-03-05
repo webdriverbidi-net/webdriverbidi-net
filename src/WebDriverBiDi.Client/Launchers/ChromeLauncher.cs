@@ -126,6 +126,12 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// </summary>
     public ConnectionType ConnectionType { get; set; } = ConnectionType.WebSocket;
 
+    /// <summary>
+    /// Gets the process that hosts the pipe server. This process is
+    /// expected to be started and running when accessed. The pipe
+    /// server process should be responsible for managing the lifetime
+    /// of the pipe handles used for communication.
+    /// </summary>
     public Process? PipeServerProcess => this.browserProcess;
 
     private IList<string> CommandLineArguments
@@ -257,11 +263,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     public override Transport CreateTransport()
     {
         return new ChromiumTransport(this.connection ?? this.CreateConnection());
-    }
-
-    public Process CreatePipeServerProcess(string inputPipeHandle, string outputPipeHandle)
-    {
-        throw new NotImplementedException();
     }
 
     /// <summary>
