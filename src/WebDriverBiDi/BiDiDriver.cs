@@ -513,7 +513,7 @@ public class BiDiDriver : IAsyncDisposable
         this.ThrowIfDisposed();
         if (this.IsStarted)
         {
-            throw new InvalidOperationException("Cannot register a type info resolver after the driver has started");
+            throw new InvalidOperationException("Cannot register a module after the driver has started");
         }
 
         if (!this.modules.TryAdd(module.ModuleName, module))
