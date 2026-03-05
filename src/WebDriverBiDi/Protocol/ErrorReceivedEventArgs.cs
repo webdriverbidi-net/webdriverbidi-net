@@ -14,13 +14,13 @@ public record ErrorReceivedEventArgs : WebDriverBiDiEventArgs
     /// Initializes a new instance of the <see cref="ErrorReceivedEventArgs" /> class.
     /// </summary>
     /// <param name="errorData">The data about the error received from the connection.</param>
-    public ErrorReceivedEventArgs(ErrorResult? errorData)
+    public ErrorReceivedEventArgs(ErrorResult errorData)
     {
-        this.ErrorData = errorData;
+        this.ErrorData = errorData ?? throw new ArgumentNullException(nameof(errorData));
     }
 
     /// <summary>
     /// Gets the error response data.
     /// </summary>
-    public ErrorResult? ErrorData { get; }
+    public ErrorResult ErrorData { get; }
 }
