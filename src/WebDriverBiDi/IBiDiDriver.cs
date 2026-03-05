@@ -13,6 +13,14 @@ using WebDriverBiDi.Protocol;
 /// driver classes. It extends <see cref="IAsyncDisposable"/> to allow for proper asynchronous
 /// disposal of resources.
 /// </summary>
+/// <remorks>
+/// This interface is not intended to be implemented by users of this library. It is exposed publicly
+/// to allow for testing and to allow users to implement their own driver classes if they choose.
+/// Critically, not all implementations will choose to use the module-based architecture of the primary
+/// implementation in <see cref="BiDiDriver"/>, so this interface allows for flexibility in how a driver
+/// can be implemented while still providing the core functionality needed to interact with the WebDriver
+/// BiDi protocol.
+/// </remorks>
 public interface IBiDiDriver : IAsyncDisposable
 {
     /// <summary>
