@@ -58,7 +58,7 @@ public class PipeConnection : Connection
     private readonly IPipeServerProcessProvider processProvider;
     private Task? dataReceiveTask;
     private CancellationTokenSource connectionTokenSource = new();
-    private bool isConnectionActive;
+    private int isConnectionActiveTypeSafeFlag = 0;
     private bool clientHandlesDisposed;
 
     /// <summary>
@@ -83,7 +83,7 @@ public class PipeConnection : Connection
     /// <summary>
     /// Gets a value indicating whether this connection is active.
     /// </summary>
-    public override bool IsActive => this.isConnectionActive && this.processProvider.PipeServerProcess is not null && !this.processProvider.PipeServerProcess.HasExited;
+    public override bool IsActive => this.IsConnectionActive && this.processProvider.PipeServerProcess is not null && !this.processProvider.PipeServerProcess.HasExited;
 
     /// <summary>
     /// Gets a value indicating the type of data transport used by this connection, in this case, pipes.
@@ -99,6 +99,20 @@ public class PipeConnection : Connection
     /// Gets the handle used for receiving data from the external process.
     /// </summary>
     public string WritePipeHandle => this.clientHandlesDisposed ? string.Empty : this.pipeFromProcess.GetClientHandleAsString();
+
+    private bool IsConnectionActive
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.isConnectionActiveTypeSafeFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.isConnectionActiveTypeSafeFlag, flagValue);
+        }
+    }
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -120,7 +134,7 @@ public class PipeConnection : Connection
             throw new WebDriverBiDiConnectionException("The pipes have been disposed; the connection cannot be restarted after disposal.");
         }
 
-        if (this.isConnectionActive)
+        if (this.IsConnectionActive)
         {
             throw new WebDriverBiDiConnectionException($"The pipe connection is already active for {this.ConnectionString}; call the Stop method to disconnect before calling Start");
         }
@@ -140,7 +154,7 @@ public class PipeConnection : Connection
         this.connectionTokenSource = new CancellationTokenSource();
 
         this.ConnectionString = connectionString;
-        this.isConnectionActive = true;
+        this.IsConnectionActive = true;
 
         // Start the receive loop
         this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync().ConfigureAwait(false));
@@ -157,7 +171,7 @@ public class PipeConnection : Connection
     {
         await this.LogAsync("Closing pipe connection");
 
-        if (!this.isConnectionActive)
+        if (!this.IsConnectionActive)
         {
             await this.LogAsync("Pipe connection already closed");
             return;
@@ -172,7 +186,7 @@ public class PipeConnection : Connection
             await this.dataReceiveTask.ConfigureAwait(false);
         }
 
-        this.isConnectionActive = false;
+        this.IsConnectionActive = false;
         this.ConnectionString = string.Empty;
 
         await this.LogAsync("Pipe connection closed");
