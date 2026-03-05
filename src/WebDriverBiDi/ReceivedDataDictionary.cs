@@ -9,6 +9,9 @@ using System.Collections.ObjectModel;
 
 /// <summary>
 /// A read-only dictionary containing a dictionary of additional data from a command result.
+/// The proper workflow for this class is that additional data is received from the protocol
+/// as a dictionary with string keys, and object values. The entries in that dictionary are
+/// then intentionally mutated to be read-only, so that they cannot be updated by the user.
 /// </summary>
 public sealed class ReceivedDataDictionary : ReadOnlyDictionary<string, object?>
 {

@@ -27,6 +27,13 @@ public abstract class CommandParameters
     /// <summary>
     /// Gets additional properties to be serialized with this command.
     /// </summary>
+    /// <remarks>
+    /// The WebDriver BiDi protocol allows for additional command properties that are not
+    /// defined in the specification. This dictionary allows users to include those additional
+    /// properties while maintaining the strongly-typed nature of the CommandParameters class.
+    /// The entries in this dictionary are intentionally mutable, so that users can add additional
+    /// properties as needed.
+    /// </remarks>
     [JsonIgnore]
     public Dictionary<string, object?> AdditionalData { get; } = [];
 }
