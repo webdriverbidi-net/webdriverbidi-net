@@ -31,9 +31,7 @@ public class ErrorReceivedEventArgsTests
     [Test]
     public void TestCreateErrorReceivedEventArgsWithNullErrorDataThrows()
     {
-#pragma warning disable CS8625 // Converting null literal or possible null value to non-nullable type.
-        Assert.That(() => new ErrorReceivedEventArgs(null), Throws.ArgumentNullException);
-#pragma warning restore CS8625 // Converting null literal or possible null value to non-nullable type.
+        Assert.That(() => new ErrorReceivedEventArgs(null!), Throws.ArgumentNullException);
     }
 
     [Test]

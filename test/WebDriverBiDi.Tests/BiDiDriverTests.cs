@@ -1204,13 +1204,77 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task TestNullCommandParametersThrows()
+    public async Task TestExecuteCommandAsyncWithNullCommandParametersThrows()
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
-#pragma warning disable CS8625 // Converting null literal or possible null value to non-nullable type.
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(null), Throws.InstanceOf<ArgumentNullException>());
-#pragma warning restore CS8625 // Converting null literal or possible null value to non-nullable type.
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(null!), Throws.InstanceOf<ArgumentNullException>());
+    }
+
+    [Test]
+    public async Task TestRegisterEventWithNullEventNameThrows()
+    {
+        Func<EventInfo<TestEventArgs>, Task> eventInvoker = (eventData) => Task.CompletedTask;
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(() => driver.RegisterEvent(null!, eventInvoker), Throws.InstanceOf<ArgumentException>());
+    }
+
+    [Test]
+    public async Task TestRegisterEventWithEmptyEventNameThrows()
+    {
+        Func<EventInfo<TestEventArgs>, Task> eventInvoker = (eventData) => Task.CompletedTask;
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(() => driver.RegisterEvent(string.Empty, eventInvoker), Throws.InstanceOf<ArgumentException>());
+    }
+
+    [Test]
+    public async Task TestRegisterEventWithNullEventInvokerThrows()
+    {
+        Func<EventInfo<TestEventArgs>, Task> eventInvoker = null!;
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(() => driver.RegisterEvent("protocol.event", eventInvoker), Throws.InstanceOf<ArgumentNullException>());
+    }
+
+    [Test]
+    public async Task TestRegisterModuleWithNullModuleThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(() => driver.RegisterModule(null!), Throws.InstanceOf<ArgumentNullException>());
+    }
+
+    [Test]
+    public async Task TestGetModuleWithNullModuleNameThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(() => driver.GetModule<TestProtocolModule>(null!), Throws.InstanceOf<ArgumentException>());
+    }
+
+    [Test]
+    public async Task TestGetModuleWithEmptyModuleNameThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(() => driver.GetModule<TestProtocolModule>(string.Empty), Throws.InstanceOf<ArgumentException>());
+    }
+
+    [Test]
+    public async Task TestRegisterTypeInfoResolverWithNullResolverThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        Assert.That(() => driver.RegisterTypeInfoResolver(null!), Throws.InstanceOf<ArgumentNullException>());
     }
 }

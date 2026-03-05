@@ -467,18 +467,39 @@ public class BiDiDriver : IBiDiDriver
     }
 
     /// <summary>
-    /// Registers an additional <see cref="IJsonTypeInfoResolver"/> for JSON serialization
-    /// and deserialization. This allows custom types, such as those from user-defined modules,
-    /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
-    /// This method must be called before starting the driver.
+    /// Registers an event to be raised by the remote end of the WebDriver BiDi protocol.
     /// </summary>
-    /// <param name="resolver">The type info resolver to add.</param>
-    /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if the driver has already been started.</exception>
-    public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
+    /// <typeparam name="T">The type of data that will be raised by the event.</typeparam>
+    /// <param name="eventName">The name of the event to raise.</param>
+    /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
+    /// <exception cref="ArgumentException">Thrown when the specified event name is already registered with this driver, or when the event name is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the event invoker argument is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when attempting to call this method after the driver has been started.</exception>
+    public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
         this.ThrowIfDisposed();
-        this.transport.RegisterTypeInfoResolver(resolver);
+        if (this.IsStarted)
+        {
+            throw new InvalidOperationException("Cannot register an event after the driver has started");
+        }
+
+        if (string.IsNullOrEmpty(eventName))
+        {
+            throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
+        }
+
+        if (eventInvoker is null)
+        {
+            throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
+        }
+
+        if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
+        {
+            throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
+        }
+
+        this.transport.RegisterEventMessage<T>(eventName);
     }
 
     /// <summary>
@@ -486,6 +507,7 @@ public class BiDiDriver : IBiDiDriver
     /// </summary>
     /// <param name="module">The module object.</param>
     /// <exception cref="ArgumentException">Thrown when attempting to register a module with a name that has already been registered.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the module argument is <see langword="null"/>.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown when attempting to call this method after the driver has been started.</exception>
     /// <remarks>
@@ -516,6 +538,11 @@ public class BiDiDriver : IBiDiDriver
             throw new InvalidOperationException("Cannot register a module after the driver has started");
         }
 
+        if (module is null)
+        {
+            throw new ArgumentNullException(nameof(module), "Module object may not be null");
+        }
+
         if (!this.modules.TryAdd(module.ModuleName, module))
         {
             throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
@@ -528,13 +555,18 @@ public class BiDiDriver : IBiDiDriver
     /// <typeparam name="T">A module object which is a subclass of <see cref="Module"/>.</typeparam>
     /// <param name="moduleName">The name of the module to return.</param>
     /// <returns>The protocol module object.</returns>
-    /// <exception cref="ArgumentException">Thrown when the specified module name is not registered with this driver.</exception>
+    /// <exception cref="ArgumentException">Thrown when the specified module name is not registered with this driver, or when the module name is null or empty.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the registered module object is not of the expected type.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     public virtual T GetModule<T>(string moduleName)
         where T : Module
     {
         this.ThrowIfDisposed();
+        if (string.IsNullOrEmpty(moduleName))
+        {
+            throw new ArgumentException("Module name may not be null or empty", nameof(moduleName));
+        }
+
         if (!this.modules.TryGetValue(moduleName, out Module? module))
         {
             throw new ArgumentException($"Module '{moduleName}' is not registered with this driver", nameof(moduleName));
@@ -549,28 +581,24 @@ public class BiDiDriver : IBiDiDriver
     }
 
     /// <summary>
-    /// Registers an event to be raised by the remote end of the WebDriver BiDi protocol.
+    /// Registers an additional <see cref="IJsonTypeInfoResolver"/> for JSON serialization
+    /// and deserialization. This allows custom types, such as those from user-defined modules,
+    /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
+    /// This method must be called before starting the driver.
     /// </summary>
-    /// <typeparam name="T">The type of data that will be raised by the event.</typeparam>
-    /// <param name="eventName">The name of the event to raise.</param>
-    /// <param name="eventInvoker">The delegate taking a single parameter of type T used to invoke the event.</param>
-    /// <exception cref="ArgumentException">Thrown when the specified event name is already registered with this driver.</exception>
-    /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when attempting to call this method after the driver has been started.</exception>
-    public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
+    /// <param name="resolver">The type info resolver to add.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the resolver argument is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the driver has already been started.</exception>
+    public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
     {
         this.ThrowIfDisposed();
-        if (this.IsStarted)
+        if (resolver is null)
         {
-            throw new InvalidOperationException("Cannot register an event after the driver has started");
+            throw new ArgumentNullException(nameof(resolver), "Type info resolver may not be null");
         }
 
-        if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
-        {
-            throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
-        }
-
-        this.transport.RegisterEventMessage<T>(eventName);
+        this.transport.RegisterTypeInfoResolver(resolver);
     }
 
     /// <summary>

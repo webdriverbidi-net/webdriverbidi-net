@@ -7,8 +7,8 @@ public sealed class TestProtocolModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="TestProtocolModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
-    public TestProtocolModule(BiDiDriver driver, int maxObserverCount = 0, bool registerEvents = true)
+    /// <param name="driver">The <see cref="IBiDiDriver"/> used in the module commands and events.</param>
+    public TestProtocolModule(IBiDiDriver driver, int maxObserverCount = 0, bool registerEvents = true)
         : base(driver)
     {
         this.OnEventInvoked = new ObservableEvent<TestEventArgs>(EventName, maxObserverCount);
@@ -22,5 +22,5 @@ public sealed class TestProtocolModule : Module
 
     public override string ModuleName => "protocol";
 
-    public BiDiDriver HostingDriver => this.Driver;
+    public IBiDiDriver HostingDriver => this.Driver;
 }
