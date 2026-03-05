@@ -247,11 +247,15 @@ public class BiDiDriver : IBiDiDriver
 
     /// <summary>
     /// Gets a value indicating whether the driver has started communication with the remote end of the WebDriver BiDi protocol.
+    /// This property delegates to the underlying <see cref="Transport.IsConnected"/>, which in turn
+    /// checks the <see cref="Connection.IsActive"/> state.
     /// </summary>
     /// <remarks>
     /// <para>
     /// This property returns <see langword="true"/> after <see cref="StartAsync(string, CancellationToken)"/> completes successfully
     /// and remains <see langword="true"/> until <see cref="StopAsync(CancellationToken)"/> is called or the connection is lost.
+    /// For WebSocket connections, this returns true when the WebSocket is in the Open state.
+    /// For pipe connections, this returns true when both pipes are connected and the browser process is running.
     /// </para>
     /// <para>
     /// Use this property to check driver state before executing commands or during cleanup operations.
