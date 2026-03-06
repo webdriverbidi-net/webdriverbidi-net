@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
@@ -174,6 +175,28 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         {
             timeoutTokenSource.Cancel();
             this.UnsetCheckpoint();
+        }
+
+        return checkpointFulfilled;
+    }
+
+    /// <summary>
+    /// Asynchronously waits for a checkpoint to be satisfied by having this event observer notified the number of
+    /// times specified when the checkpoint was set. If the wait is successful, it means that this observer was
+    /// notified to execute the handler the expected number of times, and the Tasks representing the execution
+    /// of those handlers have also completed execution. This method discards the Tasks after completion. If you
+    /// need to inspect the Tasks, use <see cref="WaitForCheckpointAsync"/> followed by <see cref="GetCheckpointTasks"/>
+    /// instead.
+    /// </summary>
+    /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied. This timeout only applies to waiting for this observer to be notified the proper number of times; it does not apply to the execution of the handlers.</param>
+    /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
+    public async Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout)
+    {
+        bool checkpointFulfilled = await this.WaitForCheckpointAsync(timeout).ConfigureAwait(false);
+        if (checkpointFulfilled)
+        {
+            Task[] tasksToWait = this.GetCheckpointTasks();
+            await Task.WhenAll(tasksToWait).ConfigureAwait(false);
         }
 
         return checkpointFulfilled;

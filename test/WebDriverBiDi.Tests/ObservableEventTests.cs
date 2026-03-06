@@ -293,7 +293,7 @@ public class ObservableEventTests
     }
 
     [Test]
-    public void UnsetCheckpoint_CalledTwice_ShouldNotThrow()
+    public void UnsetCheckpointCalledTwiceShouldNotThrow()
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(async (TestObservableEventArgs e) => { });
@@ -390,6 +390,35 @@ public class ObservableEventTests
         Assert.That(eventTasks, Has.Length.EqualTo(1));
         await eventTasks[0];
         Assert.That(eventTasks[0].IsCompletedSuccessfully, Is.True);
+    }
+
+    [Test]
+    public async Task TestWaitForCheckpointAndTasksWaitsForMultipleEventTasks()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.SetCheckpoint(2);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        bool checkpointFulfilled = await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromMilliseconds(100));
+        Assert.That(checkpointFulfilled, Is.True);
+        Assert.That(observer.IsCheckpointSet, Is.False);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(0));
+    }
+
+    [Test]
+    public async Task TestWaitForCheckpointAndTasksAsyncTimesOut()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.SetCheckpoint(2);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        bool checkpointFulfilled = await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromMilliseconds(100));
+        Assert.That(checkpointFulfilled, Is.False);
+        Assert.That(observer.IsCheckpointSet, Is.True);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(1));
     }
 
     [Test]
