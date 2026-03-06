@@ -14,8 +14,8 @@ public class PendingCommandCollectionTests
 
         await collection.AddPendingCommandAsync(testCommand);
         Assert.That(collection.PendingCommandCount, Is.EqualTo(1));
-        Assert.That(collection.RemovePendingCommand(1, out Command removedCommand), Is.True);
-        Assert.That(removedCommand.CommandName, Is.EqualTo("module.command"));
+        Assert.That(collection.RemovePendingCommand(1, out Command? removedCommand), Is.True);
+        Assert.That(removedCommand!.CommandName, Is.EqualTo("module.command"));
     }
 
     [Test]
@@ -25,8 +25,8 @@ public class PendingCommandCollectionTests
         PendingCommandCollection collection = new();
         await collection.AddPendingCommandAsync(testCommand);
 
-        Assert.That(collection.RemovePendingCommand(1, out Command removedCommand), Is.True);
-        Assert.That(removedCommand.CommandName, Is.EqualTo("module.command"));
+        Assert.That(collection.RemovePendingCommand(1, out Command? removedCommand), Is.True);
+        Assert.That(removedCommand!.CommandName, Is.EqualTo("module.command"));
     }
 
     [Test]
@@ -44,7 +44,7 @@ public class PendingCommandCollectionTests
     public void TestCanAttemptToRemoveNonExistentCommand()
     {
         PendingCommandCollection collection = new();
-        Assert.That(collection.RemovePendingCommand(1, out Command removedCommand), Is.False);
+        Assert.That(collection.RemovePendingCommand(1, out Command? removedCommand), Is.False);
     }
 
     [Test]
@@ -72,8 +72,8 @@ public class PendingCommandCollectionTests
         await collection.AddPendingCommandAsync(testCommand);
         await collection.CloseAsync();
         Assert.That(collection.PendingCommandCount, Is.EqualTo(1));
-        Assert.That(collection.RemovePendingCommand(1, out Command removedCommand), Is.True);
-        Assert.That(removedCommand.CommandName, Is.EqualTo("module.command"));
+        Assert.That(collection.RemovePendingCommand(1, out Command? removedCommand), Is.True);
+        Assert.That(removedCommand!.CommandName, Is.EqualTo("module.command"));
     }
 
     [Test]

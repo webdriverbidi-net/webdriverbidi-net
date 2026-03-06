@@ -627,7 +627,7 @@ public class Transport : IAsyncDisposable
     {
         if (message.TryGetProperty("id", out JsonElement idToken) && idToken.ValueKind == JsonValueKind.Number && idToken.TryGetInt64(out long responseId))
         {
-            if (this.pendingCommands.RemovePendingCommand(responseId, out Command executedCommand))
+            if (this.pendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
             {
                 try
                 {
@@ -661,7 +661,7 @@ public class Transport : IAsyncDisposable
             if (errorMessage is not null)
             {
                 ErrorResult result = errorMessage.GetErrorResponseData();
-                if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command executedCommand))
+                if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command? executedCommand))
                 {
                     executedCommand.SetResult(result);
                 }

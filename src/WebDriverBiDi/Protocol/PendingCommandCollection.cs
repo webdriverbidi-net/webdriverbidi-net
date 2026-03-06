@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Object containing a thread-safe collection of pending commands.
@@ -65,12 +66,9 @@ public class PendingCommandCollection : IDisposable
     /// <param name="commandId">The ID of the command to remove.</param>
     /// <param name="removedCommand">The command object removed from the collection.</param>
     /// <returns><see langword="true"/> if a command with the specified ID exists in the collection to be removed; otherwise, <see langword="false"/>.</returns>
-    public virtual bool RemovePendingCommand(long commandId, out Command removedCommand)
+    public virtual bool RemovePendingCommand(long commandId, [NotNullWhen(true)] out Command? removedCommand)
     {
-        // Note: We can use the null-forgiving operator here, as all callers will
-        // check the boolean return value, and therefore never operate on a null
-        // Command value.
-        return this.pendingCommands.TryRemove(commandId, out removedCommand!);
+        return this.pendingCommands.TryRemove(commandId, out removedCommand);
     }
 
     /// <summary>
