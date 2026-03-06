@@ -123,6 +123,22 @@ public class RemoteReferenceTests
     }
 
     [Test]
+    public void TestSharedReferenceThrowsWhenSharedIdIsNull()
+    {
+        string json = "{}";
+        SharedReference? reference = JsonSerializer.Deserialize<SharedReference>(json);
+        Assert.That(reference, Is.Not.Null);
+        Assert.That(() => _ = reference!.SharedId, Throws.InvalidOperationException.With.Message.EqualTo("SharedId cannot be null"));
+    }
+
+    [Test]
+    public void TestSharedReferenceThrowsWhenSettingSharedIdToNull()
+    {
+        SharedReference reference = new("mySharedId");
+        Assert.That(() => reference.SharedId = null!, Throws.ArgumentNullException);
+    }
+
+    [Test]
     public void TestCanSerializeRemoteObjectReferenceWithAdditionalProperties()
     {
         RemoteObjectReference reference = new("myHandle");

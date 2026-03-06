@@ -25,7 +25,11 @@ public record SharedReference : RemoteReference
     /// Gets or sets the shared ID of the remote object.
     /// </summary>
     [JsonIgnore]
-    public string SharedId { get => this.InternalSharedId!; set => this.InternalSharedId = value; }
+    public string SharedId
+    {
+        get => this.InternalSharedId ?? throw new InvalidOperationException("SharedId cannot be null");
+        set => this.InternalSharedId = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     /// <summary>
     /// Gets or sets the handle of the remote object.
