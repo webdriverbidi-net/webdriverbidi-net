@@ -1,3 +1,4 @@
+using System.Reflection.Metadata.Ecma335;
 using WebDriverBiDi.TestUtilities;
 
 namespace WebDriverBiDi;
@@ -289,6 +290,19 @@ public class ObservableEventTests
         Assert.That(observer.IsCheckpointSet, Is.False);
         Task[] tasks = observer.GetCheckpointTasks();
         Assert.That(tasks, Is.Empty);
+    }
+
+    [Test]
+    public void UnsetCheckpoint_CalledTwice_ShouldNotThrow()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(async (TestObservableEventArgs e) => { });
+        
+        observer.SetCheckpoint(1);
+        observer.UnsetCheckpoint();  // First call disposes counter
+        
+        // Second call would try to dispose already-disposed counter
+        Assert.DoesNotThrow(() => observer.UnsetCheckpoint());
     }
 
     [Test]
