@@ -62,6 +62,7 @@ public class BiDiDriver : IBiDiDriver
     private readonly Transport transport;
     private readonly ConcurrentDictionary<string, Module> modules = [];
     private readonly ConcurrentDictionary<string, EventInvoker> eventInvokers = [];
+    private readonly object registrationLock = new();
     private int isDisposedFlag = 0;
 
     /// <summary>
@@ -537,19 +538,22 @@ public class BiDiDriver : IBiDiDriver
     public virtual void RegisterModule(Module module)
     {
         this.ThrowIfDisposed();
-        if (this.IsStarted)
+        lock (this.registrationLock)
         {
-            throw new InvalidOperationException("Cannot register a module after the driver has started");
-        }
+            if (this.IsStarted)
+            {
+                throw new InvalidOperationException("Cannot register a module after the driver has started");
+            }
 
-        if (module is null)
-        {
-            throw new ArgumentNullException(nameof(module), "Module object may not be null");
-        }
+            if (module is null)
+            {
+                throw new ArgumentNullException(nameof(module), "Module object may not be null");
+            }
 
-        if (!this.modules.TryAdd(module.ModuleName, module))
-        {
-            throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
+            if (!this.modules.TryAdd(module.ModuleName, module))
+            {
+                throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
+            }
         }
     }
 
