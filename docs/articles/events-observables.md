@@ -21,6 +21,8 @@ Working with events involves three steps:
 2. **Subscribe to the event** through the Session module
 3. **Wait for events** or let them trigger as they occur
 
+**Important**: Steps 1 and 2 are separate by design to prevent race conditions. Adding an observer registers your handler locally; subscribing tells the browser to send events. The recommended order is to add observers first (step 1), then subscribe (step 2).
+
 ### Complete Example
 
 ```csharp
@@ -235,8 +237,11 @@ observer.SetCheckpoint();
 // Trigger navigation
 await driver.BrowsingContext.NavigateAsync(params);
 
-// Wait up to 10 seconds for the event
+// Wait up to 10 seconds for the event (synchronous - blocks calling thread)
 bool eventOccurred = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+
+// Or use async version (recommended)
+// bool eventOccurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
 
 if (eventOccurred)
 {
@@ -418,7 +423,50 @@ driver.Log.OnEntryAdded.AddObserver(
 
 ### Synchronizing with Async Handlers
 
-When handlers are async, you need to synchronize if you want to ensure they complete before continuing:
+When handlers are async, you need to synchronize if you want to ensure they complete before continuing.
+
+#### Using WaitForCheckpointAndTasksAsync (Recommended)
+
+The simplest way is to use the built-in helper method:
+
+```csharp
+EventObserver<BeforeRequestSentEventArgs> observer =
+    driver.Network.OnBeforeRequestSent.AddObserver(
+        async (e) =>
+        {
+            await ProcessRequestAsync(e);
+        },
+        ObservableEventHandlerOptions.RunHandlerAsynchronously
+    );
+
+// Set checkpoint for 3 events
+observer.SetCheckpoint(3);
+
+// Trigger events
+await driver.BrowsingContext.NavigateAsync(params);
+
+// Wait for events to occur AND all handlers to complete
+bool occurred = await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10));
+
+if (occurred)
+{
+    Console.WriteLine("All 3 events occurred and their handlers completed");
+}
+else
+{
+    Console.WriteLine("Timeout waiting for events");
+}
+```
+
+This method waits for:
+1. The checkpoint to be fulfilled (events occurred)
+2. All handler tasks to complete
+
+**Note**: The timeout only applies to waiting for the checkpoint. Handler execution time is not limited by the timeout.
+
+#### Manual Synchronization (For Fine-Grained Control)
+
+For scenarios where you need to inspect or manipulate tasks before waiting:
 
 ```csharp
 EventObserver<BeforeRequestSentEventArgs> observer =
@@ -437,12 +485,16 @@ observer.SetCheckpoint(3);
 await driver.BrowsingContext.NavigateAsync(params);
 
 // Wait for events to occur
-bool occurred = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+bool occurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
 
 if (occurred)
 {
-    // Wait for all async handlers to complete
+    // Get handler tasks for inspection or custom handling
     Task[] handlerTasks = observer.GetCheckpointTasks();
+
+    Console.WriteLine($"Waiting for {handlerTasks.Length} handlers to complete...");
+
+    // Wait for all async handlers to complete
     await Task.WhenAll(handlerTasks);
     Console.WriteLine("All handlers completed");
 }
@@ -500,11 +552,18 @@ Console.WriteLine("Navigation command completed");
 
 // Important: The navigation command completes before handlers finish
 // Wait for all events to occur
-observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+bool occurred = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
 
-// Wait for all async handlers to complete
-Task.WaitAll(handlerTasks.ToArray());
-Console.WriteLine("All event handlers completed");
+if (occurred)
+{
+    // Wait for all async handlers to complete
+    await Task.WhenAll(handlerTasks);
+    Console.WriteLine("All event handlers completed");
+}
+else
+{
+    Console.WriteLine("Timeout waiting for events");
+}
 ```
 
 **Why This Matters:**
@@ -550,10 +609,13 @@ EventObserver<BeforeRequestSentEventArgs> observer =
 
 observer.SetCheckpoint(5);
 await driver.BrowsingContext.NavigateAsync(params);
-observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
 
-// Wait for all handlers to complete before continuing
-Task.WaitAll(handlerTasks.ToArray());
+bool occurred = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+if (occurred)
+{
+    // Wait for all handlers to complete before continuing
+    await Task.WhenAll(handlerTasks);
+}
 ```
 
 ### Calling Commands in Event Handlers
@@ -641,12 +703,25 @@ driver.Log.OnEntryAdded.AddObserver((e) =>
 ### Pattern 1: Wait for Page Load
 
 ```csharp
-EventObserver<NavigationEventArgs> observer = 
+// Add observer for page load event
+EventObserver<NavigationEventArgs> observer =
     driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
+// Subscribe to the event
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
+subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+await driver.Session.SubscribeAsync(subscribe);
+
+// Set checkpoint and trigger navigation
 observer.SetCheckpoint();
 await driver.BrowsingContext.NavigateAsync(params);
-observer.WaitForCheckpoint(TimeSpan.FromSeconds(30));
+
+// Wait for page load event (use async version when possible)
+bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
+if (loaded)
+{
+    Console.WriteLine("Page loaded successfully");
+}
 ```
 
 ### Pattern 2: Collect Network Responses
@@ -791,17 +866,31 @@ driver.Network.OnResponseCompleted.AddObserver((e) =>
 
 ## Best Practices
 
-### 1. Subscribe Before Adding Observers
+### 1. Add Observers Before Subscribing
+
+The recommended order is to add observers first, then subscribe through the Session module:
 
 ```csharp
-// ✓ Good: Subscribe first
-await driver.Session.SubscribeAsync(subscribe);
+// ✓ Recommended: Add observer first, then subscribe
 driver.Log.OnEntryAdded.AddObserver(handler);
 
-// ✗ May miss early events
-driver.Log.OnEntryAdded.AddObserver(handler);
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
+subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
+
+// ✓ Also acceptable: Subscribe then add observer (but less clear)
+await driver.Session.SubscribeAsync(subscribe);
+driver.Log.OnEntryAdded.AddObserver(handler);
 ```
+
+**Why Add Observers First?**
+
+While both orders work, adding observers before subscribing ensures your handlers are ready before the browser starts sending events. This is especially important when:
+- Setting up multiple observers
+- The browser might send events immediately after subscription
+- You want predictable initialization order
+
+The two-step design (add observer + subscribe) is intentional to prevent race conditions where events arrive before handlers are registered.
 
 ### 2. Remove Observers When Done
 
@@ -847,16 +936,19 @@ driver.Log.OnEntryAdded.AddObserver((e) =>
 
 ## Next Steps
 
+- [Common Pitfalls](common-pitfalls.md): Avoid common mistakes with event handling
 - [Module Guides](modules/browser.md): Learn what events each module provides
 - [Network Interception Example](examples/network-interception.md): Practical event usage
 - [Preload Scripts Example](examples/preload-scripts.md): Using script.message events
 
 ## Summary
 
-- Events require subscription through Session module
+- Events require two steps: add observer locally, then subscribe through Session module
+- Recommended order: add observers first, then subscribe (ensures handlers are ready)
 - Observers handle events when they occur
 - Use checkpoints to synchronize with events
-- Async handlers for long-running operations
-- Remove observers to prevent memory leaks
+- Use `WaitForCheckpointAndTasksAsync()` to wait for async handlers to complete
+- Use `RunHandlerAsynchronously` option for long-running operations or I/O
+- Remove observers when done to prevent memory leaks
 - Multiple observers can handle the same event
 

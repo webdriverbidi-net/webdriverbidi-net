@@ -102,6 +102,20 @@ driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
 - Prevents race conditions
 - Maintains predictable initialization order
 
+**Thread Safety:**
+
+The `RegisterModule` method is thread-safe and can be called concurrently from multiple threads:
+
+```csharp
+// This is safe - concurrent registration is handled properly
+Parallel.Invoke(
+    () => driver.RegisterModule(customModule1),
+    () => driver.RegisterModule(customModule2)
+);
+```
+
+Thread safety is enforced using an internal lock that ensures the check against `IsStarted` and the module addition are atomic operations. However, the timing restriction still applies—all registrations must complete before `StartAsync()` is called.
+
 #### Command Timeout Configuration
 
 Configure command timeout when creating the driver:
@@ -642,12 +656,263 @@ params.Wait = ReadinessState.Complete;
 params.TimeoutSeconds = 30;
 ```
 
+## Advanced Topics
+
+> **⚠️ Note for Most Users:** The features described in this section are for advanced scenarios and library developers building on top of WebDriverBiDi.NET (such as Selenium, Puppeteer, or Playwright maintainers). **Most application developers will never need these features.** The standard `BiDiDriver` class with its built-in modules covers the vast majority of use cases.
+>
+> **Skip this section if you are:**
+> - Building a typical browser automation application
+> - Using WebDriverBiDi.NET for testing or web scraping
+> - Learning the library for the first time
+>
+> **Read this section if you are:**
+> - Building a higher-level automation framework or library
+> - Extending the protocol with custom modules
+> - Implementing protocol features not yet in the library
+> - Need fine-grained control over serialization (AOT scenarios)
+
+### The IBiDiDriver Interface
+
+The `IBiDiDriver` interface defines the contract for the driver, enabling dependency injection and testability in advanced scenarios.
+
+```csharp
+public interface IBiDiDriver
+{
+    // Core properties
+    bool IsStarted { get; }
+
+    // Module access
+    BrowserModule Browser { get; }
+    BrowsingContextModule BrowsingContext { get; }
+    // ... all other modules
+
+    // Command execution
+    Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters,
+        CancellationToken cancellationToken = default) where T : CommandResult;
+
+    // Lifecycle
+    Task StartAsync(string connectionString, CancellationToken cancellationToken = default);
+    Task StopAsync(CancellationToken cancellationToken = default);
+}
+```
+
+**Typical Usage:** Most users will use the concrete `BiDiDriver` class directly:
+
+```csharp
+// Common case - use the concrete class
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+await driver.StartAsync(webSocketUrl);
+```
+
+**Advanced Usage:** Use the interface for dependency injection in framework code:
+
+```csharp
+// Framework code - use interface for flexibility
+public class HighLevelAutomationFramework
+{
+    private readonly IBiDiDriver driver;
+
+    public HighLevelAutomationFramework(IBiDiDriver driver)
+    {
+        this.driver = driver;
+    }
+
+    public async Task NavigateAndWaitAsync(string url)
+    {
+        // Framework provides high-level API using low-level driver
+        await driver.BrowsingContext.NavigateAsync(navParams);
+    }
+}
+
+// Dependency injection setup
+services.AddSingleton<IBiDiDriver>(sp =>
+    new BiDiDriver(TimeSpan.FromSeconds(30)));
+services.AddTransient<HighLevelAutomationFramework>();
+```
+
+**Benefits of Using the Interface:**
+- **Testability**: Mock the driver in unit tests for framework code
+- **Flexibility**: Swap implementations (e.g., for testing vs. production)
+- **Abstraction**: Hide low-level details from framework users
+
+**When NOT to Use:**
+- Regular application code (use `BiDiDriver` directly)
+- Simple scripts or one-off automation tasks
+- Learning or experimenting with the library
+
+### Custom Modules
+
+Custom modules allow you to extend WebDriverBiDi.NET with protocol features not yet implemented in the library, or to add proprietary browser-specific extensions.
+
+> **⚠️ Advanced Feature:** Custom modules are only needed when:
+> - Implementing cutting-edge protocol features before they're added to the library
+> - Supporting browser-specific extensions to the WebDriver BiDi protocol
+> - Building a framework that needs to expose additional capabilities
+>
+> **Most users should use the built-in modules** (Browser, BrowsingContext, Network, Script, etc.), which cover all standard protocol features.
+
+**Creating a Custom Module:**
+
+```csharp
+using WebDriverBiDi;
+
+public class CustomModule : Module
+{
+    public CustomModule(IBiDiDriver driver)
+        : base(driver, "custom")  // "custom" is the protocol module name
+    {
+    }
+
+    // Define custom commands
+    public async Task<CustomCommandResult> MyCustomCommandAsync(
+        CustomCommandParameters parameters)
+    {
+        return await this.Driver.ExecuteCommandAsync<CustomCommandResult>(
+            parameters);
+    }
+
+    // Define custom events
+    public ObservableEvent<CustomEventArgs> OnCustomEvent { get; } =
+        new ObservableEvent<CustomEventArgs>("custom.eventOccurred");
+}
+
+// Command parameters (mutable - sent to browser)
+public class CustomCommandParameters : CommandParameters<CustomCommandResult>
+{
+    public CustomCommandParameters()
+        : base("custom.myCommand")  // Protocol method name
+    {
+    }
+
+    public string CustomProperty { get; set; }
+}
+
+// Command result (immutable - received from browser)
+public class CustomCommandResult : CommandResult
+{
+    public string ResultData { get; internal set; }
+}
+
+// Event arguments (immutable - received from browser)
+public class CustomEventArgs : WebDriverBiDiEventArgs
+{
+    public string EventData { get; internal set; }
+}
+```
+
+**Registering and Using a Custom Module:**
+
+```csharp
+// Create driver
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+// Register custom module BEFORE starting
+CustomModule customModule = new CustomModule(driver);
+driver.RegisterModule(customModule);
+
+// Register custom event
+driver.RegisterEvent<CustomEventArgs>(
+    customModule.OnCustomEvent.EventName,
+    async (eventInfo) =>
+    {
+        await customModule.OnCustomEvent.NotifyObserversAsync(eventInfo.Params);
+    });
+
+// NOW start the driver
+await driver.StartAsync(webSocketUrl);
+
+// Use custom module like built-in modules
+CustomCommandParameters params = new CustomCommandParameters
+{
+    CustomProperty = "value"
+};
+CustomCommandResult result = await customModule.MyCustomCommandAsync(params);
+```
+
+**Important Considerations:**
+- Custom modules must be registered **before** `StartAsync()`
+- The protocol method names must match what the browser expects
+- JSON serialization must align with the protocol specification
+- See [Custom Modules Guide](advanced/custom-modules.md) for complete details
+
+### Custom JSON Type Resolvers (AOT Scenarios)
+
+For ahead-of-time (AOT) compilation scenarios where reflection-based JSON serialization is unavailable, you can register custom `IJsonTypeInfoResolver` instances.
+
+> **⚠️ Specialized Feature:** This is only needed for:
+> - Native AOT deployment (e.g., NativeAOT in .NET 7+)
+> - Custom module types that need explicit serialization metadata
+> - Environments where reflection is restricted or disabled
+>
+> **Most users can ignore this** - the library handles JSON serialization automatically using reflection when available.
+
+**Example:**
+
+```csharp
+using System.Text.Json.Serialization.Metadata;
+
+// Define JSON source generation context for custom types
+[JsonSourceGenerationOptions(WriteIndented = false)]
+[JsonSerializable(typeof(CustomCommandParameters))]
+[JsonSerializable(typeof(CustomCommandResult))]
+[JsonSerializable(typeof(CustomEventArgs))]
+internal partial class CustomJsonContext : JsonSerializerContext
+{
+}
+
+// Register the custom resolver BEFORE starting
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+driver.RegisterTypeInfoResolver(CustomJsonContext.Default);
+
+await driver.StartAsync(webSocketUrl);
+```
+
+**When This is Required:**
+- Publishing with `<PublishAot>true</PublishAot>` in your .csproj
+- Using custom modules with custom parameter/result types
+- Running in restricted environments (iOS, WebAssembly, etc.)
+
+**When You Don't Need This:**
+- Regular .NET applications using JIT compilation
+- Using only the built-in modules and types
+- Any scenario where reflection is available (the default)
+
+See [AOT Compatibility Guide](advanced/aot-compatibility.md) for complete details on AOT deployment.
+
+### When to Use These Advanced Features
+
+Use this decision tree to determine if you need these advanced features:
+
+```
+Are you building a higher-level framework on top of WebDriverBiDi.NET?
+├─ YES → You might need IBiDiDriver interface for DI/testability
+└─ NO  → Use BiDiDriver directly
+
+Does the built-in library support the protocol feature you need?
+├─ YES → Use the built-in modules (Browser, Network, etc.)
+└─ NO  → You might need a custom module
+
+Are you deploying with Native AOT compilation?
+├─ YES → You might need custom type resolvers
+└─ NO  → Reflection-based serialization works automatically
+
+Are you implementing browser-specific extensions?
+├─ YES → You need custom modules and possibly custom events
+└─ NO  → Use the standard modules
+```
+
+**For almost all users:** You don't need any of these features. Use `BiDiDriver` with the built-in modules and you're set.
+
+**For framework developers:** These features provide the extensibility needed to build rich automation libraries while maintaining type safety and performance.
+
 ## Next Steps
 
 - **[Events and Observables](events-observables.md)**: Deep dive into event handling
 - **[Remote Values](remote-values.md)**: Comprehensive guide to JavaScript value handling
 - **[Module Guides](modules/browser.md)**: Learn about each module in detail
 - **[Common Scenarios](examples/common-scenarios.md)**: See practical examples
+- **[Custom Modules Guide](advanced/custom-modules.md)**: Complete guide to creating custom modules (advanced)
+- **[AOT Compatibility](advanced/aot-compatibility.md)**: Native AOT deployment guide (advanced)
 
 ## Summary
 

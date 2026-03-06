@@ -6,6 +6,8 @@
   href: first-application.md
 - name: Core Concepts
   href: core-concepts.md
+- name: Common Pitfalls
+  href: common-pitfalls.md
 - name: Architecture
   href: architecture.md
 - name: Events and Observables

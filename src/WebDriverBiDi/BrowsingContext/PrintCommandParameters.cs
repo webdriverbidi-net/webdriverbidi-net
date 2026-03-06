@@ -93,6 +93,12 @@ public class PrintCommandParameters : CommandParameters<PrintCommandResult>
     /// The objects of the list must be strings or longs. Other value types
     /// will cause an error when sending the browsingContext.print command.
     /// </summary>
+    /// <remarks>
+    /// This property uses an internal serializable property to distinguish between omitting
+    /// the property from the JSON payload (empty list) and sending an empty array.
+    /// When the list is empty, the property is not included in the command; when populated,
+    /// the list is sent to the remote end.
+    /// </remarks>
     [JsonIgnore]
     public List<object> PageRanges { get; set; } = [];
 

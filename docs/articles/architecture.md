@@ -715,6 +715,162 @@ driver.Network.OnBeforeRequestSent.AddObserver(
 
 See the [Error Handling Guide](advanced/error-handling.md) for comprehensive error management strategies.
 
+### Granular Error Control
+
+Beyond the transport-level error behavior, `BiDiDriver` exposes four properties for fine-grained control over different error scenarios. All use `TransportErrorBehavior` (Ignore/Collect/Terminate) and default to `Ignore`.
+
+**Important:** With `Terminate` mode, exceptions don't propagate immediately when they occur. Due to the asynchronous nature of the library, termination errors are thrown when the next command is sent by the driver, not when the error is first encountered on the message processing thread.
+
+#### EventHandlerExceptionBehavior
+
+Controls how exceptions thrown by your event handlers are handled:
+
+```csharp
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    // If this throws, driver will terminate on next command
+    ProcessLogEntry(e);
+});
+
+try
+{
+    await driver.StartAsync("ws://localhost:9222/session");
+
+    // Perform operations...
+    await driver.BrowsingContext.NavigateAsync(navParams);  // Exception thrown here if handler failed
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"Event handler error: {ex.Message}");
+}
+```
+
+**When to Use Each Mode:**
+- **Ignore** (default): Event handler exceptions are logged but don't interrupt message processing. Use for non-critical handlers.
+- **Collect**: Exceptions are stored and thrown when `StopAsync()` is called. Use when debugging event handler issues.
+- **Terminate**: Driver terminates when next command is sent after exception. Use when event handler failure indicates unrecoverable state.
+
+#### ProtocolErrorBehavior
+
+Controls how protocol errors are handled (invalid JSON, missing required properties, deserialization failures):
+
+```csharp
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+
+await driver.StartAsync("ws://localhost:9222/session");
+
+// Perform operations...
+await driver.BrowsingContext.NavigateAsync(navParams);
+
+// Collected errors are thrown when stopping
+try
+{
+    await driver.StopAsync();
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"Protocol errors encountered: {ex.Message}");
+}
+```
+
+**When to Use Each Mode:**
+- **Ignore** (default): Protocol errors are logged but processing continues. Use when working with experimental or unstable protocol versions.
+- **Collect**: Errors are stored and thrown at shutdown. Use when troubleshooting browser compatibility issues.
+- **Terminate**: Driver terminates when next command is sent after error. Use in production when protocol violations indicate serious issues.
+
+#### UnknownMessageBehavior
+
+Controls how unknown messages are handled (valid JSON that doesn't match any known protocol structure):
+
+```csharp
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;
+
+await driver.StartAsync("ws://localhost:9222/session");
+
+// Browser sends new event type not yet supported by library
+// With Ignore mode, these are logged but don't cause errors
+
+await driver.BrowsingContext.NavigateAsync(navParams);
+await driver.StopAsync();  // Completes without exception
+```
+
+**When to Use Each Mode:**
+- **Ignore** (default): Unknown messages are logged but don't interrupt processing. Use when working with browsers implementing experimental features.
+- **Collect**: Unknown messages are stored and thrown at shutdown. Use when discovering new protocol features or debugging compatibility.
+- **Terminate**: Driver terminates when next command is sent after unknown message. Use when strict protocol conformance is required.
+
+#### UnexpectedErrorBehavior
+
+Controls how unexpected errors are handled (error responses received with no corresponding command):
+
+```csharp
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
+
+try
+{
+    await driver.StartAsync("ws://localhost:9222/session");
+
+    // If browser sends error response without matching command ID, exception thrown on next command
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"Unexpected error: {ex.Message}");
+}
+```
+
+**When to Use Each Mode:**
+- **Ignore** (default): Unexpected errors are logged but don't interrupt processing. Use when browser may send asynchronous errors.
+- **Collect**: Errors are stored and thrown at shutdown. Use when debugging communication issues.
+- **Terminate**: Driver terminates when next command is sent after unexpected error. Use when unexpected errors indicate protocol implementation bugs.
+
+### Configuring Multiple Behaviors
+
+All four error behaviors can be configured independently:
+
+```csharp
+using WebDriverBiDi;
+
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+// Different strategies for different error types
+driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;  // Collect handler errors
+driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;        // Fail fast on protocol errors
+driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;         // Ignore unknown messages
+driver.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;       // Collect unexpected errors
+
+await driver.StartAsync("ws://localhost:9222/session");
+
+// Perform operations...
+await driver.BrowsingContext.NavigateAsync(navParams);
+
+// Errors with Collect behavior are thrown here
+try
+{
+    await driver.StopAsync();
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"Collected errors: {ex.Message}");
+    // Exception may contain multiple errors as inner exceptions
+}
+```
+
+**Best Practices:**
+- Start with **Terminate** during development to catch issues early
+- Use **Collect** when diagnosing intermittent problems
+- Switch to **Ignore** in production for non-critical errors
+- Monitor logs regardless of behavior setting
+- Consider your application's error tolerance when choosing behaviors
+- Remember that **Collect** mode defers errors until `StopAsync()` is called
+- Remember that **Terminate** mode throws errors on the next command, not immediately when the error occurs
+
 ## Extension Points
 
 WebDriverBiDi.NET can be extended in several ways:

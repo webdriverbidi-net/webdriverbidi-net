@@ -522,6 +522,12 @@ public class BiDiDriver : IBiDiDriver
     /// is locked to prevent race conditions with event handling.
     /// </para>
     /// <para>
+    /// <strong>Thread safety:</strong> This method is thread-safe and can be safely called from multiple
+    /// threads concurrently. An internal lock ensures that the check against <see cref="IsStarted"/> and
+    /// the module addition to the registry are performed atomically, preventing race conditions during
+    /// concurrent registration attempts or when registering near the time of calling <see cref="StartAsync(string, CancellationToken)"/>.
+    /// </para>
+    /// <para>
     /// This method is used for registering custom modules that extend the WebDriver BiDi protocol.
     /// All standard modules (Browser, BrowsingContext, Script, Network, etc.) are registered automatically
     /// during driver construction and do not need explicit registration.

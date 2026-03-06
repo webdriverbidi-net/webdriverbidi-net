@@ -78,7 +78,196 @@ geckodriver --port 4444
 
 ### Discovering the WebSocket URL
 
-For Chromium-based browsers, navigate to `http://localhost:9222/json/version` to find the `webSocketDebuggerUrl`.
+Chromium-based browsers provide HTTP endpoints to discover WebSocket URLs programmatically.
+
+#### Method 1: Browser-Level WebSocket URL
+
+The `/json/version` endpoint returns the browser-level WebSocket URL:
+
+```bash
+# Query the endpoint
+curl http://localhost:9222/json/version
+```
+
+**Example JSON response:**
+```json
+{
+  "Browser": "Chrome/120.0.6099.129",
+  "Protocol-Version": "1.3",
+  "User-Agent": "Mozilla/5.0...",
+  "V8-Version": "12.0.267.17",
+  "WebKit-Version": "537.36",
+  "webSocketDebuggerUrl": "ws://localhost:9222/devtools/browser/a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
+
+The `webSocketDebuggerUrl` field contains the URL to use with `BiDiDriver.StartAsync()`.
+
+**Programmatic Discovery:**
+
+```csharp
+using System.Net.Http;
+using System.Text.Json;
+
+public static async Task<string> DiscoverWebSocketUrlAsync(int port = 9222)
+{
+    using HttpClient client = new HttpClient();
+
+    try
+    {
+        string json = await client.GetStringAsync($"http://localhost:{port}/json/version");
+        using JsonDocument doc = JsonDocument.Parse(json);
+
+        if (doc.RootElement.TryGetProperty("webSocketDebuggerUrl", out JsonElement urlElement))
+        {
+            string? webSocketUrl = urlElement.GetString();
+            if (!string.IsNullOrEmpty(webSocketUrl))
+            {
+                return webSocketUrl;
+            }
+        }
+
+        throw new Exception("WebSocket URL not found in response");
+    }
+    catch (HttpRequestException ex)
+    {
+        throw new Exception($"Failed to connect to browser on port {port}. " +
+            "Ensure Chrome is running with --remote-debugging-port={port}", ex);
+    }
+}
+
+// Usage
+string webSocketUrl = await DiscoverWebSocketUrlAsync();
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+await driver.StartAsync(webSocketUrl);
+```
+
+#### Method 2: Page-Specific WebSocket URLs
+
+The `/json` endpoint returns information about all open pages:
+
+```bash
+# Query all pages
+curl http://localhost:9222/json
+```
+
+**Example JSON response:**
+```json
+[
+  {
+    "description": "",
+    "devtoolsFrontendUrl": "/devtools/inspector.html?ws=localhost:9222/devtools/page/123",
+    "id": "page-123",
+    "title": "Example Domain",
+    "type": "page",
+    "url": "https://example.com/",
+    "webSocketDebuggerUrl": "ws://localhost:9222/devtools/page/page-123"
+  },
+  {
+    "id": "page-456",
+    "title": "Google",
+    "type": "page",
+    "url": "https://www.google.com/",
+    "webSocketDebuggerUrl": "ws://localhost:9222/devtools/page/page-456"
+  }
+]
+```
+
+Each page has its own `webSocketDebuggerUrl`. However, **for WebDriver BiDi, use the browser-level URL from `/json/version`**, not page-specific URLs.
+
+#### Method 3: Browser Console Output
+
+When launching Chrome with `--remote-debugging-port`, it prints the DevTools URL to the console:
+
+```
+DevTools listening on ws://127.0.0.1:9222/devtools/browser/a1b2c3d4-e5f6-7890-abcd-ef1234567890
+```
+
+You can parse this output programmatically when launching the browser.
+
+#### Common Connection String Formats
+
+**Browser-level (recommended for WebDriver BiDi):**
+```
+ws://localhost:9222/devtools/browser/<browser-id>
+```
+
+**Simplified (may work with some browsers):**
+```
+ws://localhost:9222/session
+```
+
+**Page-specific (not recommended for WebDriver BiDi):**
+```
+ws://localhost:9222/devtools/page/<page-id>
+```
+
+#### Complete Discovery Example
+
+```csharp
+using System.Net.Http;
+using System.Text.Json;
+using WebDriverBiDi;
+
+public class BrowserConnection
+{
+    public static async Task<BiDiDriver> ConnectToBrowserAsync(int port = 9222)
+    {
+        // Try to discover WebSocket URL
+        string webSocketUrl;
+
+        try
+        {
+            webSocketUrl = await DiscoverWebSocketUrlAsync(port);
+            Console.WriteLine($"Discovered WebSocket URL: {webSocketUrl}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to discover WebSocket URL: {ex.Message}");
+            Console.WriteLine("Trying fallback URL...");
+
+            // Fallback to common URL pattern
+            webSocketUrl = $"ws://localhost:{port}/session";
+        }
+
+        // Create and start driver
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+
+        try
+        {
+            await driver.StartAsync(webSocketUrl);
+            Console.WriteLine("Connected to browser successfully");
+            return driver;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Connection failed: {ex.Message}");
+            throw;
+        }
+    }
+
+    private static async Task<string> DiscoverWebSocketUrlAsync(int port)
+    {
+        using HttpClient client = new HttpClient();
+        client.Timeout = TimeSpan.FromSeconds(5);
+
+        string json = await client.GetStringAsync($"http://localhost:{port}/json/version");
+        using JsonDocument doc = JsonDocument.Parse(json);
+
+        return doc.RootElement.GetProperty("webSocketDebuggerUrl").GetString()
+            ?? throw new Exception("WebSocket URL is null");
+    }
+}
+
+// Usage
+BiDiDriver driver = await BrowserConnection.ConnectToBrowserAsync(9222);
+```
+
+**Best Practices:**
+- Use `/json/version` to get the browser-level WebSocket URL
+- Include fallback logic for connection failures
+- Validate the WebSocket URL format before connecting
+- Handle HttpClient timeouts appropriately (browser might not be ready)
 
 ### Connection Methods
 
