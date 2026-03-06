@@ -282,6 +282,278 @@ subscribe.Events.Add("network.responseCompleted");  // Only this one
 subscribe.BrowsingContextIds.Add(contextId);
 ```
 
+## Message Queue and High-Throughput Scenarios
+
+### Understanding the Transport Message Queue
+
+WebDriverBiDi.NET uses an **unbounded message queue** to buffer incoming messages from the browser. This design choice provides flexibility and avoids blocking the connection, but has important implications for high-throughput scenarios.
+
+**Architecture:**
+- Messages received from the WebSocket connection are queued immediately
+- A dedicated reader task processes messages sequentially
+- No limit on queue depth (unbounded)
+- Single-reader, single-writer for optimal throughput
+
+**Normal Operation:**
+In typical usage, message processing is fast enough that the queue remains nearly empty. Messages arrive, get processed within milliseconds, and the queue clears immediately.
+
+**High-Throughput Risks:**
+
+```csharp
+// ⚠️ Problematic: Thousands of rapid events with slow handlers
+driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+{
+    // Slow synchronous operation (200ms)
+    Thread.Sleep(200);
+    ProcessRequest(e);
+});
+
+// If 100 events arrive per second:
+// - Processing rate: 5 events/second (200ms each)
+// - Queue growth: 95 events/second
+// - After 10 seconds: ~950 messages queued
+// - Memory usage grows unbounded
+```
+
+### Symptoms of Queue Backlog
+
+Monitor for these indicators:
+
+1. **Increasing Memory Usage**: Process memory grows during high-event periods
+2. **Event Lag**: Events processed long after they occurred
+3. **Delayed Command Responses**: Commands take longer as queue backs up
+4. **OutOfMemoryException**: In extreme cases with thousands of queued messages
+
+### Preventing Queue Backlog
+
+#### 1. Use Asynchronous Event Handlers
+
+```csharp
+// ✅ Good: Async handler doesn't block message thread
+driver.Network.OnBeforeRequestSent.AddObserver(
+    async (e) =>
+    {
+        // Runs on task pool, doesn't block queue processing
+        await Task.Delay(200);
+        await ProcessRequestAsync(e);
+    },
+    ObservableEventHandlerOptions.RunHandlerAsynchronously
+);
+```
+
+**Impact:**
+- Message processing thread continues immediately
+- Queue stays near-empty even with slow handlers
+- Multiple events can be processed concurrently
+
+#### 2. Keep Event Handlers Fast
+
+```csharp
+// ❌ Bad: Heavy processing in handler
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    // CPU-intensive operation
+    var analysis = PerformComplexAnalysis(e.Text);
+    SaveToDatabase(analysis);  // I/O operation
+    SendNotification(analysis); // Network call
+});
+
+// ✅ Good: Offload heavy work
+ConcurrentQueue<EntryAddedEventArgs> logQueue = new();
+
+driver.Log.OnEntryAdded.AddObserver((e) =>
+{
+    // Fast: Just queue for later processing
+    logQueue.Enqueue(e);
+});
+
+// Separate background task processes the queue
+Task.Run(async () =>
+{
+    while (!cancellationToken.IsCancellationRequested)
+    {
+        if (logQueue.TryDequeue(out var logEvent))
+        {
+            var analysis = await PerformComplexAnalysisAsync(logEvent.Text);
+            await SaveToDatabaseAsync(analysis);
+            await SendNotificationAsync(analysis);
+        }
+        else
+        {
+            await Task.Delay(10);
+        }
+    }
+});
+```
+
+#### 3. Reduce Event Subscriptions
+
+```csharp
+// ❌ Bad: Subscribe to high-frequency events you don't need
+subscribe.Events.Add("network.beforeRequestSent");   // Very high frequency
+subscribe.Events.Add("network.responseStarted");     // Very high frequency
+subscribe.Events.Add("network.responseCompleted");   // High frequency
+
+// ✅ Good: Only subscribe to events you actually use
+subscribe.Events.Add("network.responseCompleted");   // Only this one
+
+// ✅ Even better: Scope to specific contexts
+subscribe.Events.Add("network.responseCompleted");
+subscribe.BrowsingContextIds.Add(contextId);  // Only for this tab
+```
+
+#### 4. Implement Event Throttling
+
+```csharp
+// Throttle high-frequency events
+DateTime lastProcessed = DateTime.MinValue;
+TimeSpan throttleInterval = TimeSpan.FromMilliseconds(100);
+
+driver.Network.OnBeforeRequestSent.AddObserver((e) =>
+{
+    DateTime now = DateTime.Now;
+    if (now - lastProcessed < throttleInterval)
+    {
+        return;  // Skip this event
+    }
+
+    lastProcessed = now;
+    ProcessRequest(e);
+});
+```
+
+#### 5. Use Event Sampling
+
+```csharp
+// Sample 10% of events for analysis
+Random random = new Random();
+
+driver.Network.OnResponseCompleted.AddObserver((e) =>
+{
+    if (random.Next(100) < 10)  // 10% sample rate
+    {
+        AnalyzeResponse(e);
+    }
+});
+```
+
+### Monitoring and Diagnostics
+
+Since there's no built-in queue depth metric, monitor at the process level:
+
+```csharp
+using System.Diagnostics;
+
+// Monitor memory usage
+Process currentProcess = Process.GetCurrentProcess();
+
+Timer memoryMonitor = new Timer(_ =>
+{
+    currentProcess.Refresh();
+    long memoryMB = currentProcess.WorkingSet64 / (1024 * 1024);
+
+    if (memoryMB > 500)  // Alert if over 500MB
+    {
+        Console.WriteLine($"⚠️ High memory usage: {memoryMB} MB");
+    }
+}, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+```
+
+### Practical Guidelines
+
+**For Low-Traffic Applications** (< 100 events/second):
+- Default configuration works well
+- No special considerations needed
+- Synchronous event handlers are acceptable for quick operations
+
+**For Medium-Traffic Applications** (100-1000 events/second):
+- Use `RunHandlerAsynchronously` for all handlers doing I/O
+- Keep handlers under 10ms for synchronous execution
+- Monitor memory usage during peak load
+
+**For High-Traffic Applications** (> 1000 events/second):
+- Use `RunHandlerAsynchronously` for ALL event handlers
+- Implement event sampling or throttling
+- Consider reducing event subscriptions
+- Offload processing to background queues
+- Monitor memory continuously
+- Consider multiple driver instances to distribute load
+
+### Example: High-Throughput Network Monitoring
+
+```csharp
+using System.Collections.Concurrent;
+using WebDriverBiDi;
+using WebDriverBiDi.Network;
+
+// Efficient high-throughput event handling
+public class NetworkMonitor
+{
+    private readonly ConcurrentQueue<ResponseData> responseQueue = new();
+    private readonly SemaphoreSlim processingSignal = new(0);
+    private readonly CancellationTokenSource cancellation = new();
+    private int eventCount = 0;
+
+    public async Task StartAsync(BiDiDriver driver)
+    {
+        // Lightweight event handler - just queue
+        driver.Network.OnResponseCompleted.AddObserver(
+            async (e) =>
+            {
+                responseQueue.Enqueue(e.Response);
+                processingSignal.Release();
+                Interlocked.Increment(ref eventCount);
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously
+        );
+
+        // Background processor - handles heavy work
+        _ = Task.Run(async () =>
+        {
+            while (!cancellation.Token.IsCancellationRequested)
+            {
+                await processingSignal.WaitAsync(cancellation.Token);
+
+                if (responseQueue.TryDequeue(out var response))
+                {
+                    try
+                    {
+                        await AnalyzeResponseAsync(response);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Analysis error: {ex.Message}");
+                    }
+                }
+            }
+        });
+
+        // Metrics reporter
+        _ = Task.Run(async () =>
+        {
+            while (!cancellation.Token.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10));
+                int count = Interlocked.Exchange(ref eventCount, 0);
+                int queueDepth = responseQueue.Count;
+                Console.WriteLine($"Events/sec: {count / 10.0:F1}, Queue depth: {queueDepth}");
+            }
+        });
+    }
+
+    private async Task AnalyzeResponseAsync(ResponseData response)
+    {
+        // Heavy analysis happens here, off the message thread
+        await Task.Delay(50);  // Simulated analysis
+    }
+
+    public void Stop()
+    {
+        cancellation.Cancel();
+    }
+}
+```
+
 ## Resource Management
 
 ### Connection Pooling

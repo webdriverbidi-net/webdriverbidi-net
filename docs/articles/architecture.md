@@ -113,6 +113,29 @@ Events (Browser → Observers):
                                                      └────────────────────┘
 ```
 
+**Message Queue Architecture:**
+
+The Transport uses an unbounded `Channel<byte[]>` to buffer incoming messages:
+
+- **Design**: Single-reader, single-writer unbounded channel
+- **Purpose**: Decouple connection I/O from message processing
+- **Normal Behavior**: Queue stays near-empty as processing is typically faster than message arrival
+- **High-Throughput**: Queue can grow if messages arrive faster than processing (see [Performance Considerations](advanced/performance.md#message-queue-and-high-throughput-scenarios))
+
+```
+Connection → [Unbounded Queue] → Message Processor → Event Dispatch
+                    ↓
+            No size limit
+            Fast enqueue
+            Sequential processing
+```
+
+**Key Characteristics:**
+- No backpressure mechanism (unbounded)
+- Optimal for typical usage patterns
+- Requires attention in high-event scenarios (>1000 events/second)
+- See XML documentation on `Transport` class for mitigation strategies
+
 ### Module Layer
 
 Each module encapsulates a specific area of WebDriver BiDi functionality.

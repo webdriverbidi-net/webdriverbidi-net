@@ -19,6 +19,38 @@ using WebDriverBiDi.JsonConverters;
 /// of the objects serialized or deserialized. Consumers of this class are expected to handle things like awaiting
 /// the response of a WebDriver BiDi command message.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <strong>Message Queue Architecture:</strong>
+/// This transport uses an unbounded <see cref="System.Threading.Channels.Channel{T}"/> for message processing.
+/// Messages received from the connection are queued and processed sequentially by a dedicated reader task.
+/// </para>
+/// <para>
+/// <strong>Memory Considerations:</strong>
+/// The unbounded queue means there is no limit on the number of messages that can be buffered if they
+/// arrive faster than they can be processed. In typical usage, message processing is fast enough that
+/// queue depth remains minimal. However, in high-throughput scenarios (e.g., thousands of rapid events
+/// or very slow event handlers), memory consumption could grow significantly.
+/// </para>
+/// <para>
+/// <strong>Performance Characteristics:</strong>
+/// The single-reader, single-writer queue design provides optimal throughput for the typical case where
+/// messages arrive sequentially and are processed quickly. Event handlers that perform slow operations
+/// (I/O, CPU-intensive work) should use <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>
+/// to avoid blocking the message processing thread.
+/// </para>
+/// <para>
+/// <strong>Monitoring Queue Behavior:</strong>
+/// There is currently no built-in mechanism to monitor queue depth. If you suspect message backlog issues,
+/// consider:
+/// <list type="bullet">
+/// <item><description>Using <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> for all event handlers that perform I/O or take more than a few milliseconds</description></item>
+/// <item><description>Monitoring memory usage of your process during high-traffic operations</description></item>
+/// <item><description>Reducing the frequency of subscribed events if not all are needed</description></item>
+/// <item><description>Implementing throttling or filtering logic in your event handlers</description></item>
+/// </list>
+/// </para>
+/// </remarks>
 public class Transport : IAsyncDisposable
 {
     private const string EventReceivedEventName = "transport.eventReceived";
