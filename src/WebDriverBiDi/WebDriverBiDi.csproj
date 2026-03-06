@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>WebDriverBiDi.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>../../WebDriverBiDi.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -32,8 +32,8 @@
     <PackageReference Include="System.Threading.Channels" Version="10.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <AdditionalFiles Include=".stylecop.json" />
-    <AdditionalFiles Include="WebDriverBiDi.snk" />
+    <AdditionalFiles Include="../../.stylecop.json" />
+    <AdditionalFiles Include="../../WebDriverBiDi.snk" />
     <None Include="README.md" Pack="true" PackagePath="/"/>
   </ItemGroup>
 

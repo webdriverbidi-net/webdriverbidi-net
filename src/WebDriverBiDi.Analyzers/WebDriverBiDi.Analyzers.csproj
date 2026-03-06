@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <Nullable>enable</Nullable>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>../../WebDriverBiDi.snk</AssemblyOriginatorKeyFile>
+
+    <!-- NuGet Package Metadata -->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>WebDriverBiDi.Analyzers</PackageId>
+    <Authors>WebDriverBiDi.NET Contributors</Authors>
+    <Title>WebDriver BiDirectional Client Library - Source Code Analyzers</Title>
+    <Description>Roslyn analyzers for WebDriverBiDi.NET to catch common usage errors at compile time</Description>
+    <PackageTags>webdriver;bidi;roslyn;analyzer</PackageTags>
+    <PackageProjectUrl>https://github.com/webdriverbidi-net/webdriverbidi-net</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- Include analyzer DLL in the package -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Package the analyzer and code fixes into the correct folder structure.
+       Code fixes are in a separate assembly to satisfy RS1038 (no Workspaces in analyzer assembly). -->
+  <PropertyGroup>
+    <_CodeFixesOutputPath>$(MSBuildThisFileDirectory)../WebDriverBiDi.Analyzers.CodeFixes/bin/$(Configuration)/netstandard2.0/WebDriverBiDi.Analyzers.CodeFixes.dll</_CodeFixesOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(_CodeFixesOutputPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(_CodeFixesOutputPath)')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+  <!-- Build CodeFixes before packing so its DLL is available to include in the package -->
+  <Target Name="BuildCodeFixesBeforePack" BeforeTargets="GenerateNuspec">
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\WebDriverBiDi.Analyzers.CodeFixes\WebDriverBiDi.Analyzers.CodeFixes.csproj" Targets="Build" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <ItemGroup>
+    <AdditionalFiles Include="../../WebDriverBiDi.snk" />
+  </ItemGroup>
+</Project>

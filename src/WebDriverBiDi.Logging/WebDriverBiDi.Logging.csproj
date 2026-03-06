@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>../WebDriverBiDi/WebDriverBiDi.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>../../WebDriverBiDi.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -34,8 +34,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="../WebDriverBiDi/.stylecop.json" Link=".stylecop.json" />
-    <AdditionalFiles Include="../WebDriverBiDi/WebDriverBiDi.snk" />
+    <AdditionalFiles Include="../../.stylecop.json" Link=".stylecop.json" />
+    <AdditionalFiles Include="../../WebDriverBiDi.snk" />
     <None Include="README.md" Pack="true" PackagePath="/"/>
   </ItemGroup>
 
