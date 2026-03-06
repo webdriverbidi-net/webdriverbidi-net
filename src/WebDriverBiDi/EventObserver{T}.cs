@@ -51,12 +51,29 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// Gets a value indicating whether a checkpoint is set for this observer.
     /// </summary>
     [MemberNotNullWhen(true, nameof(checkpointCompletionSource))]
-    public bool IsCheckpointSet { get; internal set; } = false;
+    public bool IsCheckpointSet
+    {
+        get
+        {
+            lock (this.checkpointLock)
+            {
+                return this.checkpointCompletionSource is not null;
+            }
+        }
+    }
 
     /// <summary>
     /// Gets the internal unique identifier of this observer.
     /// </summary>
     public string Id { get; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Gets a value indicating whether this observer currently has a checkpoint set, without acquiring the checkpoint lock.
+    /// This is only used internally to avoid locking when notifying observers, and should not be used externally as it is
+    /// not thread-safe.
+    /// </summary>
+    [MemberNotNullWhen(true, nameof(checkpointCompletionSource))]
+    private bool IsCheckpointSetInternal => this.checkpointCompletionSource is not null;
 
     /// <summary>
     /// Stops observing the event.
@@ -94,6 +111,13 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <param name="numberOfNotifications">The number of notifications to wait for. If unspecified, defaults to 1.</param>
     /// <exception cref="ArgumentException">Thrown when the number of notifications specified is less than 1.</exception>
     /// <exception cref="WebDriverBiDiException">Thrown when a checkpoint is already established and not yet fulfilled.</exception>
+    /// <remarks>
+    /// <para>
+    /// This method is thread-safe and can be called concurrently with <see cref="Notify"/>.
+    /// However, concurrent calls to checkpoint methods (SetCheckpoint, UnsetCheckpoint, WaitForCheckpoint)
+    /// from multiple threads are not supported and may result in unpredictable behavior.
+    /// </para>
+    /// </remarks>
     public void SetCheckpoint(uint numberOfNotifications = 1)
     {
         if (numberOfNotifications < 1)
@@ -103,7 +127,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
 
         lock (this.checkpointLock)
         {
-            if (this.IsCheckpointSet)
+            if (this.IsCheckpointSetInternal)
             {
                 throw new WebDriverBiDiException("This observer already has a checkpoint set. It must be satisfied or unset before setting another.");
             }
@@ -112,7 +136,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             this.synchronizationCounter.Dispose();
             this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
             this.checkpointCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            this.IsCheckpointSet = true;
         }
     }
 
@@ -124,12 +147,18 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied.</param>
     /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// <para>
+    /// This method is thread-safe with respect to handler notification calls.
+    /// Disposing this observer while waiting will result in an <see cref="ObjectDisposedException"/>.
+    /// </para>
+    /// </remarks>
     public bool WaitForCheckpoint(TimeSpan timeout)
     {
         CountdownEvent counter;
         lock (this.checkpointLock)
         {
-            if (!this.IsCheckpointSet)
+            if (!this.IsCheckpointSetInternal)
             {
                 return true;
             }
@@ -154,12 +183,18 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied.</param>
     /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// <para>
+    /// This method is thread-safe with respect to handler notification calls.
+    /// Disposing this observer while waiting will result in an <see cref="ObjectDisposedException"/>.
+    /// </para>
+    /// </remarks>
     public async Task<bool> WaitForCheckpointAsync(TimeSpan timeout)
     {
         Task<bool> completionTask;
         lock (this.checkpointLock)
         {
-            if (!this.IsCheckpointSet)
+            if (!this.IsCheckpointSetInternal)
             {
                 return true;
             }
@@ -276,7 +311,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
 
         lock (this.checkpointLock)
         {
-            if (this.IsCheckpointSet && !this.synchronizationCounter.IsSet)
+            if (this.IsCheckpointSetInternal && !this.synchronizationCounter.IsSet)
             {
                 this.capturedTasks.Add(executingTask);
                 this.synchronizationCounter.Signal();
@@ -338,7 +373,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// </summary>
     private void ResetCheckpointState()
     {
-        this.IsCheckpointSet = false;
         this.synchronizationCounter.Dispose();
         this.checkpointCompletionSource?.TrySetCanceled();
         this.checkpointCompletionSource = null;
