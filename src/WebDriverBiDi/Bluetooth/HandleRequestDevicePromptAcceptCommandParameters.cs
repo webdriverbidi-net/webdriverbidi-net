@@ -27,5 +27,9 @@ public class HandleRequestDevicePromptAcceptCommandParameters : HandleRequestDev
     /// Gets or sets the ID of the device for which to accept the prompt.
     /// </summary>
     [JsonIgnore]
-    public string DeviceId { get => this.SerializableDeviceId!; set => this.SerializableDeviceId = value; }
+    public string DeviceId
+    {
+        get => this.SerializableDeviceId ?? throw new InvalidOperationException("DeviceId cannot be null");
+        set => this.SerializableDeviceId = value ?? throw new ArgumentNullException(nameof(value));
+    }
 }

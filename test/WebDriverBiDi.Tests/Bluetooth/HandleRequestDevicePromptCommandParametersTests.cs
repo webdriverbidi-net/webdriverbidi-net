@@ -109,4 +109,33 @@ public class HandleRequestDevicePromptCommandParametersTests
             Assert.That(serialized["accept"]!.Value<bool>(), Is.False);
         }
     }
+
+    [Test]
+    public void TestAcceptParametersDeviceIdGetterReturnsValue()
+    {
+        HandleRequestDevicePromptAcceptCommandParameters parameters = new("myContext", "myPrompt", "myDevice");
+        Assert.That(parameters.DeviceId, Is.EqualTo("myDevice"));
+    }
+
+    [Test]
+    public void TestAcceptParametersDeviceIdSetterSetsValue()
+    {
+        HandleRequestDevicePromptAcceptCommandParameters parameters = new("myContext", "myPrompt", "myDevice");
+        parameters.DeviceId = "myNewDevice";
+        Assert.That(parameters.DeviceId, Is.EqualTo("myNewDevice"));
+    }
+
+    [Test]
+    public void TestAcceptParametersThrowsWhenGettingDeviceIdWhenNull()
+    {
+        HandleRequestDevicePromptAcceptCommandParameters parameters = new("myContext", "myPrompt", null!);
+        Assert.That(() => _ = parameters.DeviceId, Throws.InvalidOperationException.With.Message.EqualTo("DeviceId cannot be null"));
+    }
+
+    [Test]
+    public void TestAcceptParametersThrowsWhenSettingDeviceIdToNull()
+    {
+        HandleRequestDevicePromptAcceptCommandParameters parameters = new("myContext", "myPrompt", "myDevice");
+        Assert.That(() => parameters.DeviceId = null!, Throws.ArgumentNullException);
+    }
 }
