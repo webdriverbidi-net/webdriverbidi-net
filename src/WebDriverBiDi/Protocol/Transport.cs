@@ -282,9 +282,7 @@ public class Transport : IAsyncDisposable
             throw new WebDriverBiDiConnectionException("Cannot register a type info resolver after the transport is connected");
         }
 
-        this.options.TypeInfoResolver = JsonTypeInfoResolver.Combine(
-            this.options.TypeInfoResolver!,
-            resolver);
+        this.options.TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, resolver);
     }
 
     /// <summary>
