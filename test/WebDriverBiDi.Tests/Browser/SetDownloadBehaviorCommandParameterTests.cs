@@ -160,4 +160,24 @@ public class SetDownloadBehaviorCommandParametersTests
             Assert.That(contextsArray[0].Value<string>(), Is.EqualTo("myUserContext"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetDownloadBehaviorCommandParameters properties = SetDownloadBehaviorCommandParameters.ResetDownloadBehavior;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.DownloadBehavior, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetDownloadBehaviorCommandParameters firstInstance = SetDownloadBehaviorCommandParameters.ResetDownloadBehavior;
+        SetDownloadBehaviorCommandParameters secondInstance = SetDownloadBehaviorCommandParameters.ResetDownloadBehavior;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

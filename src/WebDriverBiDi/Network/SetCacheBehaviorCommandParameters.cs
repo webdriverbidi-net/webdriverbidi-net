@@ -13,6 +13,15 @@ using System.Text.Json.Serialization;
 public class SetCacheBehaviorCommandParameters : CommandParameters<SetCacheBehaviorCommandResult>
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="SetCacheBehaviorCommandParameters"/> class.
+    /// </summary>
+    /// <param name="cacheBehavior">The <see cref="CacheBehavior"/> to set.</param>
+    public SetCacheBehaviorCommandParameters(CacheBehavior cacheBehavior)
+    {
+        this.CacheBehavior = cacheBehavior;
+    }
+
+    /// <summary>
     /// Gets the method name of the command.
     /// </summary>
     [JsonIgnore]
@@ -22,7 +31,7 @@ public class SetCacheBehaviorCommandParameters : CommandParameters<SetCacheBehav
     /// Gets or sets the behavior of the cache.
     /// </summary>
     [JsonPropertyName("cacheBehavior")]
-    public CacheBehavior CacheBehavior { get; set; } = CacheBehavior.Default;
+    public CacheBehavior CacheBehavior { get; set; }
 
     /// <summary>
     /// Gets or sets the contexts, if any, for which to set the cache behavior.

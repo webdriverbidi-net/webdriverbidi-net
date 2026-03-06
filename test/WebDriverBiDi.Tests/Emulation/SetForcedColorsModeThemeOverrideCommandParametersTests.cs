@@ -81,4 +81,25 @@ public class SetForcedColorsModeThemeOverrideCommandParametersTests
             Assert.That(serialized["theme"]!.Value<string>(), Is.EqualTo("dark"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetForcedColorsModeThemeOverrideCommandParameters properties = SetForcedColorsModeThemeOverrideCommandParameters.ResetForcedColorsModeThemeOverride;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.Theme, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetForcedColorsModeThemeOverrideCommandParameters firstInstance = SetForcedColorsModeThemeOverrideCommandParameters.ResetForcedColorsModeThemeOverride;
+        SetForcedColorsModeThemeOverrideCommandParameters secondInstance = SetForcedColorsModeThemeOverrideCommandParameters.ResetForcedColorsModeThemeOverride;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

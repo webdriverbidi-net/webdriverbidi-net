@@ -105,4 +105,25 @@ public class SetTouchOverrideCommandParametersTests
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetTouchOverrideCommandParameters properties = SetTouchOverrideCommandParameters.ResetTouchOverride;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.MaxTouchPoints, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetTouchOverrideCommandParameters firstInstance = SetTouchOverrideCommandParameters.ResetTouchOverride;
+        SetTouchOverrideCommandParameters secondInstance = SetTouchOverrideCommandParameters.ResetTouchOverride;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

@@ -112,4 +112,25 @@ public class SetScreenOrientationOverrideCoordinatesCommandParametersTests
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetScreenOrientationOverrideCommandParameters properties = SetScreenOrientationOverrideCommandParameters.ResetScreenOrientationOverride;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.ScreenOrientation, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetScreenOrientationOverrideCommandParameters firstInstance = SetScreenOrientationOverrideCommandParameters.ResetScreenOrientationOverride;
+        SetScreenOrientationOverrideCommandParameters secondInstance = SetScreenOrientationOverrideCommandParameters.ResetScreenOrientationOverride;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

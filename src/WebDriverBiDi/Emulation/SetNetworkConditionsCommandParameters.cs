@@ -20,6 +20,16 @@ public class SetNetworkConditionsCommandParameters : CommandParameters<SetNetwor
     }
 
     /// <summary>
+    /// Gets a pre-initialized instance of <see cref="SetNetworkConditionsCommandParameters"/>
+    /// with the <see cref="NetworkConditions"/> property set to <see langword="null"/> to clear
+    /// any existing network conditions. Returns a new instance on each access to allow fo
+    /// modification of the properties without affecting other uses. Functionally equivalent to
+    /// using the parameterless constructor, but provided as a named property to make the intent
+    /// of clearing the override more explicit in code that uses this property.
+    /// </summary>
+    public static SetNetworkConditionsCommandParameters ResetNetworkConditions => new();
+
+    /// <summary>
     /// Gets the method name of the command.
     /// </summary>
     [JsonIgnore]

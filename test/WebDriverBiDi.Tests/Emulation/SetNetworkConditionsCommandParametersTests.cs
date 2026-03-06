@@ -109,4 +109,25 @@ public class SetNetworkConditionsCommandParametersTests
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetNetworkConditionsCommandParameters properties = SetNetworkConditionsCommandParameters.ResetNetworkConditions;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.NetworkConditions, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetNetworkConditionsCommandParameters firstInstance = SetNetworkConditionsCommandParameters.ResetNetworkConditions;
+        SetNetworkConditionsCommandParameters secondInstance = SetNetworkConditionsCommandParameters.ResetNetworkConditions;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

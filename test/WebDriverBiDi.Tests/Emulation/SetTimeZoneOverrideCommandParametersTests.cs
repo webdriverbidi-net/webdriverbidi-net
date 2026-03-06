@@ -105,4 +105,25 @@ public class SetTimeZoneOverrideCoordinatesCommandParametersTests
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetTimeZoneOverrideCommandParameters properties = SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.TimeZone, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetTimeZoneOverrideCommandParameters firstInstance = SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride;
+        SetTimeZoneOverrideCommandParameters secondInstance = SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

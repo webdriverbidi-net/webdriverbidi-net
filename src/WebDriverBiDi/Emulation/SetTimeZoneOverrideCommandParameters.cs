@@ -20,6 +20,16 @@ public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZon
     }
 
     /// <summary>
+    /// Gets a pre-initialized instance of <see cref="SetTimeZoneOverrideCommandParameters"/>
+    /// with the <see cref="TimeZone"/> property set to <see langword="null"/> to clear any existing
+    /// time zone override. Returns a new instance on each access to allow for modification of the
+    /// properties without affecting other uses. Functionally equivalent to using the parameterless
+    /// constructor, but provided as a named property to make the intent of clearing the override
+    /// more explicit in code that uses this property.
+    /// </summary>
+    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
+
+    /// <summary>
     /// Gets the method name of the command.
     /// </summary>
     [JsonIgnore]

@@ -20,6 +20,17 @@ public class SetTouchOverrideCommandParameters : CommandParameters<SetTouchOverr
     }
 
     /// <summary>
+    /// Gets a pre-initialized instance of <see cref="SetTouchOverrideCommandParameters"/>
+    /// with the <see cref="MaxTouchPoints"/> property set to <see langword="null"/> to
+    /// clear any existing touch override. Returns a new instance on each access to allow
+    /// for modification of the properties without affecting other uses. Functionally
+    /// equivalent to using the parameterless constructor, but provided as a named property
+    /// to make the intent of clearing the override more explicit in code that uses this
+    /// property.
+    /// </summary>
+    public static SetTouchOverrideCommandParameters ResetTouchOverride => new();
+
+    /// <summary>
     /// Gets the method name of the command.
     /// </summary>
     [JsonIgnore]

@@ -141,4 +141,25 @@ public class SetScreenSettingsOverrideCommandParametersTests
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetScreenSettingsOverrideCommandParameters properties = SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.ScreenArea, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetScreenSettingsOverrideCommandParameters firstInstance = SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
+        SetScreenSettingsOverrideCommandParameters secondInstance = SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

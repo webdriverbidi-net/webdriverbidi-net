@@ -23,15 +23,18 @@ public class SetScriptingEnabledCommandParametersTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("enabled"));
-            Assert.That(serialized["enabled"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["enabled"]!.Value<bool>, Is.False);
+            Assert.That(serialized["enabled"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(serialized["enabled"]!.Value<bool?>(), Is.Null);
         }
     }
 
     [Test]
     public void TestCanSerializeParametersWithEnabledTrue()
     {
-        SetScriptingEnabledCommandParameters properties = new(true);
+        SetScriptingEnabledCommandParameters properties = new()
+        {
+            IsScriptingEnabled = true,
+        };
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
@@ -39,7 +42,25 @@ public class SetScriptingEnabledCommandParametersTests
         {
             Assert.That(serialized, Contains.Key("enabled"));
             Assert.That(serialized["enabled"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["enabled"]!.Value<bool>, Is.True);
+            Assert.That(serialized["enabled"]!.Value<bool?>(), Is.True);
+        }
+    }
+
+    [Test]
+    public void TestCanSerializeParametersWithEnabledFalse()
+    {
+        SetScriptingEnabledCommandParameters properties = new()
+        {
+            IsScriptingEnabled = false,
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        Assert.That(serialized, Has.Count.EqualTo(1));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(serialized, Contains.Key("enabled"));
+            Assert.That(serialized["enabled"]!.Type, Is.EqualTo(JTokenType.Boolean));
+            Assert.That(serialized["enabled"]!.Value<bool?>(), Is.False);
         }
     }
 
@@ -60,8 +81,8 @@ public class SetScriptingEnabledCommandParametersTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("enabled"));
-            Assert.That(serialized["enabled"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["enabled"]!.Value<bool>(), Is.False);
+            Assert.That(serialized["enabled"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(serialized["enabled"]!.Value<bool?>(), Is.Null);
             Assert.That(serialized, Contains.Key("contexts"));
             Assert.That(serialized["contexts"]!.Type, Is.EqualTo(JTokenType.Array));
             JArray? contextsArray = serialized["contexts"]!.Value<JArray>();
@@ -90,8 +111,8 @@ public class SetScriptingEnabledCommandParametersTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("enabled"));
-            Assert.That(serialized["enabled"]!.Type, Is.EqualTo(JTokenType.Boolean));
-            Assert.That(serialized["enabled"]!.Value<bool>(), Is.False);
+            Assert.That(serialized["enabled"]!.Type, Is.EqualTo(JTokenType.Null));
+            Assert.That(serialized["enabled"]!.Value<bool?>(), Is.Null);
             Assert.That(serialized, Contains.Key("userContexts"));
             Assert.That(serialized["userContexts"]!.Type, Is.EqualTo(JTokenType.Array));
             JArray? userContextsArray = serialized["userContexts"]!.Value<JArray>();
@@ -101,5 +122,26 @@ public class SetScriptingEnabledCommandParametersTests
             Assert.That(userContextsArray[1].Type, Is.EqualTo(JTokenType.String));
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         }
+    }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetScriptingEnabledCommandParameters properties = SetScriptingEnabledCommandParameters.ResetScriptingEnabled;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.IsScriptingEnabled, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetScriptingEnabledCommandParameters firstInstance = SetScriptingEnabledCommandParameters.ResetScriptingEnabled;
+        SetScriptingEnabledCommandParameters secondInstance = SetScriptingEnabledCommandParameters.ResetScriptingEnabled;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
     }
 }

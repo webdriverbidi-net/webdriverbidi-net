@@ -105,4 +105,25 @@ public class SetUserAgentOverrideCoordinatesCommandParametersTests
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetUserAgentOverrideCommandParameters properties = SetUserAgentOverrideCommandParameters.ResetUserAgentOverride;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.UserAgent, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetUserAgentOverrideCommandParameters firstInstance = SetUserAgentOverrideCommandParameters.ResetUserAgentOverride;
+        SetUserAgentOverrideCommandParameters secondInstance = SetUserAgentOverrideCommandParameters.ResetUserAgentOverride;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

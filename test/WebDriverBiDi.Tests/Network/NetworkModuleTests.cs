@@ -435,7 +435,7 @@ public class NetworkModuleTests
         await driver.StartAsync("ws:localhost");
         NetworkModule module = driver.Network;
 
-        Task<SetCacheBehaviorCommandResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters());
+        Task<SetCacheBehaviorCommandResult> task = module.SetCacheBehaviorAsync(new SetCacheBehaviorCommandParameters(CacheBehavior.Default));
 
         task.Wait(TimeSpan.FromSeconds(1));
         SetCacheBehaviorCommandResult result = task.Result;

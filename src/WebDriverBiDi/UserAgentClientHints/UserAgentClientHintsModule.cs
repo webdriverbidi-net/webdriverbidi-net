@@ -34,8 +34,8 @@ public sealed class UserAgentClientHintsModule : Module
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SetClientHintsOverrideCommandResult> SetClientHintsOverrideAsync(SetClientHintsOverrideCommandParameters? commandParameters = null)
+    public Task<SetClientHintsOverrideCommandResult> SetClientHintsOverrideAsync(SetClientHintsOverrideCommandParameters commandParameters)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
+        return this.Driver.ExecuteCommandAsync(commandParameters);
     }
 }

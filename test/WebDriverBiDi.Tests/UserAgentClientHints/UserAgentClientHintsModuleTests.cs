@@ -31,31 +31,4 @@ public class UserAgentClientHintsModuleTests
 
         Assert.That(result, Is.Not.Null);
     }
-
-    [Test]
-    public async Task TestSetClientHintsOverrideCommandOmittingParameters()
-    {
-        TestWebSocketConnection connection = new();
-        connection.DataSendComplete += async (sender, e) =>
-        {
-            string responseJson = $$"""
-                                  {
-                                    "type": "success",
-                                    "id": {{e.SentCommandId}},
-                                    "result": {}
-                                  }
-                                  """;
-            await connection.RaiseDataReceivedEventAsync(responseJson);
-        };
-
-        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-        await driver.StartAsync("ws:localhost");
-        UserAgentClientHintsModule module = driver.UserAgentClientHints;
-
-        Task<SetClientHintsOverrideCommandResult> task = module.SetClientHintsOverrideAsync();
-        task.Wait(TimeSpan.FromSeconds(1));
-        SetClientHintsOverrideCommandResult result = task.Result;
-
-        Assert.That(result, Is.Not.Null);
-    }
 }

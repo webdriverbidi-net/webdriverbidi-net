@@ -123,4 +123,25 @@ public class SetScrollbarTypeOverrideCommandParametersTests
             Assert.That(userContextsArray[1].Value<string>(), Is.EqualTo("userContext2"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetScrollbarTypeOverrideCommandParameters properties = SetScrollbarTypeOverrideCommandParameters.ResetScrollbarTypeOverride;
+        Assert.That(properties, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties.ScrollbarType, Is.Null);
+            Assert.That(properties.Contexts, Is.Null);
+            Assert.That(properties.UserContexts, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetScrollbarTypeOverrideCommandParameters firstInstance = SetScrollbarTypeOverrideCommandParameters.ResetScrollbarTypeOverride;
+        SetScrollbarTypeOverrideCommandParameters secondInstance = SetScrollbarTypeOverrideCommandParameters.ResetScrollbarTypeOverride;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

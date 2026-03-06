@@ -15,11 +15,19 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// <summary>
     /// Initializes a new instance of the <see cref="SetScriptingEnabledCommandParameters"/> class.
     /// </summary>
-    /// <param name="isScriptingEnabled">Indicates whether scripting is enabled or disabled for the specified contexts.</param>
-    public SetScriptingEnabledCommandParameters(bool isScriptingEnabled = false)
+    public SetScriptingEnabledCommandParameters()
     {
-        this.IsScriptingEnabled = isScriptingEnabled;
     }
+
+    /// <summary>
+    /// Gets a pre-initialized instance of <see cref="SetScriptingEnabledCommandParameters"/>
+    /// with the <see cref="IsScriptingEnabled"/> property set to <see langword="null"/> to
+    /// clear any existing scripting enabled override. Returns a new instance on each access
+    /// to allow for modification of the properties without affecting other uses. Functionally equivalent
+    /// to using the parameterless constructor, but provided as a named property to make the intent
+    /// of clearing the override more explicit in code that uses this property.
+    /// </summary>
+    public static SetScriptingEnabledCommandParameters ResetScriptingEnabled => new();
 
     /// <summary>
     /// Gets the method name of the command.
@@ -33,7 +41,7 @@ public class SetScriptingEnabledCommandParameters : CommandParameters<SetScripti
     /// </summary>
     [JsonPropertyName("enabled")]
     [JsonInclude]
-    public bool IsScriptingEnabled { get; set; }
+    public bool? IsScriptingEnabled { get; set; }
 
     /// <summary>
     /// Gets or sets the browsing contexts for which to set whether scripting is enabled.
