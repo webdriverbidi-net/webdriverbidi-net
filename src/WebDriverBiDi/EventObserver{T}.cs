@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// Implementation of an observer in the Observer pattern for events.
 /// </summary>
@@ -47,6 +49,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <summary>
     /// Gets a value indicating whether a checkpoint is set for this observer.
     /// </summary>
+    [MemberNotNullWhen(true, nameof(checkpointCompletionSource))]
     public bool IsCheckpointSet { get; internal set; } = false;
 
     /// <summary>
@@ -160,9 +163,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                 return true;
             }
 
-            // Note use of the null-forgiving operator (!) here, as SetCheckpoint always
-            // assigns checkpointCompletionSource before setting IsCheckpointSet to true.
-            completionTask = this.checkpointCompletionSource!.Task;
+            completionTask = this.checkpointCompletionSource.Task;
         }
 
         using CancellationTokenSource timeoutTokenSource = new();
@@ -258,9 +259,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                 this.synchronizationCounter.Signal();
                 if (this.synchronizationCounter.IsSet)
                 {
-                    // Note use of the null-forgiving operator (!) here, as SetCheckpoint always
-                    // assigns checkpointCompletionSource before setting IsCheckpointSet to true.
-                    this.checkpointCompletionSource!.TrySetResult(true);
+                    this.checkpointCompletionSource.TrySetResult(true);
                 }
             }
         }
