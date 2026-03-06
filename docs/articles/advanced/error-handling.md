@@ -73,9 +73,9 @@ WebDriverBiDi.NET allows you to configure how transport-layer errors are handled
 ```csharp
 public enum TransportErrorBehavior
 {
-    Ignore,     // Silently ignore transport errors
+    Ignore,     // Silently ignore transport errors (default)
     Collect,    // Store errors for later inspection
-    Terminate   // Throw exception on next command (default)
+    Terminate   // Throw exception on next command
 }
 ```
 
@@ -83,46 +83,67 @@ public enum TransportErrorBehavior
 
 Event handlers run on separate threads from your main application code. This means exceptions in event handlers don't directly propagate to the calling code. The transport error behavior determines what happens when event handler exceptions occur:
 
-- **Terminate (default)**: Exception is stored and thrown when you send the next command
+- **Ignore (default)**: Exception is discarded and logged
 - **Collect**: Exception is stored in a list for later inspection
-- **Ignore**: Exception is discarded
+- **Terminate**: Exception is stored and thrown when you send the next command
 
-### Terminate Mode (Default)
+### Why Ignore is the Default
 
-The default behavior stores exceptions from event handlers and throws them when you send the next command:
+WebDriverBiDi.NET defaults all error behaviors to `Ignore` for several important reasons:
+
+**1. Protocol Stability During Evolution**
+- The WebDriver BiDi protocol is actively evolving with new features being added regularly
+- Browsers may send events or messages that aren't yet fully specified
+- Unknown message types (valid JSON that doesn't match any known structure) are common during protocol transitions
+- `Ignore` mode allows automation to continue working even when protocols diverge slightly between library and browser versions
+
+**2. Event Handler Resilience**
+- Event handlers are secondary to the main automation flow
+- In many cases, a failing log observer or network monitor shouldn't halt critical automation workflows
+- Users can explicitly handle errors within their handlers using try-catch blocks
+- Forcing all users to handle potential event handler exceptions would add significant boilerplate
+
+**3. Graceful Degradation**
+- Libraries like this are often used for web scraping, testing, and monitoring where partial success is acceptable
+- Stopping the entire driver on a malformed protocol message would be overly aggressive
+- Users can opt-in to stricter error handling (Terminate mode) when needed
+
+**4. Backward Compatibility**
+- As browsers implement new WebDriver BiDi features, older library versions will encounter unknown protocol extensions
+- `Ignore` allows older library versions to continue functioning with newer browsers
+- This is especially important for long-running automation infrastructure
+
+**When to Change from the Default:**
+- **Development/Testing**: Use `Terminate` mode to catch issues early and ensure proper error handling
+- **Diagnostics**: Use `Collect` mode to gather all errors for troubleshooting
+- **Production (with mature code)**: Consider `Terminate` mode once your automation is stable and tested
+
+### Ignore Mode (Default)
+
+Ignore mode silently discards all transport errors. This is the default behavior for all error types:
 
 ```csharp
 using WebDriverBiDi;
 
-// Default: throws event handler exceptions on next command
+// Default behavior - errors are ignored
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
 try
 {
     await driver.StartAsync("ws://localhost:9222/session");
 
-    // Subscribe to events
+    // Event handler errors will be silently discarded
     driver.Log.OnEntryAdded.AddObserver((e) =>
     {
         // This runs on a separate thread
-        if (e.Level == LogLevel.Error)
-        {
-            throw new InvalidOperationException("Error log entry received");
-        }
+        // If it throws, the exception is discarded and logged
+        ProcessLogEntry(e);  // May throw
     });
 
     await driver.Session.SubscribeAsync(subscribeParams);
 
-    // If an error log event occurs, the exception won't throw immediately
-    // because the event handler runs on a separate thread
-
-    // The exception will be thrown here when we send the next command
+    // Commands proceed normally, event handler errors are invisible
     await driver.BrowsingContext.NavigateAsync(navParams);
-}
-catch (WebDriverBiDiException ex)
-{
-    Console.WriteLine($"Transport error: {ex.Message}");
-    // This catch block will receive the event handler exception
 }
 finally
 {
@@ -130,17 +151,14 @@ finally
 }
 ```
 
-**Why This Matters:**
-- Event handlers execute asynchronously on the transport thread
-- Your main code doesn't directly wait for event handlers to complete
-- Terminate mode ensures errors are eventually reported to your code
-- The error surfaces when you send the next command, which is a natural synchronization point
+**Use Ignore Mode When:**
+- Working with evolving protocol versions where unknown messages are expected
+- Event handler failures shouldn't stop critical automation workflows
+- You handle all errors within event handlers themselves using try-catch
+- Operating in scenarios where graceful degradation is preferred
+- Backward compatibility is more important than strict error reporting
 
-**Use Terminate Mode When:**
-- You want event handler errors to be reported (recommended)
-- You need fast failure on protocol errors
-- Operating in production with error visibility
-- You prefer explicit error handling
+**⚠️ Note:** While this is the default, consider using `Terminate` mode during development to catch issues early. The default exists primarily for protocol stability and backward compatibility, not because it's always the best choice for your use case
 
 ### Collect Mode
 
@@ -217,35 +235,45 @@ finally
 
 **Important:** Your code continues normally—errors never throw, only accumulate in the list.
 
-### Ignore Mode
+### Terminate Mode
 
-Ignore mode silently discards all transport errors:
+Terminate mode stores exceptions from event handlers and throws them when you send the next command:
 
 ```csharp
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
 
-// Create transport with Ignore behavior
+// Create transport with Terminate behavior (opt-in to stricter error handling)
 WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection, TransportErrorBehavior.Ignore);
+Transport transport = new Transport(connection, TransportErrorBehavior.Terminate);
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 try
 {
     await driver.StartAsync("ws://localhost:9222/session");
 
-    // Event handler errors will be silently ignored
+    // Subscribe to events
     driver.Log.OnEntryAdded.AddObserver((e) =>
     {
         // This runs on a separate thread
-        // If it throws, error is completely discarded
-        ProcessLogEntry(e);
+        if (e.Level == LogLevel.Error)
+        {
+            throw new InvalidOperationException("Error log entry received");
+        }
     });
 
     await driver.Session.SubscribeAsync(subscribeParams);
 
-    // Commands proceed normally, event handler errors are invisible
+    // If an error log event occurs, the exception won't throw immediately
+    // because the event handler runs on a separate thread
+
+    // The exception will be thrown here when we send the next command
     await driver.BrowsingContext.NavigateAsync(navParams);
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"Transport error: {ex.Message}");
+    // This catch block will receive the event handler exception
 }
 finally
 {
@@ -253,25 +281,25 @@ finally
 }
 ```
 
-**Use Ignore Mode When:**
-- Event handler errors are expected and acceptable
-- You handle all errors within event handlers themselves
-- Operating in fire-and-forget mode for events
-- You have alternative error detection mechanisms
+**Why This Matters:**
+- Event handlers execute asynchronously on the transport thread
+- Your main code doesn't directly wait for event handlers to complete
+- Terminate mode ensures errors are eventually reported to your code
+- The error surfaces when you send the next command, which is a natural synchronization point
 
-**⚠️ Warning:** Use Ignore mode with extreme caution. Silent failures in event handlers can:
-- Hide bugs in your code
-- Make debugging very difficult
-- Lead to incomplete or incorrect application state
-- Mask protocol issues
+**Use Terminate Mode When:**
+- You want event handler errors to be reported (recommended for development)
+- You need fast failure on protocol errors
+- Operating in production with known stable protocol versions
+- You prefer explicit error handling over silent failures
 
 ### Behavior Comparison
 
 | Mode | Event Handler Exceptions | Protocol Errors | Command Errors | When Error Surfaces |
 |------|-------------------------|-----------------|----------------|---------------------|
-| **Terminate** | Throws on next command | Throws on next command | Always throws immediately | Synchronization point (next command) |
+| **Ignore (default)** | Discarded and logged | Discarded and logged | Always throws immediately | Never |
 | **Collect** | Stored in list | Stored in list | Always throws immediately | Never (inspect list manually) |
-| **Ignore** | Discarded | Discarded | Always throws immediately | Never |
+| **Terminate** | Throws on next command | Throws on next command | Always throws immediately | Synchronization point (next command) |
 
 ### Threading Model and Error Propagation
 

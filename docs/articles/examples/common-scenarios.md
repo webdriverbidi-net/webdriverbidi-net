@@ -25,9 +25,19 @@ try
     {
         Wait = ReadinessState.Complete
     };
-    
+
     NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(navParams);
     Console.WriteLine($"Navigated to: {result.Url}");
+}
+catch (WebDriverBiDiTimeoutException ex)
+{
+    Console.WriteLine($"Navigation timeout: {ex.Message}");
+    // Handle timeout - maybe retry or fail gracefully
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"Navigation failed: {ex.Message}");
+    // Handle other protocol errors
 }
 finally
 {
@@ -117,14 +127,22 @@ await driver.StartAsync("ws://localhost:9222/session");
 
 try
 {
-    // Set up log monitoring
+    // Set up log monitoring with error handling inside the handler
     List<string> consoleMessages = new List<string>();
-    
+
     driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
     {
-        string message = $"[{e.Timestamp:HH:mm:ss}] {e.Level}: {e.Text}";
-        consoleMessages.Add(message);
-        Console.WriteLine(message);
+        try
+        {
+            string message = $"[{e.Timestamp:HH:mm:ss}] {e.Level}: {e.Text}";
+            consoleMessages.Add(message);
+            Console.WriteLine(message);
+        }
+        catch (Exception ex)
+        {
+            // Handle errors within the event handler
+            Console.WriteLine($"Error processing log entry: {ex.Message}");
+        }
     });
 
     // Subscribe to log events
@@ -145,6 +163,10 @@ try
     await Task.Delay(2000);
 
     Console.WriteLine($"\nTotal console messages: {consoleMessages.Count}");
+}
+catch (WebDriverBiDiException ex)
+{
+    Console.WriteLine($"WebDriver BiDi error: {ex.Message}");
 }
 finally
 {
