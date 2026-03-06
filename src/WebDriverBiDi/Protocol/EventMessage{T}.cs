@@ -17,7 +17,7 @@ public class EventMessage<T> : EventMessage
     /// Gets the data associated with the event.
     /// </summary>
     [JsonIgnore]
-    public override object EventData => this.SerializableData!;
+    public override object? EventData => this.SerializableData;
 
     /// <summary>
     /// Gets or sets the data of the event for serialization purposes.
@@ -25,5 +25,5 @@ public class EventMessage<T> : EventMessage
     [JsonPropertyName("params")]
     [JsonRequired]
     [JsonInclude]
-    internal T SerializableData { get; set; } = default!;
+    internal T? SerializableData { get; set; }
 }

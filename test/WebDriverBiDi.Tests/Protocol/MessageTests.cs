@@ -48,7 +48,7 @@ public class MessageTests
             Assert.That(result.Type, Is.EqualTo("event"));
             Assert.That(result.EventData, Is.InstanceOf<TestEventArgs>());
             Assert.That(result.EventName, Is.EqualTo("protocol.event"));
-            Assert.That(((TestEventArgs)result.EventData).ParamName, Is.EqualTo("paramValue"));
+            Assert.That(((TestEventArgs)result.EventData!).ParamName, Is.EqualTo("paramValue"));
             Assert.That(result.AdditionalData, Is.Empty);
         }
     }
@@ -172,5 +172,12 @@ public class MessageTests
             Assert.That(((TestCommandResult)result.Result).Value, Is.EqualTo("response value"));
             Assert.That(result.AdditionalData, Has.Count.EqualTo(1));
         }
+    }
+
+    [Test]
+    public void TestCommandResponseMessageThrowsWhenResultIsNull()
+    {
+        CommandResponseMessage<TestCommandResult> message = new();
+        Assert.That(() => _ = message.Result, Throws.InvalidOperationException.With.Message.EqualTo("Result cannot be null"));
     }
 }

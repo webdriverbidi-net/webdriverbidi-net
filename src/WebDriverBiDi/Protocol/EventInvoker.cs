@@ -19,5 +19,5 @@ public abstract class EventInvoker
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the type of the event data is not the type associated with this event data class.
     /// </exception>
-    public abstract Task InvokeEventAsync(object eventData, ReceivedDataDictionary additionalData);
+    public abstract Task InvokeEventAsync(object? eventData, ReceivedDataDictionary additionalData);
 }

@@ -31,7 +31,7 @@ public class EventInvoker<T> : EventInvoker
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the type of the event data is not the type associated with this event data class.
     /// </exception>
-    public override async Task InvokeEventAsync(object eventData, ReceivedDataDictionary additionalData)
+    public override async Task InvokeEventAsync(object? eventData, ReceivedDataDictionary additionalData)
     {
         if (eventData is not T typedEventData)
         {

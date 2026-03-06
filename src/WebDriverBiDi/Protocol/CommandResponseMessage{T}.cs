@@ -18,7 +18,7 @@ public class CommandResponseMessage<T> : CommandResponseMessage
     /// Gets the result of the command.
     /// </summary>
     [JsonIgnore]
-    public override CommandResult Result => this.SerializableResult!;
+    public override CommandResult Result => this.SerializableResult ?? throw new InvalidOperationException("Result cannot be null");
 
     /// <summary>
     /// Gets or sets the result of the command for serialization purposes.

@@ -23,5 +23,5 @@ public abstract class EventMessage : Message
     /// Gets the data for the event.
     /// </summary>
     [JsonIgnore]
-    public abstract object EventData { get; }
+    public abstract object? EventData { get; }
 }

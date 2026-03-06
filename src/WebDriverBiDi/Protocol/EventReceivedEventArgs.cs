@@ -29,5 +29,5 @@ public record EventReceivedEventArgs : WebDriverBiDiEventArgs
     /// <summary>
     /// Gets the data associated with the event.
     /// </summary>
-    public object EventData { get; }
+    public object? EventData { get; }
 }
