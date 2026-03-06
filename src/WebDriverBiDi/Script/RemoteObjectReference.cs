@@ -25,7 +25,11 @@ public record RemoteObjectReference : RemoteReference
     /// Gets or sets the handle of the remote object.
     /// </summary>
     [JsonIgnore]
-    public string Handle { get => this.InternalHandle!; set => this.InternalHandle = value; }
+    public string Handle
+    {
+        get => this.InternalHandle ?? throw new InvalidOperationException("Handle cannot be null");
+        set => this.InternalHandle = value ?? throw new ArgumentNullException(nameof(value));
+    }
 
     /// <summary>
     /// Gets or sets the shared ID of the remote object.

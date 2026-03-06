@@ -123,6 +123,52 @@ public class RemoteReferenceTests
     }
 
     [Test]
+    public void TestRemoteObjectReferenceHandleGetterReturnsValue()
+    {
+        RemoteObjectReference reference = new("myHandle");
+        Assert.That(reference.Handle, Is.EqualTo("myHandle"));
+    }
+
+    [Test]
+    public void TestRemoteObjectReferenceHandleSetterSetsValue()
+    {
+        RemoteObjectReference reference = new("myHandle");
+        reference.Handle = "myNewHandle";
+        Assert.That(reference.Handle, Is.EqualTo("myNewHandle"));
+    }
+
+    [Test]
+    public void TestRemoteObjectReferenceThrowsWhenHandleIsNull()
+    {
+        string json = "{}";
+        RemoteObjectReference? reference = JsonSerializer.Deserialize<RemoteObjectReference>(json);
+        Assert.That(reference, Is.Not.Null);
+        Assert.That(() => _ = reference!.Handle, Throws.InvalidOperationException.With.Message.EqualTo("Handle cannot be null"));
+    }
+
+    [Test]
+    public void TestRemoteObjectReferenceThrowsWhenSettingHandleToNull()
+    {
+        RemoteObjectReference reference = new("myHandle");
+        Assert.That(() => reference.Handle = null!, Throws.ArgumentNullException);
+    }
+
+    [Test]
+    public void TestSharedReferenceSharedIdGetterReturnsValue()
+    {
+        SharedReference reference = new("mySharedId");
+        Assert.That(reference.SharedId, Is.EqualTo("mySharedId"));
+    }
+
+    [Test]
+    public void TestSharedReferenceSharedIdSetterSetsValue()
+    {
+        SharedReference reference = new("mySharedId");
+        reference.SharedId = "myNewSharedId";
+        Assert.That(reference.SharedId, Is.EqualTo("myNewSharedId"));
+    }
+
+    [Test]
     public void TestSharedReferenceThrowsWhenSharedIdIsNull()
     {
         string json = "{}";
