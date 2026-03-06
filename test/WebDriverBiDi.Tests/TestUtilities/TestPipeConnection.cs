@@ -31,6 +31,12 @@ public class TestPipeConnection : PipeConnection
 
     public bool Disposed => this.IsDisposed;
 
+    public bool PipesDisposed
+    {
+        get => this.AreConnectionPipesDisposed;
+        set => this.AreConnectionPipesDisposed = value;
+    }
+
     public override bool IsActive
     {
         get

@@ -467,4 +467,66 @@ public class PipeConnectionTests
             Assert.That(receivedErrorArgs!.Exception, Is.InstanceOf<ObjectDisposedException>());
         }
     }
+
+    [Test]
+    public void TestPipesDisposedPropertySetterBothBranches()
+    {
+        TestPipeConnection connection = new(new TestPipeServer());
+
+        // Test setting to true (one branch of ternary in setter)
+        connection.PipesDisposed = true;
+        Assert.That(connection.PipesDisposed, Is.True);
+
+        // Test setting to false (other branch of ternary in setter)
+        connection.PipesDisposed = false;
+        Assert.That(connection.PipesDisposed, Is.False);
+
+        // Test setting to true again to ensure it works both ways
+        connection.PipesDisposed = true;
+        Assert.That(connection.PipesDisposed, Is.True);
+    }
+
+    [Test]
+    public void TestReadPipeHandleWhenPipesNotDisposed()
+    {
+        TestPipeConnection connection = new(new TestPipeServer());
+        connection.PipesDisposed = false;
+
+        // When pipes are not disposed, should return the actual handle
+        string handle = connection.ReadPipeHandle;
+        Assert.That(handle, Is.Not.Empty);
+    }
+
+    [Test]
+    public void TestWritePipeHandleWhenPipesNotDisposed()
+    {
+        TestPipeConnection connection = new(new TestPipeServer());
+        connection.PipesDisposed = false;
+
+        // When pipes are not disposed, should return the actual handle
+        string handle = connection.WritePipeHandle;
+        Assert.That(handle, Is.Not.Empty);
+    }
+
+    [Test]
+    public void TestReadPipeHandleWhenPipesDisposed()
+    {
+        TestPipeConnection connection = new(new TestPipeServer());
+        connection.PipesDisposed = true;
+
+        // When pipes are disposed, should return empty string
+        string handle = connection.ReadPipeHandle;
+        Assert.That(handle, Is.Empty);
+    }
+
+    [Test]
+    public void TestWritePipeHandleWhenPipesDisposed()
+    {
+        TestPipeConnection connection = new(new TestPipeServer());
+        connection.PipesDisposed = true;
+
+        // When pipes are disposed, should return empty string
+        string handle = connection.WritePipeHandle;
+        Assert.That(handle, Is.Empty);
+    }
 }

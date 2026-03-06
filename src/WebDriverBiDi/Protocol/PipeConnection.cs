@@ -59,7 +59,7 @@ public class PipeConnection : Connection
     private Task? dataReceiveTask;
     private CancellationTokenSource connectionTokenSource = new();
     private int isConnectionActiveTypeSafeFlag = 0;
-    private bool clientHandlesDisposed;
+    private int areConnectionPipesDisposedTypeSafeFlag = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PipeConnection"/> class.
@@ -67,15 +67,11 @@ public class PipeConnection : Connection
     /// <param name="processProvider">An implementation of <see cref="IPipeServerProcessProvider"/> that provides a <see cref="Process"/> that is able to send and receive messages over pipe connections.</param>
     public PipeConnection(IPipeServerProcessProvider processProvider)
     {
-        // PipeDirection.Out means WE write to this pipe (browser will read from FD 3)
-        this.pipeToProcess = new AnonymousPipeServerStream(
-            PipeDirection.Out,
-            HandleInheritability.Inheritable);
+        // PipeDirection.Out means we write to this pipe (browser will read from FD 3)
+        this.pipeToProcess = new AnonymousPipeServerStream(PipeDirection.Out, HandleInheritability.Inheritable);
 
-        // PipeDirection.In means WE read from this pipe (browser will write to FD 4)
-        this.pipeFromProcess = new AnonymousPipeServerStream(
-            PipeDirection.In,
-            HandleInheritability.Inheritable);
+        // PipeDirection.In means we read from this pipe (browser will write to FD 4)
+        this.pipeFromProcess = new AnonymousPipeServerStream(PipeDirection.In, HandleInheritability.Inheritable);
 
         this.processProvider = processProvider;
     }
@@ -93,12 +89,29 @@ public class PipeConnection : Connection
     /// <summary>
     /// Gets the handle used for sending data to the external process.
     /// </summary>
-    public string ReadPipeHandle => this.clientHandlesDisposed ? string.Empty : this.pipeToProcess.GetClientHandleAsString();
+    public string ReadPipeHandle => this.AreConnectionPipesDisposed ? string.Empty : this.pipeToProcess.GetClientHandleAsString();
 
     /// <summary>
     /// Gets the handle used for receiving data from the external process.
     /// </summary>
-    public string WritePipeHandle => this.clientHandlesDisposed ? string.Empty : this.pipeFromProcess.GetClientHandleAsString();
+    public string WritePipeHandle => this.AreConnectionPipesDisposed ? string.Empty : this.pipeFromProcess.GetClientHandleAsString();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the local copies of pipe handles have been disposed.
+    /// </summary>
+    protected bool AreConnectionPipesDisposed
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.areConnectionPipesDisposedTypeSafeFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.areConnectionPipesDisposedTypeSafeFlag, flagValue);
+        }
+    }
 
     private bool IsConnectionActive
     {
@@ -142,11 +155,11 @@ public class PipeConnection : Connection
         await this.LogAsync($"Starting pipe connection: {connectionString}");
 
         // Dispose client handles in parent process only on first start - the external process has inherited them
-        if (!this.clientHandlesDisposed)
+        if (!this.AreConnectionPipesDisposed)
         {
             this.pipeToProcess.DisposeLocalCopyOfClientHandle();
             this.pipeFromProcess.DisposeLocalCopyOfClientHandle();
-            this.clientHandlesDisposed = true;
+            this.AreConnectionPipesDisposed = true;
         }
 
         // Create a new cancellation token source for this connection session
