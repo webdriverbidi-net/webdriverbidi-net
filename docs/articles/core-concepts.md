@@ -404,7 +404,7 @@ observer.SetCheckpoint(5); // Wait for 5 events
 await driver.BrowsingContext.NavigateAsync(navParams);
 
 // Wait for the checkpoint
-bool fulfilled = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+bool fulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
 
 // Remove the observer
 observer.Unobserve();

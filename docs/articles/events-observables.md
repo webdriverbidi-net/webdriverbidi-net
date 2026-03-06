@@ -237,11 +237,8 @@ observer.SetCheckpoint();
 // Trigger navigation
 await driver.BrowsingContext.NavigateAsync(params);
 
-// Wait up to 10 seconds for the event (synchronous - blocks calling thread)
-bool eventOccurred = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
-
-// Or use async version (recommended)
-// bool eventOccurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+// Wait up to 10 seconds for the event
+bool eventOccurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
 
 if (eventOccurred)
 {
@@ -268,7 +265,7 @@ observer.SetCheckpoint(5);
 await driver.BrowsingContext.NavigateAsync(params);
 
 // Wait for all 5 responses
-bool allReceived = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+bool allReceived = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
 Console.WriteLine($"Received all 5 responses: {allReceived}");
 ```
 
@@ -281,12 +278,12 @@ EventObserver<EntryAddedEventArgs> observer =
 // First navigation
 observer.SetCheckpoint(3);
 await driver.BrowsingContext.NavigateAsync(params1);
-observer.WaitForCheckpoint(TimeSpan.FromSeconds(5));
+await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
 
 // Second navigation - reset checkpoint
 observer.SetCheckpoint(2);
 await driver.BrowsingContext.NavigateAsync(params2);
-observer.WaitForCheckpoint(TimeSpan.FromSeconds(5));
+await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
 ```
 
 ## Async Event Handlers
@@ -552,7 +549,7 @@ Console.WriteLine("Navigation command completed");
 
 // Important: The navigation command completes before handlers finish
 // Wait for all events to occur
-bool occurred = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+bool occurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
 
 if (occurred)
 {
@@ -610,7 +607,7 @@ EventObserver<BeforeRequestSentEventArgs> observer =
 observer.SetCheckpoint(5);
 await driver.BrowsingContext.NavigateAsync(params);
 
-bool occurred = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+bool occurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
 if (occurred)
 {
     // Wait for all handlers to complete before continuing

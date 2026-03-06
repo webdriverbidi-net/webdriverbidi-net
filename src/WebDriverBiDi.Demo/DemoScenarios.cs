@@ -128,7 +128,7 @@ public static class DemoScenarios
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
-        bool eventTriggered = observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+        bool eventTriggered = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
         Console.WriteLine($"Event triggered from preload script: {eventTriggered}");
 
         string functionDefinition = @"() => {
@@ -501,7 +501,7 @@ public static class DemoScenarios
         // that the event handlers will run in parallel. In this case, we've chosen to use
         // Tasks as the synchronization mechanism, so that we can wait for all of them to
         // complete before continuing.
-        observer.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+        await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
         Task.WaitAll(observer.GetCheckpointTasks());
         Console.WriteLine($"Event handlers complete");
 
@@ -535,11 +535,10 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
-        AddInterceptCommandParameters addIntercept = new()
+        AddInterceptCommandParameters addIntercept = new(InterceptPhase.BeforeRequestSent)
         {
             BrowsingContextIds = [contextId]
         };
-        addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
         addIntercept.UrlPatterns = [new UrlPatternPattern() { PathName = "simpleContent.html" }];
         await driver.Network.AddInterceptAsync(addIntercept);
 
@@ -578,7 +577,7 @@ public static class DemoScenarios
             Wait = ReadinessState.Complete
         };
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
-        observer.WaitForCheckpoint(TimeSpan.FromSeconds(3));
+        await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(3));
         Task.WaitAll(observer.GetCheckpointTasks());
 
         Console.WriteLine($"Navigation command completed");
@@ -647,7 +646,7 @@ public static class DemoScenarios
         };
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
 
-        bool checkpointFulfilled = observer.WaitForCheckpoint(TimeSpan.FromSeconds(3));
+        bool checkpointFulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(3));
         if (!checkpointFulfilled)
         {
             Console.WriteLine("Error: Checkpoint not fulfilled");
@@ -753,7 +752,7 @@ public static class DemoScenarios
 
                 navigationObserver.SetCheckpoint();
                 await driver.Input.PerformActionsAsync(actionsParams);
-                bool navigationCompleted = navigationObserver.WaitForCheckpoint(TimeSpan.FromSeconds(3));
+                bool navigationCompleted = await navigationObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(3));
                 if (!navigationCompleted)
                 {
                     Console.WriteLine("Navigation completion not detected within three seconds");

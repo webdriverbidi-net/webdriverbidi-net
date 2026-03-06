@@ -445,10 +445,13 @@ public class EventObserver<T>
 {
     // Set checkpoint to wait for N events
     public void SetCheckpoint(int count = 1);
-    
+
     // Wait for checkpoint to be fulfilled
-    public bool WaitForCheckpoint(TimeSpan timeout);
-    
+    public Task<bool> WaitForCheckpointAsync(TimeSpan timeout);
+
+    // Wait for checkpoint and all async handler tasks to complete
+    public Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout);
+
     // Get tasks from async handlers
     public Task[] GetCheckpointTasks();
     

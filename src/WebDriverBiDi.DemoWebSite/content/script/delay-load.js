@@ -9,7 +9,7 @@ function doLoadCycle() {
     document.counter++;
     setTimeout(() => {
       doLoadCycle();
-    }, 100);
+    }, 1000);
   } else {
     const element = document.querySelector("div#contentMessage");
     element.innerText = "Loaded!";

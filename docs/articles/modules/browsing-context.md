@@ -483,7 +483,7 @@ observer.SetCheckpoint();
 await driver.BrowsingContext.NavigateAsync(
     new NavigateCommandParameters(contextId, url));
 
-bool loaded = observer.WaitForCheckpoint(TimeSpan.FromSeconds(30));
+bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
 if (!loaded)
 {
     Console.WriteLine("Page load timeout!");

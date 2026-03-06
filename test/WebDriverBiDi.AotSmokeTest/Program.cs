@@ -76,7 +76,7 @@ try
     };
     await driver.BrowsingContext.NavigateAsync(navigateParams);
     Console.WriteLine("Navigation to github.com complete.");
-    observer.WaitForCheckpoint(TimeSpan.FromSeconds(1));
+    await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(1));
 
     EvaluateCommandParameters evalParams = new("document.title", new ContextTarget(contextId), true);
     EvaluateResult evalResult = await driver.Script.EvaluateAsync(evalParams);

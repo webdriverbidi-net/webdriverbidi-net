@@ -140,42 +140,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Waits for a checkpoint to be satisfied by having this event observer notified the number of
-    /// times specified when the checkpoint was set. If the wait is successful, it means only that
-    /// this observer was notified to execute the handler, not that the handler has necessarily
-    /// completed execution.
-    /// </summary>
-    /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied.</param>
-    /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
-    /// <remarks>
-    /// <para>
-    /// This method is thread-safe with respect to handler notification calls.
-    /// Disposing this observer while waiting will result in an <see cref="ObjectDisposedException"/>.
-    /// </para>
-    /// </remarks>
-    public bool WaitForCheckpoint(TimeSpan timeout)
-    {
-        CountdownEvent counter;
-        lock (this.checkpointLock)
-        {
-            if (!this.IsCheckpointSetInternal)
-            {
-                return true;
-            }
-
-            counter = this.synchronizationCounter;
-        }
-
-        bool waitSucceeded = counter.Wait(timeout);
-        if (waitSucceeded)
-        {
-            this.UnsetCheckpoint();
-        }
-
-        return waitSucceeded;
-    }
-
-    /// <summary>
     /// Asynchronously waits for a checkpoint to be satisfied by having this event observer notified the number of
     /// times specified when the checkpoint was set. If the wait is successful, it means only that
     /// this observer was notified to execute the handler, not that the handler has necessarily

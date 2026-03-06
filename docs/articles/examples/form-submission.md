@@ -185,7 +185,7 @@ namespace FormSubmissionExample
                         await driver.Input.PerformActionsAsync(clickSubmitParams);
 
                         // Wait for navigation to complete
-                        bool navCompleted = navObserver.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+                        bool navCompleted = await navObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
                         
                         if (navCompleted)
                         {
@@ -303,7 +303,7 @@ navObserver.SetCheckpoint();
 
 // Click submit button...
 
-bool navCompleted = navObserver.WaitForCheckpoint(TimeSpan.FromSeconds(10));
+bool navCompleted = await navObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
 ```
 
 Use an event observer to wait for the navigation to complete.
