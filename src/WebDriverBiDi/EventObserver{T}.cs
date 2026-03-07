@@ -5,13 +5,18 @@
 
 namespace WebDriverBiDi;
 
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Implementation of an observer in the Observer pattern for events.
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
+/// <remarks>
+/// Checkpoint methods (<see cref="SetCheckpoint"/>, <see cref="WaitForCheckpointAsync"/>,
+/// <see cref="WaitForCheckpointAndTasksAsync"/>, <see cref="GetCheckpointTasks"/>,
+/// <see cref="UnsetCheckpoint"/>) are thread-safe. Only one checkpoint may be active at a
+/// time per observer. Multiple threads may wait on the same checkpoint concurrently.
+/// </remarks>
 public class EventObserver<T> : IDisposable, IAsyncDisposable
     where T : WebDriverBiDiEventArgs
 {
@@ -21,7 +26,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
     private readonly List<Task> capturedTasks = [];
-    private TaskCompletionSource<bool>? checkpointCompletionSource;
+    private TaskCompletionSource<bool>? checkpointTaskCompletionSource;
     private CountdownEvent synchronizationCounter = new(0);
     private bool isDisposed;
 
@@ -50,14 +55,14 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <summary>
     /// Gets a value indicating whether a checkpoint is set for this observer.
     /// </summary>
-    [MemberNotNullWhen(true, nameof(checkpointCompletionSource))]
+    [MemberNotNullWhen(true, nameof(checkpointTaskCompletionSource))]
     public bool IsCheckpointSet
     {
         get
         {
             lock (this.checkpointLock)
             {
-                return this.checkpointCompletionSource is not null;
+                return this.checkpointTaskCompletionSource is not null;
             }
         }
     }
@@ -72,8 +77,8 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// This is only used internally to avoid locking when notifying observers, and should not be used externally as it is
     /// not thread-safe.
     /// </summary>
-    [MemberNotNullWhen(true, nameof(checkpointCompletionSource))]
-    private bool IsCheckpointSetInternal => this.checkpointCompletionSource is not null;
+    [MemberNotNullWhen(true, nameof(checkpointTaskCompletionSource))]
+    private bool IsCheckpointSetInternal => this.checkpointTaskCompletionSource is not null;
 
     /// <summary>
     /// Stops observing the event.
@@ -113,9 +118,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <exception cref="WebDriverBiDiException">Thrown when a checkpoint is already established and not yet fulfilled.</exception>
     /// <remarks>
     /// <para>
-    /// This method is thread-safe and can be called concurrently with <see cref="Notify"/>.
-    /// However, concurrent calls to checkpoint methods (SetCheckpoint, UnsetCheckpoint, WaitForCheckpoint)
-    /// from multiple threads are not supported and may result in unpredictable behavior.
+    /// This method is thread-safe and can be called concurrently with called handlers.
+    /// </para>
+    /// <para>
+    /// Concurrent calls from multiple threads are serialized. If another thread has already set a checkpoint that has
+    /// not been satisfied or unset, this method throws <see cref="WebDriverBiDiException"/>.
     /// </para>
     /// </remarks>
     public void SetCheckpoint(uint numberOfNotifications = 1)
@@ -135,7 +142,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             this.capturedTasks.Clear();
             this.synchronizationCounter.Dispose();
             this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
-            this.checkpointCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            this.checkpointTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
     }
 
@@ -152,10 +159,15 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// This method is thread-safe with respect to handler notification calls.
     /// Disposing this observer while waiting will result in an <see cref="ObjectDisposedException"/>.
     /// </para>
+    /// <para>
+    /// Multiple threads may call this method concurrently on the same observer; all will complete when the
+    /// checkpoint is fulfilled.
+    /// </para>
     /// </remarks>
     public async Task<bool> WaitForCheckpointAsync(TimeSpan timeout)
     {
         Task<bool> completionTask;
+        TaskCompletionSource<bool>? localTaskCompletionSource;
         lock (this.checkpointLock)
         {
             if (!this.IsCheckpointSetInternal)
@@ -163,17 +175,26 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                 return true;
             }
 
-            completionTask = this.checkpointCompletionSource.Task;
+            localTaskCompletionSource = this.checkpointTaskCompletionSource;
+            completionTask = localTaskCompletionSource.Task;
         }
 
-        using CancellationTokenSource timeoutTokenSource = new();
-        Task timeoutTask = Task.Delay(timeout, timeoutTokenSource.Token);
+        using CancellationTokenSource timeoutCancellationTokenSource = new();
+        Task timeoutTask = Task.Delay(timeout, timeoutCancellationTokenSource.Token);
         Task completedTask = await Task.WhenAny(completionTask, timeoutTask).ConfigureAwait(false);
-        bool checkpointFulfilled = completedTask == completionTask;
+
+        bool checkpointFulfilled = completedTask == completionTask && completionTask.Status == TaskStatus.RanToCompletion && completionTask.Result;
         if (checkpointFulfilled)
         {
-            timeoutTokenSource.Cancel();
-            this.UnsetCheckpoint();
+            timeoutCancellationTokenSource.Cancel();
+            lock (this.checkpointLock)
+            {
+                // Only unset if this is still our checkpoint (hasn't been replaced or already unset)
+                if (this.checkpointTaskCompletionSource == localTaskCompletionSource)
+                {
+                    this.ResetCheckpointState();
+                }
+            }
         }
 
         return checkpointFulfilled;
@@ -207,6 +228,13 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     ///  <see cref="Task"/>s to the calling method.
     /// </summary>
     /// <returns>An array of <see cref="Task"/> objects captured while waiting for the checkpoints to be fulfilled.</returns>
+    /// <remarks>
+    /// <para>
+    /// This method is thread-safe. Calling it unsets the checkpoint and transfers ownership of thecaptured
+    /// tasks to the caller. If another thread is concurrently waiting via <see cref="WaitForCheckpointAsync"/>,
+    /// that wait will still complete successfully.
+    /// </para>
+    /// </remarks>
     public Task[] GetCheckpointTasks()
     {
         lock (this.checkpointLock)
@@ -221,6 +249,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <summary>
     /// Unsets an established checkpoint for this observer.
     /// </summary>
+    /// <remarks>
+    /// This method is thread-safe.
+    /// </remarks>
     public void UnsetCheckpoint()
     {
         lock (this.checkpointLock)
@@ -281,7 +312,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                 this.synchronizationCounter.Signal();
                 if (this.synchronizationCounter.IsSet)
                 {
-                    this.checkpointCompletionSource.TrySetResult(true);
+                    this.checkpointTaskCompletionSource.TrySetResult(true);
                 }
             }
         }
@@ -338,8 +369,8 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     private void ResetCheckpointState()
     {
         this.synchronizationCounter.Dispose();
-        this.checkpointCompletionSource?.TrySetCanceled();
-        this.checkpointCompletionSource = null;
+        this.checkpointTaskCompletionSource?.TrySetCanceled();
+        this.checkpointTaskCompletionSource = null;
     }
 
     private void DisposeObserver()

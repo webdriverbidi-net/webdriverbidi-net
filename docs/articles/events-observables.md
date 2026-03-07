@@ -358,6 +358,17 @@ await driver.BrowsingContext.NavigateAsync(params2);
 await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
 ```
 
+### Checkpoint Thread Safety
+
+Checkpoint methods are thread-safe. You may:
+
+- Call `WaitForCheckpointAsync` or `WaitForCheckpointAndTasksAsync` from multiple threads on the
+same observer; all waiters complete when the checkpoint is fulfilled.
+- Call `GetCheckpointTasks` or `UnsetCheckpoint` from any thread while another thread is waiting.
+
+Only one checkpoint may be active at a time. Calling `SetCheckpoint` when a checkpoint is already set
+(and not yet satisfied or unset) throws `WebDriverBiDiException`.
+
 ## Async Event Handlers
 
 When event handlers perform async operations or I/O, you must use asynchronous handler execution to avoid blocking the transport thread.

@@ -674,6 +674,9 @@ Parallel.For(0, 10, i =>
 - Command execution (`ExecuteCommandAsync`)
 - Event observer notification
 - Transport message processing
+- EventObserver checkpoint methods (`SetCheckpoint`, `WaitForCheckpointAsync`,
+`WaitForCheckpointAndTasksAsync`, `GetCheckpointTasks`, `UnsetCheckpoint`) - multiple
+threads may wait on the same checkpoint; only one checkpoint per observer at a time
 
 **What to Be Careful With:**
 
