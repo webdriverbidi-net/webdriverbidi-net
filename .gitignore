@@ -353,3 +353,4 @@ MigrationBackup/
 
 **/.DS_Store
 .cursor/
+.claude/
