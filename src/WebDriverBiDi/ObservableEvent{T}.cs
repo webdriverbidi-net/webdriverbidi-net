@@ -188,9 +188,14 @@ public class ObservableEvent<T>
     /// <returns>A string that represents the current object.</returns>
     public override string ToString()
     {
+        // Make a copy of the observers under the lock to avoid holding the
+        // lock while building the string.
+        List<EventObserver<T>> observerList;
         lock (this.observerLock)
         {
-            return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", this.observers.Values)}";
+            observerList = [.. this.observers.Values];
         }
+
+        return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", observerList)}";
     }
 }
