@@ -233,72 +233,235 @@ public class ErrorTracker : EventListener
 
 ### Integration with Microsoft.Extensions.Logging
 
-If you need to integrate with `ILogger`, you can create a bridge in a separate assembly:
+For `ILogger` integration, use the **WebDriverBiDi.Logging** package:
+
+```bash
+dotnet add package WebDriverBiDi.Logging
+```
+
+This package bridges WebDriverBiDi EventSource events to the standard .NET logging infrastructure, enabling integration with Application Insights, Serilog, and other logging providers.
+
+#### Basic Console Application
 
 ```csharp
-// In a separate assembly: WebDriverBiDi.Logging
-// (requires Microsoft.Extensions.Logging dependency)
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.Tracing;
+using WebDriverBiDi;
 
-public class WebDriverBiDiEventSourceLogger : EventListener
+// Setup dependency injection
+var services = new ServiceCollection();
+
+// Configure logging with WebDriverBiDi events
+services.AddLogging(builder =>
+{
+    builder.AddConsole()
+           .SetMinimumLevel(LogLevel.Debug);
+
+    // Add WebDriverBiDi diagnostic event logging
+    builder.AddWebDriverBiDi(EventLevel.Informational);
+});
+
+var serviceProvider = services.BuildServiceProvider();
+
+// Use WebDriverBiDi - events will be automatically logged
+await using var driver = new BiDiDriver();
+await driver.StartAsync("ws://localhost:9222");
+
+// Logs will show:
+// [12:34:56 INF] ConnectionOpening, connectionId=12345, url=ws://localhost:9222
+// [12:34:56 INF] ConnectionOpened, connectionId=12345, url=ws://localhost:9222
+// [12:34:56 INF] TransportStarted
+
+await driver.Session.StatusAsync();
+
+// Logs will show:
+// [12:34:56 DBG] CommandSending, commandId=1, method=session.status
+// [12:34:56 INF] CommandCompleted, commandId=1, method=session.status, elapsedMilliseconds=42
+```
+
+#### ASP.NET Core Web Application
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.Tracing;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add WebDriverBiDi event logging to the ASP.NET Core logging pipeline
+builder.Logging.AddWebDriverBiDi(EventLevel.Informational);
+
+// Configure services
+builder.Services.AddScoped<IBrowserAutomationService, BrowserAutomationService>();
+
+var app = builder.Build();
+
+app.MapGet("/test", async (IBrowserAutomationService automation) =>
+{
+    // WebDriverBiDi events will be logged through the ASP.NET Core logging infrastructure
+    var result = await automation.RunTestAsync();
+    return Results.Ok(result);
+});
+
+app.Run();
+```
+
+#### With Serilog Structured Logging
+
+```csharp
+using Serilog;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.Tracing;
+using WebDriverBiDi;
+
+// Configure Serilog with structured logging
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console(outputTemplate:
+        "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}")
+    .Enrich.FromLogContext()
+    .CreateLogger();
+
+var services = new ServiceCollection();
+
+services.AddLogging(builder =>
+{
+    builder.ClearProviders();
+    builder.AddSerilog();
+    builder.AddWebDriverBiDi(EventLevel.Verbose); // Capture all events including verbose
+});
+
+var serviceProvider = services.BuildServiceProvider();
+
+// Structured properties will be captured by Serilog
+await using var driver = new BiDiDriver();
+await driver.StartAsync("ws://localhost:9222");
+
+// Serilog output includes structured properties:
+// [12:34:56 INF] CommandCompleted {"EventId":7,"EventName":"CommandCompleted","commandId":"1","method":"session.status","elapsedMilliseconds":42}
+```
+
+#### With Application Insights
+
+```csharp
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.Tracing;
+using WebDriverBiDi;
+
+var services = new ServiceCollection();
+
+// Add Application Insights
+services.AddApplicationInsightsTelemetry();
+
+// Configure logging with WebDriverBiDi events
+services.AddLogging(builder =>
+{
+    builder.AddApplicationInsights();
+    builder.AddWebDriverBiDi(EventLevel.Informational);
+});
+
+var serviceProvider = services.BuildServiceProvider();
+
+// WebDriverBiDi events will be sent to Application Insights with structured properties
+// allowing you to query and analyze automation telemetry
+```
+
+#### Filtering by Event Level
+
+```csharp
+services.AddLogging(builder =>
+{
+    builder.AddConsole();
+
+    // Only capture Warning and Error events
+    builder.AddWebDriverBiDi(EventLevel.Warning);
+
+    // Or use ILogger filtering
+    builder.AddFilter("WebDriverBiDi.Logging", LogLevel.Warning);
+});
+```
+
+#### Configuration-based Setup
+
+**appsettings.json:**
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "WebDriverBiDi.Logging": "Debug"
+    },
+    "Console": {
+      "IncludeScopes": true
+    }
+  }
+}
+```
+
+**Program.cs:**
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+// Configuration is loaded from appsettings.json
+builder.Logging.AddWebDriverBiDi(); // Respects configured log levels
+
+var app = builder.Build();
+```
+
+#### Custom Event Processing
+
+For scenarios requiring custom processing beyond standard logging:
+
+```csharp
+using System.Diagnostics.Tracing;
+using Microsoft.Extensions.Logging;
+
+public class CustomWebDriverEventListener : EventListener
 {
     private readonly ILogger logger;
 
-    public WebDriverBiDiEventSourceLogger(ILogger<BiDiDriver> logger)
+    public CustomWebDriverEventListener(ILogger logger)
     {
         this.logger = logger;
     }
 
-    protected override void OnEventSourceCreated(EventSource source)
+    protected override void OnEventSourceCreated(EventSource eventSource)
     {
-        if (source.Name == "WebDriverBiDi")
+        if (eventSource.Name == "WebDriverBiDi")
         {
-            EnableEvents(source, EventLevel.Verbose);
+            EnableEvents(eventSource, EventLevel.Informational);
         }
     }
 
     protected override void OnEventWritten(EventWrittenEventArgs eventData)
     {
-        LogLevel level = MapLevel(eventData.Level);
-
-        // Create structured log state
-        var state = new Dictionary<string, object?>
+        // Custom processing here
+        if (eventData.EventName == "CommandCompleted")
         {
-            ["EventId"] = eventData.EventId,
-            ["EventName"] = eventData.EventName
-        };
-
-        if (eventData.PayloadNames != null)
-        {
-            for (int i = 0; i < eventData.PayloadNames.Count; i++)
+            long elapsedMs = Convert.ToInt64(eventData.Payload?[2]);
+            if (elapsedMs > 1000)
             {
-                state[eventData.PayloadNames[i]] = eventData.Payload?[i];
+                logger.LogWarning("Slow command detected: {Method} took {ElapsedMs}ms",
+                    eventData.Payload?[1], elapsedMs);
             }
         }
-
-        logger.Log(level, new EventId(eventData.EventId, eventData.EventName),
-            state, null, (s, e) => FormatMessage(eventData));
-    }
-
-    private static LogLevel MapLevel(EventLevel level) => level switch
-    {
-        EventLevel.Critical => LogLevel.Critical,
-        EventLevel.Error => LogLevel.Error,
-        EventLevel.Warning => LogLevel.Warning,
-        EventLevel.Informational => LogLevel.Information,
-        EventLevel.Verbose => LogLevel.Debug,
-        _ => LogLevel.Trace
-    };
-
-    private static string FormatMessage(EventWrittenEventArgs e)
-    {
-        if (!string.IsNullOrEmpty(e.Message) && e.Payload != null)
-        {
-            return string.Format(e.Message, e.Payload.ToArray());
-        }
-        return e.EventName;
     }
 }
+
+// Register as singleton
+services.AddSingleton(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<CustomWebDriverEventListener>>();
+    return new CustomWebDriverEventListener(logger);
+});
 ```
+
+See the [WebDriverBiDi.Logging README](../src/WebDriverBiDi.Logging/README.md) for package details.
 
 ## CLI Tools
 
