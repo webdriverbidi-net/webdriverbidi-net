@@ -34,6 +34,14 @@
       href: modules/storage.md
     - name: Emulation Module
       href: modules/emulation.md
+    - name: Permissions Module
+      href: modules/permissions.md
+    - name: Bluetooth Module
+      href: modules/bluetooth.md
+    - name: WebExtension Module
+      href: modules/webextension.md
+    - name: Speculation Module
+      href: modules/speculation.md
     - name: Additional Modules
       href: modules/additional-modules.md
 - name: Examples
