@@ -540,14 +540,25 @@ driver.Log.OnEntryAdded.AddObserver((e) => ProcessLogEntry(e));
 await driver.Session.SubscribeAsync(subscribeParams);
 await driver.BrowsingContext.NavigateAsync(navParams);
 
-// Check collected errors
-if (transport.Errors.Count > 0)
+try
 {
-    Console.WriteLine($"Collected {transport.Errors.Count} errors:");
-    foreach (var error in transport.Errors)
+    await driver.StopAsync();
+}
+catch (AggregateException ex)
+{
+    // Check collected errors
+    if (ex.InnerExceptions.Count > 0)
     {
-        Console.WriteLine($"  - {error.Message}");
+        Console.WriteLine($"Collected {ex.InnerExceptions.Count} errors:");
+        foreach (var error in ex.InnerExceptions)
+        {
+            Console.WriteLine($"  - {error.Message}");
+        }
     }
+}
+finally
+{
+    await driver.DisposeAsync();
 }
 ```
 

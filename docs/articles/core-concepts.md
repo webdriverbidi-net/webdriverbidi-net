@@ -307,6 +307,51 @@ params.Wait = ReadinessState.Complete;
 params.TimeoutSeconds = 30;
 ```
 
+### When Parameters Are Optional
+
+Some module commands accept an optional `CommandParameters` object—you can pass `null` or omit it, and the library will use default parameters. Other commands always require a parameters object. The rule depends on whether the command has a "reset" capability.
+
+**Optional parameters** (no required properties, no reset property):
+
+These commands allow omitting parameters when you want default behavior:
+
+```csharp
+// ✅ CORRECT: Parameters optional—use defaults
+GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
+// Or equivalently:
+GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(null);
+
+// ✅ CORRECT: Same for other optional-parameter commands
+StatusCommandResult status = await driver.Session.StatusAsync(null);
+GetCookiesCommandResult cookies = await driver.Storage.GetCookiesAsync(null);
+```
+
+**Required parameters** (has a reset property):
+
+Some commands can reset a value on the remote end to its original state. These commands **always require** a parameters object so the intent is explicit. Passing no parameters would be ambiguous—are you setting a value or resetting it?
+
+```csharp
+// ✅ CORRECT: Use the reset property when resetting
+await driver.UserAgentClientHints.SetClientHintsOverrideAsync(
+    SetClientHintsOverrideCommandParameters.ResetClientHintsOverride);
+
+// ✅ CORRECT: Pass explicit parameters when setting
+SetClientHintsOverrideCommandParameters setParams = new SetClientHintsOverrideCommandParameters();
+setParams.ClientHints = new ClientHintsMetadata
+{
+    Brands = new List<BrandVersion>() { new BrandVersion("MyBrowser", "120.0") }
+};
+await driver.UserAgentClientHints.SetClientHintsOverrideAsync(setParams);
+
+// ❌ WRONG: SetClientHintsOverrideAsync always requires parameters
+// The command name alone doesn't indicate whether you're setting or resetting
+// await driver.UserAgentClientHints.SetClientHintsOverrideAsync(null);  // Not allowed
+```
+
+**Commands with optional parameters** include: `Browser.CloseAsync`, `Browser.CreateUserContextAsync`, `Browser.GetClientWindowsAsync`, `Browser.GetUserContextsAsync`, `BrowsingContext.GetTreeAsync`, `Script.GetRealmsAsync`, `Session.EndAsync`, `Session.StatusAsync`, `Storage.DeleteCookiesAsync`, `Storage.GetCookiesAsync`.
+
+**Commands that require parameters** (because they have reset properties) include: `UserAgentClientHints.SetClientHintsOverrideAsync`, `Browser.SetDownloadBehaviorAsync`, `BrowsingContext.SetViewportAsync`, and all Emulation `Set*OverrideAsync` commands (e.g., `SetUserAgentOverrideAsync`, `SetGeolocationOverrideAsync`).
+
 ### Command Results
 
 - **Immutable**: Properties are read-only

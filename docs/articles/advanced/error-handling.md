@@ -162,7 +162,7 @@ finally
 
 ### Collect Mode
 
-Collect mode stores transport errors in a list without ever throwing them:
+Collect mode stores transport errors in a list, throwing them when the driver is stopped:
 
 ```csharp
 using WebDriverBiDi;
@@ -170,7 +170,13 @@ using WebDriverBiDi.Protocol;
 
 // Create transport with Collect behavior
 WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection, TransportErrorBehavior.Collect);
+Transport transport = new Transport(connection)
+{
+    EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+    ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+    UnknownMessageBehavior = TransportErrorBehavior.Collect,
+    UnexpectedErrorBehavior = TransportErrorBehavior.Collect,
+};
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 try
@@ -197,22 +203,26 @@ try
     await driver.BrowsingContext.NavigateAsync(navParams);
     await driver.Script.EvaluateAsync(evalParams);
 
+    await driver.StopAsync();
+}
+catch (AggregateException ex)
+{
     // Explicitly check for collected errors when ready
-    if (transport.Errors.Count > 0)
+    if (ex.InnerExceptions.Count > 0)
     {
-        Console.WriteLine($"\nCollected {transport.Errors.Count} transport errors:");
-        foreach (Exception error in transport.Errors)
+        Console.WriteLine($"\nCollected {ex.InnerExceptions.Count} transport errors:");
+        foreach (Exception error in ex.InnerExceptions)
         {
             Console.WriteLine($"  [{error.GetType().Name}] {error.Message}");
             Console.WriteLine($"    From: {error.StackTrace?.Split('\n')[0].Trim()}");
         }
 
         // Analyze error types
-        var eventHandlerErrors = transport.Errors
+        var eventHandlerErrors = ex.InnerExceptions
             .Where(e => e.StackTrace?.Contains("AddObserver") == true)
             .ToList();
 
-        var protocolErrors = transport.Errors
+        var protocolErrors = ex.InnerExceptions
             .OfType<WebDriverBiDiProtocolException>()
             .ToList();
 
@@ -222,7 +232,7 @@ try
 }
 finally
 {
-    await driver.StopAsync();
+    await driver.DisposeAsync();
 }
 ```
 
@@ -233,7 +243,7 @@ finally
 - You need a complete error report after operations
 - Protocol errors might be transient
 
-**Important:** Your code continues normally—errors never throw, only accumulate in the list.
+**Important:** Your code continues normally—errors throw when driver stopped as an `AggregateException`.
 
 ### Terminate Mode
 
@@ -245,7 +255,13 @@ using WebDriverBiDi.Protocol;
 
 // Create transport with Terminate behavior (opt-in to stricter error handling)
 WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection, TransportErrorBehavior.Terminate);
+Transport transport = new Transport(connection)
+{
+    EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
+    ProtocolErrorBehavior = TransportErrorBehavior.Terminate,
+    UnknownMessageBehavior = TransportErrorBehavior.Terminate,
+    UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
+};
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 try
@@ -298,7 +314,7 @@ finally
 | Mode | Event Handler Exceptions | Protocol Errors | Command Errors | When Error Surfaces |
 |------|-------------------------|-----------------|----------------|---------------------|
 | **Ignore (default)** | Discarded and logged | Discarded and logged | Always throws immediately | Never |
-| **Collect** | Stored in list | Stored in list | Always throws immediately | Never (inspect list manually) |
+| **Collect** | Stored in list | Stored in list | Always throws immediately | When driver stopped |
 | **Terminate** | Throws on next command | Throws on next command | Always throws immediately | Synchronization point (next command) |
 
 ### Threading Model and Error Propagation
@@ -382,7 +398,13 @@ using WebDriverBiDi.Protocol;
 
 // Use Collect mode to gather all errors
 WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection, TransportErrorBehavior.Collect);
+Transport transport = new Transport(connection)
+{
+    EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+    ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+    UnknownMessageBehavior = TransportErrorBehavior.Collect,
+    UnexpectedErrorBehavior = TransportErrorBehavior.Collect,
+};
 
 // Monitor errors in real-time via connection events
 connection.OnConnectionError.AddObserver((errorArgs) =>
@@ -424,28 +446,33 @@ try
         throw;
     }
 
+    await driver.StopAsync();
+}
+catch (AggregateException ex)
+{
     // Check collected transport errors at appropriate checkpoints
-    if (transport.Errors.Count > 0)
+    if (ex.InnerExceptions.Count > 0)
     {
         Console.WriteLine($"\nTransport errors collected during operation:");
-        ReportCollectedErrors(transport.Errors);
+        ReportCollectedErrors(ex.InnerExceptions);
 
         // Decide how to handle
-        if (transport.Errors.Any(e => e is WebDriverBiDiProtocolException))
+        if (ex.InnerExceptions.Any(e => e is WebDriverBiDiProtocolException))
         {
             Console.WriteLine("Protocol errors detected - connection may be unstable");
         }
     }
+
 }
 finally
 {
-    await driver.StopAsync();
+    await driver.DisposeAsync();
 }
 ```
 
 ### Best Practices
 
-1. **Use Terminate mode (default) in production**: Ensures errors are reported
+1. **Use Terminate mode in production**: Ensures errors are reported
 2. **Handle errors inside event handlers**: Use try-catch within handlers when possible
 3. **Use Collect mode for diagnostics**: Helpful for troubleshooting event handler issues
 4. **Monitor connection events**: Use OnConnectionError for real-time error visibility
@@ -933,55 +960,71 @@ using WebDriverBiDi.Protocol;
 
 // Use Collect mode to see all handler errors
 WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection, TransportErrorBehavior.Collect);
+Transport transport = new Transport(connection)
+{
+    EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+    ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+    UnknownMessageBehavior = TransportErrorBehavior.Collect,
+    UnexpectedErrorBehavior = TransportErrorBehavior.Collect,
+};
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 await driver.StartAsync("ws://localhost:9222/session");
 
-// Synchronous handler for quick operations
-driver.Log.OnEntryAdded.AddObserver((e) =>
+try
 {
-    try
-    {
-        // Quick, synchronous operation
-        if (e.Level == LogLevel.Error || e.Level == LogLevel.Warn)
-        {
-            Console.WriteLine($"[{e.Level}] {e.Text}");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error in log handler: {ex.Message}");
-    }
-});
-
-// Asynchronous handler for I/O operations
-driver.Network.OnResponseCompleted.AddObserver(
-    async (e) =>
+    // Synchronous handler for quick operations
+    driver.Log.OnEntryAdded.AddObserver((e) =>
     {
         try
         {
-            // Async operation doesn't block transport
-            await SaveResponseToFileAsync(e.Response);
+            // Quick, synchronous operation
+            if (e.Level == LogLevel.Error || e.Level == LogLevel.Warn)
+            {
+                Console.WriteLine($"[{e.Level}] {e.Text}");
+            }
         }
         catch (Exception ex)
         {
-            await LogErrorAsync($"Failed to save response: {ex.Message}");
+            Console.WriteLine($"Error in log handler: {ex.Message}");
         }
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
+    });
 
-await driver.Session.SubscribeAsync(subscribeParams);
+    // Asynchronous handler for I/O operations
+    driver.Network.OnResponseCompleted.AddObserver(
+        async (e) =>
+        {
+            try
+            {
+                // Async operation doesn't block transport
+                await SaveResponseToFileAsync(e.Response);
+            }
+            catch (Exception ex)
+            {
+                await LogErrorAsync($"Failed to save response: {ex.Message}");
+            }
+        },
+        ObservableEventHandlerOptions.RunHandlerAsynchronously
+    );
 
-// After operations, check for any unhandled handler errors
-if (transport.Errors.Count > 0)
+    await driver.Session.SubscribeAsync(subscribeParams);
+
+}
+catch (AggregateException ex)
 {
-    Console.WriteLine($"Transport errors occurred: {transport.Errors.Count}");
-    foreach (var error in transport.Errors)
+    // After operations, check for any unhandled handler errors
+    if (ex.InnerExceptions.Count > 0)
     {
-        Console.WriteLine($"  - {error.Message}");
+        Console.WriteLine($"Transport errors occurred: {ex.InnerExceptions.Count}");
+        foreach (var error in ex.InnerExceptions)
+        {
+            Console.WriteLine($"  - {error.Message}");
+        }
     }
+}
+finally
+{
+    await driver.DisposeAsync();
 }
 ```
 

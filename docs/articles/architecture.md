@@ -602,20 +602,25 @@ The `Transport` class can be configured with different error behaviors:
 ```csharp
 public enum TransportErrorBehavior
 {
-    Ignore,     // Silently ignore transport errors
+    Ignore,     // Silently ignore transport errors (default)
     Collect,    // Store errors for later inspection
-    Terminate   // Throw exception immediately (default)
+    Terminate   // Throw exception immediately
 }
 ```
 
-### Terminate Mode (Default)
+### Terminate Mode
 
 Throws an exception on the first transport error:
 
 ```csharp
 // Default: throws on first error
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30))
+{
+    EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
+    ProtocolErrorBehavior = TransportErrorBehavior.Terminate,
+    UnknownMessageBehavior = TransportErrorBehavior.Terminate,
+    UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
+};
 try
 {
     await driver.StartAsync("ws://localhost:9222/session");
@@ -639,7 +644,13 @@ Stores transport errors in a list for later inspection:
 using WebDriverBiDi.Protocol;
 
 WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection, TransportErrorBehavior.Collect);
+Transport transport = new Transport(connection)
+{
+    EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+    ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+    UnknownMessageBehavior = TransportErrorBehavior.Collect,
+    UnexpectedErrorBehavior = TransportErrorBehavior.Collect,
+};
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 await driver.StartAsync("ws://localhost:9222/session");
@@ -647,17 +658,26 @@ await driver.StartAsync("ws://localhost:9222/session");
 // Perform operations...
 await driver.BrowsingContext.NavigateAsync(navParams);
 
-// Check for collected errors
-if (transport.Errors.Count > 0)
+try
 {
-    Console.WriteLine($"Encountered {transport.Errors.Count} transport errors:");
-    foreach (Exception error in transport.Errors)
+    await driver.StopAsync();
+}
+catch (AggregateException ex)
+{
+    // Check for collected errors
+    if (ex.InnerExceptions.Count > 0)
     {
-        Console.WriteLine($"  - {error.Message}");
+        Console.WriteLine($"Encountered {ex.InnerExceptions.Count} transport errors:");
+        foreach (Exception error in ex.InnerExceptions)
+        {
+            Console.WriteLine($"  - {error.Message}");
+        }
     }
 }
-
-await driver.StopAsync();
+finally
+{
+    await driver.DisposeAsync();
+}
 ```
 
 **Use When:**
@@ -673,7 +693,7 @@ Silently discards transport errors without notification:
 using WebDriverBiDi.Protocol;
 
 WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection, TransportErrorBehavior.Ignore);
+Transport transport = new Transport(connection);
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 await driver.StartAsync("ws://localhost:9222/session");
@@ -926,10 +946,10 @@ driver.RegisterModule(new MyCustomModule(driver));
 ```csharp
 public class MyTransport : Transport
 {
-    protected override async Task OnMessageReceived(string message)
+    protected override JsonElement DeserializeMessage(byte[] messageData)
     {
         // Custom message processing
-        await base.OnMessageReceived(message);
+        await base.DeserializeMessage(messageData);
     }
 }
 

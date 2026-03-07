@@ -69,6 +69,9 @@ public class ObservableEvent<T>
     /// <param name="handlerOptions">
     /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
     /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
+    /// Handlers that perform I/O tasks, long-running operations, or execute driver commands during
+    /// the event handling should be added with the ObservableEventHandlerOptions.RunHandlerAsynchronously
+    /// option.
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>
@@ -95,6 +98,9 @@ public class ObservableEvent<T>
     /// <param name="handlerOptions">
     /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
     /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
+    /// Handlers that perform I/O tasks, long-running operations, or execute driver commands during
+    /// the event handling should be added with the ObservableEventHandlerOptions.RunHandlerAsynchronously
+    /// option.
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
     /// <returns>An observer for this observable event.</returns>

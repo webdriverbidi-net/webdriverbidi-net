@@ -146,20 +146,92 @@ driver.Network.OnBeforeRequestSent.AddObserver(
 );
 ```
 
-### Storing Observer Reference
+### EventObserver Cleanup Pattern
 
-Store the `EventObserver<T>` to control it later:
+`AddObserver` returns an `EventObserver<T>` that you should store when you need to:
+
+- **Remove the observer** when it is no longer needed (`Unobserve()`)
+- **Use checkpoints** for synchronization (`SetCheckpoint()`, `WaitForCheckpointAsync()`, `WaitForCheckpointAndTasksAsync()`)
+- **Dispose resources** when the observer goes out of scope
+
+Always store the observer reference when you intend to remove it or use checkpoints. Failing to remove observers when done can lead to memory leaks and handlers continuing to run after they are no longer needed.
+
+#### Basic Cleanup with try/finally
 
 ```csharp
-EventObserver<EntryAddedEventArgs> observer = 
+EventObserver<EntryAddedEventArgs> observer =
     driver.Log.OnEntryAdded.AddObserver((e) =>
     {
         Console.WriteLine(e.Text);
     });
 
-// Later: remove the observer
-observer.Unobserve();
+try
+{
+    SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
+    subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+    await driver.Session.SubscribeAsync(subscribe);
+
+    // Use the driver...
+    await driver.BrowsingContext.NavigateAsync(navParams);
+}
+finally
+{
+    // Remove observer when done to prevent memory leaks
+    observer.Unobserve();
+}
 ```
+
+#### Using Statement for Automatic Cleanup
+
+`EventObserver<T>` implements `IDisposable`, so you can use `using` for automatic cleanup:
+
+```csharp
+using EventObserver<EntryAddedEventArgs> observer =
+    driver.Log.OnEntryAdded.AddObserver((e) =>
+    {
+        Console.WriteLine(e.Text);
+    });
+
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
+subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+await driver.Session.SubscribeAsync(subscribe);
+
+// Use the driver...
+await driver.BrowsingContext.NavigateAsync(navParams);
+
+// Observer automatically removed when scope exits
+```
+
+#### Cleanup When Using Checkpoints
+
+When using checkpoints, you must store the observer to call `SetCheckpoint()`, `WaitForCheckpointAsync()`, or `WaitForCheckpointAndTasksAsync()`. Clean up the observer when you are done:
+
+```csharp
+EventObserver<NavigationEventArgs> observer =
+    driver.BrowsingContext.OnLoad.AddObserver((e) =>
+    {
+        Console.WriteLine($"Loaded: {e.Url}");
+    });
+
+try
+{
+    SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
+    subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+    await driver.Session.SubscribeAsync(subscribe);
+
+    observer.SetCheckpoint();
+    await driver.BrowsingContext.NavigateAsync(navParams);
+    bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
+}
+finally
+{
+    observer.Unobserve();
+}
+```
+
+#### Unobserve vs Dispose
+
+`Unobserve()` removes the observer from the event. `Dispose()` (and `DisposeAsync()`) does the same and also releases internal resources. For most scenarios, either is sufficient. Use `Unobserve()` when you only need to stop receiving events; use `using` with `Dispose()` when you want automatic cleanup at scope exit.
 
 ## Subscribing to Events
 
@@ -617,7 +689,7 @@ if (occurred)
 
 ### Calling Commands in Event Handlers
 
-Calling commands within event handlers requires async mode:
+Calling commands within event handlers **requires** async mode:
 
 ```csharp
 EventObserver<BeforeRequestSentEventArgs> observer = 
@@ -943,9 +1015,10 @@ driver.Log.OnEntryAdded.AddObserver((e) =>
 - Events require two steps: add observer locally, then subscribe through Session module
 - Recommended order: add observers first, then subscribe (ensures handlers are ready)
 - Observers handle events when they occur
+- Store the observer returned by `AddObserver` when you need to remove it or use checkpoints
+- Use try/finally or `using` to ensure observers are removed when done (prevents memory leaks)
 - Use checkpoints to synchronize with events
 - Use `WaitForCheckpointAndTasksAsync()` to wait for async handlers to complete
 - Use `RunHandlerAsynchronously` option for long-running operations or I/O
-- Remove observers when done to prevent memory leaks
 - Multiple observers can handle the same event
 
