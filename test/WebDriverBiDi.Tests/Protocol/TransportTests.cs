@@ -1797,6 +1797,36 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestConnectionErrorWhenNotConnectedDoesNothing()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+
+        // Never call ConnectAsync - IsConnected remains false
+        await connection.RaiseConnectionErrorEventAsync(new Exception("Connection lost"));
+
+        // Should not throw; early return path taken. Verify transport rejects commands.
+        TestCommandParameters commandParameters = new("module.command");
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("Transport must be connected"));
+    }
+
+    [Test]
+    public async Task TestConnectionErrorWhenAlreadyDisconnectedDoesNothing()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+        await transport.DisconnectAsync();
+
+        // IsConnected is now false; raise error (e.g., receive loop dying during shutdown)
+        await connection.RaiseConnectionErrorEventAsync(new Exception("Connection lost"));
+
+        // Should not throw; early return path taken. Verify still disconnected.
+        TestCommandParameters commandParameters = new("module.command");
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("Transport must be connected"));
+    }
+
+    [Test]
     public async Task TestConnectionErrorFailsMultiplePendingCommands()
     {
         TestWebSocketConnection connection = new();

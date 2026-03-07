@@ -585,18 +585,35 @@ public class Transport : IAsyncDisposable
     {
         WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.GetHashCode().ToString(), e.Exception.Message);
 
-        // Mark the transport as disconnected so that subsequent SendCommandAsync
-        // calls fail immediately rather than queuing commands that can never
-        // receive a response.
-        this.IsConnected = false;
+        await this.AcquireConnectionLockAsync(CancellationToken.None).ConfigureAwait(false);
+        try
+        {
+            // Only process if we were connected (or thought we were).
+            // If we're still in ConnectAsync, we'll run after it releases the lock,
+            // so we'll see the correct post-connect state.
+            if (!this.IsConnected)
+            {
+                // ConnectAsync hasn't set it yet, or we're already disconnected
+                return;
+            }
 
-        // Close the pending command collection and fail every in-flight command
-        // with an exception that wraps the original connection error.
-        await this.pendingCommands.CloseAsync().ConfigureAwait(false);
-        WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
-        this.pendingCommands.FailAllPendingCommands(connectionException);
+            // Mark the transport as disconnected so that subsequent SendCommandAsync
+            // calls fail immediately rather than queuing commands that can never
+            // receive a response.
+            this.IsConnected = false;
 
-        await this.LogAsync($"Connection error; pending commands failed: {e.Exception.Message}", WebDriverBiDiLogLevel.Error);
+            // Close the pending command collection and fail every in-flight command
+            // with an exception that wraps the original connection error.
+            await this.pendingCommands.CloseAsync().ConfigureAwait(false);
+            WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
+            this.pendingCommands.FailAllPendingCommands(connectionException);
+
+            await this.LogAsync($"Connection error; pending commands failed: {e.Exception.Message}", WebDriverBiDiLogLevel.Error);
+        }
+        finally
+        {
+            this.ReleaseConnectionLock();
+        }
     }
 
     private async Task ReadIncomingMessagesAsync()
