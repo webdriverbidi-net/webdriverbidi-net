@@ -5,7 +5,9 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
@@ -66,6 +68,7 @@ public class Transport : IAsyncDisposable
     private readonly ConcurrentDictionary<string, Type> eventMessageTypes = [];
     private readonly UnhandledErrorCollection unhandledErrors = new();
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
+    private readonly ConcurrentDictionary<long, Stopwatch> commandTimings = [];
     private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {
         SingleReader = true,
@@ -203,6 +206,8 @@ public class Transport : IAsyncDisposable
                 throw new WebDriverBiDiConnectionException($"The transport is already connected to {this.Connection.ConnectionString}; you must disconnect before connecting to another URL");
             }
 
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.GetHashCode().ToString(), websocketUri);
+
             if (!this.pendingCommands.IsAcceptingCommands)
             {
                 this.pendingCommands.Dispose();
@@ -231,6 +236,9 @@ public class Transport : IAsyncDisposable
             // changes, this logic may need to be refactored.
             this.IsConnected = true;
             this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
+
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.GetHashCode().ToString(), websocketUri);
+            WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
         }
         finally
         {
@@ -276,8 +284,17 @@ public class Transport : IAsyncDisposable
             long commandId = this.GetNextCommandId();
             Command command = new(commandId, commandData);
             await this.pendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
+
+            // Start timing and log command sending
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            this.commandTimings[commandId] = stopwatch;
+            WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId.ToString(), commandData.MethodName);
+
             byte[] commandJson = this.SerializeCommand(command);
             await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
+
+            WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.pendingCommands.PendingCommandCount);
+
             return command;
         }
         finally
@@ -413,6 +430,7 @@ public class Transport : IAsyncDisposable
             // re-entrant calls (e.g., from event handlers still executing
             // during shutdown) see the transport as disconnected and
             // short-circuit rather than attempting a redundant disconnect.
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.Connection.GetHashCode().ToString(), this.terminationReason);
             this.IsConnected = false;
 
             // Close the pending command collection to further addition of commands,
@@ -446,6 +464,9 @@ public class Transport : IAsyncDisposable
             {
                 commandDelayCancelTokenSource.Cancel();
             }
+
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.GetHashCode().ToString());
+            WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.terminationReason);
 
             if (throwCollectedExceptions && this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
             {
@@ -508,6 +529,16 @@ public class Transport : IAsyncDisposable
             : WebDriverBiDiJsonSerializerContext.Default;
     }
 
+    private static string TruncateMessage(string message, int maxLength)
+    {
+        if (message.Length <= maxLength)
+        {
+            return message;
+        }
+
+        return $"{message.Substring(0, maxLength)}...";
+    }
+
     private async Task OnProtocolEventReceivedAsync(EventReceivedEventArgs e)
     {
         try
@@ -516,6 +547,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
+            WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(e.EventName, ex.Message);
             this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for event name {e.EventName}");
         }
     }
@@ -551,6 +583,8 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionErrorAsync(ConnectionErrorEventArgs e)
     {
+        WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.GetHashCode().ToString(), e.Exception.Message);
+
         // Mark the transport as disconnected so that subsequent SendCommandAsync
         // calls fail immediately rather than queuing commands that can never
         // receive a response.
@@ -650,6 +684,10 @@ public class Transport : IAsyncDisposable
         if (!isProcessed)
         {
             string message = Encoding.UTF8.GetString(messageData);
+            string messageType = messageRootElement.ValueKind != JsonValueKind.Undefined && messageRootElement.TryGetProperty("type", out JsonElement typeElement)
+                ? typeElement.GetString() ?? "unknown"
+                : "unknown";
+            WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(messageType, messageData.Length);
             await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message));
             this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
         }
@@ -661,6 +699,13 @@ public class Transport : IAsyncDisposable
         {
             if (this.pendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
             {
+                // Stop timing and log completion
+                if (this.commandTimings.TryRemove(responseId, out Stopwatch? stopwatch))
+                {
+                    stopwatch.Stop();
+                    WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId.ToString(), executedCommand.CommandName, stopwatch.ElapsedMilliseconds);
+                }
+
                 try
                 {
                     if (message.Deserialize(executedCommand.ResponseType, this.options) is CommandResponseMessage response)
@@ -695,6 +740,14 @@ public class Transport : IAsyncDisposable
                 ErrorResult result = errorMessage.GetErrorResponseData();
                 if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command? executedCommand))
                 {
+                    // Stop timing and log error
+                    if (this.commandTimings.TryRemove(errorMessage.CommandId.Value, out Stopwatch? stopwatch))
+                    {
+                        stopwatch.Stop();
+                    }
+
+                    WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value.ToString(), executedCommand.CommandName, result.ErrorType, result.ErrorMessage);
+
                     executedCommand.SetResult(result);
                 }
                 else
@@ -710,6 +763,7 @@ public class Transport : IAsyncDisposable
         {
             await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
             this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in protocol error response: {message}");
+            WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(message.ToString(), 100));
         }
 
         return false;
@@ -731,6 +785,7 @@ public class Transport : IAsyncDisposable
                         throw new WebDriverBiDiSerializationException($"Deserialization of event message returned null for event type {eventMessageType}");
                     }
 
+                    WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
                     await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData));
                     return true;
                 }
@@ -738,6 +793,7 @@ public class Transport : IAsyncDisposable
                 {
                     await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
                     this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in event message: {message}");
+                    WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(message.ToString(), 100));
                 }
             }
         }
