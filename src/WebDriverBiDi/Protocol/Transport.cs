@@ -235,7 +235,7 @@ public class Transport : IAsyncDisposable
             // should buffer the data until the first read. If the underlying data structure
             // changes, this logic may need to be refactored.
             this.IsConnected = true;
-            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessages());
+            this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync());
 
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.GetHashCode().ToString(), websocketUri);
             WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
@@ -470,7 +470,7 @@ public class Transport : IAsyncDisposable
 
             if (throwCollectedExceptions && this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
             {
-                throw this.CreateTerminationException(collectedExceptions);
+                throw this.CreateTerminationException(collectedExceptions, TransportErrorBehavior.Collect);
             }
         }
         finally
@@ -599,7 +599,7 @@ public class Transport : IAsyncDisposable
         await this.LogAsync($"Connection error; pending commands failed: {e.Exception.Message}", WebDriverBiDiLogLevel.Error);
     }
 
-    private async Task ReadIncomingMessages()
+    private async Task ReadIncomingMessagesAsync()
     {
         // In theory, we could accomplish this with an `await foreach` using
         // IAsyncEnumerable, but this would require additional dependencies,
@@ -839,10 +839,10 @@ public class Transport : IAsyncDisposable
         await this.OnLogMessage.NotifyObserversAsync(e);
     }
 
-    private Exception CreateTerminationException(IList<Exception> exceptions)
+    private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)
     {
         string message = $"Unhandled exception during transport operations. Transport was terminated with the following reason: {this.terminationReason}";
-        if (exceptions.Count == 1)
+        if (errorBehavior != TransportErrorBehavior.Collect && exceptions.Count == 1)
         {
             return new WebDriverBiDiException(message, exceptions[0]);
         }

@@ -1232,7 +1232,7 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("This is an unexpected exception"));
+        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<AggregateException>().With.InnerException.InstanceOf<WebDriverBiDiException>().And.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("This is an unexpected exception"));
     }
 
     [Test]
@@ -1656,7 +1656,7 @@ public class TransportTests
 
         Assert.That(
             async () => await transport.DisconnectAsync(),
-            Throws.InstanceOf<WebDriverBiDiException>()
+            Throws.InstanceOf<AggregateException>()
                 .With.Message.Contains("Normal shutdown")
                 .And.InnerException.InstanceOf<InvalidOperationException>()
                 .And.InnerException.Message.Contains("Simulated deserialization failure"));
@@ -1871,7 +1871,7 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Error handler exception"));
+        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<AggregateException>().With.InnerException.InstanceOf<WebDriverBiDiException>().And.With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Error handler exception"));
     }
 
     [Test]
@@ -1952,7 +1952,7 @@ public class TransportTests
         await transport.ConnectAsync("ws:localhost");
         await connection.RaiseDataReceivedEventAsync(json);
         syncEvent.WaitOne(TimeSpan.FromSeconds(1));
-        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Unknown message handler exception"));
+        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<AggregateException>().With.InnerException.InstanceOf<WebDriverBiDiException>().And.With.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("Unknown message handler exception"));
     }
 
     [Test]
