@@ -47,9 +47,11 @@
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
 
-  <!-- Build CodeFixes before packing so its DLL is available to include in the package -->
-  <Target Name="BuildCodeFixesBeforePack" BeforeTargets="GenerateNuspec">
-    <MSBuild Projects="$(MSBuildThisFileDirectory)..\WebDriverBiDi.Analyzers.CodeFixes\WebDriverBiDi.Analyzers.CodeFixes.csproj" Targets="Build" Properties="Configuration=$(Configuration)" />
+  <!-- Build CodeFixes before packing so its DLL is available to include in the package.
+       Skip when DLL already exists (e.g. after solution build with no-build).
+       Pass NoBuild=false to override parent's NoBuild when we must build. -->
+  <Target Name="BuildCodeFixesBeforePack" BeforeTargets="GenerateNuspec" Condition="!Exists('$(_CodeFixesOutputPath)')">
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\WebDriverBiDi.Analyzers.CodeFixes\WebDriverBiDi.Analyzers.CodeFixes.csproj" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" />
   </Target>
 
   <ItemGroup>
