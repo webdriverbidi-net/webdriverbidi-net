@@ -51,7 +51,7 @@ public class ObservableEventTests
         string? observedValue = null;
         TestEventSource testEventSource = new();
 
-        using (var observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue))
+        using (EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue))
         {
             await testEventSource.RaiseTestEventAsync("myValue1");
             Assert.That(observedValue, Is.EqualTo("myValue1"));
@@ -95,7 +95,7 @@ public class ObservableEventTests
         string? observedValue = null;
         TestEventSource testEventSource = new();
 
-        await using (var observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue))
+        await using (EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => observedValue = e.EventValue))
         {
             await testEventSource.RaiseTestEventAsync("myValue1");
             Assert.That(observedValue, Is.EqualTo("myValue1"));
