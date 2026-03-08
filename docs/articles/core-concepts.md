@@ -957,6 +957,8 @@ Are you implementing browser-specific extensions?
 
 ## Next Steps
 
+- **[Quick Reference](quick-reference.md)**: Cheat sheet of common commands
+- **[API Design Guide](advanced/api-design.md)**: Parameter patterns, timeouts, versioning
 - **[Events and Observables](events-observables.md)**: Deep dive into event handling
 - **[Remote Values](remote-values.md)**: Comprehensive guide to JavaScript value handling
 - **[Module Guides](modules/browser.md)**: Learn about each module in detail

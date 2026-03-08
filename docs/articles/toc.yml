@@ -6,6 +6,8 @@
   href: first-application.md
 - name: Core Concepts
   href: core-concepts.md
+- name: Quick Reference
+  href: quick-reference.md
 - name: Common Pitfalls
   href: common-pitfalls.md
 - name: Architecture
@@ -58,6 +60,8 @@
       href: examples/preload-scripts.md
 - name: Advanced Topics
   items:
+    - name: API Design Guide
+      href: advanced/api-design.md
     - name: Error Handling
       href: advanced/error-handling.md
     - name: Performance Considerations

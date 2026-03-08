@@ -1,0 +1,93 @@
+# Quick Reference
+
+A cheat sheet of common WebDriverBiDi.NET commands and patterns.
+
+## Driver Lifecycle
+
+| Operation | Code |
+|-----------|------|
+| Create driver | `BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));` |
+| Start connection | `await driver.StartAsync("ws://localhost:9222/session");` |
+| Check if started | `if (driver.IsStarted) { ... }` |
+| Stop connection | `await driver.StopAsync();` |
+| Dispose | `await driver.DisposeAsync();` |
+
+## Session
+
+| Operation | Code |
+|-----------|------|
+| Check status | `await driver.Session.StatusAsync(null);` |
+| Subscribe to events | `SubscribeCommandParameters sub = new SubscribeCommandParameters(); sub.Events.Add(driver.Network.OnBeforeRequestSent.EventName); await driver.Session.SubscribeAsync(sub);` |
+| End session | `await driver.Session.EndAsync(null);` |
+
+## Browsing Context
+
+| Operation | Code |
+|-----------|------|
+| Get context tree | `GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(null);` |
+| Create context | `CreateContextCommandResult ctx = await driver.BrowsingContext.CreateAsync(new CreateContextCommandParameters("tab"));` |
+| Navigate | `await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(contextId, url) { Wait = ReadinessState.Complete });` |
+| Close context | `await driver.BrowsingContext.CloseAsync(new CloseContextCommandParameters(contextId));` |
+| Capture screenshot | `await driver.BrowsingContext.CaptureScreenshotAsync(new CaptureScreenshotCommandParameters(contextId));` |
+
+## Script
+
+| Operation | Code |
+|-----------|------|
+| Evaluate expression | `EvaluateResult r = await driver.Script.EvaluateAsync(new EvaluateCommandParameters(expression, new ContextTarget(contextId), true));` |
+| Call function | `CallFunctionResult r = await driver.Script.CallFunctionAsync(new CallFunctionCommandParameters(functionDeclaration, new ContextTarget(contextId), true));` |
+| Add preload script | `AddPreloadScriptCommandResult r = await driver.Script.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters(script));` |
+| Get realms | `GetRealmsCommandResult realms = await driver.Script.GetRealmsAsync(null);` |
+
+## Network
+
+| Operation | Code |
+|-----------|------|
+| Add intercept | `AddInterceptCommandParameters p = new AddInterceptCommandParameters(); p.Phases.Add(InterceptPhase.BeforeRequestSent); await driver.Network.AddInterceptAsync(p);` |
+| Add data collector | `AddDataCollectorCommandParameters p = new AddDataCollectorCommandParameters(); p.BrowsingContexts.Add(contextId); await driver.Network.AddDataCollectorAsync(p);` |
+| Continue request | `await driver.Network.ContinueRequestAsync(new ContinueRequestCommandParameters(requestId));` |
+| Provide response | `await driver.Network.ProvideResponseAsync(new ProvideResponseCommandParameters(requestId, new BytesValue(BytesValueType.String, body)));` |
+
+## Storage
+
+| Operation | Code |
+|-----------|------|
+| Get cookies | `GetCookiesCommandParameters p = new GetCookiesCommandParameters(); p.Partition = new BrowsingContextPartitionDescriptor(contextId); GetCookiesCommandResult r = await driver.Storage.GetCookiesAsync(p);` |
+| Set cookie | `await driver.Storage.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie(name, value) { Domain = domain }));` |
+| Delete cookies | `DeleteCookiesCommandParameters p = new DeleteCookiesCommandParameters(); p.Partition = new BrowsingContextPartitionDescriptor(contextId); await driver.Storage.DeleteCookiesAsync(p);` |
+
+## Input
+
+| Operation | Code |
+|-----------|------|
+| Perform actions | `PerformActionsCommandParameters p = new PerformActionsCommandParameters(contextId); p.Actions.Add(new Action(p.AddPointerInput("mouse", PointerType.Mouse))); await driver.Input.PerformActionsAsync(p);` |
+
+## Event Subscription Pattern
+
+```csharp
+// 1. Add observer
+driver.Network.OnBeforeRequestSent.AddObserver((e) => Console.WriteLine(e.Request.Url));
+
+// 2. Subscribe via session
+SubscribeCommandParameters sub = new SubscribeCommandParameters();
+sub.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+await driver.Session.SubscribeAsync(sub);
+```
+
+## Error Configuration
+
+```csharp
+// Fail fast during development
+driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
+driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
+
+// Collect for debugging
+driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
+driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
+```
+
+## See Also
+
+- [API Design Guide](advanced/api-design.md): Parameter patterns, timeouts, versioning
+- [Core Concepts](core-concepts.md): Full command and event documentation
+- [API Reference](../api/index.md): Complete API documentation
