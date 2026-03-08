@@ -67,11 +67,15 @@ public static class AnalyzerTestHelpers
         string testAssemblyPath = Assembly.GetExecutingAssembly().Location;
         string testDirectory = Path.GetDirectoryName(testAssemblyPath) ?? string.Empty;
 
-        // Navigate up from test/WebDriverBiDi.Analyzers.Tests/bin/Debug/net10.0
-        // to get to the project root, then go to src/WebDriverBiDi/bin/Debug/net8.0
+        // Extract configuration (Debug/Release) from path: .../bin/{Configuration}/net10.0
+        string? configDir = Path.GetDirectoryName(testDirectory);
+        string configuration = configDir != null ? Path.GetFileName(configDir) : "Debug";
+
+        // Navigate up from test/WebDriverBiDi.Analyzers.Tests/bin/{Configuration}/net10.0
+        // to get to the project root, then go to src/WebDriverBiDi/bin/{Configuration}/net10.0
         string? currentPath = testDirectory;
 
-        // Go up to the project root (should be 5 levels up: net10.0 -> Debug -> bin -> WebDriverBiDi.Analyzers.Tests -> test)
+        // Go up to the project root (5 levels up: net10.0 -> Configuration -> bin -> WebDriverBiDi.Analyzers.Tests -> test)
         for (int i = 0; i < 5 && currentPath != null; i++)
         {
             currentPath = Path.GetDirectoryName(currentPath);
@@ -79,7 +83,7 @@ public static class AnalyzerTestHelpers
 
         if (currentPath != null)
         {
-            string net80AssemblyPath = Path.Combine(currentPath, "src", "WebDriverBiDi", "bin", "Debug", "net8.0", "WebDriverBiDi.dll");
+            string net80AssemblyPath = Path.Combine(currentPath, "src", "WebDriverBiDi", "bin", configuration, "net8.0", "WebDriverBiDi.dll");
             if (File.Exists(net80AssemblyPath))
             {
                 return net80AssemblyPath;
