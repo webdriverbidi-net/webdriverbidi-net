@@ -29,8 +29,18 @@ jobs:
       run: dotnet test --configuration Release -p:Version=${VERSION} --no-build
     - name: Pack
       run: dotnet pack --configuration Release -p:Version=${VERSION} --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output .
-    - name: Push
+    - name: Push library package
       run: dotnet nuget push WebDriverBiDi.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    - name: Push analyzer package
+      run: dotnet nuget push WebDriverBiDi.Analyzers.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    - name: Push structured logging package
+      run: dotnet nuget push WebDriverBiDi.Logging.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
