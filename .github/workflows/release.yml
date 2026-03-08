@@ -27,8 +27,12 @@ jobs:
       run: dotnet build --configuration Release -p:Version=${VERSION}
     - name: Test
       run: dotnet test --configuration Release -p:Version=${VERSION} --no-build
-    - name: Pack
-      run: dotnet pack --configuration Release -p:Version=${VERSION} --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output .
+    - name: Pack library package
+      run: dotnet pack src/WebDriverBiDi --configuration Release -p:Version=${VERSION} --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output .
+    - name: Pack analyzer package
+      run: dotnet pack src/WebDriverBiDi.Analyzers --configuration Release -p:Version=${VERSION} --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output .
+    - name: Pack structured logging package
+      run: dotnet pack src/WebDriverBiDi.Logging --configuration Release -p:Version=${VERSION} --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output .
     - name: Push library package
       run: dotnet nuget push WebDriverBiDi.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
