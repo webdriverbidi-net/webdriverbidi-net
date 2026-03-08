@@ -24,3 +24,11 @@ BIDI014 | Usage       | Warning  | BiDiDriver014_ParameterlessConstructorWithRes
 BIDI015 | Usage       | Warning  | BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer
 BIDI016 | Reliability | Warning  | BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer
 BIDI017 | Usage       | Warning  | BiDiDriver017_NullableListAddAnalyzer
+
+## Release 0.0.47
+
+### New Rules
+
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|--------------------
+BIDI018 | Usage       | Warning  | BiDiDriver018_UnsafeRemoteValueValueAsAnalyzer
