@@ -10,6 +10,17 @@ namespace WebDriverBiDi;
 /// to a specific number of observers.
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
+/// <remarks>
+/// <para>
+/// <strong>Thread Safety:</strong>
+/// This class is thread-safe. <see cref="AddObserver(Func{T, Task}, ObservableEventHandlerOptions, string)"/>,
+/// <see cref="RemoveObserver"/>, <see cref="NotifyObserversAsync"/>, and <see cref="CurrentObserverCount"/> may be called
+/// concurrently from multiple threads. Observer registration and removal are serialized via an
+/// internal lock. Notification takes a snapshot of observers under the lock before invoking
+/// handlers, so long-running handlers do not block registration. See <see cref="EventObserver{T}"/>
+/// for thread-safety of checkpoint methods on observers.
+/// </para>
+/// </remarks>
 public class ObservableEvent<T>
     where T : WebDriverBiDiEventArgs
 {

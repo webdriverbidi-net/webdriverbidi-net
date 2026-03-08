@@ -52,6 +52,14 @@ using WebDriverBiDi.JsonConverters;
 /// <item><description>Implementing throttling or filtering logic in your event handlers</description></item>
 /// </list>
 /// </para>
+/// <para>
+/// <strong>Thread Safety:</strong>
+/// This class is thread-safe. <see cref="SendCommandAsync"/> may be called concurrently from multiple threads. Connection lifecycle operations
+/// (<see cref="ConnectAsync"/>, <see cref="DisconnectAsync(CancellationToken)"/>) are serialized via an internal semaphore.
+/// A fast-path guard before the semaphore prevents deadlock when event handlers invoked during
+/// shutdown attempt to send commands. Event observers may be added or removed concurrently
+/// with message processing.
+/// </para>
 /// </remarks>
 public class Transport : IAsyncDisposable
 {

@@ -26,6 +26,16 @@ using WebDriverBiDi.WebExtension;
 /// <summary>
 /// Object containing commands to drive a browser using the WebDriver BiDi protocol.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <strong>Thread Safety:</strong>
+/// This class is thread-safe for concurrent command execution.
+/// <see cref="IBiDiDriver.ExecuteCommandAsync{T}(CommandParameters{T}, TimeSpan?, CancellationToken)"/>
+/// and module command methods may be called concurrently from multiple threads. Configuration operations
+/// (<see cref="RegisterModule"/>, <see cref="RegisterEvent"/>, <see cref="RegisterTypeInfoResolver"/>)
+/// must complete before <see cref="StartAsync"/> is called and are serialized via an internal lock.
+/// </para>
+/// </remarks>
 public class BiDiDriver : IBiDiDriver
 {
     /// <summary>
