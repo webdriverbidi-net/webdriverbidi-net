@@ -255,9 +255,7 @@ public class BiDiDriver013AnalyzerTests
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
             .WithSpan(13, 19, 13, 59)
             .WithArguments("StartAsync");
 

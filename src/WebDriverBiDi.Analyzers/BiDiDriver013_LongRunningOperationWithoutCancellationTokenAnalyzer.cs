@@ -119,9 +119,6 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
         // These operations are known to be potentially long-running
         string[] longRunningOperations =
         [
-            "NavigateAsync",
-            "ReloadAsync",
-            "PrintAsync",
             "StartAsync",
             "WaitForCheckpointAsync",
             "WaitForCheckpointAndTasksAsync",
