@@ -22,6 +22,13 @@
     <!-- Include analyzer DLL in the package -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
+
+    <!-- Suppress NU5128: analyzer packages use analyzers/ folder, not lib/ref -->
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+
+    <!-- Disable symbol package: with IncludeBuildOutput=false, NuGet cannot populate
+         the .snupkg (no mechanism to place symbols outside lib/ref), causing NU5017 -->
+    <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
 
   <ItemGroup>
