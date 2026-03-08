@@ -1098,10 +1098,11 @@ public async Task<bool> IsContextValidAsync(BiDiDriver driver, string contextId)
 {
     try
     {
+        // Use RootBrowsingContextId to fetch only this context (more efficient than full tree)
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
-            new GetTreeCommandParameters());
-        
-        return tree.ContextTree.Any(c => c.BrowsingContextId == contextId);
+            new GetTreeCommandParameters { RootBrowsingContextId = contextId });
+
+        return tree.ContextTree.Count > 0;
     }
     catch (WebDriverBiDiException)
     {
@@ -1241,7 +1242,7 @@ public async Task<string> GetPageTitleAsync(BiDiDriver driver, string contextId)
     try
     {
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
-            new GetTreeCommandParameters { Root = contextId });
+            new GetTreeCommandParameters { RootBrowsingContextId = contextId });
         
         if (tree.ContextTree.Count > 0)
         {

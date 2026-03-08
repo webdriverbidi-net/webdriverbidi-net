@@ -147,7 +147,7 @@ public class BrowsingContextModule : Module
 {
     // Constructor
     public BrowsingContextModule(BiDiDriver driver) 
-        : base(driver, BrowsingContextModuleName) { }
+        : base(driver) { }
 
     // Commands
     public async Task<NavigateCommandResult> NavigateAsync(
@@ -444,7 +444,7 @@ public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
 public class EventObserver<T>
 {
     // Set checkpoint to wait for N events
-    public void SetCheckpoint(int count = 1);
+    public void SetCheckpoint(uint numberOfNotifications = 1);
 
     // Wait for checkpoint to be fulfilled
     public Task<bool> WaitForCheckpointAsync(TimeSpan timeout);
@@ -466,7 +466,7 @@ public class EventObserver<T>
 
 ```csharp
 // Synchronous-looking code (with async/await)
-var result = await driver.BrowsingContext.NavigateAsync(params);
+NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(params);
 
 // What actually happens:
 // 1. NavigateAsync creates a Command object
@@ -604,16 +604,16 @@ public enum TransportErrorBehavior
 {
     Ignore,     // Silently ignore transport errors (default)
     Collect,    // Store errors for later inspection
-    Terminate   // Throw exception immediately
+    Terminate   // Throw exception on next command execution
 }
 ```
 
 ### Terminate Mode
 
-Throws an exception on the first transport error:
+Throws an exception when the next command is sent after a transport error:
 
 ```csharp
-// Default: throws on first error
+// Throws on next command call after error occurs
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30))
 {
     EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
@@ -926,8 +926,12 @@ WebDriverBiDi.NET can be extended in several ways:
 ```csharp
 public class MyCustomModule : Module
 {
+    public const string MyCustomModuleName = "myCustom";
+
     public MyCustomModule(BiDiDriver driver) 
-        : base(driver, "myCustom") { }
+        : base(driver) { }
+
+    public override string ModuleName => MyCustomModuleName;
     
     public async Task<MyCommandResult> MyCommandAsync(
         MyCommandParameters parameters)
@@ -949,7 +953,7 @@ public class MyTransport : Transport
     protected override JsonElement DeserializeMessage(byte[] messageData)
     {
         // Custom message processing
-        await base.DeserializeMessage(messageData);
+        return base.DeserializeMessage(messageData);
     }
 }
 

@@ -7,7 +7,7 @@ Understanding the fundamental concepts of WebDriverBiDi.NET will help you use th
 The `BiDiDriver` class is the central entry point for all WebDriver BiDi operations.
 
 ```csharp
-// Create a driver with default timeout (infinite)
+// Create a driver with default timeout (5 minutes)
 BiDiDriver driver = new BiDiDriver();
 
 // Create a driver with a specific command timeout
@@ -803,10 +803,15 @@ using WebDriverBiDi;
 
 public class CustomModule : Module
 {
+    // "custom" is the protocol module name
+    public const string CustomModuleName = "custom";
+
     public CustomModule(IBiDiDriver driver)
-        : base(driver, "custom")  // "custom" is the protocol module name
+        : base(driver)
     {
     }
+
+    public override string ModuleName => CustomModuleName;
 
     // Define custom commands
     public async Task<CustomCommandResult> MyCustomCommandAsync(
@@ -860,7 +865,7 @@ driver.RegisterEvent<CustomEventArgs>(
     customModule.OnCustomEvent.EventName,
     async (eventInfo) =>
     {
-        await customModule.OnCustomEvent.NotifyObserversAsync(eventInfo.Params);
+        await customModule.OnCustomEvent.NotifyObserversAsync(eventInfo.ToEventArgs<CustomEventArgs>());
     });
 
 // NOW start the driver

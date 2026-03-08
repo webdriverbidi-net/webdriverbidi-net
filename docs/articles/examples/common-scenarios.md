@@ -431,12 +431,12 @@ try
 
     // Retrieve cookies
     GetCookiesCommandParameters getCookiesParams = new GetCookiesCommandParameters();
-    getCookiesParams.BrowsingContexts.Add(contextId);
+    getCookiesParams.Partition = new BrowsingContextPartitionDescriptor(contextId);
     
     GetCookiesCommandResult cookies = await driver.Storage.GetCookiesAsync(getCookiesParams);
 
     Console.WriteLine($"\nAll cookies ({cookies.Cookies.Count}):");
-    foreach (var c in cookies.Cookies)
+    foreach (Cookie c in cookies.Cookies)
     {
         Console.WriteLine($"  {c.Name} = {c.Value.Value}");
     }
@@ -512,7 +512,7 @@ try
 
     if (complexResult is EvaluateResultSuccess complexSuccess)
     {
-        var data = complexSuccess.Result.ValueAs<Dictionary<string, object>>();
+        Dictionary<string, object> data = complexSuccess.Result.ValueAs<Dictionary<string, object>>();
         Console.WriteLine($"\nPage analysis:");
         Console.WriteLine($"  URL: {data["url"]}");
         Console.WriteLine($"  Links: {data["linkCount"]}");

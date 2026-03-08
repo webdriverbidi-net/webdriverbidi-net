@@ -21,10 +21,14 @@ using WebDriverBiDi;
 
 public class MyCustomModule : Module
 {
+    public const string MyCustomModuleName = "myCustom";
+
     public MyCustomModule(BiDiDriver driver) 
         : base(driver, "myCustom")
     {
     }
+
+    public override string ModuleName => MyCustomModuleName;
 }
 ```
 
@@ -32,11 +36,11 @@ public class MyCustomModule : Module
 
 ```csharp
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync(webSocketUrl);
 
-// Register custom module
+// Register custom module (must be done before calling StartAsync)
 MyCustomModule customModule = new MyCustomModule(driver);
 driver.RegisterModule(customModule);
+await driver.StartAsync(webSocketUrl);
 
 // Access module
 var myModule = driver.GetModule<MyCustomModule>("myCustom");
@@ -93,10 +97,14 @@ Implement the command in your module:
 ```csharp
 public class MyCustomModule : Module
 {
+    public const string MyCustomModuleName = "myCustom";
+
     public MyCustomModule(BiDiDriver driver) 
-        : base(driver, "myCustom")
+        : base(driver)
     {
     }
+
+    public override string ModuleName => MyCustomModuleName;
 
     public async Task<MyCommandResult> MyCommandAsync(MyCommandParameters parameters)
     {
@@ -177,9 +185,11 @@ namespace MyAutomation
         public const string PageUtilitiesModuleName = "pageUtilities";
 
         public PageUtilitiesModule(BiDiDriver driver) 
-            : base(driver, PageUtilitiesModuleName)
+            : base(driver)
         {
         }
+
+        public override string ModuleName => PageUtilitiesModuleName;
 
         public async Task<bool> WaitForElementAsync(
             string contextId, 
@@ -287,11 +297,11 @@ namespace MyAutomation
 using MyAutomation;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync(webSocketUrl);
 
-// Register custom module
+// Register custom module (must be done before calling StartAsync)
 PageUtilitiesModule pageUtils = new PageUtilitiesModule(driver);
 driver.RegisterModule(pageUtils);
+await driver.StartAsync(webSocketUrl);
 
 // Get context
 GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new());
@@ -333,9 +343,11 @@ public class TestUtilitiesModule : Module
     public const string TestUtilitiesModuleName = "testUtilities";
 
     public TestUtilitiesModule(BiDiDriver driver) 
-        : base(driver, TestUtilitiesModuleName)
+        : base(driver)
     {
     }
+
+    public override string ModuleName => TestUtilitiesModuleName;
 
     public async Task<byte[]> TakeFullPageScreenshotAsync(string contextId)
     {
@@ -439,9 +451,11 @@ public class PerformanceModule : Module
     public const string PerformanceModuleName = "performance";
 
     public PerformanceModule(BiDiDriver driver) 
-        : base(driver, PerformanceModuleName)
+        : base(driver)
     {
     }
+
+    public override string ModuleName => PerformanceModuleName;
 
     public async Task<Dictionary<string, double>> GetNavigationTimingAsync(string contextId)
     {
@@ -525,14 +539,17 @@ You can also expose observable events from your custom module:
 ```csharp
 public class CustomEventsModule : Module
 {
+    public const string CustomModuleName = "customModule";
     private const string CustomEventName = "custom.eventOccurred";
 
     public CustomEventsModule(BiDiDriver driver) 
-        : base(driver, "customEvents")
+        : base(driver)
     {
         // Register event with driver
-        driver.RegisterEvent<CustomEventArgs>(CustomEventName);
+        this.RegisterObservableEvent<CustomEventArgs>(this.OnCustomEvent);
     }
+
+    public override string ModuleName => CustomModuleName;
 
     public ObservableEvent<CustomEventArgs> OnCustomEvent { get; } = 
         new ObservableEvent<CustomEventArgs>(CustomEventName);
@@ -697,10 +714,14 @@ public class ExperimentalCommandResult : CommandResult
 // Implement in module
 public class ExperimentalModule : Module
 {
+    public const string ExperimentalModuleName = "experimental";
+
     public ExperimentalModule(BiDiDriver driver) 
-        : base(driver, "experimental")
+        : base(driver)
     {
     }
+
+    public override string ModuleName => ExperimentalModuleName;
 
     public async Task<ExperimentalCommandResult> NewCommandAsync(
         ExperimentalCommandParameters parameters)

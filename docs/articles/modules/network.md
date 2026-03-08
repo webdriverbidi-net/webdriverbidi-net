@@ -148,14 +148,14 @@ Fired when authentication is needed:
 driver.Network.OnAuthRequired.AddObserver(async (AuthRequiredEventArgs e) =>
 {
     // Provide credentials
-    ProvideCredentialsCommandParameters params = 
-        new ProvideCredentialsCommandParameters(e.Request.RequestId)
+    ContinueWithAuthommandParameters params = 
+        new ContinueWithAuthCommandParameters(e.Request.RequestId)
         {
-            Username = "myuser",
-            Password = "mypassword"
+            Action = ContinueWithAuthActionType.ProvideCredentials,
+            AuthCredentials = new AuthCredentials("myuser", "mypassword"),
         };
     
-    await driver.Network.ProvideCredentialsAsync(params);
+    await driver.Network.ContinueWithAuthAsync(params);
 },
 ObservableEventHandlerOptions.RunHandlerAsynchronously);
 ```
@@ -406,7 +406,7 @@ await driver.Storage.SetCookieAsync(params);
 
 ```csharp
 GetCookiesCommandParameters params = new GetCookiesCommandParameters();
-params.BrowsingContexts.Add(contextId);
+params.Partition = new BrowsingContextPartitionDescriptor(contextId);
 
 GetCookiesCommandResult result = await driver.Storage.GetCookiesAsync(params);
 

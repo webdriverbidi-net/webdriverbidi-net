@@ -23,7 +23,7 @@ StorageModule storage = driver.Storage;
 
 ```csharp
 GetCookiesCommandParameters params = new GetCookiesCommandParameters();
-params.BrowsingContexts.Add(contextId);
+params.Partition = new BrowsingContextPartitionDescriptor(contextId);
 
 GetCookiesCommandResult result = await driver.Storage.GetCookiesAsync(params);
 
@@ -43,7 +43,7 @@ foreach (var cookie in result.Cookies)
 
 ```csharp
 GetCookiesCommandParameters params = new GetCookiesCommandParameters();
-params.BrowsingContexts.Add(contextId);
+params.Partition = new BrowsingContextPartitionDescriptor(contextId);
 
 // Filter by name
 params.Filter = new CookieFilter
@@ -107,34 +107,9 @@ await driver.Storage.DeleteCookiesAsync(params);
 
 ```csharp
 DeleteCookiesCommandParameters params = new DeleteCookiesCommandParameters();
-params.BrowsingContexts.Add(contextId);
+params.Partition = new BrowsingContextPartitionDescriptor(contextId);
 
 await driver.Storage.DeleteCookiesAsync(params);
-```
-
-## Working with Storage
-
-### Get Local Storage Keys
-
-```csharp
-// Navigate first to set storage origin
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com"));
-
-GetStorageKeyCommandParameters params = new GetStorageKeyCommandParameters();
-params.BrowsingContexts.Add(contextId);
-
-GetStorageKeyCommandResult result = await driver.Storage.GetStorageKeyAsync(params);
-```
-
-### Delete Storage
-
-```csharp
-// Delete local and session storage
-DeleteStorageCommandParameters params = new DeleteStorageCommandParameters();
-params.BrowsingContexts.Add(contextId);
-
-await driver.Storage.DeleteStorageAsync(params);
 ```
 
 ## Common Patterns
@@ -144,7 +119,7 @@ await driver.Storage.DeleteStorageAsync(params);
 ```csharp
 // Save cookies
 GetCookiesCommandResult savedCookies = await driver.Storage.GetCookiesAsync(
-    new GetCookiesCommandParameters { BrowsingContexts = { contextId } });
+    new GetCookiesCommandParameters { Partition = new BrowsingContextPartitionDescriptor(contextId) });
 
 // ... later, restore cookies
 foreach (var cookie in savedCookies.Cookies)
@@ -169,11 +144,7 @@ foreach (var cookie in savedCookies.Cookies)
 ```csharp
 // Clear all cookies
 await driver.Storage.DeleteCookiesAsync(
-    new DeleteCookiesCommandParameters { BrowsingContexts = { contextId } });
-
-// Clear storage
-await driver.Storage.DeleteStorageAsync(
-    new DeleteStorageCommandParameters { BrowsingContexts = { contextId } });
+    new DeleteCookiesCommandParameters { Partition = new BrowsingContextPartitionDescriptor(contextId) });
 ```
 
 ### Set Authentication Cookie

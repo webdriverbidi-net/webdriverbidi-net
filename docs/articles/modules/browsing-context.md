@@ -40,7 +40,7 @@ foreach (BrowsingContextInfo context in result.ContextTree)
 ```csharp
 GetTreeCommandParameters params = new GetTreeCommandParameters()
 {
-    Root = contextId  // Only get this context and its descendants
+    RootBrowsingContextId = contextId  // Only get this context and its descendants
 };
 GetTreeCommandResult result = await driver.BrowsingContext.GetTreeAsync(params);
 ```

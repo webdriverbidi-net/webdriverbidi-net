@@ -911,7 +911,7 @@ public class CachedContextInfo
         }
         
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
-            new GetTreeCommandParameters { Root = contextId });
+            new GetTreeCommandParameters { RootBrowsingContextId = contextId });
         
         if (tree.ContextTree.Count > 0)
         {
