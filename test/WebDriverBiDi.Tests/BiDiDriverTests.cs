@@ -1172,7 +1172,7 @@ public class BiDiDriverTests
         cts.Cancel();
 
         TestCommandParameters commandParams = new("module.command");
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(commandParams, cts.Token), Throws.InstanceOf<OperationCanceledException>());
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(commandParams, cancellationToken: cts.Token), Throws.InstanceOf<OperationCanceledException>());
     }
 
     [Test]

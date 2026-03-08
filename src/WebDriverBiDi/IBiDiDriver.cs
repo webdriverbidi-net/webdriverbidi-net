@@ -101,17 +101,6 @@ public interface IBiDiDriver : IAsyncDisposable
     Task StopAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for the
-    /// default command timeout. The result type is inferred from the command parameters.
-    /// </summary>
-    /// <typeparam name="T">The expected type of the result of the command.</typeparam>
-    /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, CancellationToken cancellationToken = default)
-        where T : CommandResult;
-
-    /// <summary>
     /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for a response.
     /// The result type is inferred from the command parameters.
     /// </summary>
@@ -120,18 +109,7 @@ public interface IBiDiDriver : IAsyncDisposable
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan commandTimeout, CancellationToken cancellationToken = default)
-        where T : CommandResult;
-
-    /// <summary>
-    /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for the
-    /// default command timeout.
-    /// </summary>
-    /// <typeparam name="T">The expected type of the result of the command.</typeparam>
-    /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, CancellationToken cancellationToken = default)
+    Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         where T : CommandResult;
 
     /// <summary>
@@ -142,7 +120,7 @@ public interface IBiDiDriver : IAsyncDisposable
     /// <param name="commandTimeout">The timeout to wait for the command to complete.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan commandTimeout, CancellationToken cancellationToken = default)
+    Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         where T : CommandResult;
 
     /// <summary>

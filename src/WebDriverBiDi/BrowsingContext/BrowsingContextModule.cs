@@ -132,119 +132,143 @@ public sealed class BrowsingContextModule : Module
     /// Activates a browsing context by bringing it to the foreground.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<ActivateCommandResult> ActivateAsync(ActivateCommandParameters commandParameters)
+    public Task<ActivateCommandResult> ActivateAsync(ActivateCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Captures a screenshot of the current page in the browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing a base64-encoded screenshot.</returns>
-    public Task<CaptureScreenshotCommandResult> CaptureScreenshotAsync(CaptureScreenshotCommandParameters commandParameters)
+    public Task<CaptureScreenshotCommandResult> CaptureScreenshotAsync(CaptureScreenshotCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Closes the browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<CloseCommandResult> CloseAsync(CloseCommandParameters commandParameters)
+    public Task<CloseCommandResult> CloseAsync(CloseCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Creates a new browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command including the ID of the new context.</returns>
-    public Task<CreateCommandResult> CreateAsync(CreateCommandParameters commandParameters)
+    public Task<CreateCommandResult> CreateAsync(CreateCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Gets a tree of browsing contexts associated with a specified context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The tree associated browsing contexts.</returns>
-    public Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters? commandParameters = null)
+    public Task<GetTreeCommandResult> GetTreeAsync(GetTreeCommandParameters? commandParameters = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new(), timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Handles a user prompt.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<HandleUserPromptCommandResult> HandleUserPromptAsync(HandleUserPromptCommandParameters commandParameters)
+    public Task<HandleUserPromptCommandResult> HandleUserPromptAsync(HandleUserPromptCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Locates nodes within a browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing the located nodes, if any.</returns>
-    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters commandParameters)
+    public Task<LocateNodesCommandResult> LocateNodesAsync(LocateNodesCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Navigates a browsing context to a new URL.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
-    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters commandParameters)
+    public Task<NavigateCommandResult> NavigateAsync(NavigateCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Prints a PDF of the current page in the browsing context.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing a base64-encoded PDF of the current page.</returns>
-    public Task<PrintCommandResult> PrintAsync(PrintCommandParameters commandParameters)
+    public Task<PrintCommandResult> PrintAsync(PrintCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Reloads a browsing context to a new URL.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
-    public Task<ReloadCommandResult> ReloadAsync(ReloadCommandParameters commandParameters)
+    public Task<ReloadCommandResult> ReloadAsync(ReloadCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Sets the viewport of a browsing context to the specified dimensions.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
-    public Task<SetViewportCommandResult> SetViewportAsync(SetViewportCommandParameters commandParameters)
+    public Task<SetViewportCommandResult> SetViewportAsync(SetViewportCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Traverses the history entries of the browser.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
-    public Task<TraverseHistoryCommandResult> TraverseHistoryAsync(TraverseHistoryCommandParameters commandParameters)
+    public Task<TraverseHistoryCommandResult> TraverseHistoryAsync(TraverseHistoryCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 }

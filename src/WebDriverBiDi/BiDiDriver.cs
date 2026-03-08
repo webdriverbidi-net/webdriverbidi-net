@@ -255,7 +255,7 @@ public class BiDiDriver : IBiDiDriver
 
     /// <summary>
     /// Gets the default timeout to wait for a command to complete. This timeout is specified in
-    /// the constructor and is used by the <see cref="ExecuteCommandAsync{T}(CommandParameters{T}, CancellationToken)"/>
+    /// the constructor and is used by the <see cref="ExecuteCommandAsync{T}(CommandParameters{T}, TimeSpan?, CancellationToken)"/>
     /// overloads when a command timeout is not explicitly provided.
     /// </summary>
     public virtual TimeSpan DefaultCommandTimeout { get; private set; }
@@ -323,26 +323,6 @@ public class BiDiDriver : IBiDiDriver
     }
 
     /// <summary>
-    /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for the
-    /// default command timeout. The result type is inferred from the command parameters.
-    /// </summary>
-    /// <typeparam name="T">The expected type of the result of the command.</typeparam>
-    /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
-    /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
-    /// <exception cref="WebDriverBiDiException">Thrown if the command is cancelled, returns a null value, or does not return a result of the correct object type.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandParameters"/> is null.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, CancellationToken cancellationToken = default)
-        where T : CommandResult
-    {
-        return await this.ExecuteCommandAsync<T>(commandParameters, this.DefaultCommandTimeout, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
     /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for a response.
     /// The result type is inferred from the command parameters.
     /// </summary>
@@ -357,30 +337,10 @@ public class BiDiDriver : IBiDiDriver
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandParameters"/> is null.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan commandTimeout, CancellationToken cancellationToken = default)
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
         return await this.ExecuteCommandAsync<T>((CommandParameters)commandParameters, commandTimeout, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Asynchronously sends a command to the remote end of the WebDriver BiDi protocol and waits for the
-    /// default command timeout.
-    /// </summary>
-    /// <typeparam name="T">The expected type of the result of the command.</typeparam>
-    /// <param name="commandParameters">The object containing settings for the command, including parameters.</param>
-    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Defaults to <see cref="CancellationToken.None"/>, if unspecified.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
-    /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
-    /// <exception cref="WebDriverBiDiException">Thrown if the command is cancelled, returns a null value, or does not return a result of the correct object type.</exception>
-    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
-    /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandParameters"/> is null.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, CancellationToken cancellationToken = default)
-        where T : CommandResult
-    {
-        return await this.ExecuteCommandAsync<T>(commandParameters, this.DefaultCommandTimeout, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -397,7 +357,7 @@ public class BiDiDriver : IBiDiDriver
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="commandParameters"/> is null.</exception>
-    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan commandTimeout, CancellationToken cancellationToken = default)
+    public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, TimeSpan? commandTimeout = null, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
         this.ThrowIfDisposed();
@@ -406,19 +366,16 @@ public class BiDiDriver : IBiDiDriver
             throw new ArgumentNullException(nameof(commandParameters), $"Command parameters may not be null; must be a parameters object expecting a results of type {typeof(T)}");
         }
 
-        if (commandTimeout == default)
-        {
-            commandTimeout = this.DefaultCommandTimeout;
-        }
+        commandTimeout ??= this.DefaultCommandTimeout;
 
         Command command = await this.transport.SendCommandAsync(commandParameters, cancellationToken).ConfigureAwait(false);
         try
         {
-            bool commandCompleted = await command.WaitForCompletionAsync(commandTimeout, cancellationToken).ConfigureAwait(false);
+            bool commandCompleted = await command.WaitForCompletionAsync(commandTimeout.Value, cancellationToken).ConfigureAwait(false);
             if (!commandCompleted)
             {
                 this.transport.CancelCommand(command);
-                throw new WebDriverBiDiTimeoutException($"Timed out executing command {commandParameters.MethodName} after {commandTimeout.TotalMilliseconds} milliseconds");
+                throw new WebDriverBiDiTimeoutException($"Timed out executing command {commandParameters.MethodName} after {commandTimeout.Value.TotalMilliseconds} milliseconds");
             }
         }
         catch (OperationCanceledException)

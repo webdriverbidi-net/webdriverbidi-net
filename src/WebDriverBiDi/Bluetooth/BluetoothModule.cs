@@ -62,119 +62,143 @@ public sealed class BluetoothModule : Module
     /// Disables simulation of Bluetooth devices.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<DisableSimulationCommandResult> DisableSimulationAsync(DisableSimulationCommandParameters commandParameters)
+    public Task<DisableSimulationCommandResult> DisableSimulationAsync(DisableSimulationCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Handles the prompt requesting connection to Bluetooth devices.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<HandleRequestDevicePromptCommandResult> HandleRequestDevicePromptAsync(HandleRequestDevicePromptCommandParameters commandParameters)
+    public Task<HandleRequestDevicePromptCommandResult> HandleRequestDevicePromptAsync(HandleRequestDevicePromptCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates the presence or absence of the Bluetooth adapter, along with its power settings.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateAdapterCommandResult> SimulateAdapterAsync(SimulateAdapterCommandParameters commandParameters)
+    public Task<SimulateAdapterCommandResult> SimulateAdapterAsync(SimulateAdapterCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates the advertisement of availability of Bluetooth peripherals.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateAdvertisementCommandResult> SimulateAdvertisementAsync(SimulateAdvertisementCommandParameters commandParameters)
+    public Task<SimulateAdvertisementCommandResult> SimulateAdvertisementAsync(SimulateAdvertisementCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates a characteristic for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateCharacteristicCommandResult> SimulateCharacteristicAsync(SimulateCharacteristicCommandParameters commandParameters)
+    public Task<SimulateCharacteristicCommandResult> SimulateCharacteristicAsync(SimulateCharacteristicCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates a characteristic response for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateCharacteristicResponseCommandResult> SimulateCharacteristicResponseAsync(SimulateCharacteristicResponseCommandParameters commandParameters)
+    public Task<SimulateCharacteristicResponseCommandResult> SimulateCharacteristicResponseAsync(SimulateCharacteristicResponseCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates a descriptor for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateDescriptorCommandResult> SimulateDescriptorAsync(SimulateDescriptorCommandParameters commandParameters)
+    public Task<SimulateDescriptorCommandResult> SimulateDescriptorAsync(SimulateDescriptorCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates a descriptor response for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateDescriptorResponseCommandResult> SimulateDescriptorResponseAsync(SimulateDescriptorResponseCommandParameters commandParameters)
+    public Task<SimulateDescriptorResponseCommandResult> SimulateDescriptorResponseAsync(SimulateDescriptorResponseCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates a GATT connection response for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateGattConnectionResponseCommandResult> SimulateGattConnectionResponseAsync(SimulateGattConnectionResponseCommandParameters commandParameters)
+    public Task<SimulateGattConnectionResponseCommandResult> SimulateGattConnectionResponseAsync(SimulateGattConnectionResponseCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates a GATT disconnection response for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateGattDisconnectionCommandResult> SimulateGattDisconnectionAsync(SimulateGattDisconnectionCommandParameters commandParameters)
+    public Task<SimulateGattDisconnectionCommandResult> SimulateGattDisconnectionAsync(SimulateGattDisconnectionCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates the presence of a Bluetooth peripheral already connected to the page.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulatePreconnectedPeripheralCommandResult> SimulatePreconnectedPeripheralAsync(SimulatePreconnectedPeripheralCommandParameters commandParameters)
+    public Task<SimulatePreconnectedPeripheralCommandResult> SimulatePreconnectedPeripheralAsync(SimulatePreconnectedPeripheralCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Simulates a service for a Bluetooth device.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SimulateServiceCommandResult> SimulateServiceAsync(SimulateServiceCommandParameters commandParameters)
+    public Task<SimulateServiceCommandResult> SimulateServiceAsync(SimulateServiceCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 }

@@ -55,59 +55,71 @@ public sealed class ScriptModule : Module
     /// Adds a preload script to each page before execution of other JavaScript included in the page source.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing the ID of the created preload script.</returns>
-    public Task<AddPreloadScriptCommandResult> AddPreloadScriptAsync(AddPreloadScriptCommandParameters commandParameters)
+    public Task<AddPreloadScriptCommandResult> AddPreloadScriptAsync(AddPreloadScriptCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Calls a function in the specified script target.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing the result of the function execution.</returns>
-    public Task<EvaluateResult> CallFunctionAsync(CallFunctionCommandParameters commandParameters)
+    public Task<EvaluateResult> CallFunctionAsync(CallFunctionCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Disowns the specified handles to allow the script engine to garbage collect objects.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<DisownCommandResult> DisownAsync(DisownCommandParameters commandParameters)
+    public Task<DisownCommandResult> DisownAsync(DisownCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Evaluates a piece of JavaScript in the specified script target.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing the result of the script evaluation.</returns>
-    public Task<EvaluateResult> EvaluateAsync(EvaluateCommandParameters commandParameters)
+    public Task<EvaluateResult> EvaluateAsync(EvaluateCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Gets the realms associated with a given browsing context and realm type.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command containing IDs of the realms.</returns>
-    public Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters? commandParameters = null)
+    public Task<GetRealmsCommandResult> GetRealmsAsync(GetRealmsCommandParameters? commandParameters = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new(), timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Removes a preload script from loading on each page before execution of other JavaScript included in the page source.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<RemovePreloadScriptCommandResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandParameters)
+    public Task<RemovePreloadScriptCommandResult> RemovePreloadScriptAsync(RemovePreloadScriptCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 }

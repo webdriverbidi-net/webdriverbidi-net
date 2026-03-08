@@ -33,9 +33,11 @@ public sealed class UserAgentClientHintsModule : Module
     /// Sets overrides for the user agent client hints.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>An empty command result.</returns>
-    public Task<SetClientHintsOverrideCommandResult> SetClientHintsOverrideAsync(SetClientHintsOverrideCommandParameters commandParameters)
+    public Task<SetClientHintsOverrideCommandResult> SetClientHintsOverrideAsync(SetClientHintsOverrideCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 }

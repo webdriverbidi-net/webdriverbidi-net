@@ -33,29 +33,35 @@ public sealed class StorageModule : Module
     /// Gets cookies from the browser session.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
-    public Task<GetCookiesCommandResult> GetCookiesAsync(GetCookiesCommandParameters? commandParameters = null)
+    public Task<GetCookiesCommandResult> GetCookiesAsync(GetCookiesCommandParameters? commandParameters = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new(), timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Sets a cookie in the browser session.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
-    public Task<SetCookieCommandResult> SetCookieAsync(SetCookieCommandParameters commandParameters)
+    public Task<SetCookieCommandResult> SetCookieAsync(SetCookieCommandParameters commandParameters, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters);
+        return this.Driver.ExecuteCommandAsync(commandParameters, timeoutOverride, cancellationToken);
     }
 
     /// <summary>
     /// Deletes cookies from the browser session.
     /// </summary>
     /// <param name="commandParameters">The parameters for the command.</param>
+    /// <param name="timeoutOverride">The timeout override to use for the command. If omitted, the value of <see cref="BiDiDriver.DefaultCommandTimeout"/> is used.</param>
+    /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled. Omitting this argument is the equivalent of using <see cref="CancellationToken.None"/>.</param>
     /// <returns>The result of the command.</returns>
-    public Task<DeleteCookiesCommandResult> DeleteCookiesAsync(DeleteCookiesCommandParameters? commandParameters = null)
+    public Task<DeleteCookiesCommandResult> DeleteCookiesAsync(DeleteCookiesCommandParameters? commandParameters = null, TimeSpan? timeoutOverride = null, CancellationToken cancellationToken = default)
     {
-        return this.Driver.ExecuteCommandAsync(commandParameters ?? new());
+        return this.Driver.ExecuteCommandAsync(commandParameters ?? new(), timeoutOverride, cancellationToken);
     }
 }
