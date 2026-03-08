@@ -1736,7 +1736,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
-        Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
+        Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
     }
 
     [Test]

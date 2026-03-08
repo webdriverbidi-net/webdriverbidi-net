@@ -31,34 +31,18 @@ public class BiDiDriver : IBiDiDriver
     /// <summary>
     /// Gets the default command timeout if a timeout is not specified in the constructor.
     /// </summary>
-    public static readonly TimeSpan DefaultCommandTimeout = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan DefaultCommandWaitTimeout = TimeSpan.FromMinutes(5);
 
     private const string EventReceivedEventName = "driver.eventReceived";
     private const string UnexpectedErrorReceivedEventName = "driver.unexpectedErrorReceived";
     private const string UnknownMessageReceivedEventName = "driver.unknownMessageReceived";
     private const string LogMessageEventName = "driver.logMessage";
 
-    private readonly BluetoothModule bluetoothModule;
-    private readonly BrowserModule browserModule;
-    private readonly BrowsingContextModule browsingContextModule;
-    private readonly EmulationModule emulationModule;
-    private readonly InputModule inputModule;
-    private readonly LogModule logModule;
-    private readonly NetworkModule networkModule;
-    private readonly PermissionsModule permissionsModule;
-    private readonly ScriptModule scriptModule;
-    private readonly SessionModule sessionModule;
-    private readonly SpeculationModule speculationModule;
-    private readonly StorageModule storageModule;
-    private readonly UserAgentClientHintsModule userAgentClientHintsModule;
-    private readonly WebExtensionModule webExtensionModule;
-
     private readonly EventObserver<EventReceivedEventArgs> transportEventReceivedObserver;
     private readonly EventObserver<ErrorReceivedEventArgs> transportErrorReceivedObserver;
     private readonly EventObserver<UnknownMessageReceivedEventArgs> transportUnknownMessageReceivedObserver;
     private readonly EventObserver<LogMessageEventArgs> transportLogMessageObserver;
 
-    private readonly TimeSpan defaultCommandWaitTimeout;
     private readonly Transport transport;
     private readonly ConcurrentDictionary<string, Module> modules = [];
     private readonly ConcurrentDictionary<string, EventInvoker> eventInvokers = [];
@@ -69,7 +53,7 @@ public class BiDiDriver : IBiDiDriver
     /// Initializes a new instance of the <see cref="BiDiDriver" /> class.
     /// </summary>
     public BiDiDriver()
-        : this(DefaultCommandTimeout, new Transport())
+        : this(DefaultCommandWaitTimeout, new Transport())
     {
     }
 
@@ -106,54 +90,54 @@ public class BiDiDriver : IBiDiDriver
     /// </remarks>
     public BiDiDriver(TimeSpan defaultCommandWaitTimeout, Transport transport)
     {
-        this.defaultCommandWaitTimeout = defaultCommandWaitTimeout;
+        this.DefaultCommandTimeout = defaultCommandWaitTimeout;
         this.transport = transport;
         this.transportEventReceivedObserver = this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceived);
         this.transportErrorReceivedObserver = this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
         this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
         this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
 
-        this.bluetoothModule = new BluetoothModule(this);
-        this.RegisterModule(this.bluetoothModule);
+        this.Bluetooth = new BluetoothModule(this);
+        this.RegisterModule(this.Bluetooth);
 
-        this.browserModule = new BrowserModule(this);
-        this.RegisterModule(this.browserModule);
+        this.Browser = new BrowserModule(this);
+        this.RegisterModule(this.Browser);
 
-        this.browsingContextModule = new BrowsingContextModule(this);
-        this.RegisterModule(this.browsingContextModule);
+        this.BrowsingContext = new BrowsingContextModule(this);
+        this.RegisterModule(this.BrowsingContext);
 
-        this.emulationModule = new EmulationModule(this);
-        this.RegisterModule(this.emulationModule);
+        this.Emulation = new EmulationModule(this);
+        this.RegisterModule(this.Emulation);
 
-        this.inputModule = new InputModule(this);
-        this.RegisterModule(this.inputModule);
+        this.Input = new InputModule(this);
+        this.RegisterModule(this.Input);
 
-        this.logModule = new LogModule(this);
-        this.RegisterModule(this.logModule);
+        this.Log = new LogModule(this);
+        this.RegisterModule(this.Log);
 
-        this.networkModule = new NetworkModule(this);
-        this.RegisterModule(this.networkModule);
+        this.Network = new NetworkModule(this);
+        this.RegisterModule(this.Network);
 
-        this.permissionsModule = new PermissionsModule(this);
-        this.RegisterModule(this.permissionsModule);
+        this.Permissions = new PermissionsModule(this);
+        this.RegisterModule(this.Permissions);
 
-        this.scriptModule = new ScriptModule(this);
-        this.RegisterModule(this.scriptModule);
+        this.Script = new ScriptModule(this);
+        this.RegisterModule(this.Script);
 
-        this.sessionModule = new SessionModule(this);
-        this.RegisterModule(this.sessionModule);
+        this.Session = new SessionModule(this);
+        this.RegisterModule(this.Session);
 
-        this.speculationModule = new SpeculationModule(this);
-        this.RegisterModule(this.speculationModule);
+        this.Speculation = new SpeculationModule(this);
+        this.RegisterModule(this.Speculation);
 
-        this.storageModule = new StorageModule(this);
-        this.RegisterModule(this.storageModule);
+        this.Storage = new StorageModule(this);
+        this.RegisterModule(this.Storage);
 
-        this.userAgentClientHintsModule = new UserAgentClientHintsModule(this);
-        this.RegisterModule(this.userAgentClientHintsModule);
+        this.UserAgentClientHints = new UserAgentClientHintsModule(this);
+        this.RegisterModule(this.UserAgentClientHints);
 
-        this.webExtensionModule = new WebExtensionModule(this);
-        this.RegisterModule(this.webExtensionModule);
+        this.WebExtension = new WebExtensionModule(this);
+        this.RegisterModule(this.WebExtension);
     }
 
     /// <summary>
@@ -179,72 +163,72 @@ public class BiDiDriver : IBiDiDriver
     /// <summary>
     /// Gets the bluetooth module as described in the W3C Web Bluetooth Specification.
     /// </summary>
-    public BluetoothModule Bluetooth => this.bluetoothModule;
+    public BluetoothModule Bluetooth { get; private set; }
 
     /// <summary>
     /// Gets the browser module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public BrowserModule Browser => this.browserModule;
+    public BrowserModule Browser { get; private set; }
 
     /// <summary>
     /// Gets the browsingContext module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public BrowsingContextModule BrowsingContext => this.browsingContextModule;
+    public BrowsingContextModule BrowsingContext { get; private set; }
 
     /// <summary>
     /// Gets the emulation module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public EmulationModule Emulation => this.emulationModule;
+    public EmulationModule Emulation { get; private set; }
 
     /// <summary>
     /// Gets the input module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public InputModule Input => this.inputModule;
+    public InputModule Input { get; private set; }
 
     /// <summary>
     /// Gets the log module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public LogModule Log => this.logModule;
+    public LogModule Log { get; private set; }
 
     /// <summary>
     /// Gets the network module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public NetworkModule Network => this.networkModule;
+    public NetworkModule Network { get; private set; }
 
     /// <summary>
     /// Gets the permissions module as described in the W3C Permissions Specification.
     /// </summary>
-    public PermissionsModule Permissions => this.permissionsModule;
+    public PermissionsModule Permissions { get; private set; }
 
     /// <summary>
     /// Gets the script module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public ScriptModule Script => this.scriptModule;
+    public ScriptModule Script { get; private set; }
 
     /// <summary>
     /// Gets the session module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public SessionModule Session => this.sessionModule;
+    public SessionModule Session { get; private set; }
 
     /// <summary>
     /// Gets the speculation module as described in the W3C Community Group Prerendering specification.
     /// </summary>
-    public SpeculationModule Speculation => this.speculationModule;
+    public SpeculationModule Speculation { get; private set; }
 
     /// <summary>
     /// Gets the storage module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public StorageModule Storage => this.storageModule;
+    public StorageModule Storage { get; private set; }
 
     /// <summary>
     /// Gets the user agent client hints module as described in the W3C Community Group User Agent Client Hints specification.
     /// </summary>
-    public UserAgentClientHintsModule UserAgentClientHints => this.userAgentClientHintsModule;
+    public UserAgentClientHintsModule UserAgentClientHints { get; private set; }
 
     /// <summary>
     /// Gets the web extension module as described in the WebDriver BiDi protocol.
     /// </summary>
-    public WebExtensionModule WebExtension => this.webExtensionModule;
+    public WebExtensionModule WebExtension { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether the driver has started communication with the remote end of the WebDriver BiDi protocol.
@@ -268,6 +252,13 @@ public class BiDiDriver : IBiDiDriver
     /// </para>
     /// </remarks>
     public virtual bool IsStarted => this.transport.IsConnected;
+
+    /// <summary>
+    /// Gets the default timeout to wait for a command to complete. This timeout is specified in
+    /// the constructor and is used by the <see cref="ExecuteCommandAsync{T}(CommandParameters{T}, CancellationToken)"/>
+    /// overloads when a command timeout is not explicitly provided.
+    /// </summary>
+    public virtual TimeSpan DefaultCommandTimeout { get; private set; }
 
     /// <summary>
     /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers
@@ -348,7 +339,7 @@ public class BiDiDriver : IBiDiDriver
     public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
-        return await this.ExecuteCommandAsync<T>(commandParameters, this.defaultCommandWaitTimeout, cancellationToken).ConfigureAwait(false);
+        return await this.ExecuteCommandAsync<T>(commandParameters, this.DefaultCommandTimeout, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -389,7 +380,7 @@ public class BiDiDriver : IBiDiDriver
     public virtual async Task<T> ExecuteCommandAsync<T>(CommandParameters commandParameters, CancellationToken cancellationToken = default)
         where T : CommandResult
     {
-        return await this.ExecuteCommandAsync<T>(commandParameters, this.defaultCommandWaitTimeout, cancellationToken).ConfigureAwait(false);
+        return await this.ExecuteCommandAsync<T>(commandParameters, this.DefaultCommandTimeout, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -413,6 +404,11 @@ public class BiDiDriver : IBiDiDriver
         if (commandParameters is null)
         {
             throw new ArgumentNullException(nameof(commandParameters), $"Command parameters may not be null; must be a parameters object expecting a results of type {typeof(T)}");
+        }
+
+        if (commandTimeout == default)
+        {
+            commandTimeout = this.DefaultCommandTimeout;
         }
 
         Command command = await this.transport.SendCommandAsync(commandParameters, cancellationToken).ConfigureAwait(false);
@@ -612,6 +608,8 @@ public class BiDiDriver : IBiDiDriver
             throw new ArgumentNullException(nameof(resolver), "Type info resolver may not be null");
         }
 
+        // The transport will do the registration, and throw the proper exception if the
+        // transport is already connected (and thus the driver is started).
         this.transport.RegisterTypeInfoResolver(resolver);
     }
 

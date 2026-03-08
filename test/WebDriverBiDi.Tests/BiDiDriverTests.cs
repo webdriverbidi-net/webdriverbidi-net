@@ -1058,7 +1058,7 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         await driver.StartAsync("ws://localhost:5555");
-        Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
+        Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
     }
 
     [Test]

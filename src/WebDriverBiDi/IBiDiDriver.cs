@@ -44,6 +44,43 @@ public interface IBiDiDriver : IAsyncDisposable
     ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
 
     /// <summary>
+    /// Gets the default timeout to wait for a command to complete.
+    /// </summary>
+    TimeSpan DefaultCommandTimeout { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating the behavior for handling exceptions thrown by event handlers
+    /// invoked by this driver. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that
+    /// exceptions from event handlers will be caught and logged but will not cause the driver to stop
+    /// processing messages from the transport.
+    /// </summary>
+    TransportErrorBehavior EventHandlerExceptionBehavior { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating the behavior for handling exceptions when a protocol error is
+    /// received from the remote end. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning
+    /// that exceptions from protocol errors will be caught and logged but will not cause the driver to
+    /// stop processing messages from the transport.
+    /// </summary>
+    TransportErrorBehavior ProtocolErrorBehavior { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating the behavior for handling exceptions when an unknown message is
+    /// encountered, such as valid JSON that does not match any protocol data structure. Defaults to
+    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unknown messages will
+    /// be caught and logged, but will not cause the driver to stop processing messages from the transport.
+    /// </summary>
+    TransportErrorBehavior UnknownMessageBehavior { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating the behavior for handling exceptions when an unexpected error is
+    /// encountered, such as an error response received with no corresponding command. Defaults to
+    /// <see cref="TransportErrorBehavior.Ignore"/>, meaning that exceptions from unexpected errors will
+    /// be caught and logged but will not cause the driver to stop processing messages from the transport.
+    /// </summary>
+    TransportErrorBehavior UnexpectedErrorBehavior { get; set; }
+
+    /// <summary>
     /// Gets a value indicating whether the driver has started communication with the remote end of the WebDriver BiDi protocol.
     /// </summary>
     bool IsStarted { get; }

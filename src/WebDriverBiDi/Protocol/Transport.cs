@@ -321,14 +321,14 @@ public class Transport : IAsyncDisposable
     /// This method must be called before connecting to the remote end.
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
-    /// <exception cref="WebDriverBiDiConnectionException">
+    /// <exception cref="InvalidOperationException">
     /// Thrown if the transport is already connected to a remote end.
     /// </exception>
     public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
     {
         if (this.IsConnected)
         {
-            throw new WebDriverBiDiConnectionException("Cannot register a type info resolver after the transport is connected");
+            throw new InvalidOperationException("Cannot register a type info resolver after the transport is connected");
         }
 
         this.options.TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, resolver);
