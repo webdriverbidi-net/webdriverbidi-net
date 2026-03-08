@@ -512,12 +512,12 @@ try
 
     if (complexResult is EvaluateResultSuccess complexSuccess)
     {
-        Dictionary<string, object> data = complexSuccess.Result.ValueAs<Dictionary<string, object>>();
+        RemoteValueDictionary data = complexSuccess.Result.ValueAs<RemoteValueDictionary>();
         Console.WriteLine($"\nPage analysis:");
-        Console.WriteLine($"  URL: {data["url"]}");
-        Console.WriteLine($"  Links: {data["linkCount"]}");
-        Console.WriteLine($"  Images: {data["imageCount"]}");
-        Console.WriteLine($"  Has title: {data["hasTitle"]}");
+        Console.WriteLine($"  URL: {data["url"].ValueAs<string>()}");
+        Console.WriteLine($"  Links: {data["linkCount"].ValueAs<long>()}");
+        Console.WriteLine($"  Images: {data["imageCount"].ValueAs<long>()}");
+        Console.WriteLine($"  Has title: {data["hasTitle"].ValueAs<bool>()}");
     }
 }
 finally

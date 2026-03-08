@@ -207,8 +207,8 @@ namespace MyAutomation
 
             if (result is EvaluateResultSuccess success)
             {
-                var data = success.Result.ValueAs<Dictionary<string, object>>();
-                return (bool)data["found"];
+                RemoteValueDictionary data = success.Result.ValueAs<RemoteValueDictionary>();
+                return data["found"].ValueAs<bool>();
             }
 
             return false;
@@ -282,10 +282,27 @@ namespace MyAutomation
 
             if (result is EvaluateResultSuccess success)
             {
-                return success.Result.ValueAs<Dictionary<string, object>>();
+                return ToDictionary(success.Result.ValueAs<RemoteValueDictionary>());
             }
 
             return new Dictionary<string, object>();
+        }
+
+        private static Dictionary<string, object> ToDictionary(RemoteValueDictionary dict)
+        {
+            Dictionary<string, object> result = new();
+            foreach (KeyValuePair<object, RemoteValue> kvp in dict)
+            {
+                result[kvp.Key.ToString() ?? ""] = kvp.Value.Type switch
+                {
+                    "string" => kvp.Value.ValueAs<string>() ?? "",
+                    "number" => kvp.Value.Value is long l ? (object)l : kvp.Value.ValueAs<double>(),
+                    "boolean" => kvp.Value.ValueAs<bool>(),
+                    "null" or "undefined" => (object?)null!,
+                    _ => kvp.Value.Value ?? (object)""
+                };
+            }
+            return result;
         }
     }
 }
@@ -369,9 +386,9 @@ public class TestUtilitiesModule : Module
 
         if (result is EvaluateResultSuccess success)
         {
-            var dimensions = success.Result.ValueAs<Dictionary<string, object>>();
-            long width = Convert.ToInt64(dimensions["width"]);
-            long height = Convert.ToInt64(dimensions["height"]);
+            RemoteValueDictionary dimensions = success.Result.ValueAs<RemoteValueDictionary>();
+            long width = dimensions["width"].ValueAs<long>();
+            long height = dimensions["height"].ValueAs<long>();
 
             // Capture screenshot with full page dimensions
             CaptureScreenshotCommandParameters screenshotParams = 
@@ -404,8 +421,8 @@ public class TestUtilitiesModule : Module
 
         if (result is EvaluateResultSuccess success)
         {
-            var links = success.Result.ValueAs<List<object>>();
-            return links.Select(l => l.ToString()).ToList();
+            RemoteValueList links = success.Result.ValueAs<RemoteValueList>();
+            return links.Select(l => l.ValueAs<string>()).ToList();
         }
 
         return new List<string>();
@@ -481,10 +498,10 @@ public class PerformanceModule : Module
 
         if (result is EvaluateResultSuccess success)
         {
-            var timing = success.Result.ValueAs<Dictionary<string, object>>();
+            RemoteValueDictionary timing = success.Result.ValueAs<RemoteValueDictionary>();
             return timing.ToDictionary(
-                kvp => kvp.Key,
-                kvp => Convert.ToDouble(kvp.Value));
+                kvp => kvp.Key.ToString() ?? "",
+                kvp => kvp.Value.ValueAs<double>());
         }
 
         return new Dictionary<string, double>();
@@ -505,16 +522,16 @@ public class PerformanceModule : Module
 
         if (result is EvaluateResultSuccess success)
         {
-            var resources = success.Result.ValueAs<List<object>>();
+            RemoteValueList resources = success.Result.ValueAs<RemoteValueList>();
             return resources.Select(r =>
             {
-                var dict = (Dictionary<string, object>)r;
+                RemoteValueDictionary dict = r.ValueAs<RemoteValueDictionary>();
                 return new ResourceTiming
                 {
-                    Name = dict["name"].ToString(),
-                    Duration = Convert.ToDouble(dict["duration"]),
-                    Size = Convert.ToInt64(dict["size"]),
-                    Type = dict["type"].ToString()
+                    Name = dict["name"].ValueAs<string>() ?? "",
+                    Duration = dict["duration"].ValueAs<double>(),
+                    Size = dict["size"].ValueAs<long>(),
+                    Type = dict["type"].ValueAs<string>() ?? ""
                 };
             }).ToList();
         }

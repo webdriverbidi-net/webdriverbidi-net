@@ -389,10 +389,10 @@ if (result is EvaluateResultSuccess success)
 {
     RemoteValue obj = success.Result;
     
-    // Access as dictionary
-    var dict = obj.ValueAs<Dictionary<string, object>>();
-    Console.WriteLine($"Name: {dict["name"]}");
-    Console.WriteLine($"Age: {dict["age"]}");
+    // Access as RemoteValueDictionary
+    RemoteValueDictionary dict = obj.ValueAs<RemoteValueDictionary>();
+    Console.WriteLine($"Name: {dict["name"].ValueAs<string>()}");
+    Console.WriteLine($"Age: {dict["age"].ValueAs<long>()}");
 }
 ```
 
@@ -413,12 +413,12 @@ if (result is EvaluateResultSuccess success)
 {
     RemoteValue array = success.Result;
     
-    // Access as list
-    var list = array.ValueAs<List<object>>();
+    // Access as RemoteValueList
+    RemoteValueList list = array.ValueAs<RemoteValueList>();
     Console.WriteLine($"Array length: {list.Count}");
-    foreach (var item in list)
+    foreach (RemoteValue item in list)
     {
-        Console.WriteLine($"  Item: {item}");
+        Console.WriteLine($"  Item: {item.ValueAs<long>()}");
     }
 }
 ```

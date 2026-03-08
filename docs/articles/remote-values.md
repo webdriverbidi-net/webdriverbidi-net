@@ -31,15 +31,17 @@ Every `RemoteValue` has:
 
 | JavaScript Type | RemoteValue.Type | .NET Type |
 |----------------|------------------|-----------|
-| `Object` | `"object"` | `Dictionary<string, object>` |
-| `Array` | `"array"` | `List<object>` |
+| `Object` | `"object"` | `RemoteValueDictionary` |
+| `Array` | `"array"` | `RemoteValueList` |
 | `Function` | `"function"` | - |
 | `Promise` | `"promise"` | - |
 | `DOM Element` | `"node"` | `NodeProperties` |
 | `Date` | `"date"` | `DateTime` |
 | `RegExp` | `"regexp"` | - |
-| `Map` | `"map"` | - |
-| `Set` | `"set"` | - |
+| `Map` | `"map"` | `RemoteValueDictionary` |
+| `Set` | `"set"` | `RemoteValueList` |
+
+`RemoteValueDictionary` is a read-only dictionary mapping keys to `RemoteValue` instances. Use `dict[key].ValueAs<T>()` to extract values. `RemoteValueList` is a read-only collection of `RemoteValue` instances. Use `list[index].ValueAs<T>()` to extract elements.
 
 ## Accessing Values
 
@@ -125,12 +127,12 @@ if (result is EvaluateResultSuccess success)
 {
     RemoteValue obj = success.Result;
     
-    // Convert to dictionary
-    var dict = obj.ValueAs<Dictionary<string, object>>();
+    // Convert to RemoteValueDictionary; extract values with ValueAs<T>()
+    RemoteValueDictionary dict = obj.ValueAs<RemoteValueDictionary>();
     
-    Console.WriteLine(dict["name"]);   // "John"
-    Console.WriteLine(dict["age"]);    // 30
-    Console.WriteLine(dict["active"]); // True
+    Console.WriteLine(dict["name"].ValueAs<string>());   // "John"
+    Console.WriteLine(dict["age"].ValueAs<long>());    // 30
+    Console.WriteLine(dict["active"].ValueAs<bool>()); // True
 }
 ```
 
@@ -153,11 +155,11 @@ EvaluateResult result = await driver.Script.EvaluateAsync(
 
 if (result is EvaluateResultSuccess success)
 {
-    var dict = success.Result.ValueAs<Dictionary<string, object>>();
-    var user = (Dictionary<string, object>)dict["user"];
-    var address = (Dictionary<string, object>)user["address"];
+    RemoteValueDictionary dict = success.Result.ValueAs<RemoteValueDictionary>();
+    RemoteValueDictionary user = dict["user"].ValueAs<RemoteValueDictionary>();
+    RemoteValueDictionary address = user["address"].ValueAs<RemoteValueDictionary>();
     
-    Console.WriteLine(address["city"]); // "New York"
+    Console.WriteLine(address["city"].ValueAs<string>()); // "New York"
 }
 ```
 
@@ -171,13 +173,13 @@ EvaluateResult result = await driver.Script.EvaluateAsync(
 
 if (result is EvaluateResultSuccess success)
 {
-    var list = success.Result.ValueAs<List<object>>();
+    RemoteValueList list = success.Result.ValueAs<RemoteValueList>();
     
     Console.WriteLine($"Length: {list.Count}"); // 5
     
-    foreach (var item in list)
+    foreach (RemoteValue item in list)
     {
-        Console.WriteLine(item);
+        Console.WriteLine(item.ValueAs<long>());
     }
 }
 ```
@@ -197,14 +199,45 @@ EvaluateResult result = await driver.Script.EvaluateAsync(
 
 if (result is EvaluateResultSuccess success)
 {
-    var list = success.Result.ValueAs<List<object>>();
+    RemoteValueList list = success.Result.ValueAs<RemoteValueList>();
     
-    foreach (var item in list)
+    foreach (RemoteValue item in list)
     {
-        var person = (Dictionary<string, object>)item;
-        Console.WriteLine($"{person["name"]}, age {person["age"]}");
+        RemoteValueDictionary person = item.ValueAs<RemoteValueDictionary>();
+        Console.WriteLine($"{person["name"].ValueAs<string>()}, age {person["age"].ValueAs<long>()}");
     }
 }
+```
+
+### Converting to Dictionary or List
+
+When you need a flattened `Dictionary<string, object>` or `List<object>` (for example, for serialization or interoperability), use a recursive helper:
+
+```csharp
+using System.Linq;
+
+static object? ToObject(RemoteValue value)
+{
+    return value.Type switch
+    {
+        "string" => value.ValueAs<string>(),
+        "number" => value.Value is long l ? l : value.ValueAs<double>(),
+        "boolean" => value.ValueAs<bool>(),
+        "null" or "undefined" => null,
+        "object" or "map" => value.ValueAs<RemoteValueDictionary>()
+            .ToDictionary(kvp => kvp.Key.ToString() ?? "", kvp => ToObject(kvp.Value)),
+        "array" or "set" => value.ValueAs<RemoteValueList>()
+            .Select(ToObject)
+            .ToList(),
+        _ => value.Value
+    };
+}
+
+// Usage: convert RemoteValueDictionary to Dictionary<string, object>
+RemoteValueDictionary dict = success.Result.ValueAs<RemoteValueDictionary>();
+Dictionary<string, object?> flat = dict.ToDictionary(
+    kvp => kvp.Key.ToString() ?? "",
+    kvp => ToObject(kvp.Value));
 ```
 
 ## Working with DOM Elements
@@ -385,11 +418,11 @@ switch (value.Type)
         break;
     
     case "object":
-        var obj = value.ValueAs<Dictionary<string, object>>();
+        RemoteValueDictionary obj = value.ValueAs<RemoteValueDictionary>();
         break;
     
     case "array":
-        var list = value.ValueAs<List<object>>();
+        RemoteValueList list = value.ValueAs<RemoteValueList>();
         break;
     
     case "node":
@@ -414,7 +447,7 @@ if (value.Type == "node")
 else if (value.Type == "array")
 {
     // It's an array
-    var list = value.ValueAs<List<object>>();
+    RemoteValueList list = value.ValueAs<RemoteValueList>();
 }
 ```
 
@@ -436,12 +469,12 @@ EvaluateResult result = await driver.Script.EvaluateAsync(
 
 if (result is EvaluateResultSuccess success)
 {
-    var data = success.Result.ValueAs<Dictionary<string, object>>();
+    RemoteValueDictionary data = success.Result.ValueAs<RemoteValueDictionary>();
     
-    string title = (string)data["title"];
-    string url = (string)data["url"];
-    long linkCount = Convert.ToInt64(data["linkCount"]);
-    bool ready = (bool)data["ready"];
+    string title = data["title"].ValueAs<string>();
+    string url = data["url"].ValueAs<string>();
+    long linkCount = data["linkCount"].ValueAs<long>();
+    bool ready = data["ready"].ValueAs<bool>();
 }
 ```
 
@@ -455,11 +488,11 @@ EvaluateResult result = await driver.Script.EvaluateAsync(
 
 if (result is EvaluateResultSuccess success)
 {
-    var links = success.Result.ValueAs<List<object>>();
+    RemoteValueList links = success.Result.ValueAs<RemoteValueList>();
     
-    foreach (var link in links)
+    foreach (RemoteValue link in links)
     {
-        Console.WriteLine(link);
+        Console.WriteLine(link.ValueAs<string>());
     }
 }
 ```
@@ -488,8 +521,8 @@ CallFunctionCommandParameters propsParams = new CallFunctionCommandParameters(
 propsParams.Arguments.Add(element.ToSharedReference());
 
 EvaluateResult propsResult = await driver.Script.CallFunctionAsync(propsParams);
-var props = ((EvaluateResultSuccess)propsResult).Result
-    .ValueAs<Dictionary<string, object>>();
+RemoteValueDictionary props = ((EvaluateResultSuccess)propsResult).Result
+    .ValueAs<RemoteValueDictionary>();
 ```
 
 ## Best Practices

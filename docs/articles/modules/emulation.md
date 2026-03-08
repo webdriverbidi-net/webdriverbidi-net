@@ -181,8 +181,8 @@ EvaluateResult result = await driver.Script.EvaluateAsync(
 
 if (result is EvaluateResultSuccess success)
 {
-    var location = success.Result.ValueAs<Dictionary<string, object>>();
-    Console.WriteLine($"Browser location: {location["lat"]}, {location["lng"]}");
+    RemoteValueDictionary location = success.Result.ValueAs<RemoteValueDictionary>();
+    Console.WriteLine($"Browser location: {location["lat"].ValueAs<double>()}, {location["lng"].ValueAs<double>()}");
 }
 ```
 

@@ -192,10 +192,10 @@ EvaluateResult result = await driver.Script.EvaluateAsync(
 
 if (result is EvaluateResultSuccess success)
 {
-    var data = success.Result.ValueAs<Dictionary<string, object>>();
-    var title = data["title"];
-    var url = data["url"];
-    var linkCount = data["linkCount"];
+    RemoteValueDictionary data = success.Result.ValueAs<RemoteValueDictionary>();
+    string title = data["title"].ValueAs<string>();
+    string url = data["url"].ValueAs<string>();
+    long linkCount = data["linkCount"].ValueAs<long>();
 }
 ```
 

@@ -130,9 +130,9 @@ driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         
         if (e.Data.Type == "object")
         {
-            var data = e.Data.ValueAs<Dictionary<string, object>>();
-            Console.WriteLine($"Page ready: {data["ready"]}");
-            Console.WriteLine($"Load time: {data["loadTime"]}ms");
+            RemoteValueDictionary data = e.Data.ValueAs<RemoteValueDictionary>();
+            Console.WriteLine($"Page ready: {data["ready"].ValueAs<bool>()}");
+            Console.WriteLine($"Load time: {data["loadTime"].ValueAs<long>()}ms");
             
             pageLoadedSignal.SetResult("complete");
         }
@@ -203,14 +203,14 @@ string waitForElementScript = @"
     }
 }";
 
-TaskCompletionSource<Dictionary<string, object>> elementFoundSignal = 
-    new TaskCompletionSource<Dictionary<string, object>>();
+TaskCompletionSource<RemoteValueDictionary> elementFoundSignal = 
+    new TaskCompletionSource<RemoteValueDictionary>();
 
 driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
 {
     if (e.ChannelId == "elementWatcher")
     {
-        var data = e.Data.ValueAs<Dictionary<string, object>>();
+        RemoteValueDictionary data = e.Data.ValueAs<RemoteValueDictionary>();
         elementFoundSignal.SetResult(data);
     }
 });
@@ -229,13 +229,13 @@ await driver.BrowsingContext.NavigateAsync(
     { Wait = ReadinessState.Complete });
 
 // Wait for element (with timeout)
-Task<Dictionary<string, object>> elementTask = elementFoundSignal.Task;
+Task<RemoteValueDictionary> elementTask = elementFoundSignal.Task;
 Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
 
 if (await Task.WhenAny(elementTask, timeoutTask) == elementTask)
 {
-    var data = await elementTask;
-    Console.WriteLine($"✅ Element found: {data["text"]}");
+    RemoteValueDictionary data = await elementTask;
+    Console.WriteLine($"✅ Element found: {data["text"].ValueAs<string>()}");
 }
 else
 {
@@ -289,10 +289,10 @@ EvaluateResult result = await driver.Script.EvaluateAsync(evalParams);
 
 if (result is EvaluateResultSuccess success)
 {
-    var info = success.Result.ValueAs<Dictionary<string, object>>();
-    Console.WriteLine($"Title: {info["title"]}");
-    Console.WriteLine($"URL: {info["url"]}");
-    Console.WriteLine($"Links: {info["linkCount"]}");
+    RemoteValueDictionary info = success.Result.ValueAs<RemoteValueDictionary>();
+    Console.WriteLine($"Title: {info["title"].ValueAs<string>()}");
+    Console.WriteLine($"URL: {info["url"].ValueAs<string>()}");
+    Console.WriteLine($"Links: {info["linkCount"].ValueAs<long>()}");
 }
 
 // Trying to access from default context will fail
@@ -332,15 +332,15 @@ string interceptFetchScript = @"
     console.log('Fetch interceptor installed');
 }";
 
-List<Dictionary<string, object>> fetchCalls = new List<Dictionary<string, object>>();
+List<RemoteValueDictionary> fetchCalls = new List<RemoteValueDictionary>();
 
 driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
 {
     if (e.ChannelId == "fetchInterceptor")
     {
-        var data = e.Data.ValueAs<Dictionary<string, object>>();
+        RemoteValueDictionary data = e.Data.ValueAs<RemoteValueDictionary>();
         fetchCalls.Add(data);
-        Console.WriteLine($"🌐 Fetch intercepted: {data["url"]}");
+        Console.WriteLine($"🌐 Fetch intercepted: {data["url"].ValueAs<string>()}");
     }
 });
 
@@ -379,13 +379,13 @@ string performanceMonitorScript = @"
     });
 }";
 
-Dictionary<string, object>? performanceData = null;
+RemoteValueDictionary? performanceData = null;
 
 driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
 {
     if (e.ChannelId == "performanceMonitor")
     {
-        performanceData = e.Data.ValueAs<Dictionary<string, object>>();
+        performanceData = e.Data.ValueAs<RemoteValueDictionary>();
     }
 });
 
@@ -407,10 +407,10 @@ await Task.Delay(1000);  // Wait for load event
 if (performanceData != null)
 {
     Console.WriteLine("\n⏱️ Performance Metrics:");
-    Console.WriteLine($"  DOM Content Loaded: {performanceData["domContentLoaded"]}ms");
-    Console.WriteLine($"  Load Complete: {performanceData["loadComplete"]}ms");
-    Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"]}ms");
-    Console.WriteLine($"  Total Time: {performanceData["totalTime"]}ms");
+    Console.WriteLine($"  DOM Content Loaded: {performanceData["domContentLoaded"].ValueAs<double>()}ms");
+    Console.WriteLine($"  Load Complete: {performanceData["loadComplete"].ValueAs<double>()}ms");
+    Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"].ValueAs<double>()}ms");
+    Console.WriteLine($"  Total Time: {performanceData["totalTime"].ValueAs<double>()}ms");
 }
 ```
 

@@ -144,12 +144,12 @@ namespace MyFirstBiDiApp
 
                 if (infoResult is EvaluateResultSuccess infoSuccess)
                 {
-                    var info = infoSuccess.Result.ValueAs<Dictionary<string, object>>();
+                    RemoteValueDictionary info = infoSuccess.Result.ValueAs<RemoteValueDictionary>();
                     Console.WriteLine("Page Analysis:");
-                    Console.WriteLine($"  URL: {info["url"]}");
-                    Console.WriteLine($"  Links: {info["linkCount"]}");
-                    Console.WriteLine($"  Headings: {info["headingCount"]}");
-                    Console.WriteLine($"  Paragraphs: {info["paragraphCount"]}");
+                    Console.WriteLine($"  URL: {info["url"].ValueAs<string>()}");
+                    Console.WriteLine($"  Links: {info["linkCount"].ValueAs<long>()}");
+                    Console.WriteLine($"  Headings: {info["headingCount"].ValueAs<long>()}");
+                    Console.WriteLine($"  Paragraphs: {info["paragraphCount"].ValueAs<long>()}");
                 }
 
                 // Take a screenshot
