@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -26,6 +26,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Analyzers.Tests", "test\WebDriverBiDi.Analyzers.Tests\WebDriverBiDi.Analyzers.Tests.csproj", "{D7F64CDA-4ABD-42F1-9CB0-402D5C3455EF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Logging", "src\WebDriverBiDi.Logging\WebDriverBiDi.Logging.csproj", "{E8F53F0E-4C41-49F1-8A79-542CD3C23A97}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Logging.Tests", "test\WebDriverBiDi.Logging.Tests\WebDriverBiDi.Logging.Tests.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -157,6 +159,18 @@ Global
 		{E8F53F0E-4C41-49F1-8A79-542CD3C23A97}.Release|x64.Build.0 = Release|Any CPU
 		{E8F53F0E-4C41-49F1-8A79-542CD3C23A97}.Release|x86.ActiveCfg = Release|Any CPU
 		{E8F53F0E-4C41-49F1-8A79-542CD3C23A97}.Release|x86.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x64.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|x86.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x64.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x64.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x86.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -172,5 +186,6 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {C56741B5-A53D-4C4A-AE6D-DE2CE0F4BC52}
 		{D7F64CDA-4ABD-42F1-9CB0-402D5C3455EF} = {731061A2-3861-4672-B5D5-711ADD4F6F47}
 		{E8F53F0E-4C41-49F1-8A79-542CD3C23A97} = {C56741B5-A53D-4C4A-AE6D-DE2CE0F4BC52}
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {731061A2-3861-4672-B5D5-711ADD4F6F47}
 	EndGlobalSection
 EndGlobal
