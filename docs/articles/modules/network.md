@@ -148,7 +148,7 @@ Fired when authentication is needed:
 driver.Network.OnAuthRequired.AddObserver(async (AuthRequiredEventArgs e) =>
 {
     // Provide credentials
-    ContinueWithAuthommandParameters params = 
+    ContinueWithAuthCommandParameters params = 
         new ContinueWithAuthCommandParameters(e.Request.RequestId)
         {
             Action = ContinueWithAuthActionType.ProvideCredentials,

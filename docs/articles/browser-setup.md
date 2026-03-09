@@ -476,8 +476,6 @@ await driver.StopAsync();
 await launcher.StopAsync();
 ```
 
-See [Programmatic Browser Launch](examples/programmatic-browser-launch.md) for more examples.
-
 ## Troubleshooting
 
 ### Port Already in Use
@@ -546,5 +544,3 @@ For production use:
 - [Core Concepts](core-concepts.md): Understand the library
 - [Architecture](architecture.md): Deep dive into connection types
 - [Connection Management](advanced/connection-management.md): Advanced connection scenarios
-- [Programmatic Browser Launch](examples/programmatic-browser-launch.md): Complete launch examples
-

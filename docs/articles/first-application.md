@@ -4,7 +4,7 @@ This tutorial walks you through creating a complete WebDriverBiDi.NET applicatio
 
 ## Prerequisites
 
-- .NET SDK 6.0 or higher installed
+- .NET SDK 6.0 or higher installed (for building this tutorial)
 - A browser with WebDriver BiDi support (Chrome, Edge, or Firefox)
 - Basic knowledge of C# and async/await
 

@@ -4,7 +4,7 @@ This guide will walk you through installing WebDriverBiDi.NET and setting up you
 
 ## Prerequisites
 
-- **.NET SDK**: .NET Framework 4.6.1+, .NET Core 2.0+, or .NET 5.0+
+- **.NET SDK**: Runtime compatible with .NET Standard 2.0, supporting .NET Framework 4.6.1+, .NET Core 2.0+, or .NET 5.0+
 - **IDE**: Visual Studio, Visual Studio Code, or JetBrains Rider
 - **Browser**: A browser with WebDriver BiDi support (Chrome, Edge, Firefox)
 
