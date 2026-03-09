@@ -61,7 +61,11 @@ public static class AnalyzerTestHelpers
         await test.RunAsync();
     }
 
-    private static string GetWebDriverBiDiAssemblyPath()
+    /// <summary>
+    /// Gets the path to the WebDriverBiDi assembly for use in code fix tests.
+    /// </summary>
+    /// <returns>The assembly path.</returns>
+    internal static string GetWebDriverBiDiAssemblyPath()
     {
         // Get the test assembly's location
         string testAssemblyPath = Assembly.GetExecutingAssembly().Location;

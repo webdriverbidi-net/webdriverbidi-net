@@ -561,7 +561,7 @@ public class ObservableEventTests
     {
         private ObservableEvent<TestObservableEventArgs> testObservableEvent = new("testModule.testEvent");
 
-        public TestEventSource(int maxObserverCount = 0)
+        public TestEventSource(uint maxObserverCount = 0)
         {
             this.testObservableEvent = new ObservableEvent<TestObservableEventArgs>("testModule.testEvent", maxObserverCount);
         }
