@@ -46,8 +46,8 @@ await driver.UserAgentClientHints.SetClientHintsOverrideAsync(setParams);
 | `Browser.CloseAsync` | `UserAgentClientHints.SetClientHintsOverrideAsync` |
 | `Browser.CreateUserContextAsync` | `Browser.SetDownloadBehaviorAsync` |
 | `Browser.GetClientWindowsAsync` | `BrowsingContext.SetViewportAsync` |
-| `Browser.GetUserContextsAsync` | All Emulation `Set*OverrideAsync` commands |
-| `BrowsingContext.GetTreeAsync` | |
+| `Browser.GetUserContextsAsync` | `Network.SetExtraHeadersAsync` |
+| `BrowsingContext.GetTreeAsync` | All Emulation `Set*OverrideAsync` commands |
 | `Script.GetRealmsAsync` | |
 | `Session.EndAsync` | |
 | `Session.StatusAsync` | |

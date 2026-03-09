@@ -79,4 +79,27 @@ public class SetExtraHeadersCommandParametersTests
             Assert.That(contextsObject[0].Value<string>(), Is.EqualTo("myUserContext"));
         }
     }
+
+    [Test]
+    public void TestCanGetResetParameters()
+    {
+        SetExtraHeadersCommandParameters properties = SetExtraHeadersCommandParameters.ResetExtraHeaders;
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(serialized, Has.Count.EqualTo(1));
+            Assert.That(serialized, Contains.Key("headers"));
+            Assert.That(serialized["headers"]!.Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(serialized["headers"], Is.Empty);
+        }
+    }
+
+    [Test]
+    public void TestResetParametersPropertyReturnsNewInstance()
+    {
+        SetExtraHeadersCommandParameters firstInstance = SetExtraHeadersCommandParameters.ResetExtraHeaders;
+        SetExtraHeadersCommandParameters secondInstance = SetExtraHeadersCommandParameters.ResetExtraHeaders;
+        Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
+    }
 }

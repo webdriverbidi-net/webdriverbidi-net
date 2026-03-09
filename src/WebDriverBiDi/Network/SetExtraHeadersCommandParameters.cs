@@ -13,6 +13,16 @@ using System.Text.Json.Serialization;
 public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeadersCommandResult>
 {
     /// <summary>
+    /// Gets a pre-initialized instance of <see cref="SetExtraHeadersCommandParameters"/>
+    /// with the <see cref="Headers"/> property set to an empty list to clear any
+    /// existing extra headers. Returns a new instance on each access to allow for
+    /// modification of the properties without affecting other uses. Functionally equivalent
+    /// to using the parameterless constructor, but provided as a named property to make the
+    /// intent of clearing the extra headers more explicit in code that uses this property.
+    /// </summary>
+    public static SetExtraHeadersCommandParameters ResetExtraHeaders => new();
+
+    /// <summary>
     /// Gets the method name of the command.
     /// </summary>
     [JsonIgnore]
