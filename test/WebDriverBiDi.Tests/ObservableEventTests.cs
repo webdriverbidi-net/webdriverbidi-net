@@ -298,7 +298,37 @@ public class ObservableEventTests
     }
 
     [Test]
-    public async Task TestWaitForCheckpointAndTasksWaitsForMultipleEventTasksToComplete()
+    public async Task TestWaitForCheckpointAsyncCanReachTimeout()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.SetCheckpoint(2);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        bool checkpointFulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromMilliseconds(100));
+        Assert.That(checkpointFulfilled, Is.False);
+        Assert.That(observer.IsCheckpointSet, Is.True);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(1));
+    }
+
+    [Test]
+    public async Task TestWaitForCheckpointAsyncCanBeCancelled()
+    {
+        CancellationTokenSource cancellationTokenSource = new();
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.SetCheckpoint(2);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        Task checkpointTask = observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
+        cancellationTokenSource.Cancel();
+        Assert.That(async () => await checkpointTask, Throws.InstanceOf<OperationCanceledException>().With.Message.Contains("waiting for event notifications"));
+        Assert.That(observer.IsCheckpointSet, Is.True);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(1));
+    }
+
+    [Test]
+    public async Task TestWaitForCheckpointAndTasksAsyncWaitsForMultipleEventTasksToComplete()
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
@@ -324,6 +354,50 @@ public class ObservableEventTests
         Assert.That(observer.IsCheckpointSet, Is.True);
         Task[] tasks = observer.GetCheckpointTasks();
         Assert.That(tasks, Has.Length.EqualTo(1));
+    }
+
+    [Test]
+    public async Task TestWaitForCheckpointAndTasksAsyncCanBeCancelledWaitingForNotifications()
+    {
+        CancellationTokenSource cancellationTokenSource = new();
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
+        observer.SetCheckpoint(2);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        Task checkpointTask = observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
+        cancellationTokenSource.Cancel();
+        Assert.That(async () => await checkpointTask, Throws.InstanceOf<OperationCanceledException>().With.Message.Contains("waiting for event notifications"));
+        Assert.That(observer.IsCheckpointSet, Is.True);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(1));
+    }
+
+    [Test]
+    public async Task TestWaitForCheckpointAndTasksAsyncCanBeCancelledWaitingForTasks()
+    {
+        CountdownEvent countdownEvent = new(2);
+        CancellationTokenSource cancellationTokenSource = new();
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(async (TestObservableEventArgs e) =>
+        {
+            countdownEvent.Signal();
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.SetCheckpoint(2);
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue1");
+
+        // Makes sure the event handlers have started and the checkpoint notifed the correct
+        // number of times.
+        countdownEvent.Wait();
+
+        Task checkpointTask = observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
+        cancellationTokenSource.Cancel();
+        Assert.That(async () => await checkpointTask, Throws.InstanceOf<OperationCanceledException>().With.Message.Contains("waiting for captured tasks"));
+        Assert.That(observer.IsCheckpointSet, Is.False);
+        Task[] tasks = observer.GetCheckpointTasks();
+        Assert.That(tasks, Has.Length.EqualTo(0));
     }
 
     [Test]

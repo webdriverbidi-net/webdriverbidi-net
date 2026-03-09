@@ -153,6 +153,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// completed execution.
     /// </summary>
     /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
     /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
     /// <remarks>
     /// <para>
@@ -164,7 +165,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// checkpoint is fulfilled.
     /// </para>
     /// </remarks>
-    public async Task<bool> WaitForCheckpointAsync(TimeSpan timeout)
+    public async Task<bool> WaitForCheckpointAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         Task<bool> completionTask;
         TaskCompletionSource<bool>? localTaskCompletionSource;
@@ -180,16 +181,23 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         }
 
         using CancellationTokenSource timeoutCancellationTokenSource = new();
+        using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
         Task timeoutTask = Task.Delay(timeout, timeoutCancellationTokenSource.Token);
-        Task completedTask = await Task.WhenAny(completionTask, timeoutTask).ConfigureAwait(false);
+        Task cancellationTask = Task.Delay(Timeout.InfiniteTimeSpan, linkedCancellationTokenSource.Token);
+        Task completedTask = await Task.WhenAny(completionTask, timeoutTask, cancellationTask).ConfigureAwait(false);
+
+        if (completedTask == cancellationTask)
+        {
+            throw new OperationCanceledException("Wait cancelled waiting for event notifications", cancellationToken);
+        }
 
         bool checkpointFulfilled = completedTask == completionTask && completionTask.Status == TaskStatus.RanToCompletion && completionTask.Result;
+
         if (checkpointFulfilled)
         {
-            timeoutCancellationTokenSource.Cancel();
             lock (this.checkpointLock)
             {
-                // Only unset if this is still our checkpoint (hasn't been replaced or already unset)
                 if (this.checkpointTaskCompletionSource == localTaskCompletionSource)
                 {
                     this.ResetCheckpointState();
@@ -209,14 +217,24 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// instead.
     /// </summary>
     /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied. This timeout only applies to waiting for this observer to be notified the proper number of times; it does not apply to the execution of the handlers.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
     /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
-    public async Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout)
+    public async Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        bool checkpointFulfilled = await this.WaitForCheckpointAsync(timeout).ConfigureAwait(false);
+        bool checkpointFulfilled = await this.WaitForCheckpointAsync(timeout, cancellationToken).ConfigureAwait(false);
         if (checkpointFulfilled)
         {
+            using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             Task[] tasksToWait = this.GetCheckpointTasks();
-            await Task.WhenAll(tasksToWait).ConfigureAwait(false);
+            Task whenAllTask = Task.WhenAll(tasksToWait);
+            Task cancellationTask = Task.Delay(Timeout.InfiniteTimeSpan, linkedCancellationTokenSource.Token);
+            Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
+            if (completedTask == cancellationTask)
+            {
+                throw new OperationCanceledException("Wait cancelled waiting for captured tasks to complete", cancellationToken);
+            }
+
+            await whenAllTask.ConfigureAwait(false); // propagate any exceptions
         }
 
         return checkpointFulfilled;

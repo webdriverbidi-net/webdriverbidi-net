@@ -120,8 +120,6 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
         string[] longRunningOperations =
         [
             "StartAsync",
-            "WaitForCheckpointAsync",
-            "WaitForCheckpointAndTasksAsync",
         ];
 
         return longRunningOperations.Contains(method.Name);
