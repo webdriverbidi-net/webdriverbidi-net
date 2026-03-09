@@ -1718,16 +1718,16 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
+        Assert.That(async () => await transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
     }
 
     [Test]
-    public void TestRegisterTypeInfoResolverMultipleTimesBeforeConnecting()
+    public async Task TestRegisterTypeInfoResolverMultipleTimesBeforeConnecting()
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver());
-        Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
+        await transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver());
+        Assert.That(async () => await transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
     }
 
     [Test]
@@ -1736,7 +1736,44 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
-        Assert.That(() => transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
+        Assert.That(async () => await transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
+    }
+
+    [Test]
+    public async Task TestRegisterTypeInfoDuringConnectIsSynchronized()
+    {
+        ManualResetEventSlim registerResolverInProgress = new(false);
+        ManualResetEventSlim connectAsyncInProgress = new(false);
+
+        int acquireLockCallCount = 0;
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        transport.BeforeAcquireLockCallback = async () =>
+        {
+            int currentLockCallCount = Interlocked.Increment(ref acquireLockCallCount);
+            if (currentLockCallCount == 1)
+            {
+                // Signal that the ConnectAsync is in the lock, then wait for the
+                // type info registration to enter the lock before proceeding.
+                connectAsyncInProgress.Set();
+                await Task.Run(() => registerResolverInProgress.Wait());
+            }
+            else if (currentLockCallCount == 2)
+            {
+                // Signal that the type info registration is in the lock, then
+                // wait for the ConnectAsync to signal it's entered the lock,
+                // and wait a small delay to make sure the semaphore is held
+                // by ConnectAsync.
+                registerResolverInProgress.Set();
+                await Task.Run(() => connectAsyncInProgress.Wait());
+                await Task.Delay(TimeSpan.FromMilliseconds(50));
+            }
+        };
+
+        Task connectTask = transport.ConnectAsync("ws:localhost");
+        Task registerTask = transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver());
+        await connectTask;
+        Assert.That(async () => await registerTask, Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
     }
 
     [Test]

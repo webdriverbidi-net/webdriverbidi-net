@@ -152,5 +152,6 @@ public interface IBiDiDriver : IAsyncDisposable
     /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
-    void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
 }

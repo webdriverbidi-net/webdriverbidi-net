@@ -335,14 +335,23 @@ public class Transport : IAsyncDisposable
     /// <exception cref="InvalidOperationException">
     /// Thrown if the transport is already connected to a remote end.
     /// </exception>
-    public virtual void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    public virtual async Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
     {
-        if (this.IsConnected)
+        await this.AcquireConnectionLockAsync();
+        try
         {
-            throw new InvalidOperationException("Cannot register a type info resolver after the transport is connected");
-        }
+            if (this.IsConnected)
+            {
+                throw new InvalidOperationException("Cannot register a type info resolver after the transport is connected");
+            }
 
-        this.options.TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, resolver);
+            this.options.TypeInfoResolver = JsonTypeInfoResolver.Combine(this.options.TypeInfoResolver, resolver);
+        }
+        finally
+        {
+            this.ReleaseConnectionLock();
+        }
     }
 
     /// <summary>
