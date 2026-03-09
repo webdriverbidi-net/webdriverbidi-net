@@ -56,7 +56,8 @@ public class BiDiDriver : IBiDiDriver
     private readonly Transport transport;
     private readonly ConcurrentDictionary<string, Module> modules = [];
     private readonly ConcurrentDictionary<string, EventInvoker> eventInvokers = [];
-    private readonly object registrationLock = new();
+    private readonly object moduleRegistrationLock = new();
+    private readonly object eventRegistrationLock = new();
     private int isDisposedFlag = 0;
 
     /// <summary>
@@ -447,27 +448,30 @@ public class BiDiDriver : IBiDiDriver
     public virtual void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker)
     {
         this.ThrowIfDisposed();
-        if (this.IsStarted)
+        lock (this.eventRegistrationLock)
         {
-            throw new InvalidOperationException("Cannot register an event after the driver has started");
-        }
+            if (this.IsStarted)
+            {
+                throw new InvalidOperationException("Cannot register an event after the driver has started");
+            }
 
-        if (string.IsNullOrEmpty(eventName))
-        {
-            throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
-        }
+            if (string.IsNullOrEmpty(eventName))
+            {
+                throw new ArgumentException("Event name may not be null or empty", nameof(eventName));
+            }
 
-        if (eventInvoker is null)
-        {
-            throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
-        }
+            if (eventInvoker is null)
+            {
+                throw new ArgumentNullException(nameof(eventInvoker), "Event invoker may not be null");
+            }
 
-        if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
-        {
-            throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
-        }
+            if (!this.eventInvokers.TryAdd(eventName, new EventInvoker<T>(eventInvoker)))
+            {
+                throw new ArgumentException($"An event named '{eventName}' has already been registered.", nameof(eventName));
+            }
 
-        this.transport.RegisterEventMessage<T>(eventName);
+            this.transport.RegisterEventMessage<T>(eventName);
+        }
     }
 
     /// <summary>
@@ -507,7 +511,7 @@ public class BiDiDriver : IBiDiDriver
     public virtual void RegisterModule(Module module)
     {
         this.ThrowIfDisposed();
-        lock (this.registrationLock)
+        lock (this.moduleRegistrationLock)
         {
             if (this.IsStarted)
             {
