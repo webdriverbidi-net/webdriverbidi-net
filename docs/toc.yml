@@ -6,6 +6,8 @@
 - name: API Documentation
   href: api/
   homepage: api/index.md
+- name: Observability
+  href: observability.md
 - name: About Winston
   href: winston.md
 - name: GitHub

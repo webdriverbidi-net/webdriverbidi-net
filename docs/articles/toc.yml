@@ -62,6 +62,8 @@
       href: examples/preload-scripts.md
 - name: Advanced Topics
   items:
+    - name: Observability
+      href: ../observability.md
     - name: API Design Guide
       href: advanced/api-design.md
     - name: Error Handling
