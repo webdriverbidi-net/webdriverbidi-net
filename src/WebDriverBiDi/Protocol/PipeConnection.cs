@@ -147,6 +147,11 @@ public class PipeConnection : Connection
             throw new WebDriverBiDiConnectionException("The pipes have been disposed; the connection cannot be restarted after disposal.");
         }
 
+        if (this.processProvider.PipeServerProcess.HasExited)
+        {
+            throw new WebDriverBiDiConnectionException("External process has already exited; cannot start pipe connection.");
+        }
+
         if (this.IsConnectionActive)
         {
             throw new WebDriverBiDiConnectionException($"The pipe connection is already active for {this.ConnectionString}; call the Stop method to disconnect before calling Start");

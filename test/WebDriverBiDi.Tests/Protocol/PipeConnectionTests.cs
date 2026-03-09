@@ -340,6 +340,18 @@ public class PipeConnectionTests
     }
 
     [Test]
+    public async Task TestStartAfterServerProcessExitThrows()
+    {
+        TestPipeServer testPipeServer = new();
+        PipeConnection connection = new(testPipeServer);
+        testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        await connection.StartAsync("pipe://local");
+        testPipeServer.Stop();
+
+        Assert.That(async () => await connection.StartAsync("pipe://local"), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("External process has already exited"));
+    }
+
+    [Test]
     public async Task TestSendDataWrapsIOExceptionInConnectionException()
     {
         TestPipeServer testPipeServer = new();
