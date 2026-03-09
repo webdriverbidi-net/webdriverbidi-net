@@ -44,6 +44,8 @@
       href: modules/webextension.md
     - name: Speculation Module
       href: modules/speculation.md
+    - name: UserAgentClientHints Module
+      href: modules/user-agent-client-hints.md
     - name: Additional Modules
       href: modules/additional-modules.md
 - name: Examples

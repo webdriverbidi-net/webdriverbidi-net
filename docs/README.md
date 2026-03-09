@@ -22,15 +22,19 @@ docs/
 │   │   ├── error-handling.md
 │   │   └── performance.md
 │   ├── modules/         # Module-specific guides
+│   │   ├── bluetooth.md
 │   │   ├── browser.md
 │   │   ├── browsing-context.md
 │   │   └── emulation.md
-│   │   ├── network.md
 │   │   ├── input.md
 │   │   ├── log.md
+│   │   ├── network.md
+│   │   ├── permissions.md
 │   │   ├── script.md
 │   │   ├── session.md
+│   │   ├── speculation.md
 │   │   ├── storage.md
+│   │   ├── webextension.md
 │   │   └── additional-modules.md
 │   ├── examples/        # Example tutorials
 │   │   └── common-scenarios.md
