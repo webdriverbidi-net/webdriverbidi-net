@@ -152,7 +152,7 @@ public class PipeConnection : Connection
             throw new WebDriverBiDiConnectionException($"The pipe connection is already active for {this.ConnectionString}; call the Stop method to disconnect before calling Start");
         }
 
-        await this.LogAsync($"Starting pipe connection: {connectionString}");
+        await this.LogAsync($"Starting pipe connection: {connectionString}").ConfigureAwait(false);
 
         // Dispose client handles in parent process only on first start - the external process has inherited them
         if (!this.AreConnectionPipesDisposed)
@@ -172,7 +172,7 @@ public class PipeConnection : Connection
         // Start the receive loop
         this.dataReceiveTask = Task.Run(async () => await this.ReceiveDataAsync().ConfigureAwait(false));
 
-        await this.LogAsync("Pipe connection started");
+        await this.LogAsync("Pipe connection started").ConfigureAwait(false);
     }
 
     /// <summary>
@@ -182,11 +182,11 @@ public class PipeConnection : Connection
     /// <returns>The task object representing the asynchronous operation.</returns>
     public override async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        await this.LogAsync("Closing pipe connection");
+        await this.LogAsync("Closing pipe connection").ConfigureAwait(false);
 
         if (!this.IsConnectionActive)
         {
-            await this.LogAsync("Pipe connection already closed");
+            await this.LogAsync("Pipe connection already closed").ConfigureAwait(false);
             return;
         }
 
@@ -202,7 +202,7 @@ public class PipeConnection : Connection
         this.IsConnectionActive = false;
         this.ConnectionString = string.Empty;
 
-        await this.LogAsync("Pipe connection closed");
+        await this.LogAsync("Pipe connection closed").ConfigureAwait(false);
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ public class PipeConnection : Connection
 
             if (this.OnLogMessage.CurrentObserverCount > 0)
             {
-                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug);
+                await this.LogAsync($"SEND >>> {Encoding.UTF8.GetString(data)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
             }
 
             try
@@ -308,7 +308,7 @@ public class PipeConnection : Connection
                 if (bytesRead == 0)
                 {
                     // Pipe closed
-                    await this.LogAsync("Pipe closed by remote end");
+                    await this.LogAsync("Pipe closed by remote end").ConfigureAwait(false);
                     break;
                 }
 
@@ -331,10 +331,10 @@ public class PipeConnection : Connection
 
                             if (this.OnLogMessage.CurrentObserverCount > 0)
                             {
-                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Debug);
+                                await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                             }
 
-                            await this.OnDataReceived.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageData));
+                            await this.OnDataReceived.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageData)).ConfigureAwait(false);
                         }
 
                         startIndex = i + 1;
@@ -348,7 +348,7 @@ public class PipeConnection : Connection
                 }
             }
 
-            await this.LogAsync($"Ending pipe receive loop");
+            await this.LogAsync($"Ending pipe receive loop").ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -356,13 +356,13 @@ public class PipeConnection : Connection
         }
         catch (IOException e)
         {
-            await this.LogAsync($"Unexpected error during receive of data: {e.Message}");
-            await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(e));
+            await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
+            await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         catch (ObjectDisposedException e)
         {
-            await this.LogAsync($"Unexpected error during receive of data: {e.Message}");
-            await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(e));
+            await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
+            await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         finally
         {
@@ -383,12 +383,12 @@ public class PipeConnection : Connection
             {
                 if (this.IsActive)
                 {
-                    await this.StopAsync();
+                    await this.StopAsync().ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
             {
-                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn);
+                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
 
             // Special note: We don't dispose the external process here, as it's owned

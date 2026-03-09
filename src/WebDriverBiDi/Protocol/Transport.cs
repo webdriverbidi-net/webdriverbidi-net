@@ -261,7 +261,7 @@ public class Transport : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
-        await this.DisconnectAsync(true, cancellationToken);
+        await this.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -454,7 +454,7 @@ public class Transport : IAsyncDisposable
             // queue does not imply that processing of all items has completed; that
             // must be awaited separately.
             this.queue.Writer.Complete();
-            await this.queue.Reader.Completion;
+            await this.queue.Reader.Completion.ConfigureAwait(false);
 
             // Clear the pending command collection. This will also cancel any tasks
             // associated with the remaining pending commands. Then wait for the
@@ -466,7 +466,7 @@ public class Transport : IAsyncDisposable
             Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, Task.Delay(this.ShutdownTimeout, commandDelayCancelTokenSource.Token)).ConfigureAwait(false);
             if (completedTask != this.messageQueueProcessingTask)
             {
-                await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn);
+                await this.LogAsync("Timed out waiting for message processing to complete during shutdown", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
             else
             {
@@ -502,7 +502,7 @@ public class Transport : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn);
+                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
         }
 
@@ -551,7 +551,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.OnEventReceived.NotifyObserversAsync(e);
+            await this.OnEventReceived.NotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -564,7 +564,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.OnErrorEventReceived.NotifyObserversAsync(e);
+            await this.OnErrorEventReceived.NotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -576,7 +576,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.OnUnknownMessageReceived.NotifyObserversAsync(e);
+            await this.OnUnknownMessageReceived.NotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -586,7 +586,7 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
-        await this.queue.Writer.WriteAsync(e.Data);
+        await this.queue.Writer.WriteAsync(e.Data).ConfigureAwait(false);
     }
 
     private async Task OnConnectionErrorAsync(ConnectionErrorEventArgs e)
@@ -616,7 +616,7 @@ public class Transport : IAsyncDisposable
             WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
             this.pendingCommands.FailAllPendingCommands(connectionException);
 
-            await this.LogAsync($"Connection error; pending commands failed: {e.Exception.Message}", WebDriverBiDiLogLevel.Error);
+            await this.LogAsync($"Connection error; pending commands failed: {e.Exception.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
         }
         finally
         {
@@ -637,11 +637,11 @@ public class Transport : IAsyncDisposable
             {
                 try
                 {
-                    await this.ProcessMessageAsync(incomingMessage);
+                    await this.ProcessMessageAsync(incomingMessage).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    await this.LogAsync($"Unexpected error in message processing loop: {ex.Message}", WebDriverBiDiLogLevel.Error);
+                    await this.LogAsync($"Unexpected error in message processing loop: {ex.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
                     this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, "Unexpected error in message processing loop");
                 }
             }
@@ -664,7 +664,7 @@ public class Transport : IAsyncDisposable
             // of the protocol. Here, we just log the error; the error will be processed
             // to be added to the proper unhandled error collection in the "if (!isProcessed)"
             // block below.
-            await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error);
+            await this.LogAsync($"Unexpected error parsing JSON message: {e.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
         }
 
         if (messageRootElement.ValueKind != JsonValueKind.Undefined)
@@ -684,23 +684,23 @@ public class Transport : IAsyncDisposable
                     isProcessed = this.ProcessCommandResponseMessage(messageRootElement);
                     if (isLogging)
                     {
-                        await this.LogAsync($"Command response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
+                        await this.LogAsync($"Command response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
                     }
                 }
                 else if (messageType == "error")
                 {
-                    isProcessed = await this.ProcessErrorMessageAsync(messageRootElement);
+                    isProcessed = await this.ProcessErrorMessageAsync(messageRootElement).ConfigureAwait(false);
                     if (isLogging)
                     {
-                        await this.LogAsync($"Error response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
+                        await this.LogAsync($"Error response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
                     }
                 }
                 else if (messageType == "event")
                 {
-                    isProcessed = await this.ProcessEventMessageAsync(messageRootElement);
+                    isProcessed = await this.ProcessEventMessageAsync(messageRootElement).ConfigureAwait(false);
                     if (isLogging)
                     {
-                        await this.LogAsync($"Event message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace);
+                        await this.LogAsync($"Event message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
                     }
                 }
             }
@@ -713,7 +713,7 @@ public class Transport : IAsyncDisposable
                 ? typeElement.GetString() ?? "unknown"
                 : "unknown";
             WebDriverBiDiEventSource.RaiseEvent.UnknownMessageReceived(messageType, messageData.Length);
-            await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message));
+            await this.OnProtocolUnknownMessageReceivedAsync(new UnknownMessageReceivedEventArgs(message)).ConfigureAwait(false);
             this.CaptureUnhandledError(UnhandledErrorType.UnknownMessage, new WebDriverBiDiException($"Received unknown message from protocol connection: {message}"), "Unknown message from connection");
         }
     }
@@ -777,7 +777,7 @@ public class Transport : IAsyncDisposable
                 }
                 else
                 {
-                    await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result));
+                    await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result)).ConfigureAwait(false);
                     this.CaptureUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiProtocolException($"Received '{result.ErrorType}' error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
                 }
             }
@@ -786,7 +786,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
+            await this.LogAsync($"Unexpected error parsing error JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
             this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in protocol error response: {message}");
             WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(message.ToString(), 100));
         }
@@ -811,12 +811,12 @@ public class Transport : IAsyncDisposable
                     }
 
                     WebDriverBiDiEventSource.RaiseEvent.EventReceived(eventName);
-                    await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData));
+                    await this.OnProtocolEventReceivedAsync(new EventReceivedEventArgs(eventMessageData)).ConfigureAwait(false);
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error);
+                    await this.LogAsync($"Unexpected error parsing event JSON: {ex.Message} (JSON: {message})", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
                     this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, $"Invalid JSON in event message: {message}");
                     WebDriverBiDiEventSource.RaiseEvent.ProtocolError(ex.Message, TruncateMessage(message.ToString(), 100));
                 }
@@ -856,12 +856,12 @@ public class Transport : IAsyncDisposable
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Transport"));
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Transport")).ConfigureAwait(false);
     }
 
     private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.OnLogMessage.NotifyObserversAsync(e);
+        await this.OnLogMessage.NotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)

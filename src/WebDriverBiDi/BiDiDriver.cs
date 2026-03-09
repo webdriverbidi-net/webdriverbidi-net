@@ -609,7 +609,7 @@ public class BiDiDriver : IBiDiDriver
                     new LogMessageEventArgs(
                         $"Unexpected exception during disposal: {ex.Message}",
                         WebDriverBiDiLogLevel.Warn,
-                        "BiDiDriver"));
+                        "BiDiDriver")).ConfigureAwait(false);
             }
 
             this.transportEventReceivedObserver.Dispose();
@@ -642,24 +642,24 @@ public class BiDiDriver : IBiDiDriver
     {
         if (this.eventInvokers.TryGetValue(e.EventName, out EventInvoker? invoker))
         {
-            await invoker.InvokeEventAsync(e.EventData, e.AdditionalData);
+            await invoker.InvokeEventAsync(e.EventData, e.AdditionalData).ConfigureAwait(false);
         }
 
-        await this.OnEventReceived.NotifyObserversAsync(e);
+        await this.OnEventReceived.NotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        await this.OnUnexpectedErrorReceived.NotifyObserversAsync(e);
+        await this.OnUnexpectedErrorReceived.NotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
-        await this.OnUnknownMessageReceived.NotifyObserversAsync(e);
+        await this.OnUnknownMessageReceived.NotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.OnLogMessage.NotifyObserversAsync(e);
+        await this.OnLogMessage.NotifyObserversAsync(e).ConfigureAwait(false);
     }
 }

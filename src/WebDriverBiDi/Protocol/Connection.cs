@@ -160,7 +160,7 @@ public abstract class Connection : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected async Task LogAsync(string message)
     {
-        await this.LogAsync(message, WebDriverBiDiLogLevel.Info);
+        await this.LogAsync(message, WebDriverBiDiLogLevel.Info).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -171,6 +171,6 @@ public abstract class Connection : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Connection"));
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Connection")).ConfigureAwait(false);
     }
 }
