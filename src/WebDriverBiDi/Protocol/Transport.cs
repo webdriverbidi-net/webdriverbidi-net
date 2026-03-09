@@ -77,6 +77,9 @@ public class Transport : IAsyncDisposable
     private readonly UnhandledErrorCollection unhandledErrors = new();
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
     private readonly ConcurrentDictionary<long, Stopwatch> commandTimings = [];
+    private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
+    private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
+    private readonly EventObserver<LogMessageEventArgs> connectionLogMessageObserver;
     private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {
         SingleReader = true,
@@ -104,9 +107,9 @@ public class Transport : IAsyncDisposable
     public Transport(Connection connection)
     {
         this.Connection = connection;
-        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
-        connection.OnConnectionError.AddObserver(this.OnConnectionErrorAsync);
-        connection.OnLogMessage.AddObserver(this.OnConnectionLogMessageAsync);
+        this.connectionDataReceivedObserver = connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
+        this.connectionErrorObserver = connection.OnConnectionError.AddObserver(this.OnConnectionErrorAsync);
+        this.connectionLogMessageObserver = connection.OnLogMessage.AddObserver(this.OnConnectionLogMessageAsync);
     }
 
     /// <summary>
@@ -507,6 +510,9 @@ public class Transport : IAsyncDisposable
         }
 
         this.pendingCommands.Dispose();
+        this.connectionDataReceivedObserver.Dispose();
+        this.connectionErrorObserver.Dispose();
+        this.connectionLogMessageObserver.Dispose();
         await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
     }
