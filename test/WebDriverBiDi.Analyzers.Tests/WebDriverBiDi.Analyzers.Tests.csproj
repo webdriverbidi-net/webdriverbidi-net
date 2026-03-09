@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\WebDriverBiDi.Analyzers\WebDriverBiDi.Analyzers.csproj" />
-    <ProjectReference Include="..\..\src\WebDriverBiDi.Analyzers.CodeFixes\WebDriverBiDi.Analyzers.CodeFixes.csproj" />
+    <ProjectReference Include="..\..\src\WebDriverBiDi.Analyzers.CodeFixProviders\WebDriverBiDi.Analyzers.CodeFixProviders.csproj" />
     <ProjectReference Include="..\..\src\WebDriverBiDi\WebDriverBiDi.csproj" />
   </ItemGroup>
 

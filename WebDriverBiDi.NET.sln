@@ -21,7 +21,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.AotSmokeTest"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Analyzers", "src\WebDriverBiDi.Analyzers\WebDriverBiDi.Analyzers.csproj", "{6ADE5BAC-0034-4BA1-9C87-499A39606F4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Analyzers.CodeFixes", "src\WebDriverBiDi.Analyzers.CodeFixes\WebDriverBiDi.Analyzers.CodeFixes.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Analyzers.CodeFixProviders", "src\WebDriverBiDi.Analyzers.CodeFixProviders\WebDriverBiDi.Analyzers.CodeFixProviders.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Analyzers.Tests", "test\WebDriverBiDi.Analyzers.Tests\WebDriverBiDi.Analyzers.Tests.csproj", "{D7F64CDA-4ABD-42F1-9CB0-402D5C3455EF}"
 EndProject

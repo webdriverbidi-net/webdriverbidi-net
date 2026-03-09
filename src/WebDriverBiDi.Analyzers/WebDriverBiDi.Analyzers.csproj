@@ -42,7 +42,7 @@
   <!-- Package the analyzer and code fixes into the correct folder structure.
        Code fixes are in a separate assembly to satisfy RS1038 (no Workspaces in analyzer assembly). -->
   <PropertyGroup>
-    <_CodeFixesOutputPath>$(MSBuildThisFileDirectory)../WebDriverBiDi.Analyzers.CodeFixes/bin/$(Configuration)/netstandard2.0/WebDriverBiDi.Analyzers.CodeFixes.dll</_CodeFixesOutputPath>
+    <_CodeFixesOutputPath>$(MSBuildThisFileDirectory)../WebDriverBiDi.Analyzers.CodeFixProviders/bin/$(Configuration)/netstandard2.0/WebDriverBiDi.Analyzers.CodeFixProviders.dll</_CodeFixesOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
@@ -58,7 +58,7 @@
        Skip when DLL already exists (e.g. after solution build with no-build).
        Pass NoBuild=false to override parent's NoBuild when we must build. -->
   <Target Name="BuildCodeFixesBeforePack" BeforeTargets="GenerateNuspec" Condition="!Exists('$(_CodeFixesOutputPath)')">
-    <MSBuild Projects="$(MSBuildThisFileDirectory)..\WebDriverBiDi.Analyzers.CodeFixes\WebDriverBiDi.Analyzers.CodeFixes.csproj" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" />
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\WebDriverBiDi.Analyzers.CodeFixProviders\WebDriverBiDi.Analyzers.CodeFixProviders.csproj" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" />
   </Target>
 
   <ItemGroup>
