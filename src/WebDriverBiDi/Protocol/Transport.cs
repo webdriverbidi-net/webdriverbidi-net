@@ -593,6 +593,13 @@ public class Transport : IAsyncDisposable
     {
         WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.GetHashCode().ToString(), e.Exception.Message);
 
+        // Fast-path: if already disconnected, no work to do.
+        // Prevents deadlock when connection error occurs during DisconnectAsync.
+        if (!this.IsConnected)
+        {
+            return;
+        }
+
         await this.AcquireConnectionLockAsync(CancellationToken.None).ConfigureAwait(false);
         try
         {

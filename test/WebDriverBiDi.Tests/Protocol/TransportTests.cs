@@ -1827,6 +1827,50 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestConnectionErrorWhenDisconnectRacesHitsInnerReturnBranch()
+    {
+        // Covers the inner "if (!this.IsConnected) return" branch (line 609): OnConnectionErrorAsync
+        // passes the fast-path, blocks on the lock, then by the time it acquires the lock
+        // DisconnectAsync has already set IsConnected = false.
+        ManualResetEventSlim disconnectHasLock = new(false);
+        ManualResetEventSlim connectionErrorBlocked = new(false);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        int acquireCallCount = 0;
+        transport.BeforeAcquireLockCallback = async () =>
+        {
+            int currentCallCount = Interlocked.Increment(ref acquireCallCount);
+            if (currentCallCount == 1)
+            {
+                // Signal that the DisconnectAsync is in the lock, then wait for the
+                // OnConnectionErrorAsync to enter the lock before proceeding.
+                disconnectHasLock.Set();
+                await Task.Run(() => connectionErrorBlocked.Wait());
+            }
+            else if (currentCallCount == 2)
+            {
+                // OnConnectionErrorAsync has entered AcquireConnectionLockAsync; it will block.
+                // Signal that the OnConnectionErrorAsync is in the lock, then wait
+                // for DisconnectAsync to signal it's entered the lock, and wait a
+                // small delay to make sure the semaphore is held by DisconnectAsync.
+                connectionErrorBlocked.Set();
+                await Task.Run(() => disconnectHasLock.Wait());
+                await Task.Delay(TimeSpan.FromMilliseconds(50));
+            }
+        };
+
+        Task disconnectTask = transport.DisconnectAsync();
+        await connection.RaiseConnectionErrorEventAsync(new Exception("Connection lost during race"));
+        await disconnectTask;
+
+        TestCommandParameters commandParameters = new("module.command");
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("Transport must be connected"));
+    }
+
+    [Test]
     public async Task TestConnectionErrorFailsMultiplePendingCommands()
     {
         TestWebSocketConnection connection = new();

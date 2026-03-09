@@ -326,6 +326,30 @@ public class TransportEventSourceIntegrationTests
     }
 
     [Test]
+    public async Task TestTransportEmitsConnectionErrorEventWhenTakingFastPath()
+    {
+        TestEventListener listener = new();
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+
+        await transport.ConnectAsync("ws://localhost:9222");
+        await transport.DisconnectAsync();
+        listener.ClearEvents();
+
+        // Connection error after disconnect: fast-path guard returns early (no lock acquisition).
+        // ConnectionError event must still be emitted for observability.
+        await connection.RaiseConnectionErrorEventAsync(new InvalidOperationException("Connection lost during shutdown"));
+
+        await Task.Delay(TimeSpan.FromMilliseconds(50));
+
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("ConnectionError");
+        Assert.That(events, Has.Count.EqualTo(1));
+        Assert.That(events[0].Payload![1], Does.Contain("Connection lost during shutdown"));
+
+        listener.Dispose();
+    }
+
+    [Test]
     public async Task TestTransportEmitsPendingCommandCountEvent()
     {
         TestEventListener listener = new();
