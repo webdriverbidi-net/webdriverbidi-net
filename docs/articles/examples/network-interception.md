@@ -196,10 +196,13 @@ driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs
                     Body = BytesValue.FromString(mockData)
                 };
 
-            provideParams.Headers.Add(new Header("Content-Type",
-                new BytesValue(BytesValueType.String, "application/json")));
-            provideParams.Headers.Add(new Header("X-Mocked",
-                new BytesValue(BytesValueType.String, "true")));
+            provideParams.Headers =
+            [
+                new Header("Content-Type",
+                    new BytesValue(BytesValueType.String, "application/json")),
+                new Header("X-Mocked",
+                    new BytesValue(BytesValueType.String, "true")),
+            ];
 
             await driver.Network.ProvideResponseAsync(provideParams);
         }

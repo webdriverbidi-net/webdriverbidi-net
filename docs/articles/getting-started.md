@@ -51,7 +51,7 @@ chrome.exe --remote-debugging-port=9222
 google-chrome --remote-debugging-port=9222
 ```
 
-The WebSocket URL will typically be: `ws://localhost:9222/session`
+For Chromium-based browsers, use the browser-level WebSocket URL returned by `/json/version`, for example `ws://localhost:9222/devtools/browser/<browser-id>`
 
 ### Microsoft Edge
 
@@ -192,9 +192,9 @@ You can parse this output programmatically when launching the browser.
 ws://localhost:9222/devtools/browser/<browser-id>
 ```
 
-**Simplified (may work with some browsers):**
+**Firefox via geckodriver:**
 ```
-ws://localhost:9222/session
+ws://localhost:4444/session
 ```
 
 **Page-specific (not recommended for WebDriver BiDi):**
@@ -223,11 +223,11 @@ public class BrowserConnection
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to discover WebSocket URL: {ex.Message}");
-            Console.WriteLine("Trying fallback URL...");
-
-            // Fallback to common URL pattern
-            webSocketUrl = $"ws://localhost:{port}/session";
+            throw new InvalidOperationException(
+                $"Failed to discover a browser WebSocket URL on port {port}. " +
+                "For Chromium-based browsers, query /json/version and use the returned devtools/browser URL. " +
+                "For Firefox via geckodriver, use ws://localhost:4444/session.",
+                ex);
         }
 
         // Create and start driver

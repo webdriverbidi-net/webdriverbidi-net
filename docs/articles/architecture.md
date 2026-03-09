@@ -281,13 +281,14 @@ ChromeLauncher launcher = new ChromeLauncher()
 };
 
 await launcher.StartAsync();
+await launcher.LaunchBrowserAsync();
 
 try
 {
     // Create driver with launcher's connection
     BiDiDriver driver = new BiDiDriver(
         TimeSpan.FromSeconds(30),
-        launcher.Transport);
+        launcher.CreateTransport());
 
     await driver.StartAsync("pipes");
 
@@ -298,6 +299,7 @@ try
 }
 finally
 {
+    await launcher.QuitBrowserAsync();
     await launcher.StopAsync();
 }
 ```
@@ -447,13 +449,17 @@ public class EventObserver<T>
     public void SetCheckpoint(uint numberOfNotifications = 1);
 
     // Wait for checkpoint to be fulfilled
-    public Task<bool> WaitForCheckpointAsync(TimeSpan timeout);
+    public Task<bool> WaitForCheckpointAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 
     // Wait for checkpoint and all async handler tasks to complete
-    public Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout);
+    public Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
 
-    // Get tasks from async handlers
+    // Get tasks from async handlers, transferring ownership to
+    // the caller, and unsetting the checkpoint
     public Task[] GetCheckpointTasks();
+
+    // Unset a previously-set checkpoint
+    public void UnsetCheckpoint();
     
     // Remove observer
     public void Unobserve();
@@ -623,7 +629,7 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30))
 };
 try
 {
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 }
 catch (WebDriverBiDiException ex)
 {
@@ -653,7 +659,7 @@ Transport transport = new Transport(connection)
 };
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // Perform operations...
 await driver.BrowsingContext.NavigateAsync(navParams);
@@ -696,7 +702,7 @@ WebSocketConnection connection = new WebSocketConnection();
 Transport transport = new Transport(connection);
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // Errors won't be thrown or collected
 await driver.BrowsingContext.NavigateAsync(navParams);
@@ -735,7 +741,7 @@ connection.OnLogMessage.AddObserver((logArgs) =>
 Transport transport = new Transport(connection);
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 ```
 
 ### Event Handler Error Behavior
@@ -783,7 +789,7 @@ driver.Log.OnEntryAdded.AddObserver((e) =>
 
 try
 {
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
     // Perform operations...
     await driver.BrowsingContext.NavigateAsync(navParams);  // Exception thrown here if handler failed
@@ -807,7 +813,7 @@ Controls how protocol errors are handled (invalid JSON, missing required propert
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // Perform operations...
 await driver.BrowsingContext.NavigateAsync(navParams);
@@ -836,7 +842,7 @@ Controls how unknown messages are handled (valid JSON that doesn't match any kno
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // Browser sends new event type not yet supported by library
 // With Ignore mode, these are logged but don't cause errors
@@ -860,7 +866,7 @@ driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
 
 try
 {
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
     // If browser sends error response without matching command ID, exception thrown on next command
     await driver.BrowsingContext.NavigateAsync(navParams);
@@ -891,7 +897,7 @@ driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;        // Fail 
 driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;         // Ignore unknown messages
 driver.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;       // Collect unexpected errors
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // Perform operations...
 await driver.BrowsingContext.NavigateAsync(navParams);

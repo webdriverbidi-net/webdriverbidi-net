@@ -18,8 +18,12 @@ docs/
 │   ├── events-observables.md
 │   ├── remote-values.md
 │   ├── advanced/        # Advanced use case guides
+│   │   ├── aot-compatibility.md
+│   │   ├── api-design.md
+│   │   ├── connection-management.md
 │   │   ├── custom-modules.md
 │   │   ├── error-handling.md
+│   │   ├── observability.md
 │   │   └── performance.md
 │   ├── modules/         # Module-specific guides
 │   │   ├── bluetooth.md
@@ -34,6 +38,7 @@ docs/
 │   │   ├── session.md
 │   │   ├── speculation.md
 │   │   ├── storage.md
+│   │   ├── user-agent-client-hints.md
 │   │   ├── webextension.md
 │   │   └── additional-modules.md
 │   ├── examples/        # Example tutorials
@@ -104,7 +109,7 @@ Use complete, runnable examples:
 using WebDriverBiDi;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // ... your code here ...
 

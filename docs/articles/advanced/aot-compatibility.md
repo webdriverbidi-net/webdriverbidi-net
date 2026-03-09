@@ -95,7 +95,7 @@ Call `RegisterTypeInfoResolver` **before** starting the driver:
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
 // Register your serialization metadata for AOT support
-driver.RegisterTypeInfoResolver(MyModuleJsonSerializerContext.Default);
+await driver.RegisterTypeInfoResolver(MyModuleJsonSerializerContext.Default);
 
 // Register your custom module
 MyCustomModule myModule = new MyCustomModule(driver);
@@ -121,13 +121,13 @@ If you have several custom modules, you can either include all types in a single
 public partial class AllCustomModulesJsonContext : JsonSerializerContext { }
 
 // Register once
-driver.RegisterTypeInfoResolver(AllCustomModulesJsonContext.Default);
+await driver.RegisterTypeInfoResolver(AllCustomModulesJsonContext.Default);
 ```
 
 ```csharp
 // Option B: Separate contexts per module
-driver.RegisterTypeInfoResolver(ModuleAJsonContext.Default);
-driver.RegisterTypeInfoResolver(ModuleBJsonContext.Default);
+await driver.RegisterTypeInfoResolver(ModuleAJsonContext.Default);
+await driver.RegisterTypeInfoResolver(ModuleBJsonContext.Default);
 ```
 
 Both approaches work. Option A produces a single source-generated context, which is slightly more efficient. Option B is better for independently packaged modules.
@@ -149,7 +149,7 @@ public partial class MyExtensionJsonSerializerContext : JsonSerializerContext { 
 Document that consumers should register it:
 
 ```csharp
-driver.RegisterTypeInfoResolver(MyExtensionJsonSerializerContext.Default);
+await driver.RegisterTypeInfoResolver(MyExtensionJsonSerializerContext.Default);
 driver.RegisterModule(new MyExtensionModule(driver));
 ```
 

@@ -50,18 +50,16 @@ For local automation, use a browser launcher to manage everything:
 
 ```csharp
 using WebDriverBiDi;
-using WebDriverBiDi.Client;
+using WebDriverBiDi.Client.Launchers;
 
 // Launcher manages browser process and connection
-ChromeLauncher launcher = new ChromeLauncher()
-{
-    BrowserExecutablePath = "/path/to/chrome"
-};
+ChromeLauncher launcher = new ChromeLauncher("/path/to/chrome");
 
 await launcher.StartAsync();
+await launcher.LaunchBrowserAsync();
 
 // Create driver with launcher's preconfigured transport
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.Transport);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
 await driver.StartAsync(launcher.WebSocketUrl);
 
 try
@@ -71,7 +69,8 @@ try
 finally
 {
     await driver.StopAsync();
-    await launcher.StopAsync(); // Stops browser
+    await launcher.QuitBrowserAsync();
+    await launcher.StopAsync();
 }
 ```
 
@@ -217,7 +216,7 @@ Monitors connection errors:
 ```csharp
 connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
 {
-    Console.WriteLine($"Connection error: {e.Message}");
+    Console.WriteLine($"Connection error: {e.Exception.Message}");
     Logger.Error($"Exception: {e.Exception}");
 });
 ```
@@ -248,7 +247,7 @@ Valid WebSocket URLs use `ws://` or `wss://` schemes:
 ```csharp
 // ✅ Valid
 await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-await driver.StartAsync("wss://remote-host:9222/session");
+await driver.StartAsync("wss://remote-host:9222/devtools/browser/abc-123");
 
 // ❌ Invalid
 await driver.StartAsync("http://localhost:9222");  // Wrong scheme
@@ -304,7 +303,7 @@ Use pipes only when:
 Let the launcher handle pipe setup:
 
 ```csharp
-using WebDriverBiDi.Client;
+using WebDriverBiDi.Client.Launchers;
 
 ChromeLauncher launcher = new ChromeLauncher()
 {
@@ -312,8 +311,9 @@ ChromeLauncher launcher = new ChromeLauncher()
 };
 
 await launcher.StartAsync();
+await launcher.LaunchBrowserAsync();
 
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.Transport);
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
 await driver.StartAsync("pipes");
 
 try
@@ -323,6 +323,7 @@ try
 finally
 {
     await driver.StopAsync();
+    await launcher.QuitBrowserAsync();
     await launcher.StopAsync();
 }
 ```
@@ -376,7 +377,7 @@ bool connectionHealthy = true;
 connection.OnConnectionError.AddObserver((e) =>
 {
     connectionHealthy = false;
-    Logger.Error($"Connection error: {e.Message}");
+    Logger.Error($"Connection error: {e.Exception.Message}");
 });
 
 // Check before critical operations
@@ -490,7 +491,8 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 // ✅ Recommended for local testing
 ChromeLauncher launcher = new ChromeLauncher();
 await launcher.StartAsync();
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.Transport);
+await launcher.LaunchBrowserAsync();
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
 ```
 
 ### 3. Always Clean Up

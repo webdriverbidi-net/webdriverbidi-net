@@ -32,7 +32,7 @@ WebDriverBiDi.NET enables sophisticated browser automation scenarios:
 - 🔄 **Navigation Events**: Track page loads, redirects, and navigation lifecycle
 - 🎭 **Preload Scripts**: Inject JavaScript before any page scripts execute
 - 🔐 **Permissions Control**: Manage browser permissions programmatically
-- 💾 **Storage Management**: Interact with cookies, local storage, and session storage
+- 💾 **Storage Management**: Interact with cookies
 
 ## Quick Example
 
@@ -94,9 +94,13 @@ await driver.StopAsync();
 - [Preload Scripts](articles/examples/preload-scripts.md)
 
 ### Advanced Topics
+- [Observability](articles/advanced/observability.md)
+- [API Design Guide](articles/advanced/api-design.md)
 - [Error Handling](articles/advanced/error-handling.md)
 - [Performance Considerations](articles/advanced/performance.md)
+- [Connection Management](articles/advanced/connection-management.md)
 - [Custom Modules](articles/advanced/custom-modules.md)
+- [AOT Compatibility](articles/advanced/aot-compatibility.md)
 
 ### API Reference
 - [Browse the complete API documentation](api/index.md)

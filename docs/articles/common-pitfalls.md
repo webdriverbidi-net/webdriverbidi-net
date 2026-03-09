@@ -153,7 +153,7 @@ Attempting to register custom modules or add event observers after calling `Star
 ```csharp
 // ❌ WRONG: Registration after starting
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // This will throw InvalidOperationException!
 driver.RegisterModule(new CustomModule(driver));
@@ -184,7 +184,7 @@ driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
 driver.BrowsingContext.OnLoad.AddObserver((e) => Console.WriteLine($"Loaded: {e.Url}"));
 
 // 3. NOW start the driver
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // 4. Subscribe to events through Session module
 SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
@@ -217,15 +217,18 @@ await driver.BrowsingContext.NavigateAsync(navParams);
 
 **The Problem:**
 
-Many `CommandParameters` classes have nullable collection properties like `List<string>? Events`. Developers often wonder why these aren't initialized to empty lists.
+Many `CommandParameters` classes have nullable collection properties like `List<string>? Contexts`. Developers often wonder why these aren't initialized to empty lists.
 
 ```csharp
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-
-// Why is Events null instead of an empty list?
-if (subscribe.Events == null)  // This is true!
+SetLocaleOverrideCommandParameters parameters = new SetLocaleOverrideCommandParameters()
 {
-    subscribe.Events = new List<string>();
+    Locale = "en-US",
+};
+
+// Why is Contexts null instead of an empty list?
+if (parameters.Contexts == null)  // This is true!
+{
+    parameters.Contexts = new List<string>();
 }
 ```
 
@@ -240,19 +243,28 @@ These have **different meanings** in the protocol specification.
 **Example Protocol Difference:**
 
 ```csharp
-// Case 1: Events is null
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-// JSON sent: { /* no "events" property */ }
+// Case 1: Contexts is null
+SetLocaleOverrideCommandParameters parameters = new SetLocaleOverrideCommandParameters()
+{
+    Locale = "en-US",
+};
+// JSON sent: { "locale": "en-US" /* no "contexts" property */ }
 
-// Case 2: Events is empty list
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events = new List<string>();
-// JSON sent: { "events": [] }
+// Case 2: Contexts is empty list
+SetLocaleOverrideCommandParameters parameters = new SetLocaleOverrideCommandParameters()
+{
+    Locale = "en-US",
+};
+parameters.Contexts = new List<string>();
+// JSON sent: { "locale": "en-US",  "contexts": [] }
 
 // Case 3: Events has items
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events = new List<string> { "log.entryAdded" };
-// JSON sent: { "events": ["log.entryAdded"] }
+SetLocaleOverrideCommandParameters parameters = new SetLocaleOverrideCommandParameters()
+{
+    Locale = "en-US",
+};
+parameters.Contexts = new List<string> { "<valid browsing context ID>" };
+// JSON sent: { "locale": "en-US",  "contexts": ["<valid browsing context ID>"] }
 ```
 
 **The Solution:**
@@ -261,21 +273,21 @@ Always check for null before adding items, or initialize when needed:
 
 ```csharp
 // ✅ Option 1: Null-conditional + null-coalescing
-subscribe.Events ??= new List<string>();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+parameters.Contexts ??= new List<string>();
+parameters.Contexts.Add("<valid browsing context ID>");
 
 // ✅ Option 2: Check before adding
-if (subscribe.Events == null)
+if (parameters.Contexts == null)
 {
-    subscribe.Events = new List<string>();
+    parameters.Contexts = new List<string>();
 }
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+parameters.Contexts.Add("<valid browsing context ID>");
 
 // ✅ Option 3: Initialize in one line
-subscribe.Events = new List<string>
+parameters.Contexts = new List<string>
 {
-    driver.Log.OnEntryAdded.EventName,
-    driver.Network.OnBeforeRequestSent.EventName
+    "<valid browsing context ID>",
+    "<another valid browsing context ID>"
 };
 ```
 
@@ -509,7 +521,7 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 try
 {
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222");
 
     // Add handler that might throw
     driver.Log.OnEntryAdded.AddObserver((e) => ProcessLogEntry(e));
@@ -535,7 +547,7 @@ transport.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222");
 driver.Log.OnEntryAdded.AddObserver((e) => ProcessLogEntry(e));
 await driver.Session.SubscribeAsync(subscribeParams);
 await driver.BrowsingContext.NavigateAsync(navParams);
@@ -589,59 +601,6 @@ driver.Log.OnEntryAdded.AddObserver((e) =>
 | **Terminate** | Throws on next command | Development, fast failure |
 
 **Key Takeaway:** Default error behavior is Ignore. During development, use Terminate or Collect mode to catch handler bugs. In production, handle exceptions within your handlers.
-
----
-
-## Connection String Format
-
-### Pitfall: Using the Wrong WebSocket URL
-
-**The Problem:**
-
-Developers sometimes use the wrong format for the WebSocket URL, especially when working with Chromium browsers.
-
-```csharp
-// ❌ WRONG: HTTP endpoint URL
-await driver.StartAsync("http://localhost:9222/json/version");
-
-// ❌ WRONG: Base URL without path
-await driver.StartAsync("ws://localhost:9222");
-
-// ❌ WRONG: Page-specific debugger URL (for DevTools, not BiDi)
-await driver.StartAsync("ws://localhost:9222/devtools/page/ABC123");
-```
-
-**The Solution:**
-
-Use the correct WebSocket URL format for your browser:
-
-```csharp
-// ✅ CORRECT: Chromium browser WebSocket URL
-await driver.StartAsync("ws://localhost:9222/session");
-
-// Or use the URL from /json/version endpoint
-// Example: ws://localhost:9222/devtools/browser/12345-67890-abc-def
-```
-
-**How to Discover the URL:**
-
-```csharp
-// For Chromium browsers, query the HTTP endpoint
-using System.Net.Http;
-using System.Text.Json;
-
-HttpClient client = new HttpClient();
-string json = await client.GetStringAsync("http://localhost:9222/json/version");
-JsonDocument doc = JsonDocument.Parse(json);
-string webSocketUrl = doc.RootElement
-    .GetProperty("webSocketDebuggerUrl")
-    .GetString();
-
-// Use the discovered URL
-await driver.StartAsync(webSocketUrl);
-```
-
-**Key Takeaway:** WebSocket URLs must use the `ws://` scheme and the correct path. For Chromium, use `/session` or discover the URL from the `/json/version` endpoint.
 
 ---
 

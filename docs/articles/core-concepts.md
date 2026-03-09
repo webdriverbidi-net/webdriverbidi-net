@@ -14,7 +14,7 @@ BiDiDriver driver = new BiDiDriver();
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
 // Start the connection
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // Stop the connection when done
 await driver.StopAsync();
@@ -40,7 +40,7 @@ driver.RegisterModule(customModule);
 driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
 
 // 3. Start the driver
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // 4. Check if started
 if (driver.IsStarted)
@@ -86,11 +86,11 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 driver.RegisterModule(new CustomModule(driver));
 driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // ❌ WRONG: Cannot register after starting
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // This will throw an exception!
 driver.RegisterModule(new CustomModule(driver));
@@ -196,7 +196,7 @@ try
     });
 
     // Start the driver
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
     // Verify driver is started
     if (!driver.IsStarted)
@@ -304,7 +304,11 @@ var params = new NavigateCommandParameters(contextId, url);
 
 // Optional parameters via properties
 params.Wait = ReadinessState.Complete;
-params.TimeoutSeconds = 30;
+
+// Timeout overrides are supplied when executing the command
+await driver.BrowsingContext.NavigateAsync(
+    params,
+    TimeSpan.FromSeconds(30));
 ```
 
 ### When Parameters Are Optional
@@ -497,7 +501,7 @@ foreach (var context in tree.ContextTree)
 ```csharp
 // Create a new tab
 CreateCommandParameters createParams = new CreateCommandParameters(
-    ContextType.Tab);
+    CreateType.Tab);
 CreateCommandResult newContext = await driver.BrowsingContext.CreateAsync(createParams);
 
 string newContextId = newContext.BrowsingContextId;
@@ -522,7 +526,7 @@ Use the `ValueAs<T>()` method to convert to .NET types:
 
 ```csharp
 EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters("42", target, true));
+    new EvaluateCommandParameters("42", new ContextTarget(contextId), true));
 
 if (result is EvaluateResultSuccess success)
 {
@@ -541,9 +545,15 @@ if (result is EvaluateResultSuccess success)
 DOM elements have a `SharedId` that allows them to be referenced in subsequent commands:
 
 ```csharp
+// Get a script target against which to run JavaScript
+Target target = new ContextTarget(contextId);
+
 // Get an element
 EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters("document.querySelector('button')", target, true));
+    new EvaluateCommandParameters(
+        "document.querySelector('button')",
+        target,
+        true));
 
 if (result is EvaluateResultSuccess success)
 {
@@ -698,7 +708,11 @@ NavigateCommandParameters params = new NavigateCommandParameters(contextId, url)
 
 // ✓ Can modify - properties are settable
 params.Wait = ReadinessState.Complete;
-params.TimeoutSeconds = 30;
+
+// Timeout overrides are supplied when executing the command
+await driver.BrowsingContext.NavigateAsync(
+    params,
+    TimeSpan.FromSeconds(30));
 ```
 
 ## Advanced Topics
@@ -719,6 +733,8 @@ params.TimeoutSeconds = 30;
 ### The IBiDiDriver Interface
 
 The `IBiDiDriver` interface defines the contract for the driver, enabling dependency injection and testability in advanced scenarios.
+Importantly, the `IBiDiDriver` interface does not contain properties for any modules defined by the driver implementation. Custom
+implementation may choose to provide entirely different module layouts than the reference implementation.
 
 ```csharp
 public interface IBiDiDriver
@@ -726,13 +742,9 @@ public interface IBiDiDriver
     // Core properties
     bool IsStarted { get; }
 
-    // Module access
-    BrowserModule Browser { get; }
-    BrowsingContextModule BrowsingContext { get; }
-    // ... all other modules
-
     // Command execution
     Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters,
+        TimeSpan? commandTimeout = null,
         CancellationToken cancellationToken = default) where T : CommandResult;
 
     // Lifecycle
@@ -765,7 +777,7 @@ public class HighLevelAutomationFramework
     public async Task NavigateAndWaitAsync(string url)
     {
         // Framework provides high-level API using low-level driver
-        await driver.BrowsingContext.NavigateAsync(navParams);
+        driver.GetModule<BrowsingContextModule>(BrowsingContextModule.BrowsingContextModuleName).NavigateAsync(navParams);
     }
 }
 
@@ -912,7 +924,7 @@ internal partial class CustomJsonContext : JsonSerializerContext
 
 // Register the custom resolver BEFORE starting
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-driver.RegisterTypeInfoResolver(CustomJsonContext.Default);
+await driver.RegisterTypeInfoResolver(CustomJsonContext.Default);
 
 await driver.StartAsync(webSocketUrl);
 ```

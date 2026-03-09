@@ -130,7 +130,7 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
 try
 {
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
     // Event handler errors will be silently discarded
     driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -181,7 +181,7 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 try
 {
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
     // Subscribe to events with potentially failing handlers
     driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -266,7 +266,7 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 try
 {
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
     // Subscribe to events
     driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -323,7 +323,7 @@ Understanding the threading model is crucial for error handling:
 
 ```csharp
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // Main thread (your code)
 Console.WriteLine("Main thread: Setting up event handler");
@@ -385,7 +385,7 @@ connection.OnLogMessage.AddObserver((logArgs) =>
 Transport transport = new Transport(connection);
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 ```
 
 ### Complete Error Handling Pattern
@@ -416,7 +416,7 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
 try
 {
-    await driver.StartAsync("ws://localhost:9222/session");
+    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
     // Set up event handlers with internal error handling
     driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -872,7 +872,7 @@ driver.Network.OnBeforeRequestSent.AddObserver(
 using WebDriverBiDi;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // Synchronous handler (default)
 driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -969,7 +969,7 @@ Transport transport = new Transport(connection)
 };
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {

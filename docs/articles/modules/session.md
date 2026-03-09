@@ -45,9 +45,9 @@ Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
 ### Subscribe with Context Filter
 
 ```csharp
-SubscribeCommandParameters params = new SubscribeCommandParameters();
-params.Events.Add("network.beforeRequestSent");
-params.BrowsingContextIds.Add(contextId);  // Only for this context
+SubscribeCommandParameters params =
+    new SubscribeCommandParameters("network.beforeRequestSent");
+params.Contexts.Add(contextId);  // Only for this context
 
 await driver.Session.SubscribeAsync(params);
 ```

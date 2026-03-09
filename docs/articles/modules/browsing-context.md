@@ -60,7 +60,7 @@ GetTreeCommandResult result = await driver.BrowsingContext.GetTreeAsync(params);
 ### Create a New Tab
 
 ```csharp
-CreateCommandParameters params = new CreateCommandParameters(ContextType.Tab);
+CreateCommandParameters params = new CreateCommandParameters(CreateType.Tab);
 CreateCommandResult result = await driver.BrowsingContext.CreateAsync(params);
 
 string newTabId = result.BrowsingContextId;
@@ -70,7 +70,7 @@ Console.WriteLine($"Created tab: {newTabId}");
 ### Create a New Window
 
 ```csharp
-CreateCommandParameters params = new CreateCommandParameters(ContextType.Window);
+CreateCommandParameters params = new CreateCommandParameters(CreateType.Window);
 CreateCommandResult result = await driver.BrowsingContext.CreateAsync(params);
 
 string newWindowId = result.BrowsingContextId;
@@ -84,7 +84,7 @@ CreateUserContextCommandResult userContext =
     await driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters());
 
 // Create tab in that user context
-CreateCommandParameters params = new CreateCommandParameters(ContextType.Tab)
+CreateCommandParameters params = new CreateCommandParameters(CreateType.Tab)
 {
     UserContext = userContext.UserContextId
 };
@@ -94,7 +94,7 @@ CreateCommandResult result = await driver.BrowsingContext.CreateAsync(params);
 ### Set Window Size on Creation
 
 ```csharp
-CreateCommandParameters params = new CreateCommandParameters(ContextType.Window)
+CreateCommandParameters params = new CreateCommandParameters(CreateType.Window)
 {
     Width = 1280,
     Height = 720
@@ -141,10 +141,11 @@ NavigateCommandParameters params = new NavigateCommandParameters(
     contextId,
     "https://example.com")
 {
-    Wait = ReadinessState.Complete,
-    TimeoutSeconds = 30  // Fail if not loaded in 30 seconds
+    Wait = ReadinessState.Complete
 };
-await driver.BrowsingContext.NavigateAsync(params);
+await driver.BrowsingContext.NavigateAsync(
+    params,
+    TimeSpan.FromSeconds(30));  // Fail if not loaded in 30 seconds
 ```
 
 ### Back/Forward Navigation
@@ -498,7 +499,7 @@ List<string> contextIds = new List<string>();
 for (int i = 0; i < 3; i++)
 {
     CreateCommandResult result = await driver.BrowsingContext.CreateAsync(
-        new CreateCommandParameters(ContextType.Tab));
+        new CreateCommandParameters(CreateType.Tab));
     contextIds.Add(result.BrowsingContextId);
 }
 

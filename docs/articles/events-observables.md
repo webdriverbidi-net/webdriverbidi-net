@@ -269,7 +269,7 @@ SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
 subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
 
 // Only receive events for this specific context
-subscribe.BrowsingContextIds.Add(contextId);
+subscribe.Contexts.Add(contextId);
 
 await driver.Session.SubscribeAsync(subscribe);
 ```

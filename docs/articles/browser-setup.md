@@ -197,13 +197,14 @@ ChromeLauncher launcher = new ChromeLauncher()
 };
 
 await launcher.StartAsync();
+await launcher.LaunchBrowserAsync();
 
 try
 {
     // Create driver with launcher's transport
     BiDiDriver driver = new BiDiDriver(
         TimeSpan.FromSeconds(30),
-        launcher.Transport);
+        launcher.CreateTransport());
 
     await driver.StartAsync("pipes");
 
@@ -214,6 +215,7 @@ try
 }
 finally
 {
+    await launcher.QuitBrowserAsync();
     await launcher.StopAsync();
 }
 ```
@@ -228,11 +230,13 @@ using WebDriverBiDi.Client.Launchers;
 // WebSocket connection (default)
 BrowserLauncher wsLauncher = BrowserLauncher.Create(
     BrowserType.Chrome,
+    string.Empty,
     "/path/to/chrome");
 
 // Pipe connection
 BrowserLauncher pipeLauncher = BrowserLauncher.Create(
     BrowserType.ChromePipe,
+    string.Empty,
     "/path/to/chrome");
 ```
 
@@ -427,15 +431,16 @@ ChromeLauncher launcher = new ChromeLauncher()
 {
     ConnectionType = ConnectionType.WebSocket,
     Port = 9222,
-    Headless = true
+    IsBrowserHeadless = true
 };
 
 await launcher.StartAsync();
+await launcher.LaunchBrowserAsync();
 
 // Create driver with launcher's transport
 BiDiDriver driver = new BiDiDriver(
     TimeSpan.FromSeconds(30),
-    launcher.Transport);
+    launcher.CreateTransport());
 
 await driver.StartAsync(launcher.WebSocketUrl);
 
@@ -443,6 +448,7 @@ await driver.StartAsync(launcher.WebSocketUrl);
 
 // Clean up
 await driver.StopAsync();
+await launcher.QuitBrowserAsync();
 await launcher.StopAsync();
 ```
 
@@ -457,15 +463,16 @@ using WebDriverBiDi.Protocol;
 ChromeLauncher launcher = new ChromeLauncher()
 {
     ConnectionType = ConnectionType.Pipes,
-    Headless = true
+    IsBrowserHeadless = true
 };
 
 await launcher.StartAsync();
+await launcher.LaunchBrowserAsync();
 
 // Create driver with launcher's transport
 BiDiDriver driver = new BiDiDriver(
     TimeSpan.FromSeconds(30),
-    launcher.Transport);
+    launcher.CreateTransport());
 
 await driver.StartAsync("pipes");
 
@@ -473,6 +480,7 @@ await driver.StartAsync("pipes");
 
 // Clean up
 await driver.StopAsync();
+await launcher.QuitBrowserAsync();
 await launcher.StopAsync();
 ```
 

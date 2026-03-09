@@ -248,7 +248,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <returns>An array of <see cref="Task"/> objects captured while waiting for the checkpoints to be fulfilled.</returns>
     /// <remarks>
     /// <para>
-    /// This method is thread-safe. Calling it unsets the checkpoint and transfers ownership of thecaptured
+    /// This method is thread-safe. Calling it unsets the checkpoint and transfers ownership of the captured
     /// tasks to the caller. If another thread is concurrently waiting via <see cref="WaitForCheckpointAsync"/>,
     /// that wait will still complete successfully.
     /// </para>

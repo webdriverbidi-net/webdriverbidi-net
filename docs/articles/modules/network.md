@@ -267,8 +267,11 @@ driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs
                 Body = BytesValue.FromString(jsonResponse)
             };
         
-        params.Headers.Add(new Header("Content-Type", 
-            new BytesValue(BytesValueType.String, "application/json")));
+        params.Headers =
+        [
+            new Header("Content-Type",
+                new BytesValue(BytesValueType.String, "application/json")),
+        ];
         
         await driver.Network.ProvideResponseAsync(params);
     }
@@ -520,8 +523,11 @@ driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs
                     Body = BytesValue.FromString(mockData)
                 };
             
-            params.Headers.Add(new Header("Content-Type",
-                new BytesValue(BytesValueType.String, "application/json")));
+            params.Headers =
+            [
+                new Header("Content-Type",
+                    new BytesValue(BytesValueType.String, "application/json")),
+            ];
             
             await driver.Network.ProvideResponseAsync(params);
         }

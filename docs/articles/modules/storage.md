@@ -1,15 +1,12 @@
 # Storage Module
 
-The Storage module provides functionality for managing cookies, local storage, and session storage.
+The Storage module provides functionality for managing cookies.
 
 ## Overview
 
 The Storage module allows you to:
 
 - Get, set, and delete cookies
-- Access local storage
-- Access session storage
-- Clear storage data
 
 ## Accessing the Module
 

@@ -10,6 +10,7 @@ WebDriverBiDi.NET includes support for several W3C specifications that use the W
 - **[Bluetooth Module](bluetooth.md)** - Web Bluetooth API control
 - **[WebExtension Module](webextension.md)** - Browser extension management
 - **[Speculation Module](speculation.md)** - Navigation prefetching and prerendering
+- **[User Agent Client Hints Module](user-agent-client-hints.md)** - User agent client hints
 
 ## Permissions Module
 
@@ -97,6 +98,35 @@ AddSpeculationRulesCommandResult result =
 
 **[View full Speculation module documentation →](speculation.md)**
 
+## User Agent Client Hints Module
+
+The [User Agent Client Hints module](user-agent-client-hints.md) allows you to override user agent client hints in the browser, enabling responsive design and feature detection testing without relying solely on the User-Agent string.
+
+### Quick Example
+
+```csharp
+// Override client hints for cross-browser brand testing
+SetClientHintsOverrideCommandParameters params = new SetClientHintsOverrideCommandParameters();
+params.ClientHints = new ClientHintsMetadata
+{
+    Brands = new List<BrandVersion>
+    {
+        new BrandVersion("Chromium", "120.0"),
+        new BrandVersion("Google Chrome", "120.0")
+    },
+    Platform = "Windows",
+    PlatformVersion = "10.0",
+    Architecture = "x86",
+    Mobile = false
+};
+
+await driver.UserAgentClientHints.SetClientHintsOverrideAsync(params);
+```
+
+**Note**: User Agent Client Hints support varies by browser. This module complements the [Emulation Module](emulation.md) for user agent string overrides.
+
+**[View full User Agent Client Hints module documentation →](user-agent-client-hints.md)**
+
 ## Module Availability
 
 | Module | Chrome/Edge | Firefox | Safari |
@@ -105,6 +135,7 @@ AddSpeculationRulesCommandResult result =
 | Bluetooth | ⚠️ Experimental | ❌ | ❌ |
 | WebExtension | ✅ | ⚠️ Different API | ⚠️ Limited |
 | Speculation | ⚠️ Experimental | ❌ | ❌ |
+| User Agent Client Hints | ⚠️ Experimental | ❌ | ❌ |
 
 ## Getting Started
 
@@ -114,6 +145,7 @@ Each module has its own dedicated documentation page with comprehensive examples
 - **[Bluetooth Module Documentation](bluetooth.md)** - Full guide to Web Bluetooth API testing
 - **[WebExtension Module Documentation](webextension.md)** - Complete extension management guide
 - **[Speculation Module Documentation](speculation.md)** - Full prefetch and prerender guide
+- **[User Agent Client Hints Module Documentation](user-agent-client-hints.md)** - Complete guide to client hints override
 
 ## Next Steps
 
@@ -128,4 +160,5 @@ Each module has its own dedicated documentation page with comprehensive examples
 - [Web Bluetooth Specification](https://webbluetoothcg.github.io/web-bluetooth/)
 - [WebExtensions API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
 - [Speculation Rules API](https://wicg.github.io/nav-speculation/prefetch.html)
+- [User-Agent Client Hints](https://wicg.github.io/ua-client-hints/)
 

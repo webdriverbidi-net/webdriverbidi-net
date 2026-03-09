@@ -56,7 +56,7 @@ For specific scenarios where the browser and test runner are co-located, pipe co
 
 ```csharp
 // Pipe connection (Chromium only)
-using WebDriverBiDi.Client;
+using WebDriverBiDi.Client.Launchers;
 
 ChromeLauncher launcher = new ChromeLauncher()
 {
@@ -64,7 +64,8 @@ ChromeLauncher launcher = new ChromeLauncher()
 };
 
 await launcher.StartAsync();
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.Transport);
+await launcher.LaunchBrowserAsync();
+BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
 await driver.StartAsync("pipes");
 ```
 
@@ -279,7 +280,7 @@ SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
 subscribe.Events.Add("network.responseCompleted");  // Only this one
 
 // Even better: Subscribe only for specific contexts
-subscribe.BrowsingContextIds.Add(contextId);
+subscribe.Contexts.Add(contextId);
 ```
 
 ## Message Queue and High-Throughput Scenarios
@@ -399,7 +400,7 @@ subscribe.Events.Add("network.responseCompleted");   // Only this one
 
 // ✅ Even better: Scope to specific contexts
 subscribe.Events.Add("network.responseCompleted");
-subscribe.BrowsingContextIds.Add(contextId);  // Only for this tab
+subscribe.Contexts.Add(contextId);  // Only for this tab
 ```
 
 #### 4. Implement Event Throttling
@@ -735,7 +736,7 @@ ObservableEventHandlerOptions.RunHandlerAsynchronously);
 public async Task Test1()
 {
     CreateCommandResult ctx = await driver.BrowsingContext.CreateAsync(
-        new CreateCommandParameters(ContextType.Tab));
+        new CreateCommandParameters(CreateType.Tab));
     // Test...
     await driver.BrowsingContext.CloseAsync(new CloseCommandParameters(ctx.BrowsingContextId));
 }
@@ -747,7 +748,7 @@ private string sharedContextId;
 public async Task Setup()
 {
     CreateCommandResult ctx = await driver.BrowsingContext.CreateAsync(
-        new CreateCommandParameters(ContextType.Tab));
+        new CreateCommandParameters(CreateType.Tab));
     sharedContextId = ctx.BrowsingContextId;
 }
 
@@ -779,7 +780,7 @@ List<string> contextIds = new();
 for (int i = 0; i < 5; i++)
 {
     CreateCommandResult tab = await driver.BrowsingContext.CreateAsync(
-        new CreateCommandParameters(ContextType.Tab)
+        new CreateCommandParameters(CreateType.Tab)
         {
             UserContext = userContext.UserContextId
         });

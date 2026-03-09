@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Speculation;
 
 /// <summary>
-/// The Speculation module contains commands for managing the remote end behavior
+/// The Speculation module contains events for monitoring the remote end behavior
 /// for prefetches, prerenders, and speculation rules.
 /// </summary>
 public sealed class SpeculationModule : Module

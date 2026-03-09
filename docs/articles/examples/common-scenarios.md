@@ -9,7 +9,7 @@ using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {
@@ -54,7 +54,7 @@ using WebDriverBiDi.Input;
 using WebDriverBiDi.Script;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {
@@ -123,7 +123,7 @@ using WebDriverBiDi.Log;
 using WebDriverBiDi.Session;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {
@@ -181,7 +181,7 @@ using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {
@@ -222,7 +222,7 @@ using WebDriverBiDi.Network;
 using WebDriverBiDi.Session;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {
@@ -275,7 +275,7 @@ using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {
@@ -285,7 +285,7 @@ try
     for (int i = 0; i < 3; i++)
     {
         CreateCommandResult result = await driver.BrowsingContext.CreateAsync(
-            new CreateCommandParameters(ContextType.Tab));
+            new CreateCommandParameters(CreateType.Tab));
         tabIds.Add(result.BrowsingContextId);
         Console.WriteLine($"Created tab {i + 1}: {result.BrowsingContextId}");
     }
@@ -344,7 +344,7 @@ using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {
@@ -402,7 +402,7 @@ using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Storage;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {
@@ -462,7 +462,7 @@ using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
 
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/session");
+await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 try
 {

@@ -60,7 +60,7 @@ CreateUserContextCommandResult userContextResult =
     await driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters());
 
 // Create browsing context in that user context
-CreateCommandParameters createTabParams = new CreateCommandParameters(ContextType.Tab)
+CreateCommandParameters createTabParams = new CreateCommandParameters(CreateType.Tab)
 {
     UserContext = userContextResult.UserContextId
 };
@@ -161,7 +161,7 @@ CreateUserContextCommandResult userContext =
     await driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters());
 
 // Create tab in isolated context
-CreateCommandParameters tabParams = new CreateCommandParameters(ContextType.Tab)
+CreateCommandParameters tabParams = new CreateCommandParameters(CreateType.Tab)
 {
     UserContext = userContext.UserContextId
 };
@@ -187,7 +187,7 @@ List<string> windowIds = new List<string>();
 for (int i = 0; i < 3; i++)
 {
     CreateCommandResult window = await driver.BrowsingContext.CreateAsync(
-        new CreateCommandParameters(ContextType.Window)
+        new CreateCommandParameters(CreateType.Window)
         {
             Width = 800,
             Height = 600

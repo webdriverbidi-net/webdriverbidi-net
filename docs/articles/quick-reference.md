@@ -7,7 +7,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Operation | Code |
 |-----------|------|
 | Create driver | `BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));` |
-| Start connection | `await driver.StartAsync("ws://localhost:9222/session");` |
+| Start connection | `await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");` |
 | Check if started | `if (driver.IsStarted) { ... }` |
 | Stop connection | `await driver.StopAsync();` |
 | Dispose | `await driver.DisposeAsync();` |
@@ -25,9 +25,9 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Operation | Code |
 |-----------|------|
 | Get context tree | `GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(null);` |
-| Create context | `CreateContextCommandResult ctx = await driver.BrowsingContext.CreateAsync(new CreateContextCommandParameters("tab"));` |
+| Create context | `CreateCommandResult ctx = await driver.BrowsingContext.CreateAsync(new CreateCommandParameters(CreateType.Tab));` |
 | Navigate | `await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(contextId, url) { Wait = ReadinessState.Complete });` |
-| Close context | `await driver.BrowsingContext.CloseAsync(new CloseContextCommandParameters(contextId));` |
+| Close context | `await driver.BrowsingContext.CloseAsync(new CloseCommandParameters(contextId));` |
 | Capture screenshot | `await driver.BrowsingContext.CaptureScreenshotAsync(new CaptureScreenshotCommandParameters(contextId));` |
 
 ## Script
@@ -35,7 +35,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Operation | Code |
 |-----------|------|
 | Evaluate expression | `EvaluateResult r = await driver.Script.EvaluateAsync(new EvaluateCommandParameters(expression, new ContextTarget(contextId), true));` |
-| Call function | `CallFunctionResult r = await driver.Script.CallFunctionAsync(new CallFunctionCommandParameters(functionDeclaration, new ContextTarget(contextId), true));` |
+| Call function | `EvaluateResult r = await driver.Script.CallFunctionAsync(new CallFunctionCommandParameters(functionDeclaration, new ContextTarget(contextId), true));` |
 | Add preload script | `AddPreloadScriptCommandResult r = await driver.Script.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters(script));` |
 | Get realms | `GetRealmsCommandResult realms = await driver.Script.GetRealmsAsync(null);` |
 
@@ -46,7 +46,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Add intercept | `AddInterceptCommandParameters p = new AddInterceptCommandParameters(); p.Phases.Add(InterceptPhase.BeforeRequestSent); await driver.Network.AddInterceptAsync(p);` |
 | Add data collector | `AddDataCollectorCommandParameters p = new AddDataCollectorCommandParameters(); p.BrowsingContexts.Add(contextId); await driver.Network.AddDataCollectorAsync(p);` |
 | Continue request | `await driver.Network.ContinueRequestAsync(new ContinueRequestCommandParameters(requestId));` |
-| Provide response | `await driver.Network.ProvideResponseAsync(new ProvideResponseCommandParameters(requestId, new BytesValue(BytesValueType.String, body)));` |
+| Provide response | `ProvideResponseCommandParameters p = new ProvideResponseCommandParameters(requestId) { Body = BytesValue.FromString(body) }; await driver.Network.ProvideResponseAsync(p);` |
 
 ## Storage
 
