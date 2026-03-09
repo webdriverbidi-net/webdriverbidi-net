@@ -41,7 +41,7 @@ public class ObservableEvent<T>
     /// </summary>
     /// <param name="eventName">The name of the event.</param>
     /// <param name="maxObserverCount">The maximum number of handlers that may observe this event.</param>
-    public ObservableEvent(string eventName, int maxObserverCount)
+    public ObservableEvent(string eventName, uint maxObserverCount)
     {
         this.EventName = eventName;
         this.MaxObserverCount = maxObserverCount;
@@ -56,7 +56,7 @@ public class ObservableEvent<T>
     /// Gets the maximum number of observers that may observe this event.
     /// A value of zero (0) indicates an unlimited number of observers.
     /// </summary>
-    public int MaxObserverCount { get; }
+    public uint MaxObserverCount { get; }
 
     /// <summary>
     /// Gets the current number of observers that are observing this event.
@@ -173,7 +173,7 @@ public class ObservableEvent<T>
         {
             try
             {
-                await observer.Notify(notifyData);
+                await observer.Notify(notifyData).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
