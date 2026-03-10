@@ -87,6 +87,10 @@ Event handlers run on separate threads from your main application code. This mea
 - **Collect**: Exception is stored in a list for later inspection
 - **Terminate**: Exception is stored and thrown when you send the next command
 
+For handlers registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously`, this behavior also applies to exceptions that occur after the handler has returned control to the transport thread. In other words, exceptions from handlers being run asynchronously are not silently dropped.
+
+The one important exception is checkpoint task capture. If you capture async handler tasks by using `WaitForCheckpointAndTasksAsync()` or `GetCheckpointTasks()`, those task exceptions remain owned by your code. They are propagated through the captured task path rather than being surfaced again through `EventHandlerExceptionBehavior`.
+
 ### Why Ignore is the Default
 
 WebDriverBiDi.NET defaults all error behaviors to `Ignore` for several important reasons:
@@ -244,6 +248,7 @@ finally
 - Protocol errors might be transient
 
 **Important:** Your code continues normally—errors throw when driver stopped as an `AggregateException`.
+This includes exceptions from handlers being run asynchronously unless you have explicitly captured those handler tasks via checkpoints.
 
 ### Terminate Mode
 
@@ -300,8 +305,10 @@ finally
 **Why This Matters:**
 - Event handlers execute asynchronously on the transport thread
 - Your main code doesn't directly wait for event handlers to complete
-- Terminate mode ensures errors are eventually reported to your code
+- Terminate mode ensures errors are eventually reported to your code, including exceptions from handlers being run asynchronously
 - The error surfaces when you send the next command, which is a natural synchronization point
+
+**Checkpoint-owned exceptions are different:** if you use `WaitForCheckpointAndTasksAsync()` or `GetCheckpointTasks()` to take ownership of async handler tasks, exceptions from those tasks propagate through that checkpoint/task path instead of terminating on the next command.
 
 **Use Terminate Mode When:**
 - You want event handler errors to be reported (recommended for development)
@@ -313,9 +320,11 @@ finally
 
 | Mode | Event Handler Exceptions | Protocol Errors | Command Errors | When Error Surfaces |
 |------|-------------------------|-----------------|----------------|---------------------|
-| **Ignore (default)** | Discarded and logged | Discarded and logged | Always throws immediately | Never |
-| **Collect** | Stored in list | Stored in list | Always throws immediately | When driver stopped |
-| **Terminate** | Throws on next command | Throws on next command | Always throws immediately | Synchronization point (next command) |
+| **Ignore (default)** | Discarded and logged, including exceptions from asynchronously run handlers when those tasks are not checkpoint-captured | Discarded and logged | Always throws immediately | Never |
+| **Collect** | Stored in list, including exceptions from asynchronously run handlers when those tasks are not checkpoint-captured | Stored in list | Always throws immediately | When driver stopped |
+| **Terminate** | Throws on next command, including exceptions from asynchronously run handlers when those tasks are not checkpoint-captured | Throws on next command | Always throws immediately | Synchronization point (next command) |
+
+When async handler tasks are explicitly captured via checkpoints, their exceptions are owned by the caller instead of being routed through the transport behavior above.
 
 ### Threading Model and Error Propagation
 

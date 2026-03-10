@@ -6,6 +6,7 @@
 namespace WebDriverBiDi;
 
 using System.Diagnostics.CodeAnalysis;
+using WebDriverBiDi.Protocol;
 
 /// <summary>
 /// Implementation of an observer in the Observer pattern for events.
@@ -25,6 +26,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
+    private readonly Action<EventObserverErrorInfo>? observerErrorReporter;
     private readonly List<Task> capturedTasks = [];
     private TaskCompletionSource<bool>? checkpointTaskCompletionSource;
     private CountdownEvent synchronizationCounter = new(0);
@@ -37,11 +39,13 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <param name="handler">A function taking type T and returning a Task that is executed every time the event is observed.</param>
     /// <param name="handlerOptions">The options to use when executing the event handler.</param>
     /// <param name="description">The optional description of this observer.</param>
-    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description)
+    /// <param name="observerErrorReporter">The callback used to report late observer execution errors, if any.</param>
+    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, Action<EventObserverErrorInfo>? observerErrorReporter)
     {
         this.observableEvent = observableEvent;
         this.handler = handler;
         this.handlerOptions = handlerOptions;
+        this.observerErrorReporter = observerErrorReporter;
         if (string.IsNullOrEmpty(description))
         {
             this.description = $"EventObserver<{typeof(T).Name}> (id: {this.Id})";
@@ -215,6 +219,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// of those handlers have also completed execution. This method discards the Tasks after completion. If you
     /// need to inspect the Tasks, use <see cref="WaitForCheckpointAsync"/> followed by <see cref="GetCheckpointTasks"/>
     /// instead.
+    /// Exceptions from captured handler tasks remain owned by the caller and are propagated by this
+    /// method through the returned task rather than being re-surfaced through transport-level event
+    /// handler error behavior.
     /// </summary>
     /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied. This timeout only applies to waiting for this observer to be notified the proper number of times; it does not apply to the execution of the handlers.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
@@ -251,6 +258,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// This method is thread-safe. Calling it unsets the checkpoint and transfers ownership of the captured
     /// tasks to the caller. If another thread is concurrently waiting via <see cref="WaitForCheckpointAsync"/>,
     /// that wait will still complete successfully.
+    /// </para>
+    /// <para>
+    /// Once ownership is transferred, exceptions from those tasks are expected to be observed by the caller
+    /// instead of being surfaced again through transport-level event handler error behavior.
     /// </para>
     /// </remarks>
     public Task[] GetCheckpointTasks()
@@ -295,14 +306,14 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     internal async Task Notify(T notifyData)
     {
         Task executingTask = this.handler(notifyData);
-        bool isFireAndForget = this.handlerOptions.HasFlag(ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        bool isHandlerRunAsynchronously = this.handlerOptions.HasFlag(ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         // Capture the faulted state immediately after the handler returns,
         // before any other code runs, to distinguish synchronous failures
         // (e.g., Task.FromException or throwing before the first await)
         // from truly asynchronous ones that complete later.
         bool isSynchronouslyFaulted = false;
-        if (!isFireAndForget)
+        if (!isHandlerRunAsynchronously)
         {
             await executingTask.ConfigureAwait(false);
         }
@@ -310,29 +321,23 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         {
             isSynchronouslyFaulted = true;
         }
-        else if (!executingTask.IsCompleted)
+
+        bool isCapturedByCheckpoint = this.CaptureTaskIfCheckpointSet(executingTask);
+        if (isHandlerRunAsynchronously && !executingTask.IsCompleted)
         {
             // The handler is still running asynchronously. Attach a continuation
             // to observe any eventual exception, preventing UnobservedTaskException
-            // from being raised when the task is garbage-collected.
+            // from being raised when the task is garbage-collected. Faults are
+            // only forwarded into a higher-level error pipeline when the invocation
+            // is not already owned by checkpoint task capture.
+            string reportedEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName);
+            AsynchronousFaultState continuationStateObject = new(reportedEventName, !isCapturedByCheckpoint);
             _ = executingTask.ContinueWith(
-                static t => { _ = t.Exception; },
+                this.ReportObserverErrorContinuation,
+                continuationStateObject,
                 CancellationToken.None,
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);
-        }
-
-        lock (this.checkpointLock)
-        {
-            if (this.IsCheckpointSetInternal && !this.synchronizationCounter.IsSet)
-            {
-                this.capturedTasks.Add(executingTask);
-                this.synchronizationCounter.Signal();
-                if (this.synchronizationCounter.IsSet)
-                {
-                    this.checkpointTaskCompletionSource.TrySetResult(true);
-                }
-            }
         }
 
         if (!isSynchronouslyFaulted)
@@ -379,6 +384,16 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         return default;
     }
 
+    private static string GetObserverErrorEventName(T notifyData, string observableEventName)
+    {
+        if (notifyData is EventReceivedEventArgs eventReceivedEventArgs)
+        {
+            return eventReceivedEventArgs.EventName;
+        }
+
+        return observableEventName;
+    }
+
     /// <summary>
     /// Resets the checkpoint state, disposing the synchronization counter and
     /// canceling the completion source. Must be called while holding the
@@ -399,5 +414,76 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             this.ResetCheckpointState();
             this.capturedTasks.Clear();
         }
+    }
+
+    private void ReportObserverErrorContinuation(Task faultedTask, object? faultStateObject)
+    {
+        // The state object is always passed to the continuation by the Notify method,
+        // so the null-forgiving operator is appropriate here.
+        AsynchronousFaultState state = (AsynchronousFaultState)faultStateObject!;
+
+        // This continuation only runs for faulted tasks, and faulted Task.Exception is
+        // guaranteed by the Task Parallel Library to be non-null, so the use of the
+        // null-forgiving operator is appropriate here.
+        AggregateException aggregateException = faultedTask.Exception!;
+        Exception exception = aggregateException.InnerExceptions.Count == 1 ? aggregateException.InnerExceptions[0] : aggregateException;
+        try
+        {
+            if (!state.ShouldReportAsyncFault)
+            {
+                return;
+            }
+
+            this.observerErrorReporter?.Invoke(new EventObserverErrorInfo()
+            {
+                ObservableEventName = state.ReportedEventName,
+                ObserverId = this.Id,
+                ObserverDescription = this.description,
+                Exception = exception,
+                IsAsynchronousHandler = true,
+                FaultOccurredAfterHandlerReturned = true,
+            });
+        }
+        finally
+        {
+            _ = faultedTask.Exception;
+        }
+    }
+
+    private bool CaptureTaskIfCheckpointSet(Task executingTask)
+    {
+        lock (this.checkpointLock)
+        {
+            if (!this.IsCheckpointSetInternal || this.synchronizationCounter.IsSet)
+            {
+                return false;
+            }
+
+            this.capturedTasks.Add(executingTask);
+            this.synchronizationCounter.Signal();
+            if (this.synchronizationCounter.IsSet)
+            {
+                this.checkpointTaskCompletionSource.TrySetResult(true);
+            }
+
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Internal data structure used to pass state into the asynchronous fault reporting continuation,
+    /// allowing it to determine whether to report the fault and what event name to report it under.
+    /// </summary>
+    private class AsynchronousFaultState
+    {
+        public AsynchronousFaultState(string reportedEventName, bool shouldReportAsyncFault)
+        {
+            this.ReportedEventName = reportedEventName;
+            this.ShouldReportAsyncFault = shouldReportAsyncFault;
+        }
+
+        public string ReportedEventName { get; }
+
+        public bool ShouldReportAsyncFault { get; }
     }
 }

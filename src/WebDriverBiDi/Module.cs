@@ -5,8 +5,6 @@
 
 namespace WebDriverBiDi;
 
-using WebDriverBiDi.Protocol;
-
 /// <summary>
 /// Base class representing a module in the WebDriver Bidi protocol.
 /// </summary>
@@ -41,6 +39,8 @@ public abstract class Module
     protected void RegisterObservableEvent<T>(ObservableEvent<T> observableEvent)
         where T : WebDriverBiDiEventArgs
     {
+        this.ConfigureObserverErrorReporting(observableEvent);
+
         async Task EventInvoker(EventInfo<T> eventData)
         {
             T eventArgs = eventData.ToEventArgs<T>();
@@ -63,6 +63,8 @@ public abstract class Module
     protected void RegisterObservableEvent<T, TEventArgs>(ObservableEvent<TEventArgs> observableEvent, Func<T, TEventArgs> eventArgsConverter)
         where TEventArgs : WebDriverBiDiEventArgs
     {
+        this.ConfigureObserverErrorReporting(observableEvent);
+
         async Task EventInvoker(EventInfo<T> eventData)
         {
             TEventArgs eventArgs = eventData.ToEventArgs(eventArgsConverter);
@@ -70,5 +72,14 @@ public abstract class Module
         }
 
         this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);
+    }
+
+    private void ConfigureObserverErrorReporting<T>(ObservableEvent<T> observableEvent)
+        where T : WebDriverBiDiEventArgs
+    {
+        if (this.Driver is IEventObserverErrorReporter observerErrorReporter)
+        {
+            observableEvent.SetObserverErrorReporter(observerErrorReporter.EventObserverErrorReporter);
+        }
     }
 }

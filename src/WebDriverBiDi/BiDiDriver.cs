@@ -36,7 +36,7 @@ using WebDriverBiDi.WebExtension;
 /// must complete before <see cref="StartAsync"/> is called and are serialized via an internal lock.
 /// </para>
 /// </remarks>
-public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiDriverEvents
+public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiDriverEvents, IEventObserverErrorReporter
 {
     /// <summary>
     /// Gets the default command timeout if a timeout is not specified in the constructor.
@@ -102,11 +102,17 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     public BiDiDriver(TimeSpan defaultCommandWaitTimeout, Transport transport)
     {
         this.DefaultCommandTimeout = defaultCommandWaitTimeout;
+
         this.transport = transport;
         this.transportEventReceivedObserver = this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceived);
         this.transportErrorReceivedObserver = this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
         this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
         this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
+
+        this.OnEventReceived = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
+        this.OnUnexpectedErrorReceived = this.CreateObservableEvent<ErrorReceivedEventArgs>(UnexpectedErrorReceivedEventName);
+        this.OnUnknownMessageReceived = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
+        this.OnLogMessage = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
 
         this.Bluetooth = new BluetoothModule(this);
         this.RegisterModule(this.Bluetooth);
@@ -154,22 +160,22 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <summary>
     /// Gets an observable event that notifies when a protocol event is received from protocol transport.
     /// </summary>
-    public ObservableEvent<EventReceivedEventArgs> OnEventReceived { get; } = new(EventReceivedEventName);
+    public ObservableEvent<EventReceivedEventArgs> OnEventReceived { get; }
 
     /// <summary>
     /// Gets an observable event that notifies when a protocol error is received from protocol transport.
     /// </summary>
-    public ObservableEvent<ErrorReceivedEventArgs> OnUnexpectedErrorReceived { get; } = new(UnexpectedErrorReceivedEventName);
+    public ObservableEvent<ErrorReceivedEventArgs> OnUnexpectedErrorReceived { get; }
 
     /// <summary>
     /// Gets an observable event that notifies when an unknown message is received from protocol transport.
     /// </summary>
-    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; } = new(UnknownMessageReceivedEventName);
+    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; }
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by this driver.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new(LogMessageEventName);
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
 
     /// <summary>
     /// Gets the bluetooth module as described in the W3C Web Bluetooth Specification.
@@ -276,6 +282,13 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// invoked by this driver. Defaults to <see cref="TransportErrorBehavior.Ignore"/>, meaning that
     /// exceptions from event handlers will be caught and logged but will not cause the driver to stop
     /// processing messages from the transport.
+    /// Exceptions from handlers registered with
+    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> participate in this behavior
+    /// when they are not already owned by checkpoint task capture. If the caller captures handler tasks
+    /// using <see cref="EventObserver{T}.GetCheckpointTasks"/> or
+    /// <see cref="EventObserver{T}.WaitForCheckpointAndTasksAsync(TimeSpan, CancellationToken)"/>,
+    /// those task exceptions remain owned by the caller rather than being surfaced again through the
+    /// transport error pipeline.
     /// </summary>
     public virtual TransportErrorBehavior EventHandlerExceptionBehavior { get => this.transport.EventHandlerExceptionBehavior; set => this.transport.EventHandlerExceptionBehavior = value; }
 
@@ -302,6 +315,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// be caught and logged but will not cause the driver to stop processing messages from the transport.
     /// </summary>
     public virtual TransportErrorBehavior UnexpectedErrorBehavior { get => this.transport.UnexpectedErrorBehavior; set => this.transport.UnexpectedErrorBehavior = value; }
+
+    /// <summary>
+    /// Gets the callback used to report late observer execution errors to the underlying transport.
+    /// </summary>
+    Action<EventObserverErrorInfo> IEventObserverErrorReporter.EventObserverErrorReporter => this.ReportObservableEventObserverError;
 
     /// <summary>
     /// Gets a value indicating whether this driver is disposed.
@@ -641,6 +659,19 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         {
             throw new ObjectDisposedException(this.GetType().FullName);
         }
+    }
+
+    private void ReportObservableEventObserverError(EventObserverErrorInfo errorInfo)
+    {
+        this.transport.ReportEventObserverError(errorInfo);
+    }
+
+    private ObservableEvent<T> CreateObservableEvent<T>(string eventName)
+        where T : WebDriverBiDiEventArgs
+    {
+        ObservableEvent<T> observableEvent = new(eventName);
+        observableEvent.SetObserverErrorReporter(this.ReportObservableEventObserverError);
+        return observableEvent;
     }
 
     private async Task OnTransportEventReceived(EventReceivedEventArgs e)

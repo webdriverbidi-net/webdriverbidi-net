@@ -1,8 +1,5 @@
 namespace WebDriverBiDi.TestUtilities;
 
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Protocol;
@@ -96,6 +93,26 @@ public class TestTransport : Transport
     public void RegisterInvalidEventMessageType(string eventName, Type type)
     {
         this.AddEventMessageType(eventName, type);
+    }
+
+    public async Task<bool> WaitForCollectedEventHandlerExceptionAsync(TimeSpan timeout, TransportErrorBehavior errorBehavior)
+    {
+        // This test needs to wait until the late-fault continuation has actually
+        // recorded the exception into the transport's collected-error store.
+        // Waiting only for the handler body to complete is not sufficient.
+        UnhandledErrorCollection unhandledErrors = this.UnhandledErrors;
+        DateTime endTime = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < endTime)
+        {
+            if (unhandledErrors.HasUnhandledErrors(errorBehavior))
+            {
+                return true;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(10)).ConfigureAwait(false);
+        }
+
+        return unhandledErrors.HasUnhandledErrors(errorBehavior);
     }
 
     protected override JsonElement DeserializeMessage(byte[] messageData)

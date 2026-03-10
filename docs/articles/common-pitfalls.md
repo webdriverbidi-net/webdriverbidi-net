@@ -542,6 +542,8 @@ catch (WebDriverBiDiException ex)
 }
 ```
 
+This also applies to exceptions from handlers using `ObservableEventHandlerOptions.RunHandlerAsynchronously` when those tasks are not captured by a checkpoint. If you instead capture handler tasks with checkpoints, those exceptions are owned by the returned tasks and should be observed there.
+
 ```csharp
 // ✅ Option 2: Collect mode (gather all errors)
 WebSocketConnection connection = new WebSocketConnection();

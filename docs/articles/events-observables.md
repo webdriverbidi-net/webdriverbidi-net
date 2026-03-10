@@ -548,6 +548,8 @@ This method waits for:
 
 **Note**: The timeout only applies to waiting for the checkpoint. Handler execution time is not limited by the timeout.
 
+**Important**: When you use `WaitForCheckpointAndTasksAsync()`, exceptions from the captured async handler tasks are propagated through this method. Those exceptions are considered owned by the caller and are not surfaced again through transport-level `EventHandlerExceptionBehavior`.
+
 #### Manual Synchronization (For Fine-Grained Control)
 
 For scenarios where you need to inspect or manipulate tasks before waiting:
@@ -583,6 +585,8 @@ if (occurred)
     Console.WriteLine("All handlers completed");
 }
 ```
+
+When using `GetCheckpointTasks()`, you take ownership of those tasks and their exceptions. This lets you inspect or await handler failures directly without having those same failures also re-surfaced through the transport's event handler error behavior.
 
 ### Using TaskCompletionSource for Complex Synchronization
 

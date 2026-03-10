@@ -1365,6 +1365,90 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestAsyncExceptionInTransportEventReceivedCanCollect()
+    {
+        TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(async (EventReceivedEventArgs e) =>
+        {
+            try
+            {
+                await Task.Delay(50).ConfigureAwait(false);
+                throw new WebDriverBiDiException("This is an async unexpected exception");
+            }
+            finally
+            {
+                handlerCompleted.TrySetResult(true);
+            }
+        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Collect);
+        Assert.That(errorPropagated, Is.True, "The transport should collect the late async aggregate handler failure before shutdown.");
+
+        Assert.That(async () => await transport.DisconnectAsync(), Throws.InstanceOf<AggregateException>().With.InnerException.InstanceOf<WebDriverBiDiException>().And.Message.Contains("Normal shutdown").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("This is an async unexpected exception"));
+    }
+
+    [Test]
+    public async Task TestAsyncExceptionInTransportEventReceivedCanTerminate()
+    {
+        TaskCompletionSource<bool> handlerCompleted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
+        };
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(async (EventReceivedEventArgs e) =>
+        {
+            try
+            {
+                await Task.Delay(50).ConfigureAwait(false);
+                throw new WebDriverBiDiException("This is an async unexpected exception");
+            }
+            finally
+            {
+                handlerCompleted.TrySetResult(true);
+            }
+        }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+        await connection.RaiseDataReceivedEventAsync(json);
+        await handlerCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        bool errorPropagated = await transport.WaitForCollectedEventHandlerExceptionAsync(TimeSpan.FromSeconds(1), TransportErrorBehavior.Terminate);
+        Assert.That(errorPropagated, Is.True, "The transport should collect the late async aggregate handler failure before shutdown.");
+
+        string commandName = "module.command";
+        TestCommandParameters commandParameters = new(commandName);
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters),Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("protocol.event").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("This is an async unexpected exception"));
+    }
+
+    [Test]
     public async Task TestCapturedExceptionsCanBeReset()
     {
         string receivedName = string.Empty;

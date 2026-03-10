@@ -26,6 +26,7 @@ public class ObservableEvent<T>
 {
     private readonly object observerLock = new();
     private readonly Dictionary<string, EventObserver<T>> observers = [];
+    private Action<EventObserverErrorInfo>? observerErrorReporter;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
@@ -127,7 +128,7 @@ public class ObservableEvent<T>
                 throw new WebDriverBiDiException($"""This observable event only allows {this.MaxObserverCount} {(this.MaxObserverCount == 1 ? "handler" : "handlers")}.""");
             }
 
-            EventObserver<T> observer = new(this, handler, handlerOptions, description);
+            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.observerErrorReporter);
             this.observers.Add(observer.Id, observer);
             return observer;
         }
@@ -208,5 +209,15 @@ public class ObservableEvent<T>
         }
 
         return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", observerList)}";
+    }
+
+    /// <summary>
+    /// Sets the internal reporter used to surface observer failures that occur
+    /// after the handler has already returned to the caller.
+    /// </summary>
+    /// <param name="reporter">The reporter callback.</param>
+    internal void SetObserverErrorReporter(Action<EventObserverErrorInfo> reporter)
+    {
+        this.observerErrorReporter = reporter;
     }
 }

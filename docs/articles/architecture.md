@@ -801,9 +801,11 @@ catch (WebDriverBiDiException ex)
 ```
 
 **When to Use Each Mode:**
-- **Ignore** (default): Event handler exceptions are logged but don't interrupt message processing. Use for non-critical handlers.
-- **Collect**: Exceptions are stored and thrown when `StopAsync()` is called. Use when debugging event handler issues.
-- **Terminate**: Driver terminates when next command is sent after exception. Use when event handler failure indicates unrecoverable state.
+- **Ignore** (default): Event handler exceptions are logged but don't interrupt message processing. The same applies to exceptions from asynchronously run handlers when those tasks are not captured by an observer checkpoint. Use for non-critical handlers.
+- **Collect**: Exceptions are stored and thrown when `StopAsync()` is called. Exceptions from asynchronously run handlers are collected the same way when those tasks are not captured by an observer checkpoint. Use when debugging event handler issues.
+- **Terminate**: Driver terminates when next command is sent after exception. Exceptions from asynchronously run handlers also surface on the next command when those tasks are not captured by an observer checkpoint. Use when event handler failure indicates unrecoverable state.
+
+If you explicitly capture async handler tasks with `WaitForCheckpointAndTasksAsync()` or `GetCheckpointTasks()`, those task exceptions are instead owned by the caller and are not surfaced a second time through transport termination or collection.
 
 #### ProtocolErrorBehavior
 

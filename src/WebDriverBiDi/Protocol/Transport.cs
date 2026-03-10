@@ -66,6 +66,9 @@ public class Transport : IAsyncDisposable
     private const string ErrorReceivedEventName = "transport.errorReceived";
     private const string UnknownMessageReceivedEventName = "transport.unknownMessageReceived";
     private const string LogMessageEventName = "transport.logMessage";
+    private const string TransportEventObserverDescription = "transport event observer";
+    private const string TransportErrorObserverDescription = "transport error observer";
+    private const string TransportUnknownMessageObserverDescription = "transport unknown message observer";
 
     private readonly JsonSerializerOptions options = new()
     {
@@ -73,7 +76,6 @@ public class Transport : IAsyncDisposable
     };
 
     private readonly ConcurrentDictionary<string, Type> eventMessageTypes = [];
-    private readonly UnhandledErrorCollection unhandledErrors = new();
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
     private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
@@ -104,6 +106,12 @@ public class Transport : IAsyncDisposable
     public Transport(Connection connection)
     {
         this.Connection = connection;
+
+        this.OnEventReceived = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
+        this.OnErrorEventReceived = this.CreateObservableEvent<ErrorReceivedEventArgs>(ErrorReceivedEventName);
+        this.OnUnknownMessageReceived = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
+        this.OnLogMessage = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
+
         this.connectionDataReceivedObserver = connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         this.connectionErrorObserver = connection.OnConnectionError.AddObserver(this.OnConnectionErrorAsync);
         this.connectionLogMessageObserver = connection.OnLogMessage.AddObserver(this.OnConnectionLogMessageAsync);
@@ -112,30 +120,30 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Gets an observable event that notifies when an event is received from the protocol.
     /// </summary>
-    public ObservableEvent<EventReceivedEventArgs> OnEventReceived { get; } = new(EventReceivedEventName);
+    public ObservableEvent<EventReceivedEventArgs> OnEventReceived { get; }
 
     /// <summary>
     /// Gets an observable event that notifies when an error is received from the protocol
     /// that is not the result of a command execution.
     /// </summary>
-    public ObservableEvent<ErrorReceivedEventArgs> OnErrorEventReceived { get; } = new(ErrorReceivedEventName);
+    public ObservableEvent<ErrorReceivedEventArgs> OnErrorEventReceived { get; }
 
     /// <summary>
     /// Gets an observable event that notifies when an unknown message is received from the protocol.
     /// </summary>
-    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; } = new(UnknownMessageReceivedEventName);
+    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; }
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new(LogMessageEventName);
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
     /// unhandled exception in a handler for a defined protocol is encountered. Defaults to
     /// ignoring exceptions, in which case, those exceptions will never be surfaced to the user.
     /// </summary>
-    public TransportErrorBehavior EventHandlerExceptionBehavior { get => this.unhandledErrors.EventHandlerExceptionBehavior; set => this.unhandledErrors.EventHandlerExceptionBehavior = value; }
+    public TransportErrorBehavior EventHandlerExceptionBehavior { get => this.UnhandledErrors.EventHandlerExceptionBehavior; set => this.UnhandledErrors.EventHandlerExceptionBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when a
@@ -143,7 +151,7 @@ public class Transport : IAsyncDisposable
     /// Defaults to ignoring exceptions, in which case, those exceptions will never be surfaced
     /// to the user.
     /// </summary>
-    public TransportErrorBehavior ProtocolErrorBehavior { get => this.unhandledErrors.ProtocolErrorBehavior; set => this.unhandledErrors.ProtocolErrorBehavior = value; }
+    public TransportErrorBehavior ProtocolErrorBehavior { get => this.UnhandledErrors.ProtocolErrorBehavior; set => this.UnhandledErrors.ProtocolErrorBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
@@ -151,7 +159,7 @@ public class Transport : IAsyncDisposable
     /// structure. Defaults to ignoring exceptions, in which case, those exceptions will never
     /// be surfaced to the user.
     /// </summary>
-    public TransportErrorBehavior UnknownMessageBehavior { get => this.unhandledErrors.UnknownMessageBehavior; set => this.unhandledErrors.UnknownMessageBehavior = value; }
+    public TransportErrorBehavior UnknownMessageBehavior { get => this.UnhandledErrors.UnknownMessageBehavior; set => this.UnhandledErrors.UnknownMessageBehavior = value; }
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
@@ -159,7 +167,7 @@ public class Transport : IAsyncDisposable
     /// command. Defaults to ignoring exceptions, in which case, those exceptions will never be
     /// surfaced to the user.
     /// </summary>
-    public TransportErrorBehavior UnexpectedErrorBehavior { get => this.unhandledErrors.UnexpectedErrorBehavior; set => this.unhandledErrors.UnexpectedErrorBehavior = value; }
+    public TransportErrorBehavior UnexpectedErrorBehavior { get => this.UnhandledErrors.UnexpectedErrorBehavior; set => this.UnhandledErrors.UnexpectedErrorBehavior = value; }
 
     /// <summary>
     /// Gets or sets the timeout to wait for message processing to complete during shutdown.
@@ -203,6 +211,13 @@ public class Transport : IAsyncDisposable
     protected Connection Connection { get; }
 
     /// <summary>
+    /// Gets the collection of unhandled errors captured by this transport. This collection is thread-safe.
+    /// Use this collection to inspect unhandled errors that have been captured, and to clear
+    /// captured errors if desired.
+    /// </summary>
+    protected UnhandledErrorCollection UnhandledErrors { get; } = new();
+
+    /// <summary>
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
     /// <param name="websocketUri">The URI used to connect to the web socket.</param>
@@ -234,7 +249,7 @@ public class Transport : IAsyncDisposable
                 SingleWriter = true,
             });
 
-            this.unhandledErrors.ClearUnhandledErrors();
+            this.UnhandledErrors.ClearUnhandledErrors();
 
             // Reset the command counter for each connection.
             Interlocked.Exchange(ref this.nextCommandId, 0);
@@ -281,7 +296,7 @@ public class Transport : IAsyncDisposable
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task<Command> SendCommandAsync(CommandParameters commandData, CancellationToken cancellationToken = default)
     {
-        if (this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminationExceptions))
+        if (this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Terminate, out IList<Exception> terminationExceptions))
         {
             await this.DisconnectAsync(false).ConfigureAwait(false);
             throw this.CreateTerminationException(terminationExceptions);
@@ -389,6 +404,16 @@ public class Transport : IAsyncDisposable
     {
         await this.DisposeAsyncCore().ConfigureAwait(false);
         GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Reports a late observer execution error to this transport's unhandled-error pipeline.
+    /// </summary>
+    /// <param name="errorInfo">The details of the observer failure.</param>
+    internal void ReportEventObserverError(EventObserverErrorInfo errorInfo)
+    {
+        WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
+        this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
     }
 
     /// <summary>
@@ -505,7 +530,7 @@ public class Transport : IAsyncDisposable
             WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.GetHashCode().ToString());
             WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.terminationReason);
 
-            if (throwCollectedExceptions && this.unhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
+            if (throwCollectedExceptions && this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
             {
                 throw this.CreateTerminationException(collectedExceptions, TransportErrorBehavior.Collect);
             }
@@ -587,8 +612,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(e.EventName, ex.Message);
-            this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for event name {e.EventName}");
+            this.ReportEventObserverError(e.EventName, TransportEventObserverDescription, ex);
         }
     }
 
@@ -600,7 +624,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for error event");
+            this.ReportEventObserverError(this.OnErrorEventReceived.EventName, TransportErrorObserverDescription, ex);
         }
     }
 
@@ -612,7 +636,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, ex, $"Unhandled exception in user event handler for unknown message event");
+            this.ReportEventObserverError(this.OnUnknownMessageReceived.EventName, TransportUnknownMessageObserverDescription, ex);
         }
     }
 
@@ -878,7 +902,7 @@ public class Transport : IAsyncDisposable
 
         // Note carefully that if handling of the error type is "Ignore", adding to the
         // unhandled errors collection is a no-op.
-        this.unhandledErrors.AddUnhandledError(errorType, ex);
+        this.UnhandledErrors.AddUnhandledError(errorType, ex);
         if (isTerminalError)
         {
             this.terminationReason = terminalReason;
@@ -904,5 +928,41 @@ public class Transport : IAsyncDisposable
         }
 
         return new AggregateException(message, exceptions);
+    }
+
+    private string GetEventHandlerTerminalReason(string observableEventName)
+    {
+        if (observableEventName == this.OnErrorEventReceived.EventName)
+        {
+            return "Unhandled exception in user event handler for error event";
+        }
+
+        if (observableEventName == this.OnUnknownMessageReceived.EventName)
+        {
+            return "Unhandled exception in user event handler for unknown message event";
+        }
+
+        return $"Unhandled exception in user event handler for event name {observableEventName}";
+    }
+
+    private ObservableEvent<T> CreateObservableEvent<T>(string eventName)
+        where T : WebDriverBiDiEventArgs
+    {
+        ObservableEvent<T> observableEvent = new(eventName);
+        observableEvent.SetObserverErrorReporter(this.ReportEventObserverError);
+        return observableEvent;
+    }
+
+    private void ReportEventObserverError(string eventName, string observerDescription, Exception exception)
+    {
+        this.ReportEventObserverError(new EventObserverErrorInfo()
+        {
+            ObservableEventName = eventName,
+            ObserverId = string.Empty,
+            ObserverDescription = observerDescription,
+            Exception = exception,
+            IsAsynchronousHandler = false,
+            FaultOccurredAfterHandlerReturned = false,
+        });
     }
 }
