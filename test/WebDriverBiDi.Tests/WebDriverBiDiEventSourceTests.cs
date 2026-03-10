@@ -411,6 +411,28 @@ public class WebDriverBiDiEventSourceTests
     }
 
     [Test]
+    public void TestCommandSendFailedEventEmitted()
+    {
+        TestEventListener listener = new();
+        WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed("1", "session.status", "System.InvalidOperationException", "Simulated send failure", 12);
+        listener.Dispose();
+
+        Assert.That(listener.Events, Has.Count.EqualTo(1));
+        EventWrittenEventArgs evt = listener.Events[0];
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(evt.EventId, Is.EqualTo(22));
+            Assert.That(evt.EventName, Is.EqualTo("CommandSendFailed"));
+            Assert.That(evt.Level, Is.EqualTo(EventLevel.Warning));
+            Assert.That(evt.Payload![0], Is.EqualTo("1"));
+            Assert.That(evt.Payload![1], Is.EqualTo("session.status"));
+            Assert.That(evt.Payload![2], Is.EqualTo("System.InvalidOperationException"));
+            Assert.That(evt.Payload![3], Is.EqualTo("Simulated send failure"));
+            Assert.That(evt.Payload![4], Is.EqualTo(12L));
+        }
+    }
+
+    [Test]
     public void TestEventSourceDoesNotEmitWhenDisabled()
     {
         // Don't create a listener - EventSource should be disabled by default

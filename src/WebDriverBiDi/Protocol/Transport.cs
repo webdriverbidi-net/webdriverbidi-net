@@ -7,7 +7,6 @@ namespace WebDriverBiDi.Protocol;
 
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
@@ -76,7 +75,6 @@ public class Transport : IAsyncDisposable
     private readonly ConcurrentDictionary<string, Type> eventMessageTypes = [];
     private readonly UnhandledErrorCollection unhandledErrors = new();
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
-    private readonly ConcurrentDictionary<long, Stopwatch> commandTimings = [];
     private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
     private readonly EventObserver<LogMessageEventArgs> connectionLogMessageObserver;
@@ -86,7 +84,6 @@ public class Transport : IAsyncDisposable
         SingleWriter = true,
     });
 
-    private PendingCommandCollection pendingCommands = new();
     private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
     private int isConnectedTypeSafeFlag = 0;
@@ -190,6 +187,12 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Gets or setsthe collection of pending commands that have been sent and
+    /// have not yet received a response. This collection is thread-safe.
+    /// </summary>
+    protected PendingCommandCollection PendingCommands { get; set; } = new();
+
+    /// <summary>
     /// Gets the ID of the last command to be added.
     /// </summary>
     protected long LastCommandId => this.nextCommandId;
@@ -219,10 +222,10 @@ public class Transport : IAsyncDisposable
 
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpening(this.Connection.GetHashCode().ToString(), websocketUri);
 
-            if (!this.pendingCommands.IsAcceptingCommands)
+            if (!this.PendingCommands.IsAcceptingCommands)
             {
-                this.pendingCommands.Dispose();
-                this.pendingCommands = new PendingCommandCollection();
+                this.PendingCommands.Dispose();
+                this.PendingCommands = new PendingCommandCollection();
             }
 
             this.queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
@@ -294,19 +297,33 @@ public class Transport : IAsyncDisposable
 
             long commandId = this.GetNextCommandId();
             Command command = new(commandId, commandData);
-            await this.pendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
+            await this.PendingCommands.AddPendingCommandAsync(command, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                // Start timing and log command sending
+                command.StartTiming();
+                WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId.ToString(), commandData.MethodName);
 
-            // Start timing and log command sending
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            this.commandTimings[commandId] = stopwatch;
-            WebDriverBiDiEventSource.RaiseEvent.CommandSending(commandId.ToString(), commandData.MethodName);
+                byte[] commandJson = this.SerializeCommand(command);
+                await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
 
-            byte[] commandJson = this.SerializeCommand(command);
-            await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
+                WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
 
-            WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.pendingCommands.PendingCommandCount);
+                return command;
+            }
+            catch (Exception ex)
+            {
+                // Command failed to send, so roll back adding the command to the pending commmand
+                // collection, and emit the event for the failure.
+                if (this.PendingCommands.RemovePendingCommand(commandId, out _))
+                {
+                    command.StopTiming();
+                }
 
-            return command;
+                WebDriverBiDiEventSource.RaiseEvent.CommandSendFailed(commandId.ToString(), commandData.MethodName, ex.GetType().ToString(), ex.Message, command.ElapsedMilliseconds);
+                WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
+                throw;
+            }
         }
         finally
         {
@@ -322,7 +339,7 @@ public class Transport : IAsyncDisposable
     public virtual void CancelCommand(Command command)
     {
         command.Cancel();
-        this.pendingCommands.RemovePendingCommand(command.CommandId, out _);
+        this.PendingCommands.RemovePendingCommand(command.CommandId, out _);
     }
 
     /// <summary>
@@ -455,7 +472,7 @@ public class Transport : IAsyncDisposable
 
             // Close the pending command collection to further addition of commands,
             // and stop the connection from receiving further communication traffic.
-            await this.pendingCommands.CloseAsync().ConfigureAwait(false);
+            await this.PendingCommands.CloseAsync().ConfigureAwait(false);
             await this.Connection.StopAsync(cancellationToken).ConfigureAwait(false);
 
             // Mark the incoming message queue as complete for writing, indicating
@@ -473,7 +490,7 @@ public class Transport : IAsyncDisposable
             // message processor to complete processing of the messages received from
             // the message queue, but with a timeout to prevent hanging if an
             // in-process event handler is stuck.
-            this.pendingCommands.Clear();
+            this.PendingCommands.Clear();
             using CancellationTokenSource commandDelayCancelTokenSource = new();
             Task completedTask = await Task.WhenAny(this.messageQueueProcessingTask, Task.Delay(this.ShutdownTimeout, commandDelayCancelTokenSource.Token)).ConfigureAwait(false);
             if (completedTask != this.messageQueueProcessingTask)
@@ -518,7 +535,7 @@ public class Transport : IAsyncDisposable
             }
         }
 
-        this.pendingCommands.Dispose();
+        this.PendingCommands.Dispose();
         this.connectionDataReceivedObserver.Dispose();
         this.connectionErrorObserver.Dispose();
         this.connectionLogMessageObserver.Dispose();
@@ -634,9 +651,9 @@ public class Transport : IAsyncDisposable
 
             // Close the pending command collection and fail every in-flight command
             // with an exception that wraps the original connection error.
-            await this.pendingCommands.CloseAsync().ConfigureAwait(false);
+            await this.PendingCommands.CloseAsync().ConfigureAwait(false);
             WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
-            this.pendingCommands.FailAllPendingCommands(connectionException);
+            this.PendingCommands.FailAllPendingCommands(connectionException);
 
             await this.LogAsync($"Connection error; pending commands failed: {e.Exception.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
         }
@@ -744,15 +761,11 @@ public class Transport : IAsyncDisposable
     {
         if (message.TryGetProperty("id", out JsonElement idToken) && idToken.ValueKind == JsonValueKind.Number && idToken.TryGetInt64(out long responseId))
         {
-            if (this.pendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
+            if (this.PendingCommands.RemovePendingCommand(responseId, out Command? executedCommand))
             {
                 // Stop timing and log completion
-                if (this.commandTimings.TryRemove(responseId, out Stopwatch? stopwatch))
-                {
-                    stopwatch.Stop();
-                    WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId.ToString(), executedCommand.CommandName, stopwatch.ElapsedMilliseconds);
-                }
-
+                executedCommand.StopTiming();
+                WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId.ToString(), executedCommand.CommandName, executedCommand.ElapsedMilliseconds);
                 try
                 {
                     if (message.Deserialize(executedCommand.ResponseType, this.options) is CommandResponseMessage response)
@@ -785,14 +798,10 @@ public class Transport : IAsyncDisposable
             if (errorMessage is not null)
             {
                 ErrorResult result = errorMessage.GetErrorResponseData();
-                if (errorMessage.CommandId.HasValue && this.pendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command? executedCommand))
+                if (errorMessage.CommandId.HasValue && this.PendingCommands.RemovePendingCommand(errorMessage.CommandId.Value, out Command? executedCommand))
                 {
                     // Stop timing and log error
-                    if (this.commandTimings.TryRemove(errorMessage.CommandId.Value, out Stopwatch? stopwatch))
-                    {
-                        stopwatch.Stop();
-                    }
-
+                    executedCommand.StopTiming();
                     WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value.ToString(), executedCommand.CommandName, result.ErrorType, result.ErrorMessage);
 
                     executedCommand.SetResult(result);

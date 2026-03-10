@@ -164,6 +164,94 @@ public class TransportEventSourceIntegrationTests
     }
 
     [Test]
+    public async Task TestTransportEmitsCommandSendFailedEventWhenSendThrows()
+    {
+        TestEventListener listener = new();
+        TestWebSocketConnection connection = new()
+        {
+            SendWebSocketDataOverride = _ => throw new InvalidOperationException("Simulated send failure"),
+        };
+        Transport transport = new(connection);
+
+        await transport.ConnectAsync("ws://localhost:9222");
+        listener.ClearEvents();
+
+        TestCommandParameters commandParameters = new("session.status");
+        Assert.That(
+            async () => await transport.SendCommandAsync(commandParameters),
+            Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Simulated send failure"));
+
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("CommandSending", "CommandSendFailed", "PendingCommandCount", "CommandCompleted", "CommandError");
+        EventWrittenEventArgs sendingEvent = events.First(e => e.EventName == "CommandSending");
+        EventWrittenEventArgs failedEvent = events.First(e => e.EventName == "CommandSendFailed");
+        EventWrittenEventArgs countEvent = events.Last(e => e.EventName == "PendingCommandCount");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(sendingEvent.Payload![0], Is.EqualTo("1"));
+            Assert.That(sendingEvent.Payload![1], Is.EqualTo("session.status"));
+            Assert.That(failedEvent.Payload![0], Is.EqualTo("1"));
+            Assert.That(failedEvent.Payload![1], Is.EqualTo("session.status"));
+            Assert.That(failedEvent.Payload![2], Is.EqualTo(typeof(InvalidOperationException).FullName));
+            Assert.That(failedEvent.Payload![3], Is.EqualTo("Simulated send failure"));
+            Assert.That(failedEvent.Payload![4], Is.InstanceOf<long>());
+            Assert.That(countEvent.Payload![0], Is.EqualTo(0));
+            Assert.That(events.Any(e => e.EventName == "CommandCompleted"), Is.False);
+            Assert.That(events.Any(e => e.EventName == "CommandError"), Is.False);
+        }
+
+        await transport.DisconnectAsync();
+        listener.Dispose();
+    }
+
+    [Test]
+    public async Task TestTransportEmitsCommandSendFailedEventWhenSendIsCanceled()
+    {
+        TestEventListener listener = new();
+        ManualResetEventSlim sendStarted = new(false);
+        using CancellationTokenSource cancellationTokenSource = new();
+        TestWebSocketConnection connection = new()
+        {
+            SendWebSocketDataOverride = async _ =>
+            {
+                sendStarted.Set();
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationTokenSource.Token);
+            },
+        };
+        Transport transport = new(connection);
+
+        await transport.ConnectAsync("ws://localhost:9222");
+        listener.ClearEvents();
+
+        TestCommandParameters commandParameters = new("session.status");
+        Task<Command> sendTask = transport.SendCommandAsync(commandParameters, cancellationTokenSource.Token);
+        bool sendDidStart = sendStarted.Wait(TimeSpan.FromSeconds(1));
+        Assert.That(sendDidStart, Is.True);
+        cancellationTokenSource.Cancel();
+
+        Assert.That(async () => await sendTask, Throws.InstanceOf<OperationCanceledException>());
+
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("CommandSending", "CommandSendFailed", "PendingCommandCount", "CommandCompleted", "CommandError");
+        EventWrittenEventArgs failedEvent = events.First(e => e.EventName == "CommandSendFailed");
+        EventWrittenEventArgs countEvent = events.Last(e => e.EventName == "PendingCommandCount");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(failedEvent.Payload![0], Is.EqualTo("1"));
+            Assert.That(failedEvent.Payload![1], Is.EqualTo("session.status"));
+            Assert.That(failedEvent.Payload![2], Is.EqualTo(typeof(TaskCanceledException).FullName));
+            Assert.That(failedEvent.Payload![3], Is.Not.Empty);
+            Assert.That(failedEvent.Payload![4], Is.InstanceOf<long>());
+            Assert.That(countEvent.Payload![0], Is.EqualTo(0));
+            Assert.That(events.Any(e => e.EventName == "CommandCompleted"), Is.False);
+            Assert.That(events.Any(e => e.EventName == "CommandError"), Is.False);
+        }
+
+        await transport.DisconnectAsync();
+        listener.Dispose();
+    }
+
+    [Test]
     public async Task TestTransportEmitsEventReceivedEvent()
     {
         // This test verifies EventReceived is emitted by directly checking if the method

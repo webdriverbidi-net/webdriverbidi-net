@@ -366,4 +366,21 @@ public sealed class WebDriverBiDiEventSource : EventSource
             this.WriteEvent(21, messagesSent, messagesReceived, eventsReceived, errorsReceived);
         }
     }
+
+    /// <summary>
+    /// Logs when a command fails before it can be successfully transmitted.
+    /// </summary>
+    /// <param name="commandId">The unique identifier for the command.</param>
+    /// <param name="method">The command method name.</param>
+    /// <param name="failureType">The .NET exception type describing the send failure.</param>
+    /// <param name="failureMessage">The failure message.</param>
+    /// <param name="elapsedMilliseconds">The elapsed time in milliseconds before the send failed.</param>
+    [Event(22, Level = EventLevel.Warning, Message = "Command {0} ({1}) failed before transmission: {2} - {3} after {4}ms")]
+    public void CommandSendFailed(string commandId, string method, string failureType, string failureMessage, long elapsedMilliseconds)
+    {
+        if (this.IsEnabled(EventLevel.Warning, EventKeywords.None))
+        {
+            this.WriteEvent(22, [commandId, method, failureType, failureMessage, elapsedMilliseconds]);
+        }
+    }
 }

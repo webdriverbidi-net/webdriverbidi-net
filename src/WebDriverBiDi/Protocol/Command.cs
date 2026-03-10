@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Protocol;
 
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
@@ -14,6 +15,7 @@ using WebDriverBiDi.JsonConverters;
 [JsonConverter(typeof(CommandJsonConverter))]
 public class Command
 {
+    private readonly Stopwatch commandStopwatch = new();
     private readonly CommandParameters commandData;
     private readonly long commandId;
     private readonly TaskCompletionSource<CommandResult> taskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -102,6 +104,11 @@ public class Command
     public bool IsCanceled => this.taskCompletionSource.Task.IsCanceled;
 
     /// <summary>
+    /// Gets the elapsed time in milliseconds since the command was sent by a <see cref="Transport"/>.
+    /// </summary>
+    public long ElapsedMilliseconds => this.commandStopwatch.ElapsedMilliseconds;
+
+    /// <summary>
     /// Waits for the command to complete or until the specified timeout elapses.
     /// </summary>
     /// <param name="timeout">The timeout to wait for the command to complete.</param>
@@ -157,5 +164,24 @@ public class Command
     public virtual void Cancel()
     {
         this.taskCompletionSource.TrySetCanceled();
+    }
+
+    /// <summary>
+    /// Starts the stopwatch used to time the execution of this command. This should be
+    /// called when the command is sent by a <see cref="Transport"/>.
+    /// </summary>
+    internal void StartTiming()
+    {
+        this.commandStopwatch.Start();
+    }
+
+    /// <summary>
+    /// Stops the stopwatch used to time the execution of this command. This should be
+    /// called by a <see cref="Transport"/> when a response or error is received for the
+    /// command.
+    /// </summary>
+    internal void StopTiming()
+    {
+        this.commandStopwatch.Stop();
     }
 }

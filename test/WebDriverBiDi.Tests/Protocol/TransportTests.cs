@@ -240,6 +240,53 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestSendCommandExceptionRollsBackPendingCommandState()
+    {
+        TestWebSocketConnection connection = new()
+        {
+            SendWebSocketDataOverride = _ => throw new InvalidOperationException("Simulated send failure"),
+        };
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        TestCommandParameters commandParameters = new("module.command");
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Simulated send failure"));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(transport.TestPendingCommandCount, Is.Zero);
+        }
+    }
+
+    [Test]
+    public async Task TestSendCommandCancellationRollsBackPendingCommandState()
+    {
+        ManualResetEventSlim sendStarted = new(false);
+        using CancellationTokenSource cancellationTokenSource = new();
+        TestWebSocketConnection connection = new()
+        {
+            SendWebSocketDataOverride = async _ =>
+            {
+                sendStarted.Set();
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationTokenSource.Token);
+            },
+        };
+        TestTransport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        TestCommandParameters commandParameters = new("module.command");
+        Task<Command> sendTask = transport.SendCommandAsync(commandParameters, cancellationTokenSource.Token);
+        sendStarted.Wait(TimeSpan.FromSeconds(1));
+        cancellationTokenSource.Cancel();
+
+        Assert.That(async () => await sendTask, Throws.InstanceOf<OperationCanceledException>());
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(transport.TestPendingCommandCount, Is.Zero);
+        }
+    }
+
+    [Test]
     public async Task TestTransportEventReceived()
     {
         string receivedName = string.Empty;
@@ -1747,26 +1794,28 @@ public class TransportTests
 
         int acquireLockCallCount = 0;
         TestWebSocketConnection connection = new();
-        TestTransport transport = new(connection);
-        transport.BeforeAcquireLockCallback = async () =>
+        TestTransport transport = new(connection)
         {
-            int currentLockCallCount = Interlocked.Increment(ref acquireLockCallCount);
-            if (currentLockCallCount == 1)
+            BeforeAcquireLockCallback = async () =>
             {
-                // Signal that the ConnectAsync is in the lock, then wait for the
-                // type info registration to enter the lock before proceeding.
-                connectAsyncInProgress.Set();
-                await Task.Run(() => registerResolverInProgress.Wait());
-            }
-            else if (currentLockCallCount == 2)
-            {
-                // Signal that the type info registration is in the lock, then
-                // wait for the ConnectAsync to signal it's entered the lock,
-                // and wait a small delay to make sure the semaphore is held
-                // by ConnectAsync.
-                registerResolverInProgress.Set();
-                await Task.Run(() => connectAsyncInProgress.Wait());
-                await Task.Delay(TimeSpan.FromMilliseconds(50));
+                int currentLockCallCount = Interlocked.Increment(ref acquireLockCallCount);
+                if (currentLockCallCount == 1)
+                {
+                    // Signal that the ConnectAsync is in the lock, then wait for the
+                    // type info registration to enter the lock before proceeding.
+                    connectAsyncInProgress.Set();
+                    await Task.Run(() => registerResolverInProgress.Wait());
+                }
+                else if (currentLockCallCount == 2)
+                {
+                    // Signal that the type info registration is in the lock, then
+                    // wait for the ConnectAsync to signal it's entered the lock,
+                    // and wait a small delay to make sure the semaphore is held
+                    // by ConnectAsync.
+                    registerResolverInProgress.Set();
+                    await Task.Run(() => connectAsyncInProgress.Wait());
+                    await Task.Delay(TimeSpan.FromMilliseconds(50));
+                }
             }
         };
 

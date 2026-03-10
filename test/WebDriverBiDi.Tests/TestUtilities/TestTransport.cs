@@ -1,5 +1,7 @@
 namespace WebDriverBiDi.TestUtilities;
 
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -17,6 +19,8 @@ public class TestTransport : Transport
     }
 
     public long LastTestCommandId => this.LastCommandId;
+
+    public int TestPendingCommandCount => this.PendingCommands.PendingCommandCount;
 
     public bool IsDisposed { get; private set; }
 
