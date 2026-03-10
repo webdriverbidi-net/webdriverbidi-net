@@ -230,8 +230,8 @@ public class BiDiDriver015AnalyzerTests
 
                 public class NetworkModule
                 {
-                    [ObservableEventName("network.beforeRequest")]
-                    public ObservableEvent<BeforeRequestEventArgs> OnBeforeRequest { get; } = new ObservableEvent<BeforeRequestEventArgs>("network.beforeRequest");
+                    [ObservableEventName("network.beforeRequestSent")]
+                    public ObservableEvent<BeforeRequestSentEventArgs> OnBeforeRequestSent { get; } = new ObservableEvent<BeforeRequestSentEventArgs>("network.beforeRequestSent");
                 }
 
                 public class SessionModule
@@ -248,7 +248,7 @@ public class BiDiDriver015AnalyzerTests
 
                 public class WebDriverBiDiEventArgs { }
                 public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-                public class BeforeRequestEventArgs : WebDriverBiDiEventArgs { }
+                public class BeforeRequestSentEventArgs : WebDriverBiDiEventArgs { }
 
                 public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
                 {
@@ -280,8 +280,8 @@ public class BiDiDriver015AnalyzerTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        driver.Network.OnBeforeRequest.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|}, {|#1:"network.beforeRequest"|} }));
+                        driver.Network.OnBeforeRequestSent.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|}, {|#1:"network.beforeRequestSent"|} }));
                     }
                 }
             }
@@ -293,7 +293,7 @@ public class BiDiDriver015AnalyzerTests
 
         DiagnosticResult expected2 = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(1)
-            .WithArguments("driver.Network.OnBeforeRequest.EventName", "network.beforeRequest");
+            .WithArguments("driver.Network.OnBeforeRequestSent.EventName", "network.beforeRequestSent");
 
         CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
         {
@@ -425,8 +425,8 @@ public class BiDiDriver015AnalyzerTests
 
                 public class NetworkModule
                 {
-                    [ObservableEventName("network.beforeRequest")]
-                    public ObservableEvent<BeforeRequestEventArgs> OnBeforeRequest { get; } = new ObservableEvent<BeforeRequestEventArgs>("network.beforeRequest");
+                    [ObservableEventName("network.beforeRequestSent")]
+                    public ObservableEvent<BeforeRequestSentEventArgs> OnBeforeRequestSent { get; } = new ObservableEvent<BeforeRequestSentEventArgs>("network.beforeRequestSent");
                 }
 
                 public class SessionModule
@@ -443,7 +443,7 @@ public class BiDiDriver015AnalyzerTests
 
                 public class WebDriverBiDiEventArgs { }
                 public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
-                public class BeforeRequestEventArgs : WebDriverBiDiEventArgs { }
+                public class BeforeRequestSentEventArgs : WebDriverBiDiEventArgs { }
 
                 public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
                 {
@@ -475,8 +475,8 @@ public class BiDiDriver015AnalyzerTests
                     {
                         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         driver.Log.OnEntryAdded.AddObserver(async (e) => { });
-                        driver.Network.OnBeforeRequest.AddObserver(async (e) => { });
-                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { driver.Log.OnEntryAdded.EventName, {|#0:"network.beforeRequest"|} }));
+                        driver.Network.OnBeforeRequestSent.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new SubscribeCommandParameters(new[] { driver.Log.OnEntryAdded.EventName, {|#0:"network.beforeRequestSent"|} }));
                     }
                 }
             }
@@ -484,7 +484,7 @@ public class BiDiDriver015AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("driver.Network.OnBeforeRequest.EventName", "network.beforeRequest");
+            .WithArguments("driver.Network.OnBeforeRequestSent.EventName", "network.beforeRequestSent");
 
         CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
         {

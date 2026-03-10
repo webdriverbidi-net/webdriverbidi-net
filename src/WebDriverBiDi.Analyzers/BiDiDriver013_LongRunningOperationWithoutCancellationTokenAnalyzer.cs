@@ -118,7 +118,12 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
         // These operations are known to be potentially long-running
         string[] longRunningOperations =
         [
+            "NavigateAsync",
+            "PrintAsync",
+            "ReloadAsync",
             "StartAsync",
+            "WaitForCheckpointAsync",
+            "WaitForCheckpointAndTasksAsync",
         ];
 
         return longRunningOperations.Contains(method.Name);

@@ -15,9 +15,8 @@ using Microsoft.CodeAnalysis.Testing;
 public class BiDiDriver013AnalyzerTests
 {
     [Test]
-    public async Task NavigateAsync_WithoutCancellationToken_NoDiagnostic()
+    public async Task NavigateAsync_WithoutCancellationToken_ReportsWarning()
     {
-        // Module commands don't have CancellationToken overloads yet
         string testCode = """
             using WebDriverBiDi;
             using System.Threading.Tasks;
@@ -30,45 +29,22 @@ public class BiDiDriver013AnalyzerTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("contextId", "https://example.com"));
+                        await {|#0:driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("contextId", "https://example.com"))|};
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
-    }
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("NavigateAsync");
 
-
-    [Test]
-    public async Task ReloadAsync_WithoutCancellationToken_NoDiagnostic()
-    {
-        // Module commands don't have CancellationToken overloads yet
-        string testCode = """
-            using WebDriverBiDi;
-            using System.Threading.Tasks;
-            using WebDriverBiDi.BrowsingContext;
-
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public async Task TestMethod()
-                    {
-                        BiDiDriver driver = new();
-                        await driver.BrowsingContext.ReloadAsync(new ReloadCommandParameters("contextId"));
-                    }
-                }
-            }
-            """;
-
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
     [Test]
-    public async Task PrintAsync_WithoutCancellationToken_NoDiagnostic()
+    public async Task ReloadAsync_WithoutCancellationToken_ReportsWarning()
     {
-        // Module commands don't have CancellationToken overloads yet
         string testCode = """
             using WebDriverBiDi;
             using System.Threading.Tasks;
@@ -81,13 +57,45 @@ public class BiDiDriver013AnalyzerTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        await driver.BrowsingContext.PrintAsync(new PrintCommandParameters("contextId"));
+                        await {|#0:driver.BrowsingContext.ReloadAsync(new ReloadCommandParameters("contextId"))|};
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("ReloadAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
+    }
+
+    [Test]
+    public async Task PrintAsync_WithoutCancellationToken_ReportsWarning()
+    {
+        string testCode = """
+            using WebDriverBiDi;
+            using System.Threading.Tasks;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        await {|#0:driver.BrowsingContext.PrintAsync(new PrintCommandParameters("contextId"))|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("PrintAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
     [Test]
@@ -104,7 +112,7 @@ public class BiDiDriver013AnalyzerTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        await driver.StartAsync("ws://localhost:9222");
+                        await {|#0:driver.StartAsync("ws://localhost:9222")|};
                     }
                 }
             }
@@ -113,16 +121,15 @@ public class BiDiDriver013AnalyzerTests
         DiagnosticResult expected = new DiagnosticResult(
             BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
-            .WithSpan(11, 19, 11, 59)
+            .WithLocation(0)
             .WithArguments("StartAsync");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
     [Test]
-    public async Task WaitForCheckpointAsync_WithoutCancellationToken_NoDiagnostic()
+    public async Task WaitForCheckpointAsync_WithoutCancellationToken_ReportsWarning()
     {
-        // EventObserver methods don't have CancellationToken overloads yet
         string testCode = """
             using System;
             using System.Threading.Tasks;
@@ -138,19 +145,22 @@ public class BiDiDriver013AnalyzerTests
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
                         observer.SetCheckpoint(5);
-                        await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+                        await {|#0:observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("WaitForCheckpointAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
     [Test]
-    public async Task WaitForCheckpointAndTasksAsync_WithoutCancellationToken_NoDiagnostic()
+    public async Task WaitForCheckpointAndTasksAsync_WithoutCancellationToken_ReportsWarning()
     {
-        // EventObserver methods don't have CancellationToken overloads yet
         string testCode = """
             using System;
             using System.Threading.Tasks;
@@ -166,13 +176,17 @@ public class BiDiDriver013AnalyzerTests
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
                         observer.SetCheckpoint(5);
-                        await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10));
+                        await {|#0:observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode);
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("WaitForCheckpointAndTasksAsync");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
     [Test]
@@ -231,9 +245,8 @@ public class BiDiDriver013AnalyzerTests
     }
 
     [Test]
-    public async Task MultipleLongRunningOperations_WithoutCancellationToken_ReportsWarningForStartAsync()
+    public async Task MultipleLongRunningOperations_WithoutCancellationToken_ReportsAllWarnings()
     {
-        // Only StartAsync has a CancellationToken overload currently
         string testCode = """
             using System;
             using System.Threading.Tasks;
@@ -247,19 +260,25 @@ public class BiDiDriver013AnalyzerTests
                     public async Task TestMethod()
                     {
                         BiDiDriver driver = new();
-                        await driver.StartAsync("ws://localhost:9222");
-                        await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("contextId", "https://example.com"));
-                        await driver.BrowsingContext.PrintAsync(new PrintCommandParameters("contextId"));
+                        await {|#0:driver.StartAsync("ws://localhost:9222")|};
+                        await {|#1:driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters("contextId", "https://example.com"))|};
+                        await {|#2:driver.BrowsingContext.PrintAsync(new PrintCommandParameters("contextId"))|};
                     }
                 }
             }
             """;
 
-        DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
-            .WithSpan(13, 19, 13, 59)
+        DiagnosticResult expected0 = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
             .WithArguments("StartAsync");
+        DiagnosticResult expected1 = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(1)
+            .WithArguments("NavigateAsync");
+        DiagnosticResult expected2 = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(2)
+            .WithArguments("PrintAsync");
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected0, expected1, expected2);
     }
 
     [Test]

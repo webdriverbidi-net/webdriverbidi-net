@@ -36,14 +36,14 @@ public class BiDiDriver003AnalyzerTests
 
                 public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
                 {
-                    void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+                    Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
                 }
 
                 public class BiDiDriver : IBiDiDriverConfiguration
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) { }
+                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -97,7 +97,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) { }
+                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -147,7 +147,7 @@ public class BiDiDriver003AnalyzerTests
                     {
                         public BiDiDriver(TimeSpan timeout) { }
                         public Task StartAsync(string url) => Task.CompletedTask;
-                        public void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) { }
+                        public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                     }
                 }
 
@@ -181,7 +181,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) { }
+                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -236,7 +236,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) { }
+                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
@@ -279,7 +279,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public CustomDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) { }
+                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
 
                 public class TestClass
@@ -323,7 +323,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
-                    public void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) { }
+                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
                 }
             }
 
