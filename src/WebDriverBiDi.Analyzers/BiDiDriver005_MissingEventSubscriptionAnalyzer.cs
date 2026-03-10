@@ -138,7 +138,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         if (current is IdentifierNameSyntax identifier)
         {
             ITypeSymbol? identifierType = context.SemanticModel.GetTypeInfo(identifier).Type;
-            if (identifierType != null && IsBiDiDriverType(identifierType))
+            if (identifierType != null && AnalyzerSymbolHelpers.IsCommandExecutorType(identifierType))
             {
                 // Verify the expression goes through a Module property
                 if (expression is MemberAccessExpressionSyntax ma)
@@ -314,11 +314,6 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         {
             eventNames.Add(eventName);
         }
-    }
-
-    private static bool IsBiDiDriverType(ITypeSymbol type)
-    {
-        return type.Name == "BiDiDriver" || type.Name == "IBiDiDriver";
     }
 
     private static bool IsModuleType(ITypeSymbol type)

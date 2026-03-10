@@ -24,8 +24,8 @@ public sealed class NetworkModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="NetworkModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiDriver"/> used in the module commands and events.</param>
-    public NetworkModule(IBiDiDriver driver)
+    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
+    public NetworkModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
         this.RegisterObservableEvent(this.OnAuthRequired);

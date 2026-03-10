@@ -28,9 +28,17 @@ public class BiDiDriver001AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public interface IBiDiDriver { }
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
 
-                public class BiDiDriver : IBiDiDriver
+                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                {
+                    void RegisterModule(Module module);
+                }
+
+                public class BiDiDriver : IBiDiDriverConfiguration
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
@@ -39,7 +47,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public abstract class Module
                 {
-                    protected Module(IBiDiDriver driver) { }
+                    protected Module(IBiDiCommandExecutor driver) { }
                     public abstract string ModuleName { get; }
                 }
             }
@@ -52,7 +60,7 @@ public class BiDiDriver001AnalyzerTests
                 {
                     public async Task TestMethod()
                     {
-                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
 
                         // This should trigger BIDI001
@@ -62,7 +70,7 @@ public class BiDiDriver001AnalyzerTests
 
                 public class CustomModule : Module
                 {
-                    public CustomModule(IBiDiDriver driver) : base(driver) { }
+                    public CustomModule(IBiDiCommandExecutor driver) : base(driver) { }
                     public override string ModuleName => "custom";
                 }
             }

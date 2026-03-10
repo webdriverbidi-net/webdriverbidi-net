@@ -97,7 +97,7 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
             }
 
             ITypeSymbol? variableType = context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
-            if (variableType != null && IsBiDiDriverType(variableType))
+            if (AnalyzerSymbolHelpers.IsDriverConfigurationType(variableType))
             {
                 updatedVariables = updatedVariables.Add(variable.Identifier.Text, new DriverVariableState());
             }
@@ -162,14 +162,14 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
         string methodName = methodSymbol.Name;
 
         // Track StartAsync calls
-        if (methodName == "StartAsync" && IsBiDiDriverType(methodSymbol.ContainingType))
+        if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
         {
             DriverVariableState currentState = new DriverVariableState { IsStarted = true };
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
         // Check for RegisterTypeInfoResolver after StartAsync
-        if (methodName == "RegisterTypeInfoResolver" && IsBiDiDriverType(methodSymbol.ContainingType))
+        if (methodName == "RegisterTypeInfoResolver" && AnalyzerSymbolHelpers.IsDriverConfigurationType(methodSymbol.ContainingType))
         {
             DriverVariableState state = updatedVariables[driverVariableName];
             if (state.IsStarted)
@@ -198,11 +198,6 @@ public class BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer : Diag
         }
 
         return null;
-    }
-
-    private static bool IsBiDiDriverType(ITypeSymbol type)
-    {
-        return type.Name == "BiDiDriver" || type.Name == "IBiDiDriver";
     }
 
     private class DriverVariableState

@@ -23,7 +23,7 @@ public sealed class ScriptModule : Module
     /// Initializes a new instance of the <see cref="ScriptModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="BiDiDriver"/> used in the module commands and events.</param>
-    public ScriptModule(IBiDiDriver driver)
+    public ScriptModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
         this.RegisterObservableEvent<RealmInfo, RealmCreatedEventArgs>(this.OnRealmCreated, info => new RealmCreatedEventArgs(info));

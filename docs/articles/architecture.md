@@ -146,7 +146,7 @@ Each module encapsulates a specific area of WebDriver BiDi functionality.
 public class BrowsingContextModule : Module
 {
     // Constructor
-    public BrowsingContextModule(BiDiDriver driver) 
+    public BrowsingContextModule(IBiDiCommandExecutor driver)
         : base(driver) { }
 
     // Commands
@@ -934,7 +934,7 @@ public class MyCustomModule : Module
 {
     public const string MyCustomModuleName = "myCustom";
 
-    public MyCustomModule(BiDiDriver driver) 
+    public MyCustomModule(IBiDiCommandExecutor driver)
         : base(driver) { }
 
     public override string ModuleName => MyCustomModuleName;

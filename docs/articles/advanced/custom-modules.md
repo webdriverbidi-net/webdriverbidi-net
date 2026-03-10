@@ -2,6 +2,8 @@
 
 This guide explains how to create custom modules to extend WebDriverBiDi.NET with your own commands and functionality.
 
+> **Advanced guide:** This article is for framework authors and library extenders. If you are building a typical automation application, use `BiDiDriver` and the built-in modules directly instead of creating custom modules.
+
 ## Overview
 
 WebDriverBiDi.NET's module system is extensible, allowing you to:
@@ -23,8 +25,8 @@ public class MyCustomModule : Module
 {
     public const string MyCustomModuleName = "myCustom";
 
-    public MyCustomModule(BiDiDriver driver) 
-        : base(driver, "myCustom")
+    public MyCustomModule(IBiDiCommandExecutor driver)
+        : base(driver)
     {
     }
 
@@ -99,7 +101,7 @@ public class MyCustomModule : Module
 {
     public const string MyCustomModuleName = "myCustom";
 
-    public MyCustomModule(BiDiDriver driver) 
+    public MyCustomModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
     }
@@ -184,7 +186,7 @@ namespace MyAutomation
     {
         public const string PageUtilitiesModuleName = "pageUtilities";
 
-        public PageUtilitiesModule(BiDiDriver driver) 
+        public PageUtilitiesModule(IBiDiCommandExecutor driver)
             : base(driver)
         {
         }
@@ -221,7 +223,7 @@ namespace MyAutomation
                 new ContextTarget(contextId),
                 true);
 
-            EvaluateResult result = await this.Driver.Script.EvaluateAsync(parameters);
+            EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
 
             if (result is EvaluateResultSuccess success)
             {
@@ -248,7 +250,7 @@ namespace MyAutomation
                 new ContextTarget(contextId),
                 true);
 
-            EvaluateResult result = await this.Driver.Script.EvaluateAsync(parameters);
+            EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
 
             if (result is EvaluateResultSuccess success)
             {
@@ -278,7 +280,7 @@ namespace MyAutomation
                 new ContextTarget(contextId),
                 true);
 
-            EvaluateResult result = await this.Driver.Script.EvaluateAsync(parameters);
+            EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
 
             if (result is EvaluateResultSuccess success)
             {
@@ -359,7 +361,7 @@ public class TestUtilitiesModule : Module
 {
     public const string TestUtilitiesModuleName = "testUtilities";
 
-    public TestUtilitiesModule(BiDiDriver driver) 
+    public TestUtilitiesModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
     }
@@ -381,7 +383,7 @@ public class TestUtilitiesModule : Module
             )
         })";
 
-        EvaluateResult result = await this.Driver.Script.EvaluateAsync(
+        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
         if (result is EvaluateResultSuccess success)
@@ -403,8 +405,8 @@ public class TestUtilitiesModule : Module
                     }
                 };
 
-            CaptureScreenshotCommandResult screenshot = 
-                await this.Driver.BrowsingContext.CaptureScreenshotAsync(screenshotParams);
+            CaptureScreenshotCommandResult screenshot =
+                await this.Driver.ExecuteCommandAsync<CaptureScreenshotCommandResult>(screenshotParams);
 
             return Convert.FromBase64String(screenshot.Data);
         }
@@ -416,7 +418,7 @@ public class TestUtilitiesModule : Module
     {
         string script = "Array.from(document.querySelectorAll('a')).map(a => a.href)";
 
-        EvaluateResult result = await this.Driver.Script.EvaluateAsync(
+        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
         if (result is EvaluateResultSuccess success)
@@ -441,7 +443,7 @@ public class TestUtilitiesModule : Module
                 return false;
             }})()";
 
-        await this.Driver.Script.EvaluateAsync(
+        await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), false));
     }
 
@@ -454,7 +456,7 @@ public class TestUtilitiesModule : Module
                 document.head.appendChild(style);
             }})()";
 
-        await this.Driver.Script.EvaluateAsync(
+        await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), false));
     }
 }
@@ -467,7 +469,7 @@ public class PerformanceModule : Module
 {
     public const string PerformanceModuleName = "performance";
 
-    public PerformanceModule(BiDiDriver driver) 
+    public PerformanceModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
     }
@@ -493,7 +495,7 @@ public class PerformanceModule : Module
             };
         })()";
 
-        EvaluateResult result = await this.Driver.Script.EvaluateAsync(
+        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
         if (result is EvaluateResultSuccess success)
@@ -517,7 +519,7 @@ public class PerformanceModule : Module
             type: r.initiatorType
         }))";
 
-        EvaluateResult result = await this.Driver.Script.EvaluateAsync(
+        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
         if (result is EvaluateResultSuccess success)
@@ -559,7 +561,7 @@ public class CustomEventsModule : Module
     public const string CustomModuleName = "customModule";
     private const string CustomEventName = "custom.eventOccurred";
 
-    public CustomEventsModule(BiDiDriver driver) 
+    public CustomEventsModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
         // Register event with driver
@@ -640,7 +642,7 @@ public async Task<string?> GetElementTextAsync(string contextId, string selector
 {
     try
     {
-        EvaluateResult result = await this.Driver.Script.EvaluateAsync(parameters);
+        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
         
         if (result is EvaluateResultSuccess success)
         {
@@ -733,7 +735,7 @@ public class ExperimentalModule : Module
 {
     public const string ExperimentalModuleName = "experimental";
 
-    public ExperimentalModule(BiDiDriver driver) 
+    public ExperimentalModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
     }

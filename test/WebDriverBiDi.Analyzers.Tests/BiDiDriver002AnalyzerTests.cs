@@ -28,9 +28,13 @@ public class BiDiDriver002AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public interface IBiDiDriver { }
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                    void RegisterEvent<T>(string eventName, Func<EventInfo<T>, Task> eventInvoker);
+                }
 
-                public class BiDiDriver : IBiDiDriver
+                public class BiDiDriver : IBiDiCommandExecutor
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
@@ -48,7 +52,7 @@ public class BiDiDriver002AnalyzerTests
                 {
                     public async Task TestMethod()
                     {
-                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        IBiDiCommandExecutor driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         {|#0:driver.RegisterEvent<string>("test.event", async (e) => { })|};
                     }

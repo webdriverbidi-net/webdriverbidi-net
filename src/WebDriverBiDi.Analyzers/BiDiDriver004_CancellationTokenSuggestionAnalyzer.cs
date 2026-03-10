@@ -102,7 +102,7 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
             return false;
         }
 
-        return type.Name == "BiDiDriver" || type.Name == "IBiDiDriver" || type.Name.EndsWith("Module");
+        return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || type.Name.EndsWith("Module");
     }
 
     private static bool ShouldSuggestToken(IMethodSymbol method)

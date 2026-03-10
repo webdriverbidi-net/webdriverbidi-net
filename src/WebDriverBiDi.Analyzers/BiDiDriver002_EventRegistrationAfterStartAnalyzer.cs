@@ -96,7 +96,7 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
             }
 
             ITypeSymbol? variableType = context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
-            if (variableType != null && IsBiDiDriverType(variableType))
+            if (AnalyzerSymbolHelpers.IsCommandExecutorType(variableType))
             {
                 updatedVariables = updatedVariables.Add(variable.Identifier.Text, new DriverVariableState());
             }
@@ -161,14 +161,14 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         string methodName = methodSymbol.Name;
 
         // Track StartAsync calls
-        if (methodName == "StartAsync" && IsBiDiDriverType(methodSymbol.ContainingType))
+        if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
         {
             DriverVariableState currentState = new DriverVariableState { IsStarted = true };
             updatedVariables = updatedVariables.SetItem(driverVariableName, currentState);
         }
 
         // Check for RegisterEvent after StartAsync
-        if (methodName == "RegisterEvent" && IsBiDiDriverType(methodSymbol.ContainingType))
+        if (methodName == "RegisterEvent" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
         {
             DriverVariableState state = updatedVariables[driverVariableName];
             if (state.IsStarted)
@@ -216,7 +216,7 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
 
             // Check if the root is a BiDiDriver or Module type
             ITypeSymbol? rootType = context.SemanticModel.GetTypeInfo(current).Type;
-            if (rootType != null && (IsBiDiDriverType(rootType) || IsModuleType(rootType)))
+            if (rootType != null && (AnalyzerSymbolHelpers.IsCommandExecutorType(rootType) || IsModuleType(rootType)))
             {
                 return true;
             }
@@ -241,11 +241,6 @@ public class BiDiDriver002_EventRegistrationAfterStartAnalyzer : DiagnosticAnaly
         }
 
         return null;
-    }
-
-    private static bool IsBiDiDriverType(ITypeSymbol type)
-    {
-        return type.Name == "BiDiDriver" || type.Name == "IBiDiDriver";
     }
 
     private static bool IsModuleType(ITypeSymbol type)

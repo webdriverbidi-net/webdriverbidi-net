@@ -91,7 +91,7 @@ await driver.BrowsingContext.NavigateAsync(navParams, cancellationToken: cts.Tok
 
 ## Error Handling Configuration
 
-The library uses `TransportErrorBehavior` (Ignore, Collect, Terminate) to control how transport-level errors are handled. Four properties on `BiDiDriver` (and `IBiDiDriver`) provide fine-grained control:
+The library uses `TransportErrorBehavior` (Ignore, Collect, Terminate) to control how transport-level errors are handled. Four properties on `BiDiDriver` provide fine-grained control in normal application code. These same members are also exposed through the advanced `IBiDiDriverEvents` interface for framework and testing scenarios.
 
 | Property | Default | Controls |
 |----------|---------|----------|

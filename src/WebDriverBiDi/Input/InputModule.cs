@@ -20,8 +20,8 @@ public sealed class InputModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="InputModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiDriver"/> used in the module commands and events.</param>
-    public InputModule(IBiDiDriver driver)
+    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
+    public InputModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
         this.RegisterObservableEvent<FileDialogInfo, FileDialogOpenedEventArgs>(this.OnFileDialogOpened, info => new FileDialogOpenedEventArgs(info));

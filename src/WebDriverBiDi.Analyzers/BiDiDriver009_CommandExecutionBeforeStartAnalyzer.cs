@@ -90,7 +90,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             }
 
             ITypeSymbol? typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value).Type;
-            if (IsBiDiDriverType(typeInfo))
+            if (AnalyzerSymbolHelpers.IsCommandExecutorType(typeInfo))
             {
                 driverStartedStatus[variable.Identifier.Text] = false;
             }
@@ -134,7 +134,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         }
 
         // If this is StartAsync, mark the driver as started
-        if (methodName == "StartAsync" && IsBiDiDriverType(methodSymbol.ContainingType))
+        if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
         {
             driverStartedStatus[driverVariableName] = true;
             return;
@@ -156,7 +156,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
             if (memberAccess.Expression is IdentifierNameSyntax identifier)
             {
                 ITypeSymbol? type = semanticModel.GetTypeInfo(identifier).Type;
-                if (IsBiDiDriverType(type))
+                if (AnalyzerSymbolHelpers.IsCommandExecutorType(type))
                 {
                     return identifier.Identifier.Text;
                 }
@@ -167,7 +167,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
                 nestedMemberAccess.Expression is IdentifierNameSyntax nestedIdentifier)
             {
                 ITypeSymbol? type = semanticModel.GetTypeInfo(nestedIdentifier).Type;
-                if (IsBiDiDriverType(type))
+                if (AnalyzerSymbolHelpers.IsCommandExecutorType(type))
                 {
                     return nestedIdentifier.Identifier.Text;
                 }
@@ -182,7 +182,7 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         INamedTypeSymbol? containingType = method.ContainingType;
 
         // Check if this is ExecuteCommandAsync on BiDiDriver
-        if (IsBiDiDriverType(containingType) && method.Name == "ExecuteCommandAsync")
+        if (AnalyzerSymbolHelpers.IsCommandExecutorType(containingType) && method.Name == "ExecuteCommandAsync")
         {
             return true;
         }
@@ -233,16 +233,6 @@ public class BiDiDriver009_CommandExecutionBeforeStartAnalyzer : DiagnosticAnaly
         }
 
         return false;
-    }
-
-    private static bool IsBiDiDriverType(ITypeSymbol? type)
-    {
-        if (type == null)
-        {
-            return false;
-        }
-
-        return type.Name == "BiDiDriver" || type.Name == "IBiDiDriver";
     }
 
     private static bool IsModuleType(INamedTypeSymbol? type)

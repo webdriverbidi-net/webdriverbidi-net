@@ -29,7 +29,7 @@ public class BiDiDriver009AnalyzerTests
                 {
                     public async Task TestMethod()
                     {
-                        BiDiDriver driver = new();
+                        IBiDiCommandExecutor driver = new BiDiDriver();
                         await driver.ExecuteCommandAsync(new StatusCommandParameters());
                     }
                 }

@@ -18,8 +18,8 @@ public sealed class UserAgentClientHintsModule : Module
     /// <summary>
     /// Initializes a new instance of the <see cref="UserAgentClientHintsModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiDriver"/> used in the module commands and events.</param>
-    public UserAgentClientHintsModule(IBiDiDriver driver)
+    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
+    public UserAgentClientHintsModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
     }

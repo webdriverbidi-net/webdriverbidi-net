@@ -96,12 +96,10 @@ public class BiDiDriver012_StopAsyncBeforeDisposeAsyncAnalyzer : DiagnosticAnaly
                 if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
                     memberAccess.Name.Identifier.Text == "DisposeAsync")
                 {
-                    // Verify it's actually a BiDiDriver or IBiDiDriver
-                    IMethodSymbol? methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-                    if (methodSymbol != null)
+                    ITypeSymbol? receiverType = semanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                    if (AnalyzerSymbolHelpers.IsCommandExecutorType(receiverType))
                     {
-                        INamedTypeSymbol? containingType = methodSymbol.ContainingType;
-                        return containingType?.Name == "BiDiDriver" || containingType?.Name == "IBiDiDriver";
+                        return true;
                     }
                 }
 

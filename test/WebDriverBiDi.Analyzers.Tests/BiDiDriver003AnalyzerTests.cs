@@ -29,9 +29,17 @@ public class BiDiDriver003AnalyzerTests
 
             namespace WebDriverBiDi
             {
-                public interface IBiDiDriver { }
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
 
-                public class BiDiDriver : IBiDiDriver
+                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                {
+                    void RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+                }
+
+                public class BiDiDriver : IBiDiDriverConfiguration
                 {
                     public BiDiDriver(TimeSpan timeout) { }
                     public Task StartAsync(string url) => Task.CompletedTask;
@@ -48,7 +56,7 @@ public class BiDiDriver003AnalyzerTests
                 {
                     public async Task TestMethod(IJsonTypeInfoResolver resolver)
                     {
-                        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
+                        IBiDiDriverConfiguration driver = new BiDiDriver(TimeSpan.FromSeconds(30));
                         await driver.StartAsync("ws://localhost:9222");
                         {|#0:driver.RegisterTypeInfoResolver(resolver)|};
                     }

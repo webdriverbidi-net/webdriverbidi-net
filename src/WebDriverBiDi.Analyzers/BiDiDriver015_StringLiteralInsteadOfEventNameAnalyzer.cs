@@ -214,7 +214,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
             }
         }
 
-        if (driverType == null || !IsBiDiDriverType(driverType))
+        if (driverType == null || !AnalyzerSymbolHelpers.IsCommandExecutorType(driverType))
         {
             return null;
         }
@@ -312,7 +312,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                     if (variable.Initializer?.Value != null)
                     {
                         ITypeSymbol? type = context.SemanticModel.GetTypeInfo(variable.Initializer.Value).Type;
-                        if (type != null && IsBiDiDriverType(type))
+                        if (type != null && AnalyzerSymbolHelpers.IsCommandExecutorType(type))
                         {
                             return variable.Identifier.Text;
                         }
@@ -322,11 +322,6 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         }
 
         return null;
-    }
-
-    private static bool IsBiDiDriverType(ITypeSymbol type)
-    {
-        return type.Name == "BiDiDriver" || type.Name == "IBiDiDriver";
     }
 
     private static bool IsModuleType(ITypeSymbol type)

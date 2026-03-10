@@ -736,72 +736,33 @@ await driver.BrowsingContext.NavigateAsync(
 > - Implementing protocol features not yet in the library
 > - Need fine-grained control over serialization (AOT scenarios)
 
-### The IBiDiDriver Interface
+### Advanced Abstractions
 
-The `IBiDiDriver` interface defines the contract for the driver, enabling dependency injection and testability in advanced scenarios.
-Importantly, the `IBiDiDriver` interface does not contain properties for any modules defined by the driver implementation. Custom
-implementation may choose to provide entirely different module layouts than the reference implementation.
+For normal application code, use the concrete `BiDiDriver` class directly.
 
 ```csharp
-public interface IBiDiDriver
-{
-    // Core properties
-    bool IsStarted { get; }
-
-    // Command execution
-    Task<T> ExecuteCommandAsync<T>(CommandParameters<T> commandParameters,
-        TimeSpan? commandTimeout = null,
-        CancellationToken cancellationToken = default) where T : CommandResult;
-
-    // Lifecycle
-    Task StartAsync(string connectionString, CancellationToken cancellationToken = default);
-    Task StopAsync(CancellationToken cancellationToken = default);
-}
-```
-
-**Typical Usage:** Most users will use the concrete `BiDiDriver` class directly:
-
-```csharp
-// Common case - use the concrete class
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 await driver.StartAsync(webSocketUrl);
 ```
 
-**Advanced Usage:** Use the interface for dependency injection in framework code:
+That is the intended experience for almost every consumer of this library. Most users should never need to reference any interface type directly.
 
-```csharp
-// Framework code - use interface for flexibility
-public class HighLevelAutomationFramework
-{
-    private readonly IBiDiDriver driver;
+For advanced framework, testing, and extensibility scenarios, `BiDiDriver` also implements three focused interfaces:
 
-    public HighLevelAutomationFramework(IBiDiDriver driver)
-    {
-        this.driver = driver;
-    }
+| Interface | Purpose | Typical advanced use |
+|----------|---------|----------------------|
+| `IBiDiCommandExecutor` | Core lifecycle and command execution | Custom modules, test doubles, framework internals that only need to start/stop the driver, execute commands, or register protocol events |
+| `IBiDiDriverConfiguration` | Pre-start extensibility hooks | Registering custom modules and additional JSON type resolvers before `StartAsync()` |
+| `IBiDiDriverEvents` | Driver observability and error-behavior configuration | Subscribing to top-level driver events and adjusting transport error behavior |
 
-    public async Task NavigateAndWaitAsync(string url)
-    {
-        // Framework provides high-level API using low-level driver
-        driver.GetModule<BrowsingContextModule>(BrowsingContextModule.BrowsingContextModuleName).NavigateAsync(navParams);
-    }
-}
+The hierarchy is intentionally split by capability rather than by end-user workflow:
 
-// Dependency injection setup
-services.AddSingleton<IBiDiDriver>(sp =>
-    new BiDiDriver(TimeSpan.FromSeconds(30)));
-services.AddTransient<HighLevelAutomationFramework>();
-```
+- `BiDiDriver` is the primary type for applications.
+- `IBiDiCommandExecutor` is the narrow execution surface used by modules and low-level abstractions.
+- `IBiDiDriverConfiguration` covers advanced pre-start customization.
+- `IBiDiDriverEvents` covers top-level events and transport error behavior.
 
-**Benefits of Using the Interface:**
-- **Testability**: Mock the driver in unit tests for framework code
-- **Flexibility**: Swap implementations (e.g., for testing vs. production)
-- **Abstraction**: Hide low-level details from framework users
-
-**When NOT to Use:**
-- Regular application code (use `BiDiDriver` directly)
-- Simple scripts or one-off automation tasks
-- Learning or experimenting with the library
+If you are building a higher-level library on top of WebDriverBiDi.NET, choose the narrowest interface that matches the capability you need. If you are writing application code, ignore the interfaces and use `BiDiDriver`.
 
 ### Custom Modules
 
@@ -824,7 +785,7 @@ public class CustomModule : Module
     // "custom" is the protocol module name
     public const string CustomModuleName = "custom";
 
-    public CustomModule(IBiDiDriver driver)
+    public CustomModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
     }
@@ -953,7 +914,7 @@ Use this decision tree to determine if you need these advanced features:
 
 ```
 Are you building a higher-level framework on top of WebDriverBiDi.NET?
-├─ YES → You might need IBiDiDriver interface for DI/testability
+├─ YES → You may use custom modules, custom type resolvers, or one of the advanced capability interfaces internally
 └─ NO  → Use BiDiDriver directly
 
 Does the built-in library support the protocol feature you need?

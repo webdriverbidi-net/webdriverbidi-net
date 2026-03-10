@@ -90,7 +90,7 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
             }
 
             var typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value);
-            if (IsBiDiDriverType(typeInfo.Type))
+            if (AnalyzerSymbolHelpers.IsDriverConfigurationType(typeInfo.Type))
             {
                 driverVariables[variable.Identifier.Text] = new DriverState
                 {
@@ -136,13 +136,13 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
         string methodName = methodSymbol.Name;
 
         // Check if this is StartAsync() being called
-        if (methodName == "StartAsync" && IsBiDiDriverType(methodSymbol.ContainingType))
+        if (methodName == "StartAsync" && AnalyzerSymbolHelpers.IsCommandExecutorType(methodSymbol.ContainingType))
         {
             driverVariables[driverVariableName].IsStarted = true;
         }
 
         // Check if this is RegisterModule() being called AFTER StartAsync()
-        if (methodName == "RegisterModule" && IsBiDiDriverType(methodSymbol.ContainingType) && driverVariables[driverVariableName].IsStarted)
+        if (methodName == "RegisterModule" && AnalyzerSymbolHelpers.IsDriverConfigurationType(methodSymbol.ContainingType) && driverVariables[driverVariableName].IsStarted)
         {
             // Get module parameter for better error message
             string moduleName = "module";
@@ -166,17 +166,6 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
             MemberAccessExpressionSyntax member => GetDriverVariableName(member.Expression),
             _ => null,
         };
-    }
-
-    private static bool IsBiDiDriverType(ITypeSymbol? type)
-    {
-        if (type == null)
-        {
-            return false;
-        }
-
-        // Check if type is BiDiDriver or IBiDiDriver
-        return type.Name == "BiDiDriver" || type.Name == "IBiDiDriver";
     }
 
     private class DriverState

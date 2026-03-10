@@ -18,8 +18,8 @@ public sealed class WebExtensionModule : Module
      /// <summary>
     /// Initializes a new instance of the <see cref="WebExtensionModule"/> class.
     /// </summary>
-    /// <param name="driver">The <see cref="IBiDiDriver"/> used in the module commands and events.</param>
-    public WebExtensionModule(IBiDiDriver driver)
+    /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>
+    public WebExtensionModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
     }
