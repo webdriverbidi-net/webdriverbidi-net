@@ -32,11 +32,13 @@ Console.WriteLine($"Message: {result.Message}");
 
 ### Subscribe to Events
 
+Prefer the `EventName` property from observable events to avoid typos:
+
 ```csharp
 SubscribeCommandParameters params =
-    new SubscribeCommandParameters("log.entryAdded");
-params.Events.Add("network.responseCompleted");
-params.Events.Add("browsingContext.load");
+    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
+params.Events.Add(driver.Network.OnResponseCompleted.EventName);
+params.Events.Add(driver.BrowsingContext.OnLoad.EventName);
 
 SubscribeCommandResult result = await driver.Session.SubscribeAsync(params);
 Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
@@ -46,7 +48,7 @@ Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
 
 ```csharp
 SubscribeCommandParameters params =
-    new SubscribeCommandParameters("network.beforeRequestSent");
+    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
 params.Contexts.Add(contextId);  // Only for this context
 
 await driver.Session.SubscribeAsync(params);
@@ -65,8 +67,8 @@ await driver.Session.UnsubscribeAsync(params);
 
 ```csharp
 UnsubscribeByNamesCommandParameters params = new UnsubscribeByNamesCommandParameters();
-params.Events.Add("log.entryAdded");
-params.Events.Add("network.responseCompleted");
+params.Events.Add(driver.Log.OnEntryAdded.EventName);
+params.Events.Add(driver.Network.OnResponseCompleted.EventName);
 
 await driver.Session.UnsubscribeAsync(params);
 ```

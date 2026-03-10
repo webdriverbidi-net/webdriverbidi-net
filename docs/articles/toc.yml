@@ -68,6 +68,8 @@
       href: advanced/api-design.md
     - name: Error Handling
       href: advanced/error-handling.md
+    - name: Troubleshooting and FAQ
+      href: advanced/error-handling.md#troubleshooting-and-faq
     - name: Performance Considerations
       href: advanced/performance.md
     - name: Connection Management

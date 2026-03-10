@@ -1039,6 +1039,11 @@ await driver.StopAsync();
 - **Threading**: Fully async with dedicated message processing thread
 - **Extensibility**: Custom modules and transport implementations
 
+## See Also
+
+- [Error Handling](advanced/error-handling.md): Exception handling, timeout patterns, troubleshooting
+- [API Design Guide](advanced/api-design.md): Timeout and cancellation, command parameter patterns
+
 ## Next Steps
 
 - [Core Concepts](core-concepts.md): Understand modules, commands, and events

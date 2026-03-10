@@ -270,14 +270,14 @@ driver.Network.OnResponseCompleted.AddObserver((e) =>
 ```csharp
 // ❌ Slow: Subscribe to everything
 SubscribeCommandParameters subscribe = 
-    new SubscribeCommandParameters("network.beforeRequestSent");
-subscribe.Events.Add("network.responseStarted");
-subscribe.Events.Add("network.responseCompleted");
-subscribe.Events.Add("network.fetchError");
+    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
+subscribe.Events.Add(driver.Network.OnResponseStarted.EventName);
+subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+subscribe.Events.Add(driver.Network.OnFetchError.EventName);
 
 // ✅ Fast: Only subscribe to what you need
 SubscribeCommandParameters subscribe = 
-    new SubscribeCommandParameters("network.responseCompleted");
+    new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
 
 // Even better: Subscribe only for specific contexts
 subscribe.Contexts.Add(contextId);

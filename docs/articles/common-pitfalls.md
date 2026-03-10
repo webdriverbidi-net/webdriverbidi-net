@@ -775,6 +775,11 @@ Before running your WebDriverBiDi.NET code, verify:
 
 ---
 
+## See Also
+
+- [Error Handling](advanced/error-handling.md): Troubleshooting, timeout patterns, TransportErrorBehavior
+- [API Design Guide](advanced/api-design.md): Timeout and cancellation patterns
+
 ## Next Steps
 
 - [Events and Observables](events-observables.md): Deep dive into event handling

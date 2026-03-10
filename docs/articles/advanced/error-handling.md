@@ -627,19 +627,36 @@ NavigateCommandResult result = await resilientDriver.ExecuteWithRetryAsync(
 
 ## Timeout Handling
 
-### Configuring Timeouts
+### Preferred Approach: Use the Built-in Timeout Override
+
+The simplest and recommended way to set a per-command timeout is the `timeoutOverride` parameter on module methods. Every module command accepts this as the second parameter:
 
 ```csharp
-// Per-driver timeout
+// Per-driver default timeout (set when creating the driver)
 BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
-// Per-command timeout
-NavigateCommandResult result = await driver.ExecuteCommandAsync<NavigateCommandResult>(
+// Per-command timeout override (preferred)
+NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(
     navParams,
-    TimeSpan.FromSeconds(60));  // Override for this command
+    TimeSpan.FromSeconds(60));  // Override for this command only
+
+// Quick operations can use a shorter timeout
+StatusCommandResult status = await driver.Session.StatusAsync(
+    null,
+    timeoutOverride: TimeSpan.FromSeconds(5));
 ```
 
-### Timeout Patterns
+You can also use `ExecuteCommandAsync` when working at the driver level:
+
+```csharp
+NavigateCommandResult result = await driver.ExecuteCommandAsync<NavigateCommandResult>(
+    navParams,
+    TimeSpan.FromSeconds(60));
+```
+
+### When to Use Custom Timeout Patterns
+
+Use a custom pattern (e.g., `Task.WhenAny` with `Task.Delay`) only when you need different semantics than the built-in timeout—for example, returning `null` instead of throwing, or implementing custom retry logic:
 
 ```csharp
 public async Task<NavigateCommandResult?> NavigateWithTimeoutAsync(
@@ -648,17 +665,13 @@ public async Task<NavigateCommandResult?> NavigateWithTimeoutAsync(
     TimeSpan timeout)
 {
     Task<NavigateCommandResult> navigationTask = 
-        driver.BrowsingContext.NavigateAsync(parameters);
+        driver.BrowsingContext.NavigateAsync(parameters, timeout);
     
-    Task timeoutTask = Task.Delay(timeout);
-    
-    Task completedTask = await Task.WhenAny(navigationTask, timeoutTask);
-    
-    if (completedTask == navigationTask)
+    try
     {
         return await navigationTask;
     }
-    else
+    catch (WebDriverBiDiTimeoutException)
     {
         Console.WriteLine($"Navigation timeout after {timeout.TotalSeconds}s");
         return null;
@@ -677,6 +690,14 @@ if (result == null)
     // Handle timeout
 }
 ```
+
+**When to use each:**
+
+| Need | Use |
+|------|-----|
+| Standard per-command timeout | `timeoutOverride` parameter on module methods |
+| Return `null` on timeout instead of throwing | Custom wrapper that catches `WebDriverBiDiTimeoutException` |
+| Different timeout per retry attempt | Custom retry loop with `timeoutOverride` |
 
 ## Element Not Found Handling
 
@@ -1456,6 +1477,51 @@ catch (TaskCanceledException ex)
     // Handle cancellation
 }
 ```
+
+## Troubleshooting and FAQ
+
+### Common Error Messages
+
+| Error Message | Likely Cause | What to Do |
+|---------------|--------------|------------|
+| "Transport must be connected to a remote end to execute commands" | Commands sent before `StartAsync` or after disconnect | Ensure `StartAsync` has completed before sending commands. Check `IsStarted` before operations. |
+| "no such frame" / "no such window" | Browsing context was closed or no longer exists | Verify the context ID is still valid. Use `GetTreeAsync` to refresh context list. |
+| "Timed out executing command" | Command exceeded the timeout | Increase `timeoutOverride` for the command, or increase `DefaultCommandTimeout` on the driver. |
+| "Cannot add command; pending command collection is closed" | Command sent during or after shutdown | Avoid sending commands from event handlers during `StopAsync` or `DisconnectAsync`. |
+| "Cannot register a type info resolver after the transport is connected" | `RegisterTypeInfoResolver` called after `StartAsync` | Register type resolvers before calling `StartAsync`. |
+| "This observable event only allows N handler(s)" | Too many observers added to an event with `MaxObserverCount` | Remove observers with `Unobserve()` or `Dispose()` before adding new ones. |
+
+### Connection Diagnostics
+
+When the connection fails or behaves unexpectedly:
+
+1. **Verify the WebSocket URL**: Ensure the URL matches what your browser provides (e.g., `ws://localhost:9222/devtools/browser/...`).
+2. **Check browser is running**: The remote end must be listening before you connect.
+3. **Use connection events**: Subscribe to `connection.OnConnectionError` and `connection.OnLogMessage` for real-time diagnostics.
+4. **Inspect `UnhandledErrors`**: When using a custom `Transport`, check `transport.UnhandledErrors` for collected protocol or event-handler errors (when using `TransportErrorBehavior.Collect`).
+
+### Interpreting TransportErrorBehavior
+
+| Mode | When to Use | Trade-off |
+|------|-------------|-----------|
+| **Ignore** (default) | Protocol evolution, backward compatibility, event handlers that should not stop automation | Errors may go unnoticed. Use for production when you handle errors in handlers. |
+| **Collect** | Diagnostics, gathering all errors for post-mortem analysis | Errors surface only when you stop the driver. Operation continues despite errors. |
+| **Terminate** | Development, strict protocol conformance, fail-fast behavior | First error stops the driver on the next command. Best for catching issues early. |
+
+### Event Handlers Not Firing
+
+If events are not received:
+
+1. **Add observer before subscribing**: Call `AddObserver` before `Session.SubscribeAsync`.
+2. **Subscribe to the event**: Adding an observer alone is not enough—you must call `Session.SubscribeAsync` with the event names.
+3. **Use correct event names**: Prefer `driver.Log.OnEntryAdded.EventName` over string literals to avoid typos.
+4. **Check context filtering**: If you passed `Contexts` or `UserContexts` to `SubscribeCommandParameters`, events are limited to those contexts.
+
+### See Also
+
+- [API Design Guide](api-design.md): Timeout and cancellation patterns
+- [Architecture](../architecture.md): Transport, connection lifecycle, error configuration
+- [Common Pitfalls](../common-pitfalls.md): Event subscription, blocking handlers, registration timing
 
 ## Next Steps
 

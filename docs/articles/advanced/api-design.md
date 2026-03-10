@@ -65,7 +65,7 @@ Always check the XML documentation on the property for the rationale. See [Core 
 
 ## Timeout and Cancellation
 
-Every module command accepts two optional parameters:
+Every module command accepts two optional parameters. **This is the preferred way to set per-command timeouts** when using the module API (e.g., `driver.BrowsingContext.NavigateAsync`):
 
 ```csharp
 Task<T> CommandAsync(
@@ -88,6 +88,8 @@ await driver.Session.StatusAsync(null, timeoutOverride: TimeSpan.FromSeconds(5))
 using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
 await driver.BrowsingContext.NavigateAsync(navParams, cancellationToken: cts.Token);
 ```
+
+For timeout patterns (e.g., returning `null` instead of throwing) and connection-level timeout configuration, see [Error Handling - Timeout Handling](error-handling.md#timeout-handling).
 
 ## Error Handling Configuration
 
@@ -140,6 +142,6 @@ Breaking changes are documented in release notes. When upgrading major versions,
 ## Related Documentation
 
 - [Core Concepts](../core-concepts.md): Command parameters, events, lifecycle
-- [Error Handling](error-handling.md): TransportErrorBehavior, exception handling
+- [Error Handling](error-handling.md): TransportErrorBehavior, exception handling, timeout patterns, troubleshooting
 - [Architecture](../architecture.md): Transport, connection, error configuration
 - [Quick Reference](../quick-reference.md): Common commands at a glance

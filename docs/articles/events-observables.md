@@ -239,11 +239,13 @@ Before events are sent by the browser, you must subscribe to them.
 
 ### Basic Subscription
 
+Prefer the `EventName` property from observable events to avoid typos and stay in sync with the API:
+
 ```csharp
 SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
     [
-        "log.entryAdded",
-        "network.responseCompleted",
+        driver.Log.OnEntryAdded.EventName,
+        driver.Network.OnResponseCompleted.EventName,
     ]
 );
 
@@ -251,15 +253,13 @@ SubscribeCommandResult result = await driver.Session.SubscribeAsync(subscribe);
 Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
 ```
 
-### Using Event Names
+### Single Event Subscription
 
-Use the `EventName` property for type safety:
+For a single event, use the constructor that accepts one event name:
 
 ```csharp
 SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
-    driver.Log.OnEntryAdded.EventName,
-    driver.Network.OnResponseCompleted.EventName,
-);
+    driver.Log.OnEntryAdded.EventName);
 
 await driver.Session.SubscribeAsync(subscribe);
 ```
