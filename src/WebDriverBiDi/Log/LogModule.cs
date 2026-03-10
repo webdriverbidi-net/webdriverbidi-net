@@ -30,6 +30,7 @@ public sealed class LogModule : Module
     /// <summary>
     /// Gets an observable event that notifies when an entry is added to the log.
     /// </summary>
+    [ObservableEventName(EntryAddedEventName)]
     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new(EntryAddedEventName);
 
     /// <summary>

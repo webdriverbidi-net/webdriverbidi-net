@@ -34,16 +34,19 @@ public sealed class ScriptModule : Module
     /// <summary>
     /// Gets an observable event that notifies when a new script realm is created.
     /// </summary>
+    [ObservableEventName(RealmCreatedEventName)]
     public ObservableEvent<RealmCreatedEventArgs> OnRealmCreated { get; } = new(RealmCreatedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a script realm is destroyed.
     /// </summary>
+    [ObservableEventName(RealmDestroyedEventName)]
     public ObservableEvent<RealmDestroyedEventArgs> OnRealmDestroyed { get; } = new(RealmDestroyedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a preload script sends data to the client.
     /// </summary>
+    [ObservableEventName(MessageEventName)]
     public ObservableEvent<MessageEventArgs> OnMessage { get; } = new(MessageEventName);
 
     /// <summary>

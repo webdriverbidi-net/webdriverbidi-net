@@ -5,7 +5,10 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System.IO;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -39,6 +42,7 @@ public class BiDiDriver015AnalyzerTests
 
                 public class LogModule
                 {
+                    [ObservableEventName("log.entryAdded")]
                     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
                 }
 
@@ -67,6 +71,13 @@ public class BiDiDriver015AnalyzerTests
                 public class EventObserver<T> where T : WebDriverBiDiEventArgs
                 {
                     public void Dispose() { }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : System.Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
                 }
             }
 
@@ -124,6 +135,7 @@ public class BiDiDriver015AnalyzerTests
 
                 public class LogModule
                 {
+                    [ObservableEventName("log.entryAdded")]
                     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
                 }
 
@@ -152,6 +164,13 @@ public class BiDiDriver015AnalyzerTests
                 public class EventObserver<T> where T : WebDriverBiDiEventArgs
                 {
                     public void Dispose() { }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : System.Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
                 }
             }
 
@@ -205,11 +224,13 @@ public class BiDiDriver015AnalyzerTests
 
                 public class LogModule
                 {
+                    [ObservableEventName("log.entryAdded")]
                     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
                 }
 
                 public class NetworkModule
                 {
+                    [ObservableEventName("network.beforeRequest")]
                     public ObservableEvent<BeforeRequestEventArgs> OnBeforeRequest { get; } = new ObservableEvent<BeforeRequestEventArgs>("network.beforeRequest");
                 }
 
@@ -239,6 +260,13 @@ public class BiDiDriver015AnalyzerTests
                 public class EventObserver<T> where T : WebDriverBiDiEventArgs
                 {
                     public void Dispose() { }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : System.Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
                 }
             }
 
@@ -302,6 +330,7 @@ public class BiDiDriver015AnalyzerTests
 
                 public class LogModule
                 {
+                    [ObservableEventName("log.entryAdded")]
                     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
                 }
 
@@ -330,6 +359,13 @@ public class BiDiDriver015AnalyzerTests
                 public class EventObserver<T> where T : WebDriverBiDiEventArgs
                 {
                     public void Dispose() { }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : System.Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
                 }
             }
 
@@ -383,11 +419,13 @@ public class BiDiDriver015AnalyzerTests
 
                 public class LogModule
                 {
+                    [ObservableEventName("log.entryAdded")]
                     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
                 }
 
                 public class NetworkModule
                 {
+                    [ObservableEventName("network.beforeRequest")]
                     public ObservableEvent<BeforeRequestEventArgs> OnBeforeRequest { get; } = new ObservableEvent<BeforeRequestEventArgs>("network.beforeRequest");
                 }
 
@@ -417,6 +455,13 @@ public class BiDiDriver015AnalyzerTests
                 public class EventObserver<T> where T : WebDriverBiDiEventArgs
                 {
                     public void Dispose() { }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : System.Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
                 }
             }
 
@@ -475,6 +520,7 @@ public class BiDiDriver015AnalyzerTests
 
                 public class LogModule
                 {
+                    [ObservableEventName("log.entryAdded")]
                     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
                 }
 
@@ -503,6 +549,13 @@ public class BiDiDriver015AnalyzerTests
                 public class EventObserver<T> where T : WebDriverBiDiEventArgs
                 {
                     public void Dispose() { }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : System.Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
                 }
             }
 
@@ -539,6 +592,7 @@ public class BiDiDriver015AnalyzerTests
 
                 public class LogModule
                 {
+                    [ObservableEventName("log.entryAdded")]
                     public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>("log.entryAdded");
                 }
 
@@ -567,6 +621,13 @@ public class BiDiDriver015AnalyzerTests
                 public class EventObserver<T> where T : WebDriverBiDiEventArgs
                 {
                     public void Dispose() { }
+                }
+
+                [System.AttributeUsage(System.AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : System.Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
                 }
             }
 
@@ -657,5 +718,151 @@ public class BiDiDriver015AnalyzerTests
         };
 
         await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that BIDI015 fires correctly when WebDriverBiDi types are metadata-backed
+    /// (i.e., referenced as a compiled assembly rather than defined in source).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task StringLiteral_InSubscribeAsync_MetadataBacked_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        FakeLib.BiDiDriver driver = new FakeLib.BiDiDriver();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new FakeLib.SubscribeCommandParameters(new[] { {|#0:"log.entryAdded"|} }));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("driver.Log.OnEntryAdded.EventName", "log.entryAdded");
+
+        CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(await CreateFakeLibMetadataReference());
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that BIDI015 does not fire when EventName property is used, with metadata-backed types.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task EventNameProperty_InSubscribeAsync_MetadataBacked_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace TestApp
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        FakeLib.BiDiDriver driver = new FakeLib.BiDiDriver();
+                        driver.Log.OnEntryAdded.AddObserver(async (e) => { });
+                        await driver.Session.SubscribeAsync(new FakeLib.SubscribeCommandParameters(new[] { driver.Log.OnEntryAdded.EventName }));
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.TestState.AdditionalReferences.Add(await CreateFakeLibMetadataReference());
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Compiles a fake WebDriverBiDi-shaped library in memory so that its types appear as
+    /// metadata-backed symbols in analyzer tests, matching the real-world package-consumer scenario.
+    /// </summary>
+    private static async Task<MetadataReference> CreateFakeLibMetadataReference()
+    {
+        const string librarySource = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace FakeLib
+            {
+                [AttributeUsage(AttributeTargets.Property)]
+                public sealed class ObservableEventNameAttribute : Attribute
+                {
+                    public ObservableEventNameAttribute(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
+                }
+
+                public class WebDriverBiDiEventArgs { }
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public ObservableEvent(string eventName) { EventName = eventName; }
+                    public string EventName { get; }
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => null!;
+                }
+
+                public class EventObserver<T> where T : WebDriverBiDiEventArgs { }
+
+                public class LogModule
+                {
+                    [ObservableEventName("log.entryAdded")]
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new("log.entryAdded");
+                }
+
+                public class SessionModule
+                {
+                    public Task SubscribeAsync(SubscribeCommandParameters p) => Task.CompletedTask;
+                }
+
+                public class SubscribeCommandParameters
+                {
+                    public SubscribeCommandParameters(string[] events) { }
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new();
+                    public SessionModule Session { get; } = new();
+                }
+            }
+            """;
+
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(librarySource);
+        var netRefs = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, default);
+
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            "FakeLib",
+            [tree],
+            netRefs,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        using MemoryStream stream = new();
+        compilation.Emit(stream);
+        stream.Position = 0;
+        return MetadataReference.CreateFromStream(stream);
     }
 }

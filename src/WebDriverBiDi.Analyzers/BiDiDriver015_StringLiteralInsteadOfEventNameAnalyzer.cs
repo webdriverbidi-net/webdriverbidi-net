@@ -247,49 +247,17 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         SyntaxNodeAnalysisContext context,
         IPropertySymbol propertySymbol)
     {
-        // Try to get the constant value from the property initializer
-        SyntaxReference? syntaxRef = propertySymbol.DeclaringSyntaxReferences.FirstOrDefault();
-        if (syntaxRef == null)
+        // Read the event name from [ObservableEventName("...")] — works for both source-backed
+        // and metadata-backed symbols, so this analyzer functions when WebDriverBiDi is
+        // referenced as a compiled assembly rather than compiled alongside user code.
+        foreach (AttributeData attr in propertySymbol.GetAttributes())
         {
-            return null;
-        }
-
-        SyntaxNode propertySyntax = syntaxRef.GetSyntax();
-        if (propertySyntax is not PropertyDeclarationSyntax propertyDecl)
-        {
-            return null;
-        }
-
-        // Look for the initializer: = new ObservableEvent<T>("event.name")
-        if (propertyDecl.Initializer?.Value is not ObjectCreationExpressionSyntax objectCreation)
-        {
-            return null;
-        }
-
-        // Get the first argument which should be the event name
-        if (objectCreation.ArgumentList == null || objectCreation.ArgumentList.Arguments.Count == 0)
-        {
-            return null;
-        }
-
-        ExpressionSyntax firstArg = objectCreation.ArgumentList.Arguments[0].Expression;
-
-        // Get the semantic model for the tree containing this argument
-        Compilation compilation = context.Compilation;
-        if (!compilation.ContainsSyntaxTree(firstArg.SyntaxTree))
-        {
-            return null;
-        }
-
-        // RS1030: We intentionally need to access a different syntax tree to read the constant value
-        // from the ObservableEvent property initializer
-#pragma warning disable RS1030 // Do not invoke Compilation.GetSemanticModel() method within a diagnostic analyzer
-        SemanticModel semanticModel = compilation.GetSemanticModel(firstArg.SyntaxTree);
-#pragma warning restore RS1030
-        Optional<object?> constantValue = semanticModel.GetConstantValue(firstArg);
-        if (constantValue.HasValue && constantValue.Value is string eventName)
-        {
-            return eventName;
+            if (attr.AttributeClass?.Name == "ObservableEventNameAttribute" &&
+                attr.ConstructorArguments.Length > 0 &&
+                attr.ConstructorArguments[0].Value is string eventName)
+            {
+                return eventName;
+            }
         }
 
         return null;

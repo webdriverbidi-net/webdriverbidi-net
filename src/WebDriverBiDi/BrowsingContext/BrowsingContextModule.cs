@@ -56,71 +56,85 @@ public sealed class BrowsingContextModule : Module
     /// <summary>
     /// Gets an observable event that notifies when a browsing context is created.
     /// </summary>
+    [ObservableEventName(ContextCreatedEventName)]
     public ObservableEvent<BrowsingContextEventArgs> OnContextCreated { get; } = new(ContextCreatedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context is destroyed.
     /// </summary>
+    [ObservableEventName(ContextDestroyedEventName)]
     public ObservableEvent<BrowsingContextEventArgs> OnContextDestroyed { get; } = new(ContextDestroyedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation is started.
     /// </summary>
+    [ObservableEventName(NavigationStartedEventName)]
     public ObservableEvent<NavigationEventArgs> OnNavigationStarted { get; } = new(NavigationStartedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context fragment is navigated.
     /// </summary>
+    [ObservableEventName(FragmentNavigatedEventName)]
     public ObservableEvent<NavigationEventArgs> OnFragmentNavigated { get; } = new(FragmentNavigatedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when the DOM content in a browsing context is loaded.
     /// </summary>
+    [ObservableEventName(DomContentLoadedEventName)]
     public ObservableEvent<NavigationEventArgs> OnDomContentLoaded { get; } = new(DomContentLoadedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a download in a browsing context is about to begin.
     /// </summary>
+    [ObservableEventName(DownloadWillBeginEventName)]
     public ObservableEvent<DownloadWillBeginEventArgs> OnDownloadWillBegin { get; } = new(DownloadWillBeginEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a download has ended.
     /// </summary>
+    [ObservableEventName(DownloadEndEventName)]
     public ObservableEvent<DownloadEndEventArgs> OnDownloadEnd { get; } = new(DownloadEndEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when the content in a browsing context is loaded.
     /// </summary>
+    [ObservableEventName(LoadEventName)]
     public ObservableEvent<NavigationEventArgs> OnLoad { get; } = new(LoadEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation is aborted.
     /// </summary>
+    [ObservableEventName(NavigationAbortedEventName)]
     public ObservableEvent<NavigationEventArgs> OnNavigationAborted { get; } = new(NavigationAbortedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation is committed.
     /// </summary>
+    [ObservableEventName(NavigationCommittedEventName)]
     public ObservableEvent<NavigationEventArgs> OnNavigationCommitted { get; } = new(NavigationCommittedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation fails.
     /// </summary>
+    [ObservableEventName(NavigationFailedEventName)]
     public ObservableEvent<NavigationEventArgs> OnNavigationFailed { get; } = new(NavigationFailedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when the browser history is updated.
     /// </summary>
+    [ObservableEventName(HistoryUpdatedEventName)]
     public ObservableEvent<HistoryUpdatedEventArgs> OnHistoryUpdated { get; } = new(HistoryUpdatedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a user prompt is opened.
     /// </summary>
+    [ObservableEventName(UserPromptOpenedEventName)]
     public ObservableEvent<UserPromptOpenedEventArgs> OnUserPromptOpened { get; } = new(UserPromptOpenedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a user prompt is closed.
     /// </summary>
+    [ObservableEventName(UserPromptClosedEventName)]
     public ObservableEvent<UserPromptClosedEventArgs> OnUserPromptClosed { get; } = new(UserPromptClosedEventName);
 
     /// <summary>

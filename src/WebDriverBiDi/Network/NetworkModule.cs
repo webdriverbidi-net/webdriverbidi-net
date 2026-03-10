@@ -38,26 +38,31 @@ public sealed class NetworkModule : Module
     /// <summary>
     /// Gets an observable event that notifies when an authorization required response is received.
     /// </summary>
+    [ObservableEventName(AuthRequiredEventName)]
     public ObservableEvent<AuthRequiredEventArgs> OnAuthRequired { get; } = new(AuthRequiredEventName);
 
     /// <summary>
     /// Gets an observable event that notifies before a network request is sent.
     /// </summary>
+    [ObservableEventName(BeforeRequestSentEventName)]
     public ObservableEvent<BeforeRequestSentEventArgs> OnBeforeRequestSent { get; } = new(BeforeRequestSentEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when an error is encountered fetching data.
     /// </summary>
+    [ObservableEventName(FetchErrorEventName)]
     public ObservableEvent<FetchErrorEventArgs> OnFetchError { get; } = new(FetchErrorEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when network response has started.
     /// </summary>
+    [ObservableEventName(ResponseStartedEventName)]
     public ObservableEvent<ResponseStartedEventArgs> OnResponseStarted { get; } = new(ResponseStartedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when network response has completed.
     /// </summary>
+    [ObservableEventName(ResponseCompletedEventName)]
     public ObservableEvent<ResponseCompletedEventArgs> OnResponseCompleted { get; } = new(ResponseCompletedEventName);
 
     /// <summary>

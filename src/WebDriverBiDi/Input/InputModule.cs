@@ -35,6 +35,7 @@ public sealed class InputModule : Module
     /// <summary>
     /// Gets an observable event that notifies when a file dialog is opened.
     /// </summary>
+    [ObservableEventName(FileDialogOpenedEventName)]
     public ObservableEvent<FileDialogOpenedEventArgs> OnFileDialogOpened { get; } = new(FileDialogOpenedEventName);
 
     /// <summary>

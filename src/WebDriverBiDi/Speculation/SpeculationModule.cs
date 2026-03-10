@@ -31,6 +31,7 @@ public sealed class SpeculationModule : Module
     /// <summary>
     /// Gets an observable event that notifies when the prefetch status of a resource is updated.
     /// </summary>
+    [ObservableEventName(PrefetchStatusUpdatedEventName)]
     public ObservableEvent<PrefetchStatusUpdatedEventArgs> OnPrefetchStatusUpdated { get; } = new(PrefetchStatusUpdatedEventName);
 
     /// <summary>
