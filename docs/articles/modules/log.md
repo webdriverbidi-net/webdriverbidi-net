@@ -29,8 +29,8 @@ driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
 });
 
 // Subscribe to events
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Navigate - console logs will be captured
@@ -149,8 +149,8 @@ driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
     logs.Add(e);
 });
 
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Perform actions...
@@ -176,8 +176,8 @@ driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
     }
 });
 
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Perform test actions...

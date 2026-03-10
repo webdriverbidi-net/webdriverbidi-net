@@ -358,8 +358,8 @@ driver.BrowsingContext.OnUserPromptOpened.AddObserver((e) =>
 });
 
 // Subscribe
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.BrowsingContext.OnUserPromptOpened.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.BrowsingContext.OnUserPromptOpened.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // When prompt appears, handle it
@@ -473,8 +473,8 @@ driver.BrowsingContext.OnUserPromptClosed.AddObserver((UserPromptClosedEventArgs
 ### Wait for Page Load Pattern
 
 ```csharp
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 EventObserver<NavigationEventArgs> observer = 

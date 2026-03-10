@@ -36,9 +36,12 @@ namespace NetworkInterceptionExample
                 Console.WriteLine("Connected to browser");
 
                 // Subscribe to network events
-                SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-                subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
-                subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+                SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
+                    [
+                        driver.Network.OnBeforeRequestSent.EventName,
+                        driver.Network.OnResponseCompleted.EventName
+                    ]
+                );
                 await driver.Session.SubscribeAsync(subscribe);
 
                 GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
@@ -272,8 +275,8 @@ string collectorId = collectorResult.CollectorId;
 Console.WriteLine($"Data collector ID: {collectorId}");
 
 // Subscribe to response events
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Capture response bodies

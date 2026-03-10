@@ -97,8 +97,7 @@ public class SessionModuleTests
         SessionModule module = driver.Session;
         await driver.StartAsync("ws:localhost");
 
-        SubscribeCommandParameters subscribeParameters = new();
-        subscribeParameters.Events.Add("log.entryAdded");
+        SubscribeCommandParameters subscribeParameters = new(["log.entryAdded"]);
         Task<SubscribeCommandResult> task = module.SubscribeAsync(subscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         SubscribeCommandResult result = task.Result;

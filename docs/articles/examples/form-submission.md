@@ -37,8 +37,8 @@ namespace FormSubmissionExample
                 Console.WriteLine("Connected to browser");
 
                 // Subscribe to navigation events to track form submission
-                SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-                subscribe.Events.Add(driver.BrowsingContext.OnNavigationStarted.EventName);
+                SubscribeCommandParameters subscribe =
+                    new SubscribeCommandParameters(driver.BrowsingContext.OnNavigationStarted.EventName);
                 subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
                 await driver.Session.SubscribeAsync(subscribe);
 
@@ -243,9 +243,12 @@ namespace FormSubmissionExample
 ### 1. Subscribe to Navigation Events
 
 ```csharp
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.BrowsingContext.OnNavigationStarted.EventName);
-subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
+    [
+        driver.BrowsingContext.OnNavigationStarted.EventName,
+        driver.BrowsingContext.OnLoad.EventName,
+    ]
+);
 await driver.Session.SubscribeAsync(subscribe);
 ```
 

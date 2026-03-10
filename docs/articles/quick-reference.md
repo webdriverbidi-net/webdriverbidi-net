@@ -17,7 +17,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Operation | Code |
 |-----------|------|
 | Check status | `await driver.Session.StatusAsync(null);` |
-| Subscribe to events | `SubscribeCommandParameters sub = new SubscribeCommandParameters(); sub.Events.Add(driver.Network.OnBeforeRequestSent.EventName); await driver.Session.SubscribeAsync(sub);` |
+| Subscribe to events | `SubscribeCommandParameters sub = new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName); await driver.Session.SubscribeAsync(sub);` |
 | End session | `await driver.Session.EndAsync(null);` |
 
 ## Browsing Context
@@ -69,8 +69,8 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 driver.Network.OnBeforeRequestSent.AddObserver((e) => Console.WriteLine(e.Request.Url));
 
 // 2. Subscribe via session
-SubscribeCommandParameters sub = new SubscribeCommandParameters();
-sub.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+SubscribeCommandParameters sub = 
+    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
 await driver.Session.SubscribeAsync(sub);
 ```
 

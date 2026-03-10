@@ -146,8 +146,8 @@ try
     });
 
     // Subscribe to log events
-    SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-    subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+    SubscribeCommandParameters subscribe = 
+        new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
     await driver.Session.SubscribeAsync(subscribe);
 
     // Navigate to page
@@ -236,8 +236,8 @@ try
     });
 
     // Subscribe to network events
-    SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-    subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+    SubscribeCommandParameters subscribe = 
+        new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
     await driver.Session.SubscribeAsync(subscribe);
 
     // Navigate

@@ -264,8 +264,8 @@ Use channels to send messages from preload scripts:
 
 ```csharp
 // Subscribe to script messages
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Script.OnMessage.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Script.OnMessage.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Handle messages
@@ -633,8 +633,8 @@ driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
     Console.WriteLine($"Source context: {e.Source.Context}");
 });
 
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Script.OnMessage.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Script.OnMessage.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 ```
 

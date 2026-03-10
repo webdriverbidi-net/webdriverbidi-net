@@ -33,8 +33,8 @@ driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
 });
 
 // Step 2: Subscribe to events
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Step 3: Events will now trigger your observer
@@ -167,8 +167,8 @@ EventObserver<EntryAddedEventArgs> observer =
 
 try
 {
-    SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-    subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+    SubscribeCommandParameters subscribe = 
+        new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
     await driver.Session.SubscribeAsync(subscribe);
 
     // Use the driver...
@@ -192,8 +192,8 @@ using EventObserver<EntryAddedEventArgs> observer =
         Console.WriteLine(e.Text);
     });
 
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Use the driver...
@@ -215,8 +215,8 @@ EventObserver<NavigationEventArgs> observer =
 
 try
 {
-    SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-    subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+    SubscribeCommandParameters subscribe = 
+        new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
     await driver.Session.SubscribeAsync(subscribe);
 
     observer.SetCheckpoint();
@@ -240,9 +240,12 @@ Before events are sent by the browser, you must subscribe to them.
 ### Basic Subscription
 
 ```csharp
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add("log.entryAdded");
-subscribe.Events.Add("network.responseCompleted");
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
+    [
+        "log.entryAdded",
+        "network.responseCompleted",
+    ]
+);
 
 SubscribeCommandResult result = await driver.Session.SubscribeAsync(subscribe);
 Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
@@ -253,9 +256,10 @@ Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
 Use the `EventName` property for type safety:
 
 ```csharp
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
-subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
+    driver.Log.OnEntryAdded.EventName,
+    driver.Network.OnResponseCompleted.EventName,
+);
 
 await driver.Session.SubscribeAsync(subscribe);
 ```
@@ -265,8 +269,8 @@ await driver.Session.SubscribeAsync(subscribe);
 You can limit subscriptions to specific contexts:
 
 ```csharp
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
 
 // Only receive events for this specific context
 subscribe.Contexts.Add(contextId);
@@ -615,8 +619,7 @@ EventObserver<BeforeRequestSentEventArgs> observer =
     );
 
 // Subscribe to events
-SubscribeCommandParameters subscribe = new();
-subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+SubscribeCommandParameters subscribe = new(driver.Network.OnBeforeRequestSent.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Set checkpoint for expected number of events (e.g., 5 requests)
@@ -788,8 +791,8 @@ EventObserver<NavigationEventArgs> observer =
     driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
 // Subscribe to the event
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Set checkpoint and trigger navigation
@@ -814,8 +817,8 @@ driver.Network.OnResponseCompleted.AddObserver((e) =>
     responses.Add(e.Response);
 });
 
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 await driver.BrowsingContext.NavigateAsync(params);
@@ -954,8 +957,8 @@ The recommended order is to add observers first, then subscribe through the Sess
 // ✓ Recommended: Add observer first, then subscribe
 driver.Log.OnEntryAdded.AddObserver(handler);
 
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // ✓ Also acceptable: Subscribe then add observer (but less clear)

@@ -115,8 +115,8 @@ namespace PreloadScriptsExample
 
 ```csharp
 // Subscribe to script messages
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Script.OnMessage.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Script.OnMessage.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Set up message handler

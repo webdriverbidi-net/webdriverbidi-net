@@ -6,32 +6,39 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SubscribeCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
-        SubscribeCommandParameters properties = new();
+        SubscribeCommandParameters properties = new(["my.event"]);
         Assert.That(properties.MethodName, Is.EqualTo("session.subscribe"));
     }
 
     [Test]
-    public void TestCanSerializeParameters()
+    public void TestCannotInitializeWithEmptyEventList()
     {
-        SubscribeCommandParameters properties = new();
+        Assert.Throws<ArgumentException>(() => new SubscribeCommandParameters(Array.Empty<string>()));
+    }
+
+    [Test]
+    public void TestCanSerializeParametersWithASingleEvent()
+    {
+        SubscribeCommandParameters properties = new("some.event");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
         using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("events"));
-            Assert.That(serialized["events"]!.Count, Is.EqualTo(0));
+            Assert.That(serialized["events"]!.Count, Is.EqualTo(1));
+            Assert.That(serialized["events"]!.Type, Is.EqualTo(JTokenType.Array));
+            Assert.That(serialized["events"]![0]!.Value<string>(), Is.EqualTo("some.event"));
         }
     }
 
     [Test]
     public void TestCanSerializeParametersWithEvents()
     {
-        SubscribeCommandParameters properties = new();
-        properties.Events.Add("some.event");
+        SubscribeCommandParameters properties = new(["some.event"]);
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(1));
@@ -47,9 +54,8 @@ public class SubscribeCommandParametersTests
     [Test]
     public void TestCanSerializeParametersWithBrowsingContextData()
     {
-        SubscribeCommandParameters properties = new();
+        SubscribeCommandParameters properties = new(["some.event"]);
         properties.Contexts.Add("myContext");
-        properties.Events.Add("some.event");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));
@@ -69,9 +75,8 @@ public class SubscribeCommandParametersTests
     [Test]
     public void TestCanSerializeParametersWithUserContextData()
     {
-        SubscribeCommandParameters properties = new();
+        SubscribeCommandParameters properties = new(["some.event"]);
         properties.UserContexts.Add("myUserContext");
-        properties.Events.Add("some.event");
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(2));

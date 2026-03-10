@@ -19,9 +19,13 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     private readonly List<string> userContextList = [];
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class.
+    /// Initializes a new instance of the <see cref="SubscribeCommandParameters"/> class for a single event.
     /// </summary>
-    public SubscribeCommandParameters()
+    /// <param name="eventName">The event to which to subscribe or unsubscribe.</param>
+    /// <param name="contexts">The list of browsing context IDs for which to subscribe to the specified event.</param>
+    /// <param name="userContexts">The list of user context IDs for which to subscribe to the specified event.</param>
+    public SubscribeCommandParameters(string eventName, IList<string>? contexts = null, IList<string>? userContexts = null)
+        : this([eventName], contexts, userContexts)
     {
     }
 
@@ -33,6 +37,11 @@ public class SubscribeCommandParameters : CommandParameters<SubscribeCommandResu
     /// <param name="userContexts">The list of user context IDs for which to subscribe to the specified events.</param>
     public SubscribeCommandParameters(IList<string> events, IList<string>? contexts = null, IList<string>? userContexts = null)
     {
+        if (events.Count == 0)
+        {
+            throw new ArgumentException("At least one event must be specified.", nameof(events));
+        }
+
         this.eventList.AddRange(events);
         if (contexts is not null)
         {

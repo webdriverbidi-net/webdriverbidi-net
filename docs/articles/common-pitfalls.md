@@ -114,8 +114,7 @@ driver.Log.OnEntryAdded.AddObserver((e) =>
 });
 
 // Step 2: Subscribe to events
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Now events will be received
@@ -131,10 +130,13 @@ driver.Network.OnBeforeRequestSent.AddObserver(networkHandler);
 driver.BrowsingContext.OnLoad.AddObserver(loadHandler);
 
 // Then subscribe to all events in one call
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
-subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
-subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
+    [
+        driver.Log.OnEntryAdded.EventName,
+        driver.Network.OnBeforeRequestSent.EventName,
+        driver.BrowsingContext.OnLoad.EventName,
+    ]
+);
 await driver.Session.SubscribeAsync(subscribe);
 ```
 
@@ -187,9 +189,12 @@ driver.BrowsingContext.OnLoad.AddObserver((e) => Console.WriteLine($"Loaded: {e.
 await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
 // 4. Subscribe to events through Session module
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
-subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
+    [
+        driver.Log.OnEntryAdded.EventName,
+        driver.BrowsingContext.OnLoad.EventName,
+    ]
+);
 await driver.Session.SubscribeAsync(subscribe);
 
 // 5. Execute commands

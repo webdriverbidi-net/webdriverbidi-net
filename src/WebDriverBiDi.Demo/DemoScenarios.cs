@@ -27,9 +27,12 @@ public static class DemoScenarios
         StatusCommandResult status = await driver.Session.StatusAsync(new StatusCommandParameters());
         Console.WriteLine($"Is ready? {status.IsReady}");
 
-        SubscribeCommandParameters subscribe = new();
-        subscribe.Events.Add(driver.BrowsingContext.OnNavigationStarted.EventName);
-        subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+        List<string> eventsToSubscribe = 
+        [
+            driver.BrowsingContext.OnNavigationStarted.EventName,
+            driver.BrowsingContext.OnLoad.EventName,
+        ];
+        SubscribeCommandParameters subscribe = new(eventsToSubscribe);
         await driver.Session.SubscribeAsync(subscribe);
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -94,10 +97,13 @@ public static class DemoScenarios
             }
         });
 
-        SubscribeCommandParameters subscribe = new();
-        subscribe.Events.Add(driver.BrowsingContext.OnNavigationStarted.EventName);
-        subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
-        subscribe.Events.Add(driver.Script.OnMessage.EventName);
+        List<string> eventsToSubscribe =
+        [
+            driver.BrowsingContext.OnNavigationStarted.EventName,
+            driver.BrowsingContext.OnLoad.EventName,
+            driver.Script.OnMessage.EventName,
+        ];
+        SubscribeCommandParameters subscribe = new(eventsToSubscribe);
         await driver.Session.SubscribeAsync(subscribe);
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -203,8 +209,7 @@ public static class DemoScenarios
                 }
             }
         });
-        SubscribeCommandParameters subscribe = new();
-        subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+        SubscribeCommandParameters subscribe = new(driver.Network.OnResponseCompleted.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -241,8 +246,7 @@ public static class DemoScenarios
         {
             Console.WriteLine($"This was written to the console at {e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} UTC: {e.Text}");
         });
-        SubscribeCommandParameters subscribe = new();
-        subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+        SubscribeCommandParameters subscribe = new(driver.Log.OnEntryAdded.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -474,8 +478,7 @@ public static class DemoScenarios
             taskCompletionSource.SetResult();
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        SubscribeCommandParameters subscribe = new();
-        subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+        SubscribeCommandParameters subscribe = new(driver.Network.OnBeforeRequestSent.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -527,8 +530,7 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task InterceptAndReplaceNetworkData(BiDiDriver driver, string baseUrl)
     {
-        SubscribeCommandParameters subscribe = new();
-        subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+        SubscribeCommandParameters subscribe = new(driver.Network.OnBeforeRequestSent.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -592,8 +594,7 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task CaptureNetworkResponse(BiDiDriver driver, string baseUrl)
     {
-        SubscribeCommandParameters subscribe = new();
-        subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+        SubscribeCommandParameters subscribe = new(driver.Network.OnResponseCompleted.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
@@ -702,9 +703,12 @@ public static class DemoScenarios
     /// <returns>The task object representing the asynchronous operation.</returns>
     public static async Task CaptureAllNetworkTraffic(BiDiDriver driver, string baseUrl)
     {
-        SubscribeCommandParameters subscribe = new();
-        subscribe.Events.Add(driver.BrowsingContext.OnNavigationStarted.EventName);
-        subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+        List<string> eventsToSubscribe =
+        [
+            driver.BrowsingContext.OnNavigationStarted.EventName,
+            driver.BrowsingContext.OnLoad.EventName
+        ];
+        SubscribeCommandParameters subscribe = new(eventsToSubscribe);
         SubscribeCommandResult subscribeResult = await driver.Session.SubscribeAsync(subscribe);
         string navigationSubscriptionId = subscribeResult.SubscriptionId;
 

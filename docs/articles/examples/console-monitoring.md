@@ -44,8 +44,8 @@ namespace ConsoleMonitoringExample
                 });
 
                 // Subscribe to log events
-                SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-                subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+                SubscribeCommandParameters subscribe = 
+                    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
                 await driver.Session.SubscribeAsync(subscribe);
 
                 Console.WriteLine("Console monitoring enabled\n");
@@ -143,8 +143,8 @@ driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
 });
 
 // Subscribe
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Navigate and perform actions...

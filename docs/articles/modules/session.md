@@ -33,8 +33,8 @@ Console.WriteLine($"Message: {result.Message}");
 ### Subscribe to Events
 
 ```csharp
-SubscribeCommandParameters params = new SubscribeCommandParameters();
-params.Events.Add("log.entryAdded");
+SubscribeCommandParameters params =
+    new SubscribeCommandParameters("log.entryAdded");
 params.Events.Add("network.responseCompleted");
 params.Events.Add("browsingContext.load");
 

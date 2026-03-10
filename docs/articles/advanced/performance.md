@@ -269,15 +269,15 @@ driver.Network.OnResponseCompleted.AddObserver((e) =>
 
 ```csharp
 // ❌ Slow: Subscribe to everything
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add("network.beforeRequestSent");
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters("network.beforeRequestSent");
 subscribe.Events.Add("network.responseStarted");
 subscribe.Events.Add("network.responseCompleted");
 subscribe.Events.Add("network.fetchError");
 
 // ✅ Fast: Only subscribe to what you need
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add("network.responseCompleted");  // Only this one
+SubscribeCommandParameters subscribe = 
+    new SubscribeCommandParameters("network.responseCompleted");
 
 // Even better: Subscribe only for specific contexts
 subscribe.Contexts.Add(contextId);
@@ -872,8 +872,8 @@ public async Task AnalyzePageLoadAsync(BiDiDriver driver, string contextId, stri
             (long)e.Response.BytesReceived;
     });
     
-    SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-    subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+    SubscribeCommandParameters subscribe = 
+        new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
     await driver.Session.SubscribeAsync(subscribe);
     
     await driver.BrowsingContext.NavigateAsync(

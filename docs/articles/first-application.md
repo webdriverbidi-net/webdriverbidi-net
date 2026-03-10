@@ -86,8 +86,8 @@ namespace MyFirstBiDiApp
                     Console.WriteLine($"[Browser Console] {e.Level}: {e.Text}");
                 });
 
-                SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-                subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
+                SubscribeCommandParameters subscribe = 
+                    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
                 await driver.Session.SubscribeAsync(subscribe);
 
                 // Get the current browsing context

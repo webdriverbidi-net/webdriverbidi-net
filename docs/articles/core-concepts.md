@@ -205,9 +205,12 @@ try
     }
 
     // Subscribe to events
-    SubscribeCommandParameters subscribe = new();
-    subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
-    subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
+    SubscribeCommandParameters subscribe = new(
+        [
+            driver.Log.OnEntryAdded.EventName,
+            driver.BrowsingContext.OnLoad.EventName,
+        ]
+    );
     await driver.Session.SubscribeAsync(subscribe);
 
     // Execute commands
@@ -404,9 +407,12 @@ Before receiving events, you must subscribe to them through the Session module:
 
 ```csharp
 // Create subscription parameters
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
-subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
+    [
+        driver.Log.OnEntryAdded.EventName,
+        driver.Network.OnResponseCompleted.EventName,
+    ]
+);
 
 // Subscribe to events
 await driver.Session.SubscribeAsync(subscribe);

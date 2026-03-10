@@ -32,8 +32,8 @@ driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
 });
 
 // Subscribe to events
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 // Navigate - events will fire for all requests
@@ -54,8 +54,8 @@ driver.Network.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
     }
 });
 
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 ```
 
@@ -447,8 +447,8 @@ driver.Network.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
     allRequests.Add(e.Request);
 });
 
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters();
-subscribe.Events.Add(driver.Network.OnBeforeRequestSent.EventName);
+SubscribeCommandParameters subscribe =
+    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
 await driver.Session.SubscribeAsync(subscribe);
 
 await driver.BrowsingContext.NavigateAsync(navParams);
