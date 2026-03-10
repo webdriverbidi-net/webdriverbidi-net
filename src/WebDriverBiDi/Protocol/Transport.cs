@@ -589,6 +589,21 @@ public class Transport : IAsyncDisposable
         this.connectDisconnectSemaphore.Release();
     }
 
+    /// <summary>
+    /// Gets the type info resolver to be used for JSON serialization and deserialization.
+    /// By default, this method returns a resolver that uses reflection, but if reflection-
+    /// based serialization is not available (e.g., in AOT scenarios), it returns a source-
+    /// generated resolver.
+    /// </summary>
+    /// <returns>The <see cref="IJsonTypeInfoResolver"/> to use.</returns>
+    /// <remarks>
+    /// This method is excluded from code coverage because the behavior it provides is
+    /// environment-specific and cannot be reliably tested in a consistent manner across
+    /// different test environments. The method's logic is straightforward and primarily
+    /// serves to select the appropriate JSON type info resolver based on the capabilities
+    /// of the runtime environment, rather than containing complex logic that would benefit
+    /// from unit testing.
+    /// </remarks>
     [ExcludeFromCodeCoverage]
     private static IJsonTypeInfoResolver CreateTypeInfoResolver()
     {
