@@ -41,7 +41,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <summary>
     /// Gets the default command timeout if a timeout is not specified in the constructor.
     /// </summary>
-    public static readonly TimeSpan DefaultCommandWaitTimeout = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan DefaultCommandWaitTimeout = TimeSpan.FromSeconds(60);
 
     private const string EventReceivedEventName = "driver.eventReceived";
     private const string UnexpectedErrorReceivedEventName = "driver.unexpectedErrorReceived";

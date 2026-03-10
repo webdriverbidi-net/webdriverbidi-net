@@ -306,17 +306,17 @@ parameters.Contexts = new List<string>
 
 **The Problem:**
 
-Developers are sometimes surprised that the default command timeout is **5 minutes**, which seems very long.
+Developers are sometimes surprised that the default command timeout is **60 seconds**.
 
 ```csharp
-// Default timeout is 5 minutes!
+// Default timeout is 60 seconds!
 BiDiDriver driver = new BiDiDriver();
 
-// This command has 5 minutes to complete
+// This command has 60 seconds to complete
 await driver.BrowsingContext.NavigateAsync(navParams);
 ```
 
-**Why 5 Minutes:**
+**Why 60 Seconds:**
 
 The high default timeout is **intentional** because:
 1. Browser automation can involve genuinely slow operations
@@ -350,7 +350,7 @@ await driver.ExecuteCommandAsync<NavigateCommandResult>(
 );
 ```
 
-**Key Takeaway:** The 5-minute default is intentionally high to accommodate slow operations. Choose a timeout that matches your typical use case, and override per-command when needed.
+**Key Takeaway:** The 60-second default is intentionally set to accommodate slow operations. Choose a timeout that matches your typical use case, and override per-command when needed.
 
 ---
 

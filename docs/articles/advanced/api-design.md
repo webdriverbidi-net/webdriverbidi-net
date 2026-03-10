@@ -74,7 +74,7 @@ Task<T> CommandAsync(
     CancellationToken cancellationToken = default)
 ```
 
-- **`timeoutOverride`**: When `null`, the driver uses `BiDiDriver.DefaultCommandTimeout` (5 minutes by default). Pass a value to override for long-running or quick-fail scenarios.
+- **`timeoutOverride`**: When `null`, the driver uses `BiDiDriver.DefaultCommandTimeout` (60 seconds by default). Pass a value to override for long-running or quick-fail scenarios.
 - **`cancellationToken`**: Propagates cancellation. Use for cooperative cancellation (e.g., user cancel, test timeout).
 
 ```csharp

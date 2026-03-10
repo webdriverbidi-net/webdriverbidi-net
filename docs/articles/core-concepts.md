@@ -7,7 +7,7 @@ Understanding the fundamental concepts of WebDriverBiDi.NET will help you use th
 The `BiDiDriver` class is the central entry point for all WebDriver BiDi operations.
 
 ```csharp
-// Create a driver with default timeout (5 minutes)
+// Create a driver with default timeout (60 seconds)
 BiDiDriver driver = new BiDiDriver();
 
 // Create a driver with a specific command timeout
@@ -121,7 +121,7 @@ Thread safety is enforced using an internal lock that ensures the check against 
 Configure command timeout when creating the driver:
 
 ```csharp
-// Default timeout (5 minutes)
+// Default timeout (60 seconds)
 BiDiDriver driver = new BiDiDriver();
 
 // Custom timeout (30 seconds)
