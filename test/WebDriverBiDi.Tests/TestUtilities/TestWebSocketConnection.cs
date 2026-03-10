@@ -72,6 +72,11 @@ public class TestWebSocketConnection : WebSocketConnection
         await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(exception));
     }
 
+    public async Task RaiseRemoteDisconnectedEventAsync()
+    {
+        await this.OnRemoteDisconnected.NotifyObserversAsync(new ConnectionDisconnectedEventArgs());
+    }
+
     public override async Task StartAsync(string url, CancellationToken cancellationToken = default)
     {
         this.ConnectionString = url;

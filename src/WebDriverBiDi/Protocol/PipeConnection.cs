@@ -354,6 +354,12 @@ public class PipeConnection : Connection
             }
 
             await this.LogAsync($"Ending pipe receive loop").ConfigureAwait(false);
+
+            // If the loop exited without cancellation, the remote end closed the connection gracefully.
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                await this.OnRemoteDisconnected.NotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException)
         {

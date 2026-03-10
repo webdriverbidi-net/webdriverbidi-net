@@ -31,6 +31,11 @@ public class TestPipeConnection : PipeConnection
 
     public bool Disposed => this.IsDisposed;
 
+    public async Task RaiseRemoteDisconnectedEventAsync()
+    {
+        await this.OnRemoteDisconnected.NotifyObserversAsync(new ConnectionDisconnectedEventArgs());
+    }
+
     public bool PipesDisposed
     {
         get => this.AreConnectionPipesDisposed;

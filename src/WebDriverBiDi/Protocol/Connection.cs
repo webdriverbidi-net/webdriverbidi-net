@@ -38,6 +38,7 @@ public abstract class Connection : IAsyncDisposable
     private const string DataReceivedEventName = "connection.dataReceived";
     private const string LogMessageEventName = "connection.logMessage";
     private const string ConnectionErrorEventName = "connection.connectionError";
+    private const string RemoteDisconnectedEventName = "connection.remoteDisconnected";
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
     private int isDisposedFlag;
 
@@ -87,6 +88,11 @@ public abstract class Connection : IAsyncDisposable
     /// Gets an observable event that notifies when a communication error occurs on this connection.
     /// </summary>
     public ObservableEvent<ConnectionErrorEventArgs> OnConnectionError { get; } = new(ConnectionErrorEventName);
+
+    /// <summary>
+    /// Gets an observable event that notifies when the remote end gracefully closes this connection.
+    /// </summary>
+    public ObservableEvent<ConnectionDisconnectedEventArgs> OnRemoteDisconnected { get; } = new(RemoteDisconnectedEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.

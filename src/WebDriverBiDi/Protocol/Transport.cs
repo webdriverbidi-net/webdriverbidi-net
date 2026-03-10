@@ -79,6 +79,7 @@ public class Transport : IAsyncDisposable
     private readonly SemaphoreSlim connectDisconnectSemaphore = new(1, 1);
     private readonly EventObserver<ConnectionDataReceivedEventArgs> connectionDataReceivedObserver;
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
+    private readonly EventObserver<ConnectionDisconnectedEventArgs> connectionRemoteDisconnectObserver;
     private readonly EventObserver<LogMessageEventArgs> connectionLogMessageObserver;
     private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {
@@ -114,6 +115,7 @@ public class Transport : IAsyncDisposable
 
         this.connectionDataReceivedObserver = connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         this.connectionErrorObserver = connection.OnConnectionError.AddObserver(this.OnConnectionErrorAsync);
+        this.connectionRemoteDisconnectObserver = connection.OnRemoteDisconnected.AddObserver(this.OnConnectionRemotelyDisconnectedAsync);
         this.connectionLogMessageObserver = connection.OnLogMessage.AddObserver(this.OnConnectionLogMessageAsync);
     }
 
@@ -563,6 +565,7 @@ public class Transport : IAsyncDisposable
         this.PendingCommands.Dispose();
         this.connectionDataReceivedObserver.Dispose();
         this.connectionErrorObserver.Dispose();
+        this.connectionRemoteDisconnectObserver.Dispose();
         this.connectionLogMessageObserver.Dispose();
         await this.Connection.DisposeAsync().ConfigureAwait(false);
         this.connectDisconnectSemaphore.Dispose();
@@ -640,15 +643,33 @@ public class Transport : IAsyncDisposable
         }
     }
 
+    private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
+    {
+        await this.OnLogMessage.NotifyObserversAsync(e).ConfigureAwait(false);
+    }
+
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
         await this.queue.Writer.WriteAsync(e.Data).ConfigureAwait(false);
     }
 
+    private async Task OnConnectionRemotelyDisconnectedAsync(ConnectionDisconnectedEventArgs e)
+    {
+        WebDriverBiDiConnectionException connectionException = new("Remote end closed the connection");
+        string logMessage = "Remote end closed connection; pending commands failed";
+        await this.HandleConnectionDisconnectionAsync(connectionException, logMessage, WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
+    }
+
     private async Task OnConnectionErrorAsync(ConnectionErrorEventArgs e)
     {
         WebDriverBiDiEventSource.RaiseEvent.ConnectionError(this.Connection.GetHashCode().ToString(), e.Exception.Message);
+        WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
+        string logMessage = $"Connection error; pending commands failed: {e.Exception.Message}";
+        await this.HandleConnectionDisconnectionAsync(connectionException, logMessage, WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+    }
 
+    private async Task HandleConnectionDisconnectionAsync(WebDriverBiDiConnectionException connectionException, string logMessage, WebDriverBiDiLogLevel logLevel)
+    {
         // Fast-path: if already disconnected, no work to do.
         // Prevents deadlock when connection error occurs during DisconnectAsync.
         if (!this.IsConnected)
@@ -660,11 +681,11 @@ public class Transport : IAsyncDisposable
         try
         {
             // Only process if we were connected (or thought we were).
-            // If we're still in ConnectAsync, we'll run after it releases the lock,
+            // If we're still in DisonnectAsync, we'll run after it releases the lock,
             // so we'll see the correct post-connect state.
             if (!this.IsConnected)
             {
-                // ConnectAsync hasn't set it yet, or we're already disconnected
+                // DisconnectAsync hasn't set it yet, or we're already disconnected
                 return;
             }
 
@@ -674,12 +695,10 @@ public class Transport : IAsyncDisposable
             this.IsConnected = false;
 
             // Close the pending command collection and fail every in-flight command
-            // with an exception that wraps the original connection error.
+            // with an appropriate exception.
             await this.PendingCommands.CloseAsync().ConfigureAwait(false);
-            WebDriverBiDiConnectionException connectionException = new($"Unexpected connection error: {e.Exception.Message}", e.Exception);
             this.PendingCommands.FailAllPendingCommands(connectionException);
-
-            await this.LogAsync($"Connection error; pending commands failed: {e.Exception.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+            await this.LogAsync(logMessage, logLevel).ConfigureAwait(false);
         }
         finally
         {
@@ -912,11 +931,6 @@ public class Transport : IAsyncDisposable
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
         await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Transport")).ConfigureAwait(false);
-    }
-
-    private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
-    {
-        await this.OnLogMessage.NotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)

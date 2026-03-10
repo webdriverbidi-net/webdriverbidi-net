@@ -10,6 +10,7 @@ public class TestTransport : Transport
     private TimeSpan messageProcessingDelay = TimeSpan.Zero;
     private int deserializeThrowCount;
     private int disconnectCallCount;
+    private int concurrentConnectLockAcquisitions = 0;
 
     public TestTransport(WebSocketConnection connection) : base(connection)
     {
@@ -34,6 +35,8 @@ public class TestTransport : Transport
     public CommandResult? CustomReturnValue { get; set; }
 
     public int DisconnectCallCount => this.disconnectCallCount;
+
+    public int ConcurrentConnectLockAcquisitions => this.concurrentConnectLockAcquisitions;
 
     public TimeSpan DisconnectDelay { get; set; } = TimeSpan.Zero;
 
@@ -113,6 +116,44 @@ public class TestTransport : Transport
         }
 
         return unhandledErrors.HasUnhandledErrors(errorBehavior);
+    }
+
+    /// <summary>
+    /// COnfigures the transport to simulate concurrent acquisition of the connection lock
+    /// by ConnectAsync and DisconnectAsync, which can occur when a connection error
+    /// happens during connection or disconnection. This is used to test for correct
+    /// handling of such concurrency, such as ensuring that only one method actually
+    /// acquires the lock and processes, and that the other method correctly observes
+    /// the post-lock state (connected vs. disconnected) when it acquires the lock after
+    /// the first method releases it. The orchestration of the concurrency is tricky,
+    /// and is done here to centralize the logic and ensure correct timing.
+    /// </summary>
+    public void EnableConnectLockConcurrencyTesting()
+    {
+        ManualResetEventSlim connectionMethodHasLock = new(false);
+        ManualResetEventSlim otherMethodBlocked = new(false);
+        this.BeforeAcquireLockCallback = async () =>
+        {
+            int currentCallCount = Interlocked.Increment(ref this.concurrentConnectLockAcquisitions);
+            if (currentCallCount == 1)
+            {
+                // ConnectAsync or DisconnectAsync is first into the AcquireConnectionLockAsync,
+                // and is about to acquire the lock. Signal it, then wait for the other method
+                // to also enter the callback.
+                connectionMethodHasLock.Set();
+                await Task.Run(() => otherMethodBlocked.Wait());
+            }
+            else if (currentCallCount == 2)
+            {
+                // The other method has entered AcquireConnectionLockAsync; it will block.
+                // Signal that it's here, then wait for ConnectAsync or DisconnectAsync
+                // to signal it is acquiring the lock, and add a small delay so the
+                // semaphore is held by ConnectAsync or DisconnectAsync.
+                otherMethodBlocked.Set();
+                await Task.Run(() => connectionMethodHasLock.Wait());
+                await Task.Delay(TimeSpan.FromMilliseconds(50));
+            }
+        };
     }
 
     protected override JsonElement DeserializeMessage(byte[] messageData)
