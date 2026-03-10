@@ -361,6 +361,33 @@ public class BrowsingContextModuleTests
     }
 
     [Test]
+    public async Task TestExecuteSetBypassCSPCommand()
+    {
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += async (sender, e) =>
+        {
+            string responseJson = $$"""
+                                  {
+                                    "type": "success",
+                                    "id": {{e.SentCommandId}},
+                                    "result": {}
+                                  }
+                                  """;
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        };
+
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        BrowsingContextModule module = driver.BrowsingContext;
+
+        Task<SetBypassCSPCommandResult> task = module.SetBypassCSPAsync(new SetBypassCSPCommandParameters());
+        task.Wait(TimeSpan.FromSeconds(1));
+        SetBypassCSPCommandResult result = task.Result;
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
     public async Task TestExecuteSetViewportCommand()
     {
         TestWebSocketConnection connection = new();

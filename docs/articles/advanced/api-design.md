@@ -45,10 +45,10 @@ await driver.UserAgentClientHints.SetClientHintsOverrideAsync(setParams);
 |--------------------|--------------------------------------|
 | `Browser.CloseAsync` | `UserAgentClientHints.SetClientHintsOverrideAsync` |
 | `Browser.CreateUserContextAsync` | `Browser.SetDownloadBehaviorAsync` |
-| `Browser.GetClientWindowsAsync` | `BrowsingContext.SetViewportAsync` |
-| `Browser.GetUserContextsAsync` | `Network.SetExtraHeadersAsync` |
-| `BrowsingContext.GetTreeAsync` | All Emulation `Set*OverrideAsync` commands |
-| `Script.GetRealmsAsync` | |
+| `Browser.GetClientWindowsAsync` | `BrowsingContext.SetBypassCSPAsync` |
+| `Browser.GetUserContextsAsync` | `BrowsingContext.SetViewportAsync` |
+| `BrowsingContext.GetTreeAsync` | `Network.SetExtraHeadersAsync` |
+| `Script.GetRealmsAsync` | All Emulation `Set*OverrideAsync` commands |
 | `Session.EndAsync` | |
 | `Session.StatusAsync` | |
 | `Storage.DeleteCookiesAsync` | |
