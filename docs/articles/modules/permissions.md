@@ -13,75 +13,35 @@ The Permissions module allows you to:
 
 ## Accessing the Module
 
-```csharp
-PermissionsModule permissions = driver.Permissions;
-```
+[!code-csharp[Accessing Module](../../code/modules/PermissionsModuleSamples.cs#AccessingModule)]
 
 ## Setting Permissions
 
 ### Grant Geolocation Permission
 
-```csharp
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("geolocation");
-params.State = PermissionState.Granted;
-
-await driver.Permissions.SetPermissionsAsync(params);
-Console.WriteLine("Geolocation permission granted");
-```
+[!code-csharp[Grant Geolocation Permission](../../code/modules/PermissionsModuleSamples.cs#GrantGeolocationPermission)]
 
 ### Deny Permission
 
-```csharp
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("geolocation");
-params.State = PermissionState.Denied;
-
-await driver.Permissions.SetPermissionsAsync(params);
-Console.WriteLine("Geolocation permission denied");
-```
+[!code-csharp[Deny Permission](../../code/modules/PermissionsModuleSamples.cs#DenyPermission)]
 
 ## Permission Types
 
 ### Notifications
 
-```csharp
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("notifications");
-params.State = PermissionState.Granted;
-
-await driver.Permissions.SetPermissionsAsync(params);
-```
+[!code-csharp[Grant Notifications Permission](../../code/modules/PermissionsModuleSamples.cs#GrantNotificationsPermission)]
 
 ### Camera
 
-```csharp
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("camera");
-params.State = PermissionState.Granted;
-
-await driver.Permissions.SetPermissionsAsync(params);
-```
+[!code-csharp[Grant Camera Permission](../../code/modules/PermissionsModuleSamples.cs#GrantCameraPermission)]
 
 ### Microphone
 
-```csharp
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("microphone");
-params.State = PermissionState.Granted;
-
-await driver.Permissions.SetPermissionsAsync(params);
-```
+[!code-csharp[Grant Microphone Permission](../../code/modules/PermissionsModuleSamples.cs#GrantMicrophonePermission)]
 
 ### MIDI
 
-```csharp
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("midi");
-params.State = PermissionState.Granted;
-
-await driver.Permissions.SetPermissionsAsync(params);
-```
+[!code-csharp[Grant MIDI Permission](../../code/modules/PermissionsModuleSamples.cs#GrantMIDIPermission)]
 
 ## Permission States
 
@@ -91,136 +51,25 @@ Permissions can be set to three states:
 - `PermissionState.Denied` - Permission is denied
 - `PermissionState.Prompt` - User will be prompted
 
-```csharp
-// Set permission to prompt user
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("notifications");
-params.State = PermissionState.Prompt;
-
-await driver.Permissions.SetPermissionsAsync(params);
-```
+[!code-csharp[Set Permission to Prompt](../../code/modules/PermissionsModuleSamples.cs#SetPermissiontoPrompt)]
 
 ## Common Patterns
 
 ### Testing Geolocation Functionality
 
-```csharp
-// Grant geolocation permission
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("geolocation");
-params.State = PermissionState.Granted;
-await driver.Permissions.SetPermissionsAsync(params);
-
-// Set location
-SetGeolocationCommandParameters geoParams = new SetGeolocationCommandParameters(contextId)
-{
-    Latitude = 37.7749,
-    Longitude = -122.4194,
-    Accuracy = 100
-};
-await driver.Emulation.SetGeolocationAsync(geoParams);
-
-// Test location access
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"new Promise((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => resolve(`${pos.coords.latitude},${pos.coords.longitude}`),
-                (err) => resolve(`Error: ${err.message}`)
-            );
-        })",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string location = success.Result.ValueAs<string>();
-    Console.WriteLine($"Location: {location}");
-}
-```
+[!code-csharp[Testing Geolocation Functionality](../../code/modules/PermissionsModuleSamples.cs#TestingGeolocationFunctionality)]
 
 ### Testing Notification Permissions
 
-```csharp
-// Grant notification permission
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("notifications");
-params.State = PermissionState.Granted;
-await driver.Permissions.SetPermissionsAsync(params);
-
-// Navigate to page
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com")
-    { Wait = ReadinessState.Complete });
-
-// Check permission state in page
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        "Notification.permission",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string permissionState = success.Result.ValueAs<string>();
-    Console.WriteLine($"Notification permission: {permissionState}");
-}
-```
+[!code-csharp[Testing Notification Permissions](../../code/modules/PermissionsModuleSamples.cs#TestingNotificationPermissions)]
 
 ### Testing Permission Denial
 
-```csharp
-// Deny camera permission
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("camera");
-params.State = PermissionState.Denied;
-await driver.Permissions.SetPermissionsAsync(params);
-
-// Try to access camera - should fail
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"navigator.mediaDevices.getUserMedia({ video: true })
-            .then(() => 'granted')
-            .catch(err => `denied: ${err.name}`)",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string accessResult = success.Result.ValueAs<string>();
-    Console.WriteLine($"Camera access: {accessResult}");
-}
-```
+[!code-csharp[Testing Permission Denial](../../code/modules/PermissionsModuleSamples.cs#TestingPermissionDenial)]
 
 ### Testing Multiple Permissions
 
-```csharp
-// Grant multiple permissions
-string[] permissionTypes = { "camera", "microphone" };
-
-foreach (var permType in permissionTypes)
-{
-    SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-    params.Descriptor = new PermissionsDescriptor(permType);
-    params.State = PermissionState.Granted;
-    await driver.Permissions.SetPermissionsAsync(params);
-}
-
-// Test accessing both camera and microphone
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(() => 'both granted')
-            .catch(err => `error: ${err.name}`)",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string accessResult = success.Result.ValueAs<string>();
-    Console.WriteLine($"Media access: {accessResult}");
-}
-```
+[!code-csharp[Testing Multiple Permissions](../../code/modules/PermissionsModuleSamples.cs#TestingMultiplePermissions)]
 
 ## Available Permission Names
 

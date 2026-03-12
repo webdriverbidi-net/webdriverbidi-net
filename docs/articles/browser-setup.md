@@ -79,9 +79,7 @@ Example response:
 
 Use the `webSocketDebuggerUrl` value to connect:
 
-```csharp
-await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123-def");
-```
+[!code-csharp[Connect with WebSocket URL](../code/examples/BrowserSetupSamples.cs#ConnectwithWebSocketURL)]
 
 ## Microsoft Edge
 
@@ -145,24 +143,7 @@ WebDriverBiDi.NET supports two transport mechanisms for communicating with brows
 
 **Example:**
 
-```csharp
-using WebDriverBiDi;
-
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-
-// Connect to browser at WebSocket URL
-await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-
-try
-{
-    // Use the driver
-    var result = await driver.BrowsingContext.NavigateAsync(navParams);
-}
-finally
-{
-    await driver.StopAsync();
-}
-```
+[!code-csharp[WebSocket Connection](../code/examples/BrowserSetupSamples.cs#WebSocketConnection)]
 
 ### Pipe Connection
 
@@ -185,60 +166,9 @@ finally
 
 **Example:**
 
-```csharp
-using WebDriverBiDi;
-using WebDriverBiDi.Client.Launchers;
-using WebDriverBiDi.Protocol;
+> **Note:** WebDriverBiDi.NET does not ship a browser launcher. You must implement pipe communication yourself. The pattern below is conceptual—create a class that implements `IPipeServerProcessProvider` to launch the browser, capture its stdin/stdout, and pass the resulting `Transport` to `BiDiDriver`:
 
-// Launcher implements IPipeServerProcessProvider
-ChromeLauncher launcher = new ChromeLauncher()
-{
-    ConnectionType = ConnectionType.Pipes
-};
-
-await launcher.StartAsync();
-await launcher.LaunchBrowserAsync();
-
-try
-{
-    // Create driver with launcher's transport
-    BiDiDriver driver = new BiDiDriver(
-        TimeSpan.FromSeconds(30),
-        launcher.CreateTransport());
-
-    await driver.StartAsync("pipes");
-
-    // Use the driver
-    var result = await driver.BrowsingContext.NavigateAsync(navParams);
-
-    await driver.StopAsync();
-}
-finally
-{
-    await launcher.QuitBrowserAsync();
-    await launcher.StopAsync();
-}
-```
-
-### Using BrowserType Presets
-
-The WebDriverBiDi.Client library provides convenient presets:
-
-```csharp
-using WebDriverBiDi.Client.Launchers;
-
-// WebSocket connection (default)
-BrowserLauncher wsLauncher = BrowserLauncher.Create(
-    BrowserType.Chrome,
-    string.Empty,
-    "/path/to/chrome");
-
-// Pipe connection
-BrowserLauncher pipeLauncher = BrowserLauncher.Create(
-    BrowserType.ChromePipe,
-    string.Empty,
-    "/path/to/chrome");
-```
+[!code-csharp[Pipe Launcher Pattern](../code/examples/BrowserSetupSamples.cs#PipeLauncherPattern)]
 
 ### Comparison
 
@@ -277,9 +207,7 @@ ws://localhost:4444/session
 
 Connect with:
 
-```csharp
-await driver.StartAsync("ws://localhost:4444/session");
-```
+[!code-csharp[Firefox Connection](../code/examples/BrowserSetupSamples.cs#FirefoxConnection)]
 
 ### Note on Firefox Support
 
@@ -289,16 +217,9 @@ Firefox's WebDriver BiDi implementation is actively being developed. Some featur
 
 If you're using Selenium, you can let Selenium Manager handle browser launching:
 
-```csharp
-// This is conceptual - WebDriverBiDi.NET doesn't include Selenium Manager
-// But you can use them together
-var seleniumDriver = new ChromeDriver(chromeOptions);
-string wsUrl = (string)((ChromeDriver)seleniumDriver)
-    .ExecuteCdpCommand("Target.getTargets", new Dictionary<string, object>())
-    ["webSocketDebuggerUrl"];
+[!code-csharp[Selenium Manager Integration](../code/examples/BrowserSetupSamples.cs#SeleniumManagerIntegration)]
 
-await driver.StartAsync(wsUrl);
-```
+This is conceptual—WebDriverBiDi.NET doesn't include Selenium. Add `--remote-debugging-port` to Chrome options, launch via ChromeDriver, then fetch the WebSocket URL from `/json/version` and connect BiDiDriver.
 
 ## Docker Container
 
@@ -384,105 +305,21 @@ google-chrome \
 
 You can launch the browser programmatically before connecting:
 
-```csharp
-using System.Diagnostics;
+[!code-csharp[Programmatic Browser Launch](../code/examples/BrowserSetupSamples.cs#ProgrammaticBrowserLaunch)]
 
-// Launch Chrome
-Process chromeProcess = new Process
-{
-    StartInfo = new ProcessStartInfo
-    {
-        FileName = "chrome.exe",
-        Arguments = "--remote-debugging-port=9222 --user-data-dir=C:\\temp\\chrome",
-        UseShellExecute = false,
-        RedirectStandardOutput = true
-    }
-};
-chromeProcess.Start();
+## Implementing Your Own Launcher
 
-// Wait for Chrome to start
-await Task.Delay(2000);
+WebDriverBiDi.NET does **not** ship a browser launcher. The library only provides the protocol client. To use pipe connections or automate browser launch, you must implement the launcher yourself.
 
-// Get WebSocket URL
-using HttpClient client = new HttpClient();
-string json = await client.GetStringAsync("http://localhost:9222/json/version");
-// Parse JSON to get webSocketDebuggerUrl
+### WebSocket Launcher Pattern
 
-// Connect
-await driver.StartAsync(webSocketUrl);
+Launch the browser with `--remote-debugging-port`, then discover the WebSocket URL and connect:
 
-// Later: clean up
-chromeProcess.Kill();
-```
+[!code-csharp[WebSocket Launcher Pattern](../code/examples/BrowserSetupSamples.cs#WebSocketLauncherPattern)]
 
-## Helper Libraries
+### Pipe Launcher Pattern
 
-The `WebDriverBiDi.Client` project in this repository includes launcher helpers that support both connection types:
-
-### Using ChromeLauncher with WebSocket
-
-```csharp
-using WebDriverBiDi;
-using WebDriverBiDi.Client.Launchers;
-using WebDriverBiDi.Protocol;
-
-// Launch Chrome with WebSocket (default)
-ChromeLauncher launcher = new ChromeLauncher()
-{
-    ConnectionType = ConnectionType.WebSocket,
-    Port = 9222,
-    IsBrowserHeadless = true
-};
-
-await launcher.StartAsync();
-await launcher.LaunchBrowserAsync();
-
-// Create driver with launcher's transport
-BiDiDriver driver = new BiDiDriver(
-    TimeSpan.FromSeconds(30),
-    launcher.CreateTransport());
-
-await driver.StartAsync(launcher.WebSocketUrl);
-
-// Use the driver...
-
-// Clean up
-await driver.StopAsync();
-await launcher.QuitBrowserAsync();
-await launcher.StopAsync();
-```
-
-### Using ChromeLauncher with Pipes
-
-```csharp
-using WebDriverBiDi;
-using WebDriverBiDi.Client.Launchers;
-using WebDriverBiDi.Protocol;
-
-// Launch Chrome with Pipes
-ChromeLauncher launcher = new ChromeLauncher()
-{
-    ConnectionType = ConnectionType.Pipes,
-    IsBrowserHeadless = true
-};
-
-await launcher.StartAsync();
-await launcher.LaunchBrowserAsync();
-
-// Create driver with launcher's transport
-BiDiDriver driver = new BiDiDriver(
-    TimeSpan.FromSeconds(30),
-    launcher.CreateTransport());
-
-await driver.StartAsync("pipes");
-
-// Use the driver...
-
-// Clean up
-await driver.StopAsync();
-await launcher.QuitBrowserAsync();
-await launcher.StopAsync();
-```
+For pipe connections, implement `IPipeServerProcessProvider` to launch the browser with pipe flags and provide a `Transport` to `BiDiDriver`. See the `Transport` and `PipeConnection` types in the API reference for the interface contract.
 
 ## Troubleshooting
 

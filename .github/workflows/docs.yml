@@ -49,6 +49,9 @@ jobs:
       - name: Build WebDriverBiDi library
         run: dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release --no-restore
 
+      - name: Build documentation sample code
+        run: dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release --no-restore
+
       - name: Setup DocFX
         run: dotnet tool install -g docfx
 

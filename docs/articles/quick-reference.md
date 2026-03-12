@@ -64,27 +64,11 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 
 ## Event Subscription Pattern
 
-```csharp
-// 1. Add observer
-driver.Network.OnBeforeRequestSent.AddObserver((e) => Console.WriteLine(e.Request.Url));
-
-// 2. Subscribe via session
-SubscribeCommandParameters sub = 
-    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
-await driver.Session.SubscribeAsync(sub);
-```
+[!code-csharp[Event Subscription Pattern](../code/QuickReferenceSamples.cs#EventSubscriptionPattern)]
 
 ## Error Configuration
 
-```csharp
-// Fail fast during development
-driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
-driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
-
-// Collect for debugging
-driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
-driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
-```
+[!code-csharp[Error Configuration](../code/QuickReferenceSamples.cs#ErrorConfiguration)]
 
 ## See Also
 

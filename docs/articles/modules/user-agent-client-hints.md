@@ -15,88 +15,17 @@ This module complements the [Emulation Module](emulation.md), which provides use
 
 ## Accessing the Module
 
-```csharp
-UserAgentClientHintsModule userAgentClientHints = driver.UserAgentClientHints;
-```
+[!code-csharp[Accessing Module](../../code/modules/UserAgentClientHintsModuleSamples.cs#AccessingModule)]
 
 ## Setting Client Hints Override
 
 ### Basic Override
 
-```csharp
-SetClientHintsOverrideCommandParameters parameters = new SetClientHintsOverrideCommandParameters();
-parameters.ClientHints = new ClientHintsMetadata
-{
-    Brands = new List<BrandVersion>
-    {
-        new BrandVersion("Chromium", "120.0"),
-        new BrandVersion("Google Chrome", "120.0")
-    },
-    Platform = "Windows",
-    PlatformVersion = "10.0",
-    Architecture = "x86",
-    Mobile = false
-};
-
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-Console.WriteLine("Client hints override set");
-```
+[!code-csharp[Basic Override](../../code/modules/UserAgentClientHintsModuleSamples.cs#BasicOverride)]
 
 ### Common Browser Brands
 
-```csharp
-// Chrome on Windows
-parameters.ClientHints = new ClientHintsMetadata
-{
-    Brands = new List<BrandVersion>
-    {
-        new BrandVersion("Chromium", "120.0"),
-        new BrandVersion("Google Chrome", "120.0")
-    },
-    FullVersionList = new List<BrandVersion>
-    {
-        new BrandVersion("Chromium", "120.0.6099.109"),
-        new BrandVersion("Google Chrome", "120.0.6099.109")
-    },
-    Platform = "Windows",
-    PlatformVersion = "10.0",
-    Architecture = "x86",
-    Model = "",
-    Mobile = false,
-    Bitness = "64"
-};
-
-// Firefox on macOS
-parameters.ClientHints = new ClientHintsMetadata
-{
-    Brands = new List<BrandVersion>
-    {
-        new BrandVersion("Not_A Brand", "8"),
-        new BrandVersion("Firefox", "121.0")
-    },
-    Platform = "macOS",
-    PlatformVersion = "14.0",
-    Architecture = "arm",
-    Mobile = false
-};
-
-// Mobile Chrome (Android)
-parameters.ClientHints = new ClientHintsMetadata
-{
-    Brands = new List<BrandVersion>
-    {
-        new BrandVersion("Chromium", "120.0"),
-        new BrandVersion("Google Chrome", "120.0")
-    },
-    Platform = "Android",
-    PlatformVersion = "14.0",
-    Architecture = "arm",
-    Model = "Pixel 7",
-    Mobile = true
-};
-
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-```
+[!code-csharp[Common Browser Brands](../../code/modules/UserAgentClientHintsModuleSamples.cs#CommonBrowserBrands)]
 
 ## Client Hints Metadata Properties
 
@@ -121,11 +50,7 @@ All properties are optional. Omitted properties are not sent in the command and 
 
 To clear the client hints override and restore default browser behavior, use the `ResetClientHintsOverride` static property:
 
-```csharp
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(
-    SetClientHintsOverrideCommandParameters.ResetClientHintsOverride);
-Console.WriteLine("Client hints override cleared");
-```
+[!code-csharp[Reset Client Hints](../../code/modules/UserAgentClientHintsModuleSamples.cs#ResetClientHints)]
 
 **Note**: This command always requires explicit parameters. You must pass either `ResetClientHintsOverride` to clear or a configured `SetClientHintsOverrideCommandParameters` instance to set overrides.
 
@@ -133,31 +58,11 @@ Console.WriteLine("Client hints override cleared");
 
 ### Target Specific Browsing Contexts
 
-```csharp
-SetClientHintsOverrideCommandParameters parameters = new SetClientHintsOverrideCommandParameters();
-parameters.ClientHints = new ClientHintsMetadata
-{
-    Brands = new List<BrandVersion> { new BrandVersion("Chromium", "120.0") },
-    Mobile = true
-};
-parameters.Contexts = new List<string> { contextId };
-
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-```
+[!code-csharp[Target Specific Contexts](../../code/modules/UserAgentClientHintsModuleSamples.cs#TargetSpecificContexts)]
 
 ### Target Specific User Contexts
 
-```csharp
-SetClientHintsOverrideCommandParameters parameters = new SetClientHintsOverrideCommandParameters();
-parameters.ClientHints = new ClientHintsMetadata
-{
-    Platform = "Linux",
-    Architecture = "x86"
-};
-parameters.UserContexts = new List<string> { userContextId };
-
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-```
+[!code-csharp[Target Specific User Contexts](../../code/modules/UserAgentClientHintsModuleSamples.cs#TargetSpecificUserContexts)]
 
 When `Contexts` or `UserContexts` is `null`, the override applies to all contexts. When set to an empty list, it applies to no contexts (effectively clearing for those scopes).
 
@@ -165,130 +70,15 @@ When `Contexts` or `UserContexts` is `null`, the override applies to all context
 
 ### Pattern: Mobile Device Testing
 
-```csharp
-// Emulate mobile client hints for responsive design testing
-SetClientHintsOverrideCommandParameters parameters = new SetClientHintsOverrideCommandParameters();
-parameters.ClientHints = new ClientHintsMetadata
-{
-    Brands = new List<BrandVersion>
-    {
-        new BrandVersion("Chromium", "120.0"),
-        new BrandVersion("Google Chrome", "120.0")
-    },
-    Platform = "Android",
-    PlatformVersion = "14.0",
-    Architecture = "arm",
-    Model = "Pixel 7",
-    Mobile = true,
-    FormFactors = new List<string> { "Mobile" }
-};
-
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-
-// Combine with Emulation module for full mobile emulation
-await driver.Emulation.SetViewportAsync(
-    new SetViewportCommandParameters(contextId)
-    {
-        Width = 412,
-        Height = 915,
-        DevicePixelRatio = 2.625
-    });
-```
+[!code-csharp[Mobile Device Testing](../../code/modules/UserAgentClientHintsModuleSamples.cs#MobileDeviceTesting)]
 
 ### Pattern: Cross-Browser Brand Testing
 
-```csharp
-// Test how a site behaves with different browser brands
-Dictionary<string, ClientHintsMetadata> browserConfigs = new()
-{
-    ["Chrome"] = new ClientHintsMetadata
-    {
-        Brands = new List<BrandVersion>
-        {
-            new BrandVersion("Chromium", "120.0"),
-            new BrandVersion("Google Chrome", "120.0")
-        },
-        Platform = "Windows",
-        Mobile = false
-    },
-    ["Edge"] = new ClientHintsMetadata
-    {
-        Brands = new List<BrandVersion>
-        {
-            new BrandVersion("Chromium", "120.0"),
-            new BrandVersion("Microsoft Edge", "120.0")
-        },
-        Platform = "Windows",
-        Mobile = false
-    },
-    ["Safari"] = new ClientHintsMetadata
-    {
-        Brands = new List<BrandVersion>
-        {
-            new BrandVersion("Safari", "17.0")
-        },
-        Platform = "macOS",
-        Mobile = false
-    }
-};
-
-foreach (var config in browserConfigs)
-{
-    Console.WriteLine($"\nTesting as {config.Key}");
-    SetClientHintsOverrideCommandParameters parameters = new SetClientHintsOverrideCommandParameters();
-    parameters.ClientHints = config.Value;
-    await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-
-    await driver.BrowsingContext.NavigateAsync(
-        new NavigateCommandParameters(contextId, "https://example.com")
-        { Wait = ReadinessState.Complete });
-
-    // Verify site behavior for this browser brand
-    EvaluateResult result = await driver.Script.EvaluateAsync(
-        new EvaluateCommandParameters(
-            "navigator.userAgentData?.brands?.map(b => b.brand).join(', ') ?? 'not supported'",
-            new ContextTarget(contextId),
-            true));
-
-    if (result is EvaluateResultSuccess success)
-    {
-        string brands = success.Result.ValueAs<string>();
-        Console.WriteLine($"Detected brands: {brands}");
-    }
-}
-```
+[!code-csharp[Cross-Browser Brand Testing](../../code/modules/UserAgentClientHintsModuleSamples.cs#Cross-BrowserBrandTesting)]
 
 ### Pattern: Verify Client Hints in Page
 
-```csharp
-// Set override
-SetClientHintsOverrideCommandParameters parameters = new SetClientHintsOverrideCommandParameters();
-parameters.ClientHints = new ClientHintsMetadata
-{
-    Brands = new List<BrandVersion> { new BrandVersion("TestBrowser", "1.0") },
-    Platform = "TestOS",
-    Mobile = true
-};
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-
-// Verify via User-Agent Client Hints API (JavaScript)
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"(async () => {
-            const ua = navigator.userAgentData;
-            if (!ua) return 'User-Agent Client Hints API not supported';
-            const hints = await ua.getHighEntropyValues(['brands', 'platform', 'mobile']);
-            return JSON.stringify(hints);
-        })()",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string hintsJson = success.Result.ValueAs<string>();
-    Console.WriteLine($"Client hints: {hintsJson}");
-}
-```
+[!code-csharp[Verify Client Hints in Page](../../code/modules/UserAgentClientHintsModuleSamples.cs#VerifyClientHintsinPage)]
 
 ## Best Practices
 

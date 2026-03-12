@@ -32,11 +32,7 @@ WebSocket connections are the standard transport mechanism for WebDriver BiDi:
 - Event delivery: Real-time with minimal overhead
 - Suitable for all automation scenarios
 
-```csharp
-// Standard WebSocket connection
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-```
+[!code-csharp[WebSocket Connection](../../code/advanced/PerformanceSamples.cs#WebSocketConnection)]
 
 ### Pipe Connections (Advanced)
 
@@ -54,20 +50,7 @@ For specific scenarios where the browser and test runner are co-located, pipe co
 - Limited browser support
 - No remote debugging capability
 
-```csharp
-// Pipe connection (Chromium only)
-using WebDriverBiDi.Client.Launchers;
-
-ChromeLauncher launcher = new ChromeLauncher()
-{
-    ConnectionType = ConnectionType.Pipes
-};
-
-await launcher.StartAsync();
-await launcher.LaunchBrowserAsync();
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
-await driver.StartAsync("pipes");
-```
+[!code-csharp[Pipe Connection](../../code/advanced/PerformanceSamples.cs#PipeConnection)]
 
 **Recommendation**: Use WebSocket connections unless you have specific requirements for pipe-based transport and are using a compatible browser implementation.
 
@@ -77,211 +60,45 @@ await driver.StartAsync("pipes");
 
 Execute independent commands in parallel:
 
-```csharp
-// ❌ Slow: Sequential execution
-var tree = await driver.BrowsingContext.GetTreeAsync(new());
-var status = await driver.Session.StatusAsync(new());
-var cookies = await driver.Storage.GetCookiesAsync(new());
-
-// ✅ Fast: Parallel execution
-Task<GetTreeCommandResult> treeTask = driver.BrowsingContext.GetTreeAsync(new());
-Task<StatusCommandResult> statusTask = driver.Session.StatusAsync(new());
-Task<GetCookiesCommandResult> cookiesTask = driver.Storage.GetCookiesAsync(new());
-
-await Task.WhenAll(treeTask, statusTask, cookiesTask);
-
-var tree = treeTask.Result;
-var status = statusTask.Result;
-var cookies = cookiesTask.Result;
-```
+[!code-csharp[Parallel Commands](../../code/advanced/PerformanceSamples.cs#ParallelCommands)]
 
 ### Batch Operations
 
-```csharp
-// ❌ Slow: Multiple round trips
-foreach (string url in urls)
-{
-    await driver.BrowsingContext.NavigateAsync(
-        new NavigateCommandParameters(contextId, url));
-}
-
-// ✅ Fast: Parallel navigation in different contexts
-List<Task<NavigateCommandResult>> navigationTasks = new();
-
-foreach (var (url, context) in urls.Zip(contextIds))
-{
-    navigationTasks.Add(driver.BrowsingContext.NavigateAsync(
-        new NavigateCommandParameters(context, url)));
-}
-
-await Task.WhenAll(navigationTasks);
-```
+[!code-csharp[Batch Navigation](../../code/advanced/PerformanceSamples.cs#BatchNavigation)]
 
 ## Navigation Optimization
 
 ### Use Appropriate Readiness States
 
-```csharp
-// For content-only needs
-NavigateCommandParameters params = new NavigateCommandParameters(contextId, url)
-{
-    Wait = ReadinessState.Interactive  // Don't wait for images/CSS
-};
-
-// For visual validation
-NavigateCommandParameters params = new NavigateCommandParameters(contextId, url)
-{
-    Wait = ReadinessState.Complete  // Wait for all resources
-};
-
-// For fastest possible navigation
-NavigateCommandParameters params = new NavigateCommandParameters(contextId, url)
-{
-    Wait = ReadinessState.None  // Return immediately
-};
-```
+[!code-csharp[Readiness States](../../code/advanced/PerformanceSamples.cs#ReadinessStates)]
 
 ### Smart Waiting
 
-```csharp
-// ❌ Slow: Fixed delays
-await driver.BrowsingContext.NavigateAsync(navParams);
-await Task.Delay(5000);  // Always waits 5 seconds
-
-// ✅ Fast: Wait for specific condition
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-string waitScript = @"
-    new Promise((resolve) => {
-        if (document.querySelector('.content-loaded')) {
-            resolve(true);
-        } else {
-            const observer = new MutationObserver(() => {
-                if (document.querySelector('.content-loaded')) {
-                    observer.disconnect();
-                    resolve(true);
-                }
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-        }
-    })";
-
-await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(waitScript, new ContextTarget(contextId), true));
-```
+[!code-csharp[Smart Waiting](../../code/advanced/PerformanceSamples.cs#SmartWaiting)]
 
 ## Script Execution Optimization
 
 ### Minimize Script Calls
 
-```csharp
-// ❌ Slow: Multiple script calls
-var title = await GetScriptValue("document.title");
-var url = await GetScriptValue("window.location.href");
-var linkCount = await GetScriptValue("document.querySelectorAll('a').length");
-
-// ✅ Fast: Single script call
-string script = @"
-({
-    title: document.title,
-    url: window.location.href,
-    linkCount: document.querySelectorAll('a').length
-})";
-
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
-
-if (result is EvaluateResultSuccess success)
-{
-    RemoteValueDictionary data = success.Result.ValueAs<RemoteValueDictionary>();
-    string title = data["title"].ValueAs<string>();
-    string url = data["url"].ValueAs<string>();
-    long linkCount = data["linkCount"].ValueAs<long>();
-}
-```
+[!code-csharp[Minimize Script Calls](../../code/advanced/PerformanceSamples.cs#MinimizeScriptCalls)]
 
 ### Efficient Element Operations
 
-```csharp
-// ❌ Slow: Multiple element queries
-for (int i = 0; i < 10; i++)
-{
-    var element = await FindElementAsync($".item-{i}");
-    await ClickElementAsync(element);
-}
-
-// ✅ Fast: Batch element operations
-string script = @"
-    Array.from(document.querySelectorAll('[class^=""item-""]'))
-        .slice(0, 10)
-        .forEach(el => el.click());";
-
-await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(script, new ContextTarget(contextId), false));
-```
+[!code-csharp[Efficient Element Operations](../../code/advanced/PerformanceSamples.cs#EfficientElementOperations)]
 
 ## Event Processing Optimization
 
 ### Use Async Event Handlers
 
-```csharp
-// ❌ Slow: Synchronous handler blocks message processing
-driver.Network.OnBeforeRequestSent.AddObserver((e) =>
-{
-    Thread.Sleep(1000);  // Blocks for 1 second!
-    ProcessRequest(e);
-});
-
-// ✅ Fast: Async handler doesn't block
-driver.Network.OnBeforeRequestSent.AddObserver(async (e) =>
-{
-    await Task.Delay(1000);  // Doesn't block message processing
-    await ProcessRequestAsync(e);
-},
-ObservableEventHandlerOptions.RunHandlerAsynchronously);
-```
+[!code-csharp[Async Event Handler](../../code/advanced/PerformanceSamples.cs#AsyncEventHandler)]
 
 ### Filter Events Early
 
-```csharp
-// ❌ Slow: Process all events then filter
-driver.Network.OnResponseCompleted.AddObserver((e) =>
-{
-    // Process every single response
-    if (e.Response.Url.Contains(".json"))
-    {
-        // Only use JSON responses
-        ProcessResponse(e);
-    }
-});
-
-// ✅ Fast: Filter in observer
-driver.Network.OnResponseCompleted.AddObserver((e) =>
-{
-    if (!e.Response.Url.Contains(".json"))
-        return;  // Exit early
-    
-    ProcessResponse(e);
-});
-```
+[!code-csharp[Filter Events Early](../../code/advanced/PerformanceSamples.cs#FilterEventsEarly)]
 
 ### Selective Event Subscription
 
-```csharp
-// ❌ Slow: Subscribe to everything
-SubscribeCommandParameters subscribe = 
-    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
-subscribe.Events.Add(driver.Network.OnResponseStarted.EventName);
-subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
-subscribe.Events.Add(driver.Network.OnFetchError.EventName);
-
-// ✅ Fast: Only subscribe to what you need
-SubscribeCommandParameters subscribe = 
-    new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
-
-// Even better: Subscribe only for specific contexts
-subscribe.Contexts.Add(contextId);
-```
+[!code-csharp[Selective Event Subscription](../../code/advanced/PerformanceSamples.cs#SelectiveEventSubscription)]
 
 ## Message Queue and High-Throughput Scenarios
 
@@ -300,21 +117,7 @@ In typical usage, message processing is fast enough that the queue remains nearl
 
 **High-Throughput Risks:**
 
-```csharp
-// ⚠️ Problematic: Thousands of rapid events with slow handlers
-driver.Network.OnBeforeRequestSent.AddObserver((e) =>
-{
-    // Slow synchronous operation (200ms)
-    Thread.Sleep(200);
-    ProcessRequest(e);
-});
-
-// If 100 events arrive per second:
-// - Processing rate: 5 events/second (200ms each)
-// - Queue growth: 95 events/second
-// - After 10 seconds: ~950 messages queued
-// - Memory usage grows unbounded
-```
+[!code-csharp[Slow Handler Problem](../../code/advanced/PerformanceSamples.cs#SlowHandlerProblem)]
 
 ### Symptoms of Queue Backlog
 
@@ -329,18 +132,7 @@ Monitor for these indicators:
 
 #### 1. Use Asynchronous Event Handlers
 
-```csharp
-// ✅ Good: Async handler doesn't block message thread
-driver.Network.OnBeforeRequestSent.AddObserver(
-    async (e) =>
-    {
-        // Runs on task pool, doesn't block queue processing
-        await Task.Delay(200);
-        await ProcessRequestAsync(e);
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
-```
+[!code-csharp[Async Handler Good](../../code/advanced/PerformanceSamples.cs#AsyncHandlerGood)]
 
 **Impact:**
 - Message processing thread continues immediately
@@ -349,116 +141,25 @@ driver.Network.OnBeforeRequestSent.AddObserver(
 
 #### 2. Keep Event Handlers Fast
 
-```csharp
-// ❌ Bad: Heavy processing in handler
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    // CPU-intensive operation
-    var analysis = PerformComplexAnalysis(e.Text);
-    SaveToDatabase(analysis);  // I/O operation
-    SendNotification(analysis); // Network call
-});
-
-// ✅ Good: Offload heavy work
-ConcurrentQueue<EntryAddedEventArgs> logQueue = new();
-
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    // Fast: Just queue for later processing
-    logQueue.Enqueue(e);
-});
-
-// Separate background task processes the queue
-Task.Run(async () =>
-{
-    while (!cancellationToken.IsCancellationRequested)
-    {
-        if (logQueue.TryDequeue(out var logEvent))
-        {
-            var analysis = await PerformComplexAnalysisAsync(logEvent.Text);
-            await SaveToDatabaseAsync(analysis);
-            await SendNotificationAsync(analysis);
-        }
-        else
-        {
-            await Task.Delay(10);
-        }
-    }
-});
-```
+[!code-csharp[Offload Heavy Work](../../code/advanced/PerformanceSamples.cs#OffloadHeavyWork)]
 
 #### 3. Reduce Event Subscriptions
 
-```csharp
-// ❌ Bad: Subscribe to high-frequency events you don't need
-subscribe.Events.Add("network.beforeRequestSent");   // Very high frequency
-subscribe.Events.Add("network.responseStarted");     // Very high frequency
-subscribe.Events.Add("network.responseCompleted");   // High frequency
-
-// ✅ Good: Only subscribe to events you actually use
-subscribe.Events.Add("network.responseCompleted");   // Only this one
-
-// ✅ Even better: Scope to specific contexts
-subscribe.Events.Add("network.responseCompleted");
-subscribe.Contexts.Add(contextId);  // Only for this tab
-```
+[!code-csharp[Scope Subscriptions](../../code/advanced/PerformanceSamples.cs#ScopeSubscriptions)]
 
 #### 4. Implement Event Throttling
 
-```csharp
-// Throttle high-frequency events
-DateTime lastProcessed = DateTime.MinValue;
-TimeSpan throttleInterval = TimeSpan.FromMilliseconds(100);
-
-driver.Network.OnBeforeRequestSent.AddObserver((e) =>
-{
-    DateTime now = DateTime.Now;
-    if (now - lastProcessed < throttleInterval)
-    {
-        return;  // Skip this event
-    }
-
-    lastProcessed = now;
-    ProcessRequest(e);
-});
-```
+[!code-csharp[Event Throttling](../../code/advanced/PerformanceSamples.cs#EventThrottling)]
 
 #### 5. Use Event Sampling
 
-```csharp
-// Sample 10% of events for analysis
-Random random = new Random();
-
-driver.Network.OnResponseCompleted.AddObserver((e) =>
-{
-    if (random.Next(100) < 10)  // 10% sample rate
-    {
-        AnalyzeResponse(e);
-    }
-});
-```
+[!code-csharp[Event Sampling](../../code/advanced/PerformanceSamples.cs#EventSampling)]
 
 ### Monitoring and Diagnostics
 
 Since there's no built-in queue depth metric, monitor at the process level:
 
-```csharp
-using System.Diagnostics;
-
-// Monitor memory usage
-Process currentProcess = Process.GetCurrentProcess();
-
-Timer memoryMonitor = new Timer(_ =>
-{
-    currentProcess.Refresh();
-    long memoryMB = currentProcess.WorkingSet64 / (1024 * 1024);
-
-    if (memoryMB > 500)  // Alert if over 500MB
-    {
-        Console.WriteLine($"⚠️ High memory usage: {memoryMB} MB");
-    }
-}, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
-```
+[!code-csharp[Memory Monitoring](../../code/advanced/PerformanceSamples.cs#MemoryMonitoring)]
 
 ### Practical Guidelines
 
@@ -482,453 +183,65 @@ Timer memoryMonitor = new Timer(_ =>
 
 ### Example: High-Throughput Network Monitoring
 
-```csharp
-using System.Collections.Concurrent;
-using WebDriverBiDi;
-using WebDriverBiDi.Network;
-
-// Efficient high-throughput event handling
-public class NetworkMonitor
-{
-    private readonly ConcurrentQueue<ResponseData> responseQueue = new();
-    private readonly SemaphoreSlim processingSignal = new(0);
-    private readonly CancellationTokenSource cancellation = new();
-    private int eventCount = 0;
-
-    public async Task StartAsync(BiDiDriver driver)
-    {
-        // Lightweight event handler - just queue
-        driver.Network.OnResponseCompleted.AddObserver(
-            async (e) =>
-            {
-                responseQueue.Enqueue(e.Response);
-                processingSignal.Release();
-                Interlocked.Increment(ref eventCount);
-            },
-            ObservableEventHandlerOptions.RunHandlerAsynchronously
-        );
-
-        // Background processor - handles heavy work
-        _ = Task.Run(async () =>
-        {
-            while (!cancellation.Token.IsCancellationRequested)
-            {
-                await processingSignal.WaitAsync(cancellation.Token);
-
-                if (responseQueue.TryDequeue(out var response))
-                {
-                    try
-                    {
-                        await AnalyzeResponseAsync(response);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Analysis error: {ex.Message}");
-                    }
-                }
-            }
-        });
-
-        // Metrics reporter
-        _ = Task.Run(async () =>
-        {
-            while (!cancellation.Token.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(10));
-                int count = Interlocked.Exchange(ref eventCount, 0);
-                int queueDepth = responseQueue.Count;
-                Console.WriteLine($"Events/sec: {count / 10.0:F1}, Queue depth: {queueDepth}");
-            }
-        });
-    }
-
-    private async Task AnalyzeResponseAsync(ResponseData response)
-    {
-        // Heavy analysis happens here, off the message thread
-        await Task.Delay(50);  // Simulated analysis
-    }
-
-    public void Stop()
-    {
-        cancellation.Cancel();
-    }
-}
-```
+[!code-csharp[NetworkMonitor Class](../../code/advanced/PerformanceSamples.cs#NetworkMonitorClass)]
 
 ## Resource Management
 
 ### Connection Pooling
 
-```csharp
-public class DriverPool
-{
-    private readonly Stack<BiDiDriver> availableDrivers = new();
-    private readonly int maxPoolSize = 5;
-    private readonly SemaphoreSlim semaphore;
-    
-    public DriverPool()
-    {
-        semaphore = new SemaphoreSlim(maxPoolSize, maxPoolSize);
-    }
+[!code-csharp[DriverPool Class](../../code/advanced/PerformanceSamples.cs#DriverPoolClass)]
 
-    public async Task<BiDiDriver> AcquireAsync()
-    {
-        await semaphore.WaitAsync();
-        
-        lock (availableDrivers)
-        {
-            if (availableDrivers.Count > 0)
-            {
-                return availableDrivers.Pop();
-            }
-        }
-        
-        // Create new driver if none available
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.StartAsync(webSocketUrl);
-        return driver;
-    }
-
-    public void Release(BiDiDriver driver)
-    {
-        lock (availableDrivers)
-        {
-            if (availableDrivers.Count < maxPoolSize)
-            {
-                availableDrivers.Push(driver);
-            }
-            else
-            {
-                driver.StopAsync().Wait();
-            }
-        }
-        
-        semaphore.Release();
-    }
-}
-
-// Usage
-DriverPool pool = new DriverPool();
-
-BiDiDriver driver = await pool.AcquireAsync();
-try
-{
-    // Use driver
-    await driver.BrowsingContext.NavigateAsync(navParams);
-}
-finally
-{
-    pool.Release(driver);
-}
-```
+[!code-csharp[DriverPool Usage](../../code/advanced/PerformanceSamples.cs#DriverPoolUsage)]
 
 ### Memory Management
 
-```csharp
-// Always clean up data collectors
-AddDataCollectorCommandResult collector = 
-    await driver.Network.AddDataCollectorAsync(collectorParams);
-
-try
-{
-    // Use collector
-    await CaptureNetworkTraffic();
-}
-finally
-{
-    await driver.Network.RemoveDataCollectorAsync(
-        new RemoveDataCollectorCommandParameters(collector.CollectorId));
-}
-
-// Disown collected data to free memory
-GetDataCommandParameters getDataParams = new GetDataCommandParameters(requestId)
-{
-    CollectorId = collectorId,
-    DisownCollectedData = true  // Free memory after retrieval
-};
-```
+[!code-csharp[Memory Management Collectors](../../code/advanced/PerformanceSamples.cs#MemoryManagementCollectors)]
 
 ### Observer Cleanup
 
-```csharp
-public class ManagedObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
-{
-    private EventObserver<T>? observer;
-    
-    public ManagedObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler)
-    {
-        observer = observableEvent.AddObserver(handler);
-    }
-    
-    public void Dispose()
-    {
-        observer?.Unobserve();
-        observer = null;
-    }
-}
+[!code-csharp[ManagedObserver Class](../../code/advanced/PerformanceSamples.cs#ManagedObserverClass)]
 
-// Usage with automatic cleanup
-using (new ManagedObserver<EntryAddedEventArgs>(
-    driver.Log.OnEntryAdded,
-    (e) => { Console.WriteLine(e.Text); return Task.CompletedTask; }))
-{
-    // Observer active here
-    await driver.BrowsingContext.NavigateAsync(navParams);
-}
-// Observer automatically removed
-```
+[!code-csharp[ManagedObserver Usage](../../code/advanced/PerformanceSamples.cs#ManagedObserverUsage)]
 
 ## Network Optimization
 
 ### Reduce Network Interception Overhead
 
-```csharp
-// ❌ Slow: Intercept everything
-AddInterceptCommandParameters intercept = new AddInterceptCommandParameters();
-intercept.Phases.Add(InterceptPhase.BeforeRequestSent);
-await driver.Network.AddInterceptAsync(intercept);
-
-// ✅ Fast: Intercept only what you need
-AddInterceptCommandParameters intercept = new AddInterceptCommandParameters();
-intercept.Phases.Add(InterceptPhase.BeforeRequestSent);
-intercept.UrlPatterns = new List<UrlPattern>
-{
-    new UrlPatternPattern { Hostname = "api.example.com" }
-};
-await driver.Network.AddInterceptAsync(intercept);
-```
+[!code-csharp[Scoped Interception](../../code/advanced/PerformanceSamples.cs#ScopedInterception)]
 
 ### Block Unnecessary Resources
 
-```csharp
-// Speed up page loads by blocking images, CSS, fonts
-AddInterceptCommandParameters intercept = new AddInterceptCommandParameters();
-intercept.Phases.Add(InterceptPhase.BeforeRequestSent);
-intercept.UrlPatterns = new List<UrlPattern>
-{
-    new UrlPatternString("*.jpg"),
-    new UrlPatternString("*.png"),
-    new UrlPatternString("*.gif"),
-    new UrlPatternString("*.css"),
-    new UrlPatternString("*.woff*")
-};
-
-await driver.Network.AddInterceptAsync(intercept);
-
-driver.Network.OnBeforeRequestSent.AddObserver(async (e) =>
-{
-    if (e.IsBlocked)
-    {
-        await driver.Network.FailRequestAsync(
-            new FailRequestCommandParameters(e.Request.RequestId));
-    }
-},
-ObservableEventHandlerOptions.RunHandlerAsynchronously);
-```
+[!code-csharp[Block Unnecessary Resources](../../code/advanced/PerformanceSamples.cs#BlockUnnecessaryResources)]
 
 ## Browser Context Optimization
 
 ### Reuse Contexts
 
-```csharp
-// ❌ Slow: Create new context for each test
-[Test]
-public async Task Test1()
-{
-    CreateCommandResult ctx = await driver.BrowsingContext.CreateAsync(
-        new CreateCommandParameters(CreateType.Tab));
-    // Test...
-    await driver.BrowsingContext.CloseAsync(new CloseCommandParameters(ctx.BrowsingContextId));
-}
-
-// ✅ Fast: Reuse context, just navigate
-private string sharedContextId;
-
-[SetUp]
-public async Task Setup()
-{
-    CreateCommandResult ctx = await driver.BrowsingContext.CreateAsync(
-        new CreateCommandParameters(CreateType.Tab));
-    sharedContextId = ctx.BrowsingContextId;
-}
-
-[Test]
-public async Task Test1()
-{
-    await driver.BrowsingContext.NavigateAsync(
-        new NavigateCommandParameters(sharedContextId, url));
-    // Test...
-}
-
-[TearDown]
-public async Task Teardown()
-{
-    await driver.BrowsingContext.CloseAsync(
-        new CloseCommandParameters(sharedContextId));
-}
-```
+[!code-csharp[Reuse Context](../../code/advanced/PerformanceReuseContextSamples.cs#ReuseContext)]
 
 ### Use User Contexts for Isolation
 
-```csharp
-// Create isolated user context once
-CreateUserContextCommandResult userContext = 
-    await driver.Browser.CreateUserContextAsync(new());
-
-// Create multiple tabs in same user context (shares cache, cookies)
-List<string> contextIds = new();
-for (int i = 0; i < 5; i++)
-{
-    CreateCommandResult tab = await driver.BrowsingContext.CreateAsync(
-        new CreateCommandParameters(CreateType.Tab)
-        {
-            UserContext = userContext.UserContextId
-        });
-    contextIds.Add(tab.BrowsingContextId);
-}
-
-// All tabs share cookies and cache = faster subsequent loads
-```
+[!code-csharp[User Contexts for Isolation](../../code/advanced/PerformanceSamples.cs#UserContextsforIsolation)]
 
 ## Measurement and Profiling
 
 ### Performance Tracking
 
-```csharp
-public class PerformanceTracker
-{
-    private Dictionary<string, List<TimeSpan>> metrics = new();
-    
-    public async Task<T> TrackAsync<T>(string operationName, Func<Task<T>> operation)
-    {
-        DateTime start = DateTime.Now;
-        
-        try
-        {
-            return await operation();
-        }
-        finally
-        {
-            TimeSpan duration = DateTime.Now - start;
-            
-            if (!metrics.ContainsKey(operationName))
-            {
-                metrics[operationName] = new List<TimeSpan>();
-            }
-            
-            metrics[operationName].Add(duration);
-        }
-    }
-    
-    public void PrintStats()
-    {
-        Console.WriteLine("\n Performance Statistics");
-        Console.WriteLine("========================");
-        
-        foreach (var kvp in metrics)
-        {
-            var durations = kvp.Value;
-            double avgMs = durations.Average(d => d.TotalMilliseconds);
-            double minMs = durations.Min(d => d.TotalMilliseconds);
-            double maxMs = durations.Max(d => d.TotalMilliseconds);
-            
-            Console.WriteLine($"\n{kvp.Key}:");
-            Console.WriteLine($"  Count: {durations.Count}");
-            Console.WriteLine($"  Avg:   {avgMs:F2}ms");
-            Console.WriteLine($"  Min:   {minMs:F2}ms");
-            Console.WriteLine($"  Max:   {maxMs:F2}ms");
-        }
-    }
-}
+[!code-csharp[PerformanceTracker Class](../../code/advanced/PerformanceSamples.cs#PerformanceTrackerClass)]
 
-// Usage
-PerformanceTracker tracker = new PerformanceTracker();
-
-await tracker.TrackAsync("Navigation", async () =>
-    await driver.BrowsingContext.NavigateAsync(navParams));
-
-await tracker.TrackAsync("Script Execution", async () =>
-    await driver.Script.EvaluateAsync(evalParams));
-
-tracker.PrintStats();
-```
+[!code-csharp[PerformanceTracker Usage](../../code/advanced/PerformanceSamples.cs#PerformanceTrackerUsage)]
 
 ### Bottleneck Identification
 
-```csharp
-public async Task AnalyzePageLoadAsync(BiDiDriver driver, string contextId, string url)
-{
-    Dictionary<string, int> resourceCounts = new();
-    Dictionary<string, long> resourceSizes = new();
-    DateTime startTime = DateTime.Now;
-    
-    driver.Network.OnResponseCompleted.AddObserver((e) =>
-    {
-        Uri uri = new Uri(e.Response.Url);
-        string extension = Path.GetExtension(uri.LocalPath).ToLower();
-        
-        resourceCounts[extension] = resourceCounts.GetValueOrDefault(extension) + 1;
-        resourceSizes[extension] = resourceSizes.GetValueOrDefault(extension) + 
-            (long)e.Response.BytesReceived;
-    });
-    
-    SubscribeCommandParameters subscribe = 
-        new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
-    await driver.Session.SubscribeAsync(subscribe);
-    
-    await driver.BrowsingContext.NavigateAsync(
-        new NavigateCommandParameters(contextId, url)
-        { Wait = ReadinessState.Complete });
-    
-    TimeSpan loadTime = DateTime.Now - startTime;
-    
-    Console.WriteLine($"\nPage Load Analysis for {url}");
-    Console.WriteLine($"Total Time: {loadTime.TotalSeconds:F2}s");
-    Console.WriteLine("\nResources by Type:");
-    
-    foreach (var kvp in resourceCounts.OrderByDescending(x => x.Value))
-    {
-        long sizeKB = resourceSizes[kvp.Key] / 1024;
-        Console.WriteLine($"  {kvp.Key,-10} {kvp.Value,3} files  {sizeKB,6} KB");
-    }
-}
-```
+[!code-csharp[Analyze Page Load](../../code/advanced/PerformanceSamples.cs#AnalyzePageLoad)]
 
 ## Caching Strategies
 
 ### Cache Repeated Queries
 
-```csharp
-public class CachedContextInfo
-{
-    private Dictionary<string, BrowsingContextInfo> cache = new();
-    private BiDiDriver driver;
-    
-    public async Task<BrowsingContextInfo> GetContextInfoAsync(string contextId)
-    {
-        if (cache.TryGetValue(contextId, out var cachedInfo))
-        {
-            return cachedInfo;
-        }
-        
-        GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
-            new GetTreeCommandParameters { RootBrowsingContextId = contextId });
-        
-        if (tree.ContextTree.Count > 0)
-        {
-            cache[contextId] = tree.ContextTree[0];
-            return tree.ContextTree[0];
-        }
-        
-        throw new Exception("Context not found");
-    }
-    
-    public void InvalidateCache(string contextId)
-    {
-        cache.Remove(contextId);
-    }
-}
-```
+[!code-csharp[CachedContextInfo Class](../../code/advanced/PerformanceSamples.cs#CachedContextInfoClass)]
+
+[!code-csharp[CachedContextInfo Usage](../../code/advanced/PerformanceSamples.cs#CachedContextInfoUsage)]
 
 ## Best Practices Summary
 

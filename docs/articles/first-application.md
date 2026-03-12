@@ -53,140 +53,7 @@ google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-profile
 
 Replace the contents of `Program.cs`:
 
-```csharp
-using System;
-using System.Threading.Tasks;
-using WebDriverBiDi;
-using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Script;
-using WebDriverBiDi.Log;
-using WebDriverBiDi.Session;
-
-namespace MyFirstBiDiApp
-{
-    class Program
-    {
-        static async Task Main(string[] args)
-        {
-            // Replace with your WebSocket URL from step 4
-            string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-ID-HERE";
-
-            // Create driver with 30 second timeout
-            BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-
-            try
-            {
-                Console.WriteLine("Connecting to browser...");
-                await driver.StartAsync(webSocketUrl);
-                Console.WriteLine("Connected!");
-
-                // Set up console log monitoring
-                driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-                {
-                    Console.WriteLine($"[Browser Console] {e.Level}: {e.Text}");
-                });
-
-                SubscribeCommandParameters subscribe = 
-                    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-                await driver.Session.SubscribeAsync(subscribe);
-
-                // Get the current browsing context
-                Console.WriteLine("\nGetting browsing contexts...");
-                GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
-                    new GetTreeCommandParameters());
-
-                string contextId = tree.ContextTree[0].BrowsingContextId;
-                Console.WriteLine($"Active context: {contextId}");
-
-                // Navigate to a website
-                Console.WriteLine("\nNavigating to example.com...");
-                NavigateCommandParameters navParams = new NavigateCommandParameters(
-                    contextId,
-                    "https://example.com")
-                {
-                    Wait = ReadinessState.Complete
-                };
-
-                NavigateCommandResult navResult = await driver.BrowsingContext.NavigateAsync(navParams);
-                Console.WriteLine($"Navigation complete! URL: {navResult.Url}");
-
-                // Get the page title
-                Console.WriteLine("\nGetting page title...");
-                EvaluateCommandParameters evalParams = new EvaluateCommandParameters(
-                    "document.title",
-                    new ContextTarget(contextId),
-                    true);
-
-                EvaluateResult scriptResult = await driver.Script.EvaluateAsync(evalParams);
-
-                if (scriptResult is EvaluateResultSuccess success)
-                {
-                    string title = success.Result.ValueAs<string>() ?? "No title";
-                    Console.WriteLine($"Page title: {title}");
-                }
-
-                // Get page information
-                Console.WriteLine("\nGetting page information...");
-                string infoScript = @"
-                {
-                    url: window.location.href,
-                    linkCount: document.querySelectorAll('a').length,
-                    headingCount: document.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
-                    paragraphCount: document.querySelectorAll('p').length
-                }";
-
-                EvaluateCommandParameters infoParams = new EvaluateCommandParameters(
-                    infoScript,
-                    new ContextTarget(contextId),
-                    true);
-
-                EvaluateResult infoResult = await driver.Script.EvaluateAsync(infoParams);
-
-                if (infoResult is EvaluateResultSuccess infoSuccess)
-                {
-                    RemoteValueDictionary info = infoSuccess.Result.ValueAs<RemoteValueDictionary>();
-                    Console.WriteLine("Page Analysis:");
-                    Console.WriteLine($"  URL: {info["url"].ValueAs<string>()}");
-                    Console.WriteLine($"  Links: {info["linkCount"].ValueAs<long>()}");
-                    Console.WriteLine($"  Headings: {info["headingCount"].ValueAs<long>()}");
-                    Console.WriteLine($"  Paragraphs: {info["paragraphCount"].ValueAs<long>()}");
-                }
-
-                // Take a screenshot
-                Console.WriteLine("\nCapturing screenshot...");
-                CaptureScreenshotCommandParameters screenshotParams =
-                    new CaptureScreenshotCommandParameters(contextId);
-
-                CaptureScreenshotCommandResult screenshot =
-                    await driver.BrowsingContext.CaptureScreenshotAsync(screenshotParams);
-
-                byte[] imageBytes = Convert.FromBase64String(screenshot.Data);
-                await File.WriteAllBytesAsync("example-screenshot.png", imageBytes);
-                Console.WriteLine("Screenshot saved to example-screenshot.png");
-
-                Console.WriteLine("\n✓ All operations completed successfully!");
-                Console.WriteLine("\nPress any key to exit...");
-                Console.ReadKey();
-            }
-            catch (WebDriverBiDiException ex)
-            {
-                Console.WriteLine($"\n✗ WebDriver BiDi Error: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"\n✗ Unexpected Error: {ex.Message}");
-            }
-            finally
-            {
-                // Disconnect from the browser
-                Console.WriteLine("\nDisconnecting from browser...");
-                await driver.StopAsync();
-                Console.WriteLine("Disconnected!");
-            }
-        }
-    }
-}
-```
+[!code-csharp[Full First Application](../code/examples/FirstApplicationSamples.cs#FullFirstApplication)]
 
 ## Step 6: Run the Application
 
@@ -228,66 +95,37 @@ Press any key to exit...
 
 ### 1. Driver Initialization
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync(webSocketUrl);
-```
+[!code-csharp[Driver Initialization](../code/examples/FirstApplicationSamples.cs#DriverInitialization)]
 
 Creates a driver with a 30-second command timeout and connects to the browser.
 
 ### 2. Event Subscription
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((e) => { /* handle log */ });
-await driver.Session.SubscribeAsync(subscribe);
-```
+[!code-csharp[Event Subscription](../code/examples/FirstApplicationSamples.cs#EventSubscription)]
 
 Sets up monitoring for browser console logs before they occur.
 
 ### 3. Getting the Context
 
-```csharp
-GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
-    new GetTreeCommandParameters());
-string contextId = tree.ContextTree[0].BrowsingContextId;
-```
+[!code-csharp[Getting Context](../code/examples/FirstApplicationSamples.cs#GettingContext)]
 
 Retrieves the current browsing contexts (tabs). We use the first one.
 
 ### 4. Navigation
 
-```csharp
-NavigateCommandParameters navParams = new NavigateCommandParameters(
-    contextId,
-    "https://example.com")
-{
-    Wait = ReadinessState.Complete  // Wait for full page load
-};
-await driver.BrowsingContext.NavigateAsync(navParams);
-```
+[!code-csharp[Navigation](../code/examples/FirstApplicationSamples.cs#Navigation)]
 
 Navigates to a URL and waits for the page to fully load.
 
 ### 5. JavaScript Execution
 
-```csharp
-EvaluateCommandParameters evalParams = new EvaluateCommandParameters(
-    "document.title",
-    new ContextTarget(contextId),
-    true);  // awaitPromise
-EvaluateResult result = await driver.Script.EvaluateAsync(evalParams);
-```
+[!code-csharp[JavaScript Execution](../code/examples/FirstApplicationSamples.cs#JavaScriptExecution)]
 
 Executes JavaScript and retrieves the result.
 
 ### 6. Screenshot Capture
 
-```csharp
-CaptureScreenshotCommandResult screenshot =
-    await driver.BrowsingContext.CaptureScreenshotAsync(screenshotParams);
-byte[] imageBytes = Convert.FromBase64String(screenshot.Data);
-await File.WriteAllBytesAsync("screenshot.png", imageBytes);
-```
+[!code-csharp[Screenshot Capture](../code/examples/FirstApplicationSamples.cs#ScreenshotCapture)]
 
 Captures a screenshot and saves it to disk.
 
@@ -332,7 +170,6 @@ Now that you have a working application, explore these topics:
 
 Find complete examples and more advanced scenarios in the project's demo applications:
 - `src/WebDriverBiDi.Demo/` - Various demonstration scenarios
-- `src/WebDriverBiDi.Client/` - Helper utilities for common tasks
 
 ## Exercises
 

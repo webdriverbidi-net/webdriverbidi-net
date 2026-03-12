@@ -13,37 +13,37 @@ This document provides an architectural overview of WebDriverBiDi.NET, explainin
                  ▼
 ┌─────────────────────────────────────────────────────┐
 │              BiDiDriver                             │
-│  ┌─────────────────────────────────────────────┐   │
-│  │           Module Layer                      │   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  │   │
-│  │  │ Browser  │  │ Browsing │  │  Script  │  │   │
-│  │  │  Module  │  │  Context │  │  Module  │  │   │
-│  │  └──────────┘  │  Module  │  └──────────┘  │   │
-│  │                └──────────┘                 │   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  │   │
-│  │  │ Network  │  │  Input   │  │   Log    │  │   │
-│  │  │  Module  │  │  Module  │  │  Module  │  │   │
-│  │  └──────────┘  └──────────┘  └──────────┘  │   │
-│  └─────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────┐    │
+│  │           Module Layer                      │    │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐   │    │
+│  │  │ Browser  │  │ Browsing │  │  Script  │   │    │
+│  │  │  Module  │  │  Context │  │  Module  │   │    │
+│  │  └──────────┘  │  Module  │  └──────────┘   │    │
+│  │                └──────────┘                 │    │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐   │    │
+│  │  │ Network  │  │  Input   │  │   Log    │   │    │
+│  │  │  Module  │  │  Module  │  │  Module  │   │    │
+│  │  └──────────┘  └──────────┘  └──────────┘   │    │
+│  └─────────────────────────────────────────────┘    │
 │                      │                              │
-│  ┌─────────────────────────────────────────────┐   │
-│  │           Protocol Layer                    │   │
-│  │         ┌──────────┐                        │   │
-│  │         │Transport │                        │   │
-│  │         └────┬─────┘                        │   │
-│  │              │                               │   │
-│  │         ┌────▼─────────┐                    │   │
-│  │         │  Connection  │  (Abstract)        │   │
-│  │         └────┬─────────┘                    │   │
-│  │              │                               │   │
-│  │      ┌───────┴────────┐                     │   │
-│  │      ▼                ▼                     │   │
-│  │  ┌────────────┐  ┌──────────┐              │   │
-│  │  │  WebSocket │  │  Pipes   │              │   │
-│  │  │ Connection │  │Connection│              │   │
-│  │  └─────┬──────┘  └────┬─────┘              │   │
-│  └────────┼──────────────┼──────────────────────┘
-└───────────┼──────────────┼────────────────────────┘
+│  ┌─────────────────────────────────────────────┐    │
+│  │           Protocol Layer                    │    │
+│  │         ┌──────────┐                        │    │
+│  │         │Transport │                        │    │
+│  │         └────┬─────┘                        │    │
+│  │              │                              │    │
+│  │         ┌────▼─────────┐                    │    │
+│  │         │  Connection  │  (Abstract)        │    │
+│  │         └────┬─────────┘                    │    │
+│  │              │                              │    │
+│  │      ┌───────┴────────┐                     │    │
+│  │      ▼                ▼                     │    │
+│  │  ┌────────────┐  ┌──────────┐               │    │
+│  │  │  WebSocket │  │  Pipes   │               │    │
+│  │  │ Connection │  │Connection│               │    │
+│  │  └─────┬──────┘  └────┬─────┘               │    │
+│  └────────┼──────────────┼─────────────────────┘.   |
+└───────────┼──────────────┼─────────────────--───────┘
             │              │
             ▼              ▼
        WebSocket        Pipes
@@ -91,23 +91,23 @@ The `Transport` class handles low-level communication with the browser through a
 
 ```
 Commands (Your Code → Browser):
-┌──────────────┐   Serialize    ┌───────────┐   WebSocket   ┌─────────┐
+┌──────────────┐   Serialize     ┌───────────┐   WebSocket   ┌─────────┐
 │ Command      │────────────────▶│  JSON     │──────────────▶│ Browser │
 │ Parameters   │                 │  Message  │               └─────────┘
 └──────────────┘                 └───────────┘
 
 Responses (Browser → Your Code):
-┌─────────┐   WebSocket   ┌───────────┐   Deserialize   ┌──────────────┐
-│ Browser │──────────────▶│  JSON     │─────────────────▶│ Command      │
-└─────────┘                │  Message  │                  │ Result       │
-                           └───────────┘                  └──────────────┘
+┌─────────┐   WebSocket   ┌───────────-┐   Deserialize    ┌──────────────┐
+│ Browser │──────────────▶│  JSON      │─────────────────▶│ Command      │
+└─────────┘               │  Message   │                  │ Result       │
+                          └─────-──────┘                  └──────────────┘
 
 Events (Browser → Observers):
-┌─────────┐   WebSocket   ┌───────────┐   Deserialize   ┌──────────────┐
+┌─────────┐   WebSocket   ┌───────────┐   Deserialize    ┌──────────────┐
 │ Browser │──────────────▶│  JSON     │─────────────────▶│ Event Args   │
-└─────────┘                │  Message  │                  └──────┬───────┘
-                           └───────────┘                         │
-                                                                 ▼
+└─────────┘               │  Message  │                  └──────┬───────┘
+                          └───────────┘                         │
+                                                                ▼
                                                      ┌────────────────────┐
                                                      │ Event Observers    │
                                                      └────────────────────┘
@@ -142,25 +142,7 @@ Each module encapsulates a specific area of WebDriver BiDi functionality.
 
 **Module Structure:**
 
-```csharp
-public class BrowsingContextModule : Module
-{
-    // Constructor
-    public BrowsingContextModule(IBiDiCommandExecutor driver)
-        : base(driver) { }
-
-    // Commands
-    public async Task<NavigateCommandResult> NavigateAsync(
-        NavigateCommandParameters parameters) { }
-    
-    public async Task<GetTreeCommandResult> GetTreeAsync(
-        GetTreeCommandParameters parameters) { }
-
-    // Observable Events
-    public ObservableEvent<NavigationEventArgs> OnLoad { get; }
-    public ObservableEvent<NavigationEventArgs> OnNavigationStarted { get; }
-}
-```
+See `BrowsingContextModule` in the WebDriverBiDi.BrowsingContext namespace. Each module has a constructor taking `IBiDiCommandExecutor`, command methods returning `Task<CommandResult>`, and observable events of type `ObservableEvent<TEventArgs>`.
 
 **All Modules:**
 - `BrowserModule`: Browser windows and user contexts
@@ -183,29 +165,7 @@ WebDriverBiDi.NET uses an abstract `Connection` class to support multiple transp
 
 ### Connection Architecture
 
-The `Connection` abstract class defines the contract for all transport implementations:
-
-```csharp
-public abstract class Connection : IAsyncDisposable
-{
-    // Abstract members that implementations must provide
-    public abstract bool IsActive { get; }
-    public abstract ConnectionType ConnectionType { get; }
-    public abstract Task StartAsync(string connectionString, CancellationToken cancellationToken);
-    public abstract Task StopAsync(CancellationToken cancellationToken);
-    public abstract Task SendDataAsync(byte[] data, CancellationToken cancellationToken);
-
-    // Observable events for connection lifecycle
-    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived { get; }
-    public ObservableEvent<ConnectionErrorEventArgs> OnConnectionError { get; }
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
-
-    // Configurable timeouts
-    public TimeSpan StartupTimeout { get; set; }  // Default: 10 seconds
-    public TimeSpan ShutdownTimeout { get; set; } // Default: 10 seconds
-    public TimeSpan DataTimeout { get; set; }     // Default: 10 seconds
-}
-```
+The `Connection` abstract class defines the contract for all transport implementations. See the `Connection` class in the WebDriverBiDi.Protocol namespace for the full API, including `IsActive`, `ConnectionType`, `StartAsync`, `StopAsync`, `SendDataAsync`, observable events (`OnDataReceived`, `OnConnectionError`, `OnLogMessage`), and configurable timeouts (`StartupTimeout`, `ShutdownTimeout`, `DataTimeout`).
 
 ### WebSocket Connection
 
@@ -225,23 +185,7 @@ public abstract class Connection : IAsyncDisposable
 
 **Example:**
 
-```csharp
-using WebDriverBiDi;
-
-// Connect to browser at WebSocket URL
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-
-try
-{
-    // Use the driver
-    await driver.BrowsingContext.NavigateAsync(navParams);
-}
-finally
-{
-    await driver.StopAsync();
-}
-```
+[!code-csharp[WebSocket Example](../code/architecture/ArchitectureSamples.cs#WebSocketExample)]
 
 **Browser Launch:**
 ```bash
@@ -269,40 +213,9 @@ The browser provides the WebSocket URL in its output or via the `/json/version` 
 
 **Example:**
 
-```csharp
-using WebDriverBiDi;
-using WebDriverBiDi.Client.Launchers;
-using WebDriverBiDi.Protocol;
+> **Note:** WebDriverBiDi.NET does not ship a browser launcher. Implement `IPipeServerProcessProvider` yourself to launch the browser and provide a `Transport`:
 
-// Launcher implements IPipeServerProcessProvider
-ChromeLauncher launcher = new ChromeLauncher()
-{
-    ConnectionType = ConnectionType.Pipes
-};
-
-await launcher.StartAsync();
-await launcher.LaunchBrowserAsync();
-
-try
-{
-    // Create driver with launcher's connection
-    BiDiDriver driver = new BiDiDriver(
-        TimeSpan.FromSeconds(30),
-        launcher.CreateTransport());
-
-    await driver.StartAsync("pipes");
-
-    // Use the driver
-    await driver.BrowsingContext.NavigateAsync(navParams);
-
-    await driver.StopAsync();
-}
-finally
-{
-    await launcher.QuitBrowserAsync();
-    await launcher.StopAsync();
-}
-```
+[!code-csharp[Pipe Example](../code/architecture/ArchitectureSamples.cs#PipeExample)]
 
 **Browser Launch:**
 ```bash
@@ -313,30 +226,11 @@ The `--remote-debugging-pipe` flag instructs the browser to communicate via stdi
 
 ### IPipeServerProcessProvider Interface
 
-The `IPipeServerProcessProvider` interface enables dependency injection for pipe connections:
-
-```csharp
-public interface IPipeServerProcessProvider
-{
-    Process? PipeServerProcess { get; }
-}
-```
-
-This allows `PipeConnection` to access the browser process and its stdin/stdout handles. Implementations (like `ChromeLauncher`) manage the browser process lifecycle and provide it to the connection.
+The `IPipeServerProcessProvider` interface enables dependency injection for pipe connections. See the interface in the WebDriverBiDi.Protocol namespace—it defines `Process? PipeServerProcess { get; }`. This allows `PipeConnection` to access the browser process and its stdin/stdout handles. You must implement this interface to manage the browser process lifecycle and provide it to the connection.
 
 ### ConnectionType Enum
 
-The `ConnectionType` enum identifies which transport mechanism is being used:
-
-```csharp
-public enum ConnectionType
-{
-    WebSocket,  // WebSocket-based communication
-    Pipes       // Pipe-based communication
-}
-```
-
-Launchers use this to determine which browser flags to use (`--remote-debugging-port` vs `--remote-debugging-pipe`).
+The `ConnectionType` enum identifies which transport mechanism is being used (`WebSocket` or `Pipes`). See the enum in the WebDriverBiDi.Protocol namespace. Launchers use this to determine which browser flags to use (`--remote-debugging-port` vs `--remote-debugging-pipe`).
 
 ### Choosing a Connection Type
 
@@ -386,14 +280,7 @@ Commands follow a strict pattern for type safety and consistency.
 
 **Example:**
 
-```csharp
-// 1. Create parameters (mutable)
-NavigateCommandParameters params = new NavigateCommandParameters(contextId, url);
-params.Wait = ReadinessState.Complete;
-
-// 2-11. Execute command (returns immutable result)
-NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(params);
-```
+[!code-csharp[Command Pattern](../code/architecture/ArchitectureSamples.cs#CommandPattern)]
 
 ### Event System
 
@@ -414,95 +301,30 @@ ObservableEvent<TEventArgs>
   │
   │ Notifies
   ▼
-┌──────────────────────────┐
-│  EventObserver<TEventArgs>│
-│  EventObserver<TEventArgs>│
-│  EventObserver<TEventArgs>│
-└──────────────────────────┘
+┌────────────────────────--─-─┐
+│  EventObserver<TEventArgs>  │
+│  EventObserver<TEventArgs>  │
+│  EventObserver<TEventArgs>  │
+└─────────────────────────--─-┘
   │
   │ Invokes
   ▼
 Your Event Handlers
 ```
 
-**Observable Event:**
+**Observable Event:** See `ObservableEvent<T>` in the WebDriverBiDi namespace—it provides `AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions? options)` and `NotifyObserversAsync(T eventArgs)`.
 
-```csharp
-public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
-{
-    // Subscribe to event
-    public EventObserver<T> AddObserver(
-        Func<T, Task> handler, 
-        ObservableEventHandlerOptions? options = null);
-    
-    // Notify all observers
-    public async Task NotifyObserversAsync(T eventArgs);
-}
-```
-
-**Event Observer:**
-
-```csharp
-public class EventObserver<T>
-{
-    // Set checkpoint to wait for N events
-    public void SetCheckpoint(uint numberOfNotifications = 1);
-
-    // Wait for checkpoint to be fulfilled
-    public Task<bool> WaitForCheckpointAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
-
-    // Wait for checkpoint and all async handler tasks to complete
-    public Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
-
-    // Get tasks from async handlers, transferring ownership to
-    // the caller, and unsetting the checkpoint
-    public Task[] GetCheckpointTasks();
-
-    // Unset a previously-set checkpoint
-    public void UnsetCheckpoint();
-    
-    // Remove observer
-    public void Unobserve();
-}
-```
+**Event Observer:** See `EventObserver<T>` in the WebDriverBiDi namespace—it provides `SetCheckpoint`, `WaitForCheckpointAsync`, `WaitForCheckpointAndTasksAsync`, `GetCheckpointTasks`, `UnsetCheckpoint`, and `Unobserve`.
 
 ## Data Flow Patterns
 
 ### Command Execution
 
-```csharp
-// Synchronous-looking code (with async/await)
-NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(params);
-
-// What actually happens:
-// 1. NavigateAsync creates a Command object
-// 2. Command is serialized to JSON
-// 3. JSON sent via WebSocket
-// 4. Method awaits response
-// 5. Browser processes navigation
-// 6. Browser sends response JSON
-// 7. Transport deserializes to NavigateCommandResult
-// 8. Awaited method returns result
-```
+[!code-csharp[Command Execution Flow](../code/architecture/ArchitectureSamples.cs#CommandExecutionFlow)]
 
 ### Event Handling
 
-```csharp
-// Setup (before events occur)
-driver.Log.OnEntryAdded.AddObserver((e) => {
-    Console.WriteLine(e.Text);
-});
-
-await driver.Session.SubscribeAsync(subscribeParams);
-
-// Runtime (when event occurs):
-// 1. Browser emits log.entryAdded event
-// 2. Transport receives JSON message
-// 3. Transport deserializes to EntryAddedEventArgs
-// 4. ObservableEvent.NotifyObserversAsync called
-// 5. All registered observers invoked
-// 6. Your handler executes
-```
+[!code-csharp[Event Handling](../code/architecture/ArchitectureSamples.cs#EventHandling)]
 
 ### Bidirectional Communication
 
@@ -510,10 +332,10 @@ WebDriver BiDi is truly bidirectional:
 
 ```
 Your Code ────Commands────▶ Browser
-           ◀───Responses────
+          ◀───Responses────
 
 Your Code ◀────Events────── Browser
-           ───Subscribe────▶
+          ───Subscribe────▶
 ```
 
 ## Serialization
@@ -532,24 +354,7 @@ The library includes specialized converters for WebDriver BiDi types:
 
 ### Extension Data
 
-Command results and event args capture unknown properties:
-
-```csharp
-public class CommandResult
-{
-    // Known properties
-    public bool IsError { get; }
-    
-    // Unknown properties stored here
-    [JsonExtensionData]
-    internal Dictionary<string, JsonElement> SerializableAdditionalData { get; }
-    
-    // Exposed as read-only dictionary
-    public ReceivedDataDictionary AdditionalData { get; }
-}
-```
-
-This allows forward compatibility with new protocol versions.
+Command results and event args capture unknown properties via `[JsonExtensionData]` and expose them as `AdditionalData`. See the `CommandResult` base class in the WebDriverBiDi namespace. This allows forward compatibility with new protocol versions.
 
 ## Threading Model
 
@@ -577,25 +382,12 @@ Your application code runs on your own threads:
 Event handlers have two modes:
 
 **Synchronous Mode (default):**
-```csharp
-driver.Log.OnEntryAdded.AddObserver((e) => {
-    // Runs on Transport thread
-    // Blocks other message processing until complete
-    Console.WriteLine(e.Text);
-});
-```
+
+[!code-csharp[Sync Event Handler](../code/architecture/ArchitectureSamples.cs#SyncEventHandler)]
 
 **Asynchronous Mode:**
-```csharp
-driver.Log.OnEntryAdded.AddObserver(
-    async (e) => {
-        // Runs on Task pool
-        // Doesn't block message processing
-        await ProcessLogEntryAsync(e);
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
-```
+
+[!code-csharp[Async Event Handler](../code/architecture/ArchitectureSamples.cs#AsyncEventHandler)]
 
 ## Error Handling Configuration
 
@@ -603,39 +395,13 @@ WebDriverBiDi.NET provides configurable error handling behavior at multiple leve
 
 ### Transport Error Behavior
 
-The `Transport` class can be configured with different error behaviors:
-
-```csharp
-public enum TransportErrorBehavior
-{
-    Ignore,     // Silently ignore transport errors (default)
-    Collect,    // Store errors for later inspection
-    Terminate   // Throw exception on next command execution
-}
-```
+The `Transport` class can be configured with different error behaviors. See `TransportErrorBehavior` enum in the WebDriverBiDi.Protocol namespace: `Ignore` (default), `Collect`, and `Terminate`.
 
 ### Terminate Mode
 
 Throws an exception when the next command is sent after a transport error:
 
-```csharp
-// Throws on next command call after error occurs
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30))
-{
-    EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate,
-    ProtocolErrorBehavior = TransportErrorBehavior.Terminate,
-    UnknownMessageBehavior = TransportErrorBehavior.Terminate,
-    UnexpectedErrorBehavior = TransportErrorBehavior.Terminate,
-};
-try
-{
-    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-}
-catch (WebDriverBiDiException ex)
-{
-    Console.WriteLine($"Connection failed: {ex.Message}");
-}
-```
+[!code-csharp[Terminate Mode](../code/architecture/ArchitectureSamples.cs#TerminateMode)]
 
 **Use When:**
 - You want fast failure on errors
@@ -646,45 +412,7 @@ catch (WebDriverBiDiException ex)
 
 Stores transport errors in a list for later inspection:
 
-```csharp
-using WebDriverBiDi.Protocol;
-
-WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection)
-{
-    EventHandlerExceptionBehavior = TransportErrorBehavior.Collect,
-    ProtocolErrorBehavior = TransportErrorBehavior.Collect,
-    UnknownMessageBehavior = TransportErrorBehavior.Collect,
-    UnexpectedErrorBehavior = TransportErrorBehavior.Collect,
-};
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-
-await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-
-// Perform operations...
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-try
-{
-    await driver.StopAsync();
-}
-catch (AggregateException ex)
-{
-    // Check for collected errors
-    if (ex.InnerExceptions.Count > 0)
-    {
-        Console.WriteLine($"Encountered {ex.InnerExceptions.Count} transport errors:");
-        foreach (Exception error in ex.InnerExceptions)
-        {
-            Console.WriteLine($"  - {error.Message}");
-        }
-    }
-}
-finally
-{
-    await driver.DisposeAsync();
-}
-```
+[!code-csharp[Collect Mode](../code/architecture/ArchitectureSamples.cs#CollectMode)]
 
 **Use When:**
 - You want to continue operation despite errors
@@ -695,20 +423,7 @@ finally
 
 Silently discards transport errors without notification:
 
-```csharp
-using WebDriverBiDi.Protocol;
-
-WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection);
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-
-await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-
-// Errors won't be thrown or collected
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-await driver.StopAsync();
-```
+[!code-csharp[Ignore Mode](../code/architecture/ArchitectureSamples.cs#IgnoreMode)]
 
 **Use When:**
 - Operating in fire-and-forget mode
@@ -721,49 +436,13 @@ await driver.StopAsync();
 
 Connections provide observable events for error monitoring:
 
-```csharp
-using WebDriverBiDi.Protocol;
-
-WebSocketConnection connection = new WebSocketConnection();
-
-// Subscribe to connection errors
-connection.OnConnectionError.AddObserver((errorArgs) =>
-{
-    Console.WriteLine($"Connection error: {errorArgs.Exception.Message}");
-});
-
-// Subscribe to log messages
-connection.OnLogMessage.AddObserver((logArgs) =>
-{
-    Console.WriteLine($"[{logArgs.Level}] {logArgs.Message}");
-});
-
-Transport transport = new Transport(connection);
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-
-await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-```
+[!code-csharp[Connection-Level Error Handling](../code/architecture/ArchitectureSamples.cs#Connection-LevelErrorHandling)]
 
 ### Event Handler Error Behavior
 
 Event handlers can also throw exceptions. Control this with `ObservableEventHandlerOptions`:
 
-```csharp
-// Synchronous handler: exceptions bubble up immediately
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    ProcessLogEntry(e);  // If this throws, exception propagates
-});
-
-// Asynchronous handler: exceptions are captured
-driver.Network.OnBeforeRequestSent.AddObserver(
-    async (e) =>
-    {
-        await ProcessRequestAsync(e);  // Exceptions captured
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
-```
+[!code-csharp[Event Handler Error Behavior](../code/architecture/ArchitectureSamples.cs#EventHandlerErrorBehavior)]
 
 See the [Error Handling Guide](advanced/error-handling.md) for comprehensive error management strategies.
 
@@ -777,28 +456,7 @@ Beyond the transport-level error behavior, `BiDiDriver` exposes four properties 
 
 Controls how exceptions thrown by your event handlers are handled:
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
-
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    // If this throws, driver will terminate on next command
-    ProcessLogEntry(e);
-});
-
-try
-{
-    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-
-    // Perform operations...
-    await driver.BrowsingContext.NavigateAsync(navParams);  // Exception thrown here if handler failed
-}
-catch (WebDriverBiDiException ex)
-{
-    Console.WriteLine($"Event handler error: {ex.Message}");
-}
-```
+[!code-csharp[EventHandlerExceptionBehavior](../code/architecture/ArchitectureSamples.cs#EventHandlerExceptionBehavior)]
 
 **When to Use Each Mode:**
 - **Ignore** (default): Event handler exceptions are logged but don't interrupt message processing. The same applies to exceptions from asynchronously run handlers when those tasks are not captured by an observer checkpoint. Use for non-critical handlers.
@@ -811,25 +469,7 @@ If you explicitly capture async handler tasks with `WaitForCheckpointAndTasksAsy
 
 Controls how protocol errors are handled (invalid JSON, missing required properties, deserialization failures):
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
-
-await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-
-// Perform operations...
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-// Collected errors are thrown when stopping
-try
-{
-    await driver.StopAsync();
-}
-catch (WebDriverBiDiException ex)
-{
-    Console.WriteLine($"Protocol errors encountered: {ex.Message}");
-}
-```
+[!code-csharp[ProtocolErrorBehavior](../code/architecture/ArchitectureSamples.cs#ProtocolErrorBehavior)]
 
 **When to Use Each Mode:**
 - **Ignore** (default): Protocol errors are logged but processing continues. Use when working with experimental or unstable protocol versions.
@@ -840,18 +480,7 @@ catch (WebDriverBiDiException ex)
 
 Controls how unknown messages are handled (valid JSON that doesn't match any known protocol structure):
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;
-
-await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-
-// Browser sends new event type not yet supported by library
-// With Ignore mode, these are logged but don't cause errors
-
-await driver.BrowsingContext.NavigateAsync(navParams);
-await driver.StopAsync();  // Completes without exception
-```
+[!code-csharp[UnknownMessageBehavior](../code/architecture/ArchitectureSamples.cs#UnknownMessageBehavior)]
 
 **When to Use Each Mode:**
 - **Ignore** (default): Unknown messages are logged but don't interrupt processing. Use when working with browsers implementing experimental features.
@@ -862,22 +491,7 @@ await driver.StopAsync();  // Completes without exception
 
 Controls how unexpected errors are handled (error responses received with no corresponding command):
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
-
-try
-{
-    await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-
-    // If browser sends error response without matching command ID, exception thrown on next command
-    await driver.BrowsingContext.NavigateAsync(navParams);
-}
-catch (WebDriverBiDiException ex)
-{
-    Console.WriteLine($"Unexpected error: {ex.Message}");
-}
-```
+[!code-csharp[UnexpectedErrorBehavior](../code/architecture/ArchitectureSamples.cs#UnexpectedErrorBehavior)]
 
 **When to Use Each Mode:**
 - **Ignore** (default): Unexpected errors are logged but don't interrupt processing. Use when browser may send asynchronous errors.
@@ -888,33 +502,7 @@ catch (WebDriverBiDiException ex)
 
 All four error behaviors can be configured independently:
 
-```csharp
-using WebDriverBiDi;
-
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-
-// Different strategies for different error types
-driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;  // Collect handler errors
-driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;        // Fail fast on protocol errors
-driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;         // Ignore unknown messages
-driver.UnexpectedErrorBehavior = TransportErrorBehavior.Collect;       // Collect unexpected errors
-
-await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-
-// Perform operations...
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-// Errors with Collect behavior are thrown here
-try
-{
-    await driver.StopAsync();
-}
-catch (WebDriverBiDiException ex)
-{
-    Console.WriteLine($"Collected errors: {ex.Message}");
-    // Exception may contain multiple errors as inner exceptions
-}
-```
+[!code-csharp[Multiple Error Behaviors](../code/architecture/ArchitectureSamples.cs#MultipleErrorBehaviors)]
 
 **Best Practices:**
 - Start with **Terminate** during development to catch issues early
@@ -931,45 +519,15 @@ WebDriverBiDi.NET can be extended in several ways:
 
 ### Custom Modules
 
-```csharp
-public class MyCustomModule : Module
-{
-    public const string MyCustomModuleName = "myCustom";
+See [Custom Modules](advanced/custom-modules.md) for the full pattern. Register with the driver:
 
-    public MyCustomModule(IBiDiCommandExecutor driver)
-        : base(driver) { }
+[!code-csharp[Custom Module Definition](../code/architecture/ArchitectureSamples.cs#CustomModuleDefinition)]
 
-    public override string ModuleName => MyCustomModuleName;
-    
-    public async Task<MyCommandResult> MyCommandAsync(
-        MyCommandParameters parameters)
-    {
-        return await this.Driver.ExecuteCommandAsync<MyCommandResult>(
-            parameters);
-    }
-}
-
-// Register with driver
-driver.RegisterModule(new MyCustomModule(driver));
-```
+[!code-csharp[Custom Module Registration](../code/architecture/ArchitectureSamples.cs#CustomModuleRegistration)]
 
 ### Custom Transport
 
-```csharp
-public class MyTransport : Transport
-{
-    protected override JsonElement DeserializeMessage(byte[] messageData)
-    {
-        // Custom message processing
-        return base.DeserializeMessage(messageData);
-    }
-}
-
-BiDiDriver driver = new BiDiDriver(
-    TimeSpan.FromSeconds(10), 
-    new MyTransport()
-);
-```
+Create a class that extends `Transport` and overrides `DeserializeMessage` for custom message processing. Pass an instance to `BiDiDriver(TimeSpan, Transport)`.
 
 ## Performance Considerations
 
@@ -977,35 +535,13 @@ BiDiDriver driver = new BiDiDriver(
 
 Commands are executed sequentially per connection. To improve performance:
 
-```csharp
-// ✓ Good: Execute independent commands in parallel
-Task<GetTreeCommandResult> t1 = driver.BrowsingContext.GetTreeAsync(params1);
-Task<StatusCommandResult> t2 = driver.Session.StatusAsync(params2);
-await Task.WhenAll(t1, t2);
-
-// ✗ Slower: Execute sequentially when not needed
-var r1 = await driver.BrowsingContext.GetTreeAsync(params1);
-var r2 = await driver.Session.StatusAsync(params2);
-```
+[!code-csharp[Command Batching](../code/architecture/ArchitectureSamples.cs#CommandBatching)]
 
 ### Event Handler Performance
 
 Long-running event handlers block message processing:
 
-```csharp
-// ✗ Bad: Blocks message processing
-driver.Log.OnEntryAdded.AddObserver((e) => {
-    Thread.Sleep(1000); // Blocks for 1 second
-});
-
-// ✓ Good: Run asynchronously
-driver.Log.OnEntryAdded.AddObserver(
-    async (e) => {
-        await Task.Delay(1000); // Doesn't block
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
-```
+[!code-csharp[Event Handler Performance](../code/architecture/ArchitectureSamples.cs#EventHandlerPerformance)]
 
 ### Memory Management
 
@@ -1013,20 +549,7 @@ driver.Log.OnEntryAdded.AddObserver(
 - **Remove observers** to prevent memory leaks
 - **Dispose of driver** to close WebSocket connection
 
-```csharp
-// Remove observer when done
-EventObserver<EntryAddedEventArgs> observer = 
-    driver.Log.OnEntryAdded.AddObserver(handler);
-    
-// Later...
-observer.Unobserve();
-
-// Unsubscribe from events
-await driver.Session.UnsubscribeAsync(unsubscribeParams);
-
-// Stop driver
-await driver.StopAsync();
-```
+[!code-csharp[Memory Management](../code/architecture/ArchitectureSamples.cs#MemoryManagement)]
 
 ## Summary
 

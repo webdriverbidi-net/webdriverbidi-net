@@ -18,14 +18,7 @@ WebDriverBiDi.NET ships with a pre-built context, `WebDriverBiDiJsonSerializerCo
 
 If you're only using the built-in modules, no additional configuration is needed. The library handles everything automatically:
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync(webSocketUrl);
-
-// All built-in modules work in AOT with no extra setup
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com"));
-```
+[!code-csharp[Built-in Modules in AOT](../../code/advanced/AotCompatibilitySamples.cs#Built-inModulesinAOT)]
 
 ## Custom Modules in AOT
 
@@ -40,50 +33,13 @@ The solution has two parts:
 
 Suppose you have a custom module with its own command and event types:
 
-```csharp
-using System.Text.Json.Serialization;
-using WebDriverBiDi;
-
-public class MyCommandParameters : CommandParameters<MyCommandResult>
-{
-    [JsonIgnore]
-    public override string MethodName => "myModule.myCommand";
-
-    [JsonPropertyName("value")]
-    public string Value { get; set; } = string.Empty;
-}
-
-public class MyCommandResult : CommandResult
-{
-    [JsonIgnore]
-    public override bool IsError => false;
-
-    [JsonPropertyName("data")]
-    public string Data { get; set; } = string.Empty;
-}
-
-public class MyEventArgs : WebDriverBiDiEventArgs
-{
-    [JsonPropertyName("detail")]
-    public string Detail { get; set; } = string.Empty;
-}
-```
+[!code-csharp[Custom Types for AOT](../../code/core-concepts/CoreConceptsCustomModuleSamples.cs#CustomTypesforAOT)]
 
 ### Step 2: Create a Source-Generated Serializer Context
 
 Add `[JsonSerializable]` attributes for the **protocol wrapper types** that the transport actually serializes and deserializes — not just your raw types. The transport serializes `CommandParameters` subclasses directly, but it deserializes responses as `CommandResponseMessage<T>` and events as `EventMessage<T>`:
 
-```csharp
-using System.Text.Json.Serialization;
-using WebDriverBiDi.Protocol;
-
-[JsonSerializable(typeof(MyCommandParameters))]
-[JsonSerializable(typeof(CommandResponseMessage<MyCommandResult>))]
-[JsonSerializable(typeof(EventMessage<MyEventArgs>))]
-public partial class MyModuleJsonSerializerContext : JsonSerializerContext
-{
-}
-```
+[!code-csharp[Source-Generated Context](../../code/core-concepts/CoreConceptsCustomModuleSamples.cs#Source-GeneratedContext)]
 
 > **Important:** You must include `CommandResponseMessage<T>` for each command result type, and `EventMessage<T>` for each event args type. These are the closed generic types that the transport deserializes at runtime.
 
@@ -91,19 +47,7 @@ public partial class MyModuleJsonSerializerContext : JsonSerializerContext
 
 Call `RegisterTypeInfoResolver` **before** starting the driver:
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-
-// Register your serialization metadata for AOT support
-await driver.RegisterTypeInfoResolver(MyModuleJsonSerializerContext.Default);
-
-// Register your custom module
-MyCustomModule myModule = new MyCustomModule(driver);
-driver.RegisterModule(myModule);
-
-// Now connect — the transport will use both the built-in and your custom metadata
-await driver.StartAsync(webSocketUrl);
-```
+[!code-csharp[Register and Connect](../../code/advanced/AotCompatibilitySamples.cs#RegisterandConnect)]
 
 The library combines your resolver with its own using `JsonTypeInfoResolver.Combine()`, so both built-in and custom types are handled seamlessly.
 
@@ -111,47 +55,21 @@ The library combines your resolver with its own using `JsonTypeInfoResolver.Comb
 
 If you have several custom modules, you can either include all types in a single `JsonSerializerContext`, or register multiple contexts separately:
 
-```csharp
-// Option A: One context for everything
-[JsonSerializable(typeof(ModuleACommandParameters))]
-[JsonSerializable(typeof(CommandResponseMessage<ModuleACommandResult>))]
-[JsonSerializable(typeof(ModuleBCommandParameters))]
-[JsonSerializable(typeof(CommandResponseMessage<ModuleBCommandResult>))]
-[JsonSerializable(typeof(EventMessage<ModuleBEventArgs>))]
-public partial class AllCustomModulesJsonContext : JsonSerializerContext { }
+[!code-csharp[Multiple Contexts](../../code/advanced/AotCompatibilitySamples.cs#MultipleCustomModulesOptionA)]
 
-// Register once
-await driver.RegisterTypeInfoResolver(AllCustomModulesJsonContext.Default);
-```
+[!code-csharp[Multiple Contexts](../../code/advanced/AotCompatibilitySamples.cs#MultipleCustomModulesOptionARegistration)]
 
-```csharp
-// Option B: Separate contexts per module
-await driver.RegisterTypeInfoResolver(ModuleAJsonContext.Default);
-await driver.RegisterTypeInfoResolver(ModuleBJsonContext.Default);
-```
+[!code-csharp[Multiple Contexts](../../code/advanced/AotCompatibilitySamples.cs#MultipleCustomModulesOptionBRegistration)]
 
 Both approaches work. Option A produces a single source-generated context, which is slightly more efficient. Option B is better for independently packaged modules.
 
 ## Packaging AOT-Compatible Modules
 
-When distributing a custom module as a NuGet package, include the source-generated context so consumers don't have to create their own:
-
-```csharp
-namespace MyCompany.WebDriverBiDi.Extensions;
-
-// Ship this context alongside your module
-[JsonSerializable(typeof(MyCommandParameters))]
-[JsonSerializable(typeof(CommandResponseMessage<MyCommandResult>))]
-[JsonSerializable(typeof(EventMessage<MyEventArgs>))]
-public partial class MyExtensionJsonSerializerContext : JsonSerializerContext { }
-```
+When distributing a custom module as a NuGet package, include the source-generated context so consumers don't have to create their own. See [Core Concepts - Custom JSON Type Resolvers](../core-concepts.md#custom-json-type-resolvers-aot-scenarios) for the context definition pattern.
 
 Document that consumers should register it:
 
-```csharp
-await driver.RegisterTypeInfoResolver(MyExtensionJsonSerializerContext.Default);
-driver.RegisterModule(new MyExtensionModule(driver));
-```
+[!code-csharp[Consumer Registers Extension](../../code/advanced/AotCompatibilitySamples.cs#ConsumerRegistersExtension)]
 
 ## Troubleshooting
 
@@ -170,16 +88,9 @@ This typically means reflection-based serialization was handling your types in d
 
 If your custom types use enums with a custom `JsonConverter` (such as `EnumValueJsonConverter<T>`), ensure the enum array type is rooted for AOT. Add a static constructor to your context:
 
-```csharp
-[JsonSerializable(typeof(MyCommandParameters))]
-public partial class MyModuleJsonSerializerContext : JsonSerializerContext
-{
-    static MyModuleJsonSerializerContext()
-    {
-        RuntimeHelpers.RunClassConstructor(typeof(MyCustomEnum[]).TypeHandle);
-    }
-}
-```
+[!code-csharp[AOT Enum Rooting](../../code/advanced/AotCompatibilitySamples.cs#AOTEnumRooting)]
+
+> This pattern requires `using System.Runtime.CompilerServices;` for `RuntimeHelpers`.
 
 ## Best Practices
 

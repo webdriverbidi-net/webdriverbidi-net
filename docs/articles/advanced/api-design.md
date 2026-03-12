@@ -18,26 +18,11 @@ Module commands fall into two categories based on their `CommandParameters`:
 
 **Commands with optional parameters** accept `null` or omit the parameters object. Use these when the command has no required properties and no "reset" capability:
 
-```csharp
-// All equivalent—parameters optional
-GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(null);
-GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
-StatusCommandResult status = await driver.Session.StatusAsync(null);
-GetCookiesCommandResult cookies = await driver.Storage.GetCookiesAsync(null);
-```
+[!code-csharp[Optional Parameters](../../code/api-design/TimeoutAndCancellationSamples.cs#OptionalParameters)]
 
 **Commands with required parameters** always require a parameters object. These commands have a static "reset" property that clears a value on the remote end. Passing no parameters would be ambiguous—are you setting or resetting?
 
-```csharp
-// ✅ Explicit reset
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(
-    SetClientHintsOverrideCommandParameters.ResetClientHintsOverride);
-
-// ✅ Explicit set
-SetClientHintsOverrideCommandParameters setParams = new SetClientHintsOverrideCommandParameters();
-setParams.ClientHints = new ClientHintsMetadata { /* ... */ };
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(setParams);
-```
+[!code-csharp[Required Parameters](../../code/api-design/TimeoutAndCancellationSamples.cs#RequiredParameters)]
 
 ### Complete Lists
 
@@ -77,17 +62,7 @@ Task<T> CommandAsync(
 - **`timeoutOverride`**: When `null`, the driver uses `BiDiDriver.DefaultCommandTimeout` (60 seconds by default). Pass a value to override for long-running or quick-fail scenarios.
 - **`cancellationToken`**: Propagates cancellation. Use for cooperative cancellation (e.g., user cancel, test timeout).
 
-```csharp
-// Use default timeout
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-// Override timeout for quick operation
-await driver.Session.StatusAsync(null, timeoutOverride: TimeSpan.FromSeconds(5));
-
-// With cancellation
-using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
-await driver.BrowsingContext.NavigateAsync(navParams, cancellationToken: cts.Token);
-```
+[!code-csharp[Timeout and Cancellation Examples](../../code/api-design/TimeoutAndCancellationSamples.cs#TimeoutandCancellationExamples)]
 
 For timeout patterns (e.g., returning `null` instead of throwing) and connection-level timeout configuration, see [Error Handling - Timeout Handling](error-handling.md#timeout-handling).
 

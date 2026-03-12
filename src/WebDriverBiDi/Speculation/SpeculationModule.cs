@@ -6,8 +6,8 @@
 namespace WebDriverBiDi.Speculation;
 
 /// <summary>
-/// The Speculation module contains events for monitoring the remote end behavior
-/// for prefetches, prerenders, and speculation rules.
+/// The Speculation module provides the <c>speculation.prefetchStatusUpdated</c> event for
+/// monitoring prefetch status. Defined in the Prefetch spec's Automated testing section.
 /// </summary>
 public sealed class SpeculationModule : Module
 {

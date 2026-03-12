@@ -13,179 +13,41 @@ The Bluetooth module allows you to:
 
 ## Accessing the Module
 
-```csharp
-BluetoothModule bluetooth = driver.Bluetooth;
-```
+[!code-csharp[Accessing Module](../../code/modules/BluetoothModuleSamples.cs#AccessingModule)]
 
 ## Simulating Bluetooth Devices
 
 ### Basic Device Simulation
 
-```csharp
-SimulateDeviceCommandParameters params = new SimulateDeviceCommandParameters();
-params.DeviceAddress = "00:00:00:00:00:00";
-params.DeviceName = "Test Device";
-params.ManufacturerData = new Dictionary<ushort, byte[]>
-{
-    { 0x004C, new byte[] { 0x01, 0x02, 0x03 } }
-};
-
-await driver.Bluetooth.SimulateDeviceAsync(params);
-Console.WriteLine("Bluetooth device simulated");
-```
+[!code-csharp[Basic Device Simulation](../../code/modules/BluetoothModuleSamples.cs#BasicDeviceSimulation)]
 
 ### Device with Services
 
-```csharp
-SimulateDeviceCommandParameters params = new SimulateDeviceCommandParameters();
-params.DeviceAddress = "AA:BB:CC:DD:EE:FF";
-params.DeviceName = "Heart Rate Monitor";
-params.Services = new List<string> { "heart_rate" };
-
-await driver.Bluetooth.SimulateDeviceAsync(params);
-Console.WriteLine("Bluetooth heart rate monitor simulated");
-```
+[!code-csharp[Device with Services](../../code/modules/BluetoothModuleSamples.cs#DevicewithServices)]
 
 ## Simulating Advertisements
 
 ### Basic Advertisement
 
-```csharp
-SimulateAdvertisementCommandParameters params =
-    new SimulateAdvertisementCommandParameters();
-params.DeviceAddress = "00:00:00:00:00:00";
-params.Rssi = -50;  // Signal strength
-
-await driver.Bluetooth.SimulateAdvertisementAsync(params);
-Console.WriteLine("Bluetooth advertisement simulated");
-```
+[!code-csharp[Basic Advertisement](../../code/modules/BluetoothModuleSamples.cs#BasicAdvertisement)]
 
 ### Advertisement with Signal Strength
 
-```csharp
-// Simulate weak signal
-SimulateAdvertisementCommandParameters weakSignal =
-    new SimulateAdvertisementCommandParameters();
-weakSignal.DeviceAddress = "00:00:00:00:00:00";
-weakSignal.Rssi = -80;  // Weak signal
-
-await driver.Bluetooth.SimulateAdvertisementAsync(weakSignal);
-
-// Simulate strong signal
-SimulateAdvertisementCommandParameters strongSignal =
-    new SimulateAdvertisementCommandParameters();
-strongSignal.DeviceAddress = "00:00:00:00:00:00";
-strongSignal.Rssi = -30;  // Strong signal
-
-await driver.Bluetooth.SimulateAdvertisementAsync(strongSignal);
-```
+[!code-csharp[Advertisement with Signal Strength](../../code/modules/BluetoothModuleSamples.cs#AdvertisementwithSignalStrength)]
 
 ## Common Patterns
 
 ### Testing Bluetooth Scanner
 
-```csharp
-// Simulate a Bluetooth device
-SimulateDeviceCommandParameters deviceParams =
-    new SimulateDeviceCommandParameters();
-deviceParams.DeviceAddress = "AA:BB:CC:DD:EE:FF";
-deviceParams.DeviceName = "Heart Rate Monitor";
-deviceParams.Services = new List<string> { "heart_rate" };
-
-await driver.Bluetooth.SimulateDeviceAsync(deviceParams);
-
-// Navigate to page with Bluetooth functionality
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com")
-    { Wait = ReadinessState.Complete });
-
-// Trigger Bluetooth scan in page
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"navigator.bluetooth.requestDevice({
-            filters: [{ services: ['heart_rate'] }]
-        }).then(device => device.name)",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string deviceName = success.Result.ValueAs<string>();
-    Console.WriteLine($"Found device: {deviceName}");
-}
-```
+[!code-csharp[Testing Bluetooth Scanner](../../code/modules/BluetoothModuleSamples.cs#TestingBluetoothScanner)]
 
 ### Testing Multiple Devices
 
-```csharp
-// Simulate multiple devices
-List<string> deviceAddresses = new List<string>
-{
-    "AA:BB:CC:DD:EE:01",
-    "AA:BB:CC:DD:EE:02",
-    "AA:BB:CC:DD:EE:03"
-};
-
-foreach (var address in deviceAddresses)
-{
-    SimulateDeviceCommandParameters params =
-        new SimulateDeviceCommandParameters();
-    params.DeviceAddress = address;
-    params.DeviceName = $"Device {address.Substring(15)}";
-    params.Services = new List<string> { "battery_service" };
-
-    await driver.Bluetooth.SimulateDeviceAsync(params);
-}
-
-// Test device discovery
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"navigator.bluetooth.requestDevice({
-            filters: [{ services: ['battery_service'] }],
-            acceptAllDevices: false
-        }).then(device => device.id)",
-        new ContextTarget(contextId),
-        true));
-```
+[!code-csharp[Testing Multiple Devices](../../code/modules/BluetoothModuleSamples.cs#TestingMultipleDevices)]
 
 ### Testing Device Connection
 
-```csharp
-// Simulate device
-SimulateDeviceCommandParameters deviceParams =
-    new SimulateDeviceCommandParameters();
-deviceParams.DeviceAddress = "11:22:33:44:55:66";
-deviceParams.DeviceName = "Temperature Sensor";
-deviceParams.Services = new List<string> { "environmental_sensing" };
-
-await driver.Bluetooth.SimulateDeviceAsync(deviceParams);
-
-// Advertise device
-SimulateAdvertisementCommandParameters adParams =
-    new SimulateAdvertisementCommandParameters();
-adParams.DeviceAddress = "11:22:33:44:55:66";
-adParams.Rssi = -45;
-
-await driver.Bluetooth.SimulateAdvertisementAsync(adParams);
-
-// Test connection
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"navigator.bluetooth.requestDevice({
-            filters: [{ services: ['environmental_sensing'] }]
-        })
-        .then(device => device.gatt.connect())
-        .then(server => 'connected')
-        .catch(err => `error: ${err.message}`)",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string connectionStatus = success.Result.ValueAs<string>();
-    Console.WriteLine($"Connection status: {connectionStatus}");
-}
-```
+[!code-csharp[Testing Device Connection](../../code/modules/BluetoothModuleSamples.cs#TestingDeviceConnection)]
 
 ## Browser Support
 

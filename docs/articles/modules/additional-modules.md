@@ -9,7 +9,7 @@ WebDriverBiDi.NET includes support for several W3C specifications that use the W
 - **[Permissions Module](permissions.md)** - Browser permission management
 - **[Bluetooth Module](bluetooth.md)** - Web Bluetooth API control
 - **[WebExtension Module](webextension.md)** - Browser extension management
-- **[Speculation Module](speculation.md)** - Navigation prefetching and prerendering
+- **[Speculation Module](speculation.md)** - Prefetch status monitoring
 - **[User Agent Client Hints Module](user-agent-client-hints.md)** - User agent client hints
 
 ## Permissions Module
@@ -18,14 +18,7 @@ The [Permissions module](permissions.md) allows you to manage browser permission
 
 ### Quick Example
 
-```csharp
-// Grant geolocation permission
-SetPermissionsCommandParameters params = new SetPermissionsCommandParameters();
-params.Descriptor = new PermissionsDescriptor("geolocation");
-params.State = PermissionState.Granted;
-
-await driver.Permissions.SetPermissionsAsync(params);
-```
+[!code-csharp[Grant Geolocation Permission](../../code/modules/AdditionalModulesSamples.cs#GrantGeolocationPermission)]
 
 **[View full Permissions module documentation →](permissions.md)**
 
@@ -35,15 +28,7 @@ The [Bluetooth module](bluetooth.md) provides control over the Web Bluetooth API
 
 ### Quick Example
 
-```csharp
-// Simulate a Bluetooth device
-SimulateDeviceCommandParameters params = new SimulateDeviceCommandParameters();
-params.DeviceAddress = "AA:BB:CC:DD:EE:FF";
-params.DeviceName = "Heart Rate Monitor";
-params.Services = new List<string> { "heart_rate" };
-
-await driver.Bluetooth.SimulateDeviceAsync(params);
-```
+[!code-csharp[Simulate Bluetooth Device](../../code/modules/AdditionalModulesSamples.cs#SimulateBluetoothDevice)]
 
 **Note**: Bluetooth module support varies by browser and requires specific browser flags to be enabled.
 
@@ -55,16 +40,7 @@ The [WebExtension module](webextension.md) allows you to manage browser extensio
 
 ### Quick Example
 
-```csharp
-// Install an extension
-InstallCommandParameters params = new InstallCommandParameters();
-params.ExtensionPath = "/path/to/extension.crx";
-
-InstallCommandResult result = await driver.WebExtension.InstallAsync(params);
-string extensionId = result.ExtensionId;
-
-Console.WriteLine($"Extension installed: {extensionId}");
-```
+[!code-csharp[Install Extension](../../code/modules/AdditionalModulesSamples.cs#InstallExtension)]
 
 **Note**: Extension installation support varies by browser. Chrome and Edge support CRX files, while Firefox uses different formats.
 
@@ -72,29 +48,13 @@ Console.WriteLine($"Extension installed: {extensionId}");
 
 ## Speculation Module
 
-The [Speculation module](speculation.md) provides control over navigation prefetching and prerendering based on the [Speculation Rules API](https://wicg.github.io/nav-speculation/prefetch.html).
+The [Speculation module](speculation.md) provides **monitoring** of prefetch status updates. It subscribes to the `speculation.prefetchStatusUpdated` event defined in the [Prefetch spec's Automated testing section](https://wicg.github.io/nav-speculation/prefetch.html#automated-testing). WebDriver BiDi does not define commands to add or remove speculation rules—those are configured by the page via the Speculation Rules API.
 
 ### Quick Example
 
-```csharp
-// Add prefetch rules
-AddSpeculationRulesCommandParameters params =
-    new AddSpeculationRulesCommandParameters(contextId);
+[!code-csharp[Subscribe to Prefetch Status](../../code/modules/SpeculationModuleSamples.cs#SubscribetoPrefetchStatus)]
 
-params.Rules = @"{
-    ""prefetch"": [
-        {
-            ""source"": ""list"",
-            ""urls"": [""https://example.com/page1"", ""https://example.com/page2""]
-        }
-    ]
-}";
-
-AddSpeculationRulesCommandResult result =
-    await driver.Speculation.AddSpeculationRulesAsync(params);
-```
-
-**Note**: Speculation Rules support is experimental and may not be available in all browsers.
+**Note**: Prefetch status events are experimental and may not be available in all browsers.
 
 **[View full Speculation module documentation →](speculation.md)**
 
@@ -104,24 +64,7 @@ The [User Agent Client Hints module](user-agent-client-hints.md) allows you to o
 
 ### Quick Example
 
-```csharp
-// Override client hints for cross-browser brand testing
-SetClientHintsOverrideCommandParameters params = new SetClientHintsOverrideCommandParameters();
-params.ClientHints = new ClientHintsMetadata
-{
-    Brands = new List<BrandVersion>
-    {
-        new BrandVersion("Chromium", "120.0"),
-        new BrandVersion("Google Chrome", "120.0")
-    },
-    Platform = "Windows",
-    PlatformVersion = "10.0",
-    Architecture = "x86",
-    Mobile = false
-};
-
-await driver.UserAgentClientHints.SetClientHintsOverrideAsync(params);
-```
+[!code-csharp[Set Client Hints Override](../../code/modules/AdditionalModulesSamples.cs#SetClientHintsOverride)]
 
 **Note**: User Agent Client Hints support varies by browser. This module complements the [Emulation Module](emulation.md) for user agent string overrides.
 
@@ -144,7 +87,7 @@ Each module has its own dedicated documentation page with comprehensive examples
 - **[Permissions Module Documentation](permissions.md)** - Complete guide to managing browser permissions
 - **[Bluetooth Module Documentation](bluetooth.md)** - Full guide to Web Bluetooth API testing
 - **[WebExtension Module Documentation](webextension.md)** - Complete extension management guide
-- **[Speculation Module Documentation](speculation.md)** - Full prefetch and prerender guide
+- **[Speculation Module Documentation](speculation.md)** - Prefetch status monitoring
 - **[User Agent Client Hints Module Documentation](user-agent-client-hints.md)** - Complete guide to client hints override
 
 ## Next Steps
@@ -159,6 +102,6 @@ Each module has its own dedicated documentation page with comprehensive examples
 - [W3C Permissions Specification](https://www.w3.org/TR/permissions/)
 - [Web Bluetooth Specification](https://webbluetoothcg.github.io/web-bluetooth/)
 - [WebExtensions API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
-- [Speculation Rules API](https://wicg.github.io/nav-speculation/prefetch.html)
+- [Prefetch Spec – Automated testing](https://wicg.github.io/nav-speculation/prefetch.html#automated-testing)
 - [User-Agent Client Hints](https://wicg.github.io/ua-client-hints/)
 

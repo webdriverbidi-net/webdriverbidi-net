@@ -30,49 +30,15 @@ Connection (← Very rarely customized)
 
 Most users should use `BiDiDriver` directly without worrying about connections:
 
-```csharp
-using WebDriverBiDi;
-
-// BiDiDriver handles connection automatically
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-
-// Use driver...
-
-await driver.StopAsync();
-```
+[!code-csharp[Simple WebSocket Connection](../../code/advanced/ConnectionManagementSamples.cs#SimpleWebSocketConnection)]
 
 This is sufficient for 95% of use cases. The driver creates a WebSocket connection internally.
 
 ### Using a Browser Launcher (Best for Local Automation)
 
-For local automation, use a browser launcher to manage everything:
+For local automation, use a browser launcher to manage the process and connection. **WebDriverBiDi.NET does not ship a launcher**—you must implement one. The pattern:
 
-```csharp
-using WebDriverBiDi;
-using WebDriverBiDi.Client.Launchers;
-
-// Launcher manages browser process and connection
-ChromeLauncher launcher = new ChromeLauncher("/path/to/chrome");
-
-await launcher.StartAsync();
-await launcher.LaunchBrowserAsync();
-
-// Create driver with launcher's preconfigured transport
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
-await driver.StartAsync(launcher.WebSocketUrl);
-
-try
-{
-    // Use driver...
-}
-finally
-{
-    await driver.StopAsync();
-    await launcher.QuitBrowserAsync();
-    await launcher.StopAsync();
-}
-```
+[!code-csharp[Using a Browser Launcher](../../code/advanced/ConnectionManagementSamples.cs#UsingaBrowserLauncher)]
 
 ## When You Might Need Connection Management
 
@@ -89,18 +55,7 @@ You only need to manage connections directly in these rare scenarios:
 
 ### The Connection Abstraction
 
-For the rare cases where you need it, the `Connection` base class defines the transport contract:
-
-```csharp
-public abstract class Connection : IAsyncDisposable
-{
-    public abstract bool IsActive { get; }
-    public abstract ConnectionType ConnectionType { get; }
-    public abstract Task StartAsync(string connectionString, CancellationToken cancellationToken = default);
-    public abstract Task StopAsync(CancellationToken cancellationToken = default);
-    public abstract Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default);
-}
-```
+For the rare cases where you need it, the `Connection` base class defines the transport contract. See the `Connection` class in the WebDriverBiDi.Protocol namespace for the full API.
 
 ### Available Implementations
 
@@ -114,46 +69,17 @@ public abstract class Connection : IAsyncDisposable
 - Uses `System.IO.Pipes.AnonymousPipeServerStream`
 - Requires browser process with `--remote-debugging-pipe` flag
 - Currently limited to Chromium-based browsers
-- Managed by `ChromeLauncher` when using pipe connections
+- Requires your own implementation of `IPipeServerProcessProvider` to manage the browser process
 
 ## Advanced Usage: Custom Connection Configuration
 
 Only use this pattern if you need custom connection timeout configuration:
 
-```csharp
-using WebDriverBiDi;
-using WebDriverBiDi.Protocol;
-
-// Create and configure connection (rare need)
-WebSocketConnection connection = new WebSocketConnection()
-{
-    StartupTimeout = TimeSpan.FromSeconds(30),  // Very slow environment
-    DataTimeout = TimeSpan.FromSeconds(15)       // Slow network
-};
-
-// Wrap in transport
-Transport transport = new Transport(connection);
-
-// Create driver with custom transport
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-
-try
-{
-    // Use driver...
-}
-finally
-{
-    await driver.StopAsync();
-}
-```
+[!code-csharp[Custom Connection Configuration](../../code/advanced/ConnectionManagementSamples.cs#CustomConnectionConfiguration)]
 
 **Note**: Most users should configure the driver timeout instead:
 
-```csharp
-// Simpler and sufficient for most cases
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(60)); // Long timeout
-```
+[!code-csharp[Driver timeout](../../code/advanced/ConnectionManagementSamples.cs#Drivertimeout)]
 
 ## Connection Configuration
 
@@ -161,19 +87,7 @@ BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(60)); // Long timeout
 
 Connections have three timeout properties (default: 10 seconds each):
 
-```csharp
-WebSocketConnection connection = new WebSocketConnection()
-{
-    // How long to wait for initial connection
-    StartupTimeout = TimeSpan.FromSeconds(15),
-
-    // How long to wait for graceful shutdown
-    ShutdownTimeout = TimeSpan.FromSeconds(10),
-
-    // How long to wait for send/receive operations
-    DataTimeout = TimeSpan.FromSeconds(10)
-};
-```
+[!code-csharp[Timeout Settings](../../code/advanced/ConnectionManagementSamples.cs#TimeoutSettings)]
 
 **StartupTimeout**: Connection establishment timeout. WebSocket connections retry every 500ms until timeout.
 
@@ -185,9 +99,7 @@ WebSocketConnection connection = new WebSocketConnection()
 
 Connection buffer size is fixed at 1 MB (2²⁰ bytes):
 
-```csharp
-int bufferSize = connection.BufferSize; // 1048576 bytes (read-only)
-```
+[!code-csharp[Buffer Size](../../code/advanced/ConnectionManagementSamples.cs#BufferSize)]
 
 This is suitable for typical WebDriver BiDi messages. Large transfers (screenshots, DOM snapshots) are split across multiple messages.
 
@@ -199,13 +111,7 @@ Connections provide observable events for diagnostics. This is useful for monito
 
 Monitors raw data received from the browser:
 
-```csharp
-connection.OnDataReceived.AddObserver((ConnectionDataReceivedEventArgs e) =>
-{
-    Console.WriteLine($"Received: {e.Data.Length} bytes");
-    // e.Data contains the raw byte array
-});
-```
+[!code-csharp[OnDataReceived Event](../../code/advanced/ConnectionManagementSamples.cs#OnDataReceivedEvent)]
 
 **Use cases:** Protocol debugging, traffic analysis, performance monitoring.
 
@@ -213,13 +119,7 @@ connection.OnDataReceived.AddObserver((ConnectionDataReceivedEventArgs e) =>
 
 Monitors connection errors:
 
-```csharp
-connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
-{
-    Console.WriteLine($"Connection error: {e.Exception.Message}");
-    Logger.Error($"Exception: {e.Exception}");
-});
-```
+[!code-csharp[OnConnectionError Event](../../code/advanced/ConnectionManagementSamples.cs#OnConnectionErrorEvent)]
 
 **Error scenarios:** Disconnections, network failures, protocol violations, timeouts.
 
@@ -227,12 +127,7 @@ connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
 
 Internal connection logging:
 
-```csharp
-connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
-{
-    Console.WriteLine($"[{e.Level}] {e.Source}: {e.Message}");
-});
-```
+[!code-csharp[OnLogMessage Event](../../code/advanced/ConnectionManagementSamples.cs#OnLogMessageEvent)]
 
 **Levels:** Info (normal operations), Warning (non-critical issues), Error (connection errors).
 
@@ -244,27 +139,13 @@ WebSocket connections are the standard transport mechanism.
 
 Valid WebSocket URLs use `ws://` or `wss://` schemes:
 
-```csharp
-// ✅ Valid
-await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-await driver.StartAsync("wss://remote-host:9222/devtools/browser/abc-123");
-
-// ❌ Invalid
-await driver.StartAsync("http://localhost:9222");  // Wrong scheme
-await driver.StartAsync("localhost:9222");         // Not absolute
-```
+[!code-csharp[WebSocket URL Requirements](../../code/advanced/ConnectionManagementSamples.cs#WebSocketURLRequirements)]
 
 ### Automatic Retry
 
 WebSocket connections retry during startup if the browser isn't ready:
 
-```csharp
-// Will retry every 500ms for up to 30 seconds
-WebSocketConnection connection = new WebSocketConnection()
-{
-    StartupTimeout = TimeSpan.FromSeconds(30)
-};
-```
+[!code-csharp[Automatic Retry](../../code/advanced/ConnectionManagementSamples.cs#AutomaticRetry)]
 
 This handles cases where the browser is still launching.
 
@@ -272,12 +153,7 @@ This handles cases where the browser is still launching.
 
 Check if a connection is active:
 
-```csharp
-if (connection.IsActive)
-{
-    // Connection is open and ready
-}
-```
+[!code-csharp[Connection State](../../code/advanced/ConnectionManagementSamples.cs#ConnectionState)]
 
 ## Pipe Connection Details
 
@@ -298,35 +174,11 @@ Use pipes only when:
 - Browser launched with `--remote-debugging-pipe` flag
 - Process lifecycle management
 
-### Using Pipes with ChromeLauncher
+### Using Pipes with a Custom Launcher
 
-Let the launcher handle pipe setup:
+WebDriverBiDi.NET does not ship a launcher. Implement `IPipeServerProcessProvider` to launch the browser with `--remote-debugging-pipe` and provide the `Transport`:
 
-```csharp
-using WebDriverBiDi.Client.Launchers;
-
-ChromeLauncher launcher = new ChromeLauncher()
-{
-    ConnectionType = ConnectionType.Pipes  // Enable pipes
-};
-
-await launcher.StartAsync();
-await launcher.LaunchBrowserAsync();
-
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
-await driver.StartAsync("pipes");
-
-try
-{
-    // Use driver...
-}
-finally
-{
-    await driver.StopAsync();
-    await launcher.QuitBrowserAsync();
-    await launcher.StopAsync();
-}
-```
+[!code-csharp[Using Pipes with Launcher](../../code/advanced/ConnectionManagementSamples.cs#UsingPipeswithLauncher)]
 
 ### Protocol Details
 
@@ -345,47 +197,13 @@ Pipes use null-terminated JSON messages:
 
 ### Common Connection Errors
 
-```csharp
-try
-{
-    await driver.StartAsync(url);
-}
-catch (WebDriverBiDiTimeoutException ex)
-{
-    Console.WriteLine($"Connection timeout: {ex.Message}");
-    // Browser may not be ready or URL incorrect
-}
-catch (WebDriverBiDiConnectionException ex)
-{
-    Console.WriteLine($"Connection failed: {ex.Message}");
-    // Connection already in use or invalid state
-}
-catch (ArgumentException ex)
-{
-    Console.WriteLine($"Invalid URL: {ex.Message}");
-    // URL format is incorrect
-}
-```
+[!code-csharp[Connection Error Handling](../../code/advanced/ConnectionManagementSamples.cs#ConnectionErrorHandling)]
 
 ### Monitoring Connection Health
 
 Monitor connection health with diagnostics:
 
-```csharp
-bool connectionHealthy = true;
-
-connection.OnConnectionError.AddObserver((e) =>
-{
-    connectionHealthy = false;
-    Logger.Error($"Connection error: {e.Exception.Message}");
-});
-
-// Check before critical operations
-if (!connectionHealthy || !connection.IsActive)
-{
-    // Handle error or reconnect
-}
-```
+[!code-csharp[Monitoring Connection Health](../../code/advanced/ConnectionManagementSamples.cs#MonitoringConnectionHealth)]
 
 ## Very Advanced: Custom Connection Implementations
 
@@ -393,48 +211,11 @@ if (!connectionHealthy || !connection.IsActive)
 
 You can create custom connection implementations for experimental transports:
 
-```csharp
-public class CustomConnection : Connection
-{
-    public override bool IsActive => /* your logic */;
+[!code-csharp[Custom Connection Implementation](../../code/advanced/ConnectionManagementSamples.cs#CustomConnectionImplementation)]
 
-    public override ConnectionType ConnectionType => ConnectionType.WebSocket;
+Usage: create the custom connection, wrap in transport, and pass to BiDiDriver:
 
-    public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
-    {
-        await LogAsync("Custom connection starting");
-        // Your startup logic
-    }
-
-    public override async Task StopAsync(CancellationToken cancellationToken = default)
-    {
-        await LogAsync("Custom connection stopping");
-        // Your shutdown logic
-    }
-
-    public override async Task SendDataAsync(byte[] data, CancellationToken cancellationToken = default)
-    {
-        // Your send logic
-    }
-
-    protected override async Task ReceiveDataAsync()
-    {
-        // Your receive logic
-        // Call OnDataReceived.NotifyObserversAsync() with received data
-    }
-
-    protected override async ValueTask DisposeAsyncCore()
-    {
-        // Your cleanup logic
-    }
-}
-
-// Usage
-CustomConnection customConnection = new CustomConnection();
-Transport transport = new Transport(customConnection);
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-await driver.StartAsync(customConnectionString);
-```
+[!code-csharp[Custom Connection Usage](../../code/advanced/ConnectionManagementSamples.cs#CustomConnectionUsage)]
 
 **Use cases for custom connections:**
 - Research into new transport protocols
@@ -463,55 +244,23 @@ await driver.StartAsync(customConnectionString);
 
 **Pipes:** Not recommended. Requires shared process namespace and complex orchestration.
 
-```csharp
-// WebSocket to containerized browser
-string url = $"ws://172.17.0.2:9222/devtools/browser/abc-123";
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync(url);
-```
+[!code-csharp[Docker WebSocket Connection](../../code/advanced/ConnectionManagementSamples.cs#DockerWebSocketConnection)]
 
 ## Best Practices
 
 ### 1. Use the Simplest Pattern That Works
 
-```csharp
-// ✅ Best: Let BiDiDriver handle everything
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync(url);
+[!code-csharp[Best Practice Simplest](../../code/advanced/ConnectionManagementSamples.cs#BestPracticeSimplest)]
 
-// ❌ Avoid unless you have a specific need
-WebSocketConnection connection = new WebSocketConnection();
-Transport transport = new Transport(connection);
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-```
+### 2. Use a Browser Launcher for Local Automation
 
-### 2. Use Browser Launchers for Local Automation
+Implement your own launcher to manage the browser process and connection. Launch with `--remote-debugging-port`, discover the WebSocket URL from `/json/version`, then connect:
 
-```csharp
-// ✅ Recommended for local testing
-ChromeLauncher launcher = new ChromeLauncher();
-await launcher.StartAsync();
-await launcher.LaunchBrowserAsync();
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
-```
+[!code-csharp[Best Practice Browser Launcher](../../code/advanced/ConnectionManagementSamples.cs#BestPracticeBrowserLauncher)]
 
 ### 3. Always Clean Up
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-try
-{
-    await driver.StartAsync(url);
-    // Use driver...
-}
-finally
-{
-    if (driver.IsStarted)
-    {
-        await driver.StopAsync();
-    }
-}
-```
+[!code-csharp[Best Practice Cleanup](../../code/advanced/ConnectionManagementSamples.cs#BestPracticeCleanup)]
 
 ### 4. Prefer WebSocket Unless You Have a Specific Reason
 
@@ -523,22 +272,12 @@ WebSocket connections are:
 
 ### 5. Configure Timeouts at the Driver Level
 
-```csharp
-// ✅ Preferred: Simple and sufficient
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(60));
-
-// ❌ Avoid unless needed: More complex
-WebSocketConnection connection = new WebSocketConnection()
-{
-    StartupTimeout = TimeSpan.FromSeconds(60),
-    DataTimeout = TimeSpan.FromSeconds(60)
-};
-```
+[!code-csharp[Best Practice Timeouts](../../code/advanced/ConnectionManagementSamples.cs#BestPracticeTimeouts)]
 
 ## Summary
 
 - **Most users**: Use `new BiDiDriver()` and call `StartAsync()`. That's it.
-- **Local automation**: Use browser launchers (`ChromeLauncher`, etc.)
+- **Local automation**: Implement a launcher to manage the browser process and connection
 - **Advanced users only**: Manage connections directly for custom timeouts or diagnostics
 - **Very advanced users only**: Implement custom connections for experimental transports
 - WebSocket connections are standard and recommended for all scenarios

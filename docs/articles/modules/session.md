@@ -12,21 +12,13 @@ The Session module provides:
 
 ## Accessing the Module
 
-```csharp
-SessionModule session = driver.Session;
-```
+[!code-csharp[Accessing Module](../../code/modules/SessionModuleSamples.cs#AccessingModule)]
 
 ## Session Status
 
 ### Check Session Status
 
-```csharp
-StatusCommandParameters params = new StatusCommandParameters();
-StatusCommandResult result = await driver.Session.StatusAsync(params);
-
-Console.WriteLine($"Is ready: {result.IsReady}");
-Console.WriteLine($"Message: {result.Message}");
-```
+[!code-csharp[Check Session Status](../../code/modules/SessionModuleSamples.cs#CheckSessionStatus)]
 
 ## Event Subscription
 
@@ -34,44 +26,19 @@ Console.WriteLine($"Message: {result.Message}");
 
 Prefer the `EventName` property from observable events to avoid typos:
 
-```csharp
-SubscribeCommandParameters params =
-    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-params.Events.Add(driver.Network.OnResponseCompleted.EventName);
-params.Events.Add(driver.BrowsingContext.OnLoad.EventName);
-
-SubscribeCommandResult result = await driver.Session.SubscribeAsync(params);
-Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
-```
+[!code-csharp[Subscribe Multiple Events](../../code/events-observables/SubscribeSamples.cs#SubscribeMultipleEvents)]
 
 ### Subscribe with Context Filter
 
-```csharp
-SubscribeCommandParameters params =
-    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
-params.Contexts.Add(contextId);  // Only for this context
-
-await driver.Session.SubscribeAsync(params);
-```
+[!code-csharp[Subscription with Context](../../code/events-observables/SubscribeSamples.cs#SubscriptionwithContext)]
 
 ### Unsubscribe by ID
 
-```csharp
-UnsubscribeByIdsCommandParameters params = new UnsubscribeByIdsCommandParameters();
-params.SubscriptionIds.Add(subscriptionId);
-
-await driver.Session.UnsubscribeAsync(params);
-```
+[!code-csharp[Unsubscribe by ID](../../code/events-observables/SubscribeSamples.cs#UnsubscribebyID)]
 
 ### Unsubscribe by Event Names
 
-```csharp
-UnsubscribeByNamesCommandParameters params = new UnsubscribeByNamesCommandParameters();
-params.Events.Add(driver.Log.OnEntryAdded.EventName);
-params.Events.Add(driver.Network.OnResponseCompleted.EventName);
-
-await driver.Session.UnsubscribeAsync(params);
-```
+[!code-csharp[Unsubscribe by Event Names](../../code/events-observables/SubscribeSamples.cs#UnsubscribebyEventNames)]
 
 ## Best Practices
 

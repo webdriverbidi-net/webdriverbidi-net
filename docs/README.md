@@ -105,16 +105,7 @@ docfx docfx.json --serve
 
 Use complete, runnable examples:
 
-```csharp
-using WebDriverBiDi;
-
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-
-// ... your code here ...
-
-await driver.StopAsync();
-```
+[!code-csharp[Complete Runnable Example](code/DocsReadmeSamples.cs#CompleteRunnableExample)]
 
 ### Cross-References
 

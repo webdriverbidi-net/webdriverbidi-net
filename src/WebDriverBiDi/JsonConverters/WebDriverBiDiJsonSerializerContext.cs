@@ -439,6 +439,9 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(InstallCommandParameters))]
 [JsonSerializable(typeof(UninstallCommandParameters))]
 
+// This type is excluded from code coverage because it is only used for
+// source generation of JSON serialization metadata as used in AOT
+// compilation environments, and does not contain any logic to be tested.
 [ExcludeFromCodeCoverage]
 public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
 {

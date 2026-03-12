@@ -10,161 +10,47 @@ The Storage module allows you to:
 
 ## Accessing the Module
 
-```csharp
-StorageModule storage = driver.Storage;
-```
+[!code-csharp[Accessing Module](../../code/modules/StorageModuleSamples.cs#AccessingModule)]
 
 ## Working with Cookies
 
 ### Get All Cookies
 
-```csharp
-GetCookiesCommandParameters params = new GetCookiesCommandParameters();
-params.Partition = new BrowsingContextPartitionDescriptor(contextId);
-
-GetCookiesCommandResult result = await driver.Storage.GetCookiesAsync(params);
-
-foreach (var cookie in result.Cookies)
-{
-    Console.WriteLine($"Name: {cookie.Name}");
-    Console.WriteLine($"Value: {cookie.Value.Value}");
-    Console.WriteLine($"Domain: {cookie.Domain}");
-    Console.WriteLine($"Path: {cookie.Path}");
-    Console.WriteLine($"Secure: {cookie.Secure}");
-    Console.WriteLine($"HttpOnly: {cookie.HttpOnly}");
-    Console.WriteLine($"SameSite: {cookie.SameSite}");
-}
-```
+[!code-csharp[Get All Cookies](../../code/modules/StorageModuleSamples.cs#GetAllCookies)]
 
 ### Get Cookies by Filter
 
-```csharp
-GetCookiesCommandParameters params = new GetCookiesCommandParameters();
-params.Partition = new BrowsingContextPartitionDescriptor(contextId);
-
-// Filter by name
-params.Filter = new CookieFilter
-{
-    Name = "sessionId"
-};
-
-GetCookiesCommandResult result = await driver.Storage.GetCookiesAsync(params);
-```
+[!code-csharp[Get Cookies by Filter](../../code/modules/StorageModuleSamples.cs#GetCookiesbyFilter)]
 
 ### Set Cookie
 
-```csharp
-PartialCookie cookie = new PartialCookie(
-    "sessionId", 
-    new BytesValue(BytesValueType.String, "abc123"))
-{
-    Domain = "example.com",
-    Path = "/",
-    Secure = true,
-    HttpOnly = true,
-    SameSite = SameSite.Strict
-};
-
-SetCookieCommandParameters params = new SetCookieCommandParameters(cookie);
-await driver.Storage.SetCookieAsync(params);
-```
+[!code-csharp[Set Cookie](../../code/modules/StorageModuleSamples.cs#SetCookie)]
 
 ### Set Cookie with Expiry
 
-```csharp
-PartialCookie cookie = new PartialCookie(
-    "rememberMe",
-    new BytesValue(BytesValueType.String, "true"))
-{
-    Domain = "example.com",
-    Path = "/",
-    Expiry = DateTimeOffset.Now.AddDays(30).ToUnixTimeSeconds()
-};
-
-SetCookieCommandParameters params = new SetCookieCommandParameters(cookie);
-await driver.Storage.SetCookieAsync(params);
-```
+[!code-csharp[Set Cookie with Expiry](../../code/modules/StorageModuleSamples.cs#SetCookiewithExpiry)]
 
 ### Delete Cookie
 
-```csharp
-CookieFilter filter = new CookieFilter
-{
-    Name = "sessionId",
-    Domain = "example.com"
-};
-
-DeleteCookiesCommandParameters params = new DeleteCookiesCommandParameters();
-params.Filter = filter;
-
-await driver.Storage.DeleteCookiesAsync(params);
-```
+[!code-csharp[Delete Cookie](../../code/modules/StorageModuleSamples.cs#DeleteCookie)]
 
 ### Delete All Cookies
 
-```csharp
-DeleteCookiesCommandParameters params = new DeleteCookiesCommandParameters();
-params.Partition = new BrowsingContextPartitionDescriptor(contextId);
-
-await driver.Storage.DeleteCookiesAsync(params);
-```
+[!code-csharp[Delete All Cookies](../../code/modules/StorageModuleSamples.cs#DeleteAllCookies)]
 
 ## Common Patterns
 
 ### Save and Restore Session
 
-```csharp
-// Save cookies
-GetCookiesCommandResult savedCookies = await driver.Storage.GetCookiesAsync(
-    new GetCookiesCommandParameters { Partition = new BrowsingContextPartitionDescriptor(contextId) });
-
-// ... later, restore cookies
-foreach (var cookie in savedCookies.Cookies)
-{
-    PartialCookie newCookie = new PartialCookie(cookie.Name, cookie.Value)
-    {
-        Domain = cookie.Domain,
-        Path = cookie.Path,
-        Secure = cookie.Secure,
-        HttpOnly = cookie.HttpOnly,
-        SameSite = cookie.SameSite,
-        Expiry = cookie.Expiry
-    };
-    
-    await driver.Storage.SetCookieAsync(
-        new SetCookieCommandParameters(newCookie));
-}
-```
+[!code-csharp[Save and Restore Session](../../code/modules/StorageModuleSamples.cs#SaveandRestoreSession)]
 
 ### Clean State Between Tests
 
-```csharp
-// Clear all cookies
-await driver.Storage.DeleteCookiesAsync(
-    new DeleteCookiesCommandParameters { Partition = new BrowsingContextPartitionDescriptor(contextId) });
-```
+[!code-csharp[Clean State Between Tests](../../code/modules/StorageModuleSamples.cs#CleanStateBetweenTests)]
 
 ### Set Authentication Cookie
 
-```csharp
-PartialCookie authCookie = new PartialCookie(
-    "authToken",
-    new BytesValue(BytesValueType.String, "your-auth-token"))
-{
-    Domain = "example.com",
-    Path = "/",
-    Secure = true,
-    HttpOnly = true,
-    SameSite = SameSite.Strict
-};
-
-SetCookieCommandParameters params = new SetCookieCommandParameters(authCookie);
-await driver.Storage.SetCookieAsync(params);
-
-// Now navigate - cookie will be sent
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com/dashboard"));
-```
+[!code-csharp[Set Authentication Cookie](../../code/modules/StorageModuleSamples.cs#SetAuthenticationCookie)]
 
 ## Best Practices
 

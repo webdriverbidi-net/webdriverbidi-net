@@ -175,40 +175,19 @@ Then open your browser to `http://localhost:8080`.
 
 All command parameter classes follow this pattern:
 
-```csharp
-public class CommandNameCommandParameters : CommandParameters<CommandNameCommandResult>
-{
-    // Required parameters in constructor
-    public CommandNameCommandParameters(string requiredParam);
-    
-    // Optional parameters as properties
-    public string? OptionalParam { get; set; }
-}
-```
+[!code-csharp[Command Parameters Pattern](../code/api/ApiIndexSamples.cs#CommandParametersPattern)]
 
 #### Command Results
 
 All command result classes follow this pattern:
 
-```csharp
-public class CommandNameCommandResult : CommandResult
-{
-    // Properties are read-only (immutable)
-    public string ResultProperty { get; }
-}
-```
+[!code-csharp[Command Results Pattern](../code/api/ApiIndexSamples.cs#CommandResultsPattern)]
 
 #### Event Arguments
 
 All event argument classes inherit from `WebDriverBiDiEventArgs`:
 
-```csharp
-public class EventNameEventArgs : WebDriverBiDiEventArgs
-{
-    // Properties are read-only (immutable)
-    public string EventData { get; }
-}
-```
+[!code-csharp[Event Arguments Pattern](../code/api/ApiIndexSamples.cs#EventArgumentsPattern)]
 
 ### Common Patterns in API
 
@@ -216,35 +195,19 @@ public class EventNameEventArgs : WebDriverBiDiEventArgs
 
 All methods that communicate with the browser are async:
 
-```csharp
-public async Task<TResult> MethodNameAsync(TParameters parameters)
-```
+[!code-csharp[Async Methods Pattern](../code/api/ApiIndexSamples.cs#AsyncMethodsPattern)]
 
 #### Module Access
 
 All modules are accessed through the `BiDiDriver`:
 
-```csharp
-BiDiDriver driver = new BiDiDriver();
-BrowsingContextModule browsingContext = driver.BrowsingContext;
-ScriptModule script = driver.Script;
-NetworkModule network = driver.Network;
-```
+[!code-csharp[Module Access](../code/api/ApiIndexSamples.cs#ModuleAccess)]
 
 #### Event Subscription
 
 Events use the observable pattern:
 
-```csharp
-// Access observable event
-ObservableEvent<TEventArgs> observableEvent = module.OnEventName;
-
-// Add observer
-EventObserver<TEventArgs> observer = observableEvent.AddObserver(handler);
-
-// Subscribe through Session
-await driver.Session.SubscribeAsync(subscribeParams);
-```
+[!code-csharp[Event Subscription](../code/api/ApiIndexSamples.cs#EventSubscription)]
 
 ## API Design Principles
 

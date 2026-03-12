@@ -23,54 +23,17 @@ The library emits structured diagnostic events that can be consumed by:
 
 ### Console Logging
 
-The simplest way to see diagnostic events is using the included example `EventListener`:
+The simplest way to see diagnostic events is using a console event listener:
 
-```csharp
-using System.Diagnostics.Tracing;
-using WebDriverBiDi;
-
-// Create a simple console event listener
-using var listener = new ConsoleEventListener();
-
-// Use WebDriverBiDi normally - events will be logged to console
-await using var driver = new BiDiDriver();
-await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-```
+[!code-csharp[Console Logging](../../code/advanced/ObservabilitySamples.cs#ConsoleLogging)]
 
 ### Custom EventListener
 
 Create a custom listener for more control:
 
-```csharp
-public class MyEventListener : EventListener
-{
-    protected override void OnEventSourceCreated(EventSource source)
-    {
-        // Enable WebDriverBiDi events at Informational level
-        if (source.Name == "WebDriverBiDi")
-        {
-            EnableEvents(source, EventLevel.Informational);
-        }
-    }
+[!code-csharp[Custom EventListener](../../code/advanced/ObservabilitySamples.cs#CustomEventListener)]
 
-    protected override void OnEventWritten(EventWrittenEventArgs eventData)
-    {
-        Console.WriteLine($"[{eventData.Level}] {eventData.EventName}");
-
-        // Access structured payload
-        if (eventData.PayloadNames != null)
-        {
-            for (int i = 0; i < eventData.PayloadNames.Count; i++)
-            {
-                Console.WriteLine($"  {eventData.PayloadNames[i]}: {eventData.Payload?[i]}");
-            }
-        }
-    }
-}
-
-// Usage
-using var listener = new MyEventListener();
-```
+[!code-csharp[Custom EventListener Usage](../../code/advanced/ObservabilitySamples.cs#CustomEventListenerUsage)]
 
 ## Event Levels
 
@@ -145,91 +108,13 @@ Choose the appropriate level based on your needs:
 
 Track command execution times to identify bottlenecks:
 
-```csharp
-public class PerformanceMonitor : EventListener
-{
-    private readonly Dictionary<string, List<long>> timings = new();
-
-    protected override void OnEventSourceCreated(EventSource source)
-    {
-        if (source.Name == "WebDriverBiDi")
-        {
-            EnableEvents(source, EventLevel.Informational);
-        }
-    }
-
-    protected override void OnEventWritten(EventWrittenEventArgs eventData)
-    {
-        if (eventData.EventName == "CommandCompleted")
-        {
-            string method = eventData.Payload?[1]?.ToString() ?? "unknown";
-            long elapsed = Convert.ToInt64(eventData.Payload?[2]);
-
-            if (!timings.ContainsKey(method))
-            {
-                timings[method] = new List<long>();
-            }
-            timings[method].Add(elapsed);
-
-            // Alert on slow commands
-            if (elapsed > 1000)
-            {
-                Console.WriteLine($"SLOW: {method} took {elapsed}ms");
-            }
-        }
-    }
-
-    public void PrintStatistics()
-    {
-        foreach (var kvp in timings.OrderByDescending(x => x.Value.Average()))
-        {
-            Console.WriteLine($"{kvp.Key}: avg={kvp.Value.Average():F2}ms, max={kvp.Value.Max()}ms");
-        }
-    }
-}
-```
+[!code-csharp[Performance Monitor](../../code/advanced/ObservabilitySamples.cs#PerformanceMonitor)]
 
 ### Error Tracking
 
 Monitor errors for debugging and alerting:
 
-```csharp
-public class ErrorTracker : EventListener
-{
-    private int errorCount = 0;
-    private readonly List<string> recentErrors = new();
-
-    protected override void OnEventSourceCreated(EventSource source)
-    {
-        if (source.Name == "WebDriverBiDi")
-        {
-            EnableEvents(source, EventLevel.Warning); // Warning and above
-        }
-    }
-
-    protected override void OnEventWritten(EventWrittenEventArgs eventData)
-    {
-        if (eventData.Level == EventLevel.Error)
-        {
-            errorCount++;
-            string error = $"{eventData.EventName}: {string.Join(", ", eventData.Payload ?? [])}";
-            recentErrors.Add(error);
-
-            // Keep only last 100 errors
-            if (recentErrors.Count > 100)
-            {
-                recentErrors.RemoveAt(0);
-            }
-
-            // Send to monitoring service
-            if (errorCount % 10 == 0)
-            {
-                Console.WriteLine($"ALERT: {errorCount} errors occurred!");
-            }
-        }
-    }
-}
-```
+[!code-csharp[Error Tracker](../../code/advanced/ObservabilitySamples.cs#ErrorTracker)]
 
 ### Integration with Microsoft.Extensions.Logging
 
@@ -243,147 +128,31 @@ This package bridges WebDriverBiDi EventSource events to the standard .NET loggi
 
 #### Basic Console Application
 
-```csharp
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics.Tracing;
-using WebDriverBiDi;
+[!code-csharp[Basic Console Application](../../code/advanced/ObservabilitySamples.cs#BasicConsoleApplication)]
 
-// Setup dependency injection
-var services = new ServiceCollection();
-
-// Configure logging with WebDriverBiDi events
-services.AddLogging(builder =>
-{
-    builder.AddConsole()
-           .SetMinimumLevel(LogLevel.Debug);
-
-    // Add WebDriverBiDi diagnostic event logging
-    builder.AddWebDriverBiDi(EventLevel.Informational);
-});
-
-var serviceProvider = services.BuildServiceProvider();
-
-// Use WebDriverBiDi - events will be automatically logged
-await using var driver = new BiDiDriver();
-await driver.StartAsync("ws://localhost:9222");
-
-// Logs will show:
-// [12:34:56 INF] ConnectionOpening, connectionId=12345, url=ws://localhost:9222
-// [12:34:56 INF] ConnectionOpened, connectionId=12345, url=ws://localhost:9222
-// [12:34:56 INF] TransportStarted
-
-await driver.Session.StatusAsync();
-
-// Logs will show:
-// [12:34:56 DBG] CommandSending, commandId=1, method=session.status
-// [12:34:56 INF] CommandCompleted, commandId=1, method=session.status, elapsedMilliseconds=42
-```
+Logs will show connection lifecycle and command completion events (e.g., `ConnectionOpening`, `ConnectionOpened`, `CommandSending`, `CommandCompleted`).
 
 #### ASP.NET Core Web Application
 
-```csharp
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics.Tracing;
+[!code-csharp[ASP.NET Core Web Application](../../code/advanced/ObservabilitySamples.cs#ASPNETCoreWebApplication)]
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add WebDriverBiDi event logging to the ASP.NET Core logging pipeline
-builder.Logging.AddWebDriverBiDi(EventLevel.Informational);
-
-// Configure services
-builder.Services.AddScoped<IBrowserAutomationService, BrowserAutomationService>();
-
-var app = builder.Build();
-
-app.MapGet("/test", async (IBrowserAutomationService automation) =>
-{
-    // WebDriverBiDi events will be logged through the ASP.NET Core logging infrastructure
-    var result = await automation.RunTestAsync();
-    return Results.Ok(result);
-});
-
-app.Run();
-```
+Add your services (e.g., `IBrowserAutomationService`) and endpoints as needed. WebDriverBiDi events will be logged through the ASP.NET Core logging infrastructure.
 
 #### With Serilog Structured Logging
 
-```csharp
-using Serilog;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics.Tracing;
-using WebDriverBiDi;
+[!code-csharp[Serilog Structured Logging](../../code/advanced/SerilogObservabilitySamples.cs#SerilogStructuredLogging)]
 
-// Configure Serilog with structured logging
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console(outputTemplate:
-        "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}")
-    .Enrich.FromLogContext()
-    .CreateLogger();
-
-var services = new ServiceCollection();
-
-services.AddLogging(builder =>
-{
-    builder.ClearProviders();
-    builder.AddSerilog();
-    builder.AddWebDriverBiDi(EventLevel.Verbose); // Capture all events including verbose
-});
-
-var serviceProvider = services.BuildServiceProvider();
-
-// Structured properties will be captured by Serilog
-await using var driver = new BiDiDriver();
-await driver.StartAsync("ws://localhost:9222");
-
-// Serilog output includes structured properties:
-// [12:34:56 INF] CommandCompleted {"EventId":7,"EventName":"CommandCompleted","commandId":"1","method":"session.status","elapsedMilliseconds":42}
-```
+Serilog output includes structured properties (e.g., `commandId`, `method`, `elapsedMilliseconds`).
 
 #### With Application Insights
 
-```csharp
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics.Tracing;
-using WebDriverBiDi;
+[!code-csharp[Application Insights](../../code/advanced/ObservabilitySamples.cs#ApplicationInsights)]
 
-var services = new ServiceCollection();
-
-// Add Application Insights
-services.AddApplicationInsightsTelemetry();
-
-// Configure logging with WebDriverBiDi events
-services.AddLogging(builder =>
-{
-    builder.AddApplicationInsights();
-    builder.AddWebDriverBiDi(EventLevel.Informational);
-});
-
-var serviceProvider = services.BuildServiceProvider();
-
-// WebDriverBiDi events will be sent to Application Insights with structured properties
-// allowing you to query and analyze automation telemetry
-```
+WebDriverBiDi events will be sent to Application Insights with structured properties for querying and analysis.
 
 #### Filtering by Event Level
 
-```csharp
-services.AddLogging(builder =>
-{
-    builder.AddConsole();
-
-    // Only capture Warning and Error events
-    builder.AddWebDriverBiDi(EventLevel.Warning);
-
-    // Or use ILogger filtering
-    builder.AddFilter("WebDriverBiDi.Logging", LogLevel.Warning);
-});
-```
+[!code-csharp[Filter by Event Level](../../code/advanced/ObservabilitySamples.cs#FilterbyEventLevel)]
 
 #### Configuration-based Setup
 
@@ -404,64 +173,18 @@ services.AddLogging(builder =>
 ```
 
 **Program.cs:**
-```csharp
-var builder = WebApplication.CreateBuilder(args);
 
-// Configuration is loaded from appsettings.json
-builder.Logging.AddWebDriverBiDi(); // Respects configured log levels
-
-var app = builder.Build();
-```
+[!code-csharp[Configuration-based Setup](../../code/advanced/ObservabilitySamples.cs#Configuration-basedSetup)]
 
 #### Custom Event Processing
 
 For scenarios requiring custom processing beyond standard logging:
 
-```csharp
-using System.Diagnostics.Tracing;
-using Microsoft.Extensions.Logging;
+[!code-csharp[Custom EventListener with ILogger](../../code/advanced/ObservabilitySamples.cs#CustomEventListenerwithILogger)]
 
-public class CustomWebDriverEventListener : EventListener
-{
-    private readonly ILogger logger;
+[!code-csharp[Register Custom EventListener](../../code/advanced/ObservabilitySamples.cs#RegisterCustomEventListener)]
 
-    public CustomWebDriverEventListener(ILogger logger)
-    {
-        this.logger = logger;
-    }
-
-    protected override void OnEventSourceCreated(EventSource eventSource)
-    {
-        if (eventSource.Name == "WebDriverBiDi")
-        {
-            EnableEvents(eventSource, EventLevel.Informational);
-        }
-    }
-
-    protected override void OnEventWritten(EventWrittenEventArgs eventData)
-    {
-        // Custom processing here
-        if (eventData.EventName == "CommandCompleted")
-        {
-            long elapsedMs = Convert.ToInt64(eventData.Payload?[2]);
-            if (elapsedMs > 1000)
-            {
-                logger.LogWarning("Slow command detected: {Method} took {ElapsedMs}ms",
-                    eventData.Payload?[1], elapsedMs);
-            }
-        }
-    }
-}
-
-// Register as singleton
-services.AddSingleton(sp =>
-{
-    var logger = sp.GetRequiredService<ILogger<CustomWebDriverEventListener>>();
-    return new CustomWebDriverEventListener(logger);
-});
-```
-
-See the [WebDriverBiDi.Logging README](../../../src/WebDriverBiDi.Logging/README.md) for package details.
+See the [WebDriverBiDi.Logging package](webdriverbidi-logging.md) for details.
 
 ## CLI Tools
 
@@ -502,28 +225,16 @@ PerfView.exe /OnlyProviders=*WebDriverBiDi collect
 
 For distributed tracing and metrics:
 
-```csharp
-// Requires: OpenTelemetry, OpenTelemetry.Exporter.Console
+[!code-csharp[OpenTelemetry Integration](../../code/advanced/ObservabilitySamples.cs#OpenTelemetryIntegration)]
 
-using OpenTelemetry;
-using OpenTelemetry.Trace;
-
-var tracerProvider = Sdk.CreateTracerProviderBuilder()
-    .AddSource("WebDriverBiDi")
-    .AddConsoleExporter()
-    .Build();
-
-// Now use WebDriverBiDi - traces will be collected
-```
+Requires: `OpenTelemetry`, `OpenTelemetry.Trace`, `OpenTelemetry.Exporter.Console`.
 
 ## Best Practices
 
 ### Production Environments
 
 1. **Use Informational or Warning Level**
-   ```csharp
-   EnableEvents(source, EventLevel.Informational);
-   ```
+   See `ObservabilityMyEventListener` and `ObservabilityPerformanceMonitor` in the samples—they use `EnableEvents(source, EventLevel.Informational)` in `OnEventSourceCreated`.
 
 2. **Process Events Quickly**
    - `OnEventWritten` is called synchronously
@@ -531,12 +242,8 @@ var tracerProvider = Sdk.CreateTracerProviderBuilder()
    - Queue events for async processing if needed
 
 3. **Filter by Event Name**
-   ```csharp
-   if (eventData.EventName == "CommandError")
-   {
-       // Handle only command errors
-   }
-   ```
+
+   [!code-csharp[Filter by Event Name](../../code/advanced/ObservabilitySamples.cs#FilterbyEventName)]
 
 4. **Monitor Key Metrics**
    - Command latency (`CommandCompleted`)
@@ -546,9 +253,7 @@ var tracerProvider = Sdk.CreateTracerProviderBuilder()
 ### Development Environments
 
 1. **Use Verbose Level**
-   ```csharp
-   EnableEvents(source, EventLevel.Verbose);
-   ```
+   Use `EventLevel.Verbose` in `EnableEvents(source, EventLevel.Verbose)` within your EventListener's `OnEventSourceCreated`.
 
 2. **Enable Detailed Payload Logging**
    - Log full payload for debugging
@@ -562,19 +267,9 @@ var tracerProvider = Sdk.CreateTracerProviderBuilder()
 
 Always dispose EventListener instances:
 
-```csharp
-using var listener = new MyEventListener();
-// or
-try
-{
-    var listener = new MyEventListener();
-    // use listener
-}
-finally
-{
-    listener?.Dispose();
-}
-```
+[!code-csharp[Resource Management](../../code/advanced/ObservabilitySamples.cs#ResourceManagement)]
+
+[!code-csharp[Resource Management Try Finally](../../code/advanced/ObservabilitySamples.cs#ResourceManagementTryFinally)]
 
 ## Performance Considerations
 
@@ -593,31 +288,16 @@ finally
 ### Events Not Appearing
 
 1. Verify EventSource is enabled:
-   ```csharp
-   if (WebDriverBiDiEventSource.Log.IsEnabled())
-   {
-       Console.WriteLine("EventSource is enabled");
-   }
-   ```
+
+   [!code-csharp[Verify EventSource Enabled](../../code/advanced/ObservabilitySamples.cs#VerifyEventSourceEnabled)]
 
 2. Check event level:
-   ```csharp
-   if (WebDriverBiDiEventSource.Log.IsEnabled(EventLevel.Verbose, EventKeywords.None))
-   {
-       Console.WriteLine("Verbose events are enabled");
-   }
-   ```
+
+   [!code-csharp[Check Verbose Enabled](../../code/advanced/ObservabilitySamples.cs#CheckVerboseEnabled)]
 
 3. Ensure listener is created before WebDriverBiDi use:
-   ```csharp
-   // CORRECT: Listener created first
-   using var listener = new MyEventListener();
-   using var driver = new BiDiDriver();
 
-   // INCORRECT: Listener created after driver
-   using var driver = new BiDiDriver();
-   using var listener = new MyEventListener(); // May miss early events
-   ```
+   [!code-csharp[Listener Before Driver](../../code/advanced/ObservabilitySamples.cs#ListenerBeforeDriver)]
 
 ### High Event Volume
 

@@ -18,35 +18,11 @@ WebDriverBiDi.NET's module system is extensible, allowing you to:
 
 All modules inherit from the `Module` base class:
 
-```csharp
-using WebDriverBiDi;
-
-public class MyCustomModule : Module
-{
-    public const string MyCustomModuleName = "myCustom";
-
-    public MyCustomModule(IBiDiCommandExecutor driver)
-        : base(driver)
-    {
-    }
-
-    public override string ModuleName => MyCustomModuleName;
-}
-```
+[!code-csharp[Module Structure](../../code/advanced/CustomModulesSamples.cs#ModuleStructure)]
 
 ### Registering a Module
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-
-// Register custom module (must be done before calling StartAsync)
-MyCustomModule customModule = new MyCustomModule(driver);
-driver.RegisterModule(customModule);
-await driver.StartAsync(webSocketUrl);
-
-// Access module
-var myModule = driver.GetModule<MyCustomModule>("myCustom");
-```
+[!code-csharp[Register and Use Module](../../code/advanced/CustomModulesSamples.cs#RegisterandUseModule)]
 
 ## Creating Commands
 
@@ -54,532 +30,45 @@ var myModule = driver.GetModule<MyCustomModule>("myCustom");
 
 Define parameters that extend `CommandParameters`:
 
-```csharp
-using WebDriverBiDi;
-
-public class MyCommandParameters : CommandParameters<MyCommandResult>
-{
-    public MyCommandParameters(string contextId, string value)
-    {
-        this.MethodName = "myCustom.myCommand";
-        this.ContextId = contextId;
-        this.Value = value;
-    }
-
-    [JsonPropertyName("context")]
-    public string ContextId { get; }
-
-    [JsonPropertyName("value")]
-    public string Value { get; }
-}
-```
+[!code-csharp[Command Parameters](../../code/advanced/CustomModulesSamples.cs#CommandParameters)]
 
 ### Command Results
 
 Define results that extend `CommandResult`:
 
-```csharp
-using System.Text.Json.Serialization;
-using WebDriverBiDi;
-
-public class MyCommandResult : CommandResult
-{
-    [JsonPropertyName("success")]
-    public bool Success { get; private set; }
-
-    [JsonPropertyName("data")]
-    public string Data { get; private set; } = string.Empty;
-}
-```
+[!code-csharp[Command Result](../../code/advanced/CustomModulesSamples.cs#CommandResult)]
 
 ### Command Method
 
 Implement the command in your module:
 
-```csharp
-public class MyCustomModule : Module
-{
-    public const string MyCustomModuleName = "myCustom";
-
-    public MyCustomModule(IBiDiCommandExecutor driver)
-        : base(driver)
-    {
-    }
-
-    public override string ModuleName => MyCustomModuleName;
-
-    public async Task<MyCommandResult> MyCommandAsync(MyCommandParameters parameters)
-    {
-        return await this.Driver.ExecuteCommandAsync<MyCommandResult>(parameters);
-    }
-}
-```
+[!code-csharp[Command Method](../../code/advanced/CustomModulesSamples.cs#CommandMethod)]
 
 ## Example: Page Utilities Module
 
 Let's create a complete custom module for common page operations:
 
-```csharp
-using System.Text.Json.Serialization;
-using WebDriverBiDi;
-using WebDriverBiDi.Script;
-
-namespace MyAutomation
-{
-    // Command Parameters
-    public class WaitForElementCommandParameters : CommandParameters<WaitForElementCommandResult>
-    {
-        public WaitForElementCommandParameters(string contextId, string selector, int timeoutMs)
-        {
-            this.MethodName = "script.evaluate";  // Use existing protocol command
-            this.ContextId = contextId;
-            this.Selector = selector;
-            this.TimeoutMs = timeoutMs;
-            
-            // Build JavaScript that waits for element
-            this.Expression = $@"
-                new Promise((resolve) => {{
-                    const checkElement = () => {{
-                        const element = document.querySelector('{selector}');
-                        if (element) {{
-                            resolve({{ found: true, tagName: element.tagName }});
-                        }} else {{
-                            setTimeout(checkElement, 100);
-                        }}
-                    }};
-                    checkElement();
-                    setTimeout(() => resolve({{ found: false }}), {timeoutMs});
-                }})";
-            
-            this.Target = new ContextTarget(contextId);
-            this.AwaitPromise = true;
-        }
-
-        [JsonPropertyName("expression")]
-        public string Expression { get; }
-
-        [JsonPropertyName("target")]
-        public ContextTarget Target { get; }
-
-        [JsonPropertyName("awaitPromise")]
-        public bool AwaitPromise { get; }
-
-        [JsonIgnore]
-        public string ContextId { get; }
-
-        [JsonIgnore]
-        public string Selector { get; }
-
-        [JsonIgnore]
-        public int TimeoutMs { get; }
-    }
-
-    // Command Result (uses standard EvaluateResult)
-    public class WaitForElementCommandResult : CommandResult
-    {
-        [JsonPropertyName("result")]
-        public RemoteValue? Result { get; private set; }
-    }
-
-    // Custom Module
-    public class PageUtilitiesModule : Module
-    {
-        public const string PageUtilitiesModuleName = "pageUtilities";
-
-        public PageUtilitiesModule(IBiDiCommandExecutor driver)
-            : base(driver)
-        {
-        }
-
-        public override string ModuleName => PageUtilitiesModuleName;
-
-        public async Task<bool> WaitForElementAsync(
-            string contextId, 
-            string selector, 
-            TimeSpan timeout)
-        {
-            WaitForElementCommandParameters parameters = 
-                new WaitForElementCommandParameters(
-                    contextId, 
-                    selector, 
-                    (int)timeout.TotalMilliseconds);
-
-            EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
-                parameters);
-
-            if (result is EvaluateResultSuccess success)
-            {
-                RemoteValueDictionary data = success.Result.ValueAs<RemoteValueDictionary>();
-                return data["found"].ValueAs<bool>();
-            }
-
-            return false;
-        }
-
-        public async Task<string?> GetElementTextAsync(string contextId, string selector)
-        {
-            EvaluateCommandParameters parameters = new EvaluateCommandParameters(
-                $"document.querySelector('{selector}')?.textContent",
-                new ContextTarget(contextId),
-                true);
-
-            EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
-
-            if (result is EvaluateResultSuccess success)
-            {
-                return success.Result.ValueAs<string>();
-            }
-
-            return null;
-        }
-
-        public async Task<bool> IsElementVisibleAsync(string contextId, string selector)
-        {
-            string script = $@"
-                (() => {{
-                    const element = document.querySelector('{selector}');
-                    if (!element) return false;
-                    const style = window.getComputedStyle(element);
-                    return style.display !== 'none' && 
-                           style.visibility !== 'hidden' && 
-                           element.offsetParent !== null;
-                }})()";
-
-            EvaluateCommandParameters parameters = new EvaluateCommandParameters(
-                script,
-                new ContextTarget(contextId),
-                true);
-
-            EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
-
-            if (result is EvaluateResultSuccess success)
-            {
-                return success.Result.ValueAs<bool>();
-            }
-
-            return false;
-        }
-
-        public async Task<Dictionary<string, object>> GetPageMetricsAsync(string contextId)
-        {
-            string script = @"
-            ({
-                title: document.title,
-                url: window.location.href,
-                linkCount: document.querySelectorAll('a').length,
-                imageCount: document.querySelectorAll('img').length,
-                scriptCount: document.querySelectorAll('script').length,
-                styleCount: document.querySelectorAll('link[rel=""stylesheet""]').length,
-                readyState: document.readyState,
-                height: document.documentElement.scrollHeight,
-                width: document.documentElement.scrollWidth
-            })";
-
-            EvaluateCommandParameters parameters = new EvaluateCommandParameters(
-                script,
-                new ContextTarget(contextId),
-                true);
-
-            EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
-
-            if (result is EvaluateResultSuccess success)
-            {
-                return ToDictionary(success.Result.ValueAs<RemoteValueDictionary>());
-            }
-
-            return new Dictionary<string, object>();
-        }
-
-        private static Dictionary<string, object> ToDictionary(RemoteValueDictionary dict)
-        {
-            Dictionary<string, object> result = new();
-            foreach (KeyValuePair<object, RemoteValue> kvp in dict)
-            {
-                result[kvp.Key.ToString() ?? ""] = kvp.Value.Type switch
-                {
-                    "string" => kvp.Value.ValueAs<string>() ?? "",
-                    "number" => kvp.Value.Value is long l ? (object)l : kvp.Value.ValueAs<double>(),
-                    "boolean" => kvp.Value.ValueAs<bool>(),
-                    "null" or "undefined" => (object?)null!,
-                    _ => kvp.Value.Value ?? (object)""
-                };
-            }
-            return result;
-        }
-    }
-}
-```
+[!code-csharp[Page Utilities Module](../../code/advanced/CustomModulesSamples.cs#PageUtilitiesModule)]
 
 ### Using the Custom Module
 
-```csharp
-using MyAutomation;
-
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-
-// Register custom module (must be done before calling StartAsync)
-PageUtilitiesModule pageUtils = new PageUtilitiesModule(driver);
-driver.RegisterModule(pageUtils);
-await driver.StartAsync(webSocketUrl);
-
-// Get context
-GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new());
-string contextId = tree.ContextTree[0].BrowsingContextId;
-
-// Navigate
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com")
-    { Wait = ReadinessState.Complete });
-
-// Use custom module
-bool elementFound = await pageUtils.WaitForElementAsync(
-    contextId, 
-    ".content", 
-    TimeSpan.FromSeconds(10));
-
-if (elementFound)
-{
-    string? text = await pageUtils.GetElementTextAsync(contextId, ".content");
-    Console.WriteLine($"Content: {text}");
-    
-    bool isVisible = await pageUtils.IsElementVisibleAsync(contextId, ".content");
-    Console.WriteLine($"Visible: {isVisible}");
-}
-
-// Get page metrics
-var metrics = await pageUtils.GetPageMetricsAsync(contextId);
-Console.WriteLine($"Links: {metrics["linkCount"]}");
-Console.WriteLine($"Images: {metrics["imageCount"]}");
-```
+[!code-csharp[Using Page Utilities Module](../../code/advanced/CustomModulesSamples.cs#UsingPageUtilitiesModule)]
 
 ## Example: Testing Utilities Module
 
 Create a module with common testing helpers:
 
-```csharp
-public class TestUtilitiesModule : Module
-{
-    public const string TestUtilitiesModuleName = "testUtilities";
-
-    public TestUtilitiesModule(IBiDiCommandExecutor driver)
-        : base(driver)
-    {
-    }
-
-    public override string ModuleName => TestUtilitiesModuleName;
-
-    public async Task<byte[]> TakeFullPageScreenshotAsync(string contextId)
-    {
-        // Get page dimensions
-        string script = @"
-        ({
-            width: Math.max(
-                document.documentElement.scrollWidth,
-                document.body.scrollWidth
-            ),
-            height: Math.max(
-                document.documentElement.scrollHeight,
-                document.body.scrollHeight
-            )
-        })";
-
-        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
-            new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
-
-        if (result is EvaluateResultSuccess success)
-        {
-            RemoteValueDictionary dimensions = success.Result.ValueAs<RemoteValueDictionary>();
-            long width = dimensions["width"].ValueAs<long>();
-            long height = dimensions["height"].ValueAs<long>();
-
-            // Capture screenshot with full page dimensions
-            CaptureScreenshotCommandParameters screenshotParams = 
-                new CaptureScreenshotCommandParameters(contextId)
-                {
-                    Clip = new BoxClipRectangle
-                    {
-                        X = 0,
-                        Y = 0,
-                        Width = width,
-                        Height = height
-                    }
-                };
-
-            CaptureScreenshotCommandResult screenshot =
-                await this.Driver.ExecuteCommandAsync<CaptureScreenshotCommandResult>(screenshotParams);
-
-            return Convert.FromBase64String(screenshot.Data);
-        }
-
-        throw new Exception("Failed to get page dimensions");
-    }
-
-    public async Task<List<string>> GetAllLinksAsync(string contextId)
-    {
-        string script = "Array.from(document.querySelectorAll('a')).map(a => a.href)";
-
-        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
-            new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
-
-        if (result is EvaluateResultSuccess success)
-        {
-            RemoteValueList links = success.Result.ValueAs<RemoteValueList>();
-            return links.Select(l => l.ValueAs<string>()).ToList();
-        }
-
-        return new List<string>();
-    }
-
-    public async Task HighlightElementAsync(string contextId, string selector)
-    {
-        string script = $@"
-            (() => {{
-                const element = document.querySelector('{selector}');
-                if (element) {{
-                    element.style.border = '3px solid red';
-                    element.style.backgroundColor = 'yellow';
-                    return true;
-                }}
-                return false;
-            }})()";
-
-        await this.Driver.ExecuteCommandAsync<EvaluateResult>(
-            new EvaluateCommandParameters(script, new ContextTarget(contextId), false));
-    }
-
-    public async Task InjectCSSAsync(string contextId, string css)
-    {
-        string script = $@"
-            (() => {{
-                const style = document.createElement('style');
-                style.textContent = `{css}`;
-                document.head.appendChild(style);
-            }})()";
-
-        await this.Driver.ExecuteCommandAsync<EvaluateResult>(
-            new EvaluateCommandParameters(script, new ContextTarget(contextId), false));
-    }
-}
-```
+[!code-csharp[Test Utilities Module](../../code/advanced/CustomModulesSamples.cs#TestUtilitiesModule)]
 
 ## Example: Performance Monitoring Module
 
-```csharp
-public class PerformanceModule : Module
-{
-    public const string PerformanceModuleName = "performance";
-
-    public PerformanceModule(IBiDiCommandExecutor driver)
-        : base(driver)
-    {
-    }
-
-    public override string ModuleName => PerformanceModuleName;
-
-    public async Task<Dictionary<string, double>> GetNavigationTimingAsync(string contextId)
-    {
-        string script = @"
-        (() => {
-            const timing = performance.getEntriesByType('navigation')[0];
-            if (!timing) return {};
-            
-            return {
-                dnsLookup: timing.domainLookupEnd - timing.domainLookupStart,
-                tcpConnection: timing.connectEnd - timing.connectStart,
-                requestTime: timing.responseStart - timing.requestStart,
-                responseTime: timing.responseEnd - timing.responseStart,
-                domParsing: timing.domInteractive - timing.responseEnd,
-                domContentLoaded: timing.domContentLoadedEventEnd - timing.domContentLoadedEventStart,
-                loadComplete: timing.loadEventEnd - timing.loadEventStart,
-                totalTime: timing.loadEventEnd - timing.fetchStart
-            };
-        })()";
-
-        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
-            new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
-
-        if (result is EvaluateResultSuccess success)
-        {
-            RemoteValueDictionary timing = success.Result.ValueAs<RemoteValueDictionary>();
-            return timing.ToDictionary(
-                kvp => kvp.Key.ToString() ?? "",
-                kvp => kvp.Value.ValueAs<double>());
-        }
-
-        return new Dictionary<string, double>();
-    }
-
-    public async Task<List<ResourceTiming>> GetResourceTimingsAsync(string contextId)
-    {
-        string script = @"
-        Array.from(performance.getEntriesByType('resource')).map(r => ({
-            name: r.name,
-            duration: r.duration,
-            size: r.transferSize || 0,
-            type: r.initiatorType
-        }))";
-
-        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
-            new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
-
-        if (result is EvaluateResultSuccess success)
-        {
-            RemoteValueList resources = success.Result.ValueAs<RemoteValueList>();
-            return resources.Select(r =>
-            {
-                RemoteValueDictionary dict = r.ValueAs<RemoteValueDictionary>();
-                return new ResourceTiming
-                {
-                    Name = dict["name"].ValueAs<string>() ?? "",
-                    Duration = dict["duration"].ValueAs<double>(),
-                    Size = dict["size"].ValueAs<long>(),
-                    Type = dict["type"].ValueAs<string>() ?? ""
-                };
-            }).ToList();
-        }
-
-        return new List<ResourceTiming>();
-    }
-}
-
-public class ResourceTiming
-{
-    public string Name { get; set; } = string.Empty;
-    public double Duration { get; set; }
-    public long Size { get; set; }
-    public string Type { get; set; } = string.Empty;
-}
-```
+The Performance module pattern uses `Script.EvaluateAsync` to run `performance.getEntriesByType('navigation')` and `performance.getEntriesByType('resource')` in the browser. See the [Test Utilities Module](#example-testing-utilities-module) example for the pattern of wrapping `ExecuteCommandAsync` with custom methods.
 
 ## Module Events
 
 You can also expose observable events from your custom module:
 
-```csharp
-public class CustomEventsModule : Module
-{
-    public const string CustomModuleName = "customModule";
-    private const string CustomEventName = "custom.eventOccurred";
-
-    public CustomEventsModule(IBiDiCommandExecutor driver)
-        : base(driver)
-    {
-        // Register event with driver
-        this.RegisterObservableEvent<CustomEventArgs>(this.OnCustomEvent);
-    }
-
-    public override string ModuleName => CustomModuleName;
-
-    public ObservableEvent<CustomEventArgs> OnCustomEvent { get; } = 
-        new ObservableEvent<CustomEventArgs>(CustomEventName);
-}
-
-public class CustomEventArgs : WebDriverBiDiEventArgs
-{
-    [JsonPropertyName("data")]
-    public string Data { get; private set; } = string.Empty;
-}
-```
+[!code-csharp[Custom Events Module](../../code/advanced/CustomModulesSamples.cs#CustomEventsModule)]
 
 ## Best Practices
 
@@ -587,101 +76,25 @@ public class CustomEventArgs : WebDriverBiDiEventArgs
 
 Use a clear module prefix for your custom commands:
 
-```csharp
-public MyCommandParameters(string value)
-{
-    this.MethodName = "myCompany.myModule.myCommand";  // Clear namespace
-    this.Value = value;
-}
-```
+[!code-csharp[Namespace Command](../../code/advanced/CustomModulesSamples.cs#NamespaceCommand)]
 
 ### 2. Provide Defaults
 
 Make your modules easy to use with sensible defaults:
 
-```csharp
-public async Task<bool> WaitForElementAsync(
-    string contextId, 
-    string selector, 
-    TimeSpan? timeout = null)  // Optional timeout
-{
-    timeout = timeout ?? TimeSpan.FromSeconds(30);  // Default
-    // ...
-}
-```
+[!code-csharp[Optional Timeout Default](../../code/advanced/CustomModulesSamples.cs#OptionalTimeoutDefault)]
 
 ### 3. Document Your Module
 
-```csharp
-/// <summary>
-/// Provides utility methods for common page operations.
-/// </summary>
-public class PageUtilitiesModule : Module
-{
-    /// <summary>
-    /// Waits for an element to appear on the page.
-    /// </summary>
-    /// <param name="contextId">The browsing context ID.</param>
-    /// <param name="selector">CSS selector for the element.</param>
-    /// <param name="timeout">Maximum time to wait.</param>
-    /// <returns>True if element found, false otherwise.</returns>
-    public async Task<bool> WaitForElementAsync(
-        string contextId, 
-        string selector, 
-        TimeSpan timeout)
-    {
-        // ...
-    }
-}
-```
+Add XML documentation comments to your module class and methods. See the [Page Utilities Module](#example-page-utilities-module) for the structure.
 
 ### 4. Handle Errors Gracefully
 
-```csharp
-public async Task<string?> GetElementTextAsync(string contextId, string selector)
-{
-    try
-    {
-        EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
-        
-        if (result is EvaluateResultSuccess success)
-        {
-            return success.Result.ValueAs<string>();
-        }
-        else if (result is EvaluateResultException exception)
-        {
-            Console.WriteLine($"Script error: {exception.ExceptionDetails.Text}");
-        }
-    }
-    catch (WebDriverBiDiException ex)
-    {
-        Console.WriteLine($"Command error: {ex.Message}");
-    }
-    
-    return null;  // Graceful fallback
-}
-```
+[!code-csharp[Error Handling in GetElementText](../../code/advanced/CustomModulesSamples.cs#ErrorHandlinginGetElementText)]
 
 ### 5. Make Modules Testable
 
-```csharp
-public interface IPageUtilities
-{
-    Task<bool> WaitForElementAsync(string contextId, string selector, TimeSpan timeout);
-    Task<string?> GetElementTextAsync(string contextId, string selector);
-}
-
-public class PageUtilitiesModule : Module, IPageUtilities
-{
-    // Implementation...
-}
-
-// Now you can mock in tests
-public class MockPageUtilities : IPageUtilities
-{
-    // Mock implementation
-}
-```
+Extract an interface from your module (e.g., `IPageUtilities` with `WaitForElementAsync` and `GetElementTextAsync`), implement it in your module class, and create a `MockPageUtilities` for unit tests.
 
 ## Packaging Custom Modules
 
@@ -709,47 +122,7 @@ Create a NuGet package for reusable modules:
 
 For actual protocol extensions (not just helper methods):
 
-```csharp
-// Define new command in protocol
-public class ExperimentalCommandParameters : CommandParameters<ExperimentalCommandResult>
-{
-    public ExperimentalCommandParameters(string parameter)
-    {
-        // Use actual protocol command name
-        this.MethodName = "experimental.newCommand";
-        this.Parameter = parameter;
-    }
-
-    [JsonPropertyName("parameter")]
-    public string Parameter { get; }
-}
-
-public class ExperimentalCommandResult : CommandResult
-{
-    [JsonPropertyName("result")]
-    public string Result { get; private set; } = string.Empty;
-}
-
-// Implement in module
-public class ExperimentalModule : Module
-{
-    public const string ExperimentalModuleName = "experimental";
-
-    public ExperimentalModule(IBiDiCommandExecutor driver)
-        : base(driver)
-    {
-    }
-
-    public override string ModuleName => ExperimentalModuleName;
-
-    public async Task<ExperimentalCommandResult> NewCommandAsync(
-        ExperimentalCommandParameters parameters)
-    {
-        return await this.Driver.ExecuteCommandAsync<ExperimentalCommandResult>(
-            parameters);
-    }
-}
-```
+[!code-csharp[Experimental Module](../../code/advanced/CustomModulesSamples.cs#ExperimentalModule)]
 
 ## Next Steps
 

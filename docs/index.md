@@ -36,30 +36,7 @@ WebDriverBiDi.NET enables sophisticated browser automation scenarios:
 
 ## Quick Example
 
-```csharp
-using WebDriverBiDi;
-
-// Connect to a browser with WebDriver BiDi enabled
-BiDiDriver driver = new(TimeSpan.FromSeconds(10));
-await driver.StartAsync("ws://localhost:9222");
-
-// Get the active browsing context
-var tree = await driver.BrowsingContext.GetTreeAsync(new());
-string contextId = tree.ContextTree[0].BrowsingContextId;
-
-// Navigate to a webpage
-await driver.BrowsingContext.NavigateAsync(
-    new(contextId, "https://example.com") 
-    { 
-        Wait = ReadinessState.Complete 
-    });
-
-// Execute JavaScript and get results
-var result = await driver.Script.EvaluateAsync(
-    new("document.title", new ContextTarget(contextId), true));
-
-await driver.StopAsync();
-```
+[!code-csharp[Quick Example](code/IndexSamples.cs#QuickExample)]
 
 ## Documentation Structure
 

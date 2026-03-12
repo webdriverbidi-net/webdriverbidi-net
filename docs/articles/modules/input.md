@@ -14,143 +14,52 @@ The Input module allows you to:
 
 ## Accessing the Module
 
-```csharp
-InputModule input = driver.Input;
-```
+[!code-csharp[Accessing Module](../../code/modules/InputModuleSamples.cs#AccessingModule)]
 
 ## Performing Actions
 
 ### Mouse Click
 
-```csharp
-PerformActionsCommandParameters params = new PerformActionsCommandParameters(contextId);
-
-// Create a pointer (mouse) action source
-PointerSource mouseSource = new PointerSource("mouse", PointerType.Mouse);
-
-// Move to element and click
-mouseSource.CreatePointerMove(100, 100, TimeSpan.Zero);
-mouseSource.CreatePointerDown(MouseButton.Left);
-mouseSource.CreatePointerUp(MouseButton.Left);
-
-params.Actions.Add(mouseSource);
-
-await driver.Input.PerformActionsAsync(params);
-```
+[!code-csharp[Mouse Click](../../code/modules/InputModuleSamples.cs#MouseClick)]
 
 ### Keyboard Input
 
-```csharp
-PerformActionsCommandParameters params = new PerformActionsCommandParameters(contextId);
-
-// Create a keyboard action source
-KeySource keySource = new KeySource("keyboard");
-
-// Type text
-keySource.CreateKeyDown("H");
-keySource.CreateKeyUp("H");
-keySource.CreateKeyDown("i");
-keySource.CreateKeyUp("i");
-
-params.Actions.Add(keySource);
-
-await driver.Input.PerformActionsAsync(params);
-```
+[!code-csharp[Keyboard Input](../../code/modules/InputModuleSamples.cs#KeyboardInput)]
 
 ### Click on Element
 
-```csharp
-// First locate the element
-LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
-    new LocateNodesCommandParameters(contextId, new CssLocator("button")));
-
-RemoteValue element = locateResult.Nodes[0];
-
-// Click the element
-PerformActionsCommandParameters params = new PerformActionsCommandParameters(contextId);
-
-PointerSource mouseSource = new PointerSource("mouse", PointerType.Mouse);
-mouseSource.CreatePointerMoveToElement(element.ToSharedReference(), 0, 0, TimeSpan.Zero);
-mouseSource.CreatePointerDown(MouseButton.Left);
-mouseSource.CreatePointerUp(MouseButton.Left);
-
-params.Actions.Add(mouseSource);
-
-await driver.Input.PerformActionsAsync(params);
-```
+[!code-csharp[Click on Element](../../code/modules/InputModuleSamples.cs#ClickonElement)]
 
 ### Send Keys to Element
 
-```csharp
-// Click element first to focus it
-// ... (click code from above)
-
-// Then send keys
-PerformActionsCommandParameters params = new PerformActionsCommandParameters(contextId);
-
-KeySource keySource = new KeySource("keyboard");
-string text = "Hello, World!";
-
-foreach (char c in text)
-{
-    keySource.CreateKeyDown(c.ToString());
-    keySource.CreateKeyUp(c.ToString());
-}
-
-// Press Enter
-keySource.CreateKeyDown(Keys.Enter);
-keySource.CreateKeyUp(Keys.Enter);
-
-params.Actions.Add(keySource);
-
-await driver.Input.PerformActionsAsync(params);
-```
+[!code-csharp[Send Keys to Element](../../code/modules/InputModuleSamples.cs#SendKeystoElement)]
 
 ### Modifier Keys
 
-```csharp
-PerformActionsCommandParameters params = new PerformActionsCommandParameters(contextId);
-
-KeySource keySource = new KeySource("keyboard");
-
-// Ctrl+A (Select All)
-keySource.CreateKeyDown(Keys.Control);
-keySource.CreateKeyDown("a");
-keySource.CreateKeyUp("a");
-keySource.CreateKeyUp(Keys.Control);
-
-params.Actions.Add(keySource);
-
-await driver.Input.PerformActionsAsync(params);
-```
+[!code-csharp[Modifier Keys](../../code/modules/InputModuleSamples.cs#ModifierKeys)]
 
 ### Release Actions
 
-```csharp
-// Release all pressed keys/buttons
-ReleaseActionsCommandParameters params = new ReleaseActionsCommandParameters(contextId);
-await driver.Input.ReleaseActionsAsync(params);
-```
+[!code-csharp[Release Actions](../../code/modules/InputModuleSamples.cs#ReleaseActions)]
 
 ## Common Key Constants
 
-The `Keys` class provides constants for special keys:
+Use Unicode values for special keys: Enter `\uE007`, Tab `\uE004`, Control `\uE009`, etc. A partial list is in the table below.
 
-```csharp
-Keys.Enter
-Keys.Tab
-Keys.Backspace
-Keys.Delete
-Keys.Escape
-Keys.Control
-Keys.Shift
-Keys.Alt
-Keys.ArrowUp
-Keys.ArrowDown
-Keys.ArrowLeft
-Keys.ArrowRight
-// ... and more
-```
+| Key         | Unicode Value |
+|-------------|---------------|
+| Enter       | `\uE007`      |
+| Tab         | `\uE004`      |
+| Backspace   | `\uE003`      |
+| Delete      | `\uE017`      |
+| Escape      | `\uE00C`      |
+| Control     | `\uE009`      |
+| Shift       | `\uE008`      |
+| Alt         | `\uE00A`      |
+| Arrow Up    | `\uE013`      |
+| Arrow Down  | `\uE015`      |
+| Arrow Left  | `\uE012`      |
+| Arrow Right | `\uE014`      |
 
 ## Best Practices
 

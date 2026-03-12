@@ -13,92 +13,27 @@ The Log module allows you to:
 
 ## Accessing the Module
 
-```csharp
-LogModule log = driver.Log;
-```
+[!code-csharp[Accessing Module](../../code/modules/LogModuleSamples.cs#AccessingModule)]
 
 ## Monitoring Console Logs
 
 ### Basic Log Monitoring
 
-```csharp
-// Add observer
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    Console.WriteLine($"[{e.Level}] {e.Text}");
-});
-
-// Subscribe to events
-SubscribeCommandParameters subscribe = 
-    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-// Navigate - console logs will be captured
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com"));
-```
+[!code-csharp[Basic Log Monitoring](../../code/modules/LogModuleSamples.cs#BasicLogMonitoring)]
 
 ### Log Entry Properties
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    Console.WriteLine($"Level: {e.Level}");          // Error, Warn, Info, Debug
-    Console.WriteLine($"Text: {e.Text}");            // Log message
-    Console.WriteLine($"Timestamp: {e.Timestamp}");  // When logged
-    Console.WriteLine($"Type: {e.Type}");            // Console, JavaScript
-    Console.WriteLine($"Method: {e.Method}");        // log, error, warn, etc.
-    
-    if (e.Source != null)
-    {
-        Console.WriteLine($"Source: {e.Source.Realm}");
-        Console.WriteLine($"Context: {e.Source.Context}");
-    }
-    
-    if (e.StackTrace != null)
-    {
-        Console.WriteLine("Stack trace:");
-        foreach (var frame in e.StackTrace.CallFrames)
-        {
-            Console.WriteLine($"  {frame.FunctionName} at {frame.Url}:{frame.LineNumber}");
-        }
-    }
-});
-```
+[!code-csharp[Log Entry Properties](../../code/modules/LogModuleSamples.cs#LogEntryProperties)]
 
 ## Filtering by Log Level
 
 ### Monitor Only Errors
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    if (e.Level == LogLevel.Error)
-    {
-        Console.WriteLine($"ERROR: {e.Text}");
-        
-        if (e.StackTrace != null)
-        {
-            foreach (var frame in e.StackTrace.CallFrames)
-            {
-                Console.WriteLine($"  at {frame.Url}:{frame.LineNumber}:{frame.ColumnNumber}");
-            }
-        }
-    }
-});
-```
+[!code-csharp[Monitor Only Errors](../../code/modules/LogModuleSamples.cs#MonitorOnlyErrors)]
 
 ### Monitor Warnings and Errors
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    if (e.Level == LogLevel.Error || e.Level == LogLevel.Warn)
-    {
-        Console.WriteLine($"[{e.Level}] {e.Text}");
-    }
-});
-```
+[!code-csharp[Monitor Warnings and Errors](../../code/modules/LogModuleSamples.cs#MonitorWarningsandErrors)]
 
 ## Log Types
 
@@ -106,101 +41,27 @@ driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
 
 These come from `console.log()`, `console.error()`, etc.:
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    if (e is ConsoleLogEntry consoleEntry)
-    {
-        Console.WriteLine($"Console method: {consoleEntry.Method}");
-        Console.WriteLine($"Args: {consoleEntry.Args.Count}");
-        
-        foreach (var arg in consoleEntry.Args)
-        {
-            Console.WriteLine($"  Type: {arg.Type}");
-            Console.WriteLine($"  Value: {arg.Value}");
-        }
-    }
-});
-```
+[!code-csharp[Console Logs](../../code/modules/LogModuleSamples.cs#ConsoleLogs)]
 
 ### JavaScript Errors
 
 Uncaught JavaScript exceptions:
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    if (e.Type == "javascript" && e.Level == LogLevel.Error)
-    {
-        Console.WriteLine($"JavaScript Error: {e.Text}");
-    }
-});
-```
+[!code-csharp[JavaScript Errors](../../code/modules/LogModuleSamples.cs#JavaScriptErrors)]
 
 ## Common Patterns
 
 ### Collect All Logs
 
-```csharp
-List<EntryAddedEventArgs> logs = new List<EntryAddedEventArgs>();
-
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    logs.Add(e);
-});
-
-SubscribeCommandParameters subscribe =
-    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-// Perform actions...
-
-// Later, analyze logs
-int errorCount = logs.Count(l => l.Level == LogLevel.Error);
-int warnCount = logs.Count(l => l.Level == LogLevel.Warn);
-
-Console.WriteLine($"Errors: {errorCount}, Warnings: {warnCount}");
-```
+[!code-csharp[Collect All Logs](../../code/modules/LogModuleSamples.cs#CollectAllLogs)]
 
 ### Fail on JavaScript Errors
 
-```csharp
-bool hasErrors = false;
-
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    if (e.Type == "javascript" && e.Level == LogLevel.Error)
-    {
-        hasErrors = true;
-        Console.WriteLine($"JavaScript error detected: {e.Text}");
-    }
-});
-
-SubscribeCommandParameters subscribe =
-    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-// Perform test actions...
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-if (hasErrors)
-{
-    throw new Exception("Test failed due to JavaScript errors");
-}
-```
+[!code-csharp[Fail on JavaScript Errors](../../code/modules/LogModuleSamples.cs#FailonJavaScriptErrors)]
 
 ### Log to File
 
-```csharp
-string logFilePath = "browser-console.log";
-
-driver.Log.OnEntryAdded.AddObserver(async (EntryAddedEventArgs e) =>
-{
-    string logLine = $"{e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{e.Level}] {e.Text}\n";
-    await File.AppendAllTextAsync(logFilePath, logLine);
-},
-ObservableEventHandlerOptions.RunHandlerAsynchronously);
-```
+[!code-csharp[Log to File](../../code/modules/LogModuleSamples.cs#LogtoFile)]
 
 ## Best Practices
 
@@ -215,4 +76,3 @@ ObservableEventHandlerOptions.RunHandlerAsynchronously);
 - [Events and Observables](../events-observables.md): Understanding event handling
 - [Examples: Console Monitoring](../examples/console-monitoring.md): Complete examples
 - [API Reference](../../api/index.md): Complete API documentation
-

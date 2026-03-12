@@ -13,189 +13,41 @@ The WebExtension module allows you to:
 
 ## Accessing the Module
 
-```csharp
-WebExtensionModule webExtension = driver.WebExtension;
-```
+[!code-csharp[Accessing Module](../../code/modules/WebExtensionModuleSamples.cs#AccessingModule)]
 
 ## Installing Extensions
 
 ### Install from Path
 
-```csharp
-InstallCommandParameters params = new InstallCommandParameters();
-params.ExtensionPath = "/path/to/extension.crx";
-
-InstallCommandResult result = await driver.WebExtension.InstallAsync(params);
-string extensionId = result.ExtensionId;
-
-Console.WriteLine($"Extension installed: {extensionId}");
-```
+[!code-csharp[Install from Path](../../code/modules/WebExtensionModuleSamples.cs#InstallfromPath)]
 
 ### Install Unpacked Extension
 
-```csharp
-// Install from unpacked extension directory
-InstallCommandParameters params = new InstallCommandParameters();
-params.ExtensionPath = "/path/to/extension-directory";
-
-InstallCommandResult result = await driver.WebExtension.InstallAsync(params);
-Console.WriteLine($"Extension installed: {result.ExtensionId}");
-```
+[!code-csharp[Install Unpacked Extension](../../code/modules/WebExtensionModuleSamples.cs#InstallUnpackedExtension)]
 
 ## Uninstalling Extensions
 
 ### Uninstall by ID
 
-```csharp
-UninstallCommandParameters params = new UninstallCommandParameters(extensionId);
-await driver.WebExtension.UninstallAsync(params);
-
-Console.WriteLine("Extension uninstalled");
-```
+[!code-csharp[Uninstall by ID](../../code/modules/WebExtensionModuleSamples.cs#UninstallbyID)]
 
 ## Common Patterns
 
 ### Testing with Extension
 
-```csharp
-// Install extension
-InstallCommandParameters installParams = new InstallCommandParameters();
-installParams.ExtensionPath = "/path/to/my-extension";
-
-InstallCommandResult installResult =
-    await driver.WebExtension.InstallAsync(installParams);
-string extensionId = installResult.ExtensionId;
-
-Console.WriteLine($"Extension installed: {extensionId}");
-
-// Navigate and test
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com")
-    { Wait = ReadinessState.Complete });
-
-// Test extension functionality
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        "document.querySelector('[data-extension-injected]') !== null",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    bool extensionActive = success.Result.ValueAs<bool>();
-    Console.WriteLine($"Extension active: {extensionActive}");
-}
-
-// Clean up
-await driver.WebExtension.UninstallAsync(
-    new UninstallCommandParameters(extensionId));
-```
+[!code-csharp[Testing with Extension](../../code/modules/WebExtensionModuleSamples.cs#TestingwithExtension)]
 
 ### Testing Extension Content Scripts
 
-```csharp
-// Install extension with content script
-InstallCommandParameters params = new InstallCommandParameters();
-params.ExtensionPath = "/path/to/content-script-extension";
-
-InstallCommandResult result = await driver.WebExtension.InstallAsync(params);
-
-// Navigate to test page
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com")
-    { Wait = ReadinessState.Complete });
-
-// Wait for content script to inject
-await Task.Delay(1000);
-
-// Check if content script modified the page
-EvaluateResult evalResult = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        "document.body.dataset.contentScriptLoaded",
-        new ContextTarget(contextId),
-        true));
-
-if (evalResult is EvaluateResultSuccess success)
-{
-    string loaded = success.Result.ValueAs<string>();
-    Console.WriteLine($"Content script loaded: {loaded}");
-}
-
-// Clean up
-await driver.WebExtension.UninstallAsync(
-    new UninstallCommandParameters(result.ExtensionId));
-```
+[!code-csharp[Testing Extension Content Scripts](../../code/modules/WebExtensionModuleSamples.cs#TestingExtensionContentScripts)]
 
 ### Testing Multiple Extensions
 
-```csharp
-List<string> extensionIds = new List<string>();
-
-// Install multiple extensions
-string[] extensionPaths = new[]
-{
-    "/path/to/extension1",
-    "/path/to/extension2",
-    "/path/to/extension3"
-};
-
-foreach (var path in extensionPaths)
-{
-    InstallCommandParameters params = new InstallCommandParameters();
-    params.ExtensionPath = path;
-
-    InstallCommandResult result = await driver.WebExtension.InstallAsync(params);
-    extensionIds.Add(result.ExtensionId);
-
-    Console.WriteLine($"Installed: {result.ExtensionId}");
-}
-
-// Run tests with all extensions active
-// ...
-
-// Clean up all extensions
-foreach (var id in extensionIds)
-{
-    await driver.WebExtension.UninstallAsync(
-        new UninstallCommandParameters(id));
-}
-```
+[!code-csharp[Testing Multiple Extensions](../../code/modules/WebExtensionModuleSamples.cs#TestingMultipleExtensions)]
 
 ### Testing Extension Permissions
 
-```csharp
-// Install extension that requires permissions
-InstallCommandParameters params = new InstallCommandParameters();
-params.ExtensionPath = "/path/to/permission-extension";
-
-InstallCommandResult result = await driver.WebExtension.InstallAsync(params);
-
-// Navigate to page where extension needs permissions
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com")
-    { Wait = ReadinessState.Complete });
-
-// Test that extension has required permissions
-EvaluateResult evalResult = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"new Promise((resolve) => {
-            chrome.permissions.contains({
-                permissions: ['storage']
-            }, (result) => resolve(result));
-        })",
-        new ContextTarget(contextId),
-        true));
-
-if (evalResult is EvaluateResultSuccess success)
-{
-    bool hasPermission = success.Result.ValueAs<bool>();
-    Console.WriteLine($"Extension has storage permission: {hasPermission}");
-}
-
-// Uninstall
-await driver.WebExtension.UninstallAsync(
-    new UninstallCommandParameters(result.ExtensionId));
-```
+[!code-csharp[Testing Extension Permissions](../../code/modules/WebExtensionModuleSamples.cs#TestingExtensionPermissions)]
 
 ## Extension Formats
 

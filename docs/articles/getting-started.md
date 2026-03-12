@@ -105,42 +105,9 @@ The `webSocketDebuggerUrl` field contains the URL to use with `BiDiDriver.StartA
 
 **Programmatic Discovery:**
 
-```csharp
-using System.Net.Http;
-using System.Text.Json;
+[!code-csharp[Discover WebSocket URL](../code/examples/GettingStartedSamples.cs#DiscoverWebSocketURL)]
 
-public static async Task<string> DiscoverWebSocketUrlAsync(int port = 9222)
-{
-    using HttpClient client = new HttpClient();
-
-    try
-    {
-        string json = await client.GetStringAsync($"http://localhost:{port}/json/version");
-        using JsonDocument doc = JsonDocument.Parse(json);
-
-        if (doc.RootElement.TryGetProperty("webSocketDebuggerUrl", out JsonElement urlElement))
-        {
-            string? webSocketUrl = urlElement.GetString();
-            if (!string.IsNullOrEmpty(webSocketUrl))
-            {
-                return webSocketUrl;
-            }
-        }
-
-        throw new Exception("WebSocket URL not found in response");
-    }
-    catch (HttpRequestException ex)
-    {
-        throw new Exception($"Failed to connect to browser on port {port}. " +
-            "Ensure Chrome is running with --remote-debugging-port={port}", ex);
-    }
-}
-
-// Usage
-string webSocketUrl = await DiscoverWebSocketUrlAsync();
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-await driver.StartAsync(webSocketUrl);
-```
+[!code-csharp[Discover WebSocket URL](../code/examples/GettingStartedSamples.cs#DiscoverWebSocketUrlUsage)]
 
 #### Method 2: Page-Specific WebSocket URLs
 
@@ -204,64 +171,9 @@ ws://localhost:9222/devtools/page/<page-id>
 
 #### Complete Discovery Example
 
-```csharp
-using System.Net.Http;
-using System.Text.Json;
-using WebDriverBiDi;
+[!code-csharp[Connect to Browser](../code/examples/GettingStartedSamples.cs#ConnecttoBrowser)]
 
-public class BrowserConnection
-{
-    public static async Task<BiDiDriver> ConnectToBrowserAsync(int port = 9222)
-    {
-        // Try to discover WebSocket URL
-        string webSocketUrl;
-
-        try
-        {
-            webSocketUrl = await DiscoverWebSocketUrlAsync(port);
-            Console.WriteLine($"Discovered WebSocket URL: {webSocketUrl}");
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                $"Failed to discover a browser WebSocket URL on port {port}. " +
-                "For Chromium-based browsers, query /json/version and use the returned devtools/browser URL. " +
-                "For Firefox via geckodriver, use ws://localhost:4444/session.",
-                ex);
-        }
-
-        // Create and start driver
-        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-
-        try
-        {
-            await driver.StartAsync(webSocketUrl);
-            Console.WriteLine("Connected to browser successfully");
-            return driver;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Connection failed: {ex.Message}");
-            throw;
-        }
-    }
-
-    private static async Task<string> DiscoverWebSocketUrlAsync(int port)
-    {
-        using HttpClient client = new HttpClient();
-        client.Timeout = TimeSpan.FromSeconds(5);
-
-        string json = await client.GetStringAsync($"http://localhost:{port}/json/version");
-        using JsonDocument doc = JsonDocument.Parse(json);
-
-        return doc.RootElement.GetProperty("webSocketDebuggerUrl").GetString()
-            ?? throw new Exception("WebSocket URL is null");
-    }
-}
-
-// Usage
-BiDiDriver driver = await BrowserConnection.ConnectToBrowserAsync(9222);
-```
+[!code-csharp[Connect to Browser](../code/examples/GettingStartedSamples.cs#ConnectToBrowserUsage)]
 
 **Best Practices:**
 - Use `/json/version` to get the browser-level WebSocket URL
@@ -292,72 +204,7 @@ dotnet add package WebDriverBiDi
 
 Replace the contents of `Program.cs`:
 
-```csharp
-using WebDriverBiDi;
-using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Script;
-
-// Set the WebSocket URL for your browser
-string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID";
-
-// Create a driver with a 10-second command timeout
-// Using default WebSocket connection
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-
-try
-{
-    // Connect to the browser
-    Console.WriteLine("Connecting to browser...");
-    await driver.StartAsync(webSocketUrl);
-    Console.WriteLine("Connected!");
-
-    // Get the current browsing contexts (tabs/windows)
-    GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
-        new GetTreeCommandParameters());
-    
-    string contextId = tree.ContextTree[0].BrowsingContextId;
-    Console.WriteLine($"Active context ID: {contextId}");
-
-    // Navigate to a webpage
-    Console.WriteLine("Navigating to example.com...");
-    NavigateCommandParameters navParams = new NavigateCommandParameters(
-        contextId, 
-        "https://example.com")
-    {
-        Wait = ReadinessState.Complete
-    };
-    
-    NavigateCommandResult navResult = await driver.BrowsingContext.NavigateAsync(navParams);
-    Console.WriteLine($"Navigation complete! URL: {navResult.Url}");
-
-    // Execute JavaScript to get the page title
-    EvaluateCommandParameters evalParams = new EvaluateCommandParameters(
-        "document.title",
-        new ContextTarget(contextId),
-        true);
-    
-    EvaluateResult scriptResult = await driver.Script.EvaluateAsync(evalParams);
-    
-    if (scriptResult is EvaluateResultSuccess success)
-    {
-        string title = success.Result.ValueAs<string>() ?? "No title";
-        Console.WriteLine($"Page title: {title}");
-    }
-
-    Console.WriteLine("Press any key to close...");
-    Console.ReadKey();
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"Error: {ex.Message}");
-}
-finally
-{
-    // Disconnect from the browser
-    await driver.StopAsync();
-    Console.WriteLine("Disconnected from browser");
-}
-```
+[!code-csharp[First Application](../code/examples/GettingStartedSamples.cs#FirstApplication)]
 
 ### 3. Run the Application
 
@@ -371,41 +218,25 @@ Let's break down what this code does:
 
 ### Creating the Driver
 
-```csharp
-BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-```
+[!code-csharp[Creating the Driver](../code/examples/GettingStartedSamples.cs#CreatingtheDriver)]
 
 The `BiDiDriver` is the main entry point for all WebDriver BiDi operations. The timeout parameter specifies how long to wait for command responses.
 
 ### Connecting to the Browser
 
-```csharp
-await driver.StartAsync(webSocketUrl);
-```
+[!code-csharp[Connecting to Browser](../code/examples/GettingStartedSamples.cs#ConnectingtoBrowser)]
 
 This establishes a WebSocket connection to the browser. The browser must already be running with WebDriver BiDi enabled.
 
 ### Getting the Browsing Context
 
-```csharp
-GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
-    new GetTreeCommandParameters());
-string contextId = tree.ContextTree[0].BrowsingContextId;
-```
+[!code-csharp[Getting Browsing Context](../code/examples/GettingStartedSamples.cs#GettingBrowsingContext)]
 
 A browsing context represents a tab, window, or iframe. You need the context ID to perform operations like navigation or script execution.
 
 ### Navigating
 
-```csharp
-NavigateCommandParameters navParams = new NavigateCommandParameters(
-    contextId, 
-    "https://example.com")
-{
-    Wait = ReadinessState.Complete
-};
-await driver.BrowsingContext.NavigateAsync(navParams);
-```
+[!code-csharp[Navigating](../code/examples/GettingStartedSamples.cs#Navigating)]
 
 The `Wait` property controls when the command returns:
 - `ReadinessState.None`: Returns immediately after navigation starts
@@ -414,14 +245,7 @@ The `Wait` property controls when the command returns:
 
 ### Executing JavaScript
 
-```csharp
-EvaluateCommandParameters evalParams = new EvaluateCommandParameters(
-    "document.title",
-    new ContextTarget(contextId),
-    true);
-    
-EvaluateResult scriptResult = await driver.Script.EvaluateAsync(evalParams);
-```
+[!code-csharp[Executing JavaScript](../code/examples/GettingStartedSamples.cs#ExecutingJavaScript)]
 
 The third parameter (`true`) indicates whether to await promises in the JavaScript code.
 

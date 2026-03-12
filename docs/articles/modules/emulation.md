@@ -5,491 +5,96 @@ The Emulation module provides functionality for emulating device characteristics
 ## Overview
 
 The Emulation module allows you to:
-- Emulate different devices and viewports
+- Emulate different devices and viewports (viewport is on BrowsingContext module)
 - Set user agent strings
-- Simulate media features (prefers-color-scheme, prefers-reduced-motion)
+- Override forced colors mode theme (light/dark)
 - Override geolocation
 - Emulate timezone and locale settings
 
 ## Accessing the Module
 
-```csharp
-EmulationModule emulation = driver.Emulation;
-```
+[!code-csharp[Accessing Module](../../code/modules/EmulationModuleSamples.cs#AccessingModule)]
 
 ## Viewport Emulation
 
+Viewport emulation is provided by the **BrowsingContext** module. See [Browsing Context Module](browsing-context.md) for details.
+
 ### Set Viewport Size
 
-```csharp
-SetViewportCommandParameters params = new SetViewportCommandParameters(contextId)
-{
-    Width = 375,    // iPhone width
-    Height = 667,   // iPhone height
-    DevicePixelRatio = 2.0
-};
-
-await driver.Emulation.SetViewportAsync(params);
-Console.WriteLine("Viewport set to mobile size");
-```
+[!code-csharp[Set Viewport Size](../../code/modules/EmulationModuleSamples.cs#SetViewportSize)]
 
 ### Common Device Viewports
 
-```csharp
-// iPhone 12/13
-await driver.Emulation.SetViewportAsync(new SetViewportCommandParameters(contextId)
-{
-    Width = 390,
-    Height = 844,
-    DevicePixelRatio = 3.0
-});
-
-// iPad Pro
-await driver.Emulation.SetViewportAsync(new SetViewportCommandParameters(contextId)
-{
-    Width = 1024,
-    Height = 1366,
-    DevicePixelRatio = 2.0
-});
-
-// Desktop HD
-await driver.Emulation.SetViewportAsync(new SetViewportCommandParameters(contextId)
-{
-    Width = 1920,
-    Height = 1080,
-    DevicePixelRatio = 1.0
-});
-```
+[!code-csharp[Common Device Viewports](../../code/modules/EmulationModuleSamples.cs#CommonDeviceViewports)]
 
 ## User Agent Override
 
 ### Set Custom User Agent
 
-```csharp
-SetUserAgentCommandParameters params = new SetUserAgentCommandParameters(contextId)
-{
-    UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1"
-};
-
-await driver.Emulation.SetUserAgentAsync(params);
-Console.WriteLine("User agent set to iPhone");
-```
+[!code-csharp[Set Custom User Agent](../../code/modules/EmulationModuleSamples.cs#SetCustomUserAgent)]
 
 ### Common User Agents
 
-```csharp
-// Mobile Safari (iPhone)
-string iPhoneUA = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1";
+[!code-csharp[Common User Agents](../../code/modules/EmulationModuleSamples.cs#CommonUserAgents)]
 
-// Mobile Chrome (Android)
-string androidUA = "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36";
+## Forced Colors Mode Theme
 
-// Desktop Safari (macOS)
-string safariUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15";
-
-// Desktop Firefox
-string firefoxUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0";
-
-await driver.Emulation.SetUserAgentAsync(
-    new SetUserAgentCommandParameters(contextId) { UserAgent = iPhoneUA });
-```
-
-## Media Features
+The Emulation module provides `SetForcedColorsModeThemeOverrideAsync` to emulate light or dark forced colors mode.
 
 ### Emulate Dark Mode
 
-```csharp
-SetEmulatedMediaCommandParameters params = new SetEmulatedMediaCommandParameters(contextId);
-params.Features.Add(new MediaFeature("prefers-color-scheme", "dark"));
+[!code-csharp[Emulate Dark Mode](../../code/modules/EmulationModuleSamples.cs#EmulateDarkMode)]
 
-await driver.Emulation.SetEmulatedMediaAsync(params);
-Console.WriteLine("Dark mode enabled");
+### Clear Forced Colors Override
 
-// Test dark mode styles
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        "window.matchMedia('(prefers-color-scheme: dark)').matches",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    bool isDarkMode = success.Result.ValueAs<bool>();
-    Console.WriteLine($"Dark mode active: {isDarkMode}");
-}
-```
-
-### Emulate Reduced Motion
-
-```csharp
-SetEmulatedMediaCommandParameters params = new SetEmulatedMediaCommandParameters(contextId);
-params.Features.Add(new MediaFeature("prefers-reduced-motion", "reduce"));
-
-await driver.Emulation.SetEmulatedMediaAsync(params);
-Console.WriteLine("Reduced motion preference set");
-```
-
-### Multiple Media Features
-
-```csharp
-SetEmulatedMediaCommandParameters params = new SetEmulatedMediaCommandParameters(contextId);
-params.Features.Add(new MediaFeature("prefers-color-scheme", "dark"));
-params.Features.Add(new MediaFeature("prefers-reduced-motion", "reduce"));
-params.Features.Add(new MediaFeature("prefers-contrast", "high"));
-
-await driver.Emulation.SetEmulatedMediaAsync(params);
-Console.WriteLine("Multiple media features set");
-```
-
-### Clear Media Emulation
-
-```csharp
-SetEmulatedMediaCommandParameters params = new SetEmulatedMediaCommandParameters(contextId);
-// Empty features list clears emulation
-await driver.Emulation.SetEmulatedMediaAsync(params);
-Console.WriteLine("Media emulation cleared");
-```
+[!code-csharp[Clear Forced Colors Override](../../code/modules/EmulationModuleSamples.cs#ClearForcedColorsOverride)]
 
 ## Geolocation Override
 
 ### Set Location
 
-```csharp
-SetGeolocationCommandParameters params = new SetGeolocationCommandParameters(contextId)
-{
-    Latitude = 37.7749,   // San Francisco
-    Longitude = -122.4194,
-    Accuracy = 100
-};
-
-await driver.Emulation.SetGeolocationAsync(params);
-Console.WriteLine("Geolocation set to San Francisco");
-
-// Verify location in page
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        @"new Promise((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => resolve({
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude
-                })
-            );
-        })",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    RemoteValueDictionary location = success.Result.ValueAs<RemoteValueDictionary>();
-    Console.WriteLine($"Browser location: {location["lat"].ValueAs<double>()}, {location["lng"].ValueAs<double>()}");
-}
-```
+[!code-csharp[Set Geolocation](../../code/modules/EmulationModuleSamples.cs#SetGeolocation)]
 
 ### Common Locations
 
-```csharp
-// New York
-await driver.Emulation.SetGeolocationAsync(
-    new SetGeolocationCommandParameters(contextId)
-    {
-        Latitude = 40.7128,
-        Longitude = -74.0060,
-        Accuracy = 100
-    });
-
-// London
-await driver.Emulation.SetGeolocationAsync(
-    new SetGeolocationCommandParameters(contextId)
-    {
-        Latitude = 51.5074,
-        Longitude = -0.1278,
-        Accuracy = 100
-    });
-
-// Tokyo
-await driver.Emulation.SetGeolocationAsync(
-    new SetGeolocationCommandParameters(contextId)
-    {
-        Latitude = 35.6762,
-        Longitude = 139.6503,
-        Accuracy = 100
-    });
-```
+[!code-csharp[Common Locations](../../code/modules/EmulationModuleSamples.cs#CommonLocations)]
 
 ## Timezone Emulation
 
 ### Set Timezone
 
-```csharp
-SetTimezoneCommandParameters params = new SetTimezoneCommandParameters(contextId)
-{
-    TimezoneId = "America/Los_Angeles"
-};
-
-await driver.Emulation.SetTimezoneAsync(params);
-Console.WriteLine("Timezone set to Pacific Time");
-
-// Verify timezone
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        "Intl.DateTimeFormat().resolvedOptions().timeZone",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string timezone = success.Result.ValueAs<string>();
-    Console.WriteLine($"Browser timezone: {timezone}");
-}
-```
+[!code-csharp[Set Timezone](../../code/modules/EmulationModuleSamples.cs#SetTimezone)]
 
 ### Common Timezones
 
-```csharp
-// Pacific Time (US West Coast)
-await driver.Emulation.SetTimezoneAsync(
-    new SetTimezoneCommandParameters(contextId)
-    {
-        TimezoneId = "America/Los_Angeles"
-    });
-
-// Eastern Time (US East Coast)
-await driver.Emulation.SetTimezoneAsync(
-    new SetTimezoneCommandParameters(contextId)
-    {
-        TimezoneId = "America/New_York"
-    });
-
-// UTC
-await driver.Emulation.SetTimezoneAsync(
-    new SetTimezoneCommandParameters(contextId)
-    {
-        TimezoneId = "UTC"
-    });
-
-// Tokyo
-await driver.Emulation.SetTimezoneAsync(
-    new SetTimezoneCommandParameters(contextId)
-    {
-        TimezoneId = "Asia/Tokyo"
-    });
-```
+[!code-csharp[Common Timezones](../../code/modules/EmulationModuleSamples.cs#CommonTimezones)]
 
 ## Locale Emulation
 
 ### Set Locale
 
-```csharp
-SetLocaleCommandParameters params = new SetLocaleCommandParameters(contextId)
-{
-    Locale = "fr-FR"
-};
-
-await driver.Emulation.SetLocaleAsync(params);
-Console.WriteLine("Locale set to French");
-
-// Verify locale
-EvaluateResult result = await driver.Script.EvaluateAsync(
-    new EvaluateCommandParameters(
-        "navigator.language",
-        new ContextTarget(contextId),
-        true));
-
-if (result is EvaluateResultSuccess success)
-{
-    string locale = success.Result.ValueAs<string>();
-    Console.WriteLine($"Browser locale: {locale}");
-}
-```
+[!code-csharp[Set Locale](../../code/modules/EmulationModuleSamples.cs#SetLocale)]
 
 ## Common Patterns
 
 ### Pattern: Mobile Device Emulation
 
-```csharp
-// Complete mobile device emulation
-public async Task EmulateMobileDevice(
-    BiDiDriver driver, 
-    string contextId,
-    string deviceName)
-{
-    switch (deviceName.ToLower())
-    {
-        case "iphone":
-            await driver.Emulation.SetViewportAsync(
-                new SetViewportCommandParameters(contextId)
-                {
-                    Width = 390,
-                    Height = 844,
-                    DevicePixelRatio = 3.0
-                });
-            
-            await driver.Emulation.SetUserAgentAsync(
-                new SetUserAgentCommandParameters(contextId)
-                {
-                    UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1"
-                });
-            break;
+[!code-csharp[Mobile Device Emulation](../../code/modules/EmulationModuleSamples.cs#MobileDeviceEmulation)]
 
-        case "android":
-            await driver.Emulation.SetViewportAsync(
-                new SetViewportCommandParameters(contextId)
-                {
-                    Width = 412,
-                    Height = 915,
-                    DevicePixelRatio = 2.625
-                });
-            
-            await driver.Emulation.SetUserAgentAsync(
-                new SetUserAgentCommandParameters(contextId)
-                {
-                    UserAgent = "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Mobile Safari/537.36"
-                });
-            break;
+[!code-csharp[Mobile Device Emulation](../../code/modules/EmulationModuleSamples.cs#MobileDeviceEmulationUsage)]
 
-        case "tablet":
-            await driver.Emulation.SetViewportAsync(
-                new SetViewportCommandParameters(contextId)
-                {
-                    Width = 1024,
-                    Height = 1366,
-                    DevicePixelRatio = 2.0
-                });
-            break;
-    }
-    
-    Console.WriteLine($"Emulating {deviceName}");
-}
-
-// Usage
-await EmulateMobileDevice(driver, contextId, "iphone");
-```
 
 ### Pattern: Responsive Testing
 
-```csharp
-// Test at multiple viewport sizes
-List<(int Width, int Height, string Name)> viewports = new()
-{
-    (320, 568, "Mobile Small"),
-    (375, 667, "Mobile Medium"),
-    (414, 896, "Mobile Large"),
-    (768, 1024, "Tablet"),
-    (1920, 1080, "Desktop")
-};
-
-foreach (var viewport in viewports)
-{
-    Console.WriteLine($"\nTesting {viewport.Name} ({viewport.Width}x{viewport.Height})");
-    
-    await driver.Emulation.SetViewportAsync(
-        new SetViewportCommandParameters(contextId)
-        {
-            Width = viewport.Width,
-            Height = viewport.Height,
-            DevicePixelRatio = 1.0
-        });
-
-    // Take screenshot
-    CaptureScreenshotCommandResult screenshot = 
-        await driver.BrowsingContext.CaptureScreenshotAsync(
-            new CaptureScreenshotCommandParameters(contextId));
-    
-    byte[] imageBytes = Convert.FromBase64String(screenshot.Data);
-    await File.WriteAllBytesAsync(
-        $"screenshot-{viewport.Name.Replace(" ", "-")}.png", 
-        imageBytes);
-}
-```
+[!code-csharp[Responsive Testing](../../code/modules/EmulationModuleSamples.cs#ResponsiveTesting)]
 
 ### Pattern: Dark Mode Testing
 
-```csharp
-// Test both light and dark modes
-string[] colorSchemes = { "light", "dark" };
-
-foreach (string scheme in colorSchemes)
-{
-    Console.WriteLine($"\nTesting {scheme} mode");
-    
-    SetEmulatedMediaCommandParameters params = 
-        new SetEmulatedMediaCommandParameters(contextId);
-    params.Features.Add(new MediaFeature("prefers-color-scheme", scheme));
-    
-    await driver.Emulation.SetEmulatedMediaAsync(params);
-
-    // Navigate to page
-    await driver.BrowsingContext.NavigateAsync(
-        new NavigateCommandParameters(contextId, "https://example.com")
-        { Wait = ReadinessState.Complete });
-
-    // Verify color scheme applied
-    EvaluateResult result = await driver.Script.EvaluateAsync(
-        new EvaluateCommandParameters(
-            "getComputedStyle(document.body).backgroundColor",
-            new ContextTarget(contextId),
-            true));
-
-    if (result is EvaluateResultSuccess success)
-    {
-        string bgColor = success.Result.ValueAs<string>();
-        Console.WriteLine($"Background color: {bgColor}");
-    }
-
-    // Take screenshot
-    CaptureScreenshotCommandResult screenshot = 
-        await driver.BrowsingContext.CaptureScreenshotAsync(
-            new CaptureScreenshotCommandParameters(contextId));
-    
-    byte[] imageBytes = Convert.FromBase64String(screenshot.Data);
-    await File.WriteAllBytesAsync($"screenshot-{scheme}.png", imageBytes);
-}
-```
+[!code-csharp[Dark Mode Testing](../../code/modules/EmulationModuleSamples.cs#DarkModeTesting)]
 
 ### Pattern: Location-Based Testing
 
-```csharp
-// Test application behavior in different locations
-Dictionary<string, (double Lat, double Lng)> locations = new()
-{
-    { "New York", (40.7128, -74.0060) },
-    { "London", (51.5074, -0.1278) },
-    { "Tokyo", (35.6762, 139.6503) },
-    { "Sydney", (-33.8688, 151.2093) }
-};
-
-foreach (var location in locations)
-{
-    Console.WriteLine($"\nTesting from {location.Key}");
-    
-    await driver.Emulation.SetGeolocationAsync(
-        new SetGeolocationCommandParameters(contextId)
-        {
-            Latitude = location.Value.Lat,
-            Longitude = location.Value.Lng,
-            Accuracy = 100
-        });
-
-    // Navigate to location-aware page
-    await driver.BrowsingContext.NavigateAsync(
-        new NavigateCommandParameters(contextId, "https://example.com/location")
-        { Wait = ReadinessState.Complete });
-
-    // Check location detection
-    EvaluateResult result = await driver.Script.EvaluateAsync(
-        new EvaluateCommandParameters(
-            "document.querySelector('#detected-location')?.textContent",
-            new ContextTarget(contextId),
-            true));
-
-    if (result is EvaluateResultSuccess success)
-    {
-        string? detectedLocation = success.Result.ValueAs<string>();
-        Console.WriteLine($"Detected: {detectedLocation}");
-    }
-}
-```
+[!code-csharp[Location-Based Testing](../../code/modules/EmulationModuleSamples.cs#Location-BasedTesting)]
 
 ## Best Practices
 
@@ -512,7 +117,7 @@ foreach (var location in locations)
 
 **Problem**: Viewport size doesn't change after setting.
 
-**Solution**: 
+**Solution**:
 - Ensure the browsing context is valid
 - Try refreshing the page after setting viewport
 - Check that the page doesn't override viewport settings
@@ -541,4 +146,3 @@ foreach (var location in locations)
 - [Browsing Context Module](browsing-context.md): Viewport and navigation
 - [Additional Modules](additional-modules.md): Other specialized modules
 - [API Reference](../../api/index.md): Complete API documentation
-

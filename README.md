@@ -138,6 +138,7 @@ To update the DocFx tooling, you can use the following command:
 
 To build the documentation, use the following commands:
 
+    dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj
     docfx metadata docs/docfx.json
     docfx build docs/docfx.json
 

@@ -25,22 +25,7 @@ Working with events involves three steps:
 
 ### Complete Example
 
-```csharp
-// Step 1: Add observer
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    Console.WriteLine($"Console: {e.Text}");
-});
-
-// Step 2: Subscribe to events
-SubscribeCommandParameters subscribe = 
-    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-// Step 3: Events will now trigger your observer
-await driver.BrowsingContext.NavigateAsync(
-    new NavigateCommandParameters(contextId, "https://example.com"));
-```
+[!code-csharp[Complete Example](../code/events-observables/EventObserverSamples.cs#CompleteExample)]
 
 ## Observable Events
 
@@ -97,13 +82,7 @@ driver.Script.OnRealmDestroyed        // Realm destroyed
 
 Each observable event has an `EventName` property with the protocol event name:
 
-```csharp
-Console.WriteLine(driver.Log.OnEntryAdded.EventName);
-// Output: "log.entryAdded"
-
-Console.WriteLine(driver.Network.OnBeforeRequestSent.EventName);
-// Output: "network.beforeRequestSent"
-```
+[!code-csharp[Event Names](../code/events-observables/EventObserverSamples.cs#EventNames)]
 
 ## Adding Observers
 
@@ -111,40 +90,17 @@ Observers are functions that get called when an event occurs.
 
 ### Simple Observer
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    Console.WriteLine($"Level: {e.Level}");
-    Console.WriteLine($"Text: {e.Text}");
-    Console.WriteLine($"Timestamp: {e.Timestamp}");
-});
-```
+[!code-csharp[Simple Observer](../code/events-observables/EventObserverSamples.cs#SimpleObserver)]
 
 ### Observer with Type Inference
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    // Type is inferred as EntryAddedEventArgs
-    Console.WriteLine(e.Text);
-});
-```
+[!code-csharp[Observer with Type Inference](../code/events-observables/EventObserverSamples.cs#ObserverwithTypeInference)]
 
 ### Async Observer
 
 For long-running or async operations in handlers:
 
-```csharp
-driver.Network.OnBeforeRequestSent.AddObserver(
-    async (BeforeRequestSentEventArgs e) =>
-    {
-        // Can use await
-        await LogRequestAsync(e.Request.Url);
-        await Task.Delay(100);
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
-```
+[!code-csharp[Async Observer](../code/events-observables/EventObserverSamples.cs#AsyncObserver)]
 
 ### EventObserver Cleanup Pattern
 
@@ -158,76 +114,19 @@ Always store the observer reference when you intend to remove it or use checkpoi
 
 #### Basic Cleanup with try/finally
 
-```csharp
-EventObserver<EntryAddedEventArgs> observer =
-    driver.Log.OnEntryAdded.AddObserver((e) =>
-    {
-        Console.WriteLine(e.Text);
-    });
-
-try
-{
-    SubscribeCommandParameters subscribe = 
-        new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-    await driver.Session.SubscribeAsync(subscribe);
-
-    // Use the driver...
-    await driver.BrowsingContext.NavigateAsync(navParams);
-}
-finally
-{
-    // Remove observer when done to prevent memory leaks
-    observer.Unobserve();
-}
-```
+[!code-csharp[Basic Cleanup try/finally](../code/events-observables/EventObserverSamples.cs#BasicCleanuptry-finally)]
 
 #### Using Statement for Automatic Cleanup
 
 `EventObserver<T>` implements `IDisposable`, so you can use `using` for automatic cleanup:
 
-```csharp
-using EventObserver<EntryAddedEventArgs> observer =
-    driver.Log.OnEntryAdded.AddObserver((e) =>
-    {
-        Console.WriteLine(e.Text);
-    });
-
-SubscribeCommandParameters subscribe = 
-    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-// Use the driver...
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-// Observer automatically removed when scope exits
-```
+[!code-csharp[Using Statement Cleanup](../code/events-observables/EventObserverSamples.cs#UsingStatementCleanup)]
 
 #### Cleanup When Using Checkpoints
 
 When using checkpoints, you must store the observer to call `SetCheckpoint()`, `WaitForCheckpointAsync()`, or `WaitForCheckpointAndTasksAsync()`. Clean up the observer when you are done:
 
-```csharp
-EventObserver<NavigationEventArgs> observer =
-    driver.BrowsingContext.OnLoad.AddObserver((e) =>
-    {
-        Console.WriteLine($"Loaded: {e.Url}");
-    });
-
-try
-{
-    SubscribeCommandParameters subscribe = 
-        new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
-    await driver.Session.SubscribeAsync(subscribe);
-
-    observer.SetCheckpoint();
-    await driver.BrowsingContext.NavigateAsync(navParams);
-    bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
-}
-finally
-{
-    observer.Unobserve();
-}
-```
+[!code-csharp[Cleanup with Checkpoints](../code/events-observables/EventObserverSamples.cs#CleanupwithCheckpoints)]
 
 #### Unobserve vs Dispose
 
@@ -241,58 +140,25 @@ Before events are sent by the browser, you must subscribe to them.
 
 Prefer the `EventName` property from observable events to avoid typos and stay in sync with the API:
 
-```csharp
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
-    [
-        driver.Log.OnEntryAdded.EventName,
-        driver.Network.OnResponseCompleted.EventName,
-    ]
-);
-
-SubscribeCommandResult result = await driver.Session.SubscribeAsync(subscribe);
-Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
-```
+[!code-csharp[Basic Subscription](../code/events-observables/SubscribeSamples.cs#BasicSubscription)]
 
 ### Single Event Subscription
 
 For a single event, use the constructor that accepts one event name:
 
-```csharp
-SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
-    driver.Log.OnEntryAdded.EventName);
-
-await driver.Session.SubscribeAsync(subscribe);
-```
+[!code-csharp[Single Event Subscription](../code/events-observables/SubscribeSamples.cs#SingleEventSubscription)]
 
 ### Subscription Scope
 
 You can limit subscriptions to specific contexts:
 
-```csharp
-SubscribeCommandParameters subscribe =
-    new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
-
-// Only receive events for this specific context
-subscribe.Contexts.Add(contextId);
-
-await driver.Session.SubscribeAsync(subscribe);
-```
+[!code-csharp[Subscription with Context](../code/events-observables/SubscribeSamples.cs#SubscriptionwithContext)]
 
 ### Unsubscribing
 
-```csharp
-// Unsubscribe by subscription ID
-UnsubscribeByIdsCommandParameters unsubscribe = 
-    new UnsubscribeByIdsCommandParameters();
-unsubscribe.SubscriptionIds.Add(subscriptionId);
-await driver.Session.UnsubscribeAsync(unsubscribe);
+[!code-csharp[Unsubscribe by ID](../code/events-observables/SubscribeSamples.cs#UnsubscribebyID)]
 
-// Or unsubscribe by event names
-UnsubscribeByNamesCommandParameters unsubscribe = 
-    new UnsubscribeByNamesCommandParameters();
-unsubscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
-await driver.Session.UnsubscribeAsync(unsubscribe);
-```
+[!code-csharp[Unsubscribe by Event Names](../code/events-observables/SubscribeSamples.cs#UnsubscribebyEventNames)]
 
 ## Event Synchronization
 
@@ -300,67 +166,15 @@ The `EventObserver<T>` class provides checkpoints for synchronizing with events.
 
 ### Waiting for a Single Event
 
-```csharp
-EventObserver<NavigationEventArgs> observer = 
-    driver.BrowsingContext.OnLoad.AddObserver((e) =>
-    {
-        Console.WriteLine($"Loaded: {e.Url}");
-    });
-
-// Set checkpoint for 1 event (default)
-observer.SetCheckpoint();
-
-// Trigger navigation
-await driver.BrowsingContext.NavigateAsync(params);
-
-// Wait up to 10 seconds for the event
-bool eventOccurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-
-if (eventOccurred)
-{
-    Console.WriteLine("Page loaded!");
-}
-else
-{
-    Console.WriteLine("Timeout waiting for page load");
-}
-```
+[!code-csharp[Wait for Single Event](../code/events-observables/EventSynchronizationSamples.cs#WaitforSingleEvent)]
 
 ### Waiting for Multiple Events
 
-```csharp
-EventObserver<ResponseCompletedEventArgs> observer = 
-    driver.Network.OnResponseCompleted.AddObserver((e) =>
-    {
-        Console.WriteLine($"Response: {e.Response.Url}");
-    });
-
-// Wait for 5 network responses
-observer.SetCheckpoint(5);
-
-await driver.BrowsingContext.NavigateAsync(params);
-
-// Wait for all 5 responses
-bool allReceived = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-Console.WriteLine($"Received all 5 responses: {allReceived}");
-```
+[!code-csharp[Wait for Multiple Events](../code/events-observables/EventSynchronizationSamples.cs#WaitforMultipleEvents)]
 
 ### Checkpoint Reset
 
-```csharp
-EventObserver<EntryAddedEventArgs> observer = 
-    driver.Log.OnEntryAdded.AddObserver((e) => { });
-
-// First navigation
-observer.SetCheckpoint(3);
-await driver.BrowsingContext.NavigateAsync(params1);
-await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
-
-// Second navigation - reset checkpoint
-observer.SetCheckpoint(2);
-await driver.BrowsingContext.NavigateAsync(params2);
-await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
-```
+[!code-csharp[Checkpoint Reset](../code/events-observables/EventObserverSamples.cs#CheckpointReset)]
 
 ### Checkpoint Thread Safety
 
@@ -394,15 +208,7 @@ public enum ObservableEventHandlerOptions
 
 By default, event handlers run synchronously on the transport thread:
 
-```csharp
-// Default behavior - runs synchronously
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    // This runs on the transport thread
-    // Blocks all message processing until complete
-    Console.WriteLine(e.Text);
-});
-```
+[!code-csharp[Synchronous Handlers](../code/events-observables/EventObserverSamples.cs#SynchronousHandlers)]
 
 **Use When:**
 - Handler completes quickly (<10ms)
@@ -412,44 +218,13 @@ driver.Log.OnEntryAdded.AddObserver((e) =>
 
 ### The Blocking Problem
 
-```csharp
-// ❌ BAD: Handler blocks message processing
-driver.Network.OnBeforeRequestSent.AddObserver((e) =>
-{
-    // This blocks the Transport thread for 5 seconds!
-    Thread.Sleep(5000);
-    Console.WriteLine($"Request: {e.Request.Url}");
-
-    // During these 5 seconds:
-    // - No other events are processed
-    // - No responses are received
-    // - Commands may timeout
-    // - Browser may become unresponsive
-});
-```
+[!code-csharp[Blocking Problem](../code/events-observables/EventObserverSamples.cs#BlockingProblem)]
 
 ### Asynchronous Handlers
 
 Use `RunHandlerAsynchronously` for I/O operations or long-running work:
 
-```csharp
-// ✅ GOOD: Handler runs asynchronously
-EventObserver<BeforeRequestSentEventArgs> observer =
-    driver.Network.OnBeforeRequestSent.AddObserver(
-        async (e) =>
-        {
-            // Doesn't block message processing
-            await Task.Delay(5000);
-            Console.WriteLine($"Request: {e.Request.Url}");
-
-            // During these 5 seconds:
-            // - Transport thread continues processing
-            // - Other events are handled normally
-            // - Handler runs on Task pool thread
-        },
-        ObservableEventHandlerOptions.RunHandlerAsynchronously
-    );
-```
+[!code-csharp[Asynchronous Handlers](../code/events-observables/EventObserverSamples.cs#AsynchronousHandlers)]
 
 **Use When:**
 - Handler performs I/O (file, network, database)
@@ -461,49 +236,11 @@ EventObserver<BeforeRequestSentEventArgs> observer =
 
 #### Quick Operations (Synchronous)
 
-```csharp
-// Counter - quick in-memory operation
-int requestCount = 0;
-driver.Network.OnBeforeRequestSent.AddObserver((e) =>
-{
-    requestCount++;  // Fast, synchronous is fine
-});
-
-// List collection - quick in-memory operation
-List<string> urls = new List<string>();
-driver.Network.OnResponseCompleted.AddObserver((e) =>
-{
-    urls.Add(e.Response.Url);  // Quick, synchronous is fine
-});
-```
+[!code-csharp[Quick Operations](../code/events-observables/EventObserverSamples.cs#QuickOperations)]
 
 #### I/O Operations (Asynchronous)
 
-```csharp
-// File I/O - use async
-driver.Log.OnEntryAdded.AddObserver(
-    async (e) =>
-    {
-        await File.AppendAllTextAsync("log.txt", $"{e.Text}\n");
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
-
-// Database operations - use async
-driver.Log.OnEntryAdded.AddObserver(
-    async (e) =>
-    {
-        await dbContext.Logs.AddAsync(new LogEntry
-        {
-            Level = e.Level,
-            Message = e.Text,
-            Timestamp = e.Timestamp
-        });
-        await dbContext.SaveChangesAsync();
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
-```
+[!code-csharp[I/O Operations](../code/events-observables/EventObserverSamples.cs#IOOperations)]
 
 ### Synchronizing with Async Handlers
 
@@ -513,34 +250,7 @@ When handlers are async, you need to synchronize if you want to ensure they comp
 
 The simplest way is to use the built-in helper method:
 
-```csharp
-EventObserver<BeforeRequestSentEventArgs> observer =
-    driver.Network.OnBeforeRequestSent.AddObserver(
-        async (e) =>
-        {
-            await ProcessRequestAsync(e);
-        },
-        ObservableEventHandlerOptions.RunHandlerAsynchronously
-    );
-
-// Set checkpoint for 3 events
-observer.SetCheckpoint(3);
-
-// Trigger events
-await driver.BrowsingContext.NavigateAsync(params);
-
-// Wait for events to occur AND all handlers to complete
-bool occurred = await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10));
-
-if (occurred)
-{
-    Console.WriteLine("All 3 events occurred and their handlers completed");
-}
-else
-{
-    Console.WriteLine("Timeout waiting for events");
-}
-```
+[!code-csharp[WaitForCheckpointAndTasksAsync](../code/events-observables/EventObserverSamples.cs#WaitForCheckpointAndTasksAsync)]
 
 This method waits for:
 1. The checkpoint to be fulfilled (events occurred)
@@ -554,37 +264,7 @@ This method waits for:
 
 For scenarios where you need to inspect or manipulate tasks before waiting:
 
-```csharp
-EventObserver<BeforeRequestSentEventArgs> observer =
-    driver.Network.OnBeforeRequestSent.AddObserver(
-        async (e) =>
-        {
-            await ProcessRequestAsync(e);
-        },
-        ObservableEventHandlerOptions.RunHandlerAsynchronously
-    );
-
-// Set checkpoint for 3 events
-observer.SetCheckpoint(3);
-
-// Trigger events
-await driver.BrowsingContext.NavigateAsync(params);
-
-// Wait for events to occur
-bool occurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-
-if (occurred)
-{
-    // Get handler tasks for inspection or custom handling
-    Task[] handlerTasks = observer.GetCheckpointTasks();
-
-    Console.WriteLine($"Waiting for {handlerTasks.Length} handlers to complete...");
-
-    // Wait for all async handlers to complete
-    await Task.WhenAll(handlerTasks);
-    Console.WriteLine("All handlers completed");
-}
-```
+[!code-csharp[Manual Synchronization](../code/events-observables/EventObserverSamples.cs#ManualSynchronization)]
 
 When using `GetCheckpointTasks()`, you take ownership of those tasks and their exceptions. This lets you inspect or await handler failures directly without having those same failures also re-surfaced through the transport's event handler error behavior.
 
@@ -592,306 +272,49 @@ When using `GetCheckpointTasks()`, you take ownership of those tasks and their e
 
 For long-running handlers, use `TaskCompletionSource` to track completion:
 
-```csharp
-List<Task> handlerTasks = new();
-
-EventObserver<BeforeRequestSentEventArgs> observer =
-    driver.Network.OnBeforeRequestSent.AddObserver(
-        async (e) =>
-        {
-            TaskCompletionSource taskCompletionSource = new();
-            handlerTasks.Add(taskCompletionSource.Task);
-
-            try
-            {
-                Console.WriteLine($"Processing request: {e.Request.Url}");
-
-                // Long-running operation
-                await Task.Delay(TimeSpan.FromSeconds(4));
-                await ProcessRequestAsync(e);
-
-                Console.WriteLine($"Completed request: {e.Request.Url}");
-                taskCompletionSource.SetResult();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Handler error: {ex.Message}");
-                taskCompletionSource.SetException(ex);
-            }
-        },
-        ObservableEventHandlerOptions.RunHandlerAsynchronously
-    );
-
-// Subscribe to events
-SubscribeCommandParameters subscribe = new(driver.Network.OnBeforeRequestSent.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-// Set checkpoint for expected number of events (e.g., 5 requests)
-observer.SetCheckpoint(5);
-
-// Trigger navigation
-NavigateCommandParameters navParams = new(contextId, "https://example.com")
-{
-    Wait = ReadinessState.Complete
-};
-NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navParams);
-Console.WriteLine("Navigation command completed");
-
-// Important: The navigation command completes before handlers finish
-// Wait for all events to occur
-bool occurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-
-if (occurred)
-{
-    // Wait for all async handlers to complete
-    await Task.WhenAll(handlerTasks);
-    Console.WriteLine("All event handlers completed");
-}
-else
-{
-    Console.WriteLine("Timeout waiting for events");
-}
-```
+[!code-csharp[TaskCompletionSource Synchronization](../code/events-observables/EventObserverSamples.cs#TaskCompletionSourceSynchronization)]
 
 **Why This Matters:**
 
 Without synchronization, your main code might exit before async handlers complete:
 
-```csharp
-// ❌ PROBLEM: Main thread may exit before handlers complete
-EventObserver<BeforeRequestSentEventArgs> observer =
-    driver.Network.OnBeforeRequestSent.AddObserver(
-        async (e) =>
-        {
-            await Task.Delay(TimeSpan.FromSeconds(5));  // Long operation
-            Console.WriteLine($"Request: {e.Request.Url}");
-        },
-        ObservableEventHandlerOptions.RunHandlerAsynchronously
-    );
-
-observer.SetCheckpoint(5);
-await driver.BrowsingContext.NavigateAsync(params);
-
-// Navigation completes...
-// Main code continues...
-// Application might exit before handlers finish!
-
-// ✅ SOLUTION: Use TaskCompletionSource and wait
-List<Task> handlerTasks = new();
-
-EventObserver<BeforeRequestSentEventArgs> observer =
-    driver.Network.OnBeforeRequestSent.AddObserver(
-        async (e) =>
-        {
-            TaskCompletionSource tcs = new();
-            handlerTasks.Add(tcs.Task);
-
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            Console.WriteLine($"Request: {e.Request.Url}");
-
-            tcs.SetResult();
-        },
-        ObservableEventHandlerOptions.RunHandlerAsynchronously
-    );
-
-observer.SetCheckpoint(5);
-await driver.BrowsingContext.NavigateAsync(params);
-
-bool occurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-if (occurred)
-{
-    // Wait for all handlers to complete before continuing
-    await Task.WhenAll(handlerTasks);
-}
-```
+[!code-csharp[Without Synchronization Problem](../code/events-observables/EventObserverSamples.cs#WithoutSynchronizationProblem)]
 
 ### Calling Commands in Event Handlers
 
 Calling commands within event handlers **requires** async mode:
 
-```csharp
-EventObserver<BeforeRequestSentEventArgs> observer = 
-    driver.Network.OnBeforeRequestSent.AddObserver(
-        async (e) =>
-        {
-            if (e.IsBlocked)
-            {
-                // Can call commands in async handler
-                ProvideResponseCommandParameters provideResponse = 
-                    new ProvideResponseCommandParameters(e.Request.RequestId)
-                    {
-                        StatusCode = 404,
-                        ReasonPhrase = "Not Found"
-                    };
-                
-                await driver.Network.ProvideResponseAsync(provideResponse);
-            }
-        },
-        ObservableEventHandlerOptions.RunHandlerAsynchronously
-    );
-```
+[!code-csharp[Calling Commands in Handlers](../code/events-observables/EventObserverSamples.cs#CallingCommandsinHandlers)]
 
 ## Event Filtering
 
 You can filter events in your observer:
 
-```csharp
-// Only log errors
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    if (e.Level == LogLevel.Error)
-    {
-        Console.WriteLine($"ERROR: {e.Text}");
-    }
-});
-
-// Only log HTML requests
-driver.Network.OnResponseCompleted.AddObserver((e) =>
-{
-    if (e.Response.Url.EndsWith(".html"))
-    {
-        Console.WriteLine($"HTML page: {e.Response.Url}");
-    }
-});
-```
+[!code-csharp[Event Filtering](../code/events-observables/EventObserverSamples.cs#EventFiltering)]
 
 ## Multiple Observers
 
 You can add multiple observers for the same event:
 
-```csharp
-// Observer 1: Log to console
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    Console.WriteLine($"Console: {e.Text}");
-});
-
-// Observer 2: Write to file
-EventObserver<EntryAddedEventArgs> fileLogger = 
-    driver.Log.OnEntryAdded.AddObserver(async (e) =>
-    {
-        await File.AppendAllTextAsync("log.txt", e.Text + "\n");
-    },
-    ObservableEventHandlerOptions.RunHandlerAsynchronously);
-
-// Observer 3: Count errors
-int errorCount = 0;
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    if (e.Level == LogLevel.Error)
-    {
-        errorCount++;
-    }
-});
-```
+[!code-csharp[Multiple Observers](../code/events-observables/EventObserverSamples.cs#MultipleObservers)]
 
 ## Common Patterns
 
 ### Pattern 1: Wait for Page Load
 
-```csharp
-// Add observer for page load event
-EventObserver<NavigationEventArgs> observer =
-    driver.BrowsingContext.OnLoad.AddObserver((e) => { });
-
-// Subscribe to the event
-SubscribeCommandParameters subscribe = 
-    new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-// Set checkpoint and trigger navigation
-observer.SetCheckpoint();
-await driver.BrowsingContext.NavigateAsync(params);
-
-// Wait for page load event (use async version when possible)
-bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
-if (loaded)
-{
-    Console.WriteLine("Page loaded successfully");
-}
-```
+[!code-csharp[Pattern 1: Wait for Page Load](../code/events-observables/EventObserverSamples.cs#Pattern1-WaitforPageLoad)]
 
 ### Pattern 2: Collect Network Responses
 
-```csharp
-List<ResponseData> responses = new List<ResponseData>();
-
-driver.Network.OnResponseCompleted.AddObserver((e) =>
-{
-    responses.Add(e.Response);
-});
-
-SubscribeCommandParameters subscribe =
-    new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-await driver.BrowsingContext.NavigateAsync(params);
-
-// Wait a bit for all responses
-await Task.Delay(2000);
-
-Console.WriteLine($"Collected {responses.Count} responses");
-```
+[!code-csharp[Pattern 2: Collect Network Responses](../code/events-observables/EventObserverSamples.cs#Pattern2-CollectNetworkResponses)]
 
 ### Pattern 3: Wait for Specific Condition
 
-```csharp
-TaskCompletionSource<RemoteValue> elementFound = 
-    new TaskCompletionSource<RemoteValue>();
-
-driver.Script.OnMessage.AddObserver((e) =>
-{
-    if (e.ChannelId == "elementWatcher")
-    {
-        elementFound.SetResult(e.Data);
-    }
-});
-
-// Preload script watches for element
-string preloadScript = @"
-(channel) => {
-    const interval = setInterval(() => {
-        const element = document.querySelector('.target');
-        if (element) {
-            clearInterval(interval);
-            channel(element);
-        }
-    }, 100);
-}";
-
-ChannelValue channel = new ChannelValue(
-    new ChannelProperties("elementWatcher"));
-
-AddPreloadScriptCommandParameters preloadParams = 
-    new AddPreloadScriptCommandParameters(preloadScript)
-    {
-        Arguments = new List<ArgumentValue> { channel }
-    };
-
-await driver.Script.AddPreloadScriptAsync(preloadParams);
-await driver.BrowsingContext.NavigateAsync(navParams);
-
-// Wait for element to appear
-RemoteValue element = await elementFound.Task;
-Console.WriteLine($"Element found: {element.SharedId}");
-```
+[!code-csharp[Pattern 3: Wait for Specific Condition](../code/events-observables/EventObserverSamples.cs#Pattern3-WaitforSpecificCondition)]
 
 ### Pattern 4: Temporary Observer
 
-```csharp
-// Add observer just for one operation
-EventObserver<EntryAddedEventArgs> observer = 
-    driver.Log.OnEntryAdded.AddObserver((e) =>
-    {
-        Console.WriteLine(e.Text);
-    });
-
-// Do something
-await driver.BrowsingContext.NavigateAsync(params);
-
-// Remove observer
-observer.Unobserve();
-```
+[!code-csharp[Pattern 4: Temporary Observer](../code/events-observables/EventObserverSamples.cs#Pattern4-TemporaryObserver)]
 
 ## Event Args Properties
 
@@ -899,57 +322,19 @@ Each event type has specific properties:
 
 ### NavigationEventArgs
 
-```csharp
-driver.BrowsingContext.OnLoad.AddObserver((NavigationEventArgs e) =>
-{
-    string contextId = e.BrowsingContextId;
-    string navigationId = e.NavigationId;
-    string url = e.Url;
-    DateTime timestamp = e.Timestamp;
-});
-```
+[!code-csharp[NavigationEventArgs](../code/events-observables/EventObserverSamples.cs#NavigationEventArgs)]
 
 ### EntryAddedEventArgs
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
-{
-    LogLevel level = e.Level;        // Error, Warn, Info, Debug
-    string text = e.Text;            // Log message
-    DateTime timestamp = e.Timestamp;
-    string? source = e.Source;       // JavaScript source location
-    string? stackTrace = e.StackTrace;
-});
-```
+[!code-csharp[EntryAddedEventArgs](../code/events-observables/EventObserverSamples.cs#EntryAddedEventArgs)]
 
 ### BeforeRequestSentEventArgs
 
-```csharp
-driver.Network.OnBeforeRequestSent.AddObserver((e) =>
-{
-    string requestId = e.Request.RequestId;
-    string url = e.Request.Url;
-    string method = e.Request.Method;
-    List<Header> headers = e.Request.Headers;
-    bool isBlocked = e.IsBlocked;    // True if intercepted
-    string contextId = e.Context.BrowsingContextId;
-});
-```
+[!code-csharp[BeforeRequestSentEventArgs](../code/events-observables/EventObserverSamples.cs#BeforeRequestSentEventArgs)]
 
 ### ResponseCompletedEventArgs
 
-```csharp
-driver.Network.OnResponseCompleted.AddObserver((e) =>
-{
-    RequestData request = e.Request;
-    ResponseData response = e.Response;
-    
-    string url = response.Url;
-    ulong status = response.Status;
-    string statusText = response.StatusText;
-    List<Header> headers = response.Headers;
-});
-```
+[!code-csharp[ResponseCompletedEventArgs](../code/events-observables/EventObserverSamples.cs#ResponseCompletedEventArgs)]
 
 ## Best Practices
 
@@ -957,18 +342,7 @@ driver.Network.OnResponseCompleted.AddObserver((e) =>
 
 The recommended order is to add observers first, then subscribe through the Session module:
 
-```csharp
-// ✓ Recommended: Add observer first, then subscribe
-driver.Log.OnEntryAdded.AddObserver(handler);
-
-SubscribeCommandParameters subscribe =
-    new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
-await driver.Session.SubscribeAsync(subscribe);
-
-// ✓ Also acceptable: Subscribe then add observer (but less clear)
-await driver.Session.SubscribeAsync(subscribe);
-driver.Log.OnEntryAdded.AddObserver(handler);
-```
+[!code-csharp[Add Observers Before Subscribing](../code/events-observables/EventObserverSamples.cs#AddObserversBeforeSubscribing)]
 
 **Why Add Observers First?**
 
@@ -981,45 +355,15 @@ The two-step design (add observer + subscribe) is intentional to prevent race co
 
 ### 2. Remove Observers When Done
 
-```csharp
-EventObserver<EntryAddedEventArgs> observer = 
-    driver.Log.OnEntryAdded.AddObserver(handler);
-
-try
-{
-    // Use observer
-}
-finally
-{
-    observer.Unobserve();
-}
-```
+[!code-csharp[Remove Observers When Done](../code/events-observables/EventObserverSamples.cs#RemoveObserversWhenDone)]
 
 ### 3. Use Async Mode for Long Operations
 
-```csharp
-// ✓ Good: Won't block message processing
-driver.Network.OnBeforeRequestSent.AddObserver(
-    async (e) => await SlowOperationAsync(e),
-    ObservableEventHandlerOptions.RunHandlerAsynchronously
-);
-```
+[!code-csharp[Use Async Mode for Long Operations](../code/events-observables/EventObserverSamples.cs#UseAsyncModeforLongOperations)]
 
 ### 4. Handle Exceptions in Observers
 
-```csharp
-driver.Log.OnEntryAdded.AddObserver((e) =>
-{
-    try
-    {
-        ProcessLogEntry(e);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Observer error: {ex.Message}");
-    }
-});
-```
+[!code-csharp[Handle Exceptions in Observers](../code/events-observables/EventObserverSamples.cs#HandleExceptionsinObservers)]
 
 ## Next Steps
 
