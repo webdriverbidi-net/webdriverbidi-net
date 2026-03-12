@@ -9,14 +9,14 @@ public class SetGeolocationOverrideCommandParametersTests
     [Test]
     public void TestCommandName()
     {
-        SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
+        SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
         Assert.That(properties.MethodName, Is.EqualTo("emulation.setGeolocationOverride"));
     }
 
     [Test]
     public void TestCanGetResetParameters()
     {
-        SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
+        SetGeolocationOverrideCommandParameters properties = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
         Assert.That(properties, Is.Not.Null);
         Assert.That(properties, Is.InstanceOf<SetGeolocationOverrideCommandParameters>());
         using (Assert.EnterMultipleScope())
@@ -30,8 +30,8 @@ public class SetGeolocationOverrideCommandParametersTests
     [Test]
     public void TestResetParametersPropertyReturnsNewInstance()
     {
-        SetGeolocationOverrideCommandParameters firstInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
-        SetGeolocationOverrideCommandParameters secondInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverride;
+        SetGeolocationOverrideCommandParameters firstInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
+        SetGeolocationOverrideCommandParameters secondInstance = SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
         Assert.That(firstInstance, Is.Not.SameAs(secondInstance));
     }
 }

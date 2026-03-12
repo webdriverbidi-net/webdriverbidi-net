@@ -28,7 +28,7 @@ public class SetGeolocationOverrideCommandParameters : CommandParameters<SetGeol
     /// <see cref="SetGeolocationOverrideCoordinatesCommandParameters"/>, but provided as a named property
     /// to make the intent of clearing the override more explicit in code that uses this property.
     /// </summary>
-    public static SetGeolocationOverrideCommandParameters ResetGeolocationOverride => new SetGeolocationOverrideCoordinatesCommandParameters();
+    public static SetGeolocationOverrideCommandParameters ResetGeolocationOverrideCoordinates => new SetGeolocationOverrideCoordinatesCommandParameters();
 
     /// <summary>
     /// Gets the method name of the command.
