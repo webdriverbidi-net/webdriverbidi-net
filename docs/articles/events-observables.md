@@ -200,7 +200,6 @@ When event handlers perform async operations or I/O, you must use asynchronous h
 The `ObservableEventHandlerOptions` enum controls how event handlers execute:
 
 ```csharp
-[Flags]
 public enum ObservableEventHandlerOptions
 {
     RunHandlerSynchronously = 0,  // Synchronous execution (default)
