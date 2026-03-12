@@ -101,7 +101,7 @@ Launch browser with experimental web platform features:
 **Solution**:
 - Ensure device services match the filter criteria
 - Verify device address format is correct
-- Call SimulateAdvertisementAsync after SimulateDeviceAsync
+- Call SimulateAdvertisementAsync after SimulatePreconnectedPeripheralAsync
 - Check that Web Bluetooth API is enabled in the browser
 
 ### Manufacturer Data Format
