@@ -1060,4 +1060,173 @@ public class BiDiDriver014AnalyzerTests
 
         await testState.RunAsync();
     }
+
+    /// <summary>
+    /// Tests that an inline parameterless constructor used directly as a method argument reports a diagnostic.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task InlineParameterlessConstructor_AsMethodArgument_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Text.Json.Serialization;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters
+                {
+                    [JsonIgnore]
+                    public abstract string MethodName { get; }
+
+                    [JsonIgnore]
+                    public abstract Type ResponseType { get; }
+                }
+
+                public abstract class CommandParameters<T> : CommandParameters
+                    where T : CommandResult
+                {
+                    [JsonIgnore]
+                    public override Type ResponseType => typeof(T);
+                }
+
+                public class CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Emulation
+            {
+                using System.Text.Json.Serialization;
+                using WebDriverBiDi;
+
+                public class SetTimeZoneOverrideCommandResult : CommandResult { }
+
+                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
+                {
+                    public SetTimeZoneOverrideCommandParameters() { }
+
+                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
+
+                    [JsonIgnore]
+                    public override string MethodName => "emulation.setTimezoneOverride";
+
+                    [JsonPropertyName("timezone")]
+                    [JsonInclude]
+                    public string? TimeZone { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Emulation;
+
+                public class TestClass
+                {
+                    public void Execute(SetTimeZoneOverrideCommandParameters p) { }
+
+                    public void TestMethod()
+                    {
+                        // Inline constructor with no properties — should fire BIDI014
+                        Execute({|#0:new SetTimeZoneOverrideCommandParameters()|});
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetTimeZoneOverrideCommandParameters", "ResetTimeZoneOverride");
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that an inline constructor with an object initializer does not report a diagnostic.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task InlineConstructor_WithObjectInitializer_AsMethodArgument_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Text.Json.Serialization;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters
+                {
+                    [JsonIgnore]
+                    public abstract string MethodName { get; }
+
+                    [JsonIgnore]
+                    public abstract Type ResponseType { get; }
+                }
+
+                public abstract class CommandParameters<T> : CommandParameters
+                    where T : CommandResult
+                {
+                    [JsonIgnore]
+                    public override Type ResponseType => typeof(T);
+                }
+
+                public class CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Emulation
+            {
+                using System.Text.Json.Serialization;
+                using WebDriverBiDi;
+
+                public class SetTimeZoneOverrideCommandResult : CommandResult { }
+
+                public class SetTimeZoneOverrideCommandParameters : CommandParameters<SetTimeZoneOverrideCommandResult>
+                {
+                    public SetTimeZoneOverrideCommandParameters() { }
+
+                    public static SetTimeZoneOverrideCommandParameters ResetTimeZoneOverride => new();
+
+                    [JsonIgnore]
+                    public override string MethodName => "emulation.setTimezoneOverride";
+
+                    [JsonPropertyName("timezone")]
+                    [JsonInclude]
+                    public string? TimeZone { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Emulation;
+
+                public class TestClass
+                {
+                    public void Execute(SetTimeZoneOverrideCommandParameters p) { }
+
+                    public void TestMethod()
+                    {
+                        // Inline constructor with object initializer — intent is clear, no diagnostic
+                        Execute(new SetTimeZoneOverrideCommandParameters { TimeZone = "America/New_York" });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
 }

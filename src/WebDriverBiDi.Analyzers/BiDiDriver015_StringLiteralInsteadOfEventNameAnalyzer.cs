@@ -143,6 +143,17 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
                 AnalyzeStringLiteral(context, item, driverVariableName);
             }
         }
+        else if (expression is CollectionExpressionSyntax collectionExpression)
+        {
+            // Handle C# 12 collection expressions: ["event1", "event2"]
+            foreach (CollectionElementSyntax element in collectionExpression.Elements)
+            {
+                if (element is ExpressionElementSyntax expressionElement)
+                {
+                    AnalyzeStringLiteral(context, expressionElement.Expression, driverVariableName);
+                }
+            }
+        }
     }
 
     private static void AnalyzeStringLiteral(

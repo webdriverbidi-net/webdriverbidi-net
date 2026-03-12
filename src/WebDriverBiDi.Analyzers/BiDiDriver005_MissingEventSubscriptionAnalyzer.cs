@@ -281,6 +281,20 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
         if (constantValue.HasValue && constantValue.Value is string eventName)
         {
             eventNames.Add(eventName);
+            return;
+        }
+
+        // Handle .EventName property access: driver.Module.Event.EventName (as recommended by BIDI015).
+        // GetConstantValue cannot resolve property accesses, so we extract the event name from
+        // the [ObservableEventName] attribute on the ObservableEvent property instead.
+        if (expression is MemberAccessExpressionSyntax memberAccess &&
+            memberAccess.Name.Identifier.Text == "EventName")
+        {
+            string? resolvedName = GetEventNameFromProperty(context, memberAccess.Expression);
+            if (resolvedName != null)
+            {
+                eventNames.Add(resolvedName);
+            }
         }
     }
 

@@ -98,6 +98,61 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 context.ReportDiagnostic(diagnostic);
             }
         }
+
+        // Also detect inline constructor usage in method call arguments, e.g.:
+        //   await driver.Emulation.SetTimeZoneOverrideAsync(new SetTimeZoneOverrideCommandParameters())
+        // An inline constructor has no variable to assign properties to afterward, so any
+        // parameterless constructor with a Reset property used inline is always a diagnostic.
+        AnalyzeInlineConstructors(methodDeclaration, context, semanticModel);
+    }
+
+    private static void AnalyzeInlineConstructors(
+        MethodDeclarationSyntax methodDeclaration,
+        SyntaxNodeAnalysisContext context,
+        SemanticModel semanticModel)
+    {
+        foreach (ArgumentSyntax argument in methodDeclaration.DescendantNodes().OfType<ArgumentSyntax>())
+        {
+            if (argument.Expression is not ObjectCreationExpressionSyntax objectCreation)
+            {
+                continue;
+            }
+
+            // Parameterless?
+            if (objectCreation.ArgumentList != null && objectCreation.ArgumentList.Arguments.Count > 0)
+            {
+                continue;
+            }
+
+            // Has object initializer with properties set? Then intent is clear — suppress.
+            if (objectCreation.Initializer != null && objectCreation.Initializer.Expressions.Count > 0)
+            {
+                continue;
+            }
+
+            ITypeSymbol? type = semanticModel.GetTypeInfo(objectCreation).Type;
+            if (type == null || !IsCommandParametersType(type))
+            {
+                continue;
+            }
+
+            string? resetPropertyName = GetResetPropertyName(type);
+            if (resetPropertyName == null)
+            {
+                continue;
+            }
+
+            var properties = ImmutableDictionary.CreateBuilder<string, string?>();
+            properties.Add("TypeName", type.Name);
+            properties.Add("ResetPropertyName", resetPropertyName);
+
+            context.ReportDiagnostic(Diagnostic.Create(
+                Rule,
+                objectCreation.GetLocation(),
+                properties.ToImmutable(),
+                type.Name,
+                resetPropertyName));
+        }
     }
 
     private static void AnalyzeLocalDeclaration(
