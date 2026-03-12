@@ -37,7 +37,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI011** | Warning | `SetCheckpoint()` called but checkpoint never waited for or unset |
 | **BIDI012** | Info | `DisposeAsync()` called without `StopAsync()` first; suggests calling `StopAsync` |
 | **BIDI013** | Warning | Long-running operation (e.g., `NavigateAsync`) called without `CancellationToken` |
-| **BIDI014** | Warning | Parameterless constructor used for command with reset property; suggests using `.Reset*` |
+| **BIDI014** | Warning | Parameterless constructor used for a command with a command-level reset property (i.e., a `static Reset*` property returning the same `CommandParameters` type); suggests using `.Reset*`. Does not apply to property-level sentinel classes such as `SetViewportCommandParameters`. |
 | **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName` |
 | **BIDI016** | Warning | Deadlock-prone pattern (e.g., `.Result`, `.Wait()`) in event handler |
 | **BIDI017** | Warning | Adding to nullable list property without `??= new List<T>()` |

@@ -21,13 +21,58 @@ public class SetViewportCommandParameters : CommandParameters<SetViewportCommand
     }
 
     /// <summary>
-    /// Gets a value indicating that the viewport should be reset to its default dimensions.
+    /// Gets a sentinel value for the <see cref="Viewport"/> property that signals the remote
+    /// end to reset the viewport to its default dimensions. Assign this to the
+    /// <see cref="Viewport"/> property; do not use it as a command-level reset.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is a <em>property-level sentinel</em>, not a command-level reset. It must be
+    /// assigned to the <see cref="Viewport"/> property of a
+    /// <see cref="SetViewportCommandParameters"/> instance:
+    /// </para>
+    /// <code>
+    /// await driver.BrowsingContext.SetViewportAsync(
+    ///     new SetViewportCommandParameters
+    ///     {
+    ///         Viewport = SetViewportCommandParameters.ResetToDefaultViewport
+    ///     });
+    /// </code>
+    /// <para>
+    /// When serialized, the sentinel causes the <c>viewport</c> field to be written as
+    /// JSON <c>null</c>, instructing the remote end to restore the default viewport.
+    /// Assigning a C# <see langword="null"/> to <see cref="Viewport"/> omits the field
+    /// entirely, leaving the current viewport unchanged.
+    /// </para>
+    /// </remarks>
     public static Viewport ResetToDefaultViewport => Viewport.ResetToDefaultViewport;
 
     /// <summary>
-    /// Gets a value indicating that the device pixel ratio should be reset to its default value.
+    /// Gets a sentinel value for the <see cref="DevicePixelRatio"/> property that signals
+    /// the remote end to reset the device pixel ratio to its default value. Assign this to
+    /// the <see cref="DevicePixelRatio"/> property; do not use it as a command-level reset.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is a <em>property-level sentinel</em>, not a command-level reset. It must be
+    /// assigned to the <see cref="DevicePixelRatio"/> property of a
+    /// <see cref="SetViewportCommandParameters"/> instance:
+    /// </para>
+    /// <code>
+    /// await driver.BrowsingContext.SetViewportAsync(
+    ///     new SetViewportCommandParameters
+    ///     {
+    ///         DevicePixelRatio = SetViewportCommandParameters.ResetToDefaultDevicePixelRatio
+    ///     });
+    /// </code>
+    /// <para>
+    /// When serialized, the sentinel (any negative value) causes the
+    /// <c>devicePixelRatio</c> field to be written as JSON <c>null</c>, instructing the
+    /// remote end to restore the default pixel ratio. Assigning a C# <see langword="null"/>
+    /// to <see cref="DevicePixelRatio"/> omits the field entirely, leaving the current
+    /// pixel ratio unchanged.
+    /// </para>
+    /// </remarks>
     public static double ResetToDefaultDevicePixelRatio => -1;
 
     /// <summary>

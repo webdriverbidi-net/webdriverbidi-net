@@ -41,6 +41,48 @@ Module commands fall into two categories based on their `CommandParameters`:
 | `Storage.DeleteCookiesAsync` | |
 | `Storage.GetCookiesAsync` | |
 
+### Reset Property Variants
+
+There are two distinct patterns for reset helpers on `CommandParameters` classes. Understanding the difference is important when reading XML documentation and when working with BIDI014.
+
+#### Command-level reset
+
+The static property returns a pre-configured instance of the `CommandParameters` class itself. You pass it directly to the command method. This is the most common pattern.
+
+```csharp
+// ResetTimeZoneOverride returns a SetTimeZoneOverrideCommandParameters instance
+await driver.Emulation.SetTimeZoneOverrideAsync(
+    SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride);
+```
+
+BIDI014 detects when you use `new SomeCommandParameters()` without setting properties and the class has a command-level reset property, since that is almost certainly a mistake.
+
+#### Property-level sentinel
+
+The static property returns a typed *value* to assign to a specific property on the `CommandParameters` object. When the property is serialized, the sentinel value is written as JSON `null`, instructing the remote end to reset that individual field.
+
+`SetViewportCommandParameters` uses this pattern because viewport dimensions and device pixel ratio can each be reset independently:
+
+```csharp
+// Reset viewport only — leave device pixel ratio unchanged
+await driver.BrowsingContext.SetViewportAsync(
+    new SetViewportCommandParameters
+    {
+        Viewport = SetViewportCommandParameters.ResetToDefaultViewport
+    });
+
+// Reset device pixel ratio only — leave viewport dimensions unchanged
+await driver.BrowsingContext.SetViewportAsync(
+    new SetViewportCommandParameters
+    {
+        DevicePixelRatio = SetViewportCommandParameters.ResetToDefaultDevicePixelRatio
+    });
+```
+
+Assigning C# `null` to either property omits it from the JSON payload entirely, leaving the current value on the remote end unchanged. The sentinel is the only way to emit an explicit JSON `null` for these fields.
+
+BIDI014 does **not** apply to property-level sentinel classes. Using `new SetViewportCommandParameters()` without any properties is valid — it sends a command that leaves both viewport and device pixel ratio at their current values.
+
 ### Nullable List Properties
 
 Many `CommandParameters` expose nullable list properties (e.g., `List<string>? Contexts`). This is intentional:
@@ -49,6 +91,22 @@ Many `CommandParameters` expose nullable list properties (e.g., `List<string>? C
 - **Empty list `[]`**: Explicit empty array sent to the remote end (protocol treats differently)
 
 Always check the XML documentation on the property for the rationale. See [Core Concepts - Command Parameters](../core-concepts.md#command-parameters) for details.
+
+### Protocol Extensions via AdditionalData
+
+The WebDriver BiDi protocol allows implementations to support additional command properties beyond the specification. The `AdditionalData` dictionary on `CommandParameters` lets you inject these extra fields into the JSON payload while keeping the strongly-typed API for standard parameters.
+
+Use `AdditionalData` when:
+
+- A browser or driver supports a pre-standard or vendor-specific parameter
+- You need to pass extension data that the library does not yet model as a typed property
+- You are integrating with a custom BiDi implementation that expects extra fields
+
+Entries in `AdditionalData` are serialized as top-level properties on the command message (alongside `id`, `method`, and `params`). Values must be JSON-serializable (strings, numbers, booleans, null, arrays, or dictionaries).
+
+[!code-csharp[Protocol Extensions via AdditionalData](../../code/api-design/AdditionalDataSamples.cs#ProtocolExtensionsviaAdditionalData)]
+
+**Note:** The remote end must support the extension fields you send. Sending unknown properties may be ignored or cause an error depending on the implementation. Consult the protocol specification or your browser/driver documentation for supported extensions.
 
 ## Timeout and Cancellation
 
