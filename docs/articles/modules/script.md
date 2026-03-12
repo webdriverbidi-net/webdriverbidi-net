@@ -17,6 +17,10 @@ The Script module allows you to:
 
 [!code-csharp[Accessing the Module](../../code/script/ScriptSamples.cs#AccessingtheModule)]
 
+## Timeout and Cancellation
+
+All commands in this module accept optional `timeoutOverride` and `CancellationToken` parameters. Use `timeoutOverride` to set a per-command timeout (defaults to `BiDiDriver.DefaultCommandTimeout` when omitted). Use `CancellationToken` for cooperative cancellation. See the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details and examples.
+
 ## Evaluating JavaScript
 
 ### Evaluate Expression

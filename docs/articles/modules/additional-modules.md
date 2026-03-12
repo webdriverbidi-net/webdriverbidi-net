@@ -4,7 +4,7 @@ This guide provides an overview of additional specialized modules in WebDriverBi
 
 ## Overview
 
-WebDriverBiDi.NET includes support for several W3C specifications that use the WebDriver BiDi protocol:
+WebDriverBiDi.NET includes support for several W3C specifications that use the WebDriver BiDi protocol. All module commands accept optional `timeoutOverride` and `CancellationToken` parameters—see the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details.
 
 - **[Permissions Module](permissions.md)** - Browser permission management
 - **[Bluetooth Module](bluetooth.md)** - Web Bluetooth API control

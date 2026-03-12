@@ -17,6 +17,10 @@ The Network module enables you to:
 
 [!code-csharp[Accessing Module](../../code/modules/NetworkModuleSamples.cs#AccessingModule)]
 
+## Timeout and Cancellation
+
+All commands in this module accept optional `timeoutOverride` and `CancellationToken` parameters. Use `timeoutOverride` to set a per-command timeout (defaults to `BiDiDriver.DefaultCommandTimeout` when omitted). Use `CancellationToken` for cooperative cancellation. See the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details and examples.
+
 ## Monitoring Network Traffic
 
 ### Basic Response Monitoring

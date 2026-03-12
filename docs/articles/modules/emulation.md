@@ -15,6 +15,10 @@ The Emulation module allows you to:
 
 [!code-csharp[Accessing Module](../../code/modules/EmulationModuleSamples.cs#AccessingModule)]
 
+## Timeout and Cancellation
+
+All commands in this module accept optional `timeoutOverride` and `CancellationToken` parameters. Use `timeoutOverride` to set a per-command timeout (defaults to `BiDiDriver.DefaultCommandTimeout` when omitted). Use `CancellationToken` for cooperative cancellation. See the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details and examples.
+
 ## Viewport Emulation
 
 Viewport emulation is provided by the **BrowsingContext** module. See [Browsing Context Module](browsing-context.md) for details.

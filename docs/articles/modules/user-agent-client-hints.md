@@ -17,6 +17,10 @@ This module complements the [Emulation Module](emulation.md), which provides use
 
 [!code-csharp[Accessing Module](../../code/modules/UserAgentClientHintsModuleSamples.cs#AccessingModule)]
 
+## Timeout and Cancellation
+
+All commands in this module accept optional `timeoutOverride` and `CancellationToken` parameters. Use `timeoutOverride` to set a per-command timeout (defaults to `BiDiDriver.DefaultCommandTimeout` when omitted). Use `CancellationToken` for cooperative cancellation. See the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for details and examples.
+
 ## Setting Client Hints Override
 
 ### Basic Override

@@ -16,6 +16,10 @@ Each browsing context has a unique identifier used to target operations.
 
 [!code-csharp[Accessing Module](../../code/modules/BrowsingContextModuleSamples.cs#AccessingModule)]
 
+## Timeout and Cancellation
+
+All commands in this module accept optional `timeoutOverride` and `CancellationToken` parameters. Use `timeoutOverride` to set a per-command timeout (defaults to `BiDiDriver.DefaultCommandTimeout` when omitted). Use `CancellationToken` for cooperative cancellation. The [Navigation with Timeout](#navigation-with-timeout) section below shows an example for `NavigateAsync`; the same parameters apply to all other commands (e.g., `ActivateAsync`, `CaptureScreenshotAsync`, `CreateAsync`). See the [API Design Guide](../advanced/api-design.md#timeout-and-cancellation) for more examples.
+
 ## Getting Browsing Contexts
 
 ### Get All Contexts
