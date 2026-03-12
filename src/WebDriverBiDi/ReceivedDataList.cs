@@ -19,12 +19,8 @@ public sealed class ReceivedDataList : ReadOnlyCollection<object?>
     /// </summary>
     /// <param name="list">The list of received data.</param>
     public ReceivedDataList(List<object?> list)
-        : base(list)
+        : base(SealList(list))
     {
-        for (int i = 0; i < this.Items.Count; i++)
-        {
-            this.Items[i] = SealValue(this.Items[i]);
-        }
     }
 
     /// <summary>
@@ -56,6 +52,17 @@ public sealed class ReceivedDataList : ReadOnlyCollection<object?>
         }
 
         return result;
+    }
+
+    private static List<object?> SealList(List<object?> listToSeal)
+    {
+        List<object?> sealedList = [];
+        for (int i = 0; i < listToSeal.Count; i++)
+        {
+            sealedList.Add(SealValue(listToSeal[i]));
+        }
+
+        return sealedList;
     }
 
     private static object? SealValue(object? valueToSeal)
