@@ -295,6 +295,8 @@ Always clean up resources:
 
 Before running your WebDriverBiDi.NET code, verify:
 
+> **Tip:** Add the [WebDriverBiDi.Analyzers](advanced/analyzers.md) package to get compile-time diagnostics for many of these pitfalls.
+
 - [ ] Event handlers use `RunHandlerAsynchronously` for I/O operations
 - [ ] You've called both `AddObserver()` AND `Session.SubscribeAsync()`
 - [ ] Modules and observers registered BEFORE `StartAsync()`
@@ -306,10 +308,13 @@ Before running your WebDriverBiDi.NET code, verify:
 - [ ] Thread safety considered for concurrent operations
 - [ ] Resources properly cleaned up with try-finally or using statements
 
+**Tip:** Add the [WebDriverBiDi.Analyzers](advanced/analyzers.md) package to get compile-time diagnostics for many of these pitfalls.
+
 ---
 
 ## See Also
 
+- [Roslyn Analyzers](advanced/analyzers.md): Compile-time diagnostics for common pitfalls
 - [Error Handling](advanced/error-handling.md): Troubleshooting, timeout patterns, TransportErrorBehavior
 - [API Design Guide](advanced/api-design.md): Timeout and cancellation patterns
 

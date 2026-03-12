@@ -32,6 +32,10 @@ Add this to your `.csproj` file:
 <PackageReference Include="WebDriverBiDi" Version="*" />
 ```
 
+### Optional: Roslyn Analyzers
+
+For compile-time help catching common usage errors, add the [WebDriverBiDi.Analyzers](advanced/analyzers.md) package. See [Roslyn Analyzers](advanced/analyzers.md) for the full list of available analyzers.
+
 ## Browser Setup
 
 WebDriverBiDi.NET requires a browser with WebDriver BiDi support running and listening on a WebSocket endpoint.

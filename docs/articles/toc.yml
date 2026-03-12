@@ -62,6 +62,8 @@
       href: examples/preload-scripts.md
 - name: Advanced Topics
   items:
+    - name: Roslyn Analyzers
+      href: advanced/analyzers.md
     - name: Observability
       href: advanced/observability.md
     - name: API Design Guide
