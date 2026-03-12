@@ -28,11 +28,22 @@ public abstract class CommandParameters
     /// Gets additional properties to be serialized with this command.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The WebDriver BiDi protocol allows for additional command properties that are not
     /// defined in the specification. This dictionary allows users to include those additional
     /// properties while maintaining the strongly-typed nature of the CommandParameters class.
     /// The entries in this dictionary are intentionally mutable, so that users can add additional
     /// properties as needed.
+    /// </para>
+    /// <para>
+    /// Though the values of this dictionary are typed as <see cref="object"/>, they will be
+    /// serialized to JSON using the same rules as other properties of the command. This means
+    /// that values can be of any type that is serializable to JSON, including complex objects,
+    /// arrays, and primitive types. However, custom types should be designed with JSON
+    /// serialization in mind to ensure they are serialized correctly, including use of
+    /// the appropriate attributes for JSON serialization by
+    /// <see cref="System.Text.Json.JsonSerializer"/>.
+    /// </para>
     /// </remarks>
     [JsonIgnore]
     public Dictionary<string, object?> AdditionalData { get; } = [];
