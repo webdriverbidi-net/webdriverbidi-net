@@ -463,6 +463,39 @@ public static class NetworkModuleSamples
     }
 
     /// <summary>
+    /// Set global extra headers.
+    /// </summary>
+    public static async Task SetGlobalExtraHeaders(BiDiDriver driver, string contextId)
+    {
+#region SetGlobalExtraHeaders
+        SetExtraHeadersCommandParameters parameters = new SetExtraHeadersCommandParameters
+        {
+            Headers =
+            [
+                "Authorization: Bearer mytoken",
+                "X-API-Key: my-api-key",
+            ],
+            Contexts = new List<string> { contextId },
+        };
+
+        await driver.Network.SetExtraHeadersAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Clear extra headers.
+    /// </summary>
+    public static async Task ClearExtraHeaders(BiDiDriver driver)
+    {
+#region ClearExtraHeaders
+        SetExtraHeadersCommandParameters parameters =
+            SetExtraHeadersCommandParameters.ResetExtraHeaders;
+
+        await driver.Network.SetExtraHeadersAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
     /// Add cookie via Storage module.
     /// </summary>
     public static async Task AddCookie(BiDiDriver driver)

@@ -123,7 +123,21 @@ To capture response bodies, you must set up a data collector.
 
 ### Setting Custom Headers
 
+The intercept-based approach adds or modifies headers for individual requests as they are intercepted. Use this when you need per-request control, conditional header injection, or to modify existing headers:
+
 [!code-csharp[Setting Custom Headers](../../code/modules/NetworkModuleSamples.cs#SettingCustomHeaders)]
+
+### Setting Global Extra Headers
+
+Use `SetExtraHeadersAsync` to add headers to *every* request without intercepting traffic. This is simpler and more efficient when you need the same headers (e.g., `Authorization`, `X-API-Key`) on all requests. No intercept setup is required.
+
+[!code-csharp[Set Global Extra Headers](../../code/modules/NetworkModuleSamples.cs#SetGlobalExtraHeaders)]
+
+### Clear Extra Headers
+
+To remove all extra headers, use `SetExtraHeadersCommandParameters.ResetExtraHeaders`:
+
+[!code-csharp[Clear Extra Headers](../../code/modules/NetworkModuleSamples.cs#ClearExtraHeaders)]
 
 ## Cookies
 
