@@ -100,6 +100,7 @@ WebDriverBiDi.NET includes the following modules:
 | **Bluetooth** | Web Bluetooth API control | `driver.Bluetooth` |
 | **WebExtension** | Browser extension management | `driver.WebExtension` |
 | **Speculation** | Navigation prefetching | `driver.Speculation` |
+| **UserAgentClientHints** | Emulates browser, platform, and device reporting | `driver.UserAgentClientHints` |
 
 ### Accessing Modules
 
