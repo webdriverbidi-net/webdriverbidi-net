@@ -59,6 +59,22 @@ Many analyzers provide automatic code fixes. In Visual Studio or VS Code, use th
 | RemoteValue (BIDI018) | [Working with Remote Values](../remote-values.md) |
 | Reset parameters (BIDI014) | [API Design Guide - Required vs Optional Parameters](api-design.md#required-vs-optional-parameters) |
 
+## Known Limitations
+
+All behavioral analyzers (BIDI001, BIDI002, BIDI003, BIDI005, BIDI009, BIDI014, BIDI015) are **intra-procedural** — they analyze usage patterns within a single method body only. They cannot detect cross-method, cross-class, or cross-file patterns.
+
+For example, if you split setup across helper methods (common in test frameworks or automation wrappers), the analyzers will not correlate calls in different methods:
+
+```csharp
+// SetupAsync() — BIDI001/009 tracks driver state here
+async Task SetupAsync() { driver = new BiDiDriver(); await driver.StartAsync(...); }
+
+// TestAsync() — BIDI009 cannot detect that StartAsync was called in SetupAsync
+async Task TestAsync() { driver.RegisterModule(new CustomModule(driver)); } // no diagnostic
+```
+
+**Runtime enforcement remains correct.** The library still throws `InvalidOperationException` or `ObjectDisposedException` at runtime when these patterns are violated. The analyzers provide compile-time guidance where they can; they do not replace runtime validation.
+
 ## See Also
 
 - [Common Pitfalls](../common-pitfalls.md): Detailed explanations of the issues the analyzers catch
