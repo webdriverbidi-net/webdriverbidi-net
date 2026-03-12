@@ -8,7 +8,6 @@ namespace WebDriverBiDi;
 /// <summary>
 /// Enumerated value describing options for the execution of a handler for an ObservableEvent.
 /// </summary>
-[Flags]
 public enum ObservableEventHandlerOptions
 {
     /// <summary>
