@@ -312,7 +312,7 @@ ObservableEvent<TEventArgs>
 Your Event Handlers
 ```
 
-**Observable Event:** See `ObservableEvent<T>` in the WebDriverBiDi namespace—it provides `AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions? options)` and `NotifyObserversAsync(T eventArgs)`.
+**Observable Event:** See `ObservableEvent<T>` in the WebDriverBiDi namespace—it provides `AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None, string description = "")` and `NotifyObserversAsync(T eventArgs)`.
 
 **Event Observer:** See `EventObserver<T>` in the WebDriverBiDi namespace—it provides `SetCheckpoint`, `WaitForCheckpointAsync`, `WaitForCheckpointAndTasksAsync`, `GetCheckpointTasks`, `UnsetCheckpoint`, and `Unobserve`.
 

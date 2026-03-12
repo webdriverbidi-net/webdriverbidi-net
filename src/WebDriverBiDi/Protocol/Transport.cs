@@ -197,7 +197,7 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
-    /// Gets or setsthe collection of pending commands that have been sent and
+    /// Gets or sets the collection of pending commands that have been sent and
     /// have not yet received a response. This collection is thread-safe.
     /// </summary>
     protected PendingCommandCollection PendingCommands { get; set; } = new();
