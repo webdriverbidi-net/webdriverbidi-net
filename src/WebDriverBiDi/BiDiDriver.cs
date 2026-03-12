@@ -555,7 +555,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <param name="moduleName">The name of the module to return.</param>
     /// <returns>The protocol module object.</returns>
     /// <exception cref="ArgumentException">Thrown when the specified module name is not registered with this driver, or when the module name is null or empty.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the registered module object is not of the expected type.</exception>
+    /// <exception cref="InvalidCastException">Thrown when the registered module object is not of the expected type.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     public virtual T GetModule<T>(string moduleName)
         where T : Module
@@ -573,7 +573,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
         if (module is not T)
         {
-            throw new InvalidOperationException($"Module '{moduleName}' is registered with this driver, but the module object is not of type {typeof(T)}");
+            throw new InvalidCastException($"Module '{moduleName}' is registered with this driver, but the module object is not of type {typeof(T)}");
         }
 
         return (T)module;

@@ -414,7 +414,7 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         driver.RegisterModule(new TestProtocolModule(driver));
-        Assert.That(() => driver.GetModule<SessionModule>("protocol"), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("Module 'protocol' is registered with this driver, but the module object is not of type WebDriverBiDi.Session.SessionModule"));
+        Assert.That(() => driver.GetModule<SessionModule>("protocol"), Throws.InstanceOf<InvalidCastException>().With.Message.EqualTo("Module 'protocol' is registered with this driver, but the module object is not of type WebDriverBiDi.Session.SessionModule"));
     }
 
     [Test]
