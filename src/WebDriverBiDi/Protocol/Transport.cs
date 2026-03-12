@@ -81,7 +81,14 @@ public class Transport : IAsyncDisposable
     private readonly EventObserver<ConnectionErrorEventArgs> connectionErrorObserver;
     private readonly EventObserver<ConnectionDisconnectedEventArgs> connectionRemoteDisconnectObserver;
     private readonly EventObserver<LogMessageEventArgs> connectionLogMessageObserver;
-    private Channel<byte[]> queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
+
+    // We are using an unbounded channel by design. This decision was
+    // carefully considered, as the rate of incoming messages is unlikely
+    // to cause memory issues by exceeding the rate of processing. Should
+    // real-world usage indicate otherwise, we will update this behavior
+    // with a bounded channel, and add monitoring of the queue depth to
+    // the transport events.
+    private Channel<byte[]> incomingMessageQueue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {
         SingleReader = true,
         SingleWriter = true,
@@ -245,7 +252,7 @@ public class Transport : IAsyncDisposable
                 this.PendingCommands = new PendingCommandCollection();
             }
 
-            this.queue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
+            this.incomingMessageQueue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
             {
                 SingleReader = true,
                 SingleWriter = true,
@@ -509,8 +516,8 @@ public class Transport : IAsyncDisposable
             // already in the queue. Note that having all items consumed from the
             // queue does not imply that processing of all items has completed; that
             // must be awaited separately.
-            this.queue.Writer.Complete();
-            await this.queue.Reader.Completion.ConfigureAwait(false);
+            this.incomingMessageQueue.Writer.Complete();
+            await this.incomingMessageQueue.Reader.Completion.ConfigureAwait(false);
 
             // Clear the pending command collection. This will also cancel any tasks
             // associated with the remaining pending commands. Then wait for the
@@ -665,7 +672,7 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
-        await this.queue.Writer.WriteAsync(e.Data).ConfigureAwait(false);
+        await this.incomingMessageQueue.Writer.WriteAsync(e.Data).ConfigureAwait(false);
     }
 
     private async Task OnConnectionRemotelyDisconnectedAsync(ConnectionDisconnectedEventArgs e)
@@ -728,9 +735,9 @@ public class Transport : IAsyncDisposable
         // which is challenging. Initial experiments has shown that simply
         // adding a reference to the Microsoft.Bcl.AsyncInterfaces assembly
         // is not enough by itself to enable compilation using that construct.
-        while (await this.queue.Reader.WaitToReadAsync().ConfigureAwait(false))
+        while (await this.incomingMessageQueue.Reader.WaitToReadAsync().ConfigureAwait(false))
         {
-            while (this.queue.Reader.TryRead(out byte[]? incomingMessage))
+            while (this.incomingMessageQueue.Reader.TryRead(out byte[]? incomingMessage))
             {
                 try
                 {
