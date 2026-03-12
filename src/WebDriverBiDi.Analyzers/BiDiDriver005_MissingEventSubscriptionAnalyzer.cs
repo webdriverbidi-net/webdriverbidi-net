@@ -259,6 +259,17 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
                 ExtractStringLiteral(context, item, eventNames);
             }
         }
+        else if (expression is CollectionExpressionSyntax collectionExpression)
+        {
+            // Handle C# 12 collection expressions: ["event1", "event2"]
+            foreach (CollectionElementSyntax element in collectionExpression.Elements)
+            {
+                if (element is ExpressionElementSyntax expressionElement)
+                {
+                    ExtractStringLiteral(context, expressionElement.Expression, eventNames);
+                }
+            }
+        }
     }
 
     private static void ExtractStringLiteral(
