@@ -11,6 +11,22 @@ using System.Text.Json.Serialization;
 /// Base class for the result of a command where the concrete type of the response data is known.
 /// </summary>
 /// <typeparam name="T">The data type of the command response.</typeparam>
+/// <remarks>
+/// <para>
+/// This class is public to support AOT (ahead-of-time) compilation scenarios in extension libraries.
+/// End users do not construct or reference this type directly; it is used internally by
+/// <see cref="CommandParameters{T}"/> to express the expected response type for a command.
+/// </para>
+/// <para>
+/// Authors of third-party extension libraries that add new protocol commands must annotate their
+/// own <see cref="System.Text.Json.Serialization.JsonSerializerContext"/> with
+/// <c>[JsonSerializable(typeof(CommandResponseMessage&lt;TResult&gt;))]</c> for each of their
+/// custom result types, then register the context via
+/// <see cref="WebDriverBiDi.Protocol.Transport.RegisterTypeInfoResolver"/>. This pattern mirrors
+/// how the library itself registers all built-in command response types in
+/// <see cref="WebDriverBiDi.JsonConverters.WebDriverBiDiJsonSerializerContext"/>.
+/// </para>
+/// </remarks>
 public class CommandResponseMessage<T> : CommandResponseMessage
     where T : CommandResult
 {
