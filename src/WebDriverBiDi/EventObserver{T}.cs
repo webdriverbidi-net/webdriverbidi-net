@@ -228,6 +228,8 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         Task timeoutTask = Task.Delay(timeout, timeoutCancellationTokenSource.Token);
         Task cancellationTask = Task.Delay(Timeout.InfiniteTimeSpan, linkedCancellationTokenSource.Token);
         Task completedTask = await Task.WhenAny(completionTask, timeoutTask, cancellationTask).ConfigureAwait(false);
+        timeoutCancellationTokenSource.Cancel();
+        linkedCancellationTokenSource.Cancel();
 
         if (completedTask == cancellationTask)
         {
@@ -285,6 +287,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             Task whenAllTask = Task.WhenAll(tasksToWait);
             Task cancellationTask = Task.Delay(Timeout.InfiniteTimeSpan, linkedCancellationTokenSource.Token);
             Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
+            linkedCancellationTokenSource.Cancel();
             if (completedTask == cancellationTask)
             {
                 throw new OperationCanceledException("Wait cancelled waiting for captured tasks to complete", cancellationToken);
@@ -380,7 +383,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     internal async Task Notify(T notifyData)
     {
         Task executingTask = this.handler(notifyData);
-        bool isHandlerRunAsynchronously = this.handlerOptions.HasFlag(ObservableEventHandlerOptions.RunHandlerAsynchronously);
+        bool isHandlerRunAsynchronously = this.handlerOptions == ObservableEventHandlerOptions.RunHandlerAsynchronously;
 
         // Capture the faulted state immediately after the handler returns,
         // before any other code runs, to distinguish synchronous failures
