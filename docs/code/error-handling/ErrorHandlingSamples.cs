@@ -344,12 +344,12 @@ public class ErrorHandlingSamples
     }
 
     /// <summary>
-    /// ObservableEventHandlerOptions enum values: None, RunHandlerAsynchronously.
+    /// ObservableEventHandlerOptions enum values: RunHandlerSynchronously, RunHandlerAsynchronously.
     /// </summary>
     public static void ObservableEventHandlerOptionsValues()
     {
 #region ObservableEventHandlerOptions
-        _ = ObservableEventHandlerOptions.None;
+        _ = ObservableEventHandlerOptions.RunHandlerSynchronously;
         _ = ObservableEventHandlerOptions.RunHandlerAsynchronously;
 #endregion
     }
@@ -618,11 +618,11 @@ public class ErrorHandlingSamples
             ProcessLogEntry(e);
         });
 
-        // ❌ Also bad: Default (None) still blocks
+        // ❌ Also bad: Default (RunHandlerSynchronously) still blocks
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
             ProcessLogEntry(e);  // Blocks transport thread until complete
-        }, ObservableEventHandlerOptions.None);
+        }, ObservableEventHandlerOptions.RunHandlerSynchronously);
 
         // ✅ Good: Asynchronous handler doesn't block transport
         driver.Log.OnEntryAdded.AddObserver(
@@ -715,7 +715,7 @@ public class ErrorHandlingSamples
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
             ProcessLogEntry(e);
-        }, ObservableEventHandlerOptions.None);
+        }, ObservableEventHandlerOptions.RunHandlerSynchronously);
 
         // Asynchronous handler
         driver.Network.OnResponseCompleted.AddObserver(

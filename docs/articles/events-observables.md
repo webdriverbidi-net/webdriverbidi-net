@@ -203,7 +203,7 @@ The `ObservableEventHandlerOptions` enum controls how event handlers execute:
 [Flags]
 public enum ObservableEventHandlerOptions
 {
-    None = 0,                      // Synchronous execution (default)
+    RunHandlerSynchronously = 0,  // Synchronous execution (default)
     RunHandlerAsynchronously = 1   // Asynchronous execution
 }
 ```

@@ -79,10 +79,10 @@ public class ObservableEvent<T>
     /// </summary>
     /// <param name="handler">An action that handles the observed event.</param>
     /// <param name="handlerOptions">
-    /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
+    /// The options for executing the handler. Defaults to <see cref="ObservableEventHandlerOptions.RunHandlerSynchronously"/>,
     /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
     /// Handlers that perform I/O tasks, long-running operations, or execute driver commands during
-    /// the event handling should be added with the ObservableEventHandlerOptions.RunHandlerAsynchronously
+    /// the event handling should be added with the <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
     /// option.
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
@@ -90,7 +90,7 @@ public class ObservableEvent<T>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the user attempts to add more observers than this event allows.
     /// </exception>
-    public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None, string description = "")
+    public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
         Func<T, Task> wrappedHandler = (T args) =>
         {
@@ -108,10 +108,10 @@ public class ObservableEvent<T>
     /// </summary>
     /// <param name="handler">A function returning a Task that handles the observed event.</param>
     /// <param name="handlerOptions">
-    /// The options for executing the handler. Defaults to ObservableEventHandlerOptions.None,
+    /// The options for executing the handler. Defaults to <see cref="ObservableEventHandlerOptions.RunHandlerSynchronously"/>,
     /// meaning the handler will attempt to execute synchronously, awaiting the result of execution.
     /// Handlers that perform I/O tasks, long-running operations, or execute driver commands during
-    /// the event handling should be added with the ObservableEventHandlerOptions.RunHandlerAsynchronously
+    /// the event handling should be added with the <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
     /// option.
     /// </param>
     /// <param name="description">An optional description for this observer.</param>
@@ -130,7 +130,7 @@ public class ObservableEvent<T>
     ///     ObservableEventHandlerOptions.RunHandlerAsynchronously);
     /// </code>
     /// </example>
-    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None, string description = "")
+    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
         lock (this.observerLock)
         {

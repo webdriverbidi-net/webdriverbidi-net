@@ -14,7 +14,7 @@ public enum ObservableEventHandlerOptions
     /// <summary>
     /// No options, meaning handlers attempt to run synchronously, awaiting the completion of execution. This is the default.
     /// </summary>
-    None = 0,
+    RunHandlerSynchronously = 0,
 
     /// <summary>
     /// The handler will execute asynchronously. Order of multiple executions of the handler is not guaranteed.

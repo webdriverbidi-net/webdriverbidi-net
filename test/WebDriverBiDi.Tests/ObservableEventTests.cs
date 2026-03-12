@@ -170,7 +170,7 @@ public class ObservableEventTests
     public void TestToStringReturnsDescription()
     {
         TestEventSource testEventSource = new();
-        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }, ObservableEventHandlerOptions.None, "My first handler");
+        testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { }, ObservableEventHandlerOptions.RunHandlerSynchronously, "My first handler");
         string eventSourceString = testEventSource.TestObservableEvent.ToString();
         Assert.That(eventSourceString, Is.EqualTo("ObservableEvent<TestObservableEventArgs> with observers:\n    My first handler"));
     }

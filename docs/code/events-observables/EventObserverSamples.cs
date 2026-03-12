@@ -915,7 +915,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void ObservableEventHandlerOptionsValues()
     {
-        _ = ObservableEventHandlerOptions.None;
+        _ = ObservableEventHandlerOptions.RunHandlerSynchronously;
         _ = ObservableEventHandlerOptions.RunHandlerAsynchronously;
     }
 

@@ -250,14 +250,14 @@ Event handlers can be configured with `ObservableEventHandlerOptions` to control
 [Flags]
 public enum ObservableEventHandlerOptions
 {
-    None = 0,                      // Synchronous execution (default)
+    RunHandlerSynchronously = 0,  // Synchronous execution (default)
     RunHandlerAsynchronously = 1   // Asynchronous execution
 }
 ```
 
 ### Synchronous vs. Asynchronous Handlers
 
-By default (`None`), event handlers run synchronously on the transport thread, which blocks message processing:
+By default (`RunHandlerSynchronously`), event handlers run synchronously on the transport thread, which blocks message processing:
 
 [!code-csharp[Synchronous vs Asynchronous Handlers](../../code/error-handling/ErrorHandlingSamples.cs#SynchronousvsAsynchronousHandlers)]
 
@@ -294,13 +294,13 @@ When multiple handlers are registered, they all execute in sequence. With synchr
 
 | Handler Does | Use Option | Why |
 |--------------|------------|-----|
-| Quick in-memory work (<10ms) | None (default) | Minimal overhead, acceptable blocking |
+| Quick in-memory work (<10ms) | RunHandlerSynchronously (default) | Minimal overhead, acceptable blocking |
 | File I/O | RunHandlerAsynchronously | Don't block transport on disk operations |
 | Network requests | RunHandlerAsynchronously | Don't block transport on network |
 | Database queries | RunHandlerAsynchronously | Don't block transport on DB operations |
 | CPU-intensive work | RunHandlerAsynchronously | Don't block transport thread |
-| Logging to console | None | Quick operation, synchronous is fine |
-| Updating counters/state | None | Quick operation, synchronous is fine |
+| Logging to console | RunHandlerSynchronously | Quick operation, synchronous is fine |
+| Updating counters/state | RunHandlerSynchronously | Quick operation, synchronous is fine |
 
 ### Best Practices for Event Handlers
 
