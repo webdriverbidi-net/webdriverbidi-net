@@ -128,6 +128,21 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
+    /// Clear user agent override.
+    /// </summary>
+    public static async Task ClearUserAgentOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearUserAgentOverride
+        SetUserAgentOverrideCommandParameters parameters =
+            SetUserAgentOverrideCommandParameters.ResetUserAgentOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetUserAgentOverrideAsync(parameters);
+        Console.WriteLine("User agent override cleared");
+#endregion
+    }
+
+    /// <summary>
     /// Emulate dark mode using forced colors theme override.
     /// </summary>
     public static async Task EmulateDarkMode(BiDiDriver driver, string contextId)
@@ -244,6 +259,21 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
+    /// Clear geolocation override.
+    /// </summary>
+    public static async Task ClearGeolocationOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearGeolocationOverride
+        SetGeolocationOverrideCommandParameters parameters =
+            SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetGeolocationOverrideAsync(parameters);
+        Console.WriteLine("Geolocation override cleared");
+#endregion
+    }
+
+    /// <summary>
     /// Set timezone.
     /// </summary>
     public static async Task SetTimezone(BiDiDriver driver, string contextId)
@@ -314,6 +344,21 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
+    /// Clear timezone override.
+    /// </summary>
+    public static async Task ClearTimezoneOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearTimezoneOverride
+        SetTimeZoneOverrideCommandParameters parameters =
+            SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetTimeZoneOverrideAsync(parameters);
+        Console.WriteLine("Timezone override cleared");
+#endregion
+    }
+
+    /// <summary>
     /// Set locale.
     /// </summary>
     public static async Task SetLocale(BiDiDriver driver, string contextId)
@@ -340,6 +385,21 @@ public class EmulationModuleSamples
             string locale = success.Result.ValueAs<string>();
             Console.WriteLine($"Browser locale: {locale}");
         }
+#endregion
+    }
+
+    /// <summary>
+    /// Clear locale override.
+    /// </summary>
+    public static async Task ClearLocaleOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearLocaleOverride
+        SetLocaleOverrideCommandParameters parameters =
+            SetLocaleOverrideCommandParameters.ResetLocaleOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetLocaleOverrideAsync(parameters);
+        Console.WriteLine("Locale override cleared");
 #endregion
     }
 

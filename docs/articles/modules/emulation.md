@@ -47,6 +47,10 @@ Viewport emulation is provided by the **BrowsingContext** module. See [Browsing 
 
 [!code-csharp[Common User Agents](../../code/modules/EmulationModuleSamples.cs#CommonUserAgents)]
 
+### Clear User Agent Override
+
+[!code-csharp[Clear User Agent Override](../../code/modules/EmulationModuleSamples.cs#ClearUserAgentOverride)]
+
 ## Forced Colors Mode Theme
 
 The Emulation module provides `SetForcedColorsModeThemeOverrideAsync` to emulate light or dark forced colors mode.
@@ -69,6 +73,10 @@ The Emulation module provides `SetForcedColorsModeThemeOverrideAsync` to emulate
 
 [!code-csharp[Common Locations](../../code/modules/EmulationModuleSamples.cs#CommonLocations)]
 
+### Clear Geolocation Override
+
+[!code-csharp[Clear Geolocation Override](../../code/modules/EmulationModuleSamples.cs#ClearGeolocationOverride)]
+
 ## Timezone Emulation
 
 ### Set Timezone
@@ -79,11 +87,19 @@ The Emulation module provides `SetForcedColorsModeThemeOverrideAsync` to emulate
 
 [!code-csharp[Common Timezones](../../code/modules/EmulationModuleSamples.cs#CommonTimezones)]
 
+### Clear Timezone Override
+
+[!code-csharp[Clear Timezone Override](../../code/modules/EmulationModuleSamples.cs#ClearTimezoneOverride)]
+
 ## Locale Emulation
 
 ### Set Locale
 
 [!code-csharp[Set Locale](../../code/modules/EmulationModuleSamples.cs#SetLocale)]
+
+### Clear Locale Override
+
+[!code-csharp[Clear Locale Override](../../code/modules/EmulationModuleSamples.cs#ClearLocaleOverride)]
 
 ## Network Conditions Emulation
 
