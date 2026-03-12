@@ -513,6 +513,34 @@ public static class BrowsingContextModuleSamples
         {
             Console.WriteLine($"Navigation failed: {e.Url}");
         });
+
+        // Navigation committed to the session history
+        driver.BrowsingContext.OnNavigationCommitted.AddObserver((NavigationEventArgs e) =>
+        {
+            Console.WriteLine($"Navigation committed: {e.Url}");
+        });
+
+        // History entry updated via pushState/replaceState
+        driver.BrowsingContext.OnHistoryUpdated.AddObserver((HistoryUpdatedEventArgs e) =>
+        {
+            Console.WriteLine($"History updated: {e.Url}");
+        });
+
+        // Download about to begin
+        driver.BrowsingContext.OnDownloadWillBegin.AddObserver((DownloadWillBeginEventArgs e) =>
+        {
+            Console.WriteLine($"Download starting: {e.SuggestedFileName} from {e.Url}");
+        });
+
+        // Download completed or failed
+        driver.BrowsingContext.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) =>
+        {
+            Console.WriteLine($"Download ended with status: {e.Status}");
+            if (e.FilePath != null)
+            {
+                Console.WriteLine($"Saved to: {e.FilePath}");
+            }
+        });
 #endregion
     }
 

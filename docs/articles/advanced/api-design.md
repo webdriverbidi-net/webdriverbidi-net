@@ -34,6 +34,8 @@ Module commands fall into two categories based on their `CommandParameters`:
 | `Browser.GetUserContextsAsync` | `BrowsingContext.SetViewportAsync` |
 | `BrowsingContext.GetTreeAsync` | `Network.SetExtraHeadersAsync` |
 | `Script.GetRealmsAsync` | All Emulation `Set*OverrideAsync` commands |
+| | `Emulation.SetNetworkConditionsAsync` |
+| | `Emulation.SetScriptingEnabledAsync` |
 | `Session.EndAsync` | |
 | `Session.StatusAsync` | |
 | `Storage.DeleteCookiesAsync` | |

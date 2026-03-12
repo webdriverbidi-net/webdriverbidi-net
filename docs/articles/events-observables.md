@@ -39,9 +39,13 @@ Each event is exposed as an `ObservableEvent<TEventArgs>` property on the releva
 driver.BrowsingContext.OnLoad                    // Page load complete
 driver.BrowsingContext.OnDomContentLoaded        // DOM ready
 driver.BrowsingContext.OnNavigationStarted       // Navigation begins
+driver.BrowsingContext.OnNavigationCommitted     // Navigation committed
 driver.BrowsingContext.OnNavigationAborted       // Navigation cancelled
 driver.BrowsingContext.OnNavigationFailed        // Navigation error
 driver.BrowsingContext.OnFragmentNavigated       // Hash navigation
+driver.BrowsingContext.OnHistoryUpdated          // History entry updated
+driver.BrowsingContext.OnDownloadWillBegin       // Download about to begin
+driver.BrowsingContext.OnDownloadEnd             // Download completed
 driver.BrowsingContext.OnContextCreated          // New tab/window/iframe
 driver.BrowsingContext.OnContextDestroyed        // Tab/window closed
 driver.BrowsingContext.OnUserPromptOpened        // Alert/confirm/prompt
@@ -335,6 +339,12 @@ Each event type has specific properties:
 ### ResponseCompletedEventArgs
 
 [!code-csharp[ResponseCompletedEventArgs](../code/events-observables/EventObserverSamples.cs#ResponseCompletedEventArgs)]
+
+### BrowsingContext Navigation and Download Events
+
+The BrowsingContext module provides additional events for navigation lifecycle, history, and downloads:
+
+[!code-csharp[BrowsingContext Navigation and Download Events](../code/events-observables/EventObserverSamples.cs#BrowsingContextNavigationAndDownloadEvents)]
 
 ## Best Practices
 

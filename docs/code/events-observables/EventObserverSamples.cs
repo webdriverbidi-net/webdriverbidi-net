@@ -9,7 +9,6 @@
 namespace WebDriverBiDi.Docs.Code.EventsObservables;
 
 using System.Collections.Generic;
-using OpenQA.Selenium.DevTools.V129.Browser;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Log;
@@ -955,13 +954,49 @@ public static class EventObserverSamples
         _ = driver.BrowsingContext.OnLoad;
         _ = driver.BrowsingContext.OnDomContentLoaded;
         _ = driver.BrowsingContext.OnNavigationStarted;
+        _ = driver.BrowsingContext.OnNavigationCommitted;
         _ = driver.BrowsingContext.OnNavigationAborted;
         _ = driver.BrowsingContext.OnNavigationFailed;
         _ = driver.BrowsingContext.OnFragmentNavigated;
+        _ = driver.BrowsingContext.OnHistoryUpdated;
+        _ = driver.BrowsingContext.OnDownloadWillBegin;
+        _ = driver.BrowsingContext.OnDownloadEnd;
         _ = driver.BrowsingContext.OnContextCreated;
         _ = driver.BrowsingContext.OnContextDestroyed;
         _ = driver.BrowsingContext.OnUserPromptOpened;
         _ = driver.BrowsingContext.OnUserPromptClosed;
+#endregion
+    }
+
+    /// <summary>
+    /// BrowsingContext navigation committed, history updated, and download events.
+    /// </summary>
+    public static void BrowsingContextNavigationAndDownloadEvents(BiDiDriver driver)
+    {
+#region BrowsingContextNavigationAndDownloadEvents
+        // Navigation committed - fired when the browser commits to the navigation
+        driver.BrowsingContext.OnNavigationCommitted.AddObserver((NavigationEventArgs e) =>
+        {
+            Console.WriteLine($"Navigation committed to: {e.Url}");
+        });
+
+        // History updated - fired when back/forward history changes
+        driver.BrowsingContext.OnHistoryUpdated.AddObserver((HistoryUpdatedEventArgs e) =>
+        {
+            Console.WriteLine($"History updated: {e.Url} in context {e.BrowsingContextId}");
+        });
+
+        // Download will begin - fired when a download is about to start
+        driver.BrowsingContext.OnDownloadWillBegin.AddObserver((DownloadWillBeginEventArgs e) =>
+        {
+            Console.WriteLine($"Download starting: {e.SuggestedFileName} from {e.Url}");
+        });
+
+        // Download end - fired when a download completes or is canceled
+        driver.BrowsingContext.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) =>
+        {
+            Console.WriteLine($"Download ended: {e.Status}, path: {e.FilePath ?? "N/A"}");
+        });
 #endregion
     }
 
