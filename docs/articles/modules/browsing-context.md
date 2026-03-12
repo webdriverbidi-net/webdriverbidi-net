@@ -107,6 +107,20 @@ The Browsing Context module provides element location functionality.
 
 [!code-csharp[Locate Within Element](../../code/modules/BrowsingContextModuleSamples.cs#LocateWithinElement)]
 
+## Setting Viewport
+
+The Browsing Context module provides `SetViewportAsync` to control the viewport dimensions and device pixel ratio of a browsing context. This is useful for responsive layouts, mobile emulation, and consistent screenshot capture.
+
+### Set Viewport Size
+
+[!code-csharp[Set Viewport Size](../../code/modules/BrowsingContextModuleSamples.cs#SetViewportSize)]
+
+### Reset Viewport to Default
+
+To restore the viewport to its default dimensions, use `SetViewportCommandParameters.ResetToDefaultViewport`:
+
+[!code-csharp[Reset Viewport to Default](../../code/modules/BrowsingContextModuleSamples.cs#ResetViewportToDefault)]
+
 ## Capturing Screenshots
 
 ### Screenshot of Entire Viewport

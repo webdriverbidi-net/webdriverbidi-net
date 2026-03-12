@@ -314,6 +314,43 @@ public static class BrowsingContextModuleSamples
     }
 
     /// <summary>
+    /// Set viewport size.
+    /// </summary>
+    public static async Task SetViewportSize(BiDiDriver driver, string contextId)
+    {
+#region SetViewportSize
+        SetViewportCommandParameters parameters = new SetViewportCommandParameters
+        {
+            BrowsingContextId = contextId,
+            Viewport = new Viewport
+            {
+                Width = 800,
+                Height = 600
+            },
+            DevicePixelRatio = 1.0
+        };
+
+        await driver.BrowsingContext.SetViewportAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Reset viewport to default.
+    /// </summary>
+    public static async Task ResetViewportToDefault(BiDiDriver driver, string contextId)
+    {
+#region ResetViewportToDefault
+        SetViewportCommandParameters parameters = new SetViewportCommandParameters
+        {
+            BrowsingContextId = contextId,
+            Viewport = SetViewportCommandParameters.ResetToDefaultViewport
+        };
+
+        await driver.BrowsingContext.SetViewportAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
     /// Screenshot of entire viewport.
     /// </summary>
     public static async Task ScreenshotOfViewport(BiDiDriver driver, string contextId)
