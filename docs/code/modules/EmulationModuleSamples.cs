@@ -344,6 +344,223 @@ public class EmulationModuleSamples
     }
 
     /// <summary>
+    /// Emulate offline network conditions.
+    /// </summary>
+    public static async Task EmulateOffline(BiDiDriver driver, string contextId)
+    {
+#region EmulateOffline
+        SetNetworkConditionsCommandParameters parameters = new SetNetworkConditionsCommandParameters
+        {
+            NetworkConditions = new NetworkConditionsOffline(),
+            Contexts = new List<string> { contextId }
+        };
+
+        await driver.Emulation.SetNetworkConditionsAsync(parameters);
+        Console.WriteLine("Network set to offline");
+#endregion
+    }
+
+    /// <summary>
+    /// Clear network conditions override.
+    /// </summary>
+    public static async Task ClearNetworkConditionsOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearNetworkConditionsOverride
+        SetNetworkConditionsCommandParameters parameters =
+            SetNetworkConditionsCommandParameters.ResetNetworkConditions;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetNetworkConditionsAsync(parameters);
+        Console.WriteLine("Network conditions override cleared");
+#endregion
+    }
+
+    /// <summary>
+    /// Set portrait screen orientation.
+    /// </summary>
+    public static async Task SetPortraitOrientation(BiDiDriver driver, string contextId)
+    {
+#region SetPortraitOrientation
+        SetScreenOrientationOverrideCommandParameters parameters =
+            new SetScreenOrientationOverrideCommandParameters
+            {
+                ScreenOrientation = new ScreenOrientation(
+                    ScreenOrientationNatural.Portrait,
+                    ScreenOrientationType.PortraitPrimary),
+                Contexts = new List<string> { contextId }
+            };
+
+        await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
+        Console.WriteLine("Screen orientation set to portrait");
+#endregion
+    }
+
+    /// <summary>
+    /// Set landscape screen orientation.
+    /// </summary>
+    public static async Task SetLandscapeOrientation(BiDiDriver driver, string contextId)
+    {
+#region SetLandscapeOrientation
+        SetScreenOrientationOverrideCommandParameters parameters =
+            new SetScreenOrientationOverrideCommandParameters
+            {
+                ScreenOrientation = new ScreenOrientation(
+                    ScreenOrientationNatural.Landscape,
+                    ScreenOrientationType.LandscapePrimary),
+                Contexts = new List<string> { contextId }
+            };
+
+        await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
+        Console.WriteLine("Screen orientation set to landscape");
+#endregion
+    }
+
+    /// <summary>
+    /// Clear screen orientation override.
+    /// </summary>
+    public static async Task ClearScreenOrientationOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearScreenOrientationOverride
+        SetScreenOrientationOverrideCommandParameters parameters =
+            SetScreenOrientationOverrideCommandParameters.ResetScreenOrientationOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
+        Console.WriteLine("Screen orientation override cleared");
+#endregion
+    }
+
+    /// <summary>
+    /// Set screen dimensions.
+    /// </summary>
+    public static async Task SetScreenDimensions(BiDiDriver driver, string contextId)
+    {
+#region SetScreenDimensions
+        SetScreenSettingsOverrideCommandParameters parameters =
+            new SetScreenSettingsOverrideCommandParameters
+            {
+                ScreenArea = new ScreenArea { Width = 1920, Height = 1080 },
+                Contexts = new List<string> { contextId }
+            };
+
+        await driver.Emulation.SetScreenSettingsOverrideAsync(parameters);
+        Console.WriteLine("Screen dimensions set to 1920x1080");
+#endregion
+    }
+
+    /// <summary>
+    /// Clear screen settings override.
+    /// </summary>
+    public static async Task ClearScreenSettingsOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearScreenSettingsOverride
+        SetScreenSettingsOverrideCommandParameters parameters =
+            SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetScreenSettingsOverrideAsync(parameters);
+        Console.WriteLine("Screen settings override cleared");
+#endregion
+    }
+
+    /// <summary>
+    /// Disable JavaScript for a context.
+    /// </summary>
+    public static async Task DisableJavaScript(BiDiDriver driver, string contextId)
+    {
+#region DisableJavaScript
+        SetScriptingEnabledCommandParameters parameters = new SetScriptingEnabledCommandParameters
+        {
+            IsScriptingEnabled = false,
+            Contexts = new List<string> { contextId }
+        };
+
+        await driver.Emulation.SetScriptingEnabledAsync(parameters);
+        Console.WriteLine("JavaScript disabled");
+#endregion
+    }
+
+    /// <summary>
+    /// Clear scripting override.
+    /// </summary>
+    public static async Task ClearScriptingOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearScriptingOverride
+        SetScriptingEnabledCommandParameters parameters =
+            SetScriptingEnabledCommandParameters.ResetScriptingEnabled;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetScriptingEnabledAsync(parameters);
+        Console.WriteLine("Scripting override cleared");
+#endregion
+    }
+
+    /// <summary>
+    /// Set overlay scrollbars.
+    /// </summary>
+    public static async Task SetOverlayScrollbars(BiDiDriver driver, string contextId)
+    {
+#region SetOverlayScrollbars
+        SetScrollbarTypeOverrideCommandParameters parameters =
+            new SetScrollbarTypeOverrideCommandParameters
+            {
+                ScrollbarType = ScrollbarType.Overlay,
+                Contexts = new List<string> { contextId }
+            };
+
+        await driver.Emulation.SetScrollbarTypeOverrideAsync(parameters);
+        Console.WriteLine("Scrollbar type set to overlay");
+#endregion
+    }
+
+    /// <summary>
+    /// Clear scrollbar type override.
+    /// </summary>
+    public static async Task ClearScrollbarTypeOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearScrollbarTypeOverride
+        SetScrollbarTypeOverrideCommandParameters parameters =
+            SetScrollbarTypeOverrideCommandParameters.ResetScrollbarTypeOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetScrollbarTypeOverrideAsync(parameters);
+        Console.WriteLine("Scrollbar type override cleared");
+#endregion
+    }
+
+    /// <summary>
+    /// Enable touch emulation with multiple touch points.
+    /// </summary>
+    public static async Task EnableTouchEmulation(BiDiDriver driver, string contextId)
+    {
+#region EnableTouchEmulation
+        SetTouchOverrideCommandParameters parameters = new SetTouchOverrideCommandParameters
+        {
+            MaxTouchPoints = 5,
+            Contexts = new List<string> { contextId }
+        };
+
+        await driver.Emulation.SetTouchOverrideAsync(parameters);
+        Console.WriteLine("Touch emulation enabled with 5 touch points");
+#endregion
+    }
+
+    /// <summary>
+    /// Clear touch override.
+    /// </summary>
+    public static async Task ClearTouchOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearTouchOverride
+        SetTouchOverrideCommandParameters parameters =
+            SetTouchOverrideCommandParameters.ResetTouchOverride;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.Emulation.SetTouchOverrideAsync(parameters);
+        Console.WriteLine("Touch override cleared");
+#endregion
+    }
+
+    /// <summary>
     /// Pattern: Mobile device emulation.
     /// </summary>
 #region MobileDeviceEmulation

@@ -10,6 +10,12 @@ The Emulation module allows you to:
 - Override forced colors mode theme (light/dark)
 - Override geolocation
 - Emulate timezone and locale settings
+- Emulate network conditions (e.g., offline)
+- Override screen orientation (portrait/landscape)
+- Override screen settings (dimensions)
+- Override JavaScript enabled state
+- Override scrollbar type (classic/overlay)
+- Override touch capability (max touch points)
 
 ## Accessing the Module
 
@@ -78,6 +84,82 @@ The Emulation module provides `SetForcedColorsModeThemeOverrideAsync` to emulate
 ### Set Locale
 
 [!code-csharp[Set Locale](../../code/modules/EmulationModuleSamples.cs#SetLocale)]
+
+## Network Conditions Emulation
+
+The Emulation module provides `SetNetworkConditionsAsync` to emulate network conditions such as offline mode. This is useful for testing how your application behaves when the network is unavailable.
+
+### Emulate Offline
+
+[!code-csharp[Emulate Offline](../../code/modules/EmulationModuleSamples.cs#EmulateOffline)]
+
+### Clear Network Conditions Override
+
+[!code-csharp[Clear Network Conditions Override](../../code/modules/EmulationModuleSamples.cs#ClearNetworkConditionsOverride)]
+
+## Screen Orientation Override
+
+The Emulation module provides `SetScreenOrientationOverrideAsync` to emulate different screen orientations (portrait, landscape). This is useful for testing mobile device behavior.
+
+### Set Portrait Orientation
+
+[!code-csharp[Set Portrait Orientation](../../code/modules/EmulationModuleSamples.cs#SetPortraitOrientation)]
+
+### Set Landscape Orientation
+
+[!code-csharp[Set Landscape Orientation](../../code/modules/EmulationModuleSamples.cs#SetLandscapeOrientation)]
+
+### Clear Screen Orientation Override
+
+[!code-csharp[Clear Screen Orientation Override](../../code/modules/EmulationModuleSamples.cs#ClearScreenOrientationOverride)]
+
+## Screen Settings Override
+
+The Emulation module provides `SetScreenSettingsOverrideAsync` to emulate screen dimensions (width and height). This can be used to simulate different display sizes.
+
+### Set Screen Dimensions
+
+[!code-csharp[Set Screen Dimensions](../../code/modules/EmulationModuleSamples.cs#SetScreenDimensions)]
+
+### Clear Screen Settings Override
+
+[!code-csharp[Clear Screen Settings Override](../../code/modules/EmulationModuleSamples.cs#ClearScreenSettingsOverride)]
+
+## JavaScript Override
+
+The Emulation module provides `SetScriptingEnabledAsync` to disable JavaScript for specified contexts. Note that this is primarily useful for simulating the case where JavaScript is disabled; the browser typically has JavaScript enabled by default.
+
+### Disable JavaScript
+
+[!code-csharp[Disable JavaScript](../../code/modules/EmulationModuleSamples.cs#DisableJavaScript)]
+
+### Clear Scripting Override
+
+[!code-csharp[Clear Scripting Override](../../code/modules/EmulationModuleSamples.cs#ClearScriptingOverride)]
+
+## Scrollbar Type Override
+
+The Emulation module provides `SetScrollbarTypeOverrideAsync` to emulate different scrollbar types (classic or overlay). This is useful for testing how your application handles different scrollbar behaviors across platforms.
+
+### Set Overlay Scrollbars
+
+[!code-csharp[Set Overlay Scrollbars](../../code/modules/EmulationModuleSamples.cs#SetOverlayScrollbars)]
+
+### Clear Scrollbar Type Override
+
+[!code-csharp[Clear Scrollbar Type Override](../../code/modules/EmulationModuleSamples.cs#ClearScrollbarTypeOverride)]
+
+## Touch Override
+
+The Emulation module provides `SetTouchOverrideAsync` to emulate touch capability by setting the maximum number of touch points. This is useful for testing touch-enabled interfaces on devices that may not have native touch support.
+
+### Enable Touch Emulation
+
+[!code-csharp[Enable Touch Emulation](../../code/modules/EmulationModuleSamples.cs#EnableTouchEmulation)]
+
+### Clear Touch Override
+
+[!code-csharp[Clear Touch Override](../../code/modules/EmulationModuleSamples.cs#ClearTouchOverride)]
 
 ## Common Patterns
 
