@@ -496,6 +496,38 @@ public static class NetworkModuleSamples
     }
 
     /// <summary>
+    /// Bypass cache for network requests.
+    /// </summary>
+    public static async Task BypassCache(BiDiDriver driver, string contextId)
+    {
+#region BypassCache
+        SetCacheBehaviorCommandParameters parameters =
+            new SetCacheBehaviorCommandParameters(CacheBehavior.Bypass)
+            {
+                Contexts = new List<string> { contextId },
+            };
+
+        await driver.Network.SetCacheBehaviorAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Restore default cache behavior.
+    /// </summary>
+    public static async Task RestoreDefaultCacheBehavior(BiDiDriver driver, string contextId)
+    {
+#region RestoreDefaultCacheBehavior
+        SetCacheBehaviorCommandParameters parameters =
+            new SetCacheBehaviorCommandParameters(CacheBehavior.Default)
+            {
+                Contexts = new List<string> { contextId },
+            };
+
+        await driver.Network.SetCacheBehaviorAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
     /// Add cookie via Storage module.
     /// </summary>
     public static async Task AddCookie(BiDiDriver driver)

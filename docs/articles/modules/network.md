@@ -139,6 +139,18 @@ To remove all extra headers, use `SetExtraHeadersCommandParameters.ResetExtraHea
 
 [!code-csharp[Clear Extra Headers](../../code/modules/NetworkModuleSamples.cs#ClearExtraHeaders)]
 
+## Cache Behavior
+
+Use `SetCacheBehaviorAsync` to control whether the browser uses its cache for network requests. This is useful when testing to ensure fresh data (bypass cache) or to restore normal caching behavior.
+
+### Bypass Cache
+
+[!code-csharp[Bypass Cache](../../code/modules/NetworkModuleSamples.cs#BypassCache)]
+
+### Restore Default Cache Behavior
+
+[!code-csharp[Restore Default Cache Behavior](../../code/modules/NetworkModuleSamples.cs#RestoreDefaultCacheBehavior)]
+
 ## Cookies
 
 ### Add Cookie
