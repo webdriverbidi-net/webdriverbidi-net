@@ -247,7 +247,7 @@ While many operations in WebDriverBiDi.NET are thread-safe, not all concurrent s
 
 **What IS Thread-Safe:**
 
-- `BiDiDriver.RegisterModule()` (as of recent updates)
+- `BiDiDriver.RegisterModule()`
 - Command execution (`ExecuteCommandAsync`)
 - Event observer notification
 - Transport message processing
