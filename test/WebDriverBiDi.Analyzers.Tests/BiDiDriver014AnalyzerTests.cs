@@ -1229,4 +1229,180 @@ public class BiDiDriver014AnalyzerTests
 
         await testState.RunAsync();
     }
+
+    /// <summary>
+    /// Tests that a parameterless constructor without property assignment reports a diagnostic
+    /// for a CommandParameters class that has a list property with a public setter and a
+    /// command-level Reset property.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task ParameterlessConstructor_WithListPropertyAndResetProperty_ReportsDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Text.Json.Serialization;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters
+                {
+                    [JsonIgnore]
+                    public abstract string MethodName { get; }
+
+                    [JsonIgnore]
+                    public abstract Type ResponseType { get; }
+                }
+
+                public abstract class CommandParameters<T> : CommandParameters
+                    where T : CommandResult
+                {
+                    [JsonIgnore]
+                    public override Type ResponseType => typeof(T);
+                }
+
+                public class CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Network
+            {
+                using System.Text.Json.Serialization;
+                using WebDriverBiDi;
+
+                public class SetExtraHeadersCommandResult : CommandResult { }
+
+                public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeadersCommandResult>
+                {
+                    public static SetExtraHeadersCommandParameters ResetExtraHeaders => new();
+
+                    [JsonIgnore]
+                    public override string MethodName => "network.setExtraHeaders";
+
+                    [JsonPropertyName("headers")]
+                    [JsonInclude]
+                    public List<string> Headers { get; set; } = new List<string>();
+
+                    [JsonPropertyName("contexts")]
+                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+                    public List<string>? Contexts { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Network;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        // Should trigger BIDI014 — no property assignment, and ResetExtraHeaders exists
+                        var parameters = {|#0:new SetExtraHeadersCommandParameters()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("SetExtraHeadersCommandParameters", "ResetExtraHeaders");
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that a parameterless constructor with the Headers list property assigned via
+    /// object initializer does not report a diagnostic, confirming the public setter resolves
+    /// the previous false positive that occurred when only .Add() was available.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task ParameterlessConstructor_WithListPropertyAssignedViaObjectInitializer_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Collections.Generic;
+            using System.Text.Json.Serialization;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public abstract class CommandParameters
+                {
+                    [JsonIgnore]
+                    public abstract string MethodName { get; }
+
+                    [JsonIgnore]
+                    public abstract Type ResponseType { get; }
+                }
+
+                public abstract class CommandParameters<T> : CommandParameters
+                    where T : CommandResult
+                {
+                    [JsonIgnore]
+                    public override Type ResponseType => typeof(T);
+                }
+
+                public class CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Network
+            {
+                using System.Text.Json.Serialization;
+                using WebDriverBiDi;
+
+                public class SetExtraHeadersCommandResult : CommandResult { }
+
+                public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeadersCommandResult>
+                {
+                    public static SetExtraHeadersCommandParameters ResetExtraHeaders => new();
+
+                    [JsonIgnore]
+                    public override string MethodName => "network.setExtraHeaders";
+
+                    [JsonPropertyName("headers")]
+                    [JsonInclude]
+                    public List<string> Headers { get; set; } = new List<string>();
+
+                    [JsonPropertyName("contexts")]
+                    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+                    public List<string>? Contexts { get; set; }
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Network;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        // No diagnostic — Headers assigned via object initializer
+                        var parameters = new SetExtraHeadersCommandParameters
+                        {
+                            Headers = new List<string> { "X-Custom-Header: value" }
+                        };
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
 }

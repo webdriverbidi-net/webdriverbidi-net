@@ -29,11 +29,11 @@ public class SetExtraHeadersCommandParameters : CommandParameters<SetExtraHeader
     public override string MethodName => "network.setExtraHeaders";
 
     /// <summary>
-    /// Gets the list of extra HTTP headers to send with every request.
+    /// Gets or sets the list of extra HTTP headers to send with every request.
     /// </summary>
     [JsonPropertyName("headers")]
     [JsonInclude]
-    public List<string> Headers { get; } = [];
+    public List<string> Headers { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the browsing contexts, if any, for which to set the extra headers.

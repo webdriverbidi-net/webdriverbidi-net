@@ -29,6 +29,28 @@ public class SetExtraHeadersCommandParametersTests
     }
 
     [Test]
+    public void TestCanSetHeadersUsingProperty()
+    {
+        SetExtraHeadersCommandParameters properties = new()
+        {
+            Headers = ["X-Extra-Header: headerValue"],
+        };
+        string json = JsonSerializer.Serialize(properties);
+        JObject serialized = JObject.Parse(json);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(serialized, Has.Count.EqualTo(1));
+            Assert.That(serialized, Contains.Key("headers"));
+            Assert.That(serialized["headers"]!.Type, Is.EqualTo(JTokenType.Array));
+            JArray headersArray = (JArray)serialized["headers"]!;
+            Assert.That(headersArray, Has.Count.EqualTo(1));
+            Assert.That(headersArray[0].Type, Is.EqualTo(JTokenType.String));
+            Assert.That(headersArray[0].Value<string>(), Is.EqualTo("X-Extra-Header: headerValue"));
+        }
+        
+    }
+
+    [Test]
     public void TestCanSerializeWithContexts()
     {
         SetExtraHeadersCommandParameters properties = new()
