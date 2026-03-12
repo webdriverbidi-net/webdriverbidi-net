@@ -119,6 +119,17 @@ public class ObservableEvent<T>
     /// <exception cref="WebDriverBiDiException">
     /// Thrown when the user attempts to add more observers than this event allows.
     /// </exception>
+    /// <example>
+    /// <code>
+    /// // Synchronous handler (default) - for quick in-memory work
+    /// driver.Log.OnEntryAdded.AddObserver(e => Console.WriteLine(e.Text));
+    ///
+    /// // Async handler with RunHandlerAsynchronously - for I/O or long-running work
+    /// driver.Network.OnBeforeRequestSent.AddObserver(
+    ///     async (e) => await SaveRequestToFileAsync(e.Request),
+    ///     ObservableEventHandlerOptions.RunHandlerAsynchronously);
+    /// </code>
+    /// </example>
     public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.None, string description = "")
     {
         lock (this.observerLock)

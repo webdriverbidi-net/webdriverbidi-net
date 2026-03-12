@@ -13,10 +13,27 @@ using WebDriverBiDi.Protocol;
 /// </summary>
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
 /// <remarks>
+/// <para>
 /// Checkpoint methods (<see cref="SetCheckpoint"/>, <see cref="WaitForCheckpointAsync"/>,
 /// <see cref="WaitForCheckpointAndTasksAsync"/>, <see cref="GetCheckpointTasks"/>,
 /// <see cref="UnsetCheckpoint"/>) are thread-safe. Only one checkpoint may be active at a
 /// time per observer. Multiple threads may wait on the same checkpoint concurrently.
+/// </para>
+/// <para>
+/// <strong>Typical checkpoint flow:</strong> Call <see cref="SetCheckpoint"/> before triggering
+/// the action that produces events, then await <see cref="WaitForCheckpointAsync"/> or
+/// <see cref="WaitForCheckpointAndTasksAsync"/> to synchronize with event delivery.
+/// </para>
+/// <example>
+/// <code>
+/// EventObserver&lt;NavigationEventArgs&gt; observer = driver.BrowsingContext.OnLoad.AddObserver(
+///     e => Console.WriteLine($"Loaded: {e.Url}"));
+/// observer.SetCheckpoint();
+/// await driver.BrowsingContext.NavigateAsync(navParams);
+/// bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
+/// if (loaded) { /* page load event received */ }
+/// </code>
+/// </example>
 /// </remarks>
 public class EventObserver<T> : IDisposable, IAsyncDisposable
     where T : WebDriverBiDiEventArgs
@@ -129,6 +146,14 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// not been satisfied or unset, this method throws <see cref="WebDriverBiDiException"/>.
     /// </para>
     /// </remarks>
+    /// <example>
+    /// <code>
+    /// observer.SetCheckpoint();           // Wait for 1 event
+    /// observer.SetCheckpoint(3);          // Wait for 3 events
+    /// await driver.BrowsingContext.NavigateAsync(navParams);
+    /// bool fulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+    /// </code>
+    /// </example>
     public void SetCheckpoint(uint numberOfNotifications = 1)
     {
         if (numberOfNotifications < 1)
@@ -168,7 +193,20 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// Multiple threads may call this method concurrently on the same observer; all will complete when the
     /// checkpoint is fulfilled.
     /// </para>
+    /// <para>
+    /// For synchronous handlers, this is sufficient. For handlers registered with
+    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>, use
+    /// <see cref="WaitForCheckpointAndTasksAsync"/> to also wait for handler execution to complete.
+    /// </para>
     /// </remarks>
+    /// <example>
+    /// <code>
+    /// observer.SetCheckpoint();
+    /// await driver.BrowsingContext.NavigateAsync(navParams);
+    /// bool notified = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+    /// if (notified) { /* handler was invoked; for sync handlers, it has completed */ }
+    /// </code>
+    /// </example>
     public async Task<bool> WaitForCheckpointAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         Task<bool> completionTask;
@@ -226,6 +264,17 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied. This timeout only applies to waiting for this observer to be notified the proper number of times; it does not apply to the execution of the handlers.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
     /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
+    /// <example>
+    /// <code>
+    /// EventObserver&lt;BeforeRequestSentEventArgs&gt; observer = driver.Network.OnBeforeRequestSent.AddObserver(
+    ///     async (e) => await ProcessRequestAsync(e),
+    ///     ObservableEventHandlerOptions.RunHandlerAsynchronously);
+    /// observer.SetCheckpoint(3);
+    /// await driver.BrowsingContext.NavigateAsync(navParams);
+    /// bool occurred = await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10));
+    /// if (occurred) { /* all 3 events received and handlers completed */ }
+    /// </code>
+    /// </example>
     public async Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         bool checkpointFulfilled = await this.WaitForCheckpointAsync(timeout, cancellationToken).ConfigureAwait(false);
@@ -264,6 +313,16 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// instead of being surfaced again through transport-level event handler error behavior.
     /// </para>
     /// </remarks>
+    /// <example>
+    /// <code>
+    /// bool fulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+    /// if (fulfilled)
+    /// {
+    ///     Task[] handlerTasks = observer.GetCheckpointTasks();
+    ///     await Task.WhenAll(handlerTasks);  // Wait for async handlers, observe exceptions
+    /// }
+    /// </code>
+    /// </example>
     public Task[] GetCheckpointTasks()
     {
         lock (this.checkpointLock)
@@ -279,8 +338,23 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// Unsets an established checkpoint for this observer.
     /// </summary>
     /// <remarks>
-    /// This method is thread-safe.
+    /// This method is thread-safe. Call this when you no longer need to wait for the checkpoint
+    /// (e.g., when cancelling an operation or cleaning up).
     /// </remarks>
+    /// <example>
+    /// <code>
+    /// observer.SetCheckpoint();
+    /// try
+    /// {
+    ///     await TriggerEventsAsync();
+    ///     await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
+    /// }
+    /// finally
+    /// {
+    ///     observer.UnsetCheckpoint();  // Ensure checkpoint is cleared if wait times out or is cancelled
+    /// }
+    /// </code>
+    /// </example>
     public void UnsetCheckpoint()
     {
         lock (this.checkpointLock)
