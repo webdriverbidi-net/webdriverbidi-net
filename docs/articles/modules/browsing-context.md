@@ -121,6 +121,20 @@ To restore the viewport to its default dimensions, use `SetViewportCommandParame
 
 [!code-csharp[Reset Viewport to Default](../../code/modules/BrowsingContextModuleSamples.cs#ResetViewportToDefault)]
 
+## Content Security Policy Bypass
+
+Use `SetBypassCSPAsync` to enable or disable Content Security Policy (CSP) bypass for specific browsing contexts. This is useful when testing pages that enforce strict CSP rules or when loading resources that would otherwise be blocked.
+
+### Enable CSP Bypass
+
+[!code-csharp[Enable CSP Bypass](../../code/modules/BrowsingContextModuleSamples.cs#EnableCSPBypass)]
+
+### Clear CSP Bypass Override
+
+To restore default CSP behavior, use `SetBypassCSPCommandParameters.ResetBypassCSP`:
+
+[!code-csharp[Clear CSP Bypass Override](../../code/modules/BrowsingContextModuleSamples.cs#ClearCSPBypassOverride)]
+
 ## Capturing Screenshots
 
 ### Screenshot of Entire Viewport

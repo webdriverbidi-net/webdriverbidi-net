@@ -351,6 +351,35 @@ public static class BrowsingContextModuleSamples
     }
 
     /// <summary>
+    /// Enable CSP bypass.
+    /// </summary>
+    public static async Task EnableCSPBypass(BiDiDriver driver, string contextId)
+    {
+#region EnableCSPBypass
+        SetBypassCSPCommandParameters parameters = new SetBypassCSPCommandParameters
+        {
+            Contexts = new List<string> { contextId },
+            Bypass = true
+        };
+
+        await driver.BrowsingContext.SetBypassCSPAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Clear CSP bypass override.
+    /// </summary>
+    public static async Task ClearCSPBypassOverride(BiDiDriver driver, string contextId)
+    {
+#region ClearCSPBypassOverride
+        SetBypassCSPCommandParameters parameters = SetBypassCSPCommandParameters.ResetBypassCSP;
+        parameters.Contexts = new List<string> { contextId };
+
+        await driver.BrowsingContext.SetBypassCSPAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
     /// Screenshot of entire viewport.
     /// </summary>
     public static async Task ScreenshotOfViewport(BiDiDriver driver, string contextId)
