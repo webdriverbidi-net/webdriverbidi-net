@@ -159,11 +159,11 @@ The high default timeout is **intentional** because:
 
 **The Solution:**
 
-Set appropriate timeouts for your use case:
+Set appropriate timeouts for your use case. **Prefer the `timeoutOverride` parameter on module methods** (e.g., `NavigateAsync(parameters, TimeSpan.FromSeconds(60))`) over `ExecuteCommandAsync` when you need per-command overrides:
 
 [!code-csharp[Configure Timeouts](../code/common-pitfalls/CommonPitfallsSamples.cs#ConfigureTimeouts)]
 
-**Key Takeaway:** The 60-second default is intentionally set to accommodate slow operations. Choose a timeout that matches your typical use case, and override per-command when needed.
+**Key Takeaway:** The 60-second default is intentionally set to accommodate slow operations. Choose a timeout that matches your typical use case, and use the `timeoutOverride` parameter on module methods when only specific commands need a different timeout.
 
 ---
 

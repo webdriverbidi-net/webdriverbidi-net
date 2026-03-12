@@ -200,6 +200,8 @@ JavaScript errors are returned as `EvaluateResultException` rather than thrown:
 
 ## Timeout Handling
 
+For per-command timeouts, **prefer the built-in `timeoutOverride` parameter** over custom patterns (e.g., `Task.WhenAny` with `Task.Delay`). Use custom patterns only when you need different semantics than the built-in timeout.
+
 ### Preferred Approach: Use the Built-in Timeout Override
 
 The simplest and recommended way to set a per-command timeout is the `timeoutOverride` parameter on module methods. Every module command accepts this as the second parameter:

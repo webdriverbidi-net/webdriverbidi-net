@@ -59,9 +59,11 @@ Configure command timeout when creating the driver:
 
 [!code-csharp[Command Timeout Configuration](../code/core-concepts/CoreConceptsSamples.cs#CommandTimeoutConfiguration)]
 
-The timeout applies to all command executions by default, but can be overridden per-command:
+The timeout applies to all command executions by default, but can be overridden per-command. **Prefer the `timeoutOverride` parameter on module methods** (e.g., `NavigateAsync(parameters, TimeSpan.FromSeconds(60))`) as the standard way to set per-command timeouts:
 
 [!code-csharp[Per-Command Timeout Override](../code/core-concepts/CoreConceptsSamples.cs#Per-CommandTimeoutOverride)]
+
+For timeout patterns (returning `null` instead of throwing, custom retry logic), see [Error Handling - Timeout Handling](advanced/error-handling.md#timeout-handling).
 
 #### Proper Disposal
 
@@ -264,7 +266,7 @@ JavaScript errors are returned as `EvaluateResultException`:
 
 ### Timeouts
 
-Commands that exceed the timeout will throw an exception:
+Commands that exceed the timeout will throw an exception. Use the `timeoutOverride` parameter on module methods to set per-command timeouts:
 
 [!code-csharp[Timeout Handling](../code/core-concepts/CoreConceptsSamples.cs#TimeoutHandling)]
 

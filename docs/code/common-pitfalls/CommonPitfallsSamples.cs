@@ -312,15 +312,14 @@ public static class CommonPitfallsSamples
         // ✅ For slow operations or large pages
         BiDiDriver slowDriver = new BiDiDriver(TimeSpan.FromMinutes(2));
 
-        // ✅ Override per-command for specific cases
+        // ✅ Override per-command for specific cases (preferred: use timeoutOverride on module method)
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         // Most commands use 30 second timeout
 
         // But this specific navigation gets longer timeout
-        await driver.ExecuteCommandAsync<NavigateCommandResult>(
+        await driver.BrowsingContext.NavigateAsync(
             slowPageParams,
-            TimeSpan.FromMinutes(5)
-        );
+            TimeSpan.FromMinutes(5));
 #endregion
     }
 

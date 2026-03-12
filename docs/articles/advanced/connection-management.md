@@ -81,6 +81,8 @@ Only use this pattern if you need custom connection timeout configuration:
 
 [!code-csharp[Driver timeout](../../code/advanced/ConnectionManagementSamples.cs#Drivertimeout)]
 
+**Command timeouts vs. connection timeouts:** The settings above (StartupTimeout, DataTimeout, etc.) control connection-level behavior. For command execution timeouts (e.g., how long to wait for a navigation or script to complete), use the `timeoutOverride` parameter on module methods or `BiDiDriver`'s default command timeout. See [Error Handling - Timeout Handling](error-handling.md#timeout-handling).
+
 ## Connection Configuration
 
 ### Timeout Settings

@@ -50,7 +50,7 @@ Always check the XML documentation on the property for the rationale. See [Core 
 
 ## Timeout and Cancellation
 
-Every module command accepts two optional parameters. **This is the preferred way to set per-command timeouts** when using the module API (e.g., `driver.BrowsingContext.NavigateAsync`):
+Every module command accepts two optional parameters. **This is the preferred way to set per-command timeouts** when using the module API (e.g., `driver.BrowsingContext.NavigateAsync`). Prefer this over `ExecuteCommandAsync` when you need per-command timeout control:
 
 ```csharp
 Task<T> CommandAsync(

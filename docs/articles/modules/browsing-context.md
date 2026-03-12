@@ -61,6 +61,8 @@ Readiness states:
 
 ### Navigation with Timeout
 
+Use the `timeoutOverride` parameter (second argument to `NavigateAsync`) to fail fast when a page takes too long to load:
+
 [!code-csharp[Navigation with Timeout](../../code/modules/BrowsingContextModuleSamples.cs#NavigationwithTimeout)]
 
 ### Back/Forward Navigation

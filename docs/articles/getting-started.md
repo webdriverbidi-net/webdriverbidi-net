@@ -270,7 +270,7 @@ Now that you have a working WebDriverBiDi.NET application, explore these topics:
 
 ### "Timeout waiting for command" Error
 
-- Increase the timeout when creating the `BiDiDriver`
+- Increase the timeout when creating the `BiDiDriver`, or override for specific commands using the `timeoutOverride` parameter on module methods (e.g., `NavigateAsync(parameters, TimeSpan.FromSeconds(120))`)
 - Check that the browser is responsive
 - Ensure the command parameters are valid
 
