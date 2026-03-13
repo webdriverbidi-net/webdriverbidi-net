@@ -25,6 +25,46 @@ public static class SessionModuleSamples
     }
 
     /// <summary>
+    /// Create a new session.
+    /// </summary>
+    public static async Task NewSession(BiDiDriver driver)
+    {
+#region NewSession
+        NewCommandParameters parameters = new NewCommandParameters();
+
+        NewCommandResult result = await driver.Session.NewSessionAsync(parameters);
+
+        string sessionId = result.SessionId;
+        Console.WriteLine($"Session ID: {result.SessionId}");
+        Console.WriteLine($"Browser: {result.Capabilities.BrowserName} {result.Capabilities.BrowserVersion}");
+#endregion
+    }
+
+    /// <summary>
+    /// Create a new session with capability requests.
+    /// </summary>
+    public static async Task NewSessionWithCapabilities(BiDiDriver driver)
+    {
+#region NewSessionWithCapabilities
+        CapabilityRequest capabilities = new CapabilityRequest
+        {
+            BrowserName = "chrome",
+            AcceptInsecureCertificates = true,
+        };
+
+        NewCommandParameters parameters = new NewCommandParameters
+        {
+            Capabilities = new CapabilitiesRequest
+            {
+                AlwaysMatch = capabilities,
+            },
+        };
+
+        NewCommandResult result = await driver.Session.NewSessionAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
     /// Check session status.
     /// </summary>
     public static async Task CheckSessionStatus(BiDiDriver driver)
