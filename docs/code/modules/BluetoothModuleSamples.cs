@@ -13,6 +13,7 @@ using WebDriverBiDi;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Snippets for Bluetooth module documentation. Compiled at build time to prevent API drift.
@@ -229,6 +230,269 @@ public static class BluetoothModuleSamples
             string connectionStatus = success.Result.ValueAs<string>();
             Console.WriteLine($"Connection status: {connectionStatus}");
         }
+#endregion
+    }
+
+    /// <summary>
+    /// Simulate Bluetooth adapter state.
+    /// </summary>
+    public static async Task SimulateAdapter(BiDiDriver driver, string contextId)
+    {
+#region SimulateAdapter
+        // Simulate adapter powered on
+        SimulateAdapterCommandParameters parameters =
+            new SimulateAdapterCommandParameters(contextId, AdapterState.PoweredOn);
+        await driver.Bluetooth.SimulateAdapterAsync(parameters);
+
+        // Or simulate adapter absent or powered off
+        await driver.Bluetooth.SimulateAdapterAsync(
+            new SimulateAdapterCommandParameters(contextId, AdapterState.Absent));
+#endregion
+    }
+
+    /// <summary>
+    /// Disable Bluetooth simulation.
+    /// </summary>
+    public static async Task DisableSimulation(BiDiDriver driver, string contextId)
+    {
+#region DisableSimulation
+        DisableSimulationCommandParameters parameters =
+            new DisableSimulationCommandParameters(contextId);
+        await driver.Bluetooth.DisableSimulationAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Handle request device prompt - accept or cancel.
+    /// </summary>
+    public static async Task HandleRequestDevicePrompt(BiDiDriver driver)
+    {
+#region HandleRequestDevicePrompt
+        // Accept the prompt and select a device
+        HandleRequestDevicePromptAcceptCommandParameters acceptParams =
+            new HandleRequestDevicePromptAcceptCommandParameters(
+                "contextId",
+                "promptId",
+                "deviceId");
+        await driver.Bluetooth.HandleRequestDevicePromptAsync(acceptParams);
+
+        // Or cancel the prompt
+        HandleRequestDevicePromptCancelCommandParameters cancelParams =
+            new HandleRequestDevicePromptCancelCommandParameters("contextId", "promptId");
+        await driver.Bluetooth.HandleRequestDevicePromptAsync(cancelParams);
+#endregion
+    }
+
+    /// <summary>
+    /// Simulate GATT service.
+    /// </summary>
+    public static async Task SimulateService(BiDiDriver driver, string contextId)
+    {
+#region SimulateService
+        SimulateServiceCommandParameters addParams =
+            new SimulateServiceCommandParameters(
+                contextId,
+                "AA:BB:CC:DD:EE:FF",
+                "heart_rate",
+                SimulateServiceType.Add);
+        await driver.Bluetooth.SimulateServiceAsync(addParams);
+
+        // Remove service
+        SimulateServiceCommandParameters removeParams =
+            new SimulateServiceCommandParameters(
+                contextId,
+                "AA:BB:CC:DD:EE:FF",
+                "heart_rate",
+                SimulateServiceType.Remove);
+        await driver.Bluetooth.SimulateServiceAsync(removeParams);
+#endregion
+    }
+
+    /// <summary>
+    /// Simulate GATT characteristic.
+    /// </summary>
+    public static async Task SimulateCharacteristic(BiDiDriver driver, string contextId)
+    {
+#region SimulateCharacteristic
+        CharacteristicProperties properties = new CharacteristicProperties
+        {
+            IsRead = true,
+            IsNotify = true,
+        };
+
+        SimulateCharacteristicCommandParameters parameters =
+            new SimulateCharacteristicCommandParameters(
+                contextId,
+                "AA:BB:CC:DD:EE:FF",
+                "heart_rate",
+                "heart_rate_measurement",
+                SimulateCharacteristicType.Add)
+        {
+            CharacteristicProperties = properties,
+        };
+        await driver.Bluetooth.SimulateCharacteristicAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Simulate characteristic response.
+    /// </summary>
+    public static async Task SimulateCharacteristicResponse(BiDiDriver driver, string contextId)
+    {
+#region SimulateCharacteristicResponse
+        // Simulate successful read response (code 0 = success)
+        SimulateCharacteristicResponseCommandParameters readParams =
+            new SimulateCharacteristicResponseCommandParameters(
+                contextId,
+                "AA:BB:CC:DD:EE:FF",
+                "heart_rate",
+                "heart_rate_measurement",
+                SimulateCharacteristicResponseType.Read,
+                0)
+        {
+            Data = new List<uint> { 0x64 },  // Heart rate value 100
+        };
+        await driver.Bluetooth.SimulateCharacteristicResponseAsync(readParams);
+#endregion
+    }
+
+    /// <summary>
+    /// Simulate GATT descriptor.
+    /// </summary>
+    public static async Task SimulateDescriptor(BiDiDriver driver, string contextId)
+    {
+#region SimulateDescriptor
+        SimulateDescriptorCommandParameters parameters =
+            new SimulateDescriptorCommandParameters(
+                contextId,
+                "AA:BB:CC:DD:EE:FF",
+                "heart_rate",
+                "heart_rate_measurement",
+                "gatt.characteristic_user_description",
+                SimulateDescriptorType.Add);
+        await driver.Bluetooth.SimulateDescriptorAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Simulate descriptor response.
+    /// </summary>
+    public static async Task SimulateDescriptorResponse(BiDiDriver driver, string contextId)
+    {
+#region SimulateDescriptorResponse
+        SimulateDescriptorResponseCommandParameters parameters =
+            new SimulateDescriptorResponseCommandParameters(
+                contextId,
+                "AA:BB:CC:DD:EE:FF",
+                "heart_rate",
+                "heart_rate_measurement",
+                "gatt.characteristic_user_description",
+                SimulateDescriptorResponseType.Read,
+                0)
+        {
+            Data = new List<uint> { 0x48, 0x65, 0x61, 0x72, 0x74, 0x20, 0x52, 0x61, 0x74, 0x65 },
+        };
+        await driver.Bluetooth.SimulateDescriptorResponseAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Simulate GATT connection response.
+    /// </summary>
+    public static async Task SimulateGattConnectionResponse(BiDiDriver driver, string contextId)
+    {
+#region SimulateGattConnectionResponse
+        // Code 0 = success
+        SimulateGattConnectionResponseCommandParameters successParams =
+            new SimulateGattConnectionResponseCommandParameters(
+                contextId,
+                "AA:BB:CC:DD:EE:FF",
+                0);
+        await driver.Bluetooth.SimulateGattConnectionResponseAsync(successParams);
+#endregion
+    }
+
+    /// <summary>
+    /// Simulate GATT disconnection.
+    /// </summary>
+    public static async Task SimulateGattDisconnection(BiDiDriver driver, string contextId)
+    {
+#region SimulateGattDisconnection
+        SimulateGattDisconnectionCommandParameters parameters =
+            new SimulateGattDisconnectionCommandParameters(contextId, "AA:BB:CC:DD:EE:FF");
+        await driver.Bluetooth.SimulateGattDisconnectionAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Request device prompt updated event.
+    /// </summary>
+    public static async Task RequestDevicePromptUpdated(BiDiDriver driver)
+    {
+#region RequestDevicePromptUpdated
+        driver.Bluetooth.OnRequestDevicePromptUpdated.AddObserver((RequestDevicePromptUpdatedEventArgs e) =>
+        {
+            Console.WriteLine($"Prompt {e.Prompt} in context {e.BrowsingContextId}");
+            foreach (RequestDeviceInfo device in e.Devices)
+            {
+                Console.WriteLine($"  Device: {device.DeviceName} ({device.DeviceId})");
+            }
+        });
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Bluetooth.OnRequestDevicePromptUpdated.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+#endregion
+    }
+
+    /// <summary>
+    /// GATT connection attempted event.
+    /// </summary>
+    public static async Task GattConnectionAttempted(BiDiDriver driver)
+    {
+#region GattConnectionAttempted
+        driver.Bluetooth.OnGattConnectionAttempted.AddObserver((GattConnectionAttemptedEventArgs e) =>
+        {
+            Console.WriteLine($"GATT connection attempted: {e.Address} in context {e.BrowsingContextId}");
+        });
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Bluetooth.OnGattConnectionAttempted.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+#endregion
+    }
+
+    /// <summary>
+    /// Characteristic event generated.
+    /// </summary>
+    public static async Task CharacteristicEventGenerated(BiDiDriver driver)
+    {
+#region CharacteristicEventGenerated
+        driver.Bluetooth.OnCharacteristicGeneratedEvent.AddObserver((CharacteristicEventGeneratedEventArgs e) =>
+        {
+            Console.WriteLine($"Characteristic {e.CharacteristicUuid} event: {e.Type}");
+        });
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Bluetooth.OnCharacteristicGeneratedEvent.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+#endregion
+    }
+
+    /// <summary>
+    /// Descriptor event generated.
+    /// </summary>
+    public static async Task DescriptorEventGenerated(BiDiDriver driver)
+    {
+#region DescriptorEventGenerated
+        driver.Bluetooth.OnDescriptorGeneratedEvent.AddObserver((DescriptorEventGeneratedEventArgs e) =>
+        {
+            Console.WriteLine($"Descriptor {e.DescriptorUuid} event: {e.Type}");
+        });
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Bluetooth.OnDescriptorGeneratedEvent.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
 #endregion
     }
 }
