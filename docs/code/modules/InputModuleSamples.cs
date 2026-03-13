@@ -10,6 +10,7 @@ using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Script;
+using WebDriverBiDi.Session;
 
 /// <summary>
 /// Snippets for Input module documentation. Compiled at build time to prevent API drift.
@@ -168,6 +169,57 @@ public static class InputModuleSamples
         // Release all pressed keys/buttons
         ReleaseActionsCommandParameters parameters = new ReleaseActionsCommandParameters(contextId);
         await driver.Input.ReleaseActionsAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// Set files on a file input element.
+    /// </summary>
+    public static async Task SetFiles(BiDiDriver driver, string contextId)
+    {
+#region SetFiles
+        LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
+            new LocateNodesCommandParameters(contextId, new CssLocator("input[type='file']")));
+
+        RemoteValue element = locateResult.Nodes[0];
+
+        SetFilesCommandParameters parameters = new SetFilesCommandParameters(
+            contextId,
+            element.ToSharedReference());
+
+        parameters.Files.Add("/path/to/file1.txt");
+        parameters.Files.Add("/path/to/file2.png");
+
+        await driver.Input.SetFilesAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
+    /// File dialog opened event - handle and optionally provide files via SetFilesAsync.
+    /// </summary>
+    public static async Task FileDialogOpened(BiDiDriver driver)
+    {
+#region FileDialogOpened
+        driver.Input.OnFileDialogOpened.AddObserver(async (FileDialogOpenedEventArgs e) =>
+        {
+            Console.WriteLine($"File dialog opened in context {e.BrowsingContextId}");
+            Console.WriteLine($"Multiple files: {e.IsMultiple}");
+
+            if (e.Element != null)
+            {
+                SetFilesCommandParameters parameters = new SetFilesCommandParameters(
+                    e.BrowsingContextId,
+                    e.Element);
+
+                parameters.Files.Add("/path/to/upload.txt");
+                await driver.Input.SetFilesAsync(parameters);
+            }
+        },
+        ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Input.OnFileDialogOpened.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
 #endregion
     }
 

@@ -46,6 +46,24 @@ All commands in this module accept optional `timeoutOverride` and `CancellationT
 
 [!code-csharp[Release Actions](../../code/modules/InputModuleSamples.cs#ReleaseActions)]
 
+### Set Files on File Input
+
+Use `SetFilesAsync` to programmatically set files on an `input type="file"` element without opening the file dialog. Locate the file input element, create `SetFilesCommandParameters` with the browsing context and element reference, add file paths to the `Files` collection, and call `SetFilesAsync`:
+
+[!code-csharp[Set Files](../../code/modules/InputModuleSamples.cs#SetFiles)]
+
+The file path format depends on the browser and driver; consult your driver documentation for supported formats.
+
+## Events
+
+### FileDialogOpened
+
+The `OnFileDialogOpened` event fires when a file dialog is opened (for example, when a user clicks an `input type="file"` element). Subscribe to the event to handle file dialogs programmatically. When the event includes an `Element` reference, you can use `SetFilesAsync` with that element to provide files without the user selecting them:
+
+[!code-csharp[File Dialog Opened](../../code/modules/InputModuleSamples.cs#FileDialogOpened)]
+
+Remember to call `Session.SubscribeAsync` with the event name before the file dialog can be triggered. Use `ObservableEventHandlerOptions.RunHandlerAsynchronously` when the handler calls commands such as `SetFilesAsync`.
+
 ## Common Key Constants
 
 Use Unicode values for special keys: Enter `\uE007`, Tab `\uE004`, Control `\uE009`, etc. A partial list is in the table below.
