@@ -402,6 +402,19 @@ public static class NetworkModuleSamples
     }
 
     /// <summary>
+    /// Release response body data held by a data collector.
+    /// </summary>
+    public static async Task DisownData(BiDiDriver driver, string collectorId, string requestId)
+    {
+#region DisownData
+        DisownDataCommandParameters parameters =
+            new DisownDataCommandParameters(collectorId, requestId);
+
+        await driver.Network.DisownDataAsync(parameters);
+#endregion
+    }
+
+    /// <summary>
     /// Remove data collector.
     /// </summary>
     public static async Task RemoveDataCollector(BiDiDriver driver, string collectorId)

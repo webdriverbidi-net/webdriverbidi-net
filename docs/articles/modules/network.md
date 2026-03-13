@@ -111,6 +111,14 @@ To capture response bodies, you must set up a data collector.
 
 [!code-csharp[Get Response Body](../../code/modules/NetworkModuleSamples.cs#GetResponseBody)]
 
+### Release Response Body Data (DisownDataAsync)
+
+Use `DisownDataAsync` to release response-body data held by a data collector when you no longer need it. This frees memory without retrieving the data first. Construct `DisownDataCommandParameters` with the collector ID and request ID:
+
+[!code-csharp[Disown Data](../../code/modules/NetworkModuleSamples.cs#DisownData)]
+
+Alternatively, you can set `DisownCollectedData = true` when calling `GetDataAsync` to release the data immediately after retrieval.
+
 ### Remove Data Collector
 
 [!code-csharp[Remove Data Collector](../../code/modules/NetworkModuleSamples.cs#RemoveDataCollector)]

@@ -69,6 +69,10 @@ Use the `timeoutOverride` parameter (second argument to `NavigateAsync`) to fail
 
 [!code-csharp[Navigation with Timeout](../../code/modules/BrowsingContextModuleSamples.cs#NavigationwithTimeout)]
 
+### Traversing History
+
+Use `TraverseHistoryAsync` to navigate back or forward in the browser history. The method takes a `TraverseHistoryCommandParameters` object with the browsing context ID and a delta value: negative for back, positive for forward. The method returns `TraverseHistoryCommandResult` (an empty result indicating success).
+
 ### Back/Forward Navigation
 
 [!code-csharp[Back/Forward Navigation](../../code/modules/BrowsingContextModuleSamples.cs#Back/ForwardNavigation)]
