@@ -207,6 +207,72 @@ public class ScriptSamples
     }
 
     /// <summary>
+    /// Get realms - all or filtered by context/type.
+    /// </summary>
+    public static async Task GetRealms(BiDiDriver driver, string contextId)
+    {
+#region GetRealms
+        // Get all realms (parameters optional)
+        GetRealmsCommandResult result = await driver.Script.GetRealmsAsync();
+
+        foreach (RealmInfo realm in result.Realms)
+        {
+            Console.WriteLine($"Realm: {realm.RealmId}, Type: {realm.Type}");
+
+            if (realm is WindowRealmInfo windowRealm)
+            {
+                Console.WriteLine($"  Context: {windowRealm.BrowsingContext}");
+            }
+        }
+
+        // Filter by browsing context
+        GetRealmsCommandParameters contextParams = new GetRealmsCommandParameters
+        {
+            BrowsingContextId = contextId,
+        };
+        result = await driver.Script.GetRealmsAsync(contextParams);
+
+        // Filter by realm type (e.g., window realms only)
+        GetRealmsCommandParameters typeParams = new GetRealmsCommandParameters
+        {
+            BrowsingContextId = contextId,
+            RealmType = RealmType.Window,
+        };
+        result = await driver.Script.GetRealmsAsync(typeParams);
+#endregion
+    }
+
+    /// <summary>
+    /// Disown handles to allow garbage collection.
+    /// </summary>
+    public static async Task DisownHandles(BiDiDriver driver, string contextId)
+    {
+#region Disown
+        EvaluateResult evalResult = await driver.Script.EvaluateAsync(
+            new EvaluateCommandParameters(
+                "document.querySelector('button')",
+                new ContextTarget(contextId),
+                true));
+
+        if (evalResult is EvaluateResultSuccess success)
+        {
+            RemoteValue element = success.Result;
+            string? handle = element.SharedId;
+
+            if (handle != null)
+            {
+                // Release the handle when no longer needed
+                DisownCommandParameters parameters = new DisownCommandParameters(
+                    new ContextTarget(contextId),
+                    handle);
+
+                await driver.Script.DisownAsync(parameters);
+            }
+        }
+#endregion
+    }
+
+    /// <summary>
     /// Sandboxed execution - ContextTarget with Sandbox.
     /// </summary>
     public static async Task SandboxedExecution(

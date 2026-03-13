@@ -61,6 +61,14 @@ Execute in a specific execution realm:
 
 [!code-csharp[Realm Target](../../code/script/ScriptSamples.cs#RealmTarget)]
 
+### Get Realms
+
+Use `GetRealmsAsync` to enumerate script execution realms. Realms represent JavaScript execution contexts (window, workers, worklets). The command accepts optional `GetRealmsCommandParameters` to filter by browsing context and realm type. Call with `null` or empty parameters to get all realms:
+
+[!code-csharp[Get Realms](../../code/script/ScriptSamples.cs#GetRealms)]
+
+Use the returned `RealmId` with `RealmTarget` to execute script in a specific realm. `WindowRealmInfo` provides `BrowsingContext` and `Sandbox` for window realms.
+
 ### Sandboxed Execution
 
 Execute in a sandbox to isolate from page scripts:
@@ -110,6 +118,14 @@ Preload script arguments in WebDriver BiDi use channels to pass values. Use `Cha
 ### Working with DOM Elements
 
 [!code-csharp[Working with DOM Elements](../../code/script/ScriptSamples.cs#WorkingwithDOMElements)]
+
+### Disowning Handles
+
+When you evaluate or call functions that return object references (e.g., DOM elements), the browser keeps those objects alive. Use `DisownAsync` to release handles when you no longer need them, allowing the script engine to garbage collect the objects. Pass the target (context or realm) and the handle values (from `RemoteValue.SharedId`):
+
+[!code-csharp[Disown](../../code/script/ScriptSamples.cs#Disown)]
+
+Disowning is optional but recommended when you hold many references or run long-lived automation to avoid memory growth.
 
 ## Creating Local Values
 
