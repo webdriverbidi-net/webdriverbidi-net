@@ -101,6 +101,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </remarks>
     public BiDiDriver(TimeSpan defaultCommandWaitTimeout, Transport transport)
     {
+        if (defaultCommandWaitTimeout < TimeSpan.Zero && defaultCommandWaitTimeout != Timeout.InfiniteTimeSpan)
+        {
+            throw new ArgumentOutOfRangeException(nameof(defaultCommandWaitTimeout), "Default command wait timeout must be a non-negative TimeSpan value");
+        }
+
         this.DefaultCommandTimeout = defaultCommandWaitTimeout;
 
         this.transport = transport;
@@ -396,6 +401,10 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         }
 
         commandTimeout ??= this.DefaultCommandTimeout;
+        if (commandTimeout.Value < TimeSpan.Zero && commandTimeout.Value != Timeout.InfiniteTimeSpan)
+        {
+            throw new ArgumentOutOfRangeException(nameof(commandTimeout), "Command timeout must be a non-negative TimeSpan value");
+        }
 
         Command command = await this.transport.SendCommandAsync(commandParameters, cancellationToken).ConfigureAwait(false);
         try

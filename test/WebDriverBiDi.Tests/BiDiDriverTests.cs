@@ -1213,6 +1213,117 @@ public class BiDiDriverTests
     }
 
     [Test]
+    public async Task TestExecuteCommandAsyncWithNegativeTimeoutThrows()
+    {
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+        CommandParameters command = new TestCommandParameters("module.command");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromSeconds(-5)), Throws.InstanceOf<ArgumentOutOfRangeException>());
+    }
+
+    [Test]
+    public async Task TestExecuteCommandAsyncWithZeroTimeoutDoesNotThrowArgumentOutOfRangeException()
+    {
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        {
+            // force a delay in responding to ensure that the timeout is actually being applied
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            string eventJson = """
+                               {
+                                 "type": "success",
+                                 "id": 1,
+                                 "result": {
+                                   "value": "command result value"
+                                 }
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(eventJson);
+        };
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        CommandParameters command = new TestCommandParameters("module.command");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.Zero), Throws.InstanceOf<WebDriverBiDiTimeoutException>());
+    }
+
+    [Test]
+    public async Task TestExecuteCommandAsyncWithExplicitPositiveTimeoutSucceeds()
+    {
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        {
+            string eventJson = """
+                               {
+                                 "type": "success",
+                                 "id": 1,
+                                 "result": {
+                                   "value": "command result value"
+                                 }
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(eventJson);
+        };
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        CommandParameters command = new TestCommandParameters("module.command");
+        TestCommandResult result = await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromSeconds(5));
+        Assert.That(result.Value, Is.EqualTo("command result value"));
+    }
+
+    [Test]
+    public async Task TestExecuteCommandAsyncWithInfiniteTimeoutDoesNotThrow()
+    {
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        {
+            string eventJson = """
+                               {
+                                 "type": "success",
+                                 "id": 1,
+                                 "result": {
+                                   "value": "command result value"
+                                 }
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(eventJson);
+        };
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        CommandParameters command = new TestCommandParameters("module.command");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, Timeout.InfiniteTimeSpan), Throws.Nothing);
+    }
+
+    [Test]
+    public async Task TestExecuteCommandAsyncWithNullTimeoutDoesNotThrow()
+    {
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        {
+            // force a delay in responding to ensure that the timeout is actually being applied
+            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            string eventJson = """
+                               {
+                                 "type": "success",
+                                 "id": 1,
+                                 "result": {
+                                   "value": "command result value"
+                                 }
+                               }
+                               """;
+            await connection.RaiseDataReceivedEventAsync(eventJson);
+        };
+        TestTransport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync("ws://localhost:5555");
+        CommandParameters command = new TestCommandParameters("module.command");
+        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, null), Throws.Nothing);
+    }
+
+    [Test]
     public async Task TestRegisterEventWithNullEventNameThrows()
     {
         Func<EventInfo<TestEventArgs>, Task> eventInvoker = (eventData) => Task.CompletedTask;
@@ -1276,5 +1387,29 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         Assert.That(() => driver.RegisterTypeInfoResolver(null!), Throws.InstanceOf<ArgumentNullException>());
+    }
+
+    [Test]
+    public void TestCreatingWithNegativeDefaultCommandTimeoutThrows()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        Assert.That(() => new BiDiDriver(TimeSpan.FromSeconds(-1), transport), Throws.InstanceOf<ArgumentOutOfRangeException>());
+    }
+
+    [Test]
+    public void TestCreatingWithZeroDefaultCommandTimeoutDoesNotThrow()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        Assert.That(() => new BiDiDriver(TimeSpan.Zero, transport), Throws.Nothing);
+    }
+
+    [Test]
+    public void TestCreatingWithInfiniteDefaultCommandTimeoutDoesNotThrow()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        Assert.That(() => new BiDiDriver(Timeout.InfiniteTimeSpan, transport), Throws.Nothing);
     }
 }
