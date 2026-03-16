@@ -148,3 +148,9 @@ following command:
     docfx serve docs/_site
 
 This will serve a local copy of the documentation at http://localhost:8080.
+
+## Prompts
+The `prompts` directory contains prompts that one can use to prompt a large language
+model (LLM), colloquially known as "AI," to aid in development of this library.
+This directory is _not_ intended as a place for prompts to use while _using_ the
+library at this time.
