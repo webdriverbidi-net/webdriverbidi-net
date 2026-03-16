@@ -243,13 +243,14 @@ This also applies to exceptions from handlers using `ObservableEventHandlerOptio
 
 **The Problem:**
 
-While many operations in WebDriverBiDi.NET are thread-safe, not all concurrent scenarios are supported. Avoid adding multiple observers concurrently to the same event.
+While many operations in WebDriverBiDi.NET are thread-safe, not all concurrent scenarios are supported.
 
 **What IS Thread-Safe:**
 
 - `BiDiDriver.RegisterModule()`
 - Command execution (`ExecuteCommandAsync`)
 - Event observer notification
+- Adding and removing observers (`AddObserver`, `RemoveObserver`, `Unobserve`) on the same event
 - Transport message processing
 - EventObserver checkpoint methods (`SetCheckpoint`, `WaitForCheckpointAsync`,
 `WaitForCheckpointAndTasksAsync`, `GetCheckpointTasks`, `UnsetCheckpoint`) - multiple
@@ -257,7 +258,6 @@ threads may wait on the same checkpoint; only one checkpoint per observer at a t
 
 **What to Be Careful With:**
 
-- Adding multiple observers concurrently to the same event
 - Modifying shared state from multiple event handlers
 - Concurrent access to command parameter objects
 
@@ -265,7 +265,7 @@ threads may wait on the same checkpoint; only one checkpoint per observer at a t
 
 [!code-csharp[Thread Safety Example](../code/common-pitfalls/CommonPitfallsSamples.cs#ThreadSafetyExample)]
 
-**Key Takeaway:** While the transport layer is thread-safe, setup operations (registration, observer management) should typically be done sequentially. Command execution is safe to parallelize.
+**Key Takeaway:** Transport processing, command execution, and observer registration/removal are thread-safe. You can parallelize those operations, but still protect any shared mutable application state used by handlers.
 
 ---
 
