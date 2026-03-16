@@ -1,4 +1,4 @@
-﻿// <copyright file="WebSocketConnection.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="WebSocketConnection.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -151,7 +151,7 @@ public class WebSocketConnection : Connection
         await this.LogAsync($"Closing connection").ConfigureAwait(false);
         if (this.client.State != WebSocketState.Open)
         {
-            await this.LogAsync($"Socket already closed (Socket state: {this.client.State})").ConfigureAwait(false);
+            await this.LogAsync($"Client state is {this.client.State}").ConfigureAwait(false);
         }
         else
         {

@@ -548,14 +548,14 @@ public class BiDiDriverTests
         Server server = new();
         ServerEventObserver<ServerDataReceivedEventArgs> dataReceivedObserver = server.OnDataReceived.AddObserver(handler);
         server.OnClientConnected.AddObserver(connectionHandler);
-        server.Start();
+        await server.StartAsync();
 
         BiDiDriver driver = new();
         await driver.StartAsync($"ws://localhost:{server.Port}");
         bool connectionEventRaised = connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
         await driver.StopAsync();
 
-        server.Stop();
+        await server.StopAsync();
         dataReceivedObserver.Unobserve();
         Assert.That(connectionEventRaised, Is.True);
     }
@@ -573,7 +573,7 @@ public class BiDiDriverTests
 
         Server server = new();
         server.OnClientConnected.AddObserver(connectionHandler);
-        server.Start();
+        await server.StartAsync();
         BiDiDriver driver = new(TimeSpan.FromSeconds(30));
 
         try
@@ -612,7 +612,7 @@ public class BiDiDriverTests
                                  }
                                }
                                """;
-            await server.SendDataAsync(connectionId, eventJson);
+            await server.SendWebSocketDataAsync(connectionId, eventJson);
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             using (Assert.EnterMultipleScope())
             {
@@ -625,7 +625,7 @@ public class BiDiDriverTests
         finally
         {
             await driver.StopAsync();
-            server.Stop();
+            await server.StopAsync();
         }
     }
 
@@ -642,7 +642,7 @@ public class BiDiDriverTests
 
         Server server = new();
         server.OnClientConnected.AddObserver(connectionHandler);
-        server.Start();
+        await server.StartAsync();
         BiDiDriver driver = new();
 
         try
@@ -685,7 +685,7 @@ public class BiDiDriverTests
                             "message": "This is a test error message"
                           }
                           """;
-            await server.SendDataAsync(connectionId, json);
+            await server.SendWebSocketDataAsync(connectionId, json);
             bool eventsRaised = WaitHandle.WaitAll(new WaitHandle[] { logSyncEvent, unknownMessageSyncEvent }, TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             using (Assert.EnterMultipleScope())
@@ -698,7 +698,7 @@ public class BiDiDriverTests
         finally
         {
             await driver.StopAsync();
-            server.Stop();
+            await server.StopAsync();
         }
     }
 
@@ -715,7 +715,7 @@ public class BiDiDriverTests
 
         Server server = new();
         server.OnClientConnected.AddObserver(connectionHandler);
-        server.Start();
+        await server.StartAsync();
         BiDiDriver driver = new();
 
         try
@@ -752,7 +752,7 @@ public class BiDiDriverTests
                                  "message": "This is a test error message"
                                }
                                """;
-            await server.SendDataAsync(connectionId, unparsableJson);
+            await server.SendWebSocketDataAsync(connectionId, unparsableJson);
             bool eventsRaised = WaitHandle.WaitAll([logSyncEvent, unknownMessageSyncEvent], TimeSpan.FromSeconds(1));
             Assert.That(eventsRaised, Is.True);
             using (Assert.EnterMultipleScope())
@@ -765,7 +765,7 @@ public class BiDiDriverTests
         finally
         {
             await driver.StopAsync();
-            server.Stop();
+            await server.StopAsync();
         }
     }
 

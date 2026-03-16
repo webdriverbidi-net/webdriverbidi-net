@@ -10,7 +10,7 @@
 
 
   <ItemGroup>
-    <PackageReference Include="PinchHitter" Version="0.0.14" />
+    <PackageReference Include="PinchHitter" Version="0.0.17" />
   </ItemGroup>
 
   <ItemGroup>

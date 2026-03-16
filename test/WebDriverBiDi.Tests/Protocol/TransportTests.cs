@@ -979,13 +979,13 @@ public class TransportTests
         Server server = new();
         ServerEventObserver<ServerDataReceivedEventArgs> dataReceivedObserver = server.OnDataReceived.AddObserver(dataReceivedHandler);
         ServerEventObserver<ClientConnectionEventArgs> connectedObserver = server.OnClientConnected.AddObserver(connectionHandler);
-        server.Start();
+        await server.StartAsync();
 
         Transport transport = new();
         await transport.ConnectAsync($"ws://localhost:{server.Port}");
         bool connectionEventRaised = connectionSyncEvent.WaitOne(TimeSpan.FromSeconds(1));
 
-        server.Stop();
+        await server.StopAsync();
         dataReceivedObserver.Unobserve();
         connectedObserver.Unobserve(); ;
         Assert.That(connectionEventRaised, Is.True);

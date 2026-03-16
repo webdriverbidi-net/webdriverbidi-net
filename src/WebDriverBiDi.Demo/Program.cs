@@ -43,7 +43,7 @@ launcher.IsBrowserHeadless = isHeadless;
 launcher.OnLogMessage.AddObserver(OnLogMessage);
 try
 {
-    demoSiteServer.Launch();
+    await demoSiteServer.LaunchAsync();
     string baseDemoSiteUrl = $"http://localhost:{demoSiteServer.Port}";
 
     await launcher.StartAsync();
@@ -89,7 +89,7 @@ finally
 {
     await launcher.QuitBrowserAsync();
     await launcher.StopAsync();
-    demoSiteServer.Shutdown();
+    await demoSiteServer.ShutdownAsync();
 }
 
 

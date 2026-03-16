@@ -23,21 +23,21 @@ public class DemoWebSiteServer
     /// <summary>
     /// Launches the server.
     /// </summary>
-    public void Launch()
+    public async Task LaunchAsync()
     {
         StoredContentRegistrar.RegisterDirectory(webServer, string.Empty, Path.Combine(AppContext.BaseDirectory, contentDirectoryName));
         this.webServer.RegisterHandler("/", new RedirectRequestHandler("/index.html"));
-        this.webServer.RegisterHandler("/processForm", HttpMethod.Post, new FormSubmitRequestHandler());
-        this.webServer.RegisterHandler("/cookiePage.html", HttpMethod.Get, new CookiePageRequestHandler());
-        this.webServer.Start();
+        this.webServer.RegisterHandler("/processForm", HttpRequestMethod.Post, new FormSubmitRequestHandler());
+        this.webServer.RegisterHandler("/cookiePage.html", HttpRequestMethod.Get, new CookiePageRequestHandler());
+        await this.webServer.StartAsync();
         Console.WriteLine($"Demo web server listening on port {this.Port}");
     }
 
     /// <summary>
     /// Shuts down the server.
     /// </summary>
-    public void Shutdown()
+    public async Task ShutdownAsync()
     {
-        this.webServer.Stop();
+        await this.webServer.StopAsync();
     }
 }

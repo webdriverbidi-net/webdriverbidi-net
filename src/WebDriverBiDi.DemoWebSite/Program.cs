@@ -1,8 +1,8 @@
 ﻿using WebDriverBiDi.DemoWebSite;
 
 DemoWebSiteServer server = new();
-server.Launch();
+await server.LaunchAsync();
 Console.WriteLine($"Serving pages at http://localhost:{server.Port}.");
 Console.WriteLine("Press <Enter> to shut down the server.");
 Console.ReadLine();
-server.Shutdown();
+await server.ShutdownAsync();

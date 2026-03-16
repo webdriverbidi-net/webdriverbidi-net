@@ -58,7 +58,7 @@ public class CookiePageRequestHandler : WebResourceRequestHandler
     /// <param name="request">The HTTP request to handle.</param>
     /// <param name="additionalData">Additional data passed into the method for handling requests.</param>
     /// <returns>The response to the HTTP request.</returns>
-    protected override Task<HttpResponse> ProcessRequestAsync(HttpRequest request, params object[] additionalData)
+    protected override Task<HttpResponse> ProcessRequestAsync(HttpRequest request)
     {
         List<Dictionary<string, string>> cookies = [];
         if (request.Headers.TryGetValue("Cookie", out List<string>? cookieHeaderValues))
@@ -94,7 +94,7 @@ public class CookiePageRequestHandler : WebResourceRequestHandler
         }
 
         response.TextBodyContent = string.Format(response.TextBodyContent, FormatCookieDisplay(cookies));
-        response.Headers["Content-Length"][0] = response.BodyContent.Length.ToString();
+        response.Headers["Content-Length"][0] = response.BodyContentBytes.Length.ToString();
         return Task.FromResult<HttpResponse>(response);
     }
 

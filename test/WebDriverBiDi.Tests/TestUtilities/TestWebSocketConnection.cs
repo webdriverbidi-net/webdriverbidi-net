@@ -15,8 +15,10 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public bool BypassDataSend { get; set; } = true;
 
-    public bool ThrowOnStop { get; set; }
+    public bool BypassCloseClientWebSocket { get; set; } = true;
 
+    public bool ThrowOnStop { get; set; }
+    
     public int StopCallCount => this.stopCallCount;
 
     public string? DataSent { get; set; }
@@ -162,9 +164,14 @@ public class TestWebSocketConnection : WebSocketConnection
         return await base.ReceiveWebSocketDataAsync(buffer, cancellationToken);
     }
 
-    protected override Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
+    protected override async Task CloseClientWebSocketAsync(CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        if (this.BypassCloseClientWebSocket)
+        {
+            return;
+        }
+
+        await base.CloseClientWebSocketAsync(cancellationToken).ConfigureAwait(false);
     }
 
     protected virtual void OnDataSendStarting()
