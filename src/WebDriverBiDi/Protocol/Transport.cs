@@ -876,14 +876,14 @@ public class Transport : IAsyncDisposable
                 {
                     // Stop timing and log error
                     executedCommand.StopTiming();
-                    WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value.ToString(), executedCommand.CommandName, result.ErrorType, result.ErrorMessage);
+                    WebDriverBiDiEventSource.RaiseEvent.CommandError(errorMessage.CommandId.Value.ToString(), executedCommand.CommandName, result.ErrorCode, result.ErrorType.ToString(), result.ErrorMessage);
 
                     executedCommand.SetResult(result);
                 }
                 else
                 {
                     await this.OnProtocolErrorEventReceivedAsync(new ErrorReceivedEventArgs(result)).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiProtocolException($"Received '{result.ErrorType}' error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
+                    this.CaptureUnhandledError(UnhandledErrorType.UnexpectedError, new WebDriverBiDiProtocolException($"Received {result.ErrorCode} ('{result.ErrorType}') error with no command ID: {result.ErrorMessage}", result), "Received error with no command ID");
                 }
             }
 

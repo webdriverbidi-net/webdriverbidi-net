@@ -192,14 +192,15 @@ public sealed class WebDriverBiDiEventSource : EventSource
     /// </summary>
     /// <param name="commandId">The unique identifier for the command.</param>
     /// <param name="method">The command method name.</param>
+    /// <param name="errorCode">The protocol error code returned by the remote end.</param>
     /// <param name="errorType">The error type returned by the remote end.</param>
     /// <param name="errorMessage">The error message returned by the remote end.</param>
-    [Event(9, Level = EventLevel.Error, Message = "Command {0} ({1}) failed: {2} - {3}")]
-    public void CommandError(string commandId, string method, string errorType, string errorMessage)
+    [Event(9, Level = EventLevel.Error, Message = "Command {0} ({1}) failed: {2} ({3}) - {4}")]
+    public void CommandError(string commandId, string method, ErrorCode errorCode, string errorType, string errorMessage)
     {
         if (this.IsEnabled(EventLevel.Error, EventKeywords.None))
         {
-            this.WriteEvent(9, commandId, method, errorType, errorMessage);
+            this.WriteEvent(9, commandId, method, errorCode, errorType, errorMessage);
         }
     }
 

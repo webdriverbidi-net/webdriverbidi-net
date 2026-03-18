@@ -17,18 +17,18 @@ public enum InterceptPhase
     /// <summary>
     /// Network traffic will be intercepted before a request is sent.
     /// </summary>
-    [JsonEnumValue("beforeRequestSent")]
+    [StringEnumValue("beforeRequestSent")]
     BeforeRequestSent,
 
     /// <summary>
     /// Network traffic will be intercepted when a response is received, but before sent to the browser.
     /// </summary>
-    [JsonEnumValue("responseStarted")]
+    [StringEnumValue("responseStarted")]
     ResponseStarted,
 
     /// <summary>
     /// Network traffic will be intercepted when a response would require authorization.
     /// </summary>
-    [JsonEnumValue("authRequired")]
+    [StringEnumValue("authRequired")]
     AuthRequired,
 }

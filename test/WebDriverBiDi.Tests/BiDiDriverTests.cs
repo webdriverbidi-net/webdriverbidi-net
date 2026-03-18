@@ -96,13 +96,15 @@ public class BiDiDriverTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(caughtException!.Message, Does.Contain("'unknown command' error executing command module.command: This is a test error message"));
-            Assert.That(caughtException.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(caughtException.ErrorCode, Is.EqualTo(ErrorCode.UnknownCommand));
+            Assert.That(caughtException.ProtocolErrorType, Is.EqualTo("unknown command"));
             Assert.That(caughtException.ProtocolErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(caughtException.RemoteStackTrace, Is.EqualTo("remote stack trace"));
-            Assert.That(caughtException.ErrorResult, Is.Not.Null);
-            Assert.That(caughtException.ErrorResult.ErrorType, Is.EqualTo("unknown command"));
-            Assert.That(caughtException.ErrorResult.ErrorMessage, Is.EqualTo("This is a test error message"));
-            Assert.That(caughtException.ErrorResult.StackTrace, Is.EqualTo("remote stack trace"));
+            Assert.That(caughtException.ErrorDetails, Is.Not.Null);
+            Assert.That(caughtException.ErrorDetails.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(caughtException.ErrorDetails.ErrorCode, Is.EqualTo(ErrorCode.UnknownCommand));
+            Assert.That(caughtException.ErrorDetails.ErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(caughtException.ErrorDetails.StackTrace, Is.EqualTo("remote stack trace"));
         }
     }
 
@@ -163,6 +165,7 @@ public class BiDiDriverTests
         Assert.That(response, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
+            Assert.That(response!.ErrorCode, Is.EqualTo(ErrorCode.UnknownCommand));
             Assert.That(response!.ErrorType, Is.EqualTo("unknown command"));
             Assert.That(response.ErrorMessage, Is.EqualTo("This is a test error message"));
         }

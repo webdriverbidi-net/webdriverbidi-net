@@ -19,7 +19,7 @@ public abstract class WebDriverBiDiErrorResponseException : WebDriverBiDiExcepti
     protected WebDriverBiDiErrorResponseException()
         : base()
     {
-        this.ErrorResult = new ErrorResult();
+        this.ErrorDetails = new ErrorResult();
     }
 
     /// <summary>
@@ -30,7 +30,7 @@ public abstract class WebDriverBiDiErrorResponseException : WebDriverBiDiExcepti
     protected WebDriverBiDiErrorResponseException(string message, ErrorResult errorResult)
         : base(message)
     {
-        this.ErrorResult = errorResult;
+        this.ErrorDetails = errorResult;
     }
 
     /// <summary>
@@ -42,28 +42,33 @@ public abstract class WebDriverBiDiErrorResponseException : WebDriverBiDiExcepti
     protected WebDriverBiDiErrorResponseException(string message, ErrorResult errorResult, Exception innerException)
         : base(message, innerException)
     {
-        this.ErrorResult = errorResult;
+        this.ErrorDetails = errorResult;
     }
 
     /// <summary>
     /// Gets the error result data from the remote end, containing the error type, error message,
     /// and optional stack trace.
     /// </summary>
-    public ErrorResult ErrorResult { get; }
+    public ErrorResult ErrorDetails { get; }
 
     /// <summary>
-    /// Gets the protocol error type string returned by the remote end (e.g., "invalid argument",
-    /// "no such frame", "unknown command").
+    /// Gets the protocol error code returned by the remote end. If the error type string does not
+    /// match any known error code, this will return <see cref="ErrorCode.UnsetErrorCode"/>.
     /// </summary>
-    public string ErrorType => this.ErrorResult.ErrorType;
+    public ErrorCode ErrorCode => this.ErrorDetails.ErrorCode;
+
+    /// <summary>
+    /// Gets the error type for the protocol error returned by the remote end.
+    /// </summary>
+    public string ProtocolErrorType => this.ErrorDetails.ErrorType;
 
     /// <summary>
     /// Gets the protocol error message returned by the remote end.
     /// </summary>
-    public string ProtocolErrorMessage => this.ErrorResult.ErrorMessage;
+    public string ProtocolErrorMessage => this.ErrorDetails.ErrorMessage;
 
     /// <summary>
     /// Gets the stack trace from the remote end, if available.
     /// </summary>
-    public string? RemoteStackTrace => this.ErrorResult.StackTrace;
+    public string? RemoteStackTrace => this.ErrorDetails.StackTrace;
 }

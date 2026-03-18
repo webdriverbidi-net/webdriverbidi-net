@@ -22,24 +22,24 @@ public enum CharacteristicEventGeneratedType
     /// <summary>
     /// The characteristic event is a write event with a response.
     /// </summary>
-    [JsonEnumValue("write-with-response")]
+    [StringEnumValue("write-with-response")]
     WriteWithResponse,
 
     /// <summary>
     /// The characteristic event is a write event without a response.
     /// </summary>
-    [JsonEnumValue("write-without-response")]
+    [StringEnumValue("write-without-response")]
     WriteWithoutResponse,
 
     /// <summary>
     /// The characteristic event is a subscription to notifications.
     /// </summary>
-    [JsonEnumValue("subscribe-to-notifications")]
+    [StringEnumValue("subscribe-to-notifications")]
     SubscribeToNotifications,
 
     /// <summary>
     /// The characteristic event is an unsubscription from notifications.
     /// </summary>
-    [JsonEnumValue("unsubscribe-from-notifications")]
+    [StringEnumValue("unsubscribe-from-notifications")]
     UnsubscribeFromNotifications,
 }

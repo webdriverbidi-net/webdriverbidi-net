@@ -12,6 +12,10 @@ using System.Text.Json.Serialization;
 /// </summary>
 public class ErrorResponseMessage : Message
 {
+    private static readonly Lazy<StringEnumValueConverter<ErrorCode>> ErrorCodeConverter = new();
+
+    private ErrorCode? errorCode;
+
     /// <summary>
     /// Gets the ID for the command causing this error during execution, if any.
     /// </summary>
@@ -42,6 +46,26 @@ public class ErrorResponseMessage : Message
     [JsonPropertyName("stacktrace")]
     [JsonInclude]
     public string? StackTrace { get; internal set; }
+
+    /// <summary>
+    /// Gets the error code associated with this error. If the error code string does not
+    /// match any known error code, this will return <see cref="ErrorCode.UnsetErrorCode"/>.
+    /// </summary>
+    [JsonIgnore]
+    public ErrorCode ErrorCode
+    {
+        get
+        {
+            if (this.errorCode is null)
+            {
+                // ErrorCode is marked with a default value of UnsetErrorCode,
+                // so this should never throw.
+                this.errorCode = ErrorCodeConverter.Value.GetValue(this.ErrorType);
+            }
+
+            return this.errorCode.Value;
+        }
+    }
 
     /// <summary>
     /// Gets the data associated with the error without the command information.

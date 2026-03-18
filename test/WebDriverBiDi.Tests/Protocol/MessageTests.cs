@@ -71,6 +71,32 @@ public class MessageTests
             Assert.That(result.Type, Is.EqualTo("error"));
             Assert.That(result.CommandId, Is.EqualTo(1));
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
+            Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
+            Assert.That(result.AdditionalData, Is.Empty);
+            Assert.That(result.StackTrace, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestCanDeserializeCommandErrorMessageWithUnknownErrorCode()
+    {
+        string json = """
+                      {
+                        "type": "error",
+                        "id": 1,
+                        "error": "invalid error code",
+                        "message": "This is a test error message"
+                      }
+                      """;
+        ErrorResponseMessage? result = JsonSerializer.Deserialize<ErrorResponseMessage>(json);
+        Assert.That(result, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Type, Is.EqualTo("error"));
+            Assert.That(result.CommandId, Is.EqualTo(1));
+            Assert.That(result.ErrorType, Is.EqualTo("invalid error code"));
+            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnsetErrorCode));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
             Assert.That(result.StackTrace, Is.Null);
@@ -95,6 +121,7 @@ public class MessageTests
             Assert.That(result.Type, Is.EqualTo("error"));
             Assert.That(result.CommandId, Is.Null);
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
         }
@@ -119,6 +146,7 @@ public class MessageTests
             Assert.That(result.Type, Is.EqualTo("error"));
             Assert.That(result.CommandId, Is.EqualTo(1));
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
             Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
@@ -144,6 +172,7 @@ public class MessageTests
         {
             Assert.That(result.IsError, Is.True);
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
             Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));

@@ -28,6 +28,7 @@ public class ErrorResultTests
         {
             Assert.That(result.IsError, Is.True);
             Assert.That(result.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(result.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
             Assert.That(result.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(result.AdditionalData, Is.Empty);
             Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));

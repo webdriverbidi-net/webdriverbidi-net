@@ -13,8 +13,8 @@ public class WebDriverBiDiProtocolExceptionTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exception.Message, Is.Not.Null);
-            Assert.That(exception.ErrorResult, Is.Not.Null);
-            Assert.That(exception.ErrorType, Is.EqualTo(string.Empty));
+            Assert.That(exception.ErrorDetails, Is.Not.Null);
+            Assert.That(exception.ErrorCode, Is.EqualTo(ErrorCode.UnsetErrorCode));
             Assert.That(exception.ProtocolErrorMessage, Is.EqualTo(string.Empty));
             Assert.That(exception.RemoteStackTrace, Is.Null);
             Assert.That(exception.InnerException, Is.Null);
@@ -29,8 +29,8 @@ public class WebDriverBiDiProtocolExceptionTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exception.Message, Is.EqualTo("Test exception message"));
-            Assert.That(exception.ErrorResult, Is.SameAs(errorResult));
-            Assert.That(exception.ErrorType, Is.EqualTo("invalid argument"));
+            Assert.That(exception.ErrorDetails, Is.SameAs(errorResult));
+            Assert.That(exception.ErrorCode, Is.EqualTo(ErrorCode.InvalidArgument));
             Assert.That(exception.ProtocolErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(exception.RemoteStackTrace, Is.EqualTo("remote stack trace"));
             Assert.That(exception.InnerException, Is.Null);
@@ -46,8 +46,8 @@ public class WebDriverBiDiProtocolExceptionTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(exception.Message, Is.EqualTo("Test exception message"));
-            Assert.That(exception.ErrorResult, Is.SameAs(errorResult));
-            Assert.That(exception.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(exception.ErrorDetails, Is.SameAs(errorResult));
+            Assert.That(exception.ErrorCode, Is.EqualTo(ErrorCode.UnknownCommand));
             Assert.That(exception.ProtocolErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(exception.RemoteStackTrace, Is.Null);
             Assert.That(exception.InnerException, Is.SameAs(innerException));

@@ -173,7 +173,7 @@ public class WebDriverBiDiEventSourceTests
     public void TestCommandErrorEventEmitted()
     {
         TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.CommandError("1", "session.status", "invalid session id", "Session not found");
+        WebDriverBiDiEventSource.RaiseEvent.CommandError("1", "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
         listener.Dispose();
 
         Assert.That(listener.Events, Has.Count.EqualTo(1));
@@ -183,8 +183,9 @@ public class WebDriverBiDiEventSourceTests
             Assert.That(evt.EventId, Is.EqualTo(9));
             Assert.That(evt.EventName, Is.EqualTo("CommandError"));
             Assert.That(evt.Level, Is.EqualTo(EventLevel.Error));
-            Assert.That(evt.Payload![2], Is.EqualTo("invalid session id"));
-            Assert.That(evt.Payload![3], Is.EqualTo("Session not found"));
+            Assert.That(evt.Payload![2], Is.EqualTo(ErrorCode.InvalidSessionId));
+            Assert.That(evt.Payload![3], Is.EqualTo("invalid session id"));
+            Assert.That(evt.Payload![4], Is.EqualTo("Session not found"));
         }
     }
 

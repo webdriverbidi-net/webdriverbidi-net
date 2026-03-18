@@ -155,8 +155,9 @@ public class TransportEventSourceIntegrationTests
         {
             Assert.That(errorEvent.Payload![0], Is.EqualTo("1"));
             Assert.That(errorEvent.Payload![1], Is.EqualTo("session.status"));
-            Assert.That(errorEvent.Payload![2], Is.EqualTo("invalid session id"));
-            Assert.That(errorEvent.Payload![3], Is.EqualTo("Session not found"));
+            Assert.That(errorEvent.Payload![2], Is.EqualTo(ErrorCode.InvalidSessionId));
+            Assert.That(errorEvent.Payload![3], Is.EqualTo("invalid session id"));
+            Assert.That(errorEvent.Payload![4], Is.EqualTo("Session not found"));
         }
 
         await transport.DisconnectAsync();

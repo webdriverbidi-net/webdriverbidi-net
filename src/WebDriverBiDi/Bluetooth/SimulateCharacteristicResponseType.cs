@@ -27,12 +27,12 @@ public enum SimulateCharacteristicResponseType
     /// <summary>
     /// Simulate a response for a subscribe characteristic.
     /// </summary>
-    [JsonEnumValue("subscribe-to-notifications")]
+    [StringEnumValue("subscribe-to-notifications")]
     SubscribeToNotifications,
 
     /// <summary>
     /// Simulate a response for an unsubscribe characteristic.
     /// </summary>
-    [JsonEnumValue("unsubscribe-from-notifications")]
+    [StringEnumValue("unsubscribe-from-notifications")]
     UnsubscribeFromNotifications,
 }

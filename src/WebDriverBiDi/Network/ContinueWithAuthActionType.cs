@@ -27,6 +27,6 @@ public enum ContinueWithAuthActionType
     /// <summary>
     /// The command will use the provided credentials.
     /// </summary>
-    [JsonEnumValue("provideCredentials")]
+    [StringEnumValue("provideCredentials")]
     ProvideCredentials,
 }

@@ -17,48 +17,48 @@ public enum RealmType
     /// <summary>
     /// A window realm.
     /// </summary>
-    [JsonEnumValue("window")]
+    [StringEnumValue("window")]
     Window,
 
     /// <summary>
     /// A dedicated worker realm.
     /// </summary>
-    [JsonEnumValue("dedicated-worker")]
+    [StringEnumValue("dedicated-worker")]
     DedicatedWorker,
 
     /// <summary>
     /// A shared worker realm.
     /// </summary>
-    [JsonEnumValue("shared-worker")]
+    [StringEnumValue("shared-worker")]
     SharedWorker,
 
     /// <summary>
     /// A service worker realm.
     /// </summary>
-    [JsonEnumValue("service-worker")]
+    [StringEnumValue("service-worker")]
     ServiceWorker,
 
     /// <summary>
     /// A worker realm.
     /// </summary>
-    [JsonEnumValue("worker")]
+    [StringEnumValue("worker")]
     Worker,
 
     /// <summary>
     /// A paint worklet realm.
     /// </summary>
-    [JsonEnumValue("paint-worklet")]
+    [StringEnumValue("paint-worklet")]
     PaintWorklet,
 
     /// <summary>
     /// An audio worklet realm.
     /// </summary>
-    [JsonEnumValue("audio-worklet")]
+    [StringEnumValue("audio-worklet")]
     AudioWorklet,
 
     /// <summary>
     /// A worklet realm.
     /// </summary>
-    [JsonEnumValue("worklet")]
+    [StringEnumValue("worklet")]
     Worklet,
 }

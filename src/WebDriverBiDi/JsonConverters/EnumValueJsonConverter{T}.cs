@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.JsonConverters;
 
 using System;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,38 +16,7 @@ using System.Text.Json.Serialization;
 public class EnumValueJsonConverter<T> : JsonConverter<T>
     where T : struct, Enum
 {
-    private readonly T? defaultValue;
-    private readonly Dictionary<T, string> enumValuesToStrings = [];
-    private readonly Dictionary<string, T> stringToEnumValues = [];
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EnumValueJsonConverter{T}"/> class.
-    /// </summary>
-    public EnumValueJsonConverter()
-    {
-        Type enumType = typeof(T);
-        JsonEnumUnmatchedValueAttribute<T>? unmatchedValueAttribute = enumType.GetCustomAttribute<JsonEnumUnmatchedValueAttribute<T>>();
-        if (unmatchedValueAttribute is not null)
-        {
-            this.defaultValue = unmatchedValueAttribute.UnmatchedValue;
-        }
-
-        T[] values = (T[])Enum.GetValues(typeof(T));
-
-        foreach (T value in values)
-        {
-            string valueAsString = value.ToString().ToLowerInvariant();
-            MemberInfo member = enumType.GetMember(value.ToString())[0];
-            JsonEnumValueAttribute? attribute = member.GetCustomAttribute<JsonEnumValueAttribute>();
-            if (attribute is not null)
-            {
-                valueAsString = attribute.Value;
-            }
-
-            this.stringToEnumValues[valueAsString] = value;
-            this.enumValuesToStrings[value] = valueAsString;
-        }
-    }
+    private static readonly Lazy<StringEnumValueConverter<T>> StringEnumConverter = new();
 
     /// <summary>
     /// Deserializes the JSON string to an enum value.
@@ -67,17 +35,12 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
         // We can rely on the string not being null because we know the
         // token type is explicitly a string type.
         string stringValue = reader.GetString()!;
-        if (this.stringToEnumValues.TryGetValue(stringValue, out T enumValue))
+        try
         {
-            return enumValue;
+            return StringEnumConverter.Value.GetValue(stringValue);
         }
-
-        // No match for the string value was found. If the enum has been
-        // marked with the JsonEnumUnmatchedValueAttribute, assign the
-        // specified value for unmatched strings.
-        if (this.defaultValue.HasValue)
+        catch (ArgumentException)
         {
-            return this.defaultValue.Value;
         }
 
         // There is no match, and no default value for unmatched
@@ -93,11 +56,14 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
-        if (!this.enumValuesToStrings.TryGetValue(value, out string? stringValue))
+        try
+        {
+            string stringValue = StringEnumConverter.Value.GetString(value);
+            writer.WriteStringValue(stringValue);
+        }
+        catch (ArgumentException)
         {
             throw new JsonException($"Serialization error: value {value} is not valid for the enum type {typeof(T).Name}");
         }
-
-        writer.WriteStringValue(stringValue);
     }
 }

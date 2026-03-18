@@ -22,12 +22,12 @@ public enum AdapterState
     /// <summary>
     /// The Bluetooth adapter is present, but powered off.
     /// </summary>
-    [JsonEnumValue("powered-off")]
+    [StringEnumValue("powered-off")]
     PoweredOff,
 
     /// <summary>
     /// The Bluetooth adapter is present, and powered on.
     /// </summary>
-    [JsonEnumValue("powered-on")]
+    [StringEnumValue("powered-on")]
     PoweredOn,
 }

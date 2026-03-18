@@ -23,11 +23,11 @@ public class ErrorReceivedEventArgsTests
         {
             Assert.That(eventArgs.ErrorData, Is.Not.Null);
             Assert.That(eventArgs.ErrorData.IsError, Is.True);
+            Assert.That(eventArgs.ErrorData.ErrorCode, Is.EqualTo(ErrorCode.UnsetErrorCode));
             Assert.That(eventArgs.ErrorData.ErrorType, Is.EqualTo("my error code"));
             Assert.That(eventArgs.ErrorData.ErrorMessage, Is.EqualTo("error message"));
             Assert.That(eventArgs.ErrorData.StackTrace, Is.EqualTo("stack trace"));
         }
-        ;
     }
 
     [Test]

@@ -1,6 +1,5 @@
 namespace WebDriverBiDi.JsonConverters;
 
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -65,18 +64,18 @@ public class EnumValueJsonConverterTests
     {
         FirstValue,
 
-        [JsonEnumValue("second-value")]
+        [StringEnumValue("second-value")]
         SecondValue
     }
 
     [JsonConverter(typeof(EnumValueJsonConverter<EnumWithDefault>))]
-    [JsonEnumUnmatchedValue<EnumWithDefault>(DefaultValue)]
+    [StringEnumUnmatchedValue<EnumWithDefault>(DefaultValue)]
     private enum EnumWithDefault
     {
-        [JsonEnumValue("default-value")]
+        [StringEnumValue("default-value")]
         DefaultValue,
 
-        [JsonEnumValue("non-default-value")]
+        [StringEnumValue("non-default-value")]
         NonDefaultValue
     }
 

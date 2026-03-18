@@ -37,6 +37,6 @@ public enum ProxyType
     /// <summary>
     /// Use a proxy autoconfig (PAC) file.
     /// </summary>
-    [JsonEnumValue("pac")]
+    [StringEnumValue("pac")]
     ProxyAutoConfig,
 }

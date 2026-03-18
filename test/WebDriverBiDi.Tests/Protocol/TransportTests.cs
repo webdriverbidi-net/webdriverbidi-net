@@ -177,6 +177,7 @@ public class TransportTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(convertedResponse.ErrorType, Is.EqualTo("unknown command"));
+            Assert.That(convertedResponse.ErrorCode, Is.EqualTo(ErrorCode.UnknownCommand));
             Assert.That(convertedResponse.ErrorMessage, Is.EqualTo("This is a test error message"));
             Assert.That(convertedResponse.StackTrace, Is.Null);
         }
@@ -357,6 +358,7 @@ public class TransportTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(convertedData.ErrorType, Is.EqualTo("unknown error"));
+            Assert.That(convertedData.ErrorCode, Is.EqualTo(ErrorCode.UnknownError));
             Assert.That(convertedData.ErrorMessage, Is.EqualTo("This is a test error message"));
         }
     }

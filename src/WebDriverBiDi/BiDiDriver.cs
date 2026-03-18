@@ -466,7 +466,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
                 throw new WebDriverBiDiException("Could not convert error response from transport for SendCommandAndWait to ErrorResult");
             }
 
-            throw new WebDriverBiDiCommandException($"Received '{errorResponse.ErrorType}' error executing command {commandParameters.MethodName}: {errorResponse.ErrorMessage}", errorResponse);
+            throw new WebDriverBiDiCommandException($"Received {errorResponse.ErrorCode} '{errorResponse.ErrorType}' error executing command {commandParameters.MethodName}: {errorResponse.ErrorMessage}", errorResponse);
         }
 
         if (result is not T convertedResult)

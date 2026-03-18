@@ -40,6 +40,7 @@ using WebDriverBiDi.WebExtension;
 // ── Protocol ──
 [JsonSerializable(typeof(Command))]
 [JsonSerializable(typeof(ErrorResponseMessage))]
+[JsonSerializable(typeof(ErrorCode))]
 
 // ── Bluetooth module (command responses and event handlers) ──
 [JsonSerializable(typeof(CommandResponseMessage<DisableSimulationCommandResult>))]
@@ -467,6 +468,8 @@ public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
     // A static constructor ensures the AOT compiler generates these array types.
     static WebDriverBiDiJsonSerializerContext()
     {
+        RuntimeHelpers.RunClassConstructor(typeof(ErrorCode[]).TypeHandle);
+
         // Bluetooth enums
         RuntimeHelpers.RunClassConstructor(typeof(AdapterState[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(CharacteristicEventGeneratedType[]).TypeHandle);

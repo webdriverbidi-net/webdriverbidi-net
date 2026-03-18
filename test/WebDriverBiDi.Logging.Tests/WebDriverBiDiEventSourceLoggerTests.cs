@@ -151,7 +151,7 @@ public class WebDriverBiDiEventSourceLoggerTests
         TestLogger fakeLogger = new();
         using (WebDriverBiDiEventSourceLogger eventSourceLogger = new(fakeLogger, EventLevel.Verbose))
         {
-            WebDriverBiDiEventSource.RaiseEvent.CommandError("1", "session.status", "invalid session id", "Session not found");
+            WebDriverBiDiEventSource.RaiseEvent.CommandError("1", "session.status", ErrorCode.InvalidSessionId, "invalid session id", "Session not found");
         }
 
         TestLogger.LogEntry entry = GetLastEntryForEvent(fakeLogger, "CommandError");
