@@ -37,7 +37,7 @@ public record LocalValue : ArgumentValue
     /// <summary>
     /// Gets a LocalValue for negative zero (-0).
     /// </summary>
-    public static LocalValue NegativeZero => new("number") { Value = decimal.Negate(decimal.Zero) };
+    public static LocalValue NegativeZero => new("number") { Value = -1.0 * 0.0 };
 
     /// <summary>
     /// Gets a LocalValue for positive infinity.
@@ -245,12 +245,10 @@ public record LocalValue : ArgumentValue
             {
                 return "-Infinity";
             }
-        }
-
-        decimal? decimalValue = this.Value as decimal?;
-        if (decimalValue is not null && decimalValue.HasValue && decimalValue.Value == decimal.Negate(decimal.Zero))
-        {
-            return "-0";
+            else if (doubleValue.Value == 0.0 && BitConverter.DoubleToInt64Bits(doubleValue.Value) == BitConverter.DoubleToInt64Bits(-0.0))
+            {
+                return "-0";
+            }
         }
 
         return this.Value;

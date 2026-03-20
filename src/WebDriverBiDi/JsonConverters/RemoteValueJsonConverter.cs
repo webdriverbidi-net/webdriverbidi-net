@@ -67,7 +67,9 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             }
             else if (specialValue == "-0")
             {
-                return decimal.Negate(decimal.Zero);
+                // Should be able to use double.NegativeZero, but this is not available
+                // in .NET Standard 2.0.
+                return -0.0;
             }
 
             throw new JsonException($"RemoteValue invalid value '{specialValue}' for 'value' property of number");

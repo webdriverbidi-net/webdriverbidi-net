@@ -96,8 +96,9 @@ public class RemoteValueJsonConverterTests
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Type, Is.EqualTo("number"));
-        Assert.That(result.Value, Is.InstanceOf<decimal>());
-        Assert.That(result.ValueAs<decimal>(), Is.EqualTo(decimal.Negate(decimal.Zero)));
+        Assert.That(result.Value, Is.InstanceOf<double>());
+        Assert.That(result.ValueAs<double>(), Is.EqualTo(-0.0));
+        Assert.That(double.IsNegative(result.ValueAs<double>()), Is.True);
     }
 
     [Test]

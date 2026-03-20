@@ -104,7 +104,7 @@ public class LocalValueTests
             Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("number"));
             Assert.That(parsed, Contains.Key("value"));
             Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Float));
-            Assert.That(parsed["value"]!.Value<decimal>(), Is.EqualTo(123.23));
+            Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(123.23));
         }
     }
     

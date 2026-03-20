@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Numerics;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
@@ -112,6 +113,96 @@ public record RemoteValue
     /// <typeparam name="T">The type to which to cast the value object.</typeparam>
     /// <returns>The value cast to the desired type.</returns>
     /// <exception cref="WebDriverBiDiException">Thrown if this RemoteValue cannot be cast to the desired type.</exception>
+    /// <remarks>
+    /// <para>
+    ///   The valid types that a value can be assigned to are:
+    ///   <list type="bulletted">
+    ///     <item>
+    ///       <description>
+    ///         <see cref="string"/> for values returning strings
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="double"/> for values returning floating point numbers
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="long"/> for values returning integers
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="bool"/> for values returning <see langword="true"/> or <see langword="false"/>
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="BigInteger"/> for large integer values exceeding <see cref="long.MaxValue"/>
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="DateTime"/> for values returning date objects
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="RegularExpressionValue"/> for values returning regular expression objects
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="NodeProperties"/> for values returning DOM nodes
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="WindowProxyProperties"/> for values returning references to a JavaScript window object
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="RemoteValueList"/> for values returning arrays, sets, node lists, or HTML element collections
+    ///       </description>
+    ///     </item>
+    ///     <item>
+    ///       <description>
+    ///         <see cref="RemoteValueDictionary"/> for values returning objects with key-value pairs, including objects and maps
+    ///       </description>
+    ///     </item>
+    ///   </list>
+    /// </para>
+    /// <para>
+    ///   If the value of this RemoteValue is <see langword="null"/>, then this method will
+    ///   return <see langword="null"/> for reference types. This method will also return
+    ///   <see langword="null"/> if the remote value being represented is null or undefined.
+    ///   However, it will throw a <see cref="WebDriverBiDiException"/> for value types since
+    ///   they cannot be assigned a <see langword="null"/> value.
+    /// </para>
+    /// <para>
+    ///   If the value of this RemoteValue represents a DOM node, this method can be used to
+    ///   convert it to a <see cref="NodeProperties"/> instance. To use the returned value as
+    ///   an argument to a subsequent call to the remote end, you should use the
+    ///   <see cref="ToSharedReference"/> method to convert this <see cref="RemoteValue"/> to a
+    ///   <see cref="SharedReference"/>.
+    /// </para>
+    /// <para>
+    ///   If the value of this RemoteValue is <see langword="null"/>, then this method will
+    ///   return <see langword="null"/> for reference types. This method will also return
+    ///   <see langword="null"/> if the remote value being represented is null or undefined.
+    ///   However, it will throw a <see cref="WebDriverBiDiException"/> for value types since
+    ///   they cannot be assigned a <see langword="null"/> value.
+    /// </para>
+    /// <para>
+    ///   For non-primitive <see cref="RemoteValue"/> instances that do not directly map to
+    ///   one of the types listed above, this method will return <see langword="null"/>. To
+    ///   use the returned value as an argument to a subsequent call to the remote end, you
+    ///   should use the <see cref="ToRemoteReference"/> method to convert this
+    ///   <see cref="RemoteValue"/> to a <see cref="RemoteReference"/>.
+    /// </para>
+    /// </remarks>
     public T? ValueAs<T>()
     {
         T? result = default;

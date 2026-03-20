@@ -123,8 +123,9 @@ public class RemoteValueTests
             Assert.That(remoteValue.HasValue);
             Assert.That(remoteValue.Handle, Is.Null);
             Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<decimal>());
-            Assert.That(remoteValue.ValueAs<decimal>(), Is.EqualTo(decimal.Negate(decimal.Zero)));
+            Assert.That(remoteValue.Value, Is.InstanceOf<double>());
+            Assert.That(remoteValue.ValueAs<double>(), Is.EqualTo(double.NegativeZero));
+            Assert.That(double.IsNegative(remoteValue.ValueAs<double>()), Is.True);
         }
     }
 
