@@ -13,8 +13,7 @@ public class WindowProxyPropertiesTests
                         "context": "myContextId"
                       }
                       """;
-        WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
-        Assert.That(windowProxyProperties, Is.Not.Null);
+        WindowProxyProperties windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
         Assert.That(windowProxyProperties.Context, Is.EqualTo("myContextId"));
     }
 
@@ -26,9 +25,8 @@ public class WindowProxyPropertiesTests
                         "context": "myContextId"
                       }
                       """;
-        WindowProxyProperties? windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
-        Assert.That(windowProxyProperties, Is.Not.Null);
-        WindowProxyProperties copy = windowProxyProperties with { };
+        WindowProxyProperties windowProxyProperties = JsonSerializer.Deserialize<WindowProxyProperties>(json);
+        WindowProxyProperties copy = windowProxyProperties;
         Assert.That(copy, Is.EqualTo(windowProxyProperties));
     }
 

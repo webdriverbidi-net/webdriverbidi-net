@@ -144,7 +144,7 @@ public static class LogModuleSamples
                     foreach (RemoteValue arg in e.Arguments)
                     {
                         Console.WriteLine($"  Type: {arg.Type}");
-                        Console.WriteLine($"  Value: {arg.Value}");
+                        Console.WriteLine($"  Value: {(arg as ValueHoldingRemoteValue)?.ValueObject ?? "null"}");
                     }
                 }
             }

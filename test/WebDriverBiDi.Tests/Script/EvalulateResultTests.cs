@@ -25,9 +25,8 @@ public class EvaluateResultTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(successResult.RealmId, Is.EqualTo("myRealm"));
-            Assert.That(successResult.Result.Type, Is.EqualTo("string"));
-            Assert.That(successResult.Result.HasValue);
-            Assert.That(successResult.Result.ValueAs<string>(), Is.EqualTo("myResult"));
+            Assert.That(successResult.Result.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(successResult.Result.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myResult"));
         }
     }
 
@@ -63,7 +62,7 @@ public class EvaluateResultTests
             Assert.That(exceptionResult.ExceptionDetails.LineNumber, Is.EqualTo(1));
             Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
             Assert.That(exceptionResult.ExceptionDetails.StackTrace.CallFrames, Has.Count.EqualTo(0));
-            Assert.That(exceptionResult.ExceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("exception value"));
+            Assert.That(exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("exception value"));
         }
     }
 

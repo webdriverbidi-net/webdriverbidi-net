@@ -14,8 +14,7 @@ public class RegularExpressionValueTests
                         "pattern": "myPattern"
                       }
                       """;
-        RegularExpressionValue? regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
-        Assert.That(regexProperties, Is.Not.Null);
+        RegularExpressionValue regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(regexProperties.Pattern, Is.EqualTo("myPattern"));
@@ -31,9 +30,8 @@ public class RegularExpressionValueTests
                         "pattern": "myPattern"
                       }
                       """;
-        RegularExpressionValue? regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
-        Assert.That(regexProperties, Is.Not.Null);
-        RegularExpressionValue copy = regexProperties with { };
+        RegularExpressionValue regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
+        RegularExpressionValue copy = regexProperties;
         Assert.That(copy, Is.EqualTo(regexProperties));
     }
 
@@ -64,8 +62,7 @@ public class RegularExpressionValueTests
                         "flags": "gi"
                       }
                       """;
-        RegularExpressionValue? regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
-        Assert.That(regexProperties, Is.Not.Null);
+        RegularExpressionValue regexProperties = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(regexProperties.Pattern, Is.EqualTo("myPattern"));
@@ -89,7 +86,10 @@ public class RegularExpressionValueTests
     [Test]
     public void TestEquality()
     {
-        RegularExpressionValue expectedRegexValue = new("myPattern", "gi");
+        LocalValue regexLocalValue = LocalValue.RegExp("myPattern", "gi");
+        LocalArgumentValue primitiveValue = (LocalArgumentValue)regexLocalValue;
+        Assert.That(primitiveValue.Value, Is.Not.Null);
+        RegularExpressionValue expectedRegexValue = (RegularExpressionValue)primitiveValue.Value;
 
         string json = """
                       {
@@ -97,14 +97,17 @@ public class RegularExpressionValueTests
                         "flags": "gi"
                       }
                       """;
-        RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
+        RegularExpressionValue actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue, Is.EqualTo(expectedRegexValue));
     }
 
     [Test]
     public void TestInequalityWithDifferingPatterns()
     {
-        RegularExpressionValue expectedRegexValue = new("myPattern", "gi");
+        LocalValue regexLocalValue = LocalValue.RegExp("myPattern", "gi");
+        LocalArgumentValue primitiveValue = (LocalArgumentValue)regexLocalValue;
+        Assert.That(primitiveValue.Value, Is.Not.Null);
+        RegularExpressionValue expectedRegexValue = (RegularExpressionValue)primitiveValue.Value;
 
         string json = """
                       {
@@ -112,28 +115,34 @@ public class RegularExpressionValueTests
                         "flags": "gi"
                       }
                       """;
-        RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
+        RegularExpressionValue actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue, Is.Not.EqualTo(expectedRegexValue));
     }
 
     [Test]
     public void TestInequalityWithDifferingPatternsAndNullFlags()
     {
-        RegularExpressionValue expectedRegexValue = new("myPattern");
+        LocalValue regexLocalValue = LocalValue.RegExp("myPattern");
+        LocalArgumentValue primitiveValue = (LocalArgumentValue)regexLocalValue;
+        Assert.That(primitiveValue.Value, Is.Not.Null);
+        RegularExpressionValue expectedRegexValue = (RegularExpressionValue)primitiveValue.Value;
 
         string json = """
                       {
                         "pattern": "notMyPattern"
                       }
                       """;
-        RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
+        RegularExpressionValue actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue, Is.Not.EqualTo(expectedRegexValue));
     }
 
     [Test]
     public void TestInequalityWithDifferingFlags()
     {
-        RegularExpressionValue expectedRegexValue = new("myPattern", "g");
+        LocalValue regexLocalValue = LocalValue.RegExp("myPattern", "g");
+        LocalArgumentValue primitiveValue = (LocalArgumentValue)regexLocalValue;
+        Assert.That(primitiveValue.Value, Is.Not.Null);
+        RegularExpressionValue expectedRegexValue = (RegularExpressionValue)primitiveValue.Value;
 
         string json = """
                       {
@@ -141,7 +150,7 @@ public class RegularExpressionValueTests
                         "flags": "gi"
                       }
                       """;
-        RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
+        RegularExpressionValue actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue, Is.Not.EqualTo(expectedRegexValue));
     }
 
@@ -155,8 +164,7 @@ public class RegularExpressionValueTests
                         "flags": "gi"
                       }
                       """;
-        RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
-        Assert.That(actualRegexValue, Is.Not.Null);
+        RegularExpressionValue actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
         Assert.That(actualRegexValue.Equals(null), Is.False);
     }
 
@@ -170,8 +178,7 @@ public class RegularExpressionValueTests
                         "flags": "gi"
                       }
                       """;
-        RegularExpressionValue? actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
-        Assert.That(actualRegexValue, Is.Not.Null);
-        Assert.That(actualRegexValue!.Equals("invalid"), Is.False);
+        RegularExpressionValue actualRegexValue = JsonSerializer.Deserialize<RegularExpressionValue>(json);
+        Assert.That(actualRegexValue.Equals("invalid"), Is.False);
     }
 }

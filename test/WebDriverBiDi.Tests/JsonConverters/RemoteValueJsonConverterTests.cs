@@ -13,9 +13,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "string", "value": "hello"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("string"));
-        Assert.That(result.HasValue);
-        Assert.That(result.ValueAs<string>(), Is.EqualTo("hello"));
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.String));
+        Assert.That(result.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("hello"));
     }
 
     [Test]
@@ -24,8 +23,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "boolean", "value": true}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("boolean"));
-        Assert.That(result.ValueAs<bool>(), Is.True);
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Boolean));
+        Assert.That(result.ConvertTo<BooleanRemoteValue>().Value, Is.True);
     }
 
     [Test]
@@ -34,8 +33,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "boolean", "value": false}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("boolean"));
-        Assert.That(result.ValueAs<bool>(), Is.False);
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Boolean));
+        Assert.That(result.ConvertTo<BooleanRemoteValue>().Value, Is.False);
     }
 
     [Test]
@@ -44,9 +43,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "number", "value": 42}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("number"));
-        Assert.That(result.Value, Is.InstanceOf<long>());
-        Assert.That(result.ValueAs<long>(), Is.EqualTo(42));
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Number));
+        Assert.That(result.ConvertTo<LongRemoteValue>().Value, Is.EqualTo(42));
     }
 
     [Test]
@@ -55,8 +53,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "number", "value": 3.14}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("number"));
-        Assert.That(result.ValueAs<double>(), Is.EqualTo(3.14).Within(0.001));
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Number));
+        Assert.That(result.ConvertTo<DoubleRemoteValue>().Value, Is.EqualTo(3.14).Within(0.001));
     }
 
     [Test]
@@ -65,8 +63,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "number", "value": "Infinity"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("number"));
-        Assert.That(result.ValueAs<double>(), Is.EqualTo(double.PositiveInfinity));
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Number));
+        Assert.That(result.ConvertTo<DoubleRemoteValue>().Value, Is.EqualTo(double.PositiveInfinity));
     }
 
     [Test]
@@ -75,8 +73,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "number", "value": "-Infinity"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("number"));
-        Assert.That(result.ValueAs<double>(), Is.EqualTo(double.NegativeInfinity));
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Number));
+        Assert.That(result.ConvertTo<DoubleRemoteValue>().Value, Is.EqualTo(double.NegativeInfinity));
     }
 
     [Test]
@@ -85,8 +83,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "number", "value": "NaN"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("number"));
-        Assert.That(double.IsNaN(result.ValueAs<double>()), Is.True);
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Number));
+        Assert.That(double.IsNaN(result.ConvertTo<DoubleRemoteValue>().Value), Is.True);
     }
 
     [Test]
@@ -95,10 +93,9 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "number", "value": "-0"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("number"));
-        Assert.That(result.Value, Is.InstanceOf<double>());
-        Assert.That(result.ValueAs<double>(), Is.EqualTo(-0.0));
-        Assert.That(double.IsNegative(result.ValueAs<double>()), Is.True);
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Number));
+        Assert.That(result.ConvertTo<DoubleRemoteValue>().Value, Is.EqualTo(-0.0));
+        Assert.That(double.IsNegative(result.ConvertTo<DoubleRemoteValue>().Value), Is.True);
     }
 
     [Test]
@@ -121,8 +118,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "bigint", "value": "12345678901234567890"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("bigint"));
-        Assert.That(result.ValueAs<BigInteger>(), Is.EqualTo(BigInteger.Parse("12345678901234567890")));
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.BigInt));
+        Assert.That(result.ConvertTo<BigIntegerRemoteValue>().Value, Is.EqualTo(BigInteger.Parse("12345678901234567890")));
     }
 
     [Test]
@@ -138,8 +135,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "null"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("null"));
-        Assert.That(result.Value, Is.Null);
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Null));
+        Assert.That(result, Is.InstanceOf<NullRemoteValue>());
     }
 
     [Test]
@@ -148,8 +145,8 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "undefined"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("undefined"));
-        Assert.That(result.Value, Is.Null);
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Undefined));
+        Assert.That(result, Is.InstanceOf<UndefinedRemoteValue>());
     }
 
     [Test]
@@ -158,10 +155,9 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "date", "value": "2024-01-15T12:00:00Z"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("date"));
-        Assert.That(result.Value, Is.InstanceOf<DateTime>());
-        Assert.That(result.ValueAs<DateTime>().Year, Is.EqualTo(2024));
-        Assert.That(result.ValueAs<DateTime>().Month, Is.EqualTo(1));
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Date));
+        Assert.That(result.ConvertTo<DateRemoteValue>().Value.Year, Is.EqualTo(2024));
+        Assert.That(result.ConvertTo<DateRemoteValue>().Value.Month, Is.EqualTo(1));
     }
 
     [Test]
@@ -177,12 +173,12 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "array", "value": [{"type": "string", "value": "a"}, {"type": "number", "value": 1}]}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("array"));
-        Assert.That(result.Value, Is.InstanceOf<RemoteValueList>());
-        RemoteValueList? list = result.ValueAs<RemoteValueList>();
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Array));
+        Assert.That(result, Is.InstanceOf<CollectionRemoteValue>());
+        RemoteValueList list = result.ConvertTo<CollectionRemoteValue>().Value;
         Assert.That(list, Has.Count.EqualTo(2));
-        Assert.That(list[0].ValueAs<string>(), Is.EqualTo("a"));
-        Assert.That(list[1].ValueAs<long>(), Is.EqualTo(1));
+        Assert.That(list[0].ConvertTo<StringRemoteValue>().Value, Is.EqualTo("a"));
+        Assert.That(list[1].ConvertTo<LongRemoteValue>().Value, Is.EqualTo(1));
     }
 
     [Test]
@@ -191,11 +187,11 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "map", "value": [["key1", {"type": "string", "value": "val1"}]]}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("map"));
-        Assert.That(result.Value, Is.InstanceOf<RemoteValueDictionary>());
-        RemoteValueDictionary? dict = result.ValueAs<RemoteValueDictionary>();
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Map));
+        Assert.That(result, Is.InstanceOf<KeyValuePairCollectionRemoteValue>());
+        RemoteValueDictionary dict = result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
         Assert.That(dict, Contains.Key("key1"));
-        Assert.That(dict!["key1"].ValueAs<string>(), Is.EqualTo("val1"));
+        Assert.That(dict!["key1"].ConvertTo<StringRemoteValue>().Value, Is.EqualTo("val1"));
     }
 
     [Test]
@@ -204,18 +200,22 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "map", "value": [[{"type": "string", "value": "objKey"}, {"type": "string", "value": "val1"}]]}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("map"));
-        Assert.That(result.Value, Is.InstanceOf<RemoteValueDictionary>());
-        RemoteValueDictionary? dict = result.ValueAs<RemoteValueDictionary>();
-        Assert.That(dict, Contains.Key("objKey"));
-        Assert.That(dict["objKey"].ValueAs<string>(), Is.EqualTo("val1"));
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Map));
+        Assert.That(result, Is.InstanceOf<KeyValuePairCollectionRemoteValue>());
+        RemoteValueDictionary? dict = result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
+        Assert.That(dict, Is.Not.Null);
+        Assert.That(dict, Has.Count.EqualTo(1));
+        KeyValuePair<object, RemoteValue> entry = dict!.ElementAt(0);
+        Assert.That(entry.Key, Is.InstanceOf<StringRemoteValue>());
+        Assert.That(((StringRemoteValue)entry.Key).Value, Is.EqualTo("objKey"));
+        Assert.That(entry.Value.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("val1"));
     }
 
     [Test]
     public void TestDeserializeWithHandleProperty()
     {
-        string json = """{"type": "string", "value": "hello", "handle": "handle-123"}""";
-        RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
+        string json = """{"type": "symbol", "handle": "handle-123"}""";
+        ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Handle, Is.EqualTo("handle-123"));
     }
@@ -223,8 +223,8 @@ public class RemoteValueJsonConverterTests
     [Test]
     public void TestDeserializeWithInternalIdProperty()
     {
-        string json = """{"type": "string", "value": "hello", "internalId": "internal-456"}""";
-        RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
+        string json = """{"type": "symbol", "internalId": "internal-456"}""";
+        ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.InternalId, Is.EqualTo("internal-456"));
     }
@@ -235,9 +235,9 @@ public class RemoteValueJsonConverterTests
         string json = """{"type": "node", "value": {"nodeType": 1, "childNodeCount": 0}, "sharedId": "shared-789"}""";
         RemoteValue? result = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Type, Is.EqualTo("node"));
-        Assert.That(result.SharedId, Is.EqualTo("shared-789"));
-        Assert.That(result.Value, Is.InstanceOf<NodeProperties>());
+        Assert.That(result!.Type, Is.EqualTo(RemoteValueType.Node));
+        Assert.That(result, Is.InstanceOf<NodeRemoteValue>());
+        Assert.That(((NodeRemoteValue)result).SharedId, Is.EqualTo("shared-789"));
     }
 
     [Test]

@@ -172,9 +172,10 @@ public static class PermissionsModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue locationValue)
         {
-            string location = success.Result.ValueAs<string>();
+            string location = locationValue.Value;
             Console.WriteLine($"Location: {location}");
         }
 #endregion
@@ -205,9 +206,10 @@ public static class PermissionsModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue permissionValue)
         {
-            string permissionState = success.Result.ValueAs<string>();
+            string permissionState = permissionValue.Value;
             Console.WriteLine($"Notification permission: {permissionState}");
         }
 #endregion
@@ -235,9 +237,10 @@ public static class PermissionsModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue accessValue)
         {
-            string accessResult = success.Result.ValueAs<string>();
+            string accessResult = accessValue.Value;
             Console.WriteLine($"Camera access: {accessResult}");
         }
 #endregion
@@ -270,9 +273,10 @@ public static class PermissionsModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue accessValue)
         {
-            string accessResult = success.Result.ValueAs<string>();
+            string accessResult = accessValue.Value;
             Console.WriteLine($"Media access: {accessResult}");
         }
     }

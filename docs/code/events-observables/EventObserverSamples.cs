@@ -725,7 +725,8 @@ public static class EventObserverSamples
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for element to appear
-        RemoteValue element = await elementFound.Task;
+        RemoteValue elementRemoteValue = await elementFound.Task;
+        elementRemoteValue.TryConvertTo(out NodeRemoteValue element);
         Console.WriteLine($"Element found: {element.SharedId}");
 #endregion
     }

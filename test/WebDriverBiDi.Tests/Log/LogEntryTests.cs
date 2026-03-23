@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.Log;
 
 using System.Text.Json;
+using WebDriverBiDi.Script;
 
 [TestFixture]
 public class LogEntryTests
@@ -110,9 +111,8 @@ public class LogEntryTests
             Assert.That(consoleEntry.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             Assert.That(consoleEntry.Method, Is.EqualTo("myMethod"));
             Assert.That(consoleEntry.Args, Has.Count.EqualTo(1));
-            Assert.That(consoleEntry.Args[0].HasValue);
-            Assert.That(consoleEntry.Args[0].Type, Is.EqualTo("string"));
-            Assert.That(consoleEntry.Args[0].ValueAs<string>(), Is.EqualTo("argValue"));
+            Assert.That(consoleEntry.Args[0].Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(consoleEntry.Args[0].ConvertTo<StringRemoteValue>().Value, Is.EqualTo("argValue"));
         }
     }
 

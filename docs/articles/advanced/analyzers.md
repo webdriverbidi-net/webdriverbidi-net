@@ -41,7 +41,6 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName` |
 | **BIDI016** | Warning | Deadlock-prone pattern (e.g., `.Result`, `.Wait()`) in event handler |
 | **BIDI017** | Warning | Adding to nullable list property without `??= new List<T>()` |
-| **BIDI018** | Warning | `RemoteValue.ValueAs<T>()` with unsupported type; suggests `RemoteValueDictionary` or `RemoteValueList` |
 
 ## Code Fixes
 
@@ -56,7 +55,6 @@ Many analyzers provide automatic code fixes. In Visual Studio or VS Code, use th
 | Blocking handlers (BIDI007, BIDI016) | [Common Pitfalls - Blocking the Transport Thread](../common-pitfalls.md#pitfall-blocking-the-transport-thread-with-synchronous-handlers) |
 | Observer disposal (BIDI006) | [Common Pitfalls - Resource Cleanup](../common-pitfalls.md#resource-cleanup) |
 | Nullable collections (BIDI017) | [Common Pitfalls - Null vs Empty Collections](../common-pitfalls.md#null-vs-empty-collections) |
-| RemoteValue (BIDI018) | [Working with Remote Values](../remote-values.md) |
 | Reset parameters (BIDI014) | [API Design Guide - Required vs Optional Parameters](api-design.md#required-vs-optional-parameters) |
 
 ## Known Limitations

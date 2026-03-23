@@ -10,24 +10,24 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing a regular expression.
 /// </summary>
-public record RegularExpressionValue
+public record struct RegularExpressionValue
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="RegularExpressionValue"/> class with a given pattern.
+    /// Initializes a new instance of the <see cref="RegularExpressionValue"/> struct with a given pattern.
     /// </summary>
     /// <param name="pattern">The pattern for the regular expression.</param>
     [JsonConstructor]
-    public RegularExpressionValue(string pattern)
+    internal RegularExpressionValue(string pattern)
         : this(pattern, null)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RegularExpressionValue"/> class with a given pattern and flags.
+    /// Initializes a new instance of the <see cref="RegularExpressionValue"/> struct with a given pattern and flags.
     /// </summary>
     /// <param name="pattern">The pattern for the regular expression.</param>
     /// <param name="flags">The flags used in the regular expression.</param>
-    public RegularExpressionValue(string pattern, string? flags)
+    internal RegularExpressionValue(string pattern, string? flags)
     {
         this.Pattern = pattern;
         this.Flags = flags;

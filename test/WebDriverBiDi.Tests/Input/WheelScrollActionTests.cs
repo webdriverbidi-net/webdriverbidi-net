@@ -147,7 +147,10 @@ public class WheelScrollActionTests
                             "sharedId": "testSharedId"
                           }
                           """;
-        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!.ToSharedReference();
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        SharedReference node = ((NodeRemoteValue)remoteValue).ToSharedReference();
         WheelScrollAction properties = new()
         {
             Origin = Origin.Element(new ElementOrigin(node))

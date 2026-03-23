@@ -76,9 +76,10 @@ public static class FirstApplicationSamples
 
             EvaluateResult scriptResult = await driver.Script.EvaluateAsync(evalParams);
 
-            if (scriptResult is EvaluateResultSuccess success)
+            if (scriptResult is EvaluateResultSuccess success &&
+                success.Result is StringRemoteValue titleValue)
             {
-                string title = success.Result.ValueAs<string>() ?? "No title";
+                string title = titleValue.Value ?? "No title";
                 Console.WriteLine($"Page title: {title}");
             }
 
@@ -99,14 +100,15 @@ public static class FirstApplicationSamples
 
             EvaluateResult infoResult = await driver.Script.EvaluateAsync(infoParams);
 
-            if (infoResult is EvaluateResultSuccess infoSuccess)
+            if (infoResult is EvaluateResultSuccess infoSuccess &&
+                infoSuccess.Result is KeyValuePairCollectionRemoteValue infoValue)
             {
-                RemoteValueDictionary info = infoSuccess.Result.ValueAs<RemoteValueDictionary>();
+                RemoteValueDictionary info = infoValue.Value;
                 Console.WriteLine("Page Analysis:");
-                Console.WriteLine($"  URL: {info["url"].ValueAs<string>()}");
-                Console.WriteLine($"  Links: {info["linkCount"].ValueAs<long>()}");
-                Console.WriteLine($"  Headings: {info["headingCount"].ValueAs<long>()}");
-                Console.WriteLine($"  Paragraphs: {info["paragraphCount"].ValueAs<long>()}");
+                Console.WriteLine($"  URL: {info["url"].ConvertTo<StringRemoteValue>().Value}");
+                Console.WriteLine($"  Links: {info["linkCount"].ConvertTo<LongRemoteValue>().Value}");
+                Console.WriteLine($"  Headings: {info["headingCount"].ConvertTo<LongRemoteValue>().Value}");
+                Console.WriteLine($"  Paragraphs: {info["paragraphCount"].ConvertTo<LongRemoteValue>().Value}");
             }
 
             // Take a screenshot

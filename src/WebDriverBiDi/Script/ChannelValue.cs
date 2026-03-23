@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Value to be used as argument to a preload script.
 /// </summary>
-public record ChannelValue : ArgumentValue
+public record ChannelValue : LocalValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ChannelValue"/> class.

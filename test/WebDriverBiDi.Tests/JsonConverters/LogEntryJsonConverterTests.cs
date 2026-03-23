@@ -49,8 +49,8 @@ public class LogEntryJsonConverterTests
         {
             Assert.That(consoleEntry.Method, Is.EqualTo("log"));
             Assert.That(consoleEntry.Args, Has.Count.EqualTo(1));
-            Assert.That(consoleEntry.Args[0].Type, Is.EqualTo("string"));
-            Assert.That(consoleEntry.Args[0].ValueAs<string>(), Is.EqualTo("test"));
+            Assert.That(consoleEntry.Args[0].Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(consoleEntry.Args[0].ConvertTo<StringRemoteValue>().Value, Is.EqualTo("test"));
         }
     }
 

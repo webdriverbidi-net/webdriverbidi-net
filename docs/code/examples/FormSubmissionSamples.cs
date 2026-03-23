@@ -55,7 +55,7 @@ public static class FormSubmissionSamples
     public static async Task ClickToFocus(
         BiDiDriver driver,
         string contextId,
-        RemoteValue inputElement)
+        NodeRemoteValue inputElement)
     {
 #region ClicktoFocus
         PerformActionsCommandParameters clickParams = new PerformActionsCommandParameters(contextId);
@@ -189,7 +189,8 @@ public static class FormSubmissionSamples
                 target,
                 true));
 
-        if (checkboxResult is EvaluateResultSuccess checkboxSuccess)
+        if (checkboxResult is EvaluateResultSuccess checkboxSuccess &&
+            checkboxSuccess.Result is NodeRemoteValue checkboxElement)
         {
             // Click to toggle
             // PointerSource is a hypothetical helper class to build input actions.
@@ -197,7 +198,7 @@ public static class FormSubmissionSamples
                 new PerformActionsCommandParameters(contextId);
             PointerSource mouse = new PointerSource("mouse", PointerType.Mouse);
             mouse.CreatePointerMoveToElement(
-                checkboxSuccess.Result.ToSharedReference(), 
+                checkboxElement.ToSharedReference(), 
                 0, 0, 
                 TimeSpan.Zero);
             mouse.CreatePointerDown(MouseButton.Left);
@@ -274,7 +275,8 @@ public static class FormSubmissionSamples
 
             if (inputResult is EvaluateResultSuccess inputSuccess)
             {
-                RemoteValue inputElement = inputSuccess.Result;
+                RemoteValue inputElementRemoteValue = inputSuccess.Result;
+                inputElementRemoteValue.TryConvertTo(out NodeRemoteValue inputElement);
                 Console.WriteLine($"Found input element: {inputElement.SharedId}");
 
                 // Click the input to focus it
@@ -322,7 +324,7 @@ public static class FormSubmissionSamples
 
                 if (phoneResult is EvaluateResultSuccess phoneSuccess)
                 {
-                    RemoteValue phoneElement = phoneSuccess.Result;
+                    phoneSuccess.Result.TryConvertTo(out NodeRemoteValue? phoneElement);
 
                     // Click phone field
                     PerformActionsCommandParameters clickPhoneParams = 
@@ -364,7 +366,8 @@ public static class FormSubmissionSamples
 
                 if (buttonResult is EvaluateResultSuccess buttonSuccess)
                 {
-                    RemoteValue buttonElement = buttonSuccess.Result;
+                    RemoteValue buttonElementRemoteValue = buttonSuccess.Result;
+                    buttonElementRemoteValue.TryConvertTo(out NodeRemoteValue buttonElement);
                     Console.WriteLine($"Found submit button: {buttonElement.SharedId}");
 
                     // Set up navigation observer
@@ -382,8 +385,8 @@ public static class FormSubmissionSamples
                         new PerformActionsCommandParameters(contextId);
                     PointerSource mouse3 = new PointerSource("mouse", PointerType.Mouse);
                     mouse3.CreatePointerMoveToElement(
-                        buttonElement.ToSharedReference(), 
-                        0, 0, 
+                        buttonElement.ToSharedReference(),
+                        0, 0,
                         TimeSpan.Zero);
                     mouse3.CreatePointerDown(MouseButton.Left);
                     mouse3.CreatePointerUp(MouseButton.Left);
@@ -404,9 +407,10 @@ public static class FormSubmissionSamples
                                 new ContextTarget(contextId),
                                 true));
 
-                        if (urlResult is EvaluateResultSuccess urlSuccess)
+                        if (urlResult is EvaluateResultSuccess urlSuccess &&
+                            urlSuccess.Result is StringRemoteValue urlValue)
                         {
-                            string currentUrl = urlSuccess.Result.ValueAs<string>();
+                            string currentUrl = urlValue.Value ?? "No URL";
                             Console.WriteLine($"Current URL: {currentUrl}");
                         }
                     }
@@ -508,7 +512,7 @@ public static class FormSubmissionSamples
                 target,
                 true));
 
-        string currentUrl = ((EvaluateResultSuccess)urlResult).Result.ValueAs<string>();
+        string currentUrl = ((EvaluateResultSuccess)urlResult).Result.ConvertTo<StringRemoteValue>().Value;
         if (currentUrl.Contains("/success"))
         {
             Console.WriteLine("Form submitted successfully!");
@@ -521,9 +525,10 @@ public static class FormSubmissionSamples
                 target,
                 true));
 
-        if (messageResult is EvaluateResultSuccess messageSuccess)
+        if (messageResult is EvaluateResultSuccess messageSuccess &&
+            messageSuccess.Result is StringRemoteValue messageValue)
         {
-            string? message = messageSuccess.Result.ValueAs<string>();
+            string? message = messageValue.Value;
             Console.WriteLine($"Success message: {message}");
         }
 #endregion

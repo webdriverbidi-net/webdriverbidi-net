@@ -219,7 +219,7 @@ Remote values have a `Type` property indicating their JavaScript type:
 
 ### Accessing Values
 
-Use the `ValueAs<T>()` method to convert to .NET types:
+Pattern match or use `As<T>()` to cast to the concrete type and access the `Value` property:
 
 [!code-csharp[Accessing Values](../code/core-concepts/CoreConceptsSamples.cs#AccessingValues)]
 

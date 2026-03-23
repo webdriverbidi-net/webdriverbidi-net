@@ -34,11 +34,11 @@ public static class RemoteValuesSamples
             RemoteValue remoteValue = success.Result;
             
             // Convert to long
-            long number = remoteValue.ValueAs<long>();
+            long number = remoteValue.ConvertTo<LongRemoteValue>().Value;
             Console.WriteLine(number); // 42
             
             // Can also convert to double
-            double doubleNumber = remoteValue.ValueAs<double>();
+            double doubleNumber = Convert.ToDouble(number);
             Console.WriteLine(doubleNumber); // 42.0
         }
 #endregion
@@ -55,9 +55,10 @@ public static class RemoteValuesSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("'Hello, World!'", target, true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue stringValue)
         {
-            string text = success.Result.ValueAs<string>();
+            string text = stringValue.Value;
             Console.WriteLine(text); // "Hello, World!"
         }
 #endregion
@@ -74,9 +75,10 @@ public static class RemoteValuesSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("true", target, true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is BooleanRemoteValue booleanValue)
         {
-            bool flag = success.Result.ValueAs<bool>();
+            bool flag = booleanValue.Value;
             Console.WriteLine(flag); // True
         }
 #endregion
@@ -95,7 +97,7 @@ public static class RemoteValuesSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            if (success.Result.Type == "null" || success.Result.Type == "undefined")
+            if (success.Result.Type == RemoteValueType.Null || success.Result.Type == RemoteValueType.Undefined)
             {
                 Console.WriteLine("Value is null or undefined");
             }
@@ -124,14 +126,14 @@ public static class RemoteValuesSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            RemoteValue obj = success.Result;
+            KeyValuePairCollectionRemoteValue obj = success.Result.ConvertTo<KeyValuePairCollectionRemoteValue>();
             
             // Convert to RemoteValueDictionary; extract values with ValueAs<T>()
-            RemoteValueDictionary dict = obj.ValueAs<RemoteValueDictionary>();
+            RemoteValueDictionary dict = obj.Value;
             
-            Console.WriteLine(dict["name"].ValueAs<string>());   // "John"
-            Console.WriteLine(dict["age"].ValueAs<long>());    // 30
-            Console.WriteLine(dict["active"].ValueAs<bool>()); // True
+            Console.WriteLine(dict["name"].ConvertTo<StringRemoteValue>().Value);   // "John"
+            Console.WriteLine(dict["age"].ConvertTo<LongRemoteValue>().Value);    // 30
+            Console.WriteLine(dict["active"].ConvertTo<BooleanRemoteValue>().Value); // True
         }
 #endregion
     }
@@ -159,13 +161,14 @@ public static class RemoteValuesSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(script, target, true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is KeyValuePairCollectionRemoteValue dictionaryValue)
         {
-            RemoteValueDictionary dict = success.Result.ValueAs<RemoteValueDictionary>();
-            RemoteValueDictionary user = dict["user"].ValueAs<RemoteValueDictionary>();
-            RemoteValueDictionary address = user["address"].ValueAs<RemoteValueDictionary>();
+            RemoteValueDictionary dict = dictionaryValue.Value;
+            RemoteValueDictionary user = dict["user"].ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
+            RemoteValueDictionary address = user["address"].ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
             
-            Console.WriteLine(address["city"].ValueAs<string>()); // "New York"
+            Console.WriteLine(address["city"].ConvertTo<StringRemoteValue>().Value); // "New York"
         }
 #endregion
     }
@@ -183,15 +186,16 @@ public static class RemoteValuesSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(script, target, true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is CollectionRemoteValue listValue)
         {
-            RemoteValueList list = success.Result.ValueAs<RemoteValueList>();
+            RemoteValueList list = listValue.Value;
             
             Console.WriteLine($"Length: {list.Count}"); // 5
             
             foreach (RemoteValue item in list)
             {
-                Console.WriteLine(item.ValueAs<long>());
+                Console.WriteLine(item.ConvertTo<LongRemoteValue>().Value);
             }
         }
 #endregion
@@ -216,14 +220,15 @@ public static class RemoteValuesSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(script, target, true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is CollectionRemoteValue listValue)
         {
-            RemoteValueList list = success.Result.ValueAs<RemoteValueList>();
+            RemoteValueList list = listValue.Value;
 
             foreach (RemoteValue item in list)
             {
-                RemoteValueDictionary person = item.ValueAs<RemoteValueDictionary>();
-                Console.WriteLine($"{person["name"].ValueAs<string>()}, age {person["age"].ValueAs<long>()}");
+                RemoteValueDictionary person = item.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
+                Console.WriteLine($"{person["name"].ConvertTo<StringRemoteValue>().Value}, age {person["age"].ConvertTo<LongRemoteValue>().Value}");
             }
         }
 #endregion
@@ -237,16 +242,16 @@ public static class RemoteValuesSamples
         {
             return value.Type switch
             {
-                "string" => value.ValueAs<string>(),
-                "number" => value.Value is long l ? l : value.ValueAs<double>(),
-                "boolean" => value.ValueAs<bool>(),
-                "null" or "undefined" => null,
-                "object" or "map" => value.ValueAs<RemoteValueDictionary>()
+                RemoteValueType.String => value.ConvertTo<StringRemoteValue>().Value,
+                RemoteValueType.Number => value is LongRemoteValue l ? l.Value : value.ConvertTo<DoubleRemoteValue>().Value,
+                RemoteValueType.Boolean => value.ConvertTo<BooleanRemoteValue>().Value,
+                RemoteValueType.Null or RemoteValueType.Undefined => null,
+                RemoteValueType.Object or RemoteValueType.Map => value.ConvertTo<KeyValuePairCollectionRemoteValue>().Value
                     .ToDictionary(kvp => kvp.Key.ToString() ?? "", kvp => ToObject(kvp.Value)),
-                "array" or "set" => value.ValueAs<RemoteValueList>()
+                RemoteValueType.Array or RemoteValueType.Set => value.ConvertTo<CollectionRemoteValue>().Value
                     .Select(ToObject)
                     .ToList(),
-                _ => value.Value
+                _ => (value as ValueHoldingRemoteValue)?.ValueObject ?? "(object)"
             };
         }
 #endregion
@@ -258,7 +263,7 @@ public static class RemoteValuesSamples
     {
 #region ToObjectUsage
         // Usage: convert RemoteValueDictionary to Dictionary<string, object>
-        RemoteValueDictionary dict = success.Result.ValueAs<RemoteValueDictionary>();
+        RemoteValueDictionary dict = success.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
         Dictionary<string, object?> flat = dict.ToDictionary(
             kvp => kvp.Key.ToString() ?? "",
             kvp => ToObject(kvp.Value));
@@ -281,27 +286,25 @@ public static class RemoteValuesSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            RemoteValue element = success.Result;
+            RemoteValue elementRemoteValue = success.Result;
+            elementRemoteValue.TryConvertTo(out NodeRemoteValue element);
             
             Console.WriteLine($"Type: {element.Type}"); // "node"
             Console.WriteLine($"SharedId: {element.SharedId}");
             
             // Get node properties
-            NodeProperties? nodeProps = element.ValueAs<NodeProperties>();
+            NodeProperties nodeProps = element.Value;
             
-            if (nodeProps != null)
+            Console.WriteLine($"Tag: {nodeProps.LocalName}");
+            Console.WriteLine($"Node Type: {nodeProps.NodeType}");
+            Console.WriteLine($"Child Count: {nodeProps.ChildNodeCount}");
+            
+            // Get attributes
+            if (nodeProps.Attributes != null)
             {
-                Console.WriteLine($"Tag: {nodeProps.LocalName}");
-                Console.WriteLine($"Node Type: {nodeProps.NodeType}");
-                Console.WriteLine($"Child Count: {nodeProps.ChildNodeCount}");
-                
-                // Get attributes
-                if (nodeProps.Attributes != null)
+                foreach (var attr in nodeProps.Attributes)
                 {
-                    foreach (var attr in nodeProps.Attributes)
-                    {
-                        Console.WriteLine($"  {attr.Key} = {attr.Value}");
-                    }
+                    Console.WriteLine($"  {attr.Key} = {attr.Value}");
                 }
             }
         }
@@ -325,7 +328,7 @@ public static class RemoteValuesSamples
 
         if (getResult is EvaluateResultSuccess getSuccess)
         {
-            RemoteValue element = getSuccess.Result;
+            getSuccess.Result.TryConvertTo(out NodeRemoteValue? element);
             
             // Create a reference
             SharedReference elementRef = element.ToSharedReference();
@@ -450,40 +453,40 @@ public static class RemoteValuesSamples
 
         switch (value.Type)
         {
-            case "string":
-                string str = value.ValueAs<string>();
+            case RemoteValueType.String:
+                string str = value.ConvertTo<StringRemoteValue>().Value;
                 break;
             
-            case "number":
+            case RemoteValueType.Number:
                 // Try long first, then double
-                try
+                if (value is LongRemoteValue l)
                 {
-                    long longNum = value.ValueAs<long>();
+                    long longNum = l.Value;
                 }
-                catch
+                else
                 {
-                    double doubleNum = value.ValueAs<double>();
+                    double doubleNum = value.ConvertTo<DoubleRemoteValue>().Value;
                 }
                 break;
             
-            case "boolean":
-                bool flag = value.ValueAs<bool>();
+            case RemoteValueType.Boolean:
+                bool flag = value.ConvertTo<BooleanRemoteValue>().Value;
                 break;
             
-            case "object":
-                RemoteValueDictionary obj = value.ValueAs<RemoteValueDictionary>();
+            case RemoteValueType.Object:
+                RemoteValueDictionary obj = value.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
                 break;
             
-            case "array":
-                RemoteValueList list = value.ValueAs<RemoteValueList>();
+            case RemoteValueType.Array:
+                RemoteValueList list = value.ConvertTo<CollectionRemoteValue>().Value;
                 break;
             
-            case "node":
-                NodeProperties? node = value.ValueAs<NodeProperties>();
+            case RemoteValueType.Node:
+                NodeProperties? node = value.ConvertTo<NodeRemoteValue>().Value;
                 break;
             
-            case "null":
-            case "undefined":
+            case RemoteValueType.Null:
+            case RemoteValueType.Undefined:
                 // Handle null/undefined
                 break;
         }
@@ -496,15 +499,17 @@ public static class RemoteValuesSamples
     public static void CheckingForSpecificTypes(RemoteValue value)
     {
 #region CheckingforSpecificTypes
-        if (value.Type == "node")
+        if (value.Type == RemoteValueType.Node)
         {
             // It's a DOM element
-            SharedReference elementRef = value.ToSharedReference();
+            value.TryConvertTo(out NodeRemoteValue? nodeValue);
+            SharedReference elementRef = nodeValue.ToSharedReference();
         }
-        else if (value.Type == "array")
+        else if (value.Type == RemoteValueType.Array)
         {
             // It's an array
-            RemoteValueList list = value.ValueAs<RemoteValueList>();
+            value.TryConvertTo(out CollectionRemoteValue? listValue);
+            RemoteValueList list = listValue.Value;
         }
 #endregion
     }
@@ -529,14 +534,15 @@ public static class RemoteValuesSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(script, target, true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is KeyValuePairCollectionRemoteValue dictionaryValue)
         {
-            RemoteValueDictionary data = success.Result.ValueAs<RemoteValueDictionary>();
+            RemoteValueDictionary data = dictionaryValue.Value;
             
-            string title = data["title"].ValueAs<string>();
-            string url = data["url"].ValueAs<string>();
-            long linkCount = data["linkCount"].ValueAs<long>();
-            bool ready = data["ready"].ValueAs<bool>();
+            string title = data["title"].ConvertTo<StringRemoteValue>().Value;
+            string url = data["url"].ConvertTo<StringRemoteValue>().Value;
+            long linkCount = data["linkCount"].ConvertTo<LongRemoteValue>().Value;
+            bool ready = data["ready"].ConvertTo<BooleanRemoteValue>().Value;
         }
 #endregion
     }
@@ -556,11 +562,11 @@ public static class RemoteValuesSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            RemoteValueList links = success.Result.ValueAs<RemoteValueList>();
+            RemoteValueList links = success.Result.ConvertTo<CollectionRemoteValue>().Value;
             
             foreach (RemoteValue link in links)
             {
-                Console.WriteLine(link.ValueAs<string>());
+                Console.WriteLine(link.ConvertTo<StringRemoteValue>().Value);
             }
         }
 #endregion
@@ -581,7 +587,7 @@ public static class RemoteValuesSamples
                 target,
                 true));
 
-        RemoteValue element = ((EvaluateResultSuccess)getResult).Result;
+        ((EvaluateResultSuccess)getResult).Result.TryConvertTo(out NodeRemoteValue? element);
 
         // Get properties from element
         CallFunctionCommandParameters propsParams = new CallFunctionCommandParameters(
@@ -598,7 +604,7 @@ public static class RemoteValuesSamples
 
         EvaluateResult propsResult = await driver.Script.CallFunctionAsync(propsParams);
         RemoteValueDictionary props = ((EvaluateResultSuccess)propsResult).Result
-            .ValueAs<RemoteValueDictionary>();
+            .ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
 #endregion
     }
 }

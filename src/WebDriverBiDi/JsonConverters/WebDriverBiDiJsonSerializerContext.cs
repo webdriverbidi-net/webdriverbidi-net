@@ -350,12 +350,18 @@ using WebDriverBiDi.WebExtension;
 
 // ── Script module ──
 [JsonSerializable(typeof(AddPreloadScriptCommandParameters))]
-[JsonSerializable(typeof(ArgumentValue))]
+[JsonSerializable(typeof(AudioWorkletRealmInfo))]
+[JsonSerializable(typeof(BigIntegerRemoteValue))]
+[JsonSerializable(typeof(BooleanRemoteValue))]
 [JsonSerializable(typeof(CallFunctionCommandParameters))]
 [JsonSerializable(typeof(ChannelProperties))]
 [JsonSerializable(typeof(ChannelValue))]
+[JsonSerializable(typeof(CollectionRemoteValue))]
 [JsonSerializable(typeof(ContextTarget))]
+[JsonSerializable(typeof(DedicatedWorkerRealmInfo))]
+[JsonSerializable(typeof(DateRemoteValue))]
 [JsonSerializable(typeof(DisownCommandParameters))]
+[JsonSerializable(typeof(DoubleRemoteValue))]
 [JsonSerializable(typeof(EvaluateCommandParameters))]
 [JsonSerializable(typeof(EvaluateResult))]
 [JsonSerializable(typeof(EvaluateResultSuccess))]
@@ -364,15 +370,20 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(ExceptionDetails))]
 [JsonSerializable(typeof(GetRealmsCommandParameters))]
 [JsonSerializable(typeof(IncludeShadowTreeSerializationOption))]
+[JsonSerializable(typeof(KeyValuePairCollectionRemoteValue))]
 [JsonSerializable(typeof(LocalValue))]
+[JsonSerializable(typeof(LocalArgumentValue))]
+[JsonSerializable(typeof(LongRemoteValue))]
 [JsonSerializable(typeof(NodeAttributes))]
 [JsonSerializable(typeof(NodeProperties))]
-[JsonSerializable(typeof(AudioWorkletRealmInfo))]
-[JsonSerializable(typeof(DedicatedWorkerRealmInfo))]
+[JsonSerializable(typeof(NodeRemoteValue))]
+[JsonSerializable(typeof(NullRemoteValue))]
+[JsonSerializable(typeof(ObjectReferenceRemoteValue))]
 [JsonSerializable(typeof(PaintWorkletRealmInfo))]
 [JsonSerializable(typeof(RealmInfo))]
 [JsonSerializable(typeof(RealmTarget))]
 [JsonSerializable(typeof(RealmType))]
+[JsonSerializable(typeof(RegExpRemoteValue))]
 [JsonSerializable(typeof(RegularExpressionValue))]
 [JsonSerializable(typeof(RemoteObjectReference))]
 [JsonSerializable(typeof(RemoteReference))]
@@ -385,10 +396,14 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(Source))]
 [JsonSerializable(typeof(StackFrame))]
 [JsonSerializable(typeof(StackTrace))]
+[JsonSerializable(typeof(StringRemoteValue))]
 [JsonSerializable(typeof(Target))]
+[JsonSerializable(typeof(UndefinedRemoteValue))]
 [JsonSerializable(typeof(ServiceWorkerRealmInfo))]
 [JsonSerializable(typeof(SharedWorkerRealmInfo))]
+[JsonSerializable(typeof(ValueHoldingRemoteValue))]
 [JsonSerializable(typeof(WindowProxyProperties))]
+[JsonSerializable(typeof(WindowProxyRemoteValue))]
 [JsonSerializable(typeof(WindowRealmInfo))]
 
 // ── Session module ──
@@ -503,6 +518,7 @@ public partial class WebDriverBiDiJsonSerializerContext : JsonSerializerContext
         RuntimeHelpers.RunClassConstructor(typeof(EvaluateResultType[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(IncludeShadowTreeSerializationOption[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(RealmType[]).TypeHandle);
+        RuntimeHelpers.RunClassConstructor(typeof(RemoteValueType[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ResultOwnership[]).TypeHandle);
         RuntimeHelpers.RunClassConstructor(typeof(ShadowRootMode[]).TypeHandle);
 

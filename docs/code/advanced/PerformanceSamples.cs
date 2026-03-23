@@ -190,12 +190,13 @@ public class PerformanceSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is KeyValuePairCollectionRemoteValue remoteValue)
         {
-            RemoteValueDictionary data = success.Result.ValueAs<RemoteValueDictionary>();
-            string actualTitle = data["title"].ValueAs<string>();
-            string actualUrl = data["url"].ValueAs<string>();
-            long actualLinkCount = data["linkCount"].ValueAs<long>();
+            RemoteValueDictionary data = remoteValue.Value;
+            string actualTitle = data["title"].ConvertTo<StringRemoteValue>().Value;
+            string actualUrl = data["url"].ConvertTo<StringRemoteValue>().Value;
+            long actualLinkCount = data["linkCount"].ConvertTo<LongRemoteValue>().Value;
         }
 #endregion
     }

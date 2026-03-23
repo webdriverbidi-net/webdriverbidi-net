@@ -207,7 +207,7 @@ public static class ConsoleMonitoringSamples
                 
                 foreach (var arg in e.Arguments)
                 {
-                    Console.WriteLine($"    Type: {arg.Type}, Value: {arg.Value}");
+                    Console.WriteLine($"    Type: {arg.Type}, Value: {arg.ConvertTo<StringRemoteValue>().Value}");
                 }
             }
         });

@@ -86,7 +86,7 @@ try
         throw new InvalidOperationException($"Script evaluation failed: result type was {evalResult.ResultType}");
     }
 
-    string? title = success.Result.ValueAs<string>();
+    string? title = success.Result.ConvertTo<StringRemoteValue>().Value;
     Console.WriteLine($"Page title: {title}");
 
     if (title is null || !title.Contains("GitHub", StringComparison.OrdinalIgnoreCase))
@@ -106,7 +106,7 @@ try
         throw new InvalidOperationException($"CallFunction failed: result type was {callResult.ResultType}");
     }
 
-    string? greeting = callSuccess.Result.ValueAs<string>();
+    string? greeting = callSuccess.Result.ConvertTo<StringRemoteValue>().Value;
     Console.WriteLine($"CallFunction result: {greeting}");
 
     if (greeting != "Hello, World!")

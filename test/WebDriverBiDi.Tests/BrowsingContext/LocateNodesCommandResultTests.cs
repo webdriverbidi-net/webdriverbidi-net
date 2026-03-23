@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.BrowsingContext;
 
 using System.Text.Json;
+using WebDriverBiDi.Script;
 
 [TestFixture]
 public class LocateNodesCommandResultTests

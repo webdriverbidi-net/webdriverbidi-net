@@ -32,3 +32,11 @@ BIDI017 | Usage       | Warning  | BiDiDriver017_NullableListAddAnalyzer
 Rule ID | Category    | Severity | Notes
 --------|-------------|----------|--------------------
 BIDI018 | Usage       | Warning  | BiDiDriver018_UnsafeRemoteValueValueAsAnalyzer
+
+## Release 0.0.48
+
+### Removed Rules
+
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|--------------------
+BIDI018 | Usage       | Disabled  | BiDiDriver018_UnsafeRemoteValueValueAsAnalyzer

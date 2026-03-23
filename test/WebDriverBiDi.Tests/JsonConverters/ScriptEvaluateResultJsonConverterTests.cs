@@ -19,9 +19,8 @@ public class ScriptEvaluateResultJsonConverterTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(successResult.RealmId, Is.EqualTo("testRealm"));
-            Assert.That(successResult.Result.Type, Is.EqualTo("string"));
-            Assert.That(successResult.Result.HasValue);
-            Assert.That(successResult.Result.ValueAs<string>(), Is.EqualTo("hello"));
+            Assert.That(successResult.Result.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(successResult.Result.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("hello"));
         }
     }
 

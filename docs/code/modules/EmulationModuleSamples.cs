@@ -166,7 +166,7 @@ public class EmulationModuleSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            bool isDarkMode = success.Result.ValueAs<bool>();
+            bool isDarkMode = success.Result.ConvertTo<BooleanRemoteValue>().Value;
             Console.WriteLine($"Dark mode active: {isDarkMode}");
         }
 #endregion
@@ -220,8 +220,8 @@ public class EmulationModuleSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            RemoteValueDictionary location = success.Result.ValueAs<RemoteValueDictionary>();
-            Console.WriteLine($"Browser location: {location["lat"].ValueAs<double>()}, {location["lng"].ValueAs<double>()}");
+            RemoteValueDictionary location = success.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
+            Console.WriteLine($"Browser location: {location["lat"].ConvertTo<DoubleRemoteValue>().Value}, {location["lng"].ConvertTo<DoubleRemoteValue>().Value}");
         }
 #endregion
     }
@@ -297,7 +297,7 @@ public class EmulationModuleSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            string timezone = success.Result.ValueAs<string>();
+            string timezone = success.Result.ConvertTo<StringRemoteValue>().Value;
             Console.WriteLine($"Browser timezone: {timezone}");
         }
 #endregion
@@ -382,7 +382,7 @@ public class EmulationModuleSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            string locale = success.Result.ValueAs<string>();
+            string locale = success.Result.ConvertTo<StringRemoteValue>().Value;
             Console.WriteLine($"Browser locale: {locale}");
         }
 #endregion
@@ -764,7 +764,7 @@ public class EmulationModuleSamples
 
             if (result is EvaluateResultSuccess success)
             {
-                string bgColor = success.Result.ValueAs<string>();
+                string bgColor = success.Result.ConvertTo<StringRemoteValue>().Value;
                 Console.WriteLine($"Background color: {bgColor}");
             }
 
@@ -819,7 +819,7 @@ public class EmulationModuleSamples
 
             if (result is EvaluateResultSuccess success)
             {
-                string? detectedLocation = success.Result.ValueAs<string>();
+                string? detectedLocation = success.Result.ConvertTo<StringRemoteValue>().Value;
                 Console.WriteLine($"Detected: {detectedLocation}");
             }
         }
