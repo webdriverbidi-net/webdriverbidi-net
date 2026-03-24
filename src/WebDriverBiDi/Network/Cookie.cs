@@ -43,8 +43,10 @@ public record Cookie
     /// Gets the domain of the cookie.
     /// </summary>
     [JsonPropertyName("domain")]
+    #pragma warning disable SA1515
     // TODO (Issue #53): Uncomment the below when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
     // [JsonRequired]
+    #pragma warning restore SA1515
     [JsonInclude]
     public string Domain { get; internal set; } = string.Empty;
 
@@ -52,8 +54,10 @@ public record Cookie
     /// Gets the path of the cookie.
     /// </summary>
     [JsonPropertyName("path")]
+    #pragma warning disable SA1515
     // TODO (Issue #53): Uncomment the below when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
     // [JsonRequired]
+    #pragma warning restore SA1515
     [JsonInclude]
     public string Path { get; internal set; } = string.Empty;
 
@@ -86,8 +90,10 @@ public record Cookie
     /// Gets the byte length of the cookie when serialized in an HTTP cookie header.
     /// </summary>
     [JsonPropertyName("size")]
+    #pragma warning disable SA1515
     // TODO (Issue #53): Uncomment the below when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
     // [JsonRequired]
+    #pragma warning restore SA1515
     [JsonInclude]
     public long Size { get; internal set; } = 0;
 
@@ -96,8 +102,10 @@ public record Cookie
     /// encrypted connection like HTTPS.
     /// </summary>
     [JsonPropertyName("secure")]
+    #pragma warning disable SA1515
     // TODO (Issue #53): Uncomment the below when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
     // [JsonRequired]
+    #pragma warning restore SA1515
     [JsonInclude]
     public bool Secure { get; internal set; }
 
@@ -107,8 +115,10 @@ public record Cookie
     /// via JavaScript (<see langword="false" />).
     /// </summary>
     [JsonPropertyName("httpOnly")]
+    #pragma warning disable SA1515
     // TODO (Issue #53): Uncomment the below when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
     // [JsonRequired]
+    #pragma warning restore SA1515
     [JsonInclude]
     public bool HttpOnly { get; internal set; }
 
@@ -116,8 +126,10 @@ public record Cookie
     /// Gets a value indicating whether the cookie is a same-site cookie.
     /// </summary>
     [JsonPropertyName("sameSite")]
+    #pragma warning disable SA1515
     // TODO (Issue #53): Uncomment the below when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
     // [JsonRequired]
+    #pragma warning restore SA1515
     [JsonInclude]
     public CookieSameSiteValue SameSite { get; internal set; } = CookieSameSiteValue.None;
 
