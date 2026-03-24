@@ -9,7 +9,7 @@
       }
     },
     "layoutRules": {
-      "newlineAtEndOfFile": "allow"
+      "newlineAtEndOfFile": "require"
     }
   }
 }
