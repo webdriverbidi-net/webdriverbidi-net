@@ -30,33 +30,33 @@ public class ApiIndexSamples
         public CommandNameCommandParameters(string requiredParam)
         {
         }
-        
+
         // Optional parameters as properties
         public string? OptionalParam { get; set; }
 
         public override string MethodName => "custom.moduleName";
     }
-#endregion
+    #endregion
 
-#region CommandResultsPattern
+    #region CommandResultsPattern
     public record CommandNameCommandResult : CommandResult
     {
         // Properties are read-only (immutable)
         public string ResultProperty { get; }
     }
-#endregion
+    #endregion
 
-#region EventArgumentsPattern
+    #region EventArgumentsPattern
     public record EventNameEventArgs : WebDriverBiDiEventArgs
     {
         // Properties are read-only (immutable)
         public string EventData { get; }
     }
-#endregion
+    #endregion
 
-#region AsyncMethodsPattern
+    #region AsyncMethodsPattern
     public async Task<TResult> MethodNameAsync(TParameters parameters)
-#endregion
+    #endregion
     {
         return default;
     }
@@ -95,12 +95,12 @@ public class ApiIndexSamples
     /// </summary>
     public static void ModuleAccess()
     {
-#region ModuleAccess
+        #region ModuleAccess
         BiDiDriver driver = new BiDiDriver();
         BrowsingContextModule browsingContext = driver.BrowsingContext;
         ScriptModule script = driver.Script;
         NetworkModule network = driver.Network;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public class ApiIndexSamples
 
         SubscribeCommandParameters subscribeParams = new SubscribeCommandParameters("module.eventName");
 
-#region EventSubscription
+        #region EventSubscription
         // Access observable event
         ObservableEvent<TEventArgs> observableEvent = module.OnEventName;
 
@@ -125,12 +125,12 @@ public class ApiIndexSamples
 
         // Subscribe through Session
         await driver.Session.SubscribeAsync(subscribeParams);
-#endregion
+        #endregion
     }
 
     public class SampleModule : Module
     {
-        public SampleModule() : base(null) {}
+        public SampleModule() : base(null) { }
         public ObservableEvent<TEventArgs> OnEventName { get; }
 
         public override string ModuleName => throw new NotImplementedException();

@@ -2,8 +2,8 @@ namespace WebDriverBiDi.Protocol;
 
 using System.Text.Json.Serialization.Metadata;
 using Newtonsoft.Json.Linq;
-using TestUtilities;
 using PinchHitter;
+using TestUtilities;
 
 [TestFixture]
 public class TransportTests
@@ -30,7 +30,7 @@ public class TransportTests
         TestCommandParameters command = new(commandName);
         _ = await transport.SendCommandAsync(command);
 
-        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();
         Assert.That(dataValue, Is.EquivalentTo(expected));
     }
 
@@ -57,7 +57,7 @@ public class TransportTests
         TestComplexCommandParameters command = new(commandName);
         _ = await transport.SendCommandAsync(command);
 
-        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();
         Assert.That(dataValue, Is.EquivalentTo(expected));
     }
 
@@ -71,7 +71,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
             string json = """
                           {
@@ -108,7 +108,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
             string json = """
                           {
@@ -151,7 +151,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
             string json = """
                           {
@@ -192,7 +192,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
             string json = """
                           {
@@ -333,7 +333,8 @@ public class TransportTests
 
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) => {
+        transport.OnErrorEventReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        {
             receivedData = e.ErrorData;
             syncEvent.Set();
             return Task.CompletedTask;
@@ -430,7 +431,7 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
             string json = """
                           {
@@ -1110,7 +1111,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection);
-        
+
         await transport.ConnectAsync("ws://localhost");
         transport.EnableConnectLockConcurrencyTesting();
 
@@ -1215,14 +1216,14 @@ public class TransportTests
         TestCommandParameters command = new(commandName);
         _ = await transport.SendCommandAsync(command);
 
-        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();
         Assert.That(dataValue, Is.EquivalentTo(expected));
         await transport.DisconnectAsync();
 
         await transport.ConnectAsync("ws://example.com:5678");
         _ = await transport.SendCommandAsync(command);
 
-        dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();
         Assert.That(dataValue, Is.EquivalentTo(expected));
         await transport.DisconnectAsync();
     }
@@ -1422,7 +1423,7 @@ public class TransportTests
 
         string commandName = "module.command";
         TestCommandParameters commandParameters = new(commandName);
-        Assert.That(async () => await transport.SendCommandAsync(commandParameters),Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("protocol.event").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("This is an async unexpected exception"));
+        Assert.That(async () => await transport.SendCommandAsync(commandParameters), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("protocol.event").And.InnerException.InstanceOf<WebDriverBiDiException>().And.InnerException.Message.Contains("This is an async unexpected exception"));
     }
 
     [Test]
@@ -1467,7 +1468,7 @@ public class TransportTests
         TestCommandParameters commandParameters = new(commandName);
         _ = await transport.SendCommandAsync(commandParameters);
 
-        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();       
+        Dictionary<string, object?> dataValue = JObject.Parse(connection.DataSent ?? "").ToParsedDictionary();
         Assert.That(dataValue, Is.EquivalentTo(expected));
     }
 
@@ -1482,7 +1483,7 @@ public class TransportTests
         string commandName = "module.command";
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
             string json = """
                           {

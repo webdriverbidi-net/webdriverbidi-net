@@ -27,7 +27,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static void BlockingHandler(BiDiDriver driver)
     {
-#region BlockingHandler
+        #region BlockingHandler
         // ❌ BAD: Blocks transport thread for 5 seconds
         driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
@@ -40,7 +40,7 @@ public static class CommonPitfallsSamples
             // - Commands may timeout
             // - The browser may become unresponsive
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static void NonBlockingHandler(BiDiDriver driver)
     {
-#region Non-BlockingHandler
+        #region Non-BlockingHandler
         // ✅ GOOD: Runs asynchronously without blocking
         driver.Network.OnBeforeRequestSent.AddObserver(
             async (e) =>
@@ -61,7 +61,7 @@ public static class CommonPitfallsSamples
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static void QuickSynchronousHandler(BiDiDriver driver)
     {
-#region QuickSynchronousHandler
+        #region QuickSynchronousHandler
         // ✅ Fine: Quick in-memory operation
         int requestCount = 0;
         driver.Network.OnBeforeRequestSent.AddObserver((e) =>
@@ -82,7 +82,7 @@ public static class CommonPitfallsSamples
         {
             Console.WriteLine($"[{e.Level}] {e.Text}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static async Task IncompleteSubscription(BiDiDriver driver, NavigateCommandParameters navParams)
     {
-#region IncompleteSubscription
+        #region IncompleteSubscription
         // ❌ INCOMPLETE: Observer added but no events will be received
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -99,7 +99,7 @@ public static class CommonPitfallsSamples
 
         await driver.BrowsingContext.NavigateAsync(navParams);
         // No log events will fire - you forgot to subscribe!
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -109,7 +109,7 @@ public static class CommonPitfallsSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region Two-StepSubscription
+        #region Two-StepSubscription
         // ✅ CORRECT: Add observer AND subscribe
         // Step 1: Add observer
         driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -123,7 +123,7 @@ public static class CommonPitfallsSamples
 
         // Now events will be received
         await driver.BrowsingContext.NavigateAsync(navParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public static class CommonPitfallsSamples
         Action<BeforeRequestSentEventArgs> networkHandler,
         Action<NavigationEventArgs> loadHandler)
     {
-#region SubscribeMultipleEvents
+        #region SubscribeMultipleEvents
         // Add all observers first
         driver.Log.OnEntryAdded.AddObserver(logHandler);
         driver.Network.OnBeforeRequestSent.AddObserver(networkHandler);
@@ -150,7 +150,7 @@ public static class CommonPitfallsSamples
             ]
         );
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static async Task WrongRegistrationOrder(string webSocketUrl, Module customModule, Action<EntryAddedEventArgs> handler)
     {
-#region WrongRegistrationOrder
+        #region WrongRegistrationOrder
         // ❌ WRONG: Registration after starting
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
@@ -166,7 +166,7 @@ public static class CommonPitfallsSamples
         // This will throw InvalidOperationException!
         driver.RegisterModule(new CustomModule(driver));
         driver.Log.OnEntryAdded.AddObserver(handler);  // May also fail
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -177,7 +177,7 @@ public static class CommonPitfallsSamples
         Module customModule,
         NavigateCommandParameters navParams)
     {
-#region CorrectRegistrationOrder
+        #region CorrectRegistrationOrder
         // ✅ CORRECT: Registration before starting
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -202,7 +202,7 @@ public static class CommonPitfallsSamples
 
         // 5. Execute commands
         await driver.BrowsingContext.NavigateAsync(navParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -210,7 +210,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static void NullableCollectionExample()
     {
-#region NullableCollectionExample
+        #region NullableCollectionExample
         SetLocaleOverrideCommandParameters parameters = new SetLocaleOverrideCommandParameters()
         {
             Locale = "en-US",
@@ -221,7 +221,7 @@ public static class CommonPitfallsSamples
         {
             parameters.Contexts = new List<string>();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -229,7 +229,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static void NullVsEmptyVsItems()
     {
-#region NullvsEmptyvsItems
+        #region NullvsEmptyvsItems
         // Case 1: Contexts is null
         SetLocaleOverrideCommandParameters p1 = new SetLocaleOverrideCommandParameters()
         {
@@ -252,7 +252,7 @@ public static class CommonPitfallsSamples
         };
         p3.Contexts = new List<string> { "<valid browsing context ID>" };
         // JSON sent: { "locale": "en-US",  "contexts": ["<valid browsing context ID>"] }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -260,7 +260,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static void HandleNullableCollections(SetLocaleOverrideCommandParameters parameters)
     {
-#region HandleNullableCollections
+        #region HandleNullableCollections
         // ✅ Option 1: Null-conditional + null-coalescing
         parameters.Contexts ??= new List<string>();
         parameters.Contexts.Add("<valid browsing context ID>");
@@ -278,7 +278,7 @@ public static class CommonPitfallsSamples
             "<valid browsing context ID>",
             "<another valid browsing context ID>"
         };
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -286,13 +286,13 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static async Task DefaultTimeout(NavigateCommandParameters navParams)
     {
-#region DefaultTimeout
+        #region DefaultTimeout
         // Default timeout is 60 seconds!
         BiDiDriver driver = new BiDiDriver();
 
         // This command has 60 seconds to complete
         await driver.BrowsingContext.NavigateAsync(navParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -302,7 +302,7 @@ public static class CommonPitfallsSamples
         NavigateCommandParameters navParams,
         NavigateCommandParameters slowPageParams)
     {
-#region ConfigureTimeouts
+        #region ConfigureTimeouts
         // ✅ For fast operations (local testing)
         BiDiDriver fastDriver = new BiDiDriver(TimeSpan.FromSeconds(10));
 
@@ -320,7 +320,7 @@ public static class CommonPitfallsSamples
         await driver.BrowsingContext.NavigateAsync(
             slowPageParams,
             TimeSpan.FromMinutes(5));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -328,7 +328,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static async Task AsyncHandlerProblem(BiDiDriver driver, SubscribeCommandParameters subscribeParams, NavigateCommandParameters navParams)
     {
-#region AsyncHandlerProblem
+        #region AsyncHandlerProblem
         // ❌ PROBLEM: Handler might not finish before program exits
         driver.Network.OnBeforeRequestSent.AddObserver(
             async (e) =>
@@ -344,7 +344,7 @@ public static class CommonPitfallsSamples
 
         // Navigation completes, but handlers might still be running!
         // If program exits here, handlers may not finish
-#endregion
+        #endregion
     }
 
     private static async Task SaveRequestToFileAsync(RequestData request)
@@ -362,7 +362,7 @@ public static class CommonPitfallsSamples
         NavigateCommandParameters navParams,
         Func<BeforeRequestSentEventArgs, Task> saveRequest)
     {
-#region WaitForCheckpointAndTasks
+        #region WaitForCheckpointAndTasks
         // ✅ GOOD: Use built-in helper
         EventObserver<BeforeRequestSentEventArgs> observer =
             driver.Network.OnBeforeRequestSent.AddObserver(
@@ -386,7 +386,7 @@ public static class CommonPitfallsSamples
         await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10));
 
         // Now all handlers have completed
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -398,7 +398,7 @@ public static class CommonPitfallsSamples
         NavigateCommandParameters navParams,
         Func<BeforeRequestSentEventArgs, Task> saveRequest)
     {
-#region ManualSynchronization
+        #region ManualSynchronization
         // ✅ GOOD: Manual synchronization for complex scenarios
         EventObserver<BeforeRequestSentEventArgs> observer =
             driver.Network.OnBeforeRequestSent.AddObserver(
@@ -428,7 +428,7 @@ public static class CommonPitfallsSamples
             // Wait for all handlers to finish
             await Task.WhenAll(handlerTasks);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -440,7 +440,7 @@ public static class CommonPitfallsSamples
         NavigateCommandParameters navParams,
         Func<BeforeRequestSentEventArgs, Task> saveRequest)
     {
-#region TaskCompletionSourceSynchronization
+        #region TaskCompletionSourceSynchronization
         // ✅ GOOD: TaskCompletionSource for fine-grained control
         List<Task> completionTasks = new();
 
@@ -468,7 +468,7 @@ public static class CommonPitfallsSamples
 
         // Wait for all handlers
         await Task.WhenAll(completionTasks);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -476,7 +476,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static async Task HandlerExceptionsIgnored(BiDiDriver driver, SubscribeCommandParameters subscribeParams, NavigateCommandParameters navParams, Action<EntryAddedEventArgs> processLogEntry)
     {
-#region HandlerExceptionsIgnored
+        #region HandlerExceptionsIgnored
         // ❌ PROBLEM: Handler exceptions are silently ignored by default
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -487,7 +487,7 @@ public static class CommonPitfallsSamples
         await driver.Session.SubscribeAsync(subscribeParams);
         await driver.BrowsingContext.NavigateAsync(navParams);
         // If handler threw, you'll never know!
-#endregion
+        #endregion
     }
 
     private static void ProcessLogEntry(EntryAddedEventArgs e)
@@ -508,7 +508,7 @@ public static class CommonPitfallsSamples
         SubscribeCommandParameters subscribeParams,
         NavigateCommandParameters navParams)
     {
-#region TerminateErrorBehavior
+        #region TerminateErrorBehavior
         // ✅ Option 1: Terminate mode (throws on next command)
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection);
@@ -535,7 +535,7 @@ public static class CommonPitfallsSamples
         {
             Console.WriteLine($"Event handler error: {ex.Message}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -547,7 +547,7 @@ public static class CommonPitfallsSamples
         SubscribeCommandParameters subscribeParams,
         NavigateCommandParameters navParams)
     {
-#region CollectErrorBehavior
+        #region CollectErrorBehavior
         // ✅ Option 2: Collect mode (gather all errors)
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection);
@@ -582,7 +582,7 @@ public static class CommonPitfallsSamples
         {
             await driver.DisposeAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -590,7 +590,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static void HandleExceptionsInHandlers(BiDiDriver driver, Action<EntryAddedEventArgs> processLogEntry)
     {
-#region HandleExceptionsInHandlers
+        #region HandleExceptionsInHandlers
         // ✅ BEST: Handle exceptions inside handlers
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -604,7 +604,7 @@ public static class CommonPitfallsSamples
                 Console.WriteLine($"Error processing log entry: {ex.Message}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -620,7 +620,7 @@ public static class CommonPitfallsSamples
         NavigateCommandParameters params1,
         NavigateCommandParameters params2)
     {
-#region ThreadSafetyExample
+        #region ThreadSafetyExample
         // ✅ GOOD: Register modules before concurrent operations
         driver.RegisterModule(module1);
         driver.RegisterModule(module2);
@@ -648,7 +648,7 @@ public static class CommonPitfallsSamples
                 counter++;
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -656,7 +656,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static async Task BadCleanup(string url, Action<EntryAddedEventArgs> handler)
     {
-#region BadCleanup
+        #region BadCleanup
         // ❌ BAD: No cleanup
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(url);
@@ -668,7 +668,7 @@ public static class CommonPitfallsSamples
 
         // Oops! Never stopped driver or removed observer
         // Resources leaked!
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -679,7 +679,7 @@ public static class CommonPitfallsSamples
         Action<EntryAddedEventArgs> handler,
         SubscribeCommandParameters subscribeParams)
     {
-#region GoodCleanup
+        #region GoodCleanup
         // ✅ GOOD: Proper cleanup
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -710,7 +710,7 @@ public static class CommonPitfallsSamples
                 await driver.StopAsync();
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -718,7 +718,7 @@ public static class CommonPitfallsSamples
     /// </summary>
     public static async Task BetterCleanup(string url, Action<EntryAddedEventArgs> handler)
     {
-#region BetterCleanup
+        #region BetterCleanup
         // ✅ BETTER: Use async disposal
         await using BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(url);
@@ -727,7 +727,7 @@ public static class CommonPitfallsSamples
             driver.Log.OnEntryAdded.AddObserver(handler);
 
         // Automatic cleanup when scope exits
-#endregion
+        #endregion
     }
 
     private class CustomModule : Module

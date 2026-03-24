@@ -10,11 +10,11 @@ namespace WebDriverBiDi.Docs.Code.Architecture;
 
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Session;
-using WebDriverBiDi.Client.Launchers;
 
 /// <summary>
 /// Snippets for architecture documentation. Compiled at build time to prevent API drift.
@@ -26,7 +26,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task WebSocketExample(NavigateCommandParameters navParams)
     {
-#region WebSocketExample
+        #region WebSocketExample
         // Connect to browser at WebSocket URL
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
@@ -40,7 +40,7 @@ public static class ArchitectureSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task PipeExample(NavigateCommandParameters navParams)
     {
-#region PipeExample
+        #region PipeExample
         // Launcher implements IPipeServerProcessProvider
         ChromeLauncher launcher = new ChromeLauncher()
         {
@@ -77,7 +77,7 @@ public static class ArchitectureSamples
             await launcher.QuitBrowserAsync();
             await launcher.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -85,14 +85,14 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task CommandPattern(BiDiDriver driver, string contextId, string url)
     {
-#region CommandPattern
+        #region CommandPattern
         // 1. Create parameters (mutable)
         NavigateCommandParameters parameters = new NavigateCommandParameters(contextId, url);
         parameters.Wait = ReadinessState.Complete;
 
         // 2-11. Execute command (returns immutable result)
         NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -100,7 +100,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task CommandExecutionFlow(BiDiDriver driver, NavigateCommandParameters navParams)
     {
-#region CommandExecutionFlow
+        #region CommandExecutionFlow
         NavigateCommandParameters parameters = null;
 
         // Synchronous-looking code (with async/await)
@@ -115,7 +115,7 @@ public static class ArchitectureSamples
         // 6. Browser sends response JSON
         // 7. Transport deserializes to NavigateCommandResult
         // 8. Awaited method returns result
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -123,9 +123,10 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task EventHandling(BiDiDriver driver, SubscribeCommandParameters subscribeParams)
     {
-#region EventHandling
+        #region EventHandling
         // Setup (before events occur)
-        driver.Log.OnEntryAdded.AddObserver((e) => {
+        driver.Log.OnEntryAdded.AddObserver((e) =>
+        {
             Console.WriteLine(e.Text);
         });
 
@@ -138,7 +139,7 @@ public static class ArchitectureSamples
         // 4. ObservableEvent.NotifyObserversAsync called
         // 5. All registered observers invoked
         // 6. Your handler executes
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -146,13 +147,14 @@ public static class ArchitectureSamples
     /// </summary>
     public static void SyncEventHandler(BiDiDriver driver)
     {
-#region SyncEventHandler
-        driver.Log.OnEntryAdded.AddObserver((e) => {
+        #region SyncEventHandler
+        driver.Log.OnEntryAdded.AddObserver((e) =>
+        {
             // Runs on Transport thread
             // Blocks other message processing until complete
             Console.WriteLine(e.Text);
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -160,16 +162,17 @@ public static class ArchitectureSamples
     /// </summary>
     public static void AsyncEventHandler(BiDiDriver driver)
     {
-#region AsyncEventHandler
+        #region AsyncEventHandler
         driver.Log.OnEntryAdded.AddObserver(
-            async (e) => {
+            async (e) =>
+            {
                 // Runs on Task pool
                 // Doesn't block message processing
                 await ProcessLogEntryAsync(e);
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -177,7 +180,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task TerminateMode(string url)
     {
-#region TerminateMode
+        #region TerminateMode
         // Throws on next command call after error occurs
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30))
         {
@@ -194,7 +197,7 @@ public static class ArchitectureSamples
         {
             Console.WriteLine($"Connection failed: {ex.Message}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -202,7 +205,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task CollectMode(NavigateCommandParameters navParams)
     {
-#region CollectMode
+        #region CollectMode
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection)
         {
@@ -238,7 +241,7 @@ public static class ArchitectureSamples
         {
             await driver.DisposeAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -246,7 +249,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task IgnoreMode(NavigateCommandParameters navParams)
     {
-#region IgnoreMode
+        #region IgnoreMode
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection);
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
@@ -256,8 +259,8 @@ public static class ArchitectureSamples
         // Errors won't be thrown or collected
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        await driver.StopAsync(); 
-#endregion
+        await driver.StopAsync();
+        #endregion
     }
 
     /// <summary>
@@ -265,7 +268,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task ConnectionLevelErrorHandling()
     {
-#region Connection-LevelErrorHandling
+        #region Connection-LevelErrorHandling
         WebSocketConnection connection = new WebSocketConnection();
 
         // Subscribe to connection errors
@@ -284,7 +287,7 @@ public static class ArchitectureSamples
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -292,7 +295,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static void EventHandlerErrorBehavior(BiDiDriver driver, Action<EntryAddedEventArgs> processLogEntry)
     {
-#region EventHandlerErrorBehavior
+        #region EventHandlerErrorBehavior
         // Synchronous handler: exceptions bubble up immediately
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -307,7 +310,7 @@ public static class ArchitectureSamples
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -315,7 +318,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task EventHandlerExceptionBehavior(string url, NavigateCommandParameters navParams, Action<EntryAddedEventArgs> processLogEntry)
     {
-#region EventHandlerExceptionBehavior
+        #region EventHandlerExceptionBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
 
@@ -336,17 +339,17 @@ public static class ArchitectureSamples
         {
             Console.WriteLine($"Event handler error: {ex.Message}");
         }
-#endregion
+        #endregion
     }
 
-    private static void ProcessLogEntry(EntryAddedEventArgs e) {}
+    private static void ProcessLogEntry(EntryAddedEventArgs e) { }
 
     /// <summary>
     /// ProtocolErrorBehavior - collect protocol errors.
     /// </summary>
     public static async Task ProtocolErrorBehavior(string url, NavigateCommandParameters navParams)
     {
-#region ProtocolErrorBehavior
+        #region ProtocolErrorBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
 
@@ -364,7 +367,7 @@ public static class ArchitectureSamples
         {
             Console.WriteLine($"Protocol errors encountered: {ex.Message}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -372,7 +375,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task UnknownMessageBehavior(string url, NavigateCommandParameters navParams)
     {
-#region UnknownMessageBehavior
+        #region UnknownMessageBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         driver.UnknownMessageBehavior = TransportErrorBehavior.Ignore;
 
@@ -383,7 +386,7 @@ public static class ArchitectureSamples
 
         await driver.BrowsingContext.NavigateAsync(navParams);
         await driver.StopAsync();  // Completes without exception
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -391,7 +394,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task UnexpectedErrorBehavior(string url, NavigateCommandParameters navParams)
     {
-#region UnexpectedErrorBehavior
+        #region UnexpectedErrorBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         driver.UnexpectedErrorBehavior = TransportErrorBehavior.Terminate;
 
@@ -406,7 +409,7 @@ public static class ArchitectureSamples
         {
             Console.WriteLine($"Unexpected error: {ex.Message}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -414,7 +417,7 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task MultipleErrorBehaviors(string url, NavigateCommandParameters navParams)
     {
-#region MultipleErrorBehaviors
+        #region MultipleErrorBehaviors
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Different strategies for different error types
@@ -438,7 +441,7 @@ public static class ArchitectureSamples
             Console.WriteLine($"Collected errors: {ex.Message}");
             // Exception may contain multiple errors as inner exceptions
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -453,7 +456,7 @@ public static class ArchitectureSamples
             : base(driver) { }
 
         public override string ModuleName => MyCustomModuleName;
-        
+
         public async Task<MyCommandResult> MyCommandAsync(
             MyCommandParameters parameters)
         {
@@ -461,14 +464,14 @@ public static class ArchitectureSamples
                 parameters);
         }
     }
-#endregion
+    #endregion
 
     public static void CustomModuleRegistration(BiDiDriver driver)
     {
-#region CustomModuleRegistration
+        #region CustomModuleRegistration
         // Register with driver
         driver.RegisterModule(new MyCustomModule(driver));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -479,7 +482,7 @@ public static class ArchitectureSamples
         GetTreeCommandParameters params1 = new GetTreeCommandParameters();
         StatusCommandParameters params2 = new StatusCommandParameters();
 
-#region CommandBatching
+        #region CommandBatching
         // ✅ Good: Execute independent commands in parallel
         Task<GetTreeCommandResult> t1 = driver.BrowsingContext.GetTreeAsync(params1);
         Task<StatusCommandResult> t2 = driver.Session.StatusAsync(params2);
@@ -488,7 +491,7 @@ public static class ArchitectureSamples
         // ❌ Slower: Execute sequentially when not needed
         var r1 = await driver.BrowsingContext.GetTreeAsync(params1);
         var r2 = await driver.Session.StatusAsync(params2);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -496,20 +499,22 @@ public static class ArchitectureSamples
     /// </summary>
     public static void EventHandlerPerformance(BiDiDriver driver)
     {
-#region EventHandlerPerformance
+        #region EventHandlerPerformance
         // ❌ Bad: Blocks message processing
-        driver.Log.OnEntryAdded.AddObserver((e) => {
+        driver.Log.OnEntryAdded.AddObserver((e) =>
+        {
             Thread.Sleep(1000); // Blocks for 1 second
         });
 
         // ✅ Good: Run asynchronously
         driver.Log.OnEntryAdded.AddObserver(
-            async (e) => {
+            async (e) =>
+            {
                 await Task.Delay(1000); // Doesn't block
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -517,11 +522,11 @@ public static class ArchitectureSamples
     /// </summary>
     public static async Task MemoryManagement(BiDiDriver driver, Func<EntryAddedEventArgs, Task> handler, UnsubscribeCommandParameters unsubscribeParams)
     {
-#region MemoryManagement
+        #region MemoryManagement
         // Remove observer when done
-        EventObserver<EntryAddedEventArgs> observer = 
+        EventObserver<EntryAddedEventArgs> observer =
             driver.Log.OnEntryAdded.AddObserver(handler);
-            
+
         // Later...
         observer.Unobserve();
 
@@ -530,7 +535,7 @@ public static class ArchitectureSamples
 
         // Stop driver
         await driver.StopAsync();
-#endregion
+        #endregion
     }
 
     public class MyCommandParameters : CommandParameters

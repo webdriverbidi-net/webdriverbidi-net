@@ -44,7 +44,7 @@ public class DeleteCookiesCommandParametersTests
             Assert.That(filterObject, Contains.Key("name"));
             Assert.That(filterObject["name"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(filterObject["name"]!.Value<string>(), Is.EqualTo("cookieName"));
-        }        
+        }
     }
 
     [Test]
@@ -69,7 +69,7 @@ public class DeleteCookiesCommandParametersTests
             Assert.That(partitionObject, Contains.Key("context"));
             Assert.That(partitionObject["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        }        
+        }
     }
 
     [Test]
@@ -97,7 +97,7 @@ public class DeleteCookiesCommandParametersTests
             Assert.That(partitionObject, Contains.Key("userContext"));
             Assert.That(partitionObject["userContext"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-        }        
+        }
     }
 
     [Test]
@@ -133,6 +133,6 @@ public class DeleteCookiesCommandParametersTests
             Assert.That(partitionObject, Contains.Key("context"));
             Assert.That(partitionObject["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        }        
+        }
     }
 }

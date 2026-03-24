@@ -12,8 +12,8 @@ using System.Collections.Generic;
 using WebDriverBiDi;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
-using CloseCommandParameters = WebDriverBiDi.Browser.CloseCommandParameters;
 using BrowsingContextCloseCommandParameters = WebDriverBiDi.BrowsingContext.CloseCommandParameters;
+using CloseCommandParameters = WebDriverBiDi.Browser.CloseCommandParameters;
 
 /// <summary>
 /// Snippets for Browser module documentation. Compiled at build time to prevent API drift.
@@ -25,9 +25,9 @@ public static class BrowserModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         BrowserModule browser = driver.Browser;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -35,13 +35,13 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task CreateUserContext(BiDiDriver driver)
     {
-#region CreateUserContext
+        #region CreateUserContext
         CreateUserContextCommandParameters parameters = new CreateUserContextCommandParameters();
         CreateUserContextCommandResult result = await driver.Browser.CreateUserContextAsync(parameters);
 
         string userContextId = result.UserContextId;
         Console.WriteLine($"Created user context: {userContextId}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task GetUserContexts(BiDiDriver driver)
     {
-#region GetUserContexts
+        #region GetUserContexts
         GetUserContextsCommandParameters parameters = new GetUserContextsCommandParameters();
         GetUserContextsCommandResult result = await driver.Browser.GetUserContextsAsync(parameters);
 
@@ -57,7 +57,7 @@ public static class BrowserModuleSamples
         {
             Console.WriteLine($"User context: {context.UserContextId}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -65,12 +65,12 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task RemoveUserContext(BiDiDriver driver, string userContextId)
     {
-#region RemoveUserContext
+        #region RemoveUserContext
         RemoveUserContextCommandParameters @params =
             new RemoveUserContextCommandParameters(userContextId);
 
         await driver.Browser.RemoveUserContextAsync(@params);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -78,8 +78,8 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task CreateTabInUserContext(BiDiDriver driver)
     {
-#region CreateTabinUserContext
-        CreateUserContextCommandResult userContextResult = 
+        #region CreateTabinUserContext
+        CreateUserContextCommandResult userContextResult =
             await driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters());
 
         // Create browsing context in that user context
@@ -89,7 +89,7 @@ public static class BrowserModuleSamples
         };
 
         CreateCommandResult tabResult = await driver.BrowsingContext.CreateAsync(createTabParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task GetClientWindows(BiDiDriver driver)
     {
-#region GetClientWindows
+        #region GetClientWindows
         GetClientWindowsCommandParameters parameters = new GetClientWindowsCommandParameters();
         GetClientWindowsCommandResult result = await driver.Browser.GetClientWindowsAsync(parameters);
 
@@ -108,7 +108,7 @@ public static class BrowserModuleSamples
             Console.WriteLine($"  Width: {window.Width}");
             Console.WriteLine($"  Height: {window.Height}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -116,24 +116,24 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task SetWindowState(BiDiDriver driver)
     {
-#region SetWindowState
-    // Get the client window
-    GetClientWindowsCommandResult windowsResult = 
-        await driver.Browser.GetClientWindowsAsync(new GetClientWindowsCommandParameters());
+        #region SetWindowState
+        // Get the client window
+        GetClientWindowsCommandResult windowsResult =
+            await driver.Browser.GetClientWindowsAsync(new GetClientWindowsCommandParameters());
 
-    string clientWindowId = windowsResult.ClientWindows[0].ClientWindowId;
+        string clientWindowId = windowsResult.ClientWindows[0].ClientWindowId;
 
-    // Maximize window
-    SetClientWindowStateCommandParameters parameters = 
-        new SetClientWindowStateCommandParameters(clientWindowId)
-        {
-            State = ClientWindowState.Maximized,
-        };
+        // Maximize window
+        SetClientWindowStateCommandParameters parameters =
+            new SetClientWindowStateCommandParameters(clientWindowId)
+            {
+                State = ClientWindowState.Maximized,
+            };
 
-    await driver.Browser.SetClientWindowStateAsync(parameters);
+        await driver.Browser.SetClientWindowStateAsync(parameters);
 
-    // Other states: Minimized, Fullscreen, Normal
-#endregion
+        // Other states: Minimized, Fullscreen, Normal
+        #endregion
     }
 
     /// <summary>
@@ -141,7 +141,7 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task SetWindowSize(BiDiDriver driver, string clientWindowId)
     {
-#region SetWindowSize
+        #region SetWindowSize
         SetClientWindowStateCommandParameters parameters =
             new SetClientWindowStateCommandParameters(clientWindowId)
             {
@@ -151,7 +151,7 @@ public static class BrowserModuleSamples
             };
 
         await driver.Browser.SetClientWindowStateAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -159,12 +159,12 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task AllowDownloads(BiDiDriver driver)
     {
-#region AllowDownloads
+        #region AllowDownloads
         SetDownloadBehaviorCommandParameters parameters = new SetDownloadBehaviorCommandParameters();
         parameters.DownloadBehavior = new DownloadBehaviorAllowed("/path/to/downloads");
 
         await driver.Browser.SetDownloadBehaviorAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -172,12 +172,12 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task DenyDownloads(BiDiDriver driver)
     {
-#region DenyDownloads
+        #region DenyDownloads
         SetDownloadBehaviorCommandParameters parameters = new SetDownloadBehaviorCommandParameters();
         parameters.DownloadBehavior = new DownloadBehaviorDenied();
 
         await driver.Browser.SetDownloadBehaviorAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -185,10 +185,10 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task CloseBrowser(BiDiDriver driver)
     {
-#region CloseBrowser
+        #region CloseBrowser
         CloseCommandParameters parameters = new CloseCommandParameters();
         await driver.Browser.CloseAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -196,9 +196,9 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task IsolatedSessionPattern(BiDiDriver driver)
     {
-#region IsolatedSessionPattern
+        #region IsolatedSessionPattern
         // Create isolated user context
-        CreateUserContextCommandResult userContext = 
+        CreateUserContextCommandResult userContext =
             await driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters());
 
         // Create tab in isolated context
@@ -218,7 +218,7 @@ public static class BrowserModuleSamples
             new BrowsingContextCloseCommandParameters(tab.BrowsingContextId));
         await driver.Browser.RemoveUserContextAsync(
             new RemoveUserContextCommandParameters(userContext.UserContextId));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -226,7 +226,7 @@ public static class BrowserModuleSamples
     /// </summary>
     public static async Task MultiWindowTesting(BiDiDriver driver)
     {
-#region Multi-WindowTesting
+        #region Multi-WindowTesting
         // Create multiple windows
         List<string> windowIds = new List<string>();
 
@@ -252,6 +252,6 @@ public static class BrowserModuleSamples
                     Height = 480
                 });
         }
-#endregion
+        #endregion
     }
 }

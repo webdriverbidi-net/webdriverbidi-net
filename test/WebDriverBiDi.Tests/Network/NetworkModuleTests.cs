@@ -530,7 +530,7 @@ public class NetworkModuleTests
                 Assert.That(e.Response.HeadersSize, Is.EqualTo(100));
                 Assert.That(e.Response.BodySize, Is.EqualTo(300));
                 Assert.That(e.Response.Content.Size, Is.EqualTo(300));
-             }
+            }
             syncEvent.Set();
         });
 
@@ -544,8 +544,8 @@ public class NetworkModuleTests
                                "isBlocked": false,
                                "redirectCount": 0,
                                "timestamp": {{milliseconds}},
-                               "request": {{requestDataJson}},
-                               "response": {{responseDataJson}}
+                               "request": {{this.requestDataJson}},
+                               "response": {{this.responseDataJson}}
                             }
                            }
                            """;
@@ -612,7 +612,7 @@ public class NetworkModuleTests
                                "isBlocked": false,
                                "redirectCount": 0,
                                "timestamp": {{milliseconds}},
-                               "request": {{requestDataJson}},
+                               "request": {{this.requestDataJson}},
                                "initiator": {
                                  "type": "parser"
                                }
@@ -682,7 +682,7 @@ public class NetworkModuleTests
                                "isBlocked": false,
                                "redirectCount": 0,
                                "timestamp": {{milliseconds}},
-                               "request": {{requestDataJson}},
+                               "request": {{this.requestDataJson}},
                                "errorText": "An error occurred"
                             }
                            }
@@ -763,8 +763,8 @@ public class NetworkModuleTests
                                "isBlocked": false,
                                "redirectCount": 0,
                                "timestamp": {{milliseconds}},
-                               "request": {{requestDataJson}},
-                               "response": {{responseDataJson}}
+                               "request": {{this.requestDataJson}},
+                               "response": {{this.responseDataJson}}
                             }
                            }
                            """;
@@ -844,8 +844,8 @@ public class NetworkModuleTests
                                "isBlocked": false,
                                "redirectCount": 0,
                                "timestamp": {{milliseconds}},
-                               "request": {{requestDataJson}},
-                               "response": {{responseDataJson}}
+                               "request": {{this.requestDataJson}},
+                               "response": {{this.responseDataJson}}
                             }
                            }
                            """;

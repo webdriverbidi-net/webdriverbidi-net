@@ -26,7 +26,7 @@ public static class NetworkInterceptionSamples
     /// </summary>
     public static async Task BasicNetworkInterception()
     {
-#region BasicNetworkInterception
+        #region BasicNetworkInterception
         string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-ID-HERE";
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -53,8 +53,8 @@ public static class NetworkInterceptionSamples
             AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
             addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
             addIntercept.BrowsingContextIds = new List<string> { contextId };
-            
-            AddInterceptCommandResult interceptResult = 
+
+            AddInterceptCommandResult interceptResult =
                 await driver.Network.AddInterceptAsync(addIntercept);
             Console.WriteLine($"Intercept ID: {interceptResult.InterceptId}");
 
@@ -66,9 +66,9 @@ public static class NetworkInterceptionSamples
                     Console.WriteLine($"Intercepted: {e.Request.Method} {e.Request.Url}");
 
                     // Continue request (allow it through)
-                    ContinueRequestCommandParameters continueParams = 
+                    ContinueRequestCommandParameters continueParams =
                         new ContinueRequestCommandParameters(e.Request.RequestId);
-                    
+
                     await driver.Network.ContinueRequestAsync(continueParams);
                 }
                 else
@@ -100,7 +100,7 @@ public static class NetworkInterceptionSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public static class NetworkInterceptionSamples
     /// </summary>
     public static async Task BlockingAdDomains(BiDiDriver driver)
     {
-#region BlockingAdDomains
+        #region BlockingAdDomains
         // List of ad domains to block
         List<string> adDomains = new List<string>
         {
@@ -125,9 +125,9 @@ public static class NetworkInterceptionSamples
 
         foreach (string domain in adDomains)
         {
-            addIntercept.UrlPatterns.Add(new UrlPatternPattern 
-            { 
-                HostName = domain 
+            addIntercept.UrlPatterns.Add(new UrlPatternPattern
+            {
+                HostName = domain
             });
         }
 
@@ -139,17 +139,17 @@ public static class NetworkInterceptionSamples
             if (e.IsBlocked)
             {
                 Console.WriteLine($"🚫 Blocking: {e.Request.Url}");
-                
-                FailRequestCommandParameters failParams = 
+
+                FailRequestCommandParameters failParams =
                     new FailRequestCommandParameters(e.Request.RequestId);
-                
+
                 await driver.Network.FailRequestAsync(failParams);
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         Console.WriteLine("Ad blocking enabled");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -157,7 +157,7 @@ public static class NetworkInterceptionSamples
     /// </summary>
     public static async Task MockingApiResponses(BiDiDriver driver)
     {
-#region MockingAPIResponses
+        #region MockingAPIResponses
         // Set up intercept for API endpoints
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
@@ -196,7 +196,7 @@ public static class NetworkInterceptionSamples
                 {
                     Console.WriteLine($"🎭 Mocking: {path}");
 
-                    ProvideResponseCommandParameters provideParams = 
+                    ProvideResponseCommandParameters provideParams =
                         new ProvideResponseCommandParameters(e.Request.RequestId)
                         {
                             StatusCode = 200,
@@ -223,7 +223,7 @@ public static class NetworkInterceptionSamples
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         Console.WriteLine("API mocking enabled");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -231,7 +231,7 @@ public static class NetworkInterceptionSamples
     /// </summary>
     public static async Task AddingCustomHeaders(BiDiDriver driver)
     {
-#region AddingCustomHeaders
+        #region AddingCustomHeaders
         // Set up intercept
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
@@ -244,7 +244,7 @@ public static class NetworkInterceptionSamples
             {
                 Console.WriteLine($"Adding headers to: {e.Request.Url}");
 
-                ContinueRequestCommandParameters continueParams = 
+                ContinueRequestCommandParameters continueParams =
                     new ContinueRequestCommandParameters(e.Request.RequestId);
 
                 // Copy existing headers
@@ -263,7 +263,7 @@ public static class NetworkInterceptionSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -273,21 +273,21 @@ public static class NetworkInterceptionSamples
         BiDiDriver driver,
         string contextId)
     {
-#region CapturingResponseBodies
+        #region CapturingResponseBodies
         // Set up data collector
         Console.WriteLine("Setting up data collector...");
         ulong maxSize = Convert.ToUInt64(Math.Pow(2, 24)); // 16 MB
-        AddDataCollectorCommandParameters collectorParams = 
+        AddDataCollectorCommandParameters collectorParams =
             new AddDataCollectorCommandParameters(maxSize);
         collectorParams.BrowsingContexts.Add(contextId);
 
-        AddDataCollectorCommandResult collectorResult = 
+        AddDataCollectorCommandResult collectorResult =
             await driver.Network.AddDataCollectorAsync(collectorParams);
         string collectorId = collectorResult.CollectorId;
         Console.WriteLine($"Data collector ID: {collectorId}");
 
         // Subscribe to response events
-        SubscribeCommandParameters subscribe = 
+        SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
@@ -306,14 +306,14 @@ public static class NetworkInterceptionSamples
 
                 try
                 {
-                    GetDataCommandParameters getDataParams = 
+                    GetDataCommandParameters getDataParams =
                         new GetDataCommandParameters(e.Request.RequestId)
                         {
                             CollectorId = collectorId,
                             DisownCollectedData = true
                         };
 
-                    GetDataCommandResult dataResult = 
+                    GetDataCommandResult dataResult =
                         await driver.Network.GetDataAsync(getDataParams);
 
                     string body = dataResult.Bytes.Value;
@@ -345,7 +345,7 @@ public static class NetworkInterceptionSamples
         // Clean up
         await driver.Network.RemoveDataCollectorAsync(
             new RemoveDataCollectorCommandParameters(collectorId));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -353,7 +353,7 @@ public static class NetworkInterceptionSamples
     /// </summary>
     public static async Task SlowDownSpecificResources(BiDiDriver driver)
     {
-#region SlowDownSpecificResources
+        #region SlowDownSpecificResources
         // Intercept image requests
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
@@ -372,7 +372,7 @@ public static class NetworkInterceptionSamples
             if (e.IsBlocked)
             {
                 Console.WriteLine($"⏱️ Delaying image request: {e.Request.Url}");
-                
+
                 // Simulate slow network
                 await Task.Delay(2000);
 
@@ -384,7 +384,7 @@ public static class NetworkInterceptionSamples
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         Console.WriteLine("Network throttling enabled for images");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -392,7 +392,7 @@ public static class NetworkInterceptionSamples
     /// </summary>
     public static async Task RedirectRequests(BiDiDriver driver)
     {
-#region RedirectRequests
+        #region RedirectRequests
         // Intercept requests to old domain
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
@@ -410,10 +410,10 @@ public static class NetworkInterceptionSamples
             {
                 string oldUrl = e.Request.Url;
                 string newUrl = oldUrl.Replace("old-api.example.com", "new-api.example.com");
-                
+
                 Console.WriteLine($"↪️ Redirecting: {oldUrl} → {newUrl}");
 
-                ContinueRequestCommandParameters continueParams = 
+                ContinueRequestCommandParameters continueParams =
                     new ContinueRequestCommandParameters(e.Request.RequestId);
                 continueParams.Url = newUrl;
 
@@ -421,7 +421,7 @@ public static class NetworkInterceptionSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -429,7 +429,7 @@ public static class NetworkInterceptionSamples
     /// </summary>
     public static async Task ConditionalInterception(BiDiDriver driver, string contextId)
     {
-#region ConditionalInterception
+        #region ConditionalInterception
         // Intercept only on specific pages
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
@@ -457,6 +457,6 @@ public static class NetworkInterceptionSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 }

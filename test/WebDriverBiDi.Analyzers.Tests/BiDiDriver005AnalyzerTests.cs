@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers.Tests;
 
+using System.Collections.Immutable;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -1319,7 +1320,7 @@ public class BiDiDriver005AnalyzerTests
             """;
 
         SyntaxTree tree = CSharpSyntaxTree.ParseText(librarySource);
-        var netRefs = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, default);
+        ImmutableArray<MetadataReference> netRefs = await ReferenceAssemblies.Net.Net80.ResolveAsync(LanguageNames.CSharp, default);
 
         CSharpCompilation compilation = CSharpCompilation.Create(
             "FakeLib",

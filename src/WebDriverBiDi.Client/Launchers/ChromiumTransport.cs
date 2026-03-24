@@ -241,7 +241,7 @@ public class ChromiumTransport : Transport
     {
         private readonly long id;
         private readonly string method;
-        private Dictionary<string, object> parameters = [];
+        private readonly Dictionary<string, object> parameters = [];
         private string? sessionId = null;
 
         public DevToolsProtocolCommand(long id, string method)

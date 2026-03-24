@@ -177,7 +177,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         string? eventPath = FindObservableEventPath(context, driverVariableName, eventName);
         if (eventPath != null)
         {
-            var propertiesBuilder = ImmutableDictionary.CreateBuilder<string, string?>();
+            ImmutableDictionary<string, string?>.Builder propertiesBuilder = ImmutableDictionary.CreateBuilder<string, string?>();
             propertiesBuilder.Add("EventPath", eventPath);
             propertiesBuilder.Add("DriverVariable", driverVariableName);
             ImmutableDictionary<string, string?> properties = propertiesBuilder.ToImmutable();
@@ -211,7 +211,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         {
             if (statement is LocalDeclarationStatementSyntax localDecl)
             {
-                foreach (var variable in localDecl.Declaration.Variables)
+                foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
                 {
                     if (variable.Identifier.Text == driverVariableName)
                     {
@@ -286,7 +286,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
         {
             if (statement is LocalDeclarationStatementSyntax localDecl)
             {
-                foreach (var variable in localDecl.Declaration.Variables)
+                foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
                 {
                     if (variable.Initializer?.Value != null)
                     {

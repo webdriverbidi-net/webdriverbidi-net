@@ -82,14 +82,14 @@ public class BiDiDriver001_ModuleRegistrationAfterStartAnalyzer : DiagnosticAnal
 
     private static void AnalyzeLocalDeclaration(LocalDeclarationStatementSyntax localDecl, SemanticModel semanticModel, Dictionary<string, DriverState> driverVariables)
     {
-        foreach (var variable in localDecl.Declaration.Variables)
+        foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
         {
             if (variable.Initializer == null)
             {
                 continue;
             }
 
-            var typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value);
+            TypeInfo typeInfo = semanticModel.GetTypeInfo(variable.Initializer.Value);
             if (AnalyzerSymbolHelpers.IsDriverConfigurationType(typeInfo.Type))
             {
                 driverVariables[variable.Identifier.Text] = new DriverState

@@ -26,9 +26,9 @@ public static class SpeculationModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         SpeculationModule speculation = driver.Speculation;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -36,7 +36,7 @@ public static class SpeculationModuleSamples
     /// </summary>
     public static async Task SubscribeToPrefetchStatus(BiDiDriver driver)
     {
-#region SubscribetoPrefetchStatus
+        #region SubscribetoPrefetchStatus
         driver.Speculation.OnPrefetchStatusUpdated.AddObserver((e) =>
         {
             Console.WriteLine($"Prefetch {e.Url}: {e.Status}");
@@ -45,7 +45,7 @@ public static class SpeculationModuleSamples
         SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
             driver.Speculation.OnPrefetchStatusUpdated.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public static class SpeculationModuleSamples
     /// </summary>
     public static async Task MonitorPrefetchDuringNavigation(BiDiDriver driver, string contextId)
     {
-#region MonitorPrefetchDuringNavigation
+        #region MonitorPrefetchDuringNavigation
         var collected = new List<PrefetchStatusUpdatedEventArgs>();
 
         driver.Speculation.OnPrefetchStatusUpdated.AddObserver((e) =>
@@ -75,6 +75,6 @@ public static class SpeculationModuleSamples
         {
             Console.WriteLine($"{evt.Url} -> {evt.Status}");
         }
-#endregion
+        #endregion
     }
 }

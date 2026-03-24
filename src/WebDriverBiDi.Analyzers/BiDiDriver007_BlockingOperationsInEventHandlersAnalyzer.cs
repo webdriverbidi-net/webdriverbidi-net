@@ -245,7 +245,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
     {
         return blockingOperation switch
         {
-            InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax memberAccess =>memberAccess.Name.Identifier.Text + "()",
+            InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text + "()",
             MemberAccessExpressionSyntax memberAccessExpr => memberAccessExpr.Name.Identifier.Text,
             _ => blockingOperation.ToString(),
         };

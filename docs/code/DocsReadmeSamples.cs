@@ -20,13 +20,13 @@ public static class DocsReadmeSamples
     /// </summary>
     public static async Task CompleteRunnableExample(string webSocketUrl)
     {
-#region CompleteRunnableExample
+        #region CompleteRunnableExample
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync(webSocketUrl);
 
         // ... your code here ...
 
         await driver.StopAsync();
-#endregion
+        #endregion
     }
 }

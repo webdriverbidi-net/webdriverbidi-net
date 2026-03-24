@@ -52,7 +52,7 @@ public class ReadOnlyHeaderTests
             Assert.That(header.Name, Is.EqualTo("headerName"));
             Assert.That(header.Value.Type, Is.EqualTo(BytesValueType.String));
             Assert.That(header.Value.Value, Is.EqualTo("headerValue"));
-        }       
+        }
     }
 
     [Test]

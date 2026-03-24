@@ -172,7 +172,7 @@ public class LogEntryTests
             Assert.That(entry.EpochTimestamp, Is.EqualTo(epochTimestamp));
             Assert.That(entry.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
         }
-   }
+    }
 
     [Test]
     public void TestCanDeserializeWithWarnLogLevel()

@@ -303,7 +303,7 @@ public class PipeConnectionTests
         };
 
         testPipeServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
-       await connection.StartAsync("pipe://local");
+        await connection.StartAsync("pipe://local");
 
         Assert.That(
             async () => await connection.SendDataAsync(Encoding.UTF8.GetBytes("data")),

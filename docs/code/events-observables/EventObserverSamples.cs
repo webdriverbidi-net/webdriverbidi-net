@@ -26,7 +26,7 @@ public static class EventObserverSamples
     /// </summary>
     public static async Task CompleteExample(BiDiDriver driver, string contextId)
     {
-#region CompleteExample
+        #region CompleteExample
         // Step 1: Add observer
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
@@ -41,7 +41,7 @@ public static class EventObserverSamples
         // Step 3: Events will now trigger your observer
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, "https://example.com"));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -49,13 +49,13 @@ public static class EventObserverSamples
     /// </summary>
     public static void EventNames(BiDiDriver driver)
     {
-#region EventNames
+        #region EventNames
         Console.WriteLine(driver.Log.OnEntryAdded.EventName);
         // Output: "log.entryAdded"
 
         Console.WriteLine(driver.Network.OnBeforeRequestSent.EventName);
         // Output: "network.beforeRequestSent"
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -63,14 +63,14 @@ public static class EventObserverSamples
     /// </summary>
     public static void SimpleObserver(BiDiDriver driver)
     {
-#region SimpleObserver
+        #region SimpleObserver
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             Console.WriteLine($"Level: {e.Level}");
             Console.WriteLine($"Text: {e.Text}");
             Console.WriteLine($"Timestamp: {e.Timestamp}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -78,13 +78,13 @@ public static class EventObserverSamples
     /// </summary>
     public static void ObserverWithTypeInference(BiDiDriver driver)
     {
-#region ObserverwithTypeInference
+        #region ObserverwithTypeInference
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
             // Type is inferred as EntryAddedEventArgs
             Console.WriteLine(e.Text);
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void AsyncObserver(BiDiDriver driver)
     {
-#region AsyncObserver
+        #region AsyncObserver
         driver.Network.OnBeforeRequestSent.AddObserver(
             async (BeforeRequestSentEventArgs e) =>
             {
@@ -101,7 +101,7 @@ public static class EventObserverSamples
                 await Task.Delay(100);
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region BasicCleanuptry-finally
+        #region BasicCleanuptry-finally
         EventObserver<EntryAddedEventArgs> observer =
             driver.Log.OnEntryAdded.AddObserver((e) =>
             {
@@ -120,7 +120,7 @@ public static class EventObserverSamples
 
         try
         {
-            SubscribeCommandParameters subscribe = 
+            SubscribeCommandParameters subscribe =
                 new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
             await driver.Session.SubscribeAsync(subscribe);
 
@@ -132,7 +132,7 @@ public static class EventObserverSamples
             // Remove observer when done to prevent memory leaks
             observer.Unobserve();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -142,14 +142,14 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region UsingStatementCleanup
+        #region UsingStatementCleanup
         using EventObserver<EntryAddedEventArgs> observer =
             driver.Log.OnEntryAdded.AddObserver((e) =>
             {
                 Console.WriteLine(e.Text);
             });
 
-        SubscribeCommandParameters subscribe = 
+        SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
@@ -157,7 +157,7 @@ public static class EventObserverSamples
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Observer automatically removed when scope exits
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -167,7 +167,7 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region CleanupwithCheckpoints
+        #region CleanupwithCheckpoints
         EventObserver<NavigationEventArgs> observer =
             driver.BrowsingContext.OnLoad.AddObserver((e) =>
             {
@@ -176,7 +176,7 @@ public static class EventObserverSamples
 
         try
         {
-            SubscribeCommandParameters subscribe = 
+            SubscribeCommandParameters subscribe =
                 new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
             await driver.Session.SubscribeAsync(subscribe);
 
@@ -188,7 +188,7 @@ public static class EventObserverSamples
         {
             observer.Unobserve();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -199,8 +199,8 @@ public static class EventObserverSamples
         NavigateCommandParameters params1,
         NavigateCommandParameters params2)
     {
-#region CheckpointReset
-        EventObserver<EntryAddedEventArgs> observer = 
+        #region CheckpointReset
+        EventObserver<EntryAddedEventArgs> observer =
             driver.Log.OnEntryAdded.AddObserver((e) => { });
 
         // First navigation
@@ -212,7 +212,7 @@ public static class EventObserverSamples
         observer.SetCheckpoint(2);
         await driver.BrowsingContext.NavigateAsync(params2);
         await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -220,7 +220,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void SynchronousHandlers(BiDiDriver driver)
     {
-#region SynchronousHandlers
+        #region SynchronousHandlers
         // Default behavior - runs synchronously
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -228,7 +228,7 @@ public static class EventObserverSamples
             // Blocks all message processing until complete
             Console.WriteLine(e.Text);
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -236,7 +236,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void BlockingProblem(BiDiDriver driver)
     {
-#region BlockingProblem
+        #region BlockingProblem
         // ❌ BAD: Handler blocks message processing
         driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
@@ -250,7 +250,7 @@ public static class EventObserverSamples
             // - Commands may timeout
             // - Browser may become unresponsive
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -258,7 +258,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void AsynchronousHandlers(BiDiDriver driver)
     {
-#region AsynchronousHandlers
+        #region AsynchronousHandlers
         // ✅ GOOD: Handler runs asynchronously
         EventObserver<BeforeRequestSentEventArgs> observer =
             driver.Network.OnBeforeRequestSent.AddObserver(
@@ -275,7 +275,7 @@ public static class EventObserverSamples
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously
             );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -283,7 +283,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void QuickOperations(BiDiDriver driver)
     {
-#region QuickOperations
+        #region QuickOperations
         // Counter - quick in-memory operation
         int requestCount = 0;
         driver.Network.OnBeforeRequestSent.AddObserver((e) =>
@@ -297,7 +297,7 @@ public static class EventObserverSamples
         {
             urls.Add(e.Response.Url);  // Quick, synchronous is fine
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -305,7 +305,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void IoOperations(BiDiDriver driver, DbContext dbContext)
     {
-#region IOOperations
+        #region IOOperations
         // File I/O - use async
         driver.Log.OnEntryAdded.AddObserver(
             async (e) =>
@@ -329,7 +329,7 @@ public static class EventObserverSamples
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -339,7 +339,7 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region WaitForCheckpointAndTasksAsync
+        #region WaitForCheckpointAndTasksAsync
         EventObserver<BeforeRequestSentEventArgs> observer =
             driver.Network.OnBeforeRequestSent.AddObserver(
                 async (e) =>
@@ -366,7 +366,7 @@ public static class EventObserverSamples
         {
             Console.WriteLine("Timeout waiting for events");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -377,7 +377,7 @@ public static class EventObserverSamples
         NavigateCommandParameters navParams,
         Func<BeforeRequestSentEventArgs, Task> processRequestAsync)
     {
-#region ManualSynchronization
+        #region ManualSynchronization
         EventObserver<BeforeRequestSentEventArgs> observer =
             driver.Network.OnBeforeRequestSent.AddObserver(
                 async (e) =>
@@ -407,7 +407,7 @@ public static class EventObserverSamples
             await Task.WhenAll(handlerTasks);
             Console.WriteLine("All handlers completed");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -418,7 +418,7 @@ public static class EventObserverSamples
         string contextId,
         Func<BeforeRequestSentEventArgs, Task> processRequestAsync)
     {
-#region TaskCompletionSourceSynchronization
+        #region TaskCompletionSourceSynchronization
         List<Task> handlerTasks = new();
 
         EventObserver<BeforeRequestSentEventArgs> observer =
@@ -477,7 +477,7 @@ public static class EventObserverSamples
         {
             Console.WriteLine("Timeout waiting for events");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -487,7 +487,7 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region WithoutSynchronizationProblem
+        #region WithoutSynchronizationProblem
         // ❌ PROBLEM: Main thread may exit before handlers complete
         EventObserver<BeforeRequestSentEventArgs> badObserver =
             driver.Network.OnBeforeRequestSent.AddObserver(
@@ -533,7 +533,7 @@ public static class EventObserverSamples
             // Wait for all handlers to complete before continuing
             await Task.WhenAll(handlerTasks);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -541,27 +541,27 @@ public static class EventObserverSamples
     /// </summary>
     public static void CallingCommandsInHandlers(BiDiDriver driver)
     {
-#region CallingCommandsinHandlers
-        EventObserver<BeforeRequestSentEventArgs> observer = 
+        #region CallingCommandsinHandlers
+        EventObserver<BeforeRequestSentEventArgs> observer =
             driver.Network.OnBeforeRequestSent.AddObserver(
                 async (e) =>
                 {
                     if (e.IsBlocked)
                     {
                         // Can call commands in async handler
-                        ProvideResponseCommandParameters provideResponse = 
+                        ProvideResponseCommandParameters provideResponse =
                             new ProvideResponseCommandParameters(e.Request.RequestId)
                             {
                                 StatusCode = 404,
                                 ReasonPhrase = "Not Found"
                             };
-                        
+
                         await driver.Network.ProvideResponseAsync(provideResponse);
                     }
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously // MUST use async mode to call commands
             );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -569,7 +569,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void EventFiltering(BiDiDriver driver)
     {
-#region EventFiltering
+        #region EventFiltering
         // Only log errors
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -587,7 +587,7 @@ public static class EventObserverSamples
                 Console.WriteLine($"HTML page: {e.Response.Url}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -595,7 +595,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void MultipleObservers(BiDiDriver driver)
     {
-#region MultipleObservers
+        #region MultipleObservers
         // Observer 1: Log to console
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -603,7 +603,7 @@ public static class EventObserverSamples
         });
 
         // Observer 2: Write to file
-        EventObserver<EntryAddedEventArgs> fileLogger = 
+        EventObserver<EntryAddedEventArgs> fileLogger =
             driver.Log.OnEntryAdded.AddObserver(async (e) =>
             {
                 await File.AppendAllTextAsync("log.txt", e.Text + "\n");
@@ -619,7 +619,7 @@ public static class EventObserverSamples
                 errorCount++;
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -629,13 +629,13 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region Pattern1-WaitforPageLoad
+        #region Pattern1-WaitforPageLoad
         // Add observer for page load event
         EventObserver<NavigationEventArgs> observer =
             driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
         // Subscribe to the event
-        SubscribeCommandParameters subscribe = 
+        SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
@@ -649,7 +649,7 @@ public static class EventObserverSamples
         {
             Console.WriteLine("Page loaded successfully");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -659,7 +659,7 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region Pattern2-CollectNetworkResponses
+        #region Pattern2-CollectNetworkResponses
         List<ResponseData> responses = new List<ResponseData>();
 
         driver.Network.OnResponseCompleted.AddObserver((e) =>
@@ -677,7 +677,7 @@ public static class EventObserverSamples
         await Task.Delay(2000);
 
         Console.WriteLine($"Collected {responses.Count} responses");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -687,8 +687,8 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region Pattern3-WaitforSpecificCondition
-        TaskCompletionSource<RemoteValue> elementFound = 
+        #region Pattern3-WaitforSpecificCondition
+        TaskCompletionSource<RemoteValue> elementFound =
             new TaskCompletionSource<RemoteValue>();
 
         driver.Script.OnMessage.AddObserver((e) =>
@@ -715,7 +715,7 @@ public static class EventObserverSamples
         ChannelValue channel = new ChannelValue(
             new ChannelProperties("elementWatcher"));
 
-        AddPreloadScriptCommandParameters preloadParams = 
+        AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(preloadScript)
             {
                 Arguments = new List<ChannelValue> { channel }
@@ -728,7 +728,7 @@ public static class EventObserverSamples
         RemoteValue elementRemoteValue = await elementFound.Task;
         elementRemoteValue.TryConvertTo(out NodeRemoteValue element);
         Console.WriteLine($"Element found: {element.SharedId}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -738,9 +738,9 @@ public static class EventObserverSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region Pattern4-TemporaryObserver
+        #region Pattern4-TemporaryObserver
         // Add observer just for one operation
-        EventObserver<EntryAddedEventArgs> observer = 
+        EventObserver<EntryAddedEventArgs> observer =
             driver.Log.OnEntryAdded.AddObserver((e) =>
             {
                 Console.WriteLine(e.Text);
@@ -751,7 +751,7 @@ public static class EventObserverSamples
 
         // Remove observer
         observer.Unobserve();
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -759,7 +759,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void NavigationEventArgsExample(BiDiDriver driver)
     {
-#region NavigationEventArgs
+        #region NavigationEventArgs
         driver.BrowsingContext.OnLoad.AddObserver((NavigationEventArgs e) =>
         {
             string contextId = e.BrowsingContextId;
@@ -767,7 +767,7 @@ public static class EventObserverSamples
             string url = e.Url;
             DateTime timestamp = e.Timestamp;
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -775,7 +775,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void EntryAddedEventArgsExample(BiDiDriver driver)
     {
-#region EntryAddedEventArgs
+        #region EntryAddedEventArgs
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             LogLevel level = e.Level;          // Error, Warn, Info, Debug
@@ -789,7 +789,7 @@ public static class EventObserverSamples
             }
             string? stackTrace = string.Join("\n", stackLines);
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -797,7 +797,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void BeforeRequestSentEventArgsExample(BiDiDriver driver)
     {
-#region BeforeRequestSentEventArgs
+        #region BeforeRequestSentEventArgs
         driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
             string requestId = e.Request.RequestId;
@@ -807,7 +807,7 @@ public static class EventObserverSamples
             bool isBlocked = e.IsBlocked;    // True if intercepted
             string contextId = e.BrowsingContextId;
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -815,18 +815,18 @@ public static class EventObserverSamples
     /// </summary>
     public static void ResponseCompletedEventArgsExample(BiDiDriver driver)
     {
-#region ResponseCompletedEventArgs
+        #region ResponseCompletedEventArgs
         driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
             RequestData request = e.Request;
             ResponseData response = e.Response;
-            
+
             string url = response.Url;
             ulong status = response.Status;
             string statusText = response.StatusText;
             IList<ReadOnlyHeader> headers = response.Headers;
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -836,7 +836,7 @@ public static class EventObserverSamples
         BiDiDriver driver,
         Action<EntryAddedEventArgs> handler)
     {
-#region AddObserversBeforeSubscribing
+        #region AddObserversBeforeSubscribing
         // ✅ Recommended: Add observer first, then subscribe
         driver.Log.OnEntryAdded.AddObserver(handler);
 
@@ -847,7 +847,7 @@ public static class EventObserverSamples
         // ✅ Also acceptable: Subscribe then add observer (but less clear)
         await driver.Session.SubscribeAsync(subscribe);
         driver.Log.OnEntryAdded.AddObserver(handler);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -857,8 +857,8 @@ public static class EventObserverSamples
         BiDiDriver driver,
         Action<EntryAddedEventArgs> handler)
     {
-#region RemoveObserversWhenDone
-        EventObserver<EntryAddedEventArgs> observer = 
+        #region RemoveObserversWhenDone
+        EventObserver<EntryAddedEventArgs> observer =
             driver.Log.OnEntryAdded.AddObserver(handler);
 
         try
@@ -869,7 +869,7 @@ public static class EventObserverSamples
         {
             observer.Unobserve();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -877,16 +877,16 @@ public static class EventObserverSamples
     /// </summary>
     public static void BestPracticeAsyncMode(BiDiDriver driver)
     {
-#region UseAsyncModeforLongOperations
+        #region UseAsyncModeforLongOperations
         // ✅ Good: Won't block message processing
         driver.Network.OnBeforeRequestSent.AddObserver(
             async (e) => await SlowOperationAsync(e),
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
-    private static async Task SlowOperationAsync(BeforeRequestSentEventArgs e) {}
+    private static async Task SlowOperationAsync(BeforeRequestSentEventArgs e) { }
 
     /// <summary>
     /// Best practice - handle exceptions in observers.
@@ -894,7 +894,7 @@ public static class EventObserverSamples
     public static void BestPracticeHandleExceptions(
         BiDiDriver driver)
     {
-#region HandleExceptionsinObservers
+        #region HandleExceptionsinObservers
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
             try
@@ -906,10 +906,10 @@ public static class EventObserverSamples
                 Console.WriteLine($"Observer error: {ex.Message}");
             }
         });
-#endregion
+        #endregion
     }
 
-    private static async Task LogRequestAsync(string url) {}
+    private static async Task LogRequestAsync(string url) { }
 
     /// <summary>
     /// ObservableEventHandlerOptions enum values.
@@ -942,16 +942,16 @@ public static class EventObserverSamples
         public DateTime Timestamp { get; set; }
     }
 
-    private static async Task ProcessRequestAsync(BeforeRequestSentEventArgs e) {}
+    private static async Task ProcessRequestAsync(BeforeRequestSentEventArgs e) { }
 
-    private static void ProcessLogEntry(EntryAddedEventArgs e) {}
+    private static void ProcessLogEntry(EntryAddedEventArgs e) { }
 
     /// <summary>
     /// BrowsingContext module observable events.
     /// </summary>
     public static void BrowsingContextEvents(BiDiDriver driver)
     {
-#region BrowsingContextEvents
+        #region BrowsingContextEvents
         _ = driver.BrowsingContext.OnLoad;
         _ = driver.BrowsingContext.OnDomContentLoaded;
         _ = driver.BrowsingContext.OnNavigationStarted;
@@ -966,7 +966,7 @@ public static class EventObserverSamples
         _ = driver.BrowsingContext.OnContextDestroyed;
         _ = driver.BrowsingContext.OnUserPromptOpened;
         _ = driver.BrowsingContext.OnUserPromptClosed;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -974,7 +974,7 @@ public static class EventObserverSamples
     /// </summary>
     public static void BrowsingContextNavigationAndDownloadEvents(BiDiDriver driver)
     {
-#region BrowsingContextNavigationAndDownloadEvents
+        #region BrowsingContextNavigationAndDownloadEvents
         // Navigation committed - fired when the browser commits to the navigation
         driver.BrowsingContext.OnNavigationCommitted.AddObserver((NavigationEventArgs e) =>
         {
@@ -998,7 +998,7 @@ public static class EventObserverSamples
         {
             Console.WriteLine($"Download ended: {e.Status}, path: {e.FilePath ?? "N/A"}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -1006,13 +1006,13 @@ public static class EventObserverSamples
     /// </summary>
     public static void NetworkEvents(BiDiDriver driver)
     {
-#region NetworkEvents
+        #region NetworkEvents
         _ = driver.Network.OnBeforeRequestSent;
         _ = driver.Network.OnResponseStarted;
         _ = driver.Network.OnResponseCompleted;
         _ = driver.Network.OnFetchError;
         _ = driver.Network.OnAuthRequired;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -1020,9 +1020,9 @@ public static class EventObserverSamples
     /// </summary>
     public static void LogEvents(BiDiDriver driver)
     {
-#region LogEvents
+        #region LogEvents
         _ = driver.Log.OnEntryAdded;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -1030,11 +1030,11 @@ public static class EventObserverSamples
     /// </summary>
     public static void ScriptEvents(BiDiDriver driver)
     {
-#region ScriptEvents
+        #region ScriptEvents
         _ = driver.Script.OnMessage;
         _ = driver.Script.OnRealmCreated;
         _ = driver.Script.OnRealmDestroyed;
-#endregion
+        #endregion
     }
 }
 

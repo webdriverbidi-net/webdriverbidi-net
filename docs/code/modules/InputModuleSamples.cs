@@ -22,9 +22,9 @@ public static class InputModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         InputModule input = driver.Input;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -32,7 +32,7 @@ public static class InputModuleSamples
     /// </summary>
     public static async Task MouseClick(BiDiDriver driver, string contextId)
     {
-#region MouseClick
+        #region MouseClick
         PerformActionsCommandParameters parameters = new PerformActionsCommandParameters(contextId);
 
         // Create a pointer (mouse) action source
@@ -47,7 +47,7 @@ public static class InputModuleSamples
         parameters.Actions.Add(mouseSource);
 
         await driver.Input.PerformActionsAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ public static class InputModuleSamples
     /// </summary>
     public static async Task KeyboardInput(BiDiDriver driver, string contextId)
     {
-#region KeyboardInput
+        #region KeyboardInput
         PerformActionsCommandParameters parameters = new PerformActionsCommandParameters(contextId);
 
         // Create a keyboard action source
@@ -70,7 +70,7 @@ public static class InputModuleSamples
         parameters.Actions.Add(keySource);
 
         await driver.Input.PerformActionsAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ public static class InputModuleSamples
     /// </summary>
     public static async Task ClickOnElement(BiDiDriver driver, string contextId)
     {
-#region ClickonElement
+        #region ClickonElement
         // First locate the element
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("button")));
@@ -104,7 +104,7 @@ public static class InputModuleSamples
         parameters.Actions.Add(mouseSource);
 
         await driver.Input.PerformActionsAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public static class InputModuleSamples
     /// </summary>
     public static async Task SendKeysToElement(BiDiDriver driver, string contextId)
     {
-#region SendKeystoElement
+        #region SendKeystoElement
         // Click element first to focus it
         // ... (click code from above)
 
@@ -135,7 +135,7 @@ public static class InputModuleSamples
         parameters.Actions.Add(keySource);
 
         await driver.Input.PerformActionsAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ public static class InputModuleSamples
     /// </summary>
     public static async Task ModifierKeys(BiDiDriver driver, string contextId)
     {
-#region ModifierKeys
+        #region ModifierKeys
         PerformActionsCommandParameters parameters = new PerformActionsCommandParameters(contextId);
 
         KeySourceActions keySource = new KeySourceActions();
@@ -157,7 +157,7 @@ public static class InputModuleSamples
         parameters.Actions.Add(keySource);
 
         await driver.Input.PerformActionsAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -165,11 +165,11 @@ public static class InputModuleSamples
     /// </summary>
     public static async Task ReleaseActions(BiDiDriver driver, string contextId)
     {
-#region ReleaseActions
+        #region ReleaseActions
         // Release all pressed keys/buttons
         ReleaseActionsCommandParameters parameters = new ReleaseActionsCommandParameters(contextId);
         await driver.Input.ReleaseActionsAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -177,7 +177,7 @@ public static class InputModuleSamples
     /// </summary>
     public static async Task SetFiles(BiDiDriver driver, string contextId)
     {
-#region SetFiles
+        #region SetFiles
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("input[type='file']")));
 
@@ -191,7 +191,7 @@ public static class InputModuleSamples
         parameters.Files.Add("/path/to/file2.png");
 
         await driver.Input.SetFilesAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -199,7 +199,7 @@ public static class InputModuleSamples
     /// </summary>
     public static async Task FileDialogOpened(BiDiDriver driver)
     {
-#region FileDialogOpened
+        #region FileDialogOpened
         driver.Input.OnFileDialogOpened.AddObserver(async (FileDialogOpenedEventArgs e) =>
         {
             Console.WriteLine($"File dialog opened in context {e.BrowsingContextId}");
@@ -220,7 +220,7 @@ public static class InputModuleSamples
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Input.OnFileDialogOpened.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -228,10 +228,10 @@ public static class InputModuleSamples
     /// </summary>
     public static void CommonKeyConstants()
     {
-#region CommonKeyConstants
+        #region CommonKeyConstants
         // Enter: \uE007, Tab: \uE004, Backspace: \uE003, Delete: \uE017
         // Escape: \uE00C, Control: \uE009, Shift: \uE008, Alt: \uE00A
         // ArrowUp: \uE013, ArrowDown: \uE015, ArrowLeft: \uE012, ArrowRight: \uE014
-#endregion
+        #endregion
     }
 }

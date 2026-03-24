@@ -24,9 +24,9 @@ public static class WebExtensionModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         WebExtensionModule webExtension = driver.WebExtension;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public static class WebExtensionModuleSamples
     /// </summary>
     public static async Task InstallFromPath(BiDiDriver driver)
     {
-#region InstallfromPath
+        #region InstallfromPath
         InstallCommandParameters @params = new InstallCommandParameters(
             new ExtensionArchivePath("/path/to/extension.zip"));
 
@@ -42,7 +42,7 @@ public static class WebExtensionModuleSamples
         string extensionId = result.ExtensionId;
 
         Console.WriteLine($"Extension installed: {extensionId}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -50,14 +50,14 @@ public static class WebExtensionModuleSamples
     /// </summary>
     public static async Task InstallUnpackedExtension(BiDiDriver driver)
     {
-#region InstallUnpackedExtension
+        #region InstallUnpackedExtension
         // Install from unpacked extension directory
         InstallCommandParameters @params = new InstallCommandParameters(
             new ExtensionPath("/path/to/extension-directory"));
 
         InstallCommandResult result = await driver.WebExtension.InstallAsync(@params);
         Console.WriteLine($"Extension installed: {result.ExtensionId}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -65,12 +65,12 @@ public static class WebExtensionModuleSamples
     /// </summary>
     public static async Task UninstallById(BiDiDriver driver, string extensionId)
     {
-#region UninstallbyID
+        #region UninstallbyID
         UninstallCommandParameters @params = new UninstallCommandParameters(extensionId);
         await driver.WebExtension.UninstallAsync(@params);
 
         Console.WriteLine("Extension uninstalled");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ public static class WebExtensionModuleSamples
     /// </summary>
     public static async Task TestingWithExtension(BiDiDriver driver, string contextId)
     {
-#region TestingwithExtension
+        #region TestingwithExtension
         // Install extension
         InstallCommandParameters installParams = new InstallCommandParameters(
             new ExtensionPath("/path/to/my-extension"));
@@ -111,7 +111,7 @@ public static class WebExtensionModuleSamples
         // Clean up
         await driver.WebExtension.UninstallAsync(
             new UninstallCommandParameters(extensionId));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ public static class WebExtensionModuleSamples
     /// </summary>
     public static async Task TestingExtensionContentScripts(BiDiDriver driver, string contextId)
     {
-#region TestingExtensionContentScripts
+        #region TestingExtensionContentScripts
         // Install extension with content script
         InstallCommandParameters @params = new InstallCommandParameters(
             new ExtensionPath("/path/to/content-script-extension"));
@@ -150,7 +150,7 @@ public static class WebExtensionModuleSamples
         // Clean up
         await driver.WebExtension.UninstallAsync(
             new UninstallCommandParameters(result.ExtensionId));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public static class WebExtensionModuleSamples
     /// </summary>
     public static async Task TestingMultipleExtensions(BiDiDriver driver)
     {
-#region TestingMultipleExtensions
+        #region TestingMultipleExtensions
         List<string> extensionIds = new List<string>();
 
         // Install multiple extensions
@@ -189,7 +189,7 @@ public static class WebExtensionModuleSamples
             await driver.WebExtension.UninstallAsync(
                 new UninstallCommandParameters(id));
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -197,7 +197,7 @@ public static class WebExtensionModuleSamples
     /// </summary>
     public static async Task TestingExtensionPermissions(BiDiDriver driver, string contextId)
     {
-#region TestingExtensionPermissions
+        #region TestingExtensionPermissions
         // Install extension that requires permissions
         InstallCommandParameters @params = new InstallCommandParameters(
             new ExtensionPath("/path/to/permission-extension"));
@@ -230,6 +230,6 @@ public static class WebExtensionModuleSamples
         // Uninstall
         await driver.WebExtension.UninstallAsync(
             new UninstallCommandParameters(result.ExtensionId));
-#endregion
+        #endregion
     }
 }

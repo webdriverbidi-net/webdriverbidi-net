@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulateGattConnectionResponseCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulateGattConnectionResponseCommandParameters properties = new("myContext", "myAddress", 0);

@@ -101,7 +101,7 @@ public class SessionModuleTests
         Task<SubscribeCommandResult> task = module.SubscribeAsync(subscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         SubscribeCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
         Assert.That(result.SubscriptionId, Is.EqualTo("mySubscriptionId"));
     }
@@ -131,7 +131,7 @@ public class SessionModuleTests
         Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         UnsubscribeCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -160,7 +160,7 @@ public class SessionModuleTests
         Task<UnsubscribeCommandResult> task = module.UnsubscribeAsync(unsubscribeParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         UnsubscribeCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -202,7 +202,7 @@ public class SessionModuleTests
         Task<NewCommandResult> task = module.NewSessionAsync(newCommandParameters);
         task.Wait(TimeSpan.FromSeconds(1));
         NewCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {

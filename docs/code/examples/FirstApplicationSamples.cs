@@ -24,7 +24,7 @@ public static class FirstApplicationSamples
     /// </summary>
     public static async Task FullFirstApplication()
     {
-#region FullFirstApplication
+        #region FullFirstApplication
         // Replace with your WebSocket URL from step 4
         string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-ID-HERE";
 
@@ -43,7 +43,7 @@ public static class FirstApplicationSamples
                 Console.WriteLine($"[Browser Console] {e.Level}: {e.Text}");
             });
 
-            SubscribeCommandParameters subscribe = 
+            SubscribeCommandParameters subscribe =
                 new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
             await driver.Session.SubscribeAsync(subscribe);
 
@@ -142,7 +142,7 @@ public static class FirstApplicationSamples
             await driver.StopAsync();
             Console.WriteLine("Disconnected!");
         }
-#endregion
+        #endregion
     }
 }
 
@@ -153,10 +153,10 @@ public static class FirstApplicationSamplesIndividual
     /// </summary>
     public static async Task DriverInitialization(string webSocketUrl)
     {
-#region DriverInitialization
+        #region DriverInitialization
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -164,12 +164,12 @@ public static class FirstApplicationSamplesIndividual
     /// </summary>
     public static async Task EventSubscription(BiDiDriver driver)
     {
-#region EventSubscription
+        #region EventSubscription
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) => { /* handle log */ });
         SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
             driver.Log.OnEntryAdded.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -177,11 +177,11 @@ public static class FirstApplicationSamplesIndividual
     /// </summary>
     public static async Task<string> GettingContext(BiDiDriver driver)
     {
-#region GettingContext
+        #region GettingContext
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
             new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
-#endregion
+        #endregion
         return contextId;
     }
 
@@ -190,7 +190,7 @@ public static class FirstApplicationSamplesIndividual
     /// </summary>
     public static async Task Navigation(BiDiDriver driver, string contextId)
     {
-#region Navigation
+        #region Navigation
         NavigateCommandParameters navParams = new NavigateCommandParameters(
             contextId,
             "https://example.com")
@@ -198,7 +198,7 @@ public static class FirstApplicationSamplesIndividual
             Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.NavigateAsync(navParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -206,13 +206,13 @@ public static class FirstApplicationSamplesIndividual
     /// </summary>
     public static async Task JavaScriptExecution(BiDiDriver driver, string contextId)
     {
-#region JavaScriptExecution
+        #region JavaScriptExecution
         EvaluateCommandParameters evalParams = new EvaluateCommandParameters(
             "document.title",
             new ContextTarget(contextId),
             true);
         EvaluateResult result = await driver.Script.EvaluateAsync(evalParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -220,13 +220,13 @@ public static class FirstApplicationSamplesIndividual
     /// </summary>
     public static async Task ScreenshotCapture(BiDiDriver driver, string contextId)
     {
-#region ScreenshotCapture
+        #region ScreenshotCapture
         CaptureScreenshotCommandParameters screenshotParams =
             new CaptureScreenshotCommandParameters(contextId);
         CaptureScreenshotCommandResult screenshot =
             await driver.BrowsingContext.CaptureScreenshotAsync(screenshotParams);
         byte[] imageBytes = Convert.FromBase64String(screenshot.Data);
         await File.WriteAllBytesAsync("screenshot.png", imageBytes);
-#endregion
+        #endregion
     }
 }

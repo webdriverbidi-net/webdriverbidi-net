@@ -3,8 +3,8 @@ namespace WebDriverBiDi.JsonConverters;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using WebDriverBiDi.Protocol;
 using TestUtilities;
+using WebDriverBiDi.Protocol;
 
 [TestFixture]
 public class WebDriverBiDiJsonSerializerContextTests
@@ -134,7 +134,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         // registered with the custom JsonSerializerContext, add them to the list of
         // missing types.
         List<Type> missingTypes = [];
-        foreach(Type assemblyType in assembly.GetTypes())
+        foreach (Type assemblyType in assembly.GetTypes())
         {
             if (assemblyType.IsEnum && IsLibraryNamespace(assemblyType) &&
                 assemblyType.GetCustomAttribute<JsonConverterAttribute>() is not null &&

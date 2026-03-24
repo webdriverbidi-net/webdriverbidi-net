@@ -28,7 +28,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task BasicPageNavigation()
     {
-#region BasicPageNavigation
+        #region BasicPageNavigation
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -64,7 +64,7 @@ public static class CommonScenariosSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task FormSubmission()
     {
-#region FormSubmission
+        #region FormSubmission
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -108,14 +108,14 @@ public static class CommonScenariosSamples
                 // Type into the field
                 PerformActionsCommandParameters typeParams = new PerformActionsCommandParameters(contextId);
                 KeySource keyboard = new KeySource("keyboard");
-                
+
                 string username = "testuser";
                 foreach (char c in username)
                 {
                     keyboard.CreateKeyDown(c.ToString());
                     keyboard.CreateKeyUp(c.ToString());
                 }
-                
+
                 typeParams.Actions.Add(keyboard.ToSourceActions());
                 await driver.Input.PerformActionsAsync(typeParams);
 
@@ -132,7 +132,7 @@ public static class CommonScenariosSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task MonitoringConsoleLogs()
     {
-#region MonitoringConsoleLogs
+        #region MonitoringConsoleLogs
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -165,7 +165,7 @@ public static class CommonScenariosSamples
             });
 
             // Subscribe to log events
-            SubscribeCommandParameters subscribe = 
+            SubscribeCommandParameters subscribe =
                 new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
             await driver.Session.SubscribeAsync(subscribe);
 
@@ -191,7 +191,7 @@ public static class CommonScenariosSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -199,7 +199,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task CaptureScreenshot()
     {
-#region CaptureScreenshot
+        #region CaptureScreenshot
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -215,23 +215,23 @@ public static class CommonScenariosSamples
                 { Wait = ReadinessState.Complete });
 
             // Capture full page screenshot
-            CaptureScreenshotCommandParameters screenshotParams = 
+            CaptureScreenshotCommandParameters screenshotParams =
                 new CaptureScreenshotCommandParameters(contextId);
-            
-            CaptureScreenshotCommandResult result = 
+
+            CaptureScreenshotCommandResult result =
                 await driver.BrowsingContext.CaptureScreenshotAsync(screenshotParams);
 
             // Save to file
             byte[] imageBytes = Convert.FromBase64String(result.Data);
             await File.WriteAllBytesAsync("screenshot.png", imageBytes);
-            
+
             Console.WriteLine("Screenshot saved to screenshot.png");
         }
         finally
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -239,7 +239,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task NetworkTrafficMonitoring()
     {
-#region NetworkTrafficMonitoring
+        #region NetworkTrafficMonitoring
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -247,7 +247,7 @@ public static class CommonScenariosSamples
         {
             // Track all network requests
             List<RequestData> requests = new List<RequestData>();
-            
+
             driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
             {
                 requests.Add(e.Request);
@@ -255,7 +255,7 @@ public static class CommonScenariosSamples
             });
 
             // Subscribe to network events
-            SubscribeCommandParameters subscribe = 
+            SubscribeCommandParameters subscribe =
                 new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
             await driver.Session.SubscribeAsync(subscribe);
 
@@ -272,20 +272,20 @@ public static class CommonScenariosSamples
             await Task.Delay(2000);
 
             Console.WriteLine($"\nTotal requests: {requests.Count}");
-            
+
             // Analyze requests
             int htmlCount = requests.Count(r => r.Url.Contains(".html") || r.Url.EndsWith("/"));
             int cssCount = requests.Count(r => r.Url.Contains(".css"));
             int jsCount = requests.Count(r => r.Url.Contains(".js"));
             int imageCount = requests.Count(r => r.Url.Contains(".jpg") || r.Url.Contains(".png") || r.Url.Contains(".gif"));
-            
+
             Console.WriteLine($"HTML: {htmlCount}, CSS: {cssCount}, JS: {jsCount}, Images: {imageCount}");
         }
         finally
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -293,7 +293,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task MultiTabManagement()
     {
-#region Multi-TabManagement
+        #region Multi-TabManagement
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -301,7 +301,7 @@ public static class CommonScenariosSamples
         {
             // Create multiple tabs
             List<string> tabIds = new List<string>();
-            
+
             for (int i = 0; i < 3; i++)
             {
                 CreateCommandResult result = await driver.BrowsingContext.CreateAsync(
@@ -311,7 +311,7 @@ public static class CommonScenariosSamples
             }
 
             // Navigate each tab to different URL
-            string[] urls = 
+            string[] urls =
             {
                 "https://example.com",
                 "https://example.org",
@@ -334,7 +334,7 @@ public static class CommonScenariosSamples
                         "document.title",
                         new ContextTarget(tabIds[i]),
                         true));
-                
+
                 if (result is EvaluateResultSuccess success &&
                     success.Result is StringRemoteValue stringValue)
                 {
@@ -348,14 +348,14 @@ public static class CommonScenariosSamples
             {
                 await driver.BrowsingContext.CloseAsync(new CloseCommandParameters(tabId));
             }
-            
+
             Console.WriteLine("All tabs closed");
         }
         finally
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -363,7 +363,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task WaitForElement()
     {
-#region WaitforElement
+        #region WaitforElement
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -414,7 +414,7 @@ public static class CommonScenariosSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -422,7 +422,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task CookieManagement()
     {
-#region CookieManagement
+        #region CookieManagement
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -454,7 +454,7 @@ public static class CommonScenariosSamples
             // Retrieve cookies
             GetCookiesCommandParameters getCookiesParams = new GetCookiesCommandParameters();
             getCookiesParams.Partition = new BrowsingContextPartitionDescriptor(contextId);
-            
+
             GetCookiesCommandResult cookies = await driver.Storage.GetCookiesAsync(getCookiesParams);
 
             Console.WriteLine($"\nAll cookies ({cookies.Cookies.Count}):");
@@ -467,14 +467,14 @@ public static class CommonScenariosSamples
             DeleteCookiesCommandParameters deleteParams = new DeleteCookiesCommandParameters();
             deleteParams.Filter = new CookieFilter { Name = "userPreference" };
             await driver.Storage.DeleteCookiesAsync(deleteParams);
-            
+
             Console.WriteLine("\nCookie deleted");
         }
         finally
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -482,7 +482,7 @@ public static class CommonScenariosSamples
     /// </summary>
     public static async Task JavaScriptExecution()
     {
-#region JavaScriptExecution
+        #region JavaScriptExecution
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -548,7 +548,7 @@ public static class CommonScenariosSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 }
 
@@ -559,7 +559,7 @@ internal class Keys
 
 internal class KeySource
 {
-    private string v;
+    private readonly string v;
 
     public KeySource(string v)
     {

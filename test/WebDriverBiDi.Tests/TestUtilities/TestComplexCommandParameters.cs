@@ -4,8 +4,8 @@ using System.Text.Json.Serialization;
 
 public class TestComplexCommandParameters : CommandParameters<TestCommandResult>
 {
-    private string parameterName = "parameterValue";
-    private List<object?> complexValue = [
+    private readonly string parameterName = "parameterValue";
+    private readonly List<object?> complexValue = [
         "stringValue",
         1,
         2.3d,

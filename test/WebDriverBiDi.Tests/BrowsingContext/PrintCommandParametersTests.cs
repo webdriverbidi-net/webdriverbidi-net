@@ -425,7 +425,7 @@ public class PrintCommandParametersTests
             Assert.That(pageRanges[0].Value<long>, Is.EqualTo(1));
             Assert.That(pageRanges[1].Type, Is.EqualTo(JTokenType.String));
             Assert.That(pageRanges[1].Value<string>, Is.EqualTo("3-5"));
-         }
+        }
     }
 
     [Test]

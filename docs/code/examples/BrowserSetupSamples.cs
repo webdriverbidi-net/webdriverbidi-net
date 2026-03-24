@@ -27,9 +27,9 @@ public static class BrowserSetupSamples
     /// </summary>
     public static async Task ConnectWithWebSocketUrl(BiDiDriver driver)
     {
-#region ConnectwithWebSocketURL
+        #region ConnectwithWebSocketURL
         await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123-def");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public static class BrowserSetupSamples
         string webSocketUrl,
         NavigateCommandParameters navParams)
     {
-#region WebSocketConnection
+        #region WebSocketConnection
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Connect to browser at WebSocket URL
@@ -54,7 +54,7 @@ public static class BrowserSetupSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -62,9 +62,9 @@ public static class BrowserSetupSamples
     /// </summary>
     public static async Task FirefoxConnection(BiDiDriver driver)
     {
-#region FirefoxConnection
+        #region FirefoxConnection
         await driver.StartAsync("ws://localhost:4444/session");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -74,10 +74,10 @@ public static class BrowserSetupSamples
         BiDiDriver driver,
         string webSocketUrl)
     {
-#region ProgrammaticBrowserLaunch
+        #region ProgrammaticBrowserLaunch
         // Launch Chrome via Process, wait, get WebSocket URL via HttpClient /json/version, then connect
         await driver.StartAsync(webSocketUrl);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public static class BrowserSetupSamples
     /// </summary>
     public static async Task PipeLauncherPattern(NavigateCommandParameters navParams)
     {
-#region PipeLauncherPattern
+        #region PipeLauncherPattern
         // Launcher implements IPipeServerProcessProvider
         ChromeLauncher launcher = new ChromeLauncher()
         {
@@ -114,7 +114,7 @@ public static class BrowserSetupSamples
             await launcher.QuitBrowserAsync();
             await launcher.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -123,7 +123,7 @@ public static class BrowserSetupSamples
     /// </summary>
     public static async Task SeleniumManagerIntegration(ChromeOptions chromeOptions)
     {
-#region SeleniumManagerIntegration
+        #region SeleniumManagerIntegration
         BiDiDriver driver = null;
 
         // This is conceptual - WebDriverBiDi.NET doesn't include Selenium Manager
@@ -134,7 +134,7 @@ public static class BrowserSetupSamples
             ["webSocketDebuggerUrl"];
 
         await driver.StartAsync(wsUrl);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public static class BrowserSetupSamples
     /// </summary>
     public static async Task WebSocketLauncherPattern(BiDiDriver driver, string webSocketUrl)
     {
-#region WebSocketLauncherPattern
+        #region WebSocketLauncherPattern
         // Launch Chrome
         Process chromeProcess = new Process
         {
@@ -170,7 +170,7 @@ public static class BrowserSetupSamples
         // Later: clean up
         chromeProcess.Kill();
     }
-#endregion
+    #endregion
 }
 
 /// <summary>

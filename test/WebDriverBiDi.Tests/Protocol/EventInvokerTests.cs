@@ -9,7 +9,8 @@ public class EventInvokerTests
     public async Task TestCanInvokeEvent()
     {
         bool eventInvoked = false;
-        Task action(EventInfo<TestEventArgs> info) {
+        Task action(EventInfo<TestEventArgs> info)
+        {
             eventInvoked = true;
             return Task.CompletedTask;
         }
@@ -172,7 +173,7 @@ public class EventInvokerTests
     [Test]
     public void TestExceptionInAsyncDelegateIsPropagated()
     {
-        Task action(EventInfo<TestEventArgs> info)
+        static Task action(EventInfo<TestEventArgs> info)
         {
             throw new InvalidOperationException("Test exception from delegate");
         }
@@ -187,7 +188,7 @@ public class EventInvokerTests
     [Test]
     public void TestExceptionInAsyncTaskIsPropagated()
     {
-        async Task action(EventInfo<TestEventArgs> info)
+        static async Task action(EventInfo<TestEventArgs> info)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(10));
             throw new ArgumentException("Async exception from delegate");

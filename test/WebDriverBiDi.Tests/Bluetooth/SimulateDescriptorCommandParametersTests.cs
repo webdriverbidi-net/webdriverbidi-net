@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulateDescriptorCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulateDescriptorCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorType.Add);
@@ -40,7 +40,7 @@ public class SimulateDescriptorCommandParametersTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("add"));
-       }
+        }
     }
 
     [Test]
@@ -70,6 +70,6 @@ public class SimulateDescriptorCommandParametersTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("remove"));
-       }
+        }
     }
 }

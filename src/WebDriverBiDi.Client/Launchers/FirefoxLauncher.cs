@@ -26,11 +26,11 @@ public class FirefoxLauncher : BrowserLauncher
     private string userDataDirectory = string.Empty;
     private Process? browserProcess;
 
-    private List<string> firefoxArguments = [
+    private readonly List<string> firefoxArguments = [
       "--no-remote",
     ];
 
-    private Dictionary<string, object> userPreferences = [];
+    private readonly Dictionary<string, object> userPreferences = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FirefoxLauncher"/> class.

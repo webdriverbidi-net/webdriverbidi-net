@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 public class TestCommandParameters : CommandParameters<TestCommandResult>
 {
-    private string parameterName = "parameterValue";
+    private readonly string parameterName = "parameterValue";
     private readonly string commandName;
 
     public TestCommandParameters(string commandName, string parameterValue = "parameterValue")

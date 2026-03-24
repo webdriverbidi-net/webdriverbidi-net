@@ -74,7 +74,7 @@ public class NavigationEventArgsTests
             Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
         }
     }
-    
+
     [Test]
     public void TestCopySemantics()
     {

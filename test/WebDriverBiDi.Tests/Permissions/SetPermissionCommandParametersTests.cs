@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SetPermissionsCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SetPermissionCommandParameters properties = new("myPermission", PermissionState.Granted, "https://example.com");

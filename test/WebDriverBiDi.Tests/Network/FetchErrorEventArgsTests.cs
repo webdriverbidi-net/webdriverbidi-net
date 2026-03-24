@@ -47,7 +47,7 @@ public class FetchErrorEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "errorText": "My error"
                            }
                            """;
@@ -83,7 +83,7 @@ public class FetchErrorEventArgsTests
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
                              "intercepts": [ "myInterceptId" ],
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "errorText": "My error"
                            }
                            """;
@@ -120,7 +120,7 @@ public class FetchErrorEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "errorText": "My error"
                            }
                            """;
@@ -155,7 +155,7 @@ public class FetchErrorEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "errorText": "My error"
                            }
                            """;
@@ -178,7 +178,7 @@ public class FetchErrorEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<FetchErrorEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -197,7 +197,7 @@ public class FetchErrorEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "errorText": {}
                            }
                            """;

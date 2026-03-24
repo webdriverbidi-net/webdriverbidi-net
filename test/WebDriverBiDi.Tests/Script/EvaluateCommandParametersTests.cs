@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class EvaluateCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         EvaluateCommandParameters properties = new("myExpression", new RealmTarget("myRealm"), true);

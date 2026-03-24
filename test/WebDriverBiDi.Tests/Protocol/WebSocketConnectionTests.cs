@@ -87,7 +87,7 @@ public class WebSocketConnectionTests
         WebSocketConnection connection = new();
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(OnSocketDataReceived);
+        this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("Hello world"u8.ToArray());
         string dataReceivedByServer = this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
@@ -105,7 +105,7 @@ public class WebSocketConnectionTests
         WebSocketConnection connection = new();
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
         await server.SendWebSocketDataAsync(registeredConnectionId, "Hello back");
         byte[] dataReceivedByConnection = this.WaitForConnectionToReceiveData(TimeSpan.FromSeconds(3));
@@ -123,7 +123,7 @@ public class WebSocketConnectionTests
         WebSocketConnection connection = new();
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
         // Create a message on an exact boundary of the buffer
         string data = new('a', 2 * connection.BufferSize);
@@ -143,7 +143,7 @@ public class WebSocketConnectionTests
         WebSocketConnection connection = new();
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
         // Create a message on an exact boundary of the buffer
         string data = new('a', 70000);
@@ -162,7 +162,7 @@ public class WebSocketConnectionTests
 
         List<LogMessageEventArgs> allLogs = [];
         WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             allLogs.Add(e);
@@ -170,7 +170,7 @@ public class WebSocketConnectionTests
         });
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(OnSocketDataReceived);
+        this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("Hello world"u8.ToArray());
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
@@ -192,7 +192,7 @@ public class WebSocketConnectionTests
 
         List<LogMessageEventArgs> logValues = [];
         WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             if (e.Level >= WebDriverBiDiLogLevel.Info)
@@ -204,7 +204,7 @@ public class WebSocketConnectionTests
         });
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(OnSocketDataReceived);
+        this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
         await connection.SendDataAsync("Hello world"u8.ToArray());
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(4));
 
@@ -237,7 +237,7 @@ public class WebSocketConnectionTests
 
         WebSocketConnection connection = new();
         Assert.That(connection.IsActive, Is.False);
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.IsActive, Is.True);
@@ -254,7 +254,7 @@ public class WebSocketConnectionTests
         string serverWebSocketUrl = $"ws://localhost:{server.Port}";
         WebSocketConnection connection = new();
         Assert.That(connection.ConnectionString, Is.EqualTo(string.Empty));
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync(serverWebSocketUrl);
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.ConnectionString, Is.EqualTo(serverWebSocketUrl));
@@ -303,7 +303,7 @@ public class WebSocketConnectionTests
             BypassStop = false
         };
         Assert.That(connection.IsActive, Is.False);
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(connection.IsActive, Is.True);
@@ -329,7 +329,7 @@ public class WebSocketConnectionTests
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
         });
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.StopAsync();
@@ -462,7 +462,7 @@ public class WebSocketConnectionTests
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
         });
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.StopAsync();
@@ -594,7 +594,7 @@ public class WebSocketConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -636,7 +636,7 @@ public class WebSocketConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -656,7 +656,7 @@ public class WebSocketConnectionTests
         await connection.StartAsync($"ws://localhost:{server.Port}");
         registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         observer = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
-        
+
         await connection.SendDataAsync("Second connection hello"u8.ToArray());
         serverReceivedData = this.WaitForServerToReceiveData(TimeSpan.FromMilliseconds(250));
         observer.Unobserve();
@@ -815,7 +815,7 @@ public class WebSocketConnectionTests
         await server.StartAsync();
 
         WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.DisposeAsync();
@@ -838,7 +838,7 @@ public class WebSocketConnectionTests
         await server.StartAsync();
 
         WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         await connection.StopAsync();
@@ -852,7 +852,7 @@ public class WebSocketConnectionTests
         await server.StartAsync();
 
         WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         Assert.That(async () => await connection.DisposeAsync(), Throws.Nothing);
@@ -891,10 +891,10 @@ public class WebSocketConnectionTests
         await server.StartAsync();
 
         WebSocketConnection connection = new();
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         string registeredConnectionId = this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
-        this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(OnSocketDataReceived);
+        this.serverDataReceivedObserver = server.OnDataReceived.AddObserver(this.OnSocketDataReceived);
 
         await connection.SendDataAsync("Hello world"u8.ToArray());
         this.WaitForServerToReceiveData(TimeSpan.FromSeconds(3));
@@ -931,7 +931,7 @@ public class WebSocketConnectionTests
             await Task.Delay(Timeout.Infinite, token);
             throw new OperationCanceledException(token);
         };
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         closeReturned.Wait(TimeSpan.FromSeconds(3));
@@ -960,7 +960,7 @@ public class WebSocketConnectionTests
             exceptionThrown.Set();
             throw new OperationCanceledException();
         };
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
         exceptionThrown.Wait(TimeSpan.FromSeconds(3));
@@ -1075,7 +1075,7 @@ public class WebSocketConnectionTests
             connectionLog.Add(e.Message);
             return Task.CompletedTask;
         });
-        connection.OnDataReceived.AddObserver(OnConnectionDataReceivedAsync);
+        connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
 
         await connection.StartAsync($"ws://localhost:{server.Port}");
         this.WaitForServerToRegisterConnection(TimeSpan.FromSeconds(1));
@@ -1105,7 +1105,7 @@ public class WebSocketConnectionTests
     private Server CreateServer()
     {
         Server server = new();
-        server.OnClientConnected.AddObserver(OnClientConnected);
+        server.OnClientConnected.AddObserver(this.OnClientConnected);
         return server;
     }
 

@@ -27,7 +27,7 @@ public static class DemoScenarios
         StatusCommandResult status = await driver.Session.StatusAsync(new StatusCommandParameters());
         Console.WriteLine($"Is ready? {status.IsReady}");
 
-        List<string> eventsToSubscribe = 
+        List<string> eventsToSubscribe =
         [
             driver.BrowsingContext.OnNavigationStarted.EventName,
             driver.BrowsingContext.OnLoad.EventName,
@@ -704,7 +704,7 @@ public static class DemoScenarios
             Console.WriteLine(bodyText);
         }
     }
-    
+
     /// <summary>
     /// Demonstrates an approach to capturing all network traffic during a session, including request and response bodies.
     /// </summary>
@@ -1025,13 +1025,13 @@ public static class DemoScenarios
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, locator));
         IList<NodeRemoteValue> locateValues = locateResult.Nodes;
         Console.WriteLine($"Found {locateValues.Count} custom-button elements");
-        foreach(RemoteValue locateValue in locateValues)
+        foreach (RemoteValue locateValue in locateValues)
         {
             NodeProperties properties = locateValue.ConvertTo<NodeRemoteValue>().Value;
             Console.WriteLine($"Custom button element (local name {properties.LocalName}, id {properties.Attributes?["id"]})");
             if (properties.ShadowRoot is not null)
             {
-               Locator shadowLocator = new AccessibilityLocator()
+                Locator shadowLocator = new AccessibilityLocator()
                 {
                     Role = "button",
                 };
@@ -1040,7 +1040,7 @@ public static class DemoScenarios
                 LocateNodesCommandResult locateShadowResult = await driver.BrowsingContext.LocateNodesAsync(shadowLocateParams);
                 IList<NodeRemoteValue> locateShadowValues = locateShadowResult.Nodes;
                 Console.WriteLine($"Found {locateShadowValues.Count} button elements in web component");
-                foreach(RemoteValue locateShadowValue in locateShadowValues)
+                foreach (RemoteValue locateShadowValue in locateShadowValues)
                 {
                     NodeProperties shadowProperties = locateShadowValue.ConvertTo<NodeRemoteValue>().Value;
                     if (shadowProperties.LocalName?.ToLower() != "script" && shadowProperties.LocalName?.ToLower() != "style")

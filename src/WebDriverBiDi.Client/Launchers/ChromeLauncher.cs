@@ -38,7 +38,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 
     private string userDataDirectory = string.Empty;
 
-    private List<string> chromeArguments = [
+    private readonly List<string> chromeArguments = [
         "--allow-browser-signin=false",
         "--allow-pre-commit-input",
         "--disable-background-networking",

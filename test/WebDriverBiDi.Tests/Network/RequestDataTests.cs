@@ -63,7 +63,7 @@ public class RequestDataTests
             Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
             Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
             Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }       
+        }
     }
 
     [Test]
@@ -135,7 +135,7 @@ public class RequestDataTests
             Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
             Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
             Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }       
+        }
     }
 
     [Test]
@@ -221,7 +221,7 @@ public class RequestDataTests
             Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
             Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
             Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }       
+        }
     }
 
     [Test]
@@ -282,7 +282,7 @@ public class RequestDataTests
             Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
             Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
             Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }       
+        }
     }
 
     [Test]
@@ -343,7 +343,7 @@ public class RequestDataTests
             Assert.That(request.Timings.RequestStart, Is.EqualTo(11));
             Assert.That(request.Timings.ResponseStart, Is.EqualTo(12));
             Assert.That(request.Timings.ResponseEnd, Is.EqualTo(13));
-        }       
+        }
     }
 
     [Test]

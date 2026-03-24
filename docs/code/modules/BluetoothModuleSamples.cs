@@ -25,9 +25,9 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         BluetoothModule bluetooth = driver.Bluetooth;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task BasicDeviceSimulation(BiDiDriver driver, string contextId)
     {
-#region BasicDeviceSimulation
+        #region BasicDeviceSimulation
         SimulatePreconnectedPeripheralCommandParameters parameters =
             new SimulatePreconnectedPeripheralCommandParameters(
                 contextId,
@@ -47,7 +47,7 @@ public static class BluetoothModuleSamples
 
         await driver.Bluetooth.SimulatePreconnectedPeripheralAsync(parameters);
         Console.WriteLine("Bluetooth device simulated");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task DeviceWithServices(BiDiDriver driver, string contextId)
     {
-#region DevicewithServices
+        #region DevicewithServices
         SimulatePreconnectedPeripheralCommandParameters @params =
             new SimulatePreconnectedPeripheralCommandParameters(
                 contextId,
@@ -65,7 +65,7 @@ public static class BluetoothModuleSamples
 
         await driver.Bluetooth.SimulatePreconnectedPeripheralAsync(@params);
         Console.WriteLine("Bluetooth heart rate monitor simulated");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -73,7 +73,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task BasicAdvertisement(BiDiDriver driver, string contextId)
     {
-#region BasicAdvertisement
+        #region BasicAdvertisement
         ScanRecord scanRecord = new ScanRecord();
         SimulateAdvertisementScanEntry scanEntry = new SimulateAdvertisementScanEntry(
             "00:00:00:00:00:00",
@@ -85,7 +85,7 @@ public static class BluetoothModuleSamples
 
         await driver.Bluetooth.SimulateAdvertisementAsync(@params);
         Console.WriteLine("Bluetooth advertisement simulated");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task AdvertisementWithSignalStrength(BiDiDriver driver, string contextId)
     {
-#region AdvertisementwithSignalStrength
+        #region AdvertisementwithSignalStrength
         // Simulate weak signal
         ScanRecord scanRecord = new ScanRecord();
         SimulateAdvertisementScanEntry weakSignal = new SimulateAdvertisementScanEntry(
@@ -110,7 +110,7 @@ public static class BluetoothModuleSamples
             scanRecord);
         await driver.Bluetooth.SimulateAdvertisementAsync(
             new SimulateAdvertisementCommandParameters(contextId, strongSignal));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -118,7 +118,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task TestingBluetoothScanner(BiDiDriver driver, string contextId)
     {
-#region TestingBluetoothScanner
+        #region TestingBluetoothScanner
         // Simulate a Bluetooth device
         SimulatePreconnectedPeripheralCommandParameters deviceParams =
             new SimulatePreconnectedPeripheralCommandParameters(
@@ -149,7 +149,7 @@ public static class BluetoothModuleSamples
             string deviceName = deviceNameValue.Value;
             Console.WriteLine($"Found device: {deviceName}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -157,7 +157,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task TestingMultipleDevices(BiDiDriver driver, string contextId)
     {
-#region TestingMultipleDevices
+        #region TestingMultipleDevices
         List<string> deviceAddresses = new List<string>
         {
             "AA:BB:CC:DD:EE:01",
@@ -186,7 +186,7 @@ public static class BluetoothModuleSamples
                 }).then(device => device.id)",
                 new ContextTarget(contextId),
                 true));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -194,7 +194,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task TestingDeviceConnection(BiDiDriver driver, string contextId)
     {
-#region TestingDeviceConnection
+        #region TestingDeviceConnection
         // Simulate device
         SimulatePreconnectedPeripheralCommandParameters deviceParams =
             new SimulatePreconnectedPeripheralCommandParameters(
@@ -232,7 +232,7 @@ public static class BluetoothModuleSamples
             string connectionStatus = connectionValue.Value;
             Console.WriteLine($"Connection status: {connectionStatus}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -240,7 +240,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task SimulateAdapter(BiDiDriver driver, string contextId)
     {
-#region SimulateAdapter
+        #region SimulateAdapter
         // Simulate adapter powered on
         SimulateAdapterCommandParameters parameters =
             new SimulateAdapterCommandParameters(contextId, AdapterState.PoweredOn);
@@ -249,7 +249,7 @@ public static class BluetoothModuleSamples
         // Or simulate adapter absent or powered off
         await driver.Bluetooth.SimulateAdapterAsync(
             new SimulateAdapterCommandParameters(contextId, AdapterState.Absent));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -257,11 +257,11 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task DisableSimulation(BiDiDriver driver, string contextId)
     {
-#region DisableSimulation
+        #region DisableSimulation
         DisableSimulationCommandParameters parameters =
             new DisableSimulationCommandParameters(contextId);
         await driver.Bluetooth.DisableSimulationAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -269,7 +269,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task HandleRequestDevicePrompt(BiDiDriver driver)
     {
-#region HandleRequestDevicePrompt
+        #region HandleRequestDevicePrompt
         // Accept the prompt and select a device
         HandleRequestDevicePromptAcceptCommandParameters acceptParams =
             new HandleRequestDevicePromptAcceptCommandParameters(
@@ -282,7 +282,7 @@ public static class BluetoothModuleSamples
         HandleRequestDevicePromptCancelCommandParameters cancelParams =
             new HandleRequestDevicePromptCancelCommandParameters("contextId", "promptId");
         await driver.Bluetooth.HandleRequestDevicePromptAsync(cancelParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -290,7 +290,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task SimulateService(BiDiDriver driver, string contextId)
     {
-#region SimulateService
+        #region SimulateService
         SimulateServiceCommandParameters addParams =
             new SimulateServiceCommandParameters(
                 contextId,
@@ -307,7 +307,7 @@ public static class BluetoothModuleSamples
                 "heart_rate",
                 SimulateServiceType.Remove);
         await driver.Bluetooth.SimulateServiceAsync(removeParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -315,7 +315,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task SimulateCharacteristic(BiDiDriver driver, string contextId)
     {
-#region SimulateCharacteristic
+        #region SimulateCharacteristic
         CharacteristicProperties properties = new CharacteristicProperties
         {
             IsRead = true,
@@ -329,11 +329,11 @@ public static class BluetoothModuleSamples
                 "heart_rate",
                 "heart_rate_measurement",
                 SimulateCharacteristicType.Add)
-        {
-            CharacteristicProperties = properties,
-        };
+            {
+                CharacteristicProperties = properties,
+            };
         await driver.Bluetooth.SimulateCharacteristicAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -341,7 +341,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task SimulateCharacteristicResponse(BiDiDriver driver, string contextId)
     {
-#region SimulateCharacteristicResponse
+        #region SimulateCharacteristicResponse
         // Simulate successful read response (code 0 = success)
         SimulateCharacteristicResponseCommandParameters readParams =
             new SimulateCharacteristicResponseCommandParameters(
@@ -351,11 +351,11 @@ public static class BluetoothModuleSamples
                 "heart_rate_measurement",
                 SimulateCharacteristicResponseType.Read,
                 0)
-        {
-            Data = new List<uint> { 0x64 },  // Heart rate value 100
-        };
+            {
+                Data = new List<uint> { 0x64 },  // Heart rate value 100
+            };
         await driver.Bluetooth.SimulateCharacteristicResponseAsync(readParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -363,7 +363,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task SimulateDescriptor(BiDiDriver driver, string contextId)
     {
-#region SimulateDescriptor
+        #region SimulateDescriptor
         SimulateDescriptorCommandParameters parameters =
             new SimulateDescriptorCommandParameters(
                 contextId,
@@ -373,7 +373,7 @@ public static class BluetoothModuleSamples
                 "gatt.characteristic_user_description",
                 SimulateDescriptorType.Add);
         await driver.Bluetooth.SimulateDescriptorAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -381,7 +381,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task SimulateDescriptorResponse(BiDiDriver driver, string contextId)
     {
-#region SimulateDescriptorResponse
+        #region SimulateDescriptorResponse
         SimulateDescriptorResponseCommandParameters parameters =
             new SimulateDescriptorResponseCommandParameters(
                 contextId,
@@ -391,11 +391,11 @@ public static class BluetoothModuleSamples
                 "gatt.characteristic_user_description",
                 SimulateDescriptorResponseType.Read,
                 0)
-        {
-            Data = new List<uint> { 0x48, 0x65, 0x61, 0x72, 0x74, 0x20, 0x52, 0x61, 0x74, 0x65 },
-        };
+            {
+                Data = new List<uint> { 0x48, 0x65, 0x61, 0x72, 0x74, 0x20, 0x52, 0x61, 0x74, 0x65 },
+            };
         await driver.Bluetooth.SimulateDescriptorResponseAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -403,7 +403,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task SimulateGattConnectionResponse(BiDiDriver driver, string contextId)
     {
-#region SimulateGattConnectionResponse
+        #region SimulateGattConnectionResponse
         // Code 0 = success
         SimulateGattConnectionResponseCommandParameters successParams =
             new SimulateGattConnectionResponseCommandParameters(
@@ -411,7 +411,7 @@ public static class BluetoothModuleSamples
                 "AA:BB:CC:DD:EE:FF",
                 0);
         await driver.Bluetooth.SimulateGattConnectionResponseAsync(successParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -419,11 +419,11 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task SimulateGattDisconnection(BiDiDriver driver, string contextId)
     {
-#region SimulateGattDisconnection
+        #region SimulateGattDisconnection
         SimulateGattDisconnectionCommandParameters parameters =
             new SimulateGattDisconnectionCommandParameters(contextId, "AA:BB:CC:DD:EE:FF");
         await driver.Bluetooth.SimulateGattDisconnectionAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -431,7 +431,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task RequestDevicePromptUpdated(BiDiDriver driver)
     {
-#region RequestDevicePromptUpdated
+        #region RequestDevicePromptUpdated
         driver.Bluetooth.OnRequestDevicePromptUpdated.AddObserver((RequestDevicePromptUpdatedEventArgs e) =>
         {
             Console.WriteLine($"Prompt {e.Prompt} in context {e.BrowsingContextId}");
@@ -444,7 +444,7 @@ public static class BluetoothModuleSamples
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Bluetooth.OnRequestDevicePromptUpdated.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -452,7 +452,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task GattConnectionAttempted(BiDiDriver driver)
     {
-#region GattConnectionAttempted
+        #region GattConnectionAttempted
         driver.Bluetooth.OnGattConnectionAttempted.AddObserver((GattConnectionAttemptedEventArgs e) =>
         {
             Console.WriteLine($"GATT connection attempted: {e.Address} in context {e.BrowsingContextId}");
@@ -461,7 +461,7 @@ public static class BluetoothModuleSamples
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Bluetooth.OnGattConnectionAttempted.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -469,7 +469,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task CharacteristicEventGenerated(BiDiDriver driver)
     {
-#region CharacteristicEventGenerated
+        #region CharacteristicEventGenerated
         driver.Bluetooth.OnCharacteristicGeneratedEvent.AddObserver((CharacteristicEventGeneratedEventArgs e) =>
         {
             Console.WriteLine($"Characteristic {e.CharacteristicUuid} event: {e.Type}");
@@ -478,7 +478,7 @@ public static class BluetoothModuleSamples
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Bluetooth.OnCharacteristicGeneratedEvent.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -486,7 +486,7 @@ public static class BluetoothModuleSamples
     /// </summary>
     public static async Task DescriptorEventGenerated(BiDiDriver driver)
     {
-#region DescriptorEventGenerated
+        #region DescriptorEventGenerated
         driver.Bluetooth.OnDescriptorGeneratedEvent.AddObserver((DescriptorEventGeneratedEventArgs e) =>
         {
             Console.WriteLine($"Descriptor {e.DescriptorUuid} event: {e.Type}");
@@ -495,6 +495,6 @@ public static class BluetoothModuleSamples
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Bluetooth.OnDescriptorGeneratedEvent.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 }

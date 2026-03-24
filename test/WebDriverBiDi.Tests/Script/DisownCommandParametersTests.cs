@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class DisownCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         DisownCommandParameters properties = new(new RealmTarget("myRealm"));

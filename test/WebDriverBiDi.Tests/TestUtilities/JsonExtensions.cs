@@ -24,12 +24,12 @@ public static class JsonExtensions
 
             case JTokenType.Object:
                 Dictionary<string, object?> dictObject = [];
-                foreach(JProperty property in ((JObject)token).Properties())
+                foreach (JProperty property in ((JObject)token).Properties())
                 {
                     dictObject[property.Name] = ParseToken(property.Value);
                 }
                 return dictObject;
-            
+
             case JTokenType.Boolean:
                 return token.ToObject<bool>();
 

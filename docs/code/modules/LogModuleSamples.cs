@@ -26,9 +26,9 @@ public static class LogModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         LogModule log = driver.Log;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -36,7 +36,7 @@ public static class LogModuleSamples
     /// </summary>
     public static async Task BasicLogMonitoring(BiDiDriver driver, string contextId)
     {
-#region BasicLogMonitoring
+        #region BasicLogMonitoring
         // Add observer
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
@@ -44,14 +44,14 @@ public static class LogModuleSamples
         });
 
         // Subscribe to events
-        SubscribeCommandParameters subscribe = 
+        SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
         // Navigate - console logs will be captured
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, "https://example.com"));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public static class LogModuleSamples
     /// </summary>
     public static void LogEntryProperties(BiDiDriver driver)
     {
-#region LogEntryProperties
+        #region LogEntryProperties
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             Console.WriteLine($"Level: {e.Level}");          // Error, Warn, Info, Debug
@@ -83,7 +83,7 @@ public static class LogModuleSamples
                 }
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public static class LogModuleSamples
     /// </summary>
     public static void MonitorOnlyErrors(BiDiDriver driver)
     {
-#region MonitorOnlyErrors
+        #region MonitorOnlyErrors
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             if (e.Level == LogLevel.Error)
@@ -107,7 +107,7 @@ public static class LogModuleSamples
                 }
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -115,7 +115,7 @@ public static class LogModuleSamples
     /// </summary>
     public static void MonitorWarningsAndErrors(BiDiDriver driver)
     {
-#region MonitorWarningsandErrors
+        #region MonitorWarningsandErrors
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             if (e.Level == LogLevel.Error || e.Level == LogLevel.Warn)
@@ -123,7 +123,7 @@ public static class LogModuleSamples
                 Console.WriteLine($"[{e.Level}] {e.Text}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -131,7 +131,7 @@ public static class LogModuleSamples
     /// </summary>
     public static void ConsoleLogs(BiDiDriver driver)
     {
-#region ConsoleLogs
+        #region ConsoleLogs
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             if (e.Type == "console")
@@ -149,7 +149,7 @@ public static class LogModuleSamples
                 }
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -157,7 +157,7 @@ public static class LogModuleSamples
     /// </summary>
     public static void JavaScriptErrors(BiDiDriver driver)
     {
-#region JavaScriptErrors
+        #region JavaScriptErrors
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             if (e.Type == "javascript" && e.Level == LogLevel.Error)
@@ -165,7 +165,7 @@ public static class LogModuleSamples
                 Console.WriteLine($"JavaScript Error: {e.Text}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -173,7 +173,7 @@ public static class LogModuleSamples
     /// </summary>
     public static async Task CollectAllLogs(BiDiDriver driver)
     {
-#region CollectAllLogs
+        #region CollectAllLogs
         List<EntryAddedEventArgs> logs = new List<EntryAddedEventArgs>();
 
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
@@ -192,7 +192,7 @@ public static class LogModuleSamples
         int warnCount = logs.Count(l => l.Level == LogLevel.Warn);
 
         Console.WriteLine($"Errors: {errorCount}, Warnings: {warnCount}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -203,7 +203,7 @@ public static class LogModuleSamples
         string contextId,
         NavigateCommandParameters navParams)
     {
-#region FailonJavaScriptErrors
+        #region FailonJavaScriptErrors
         bool hasErrors = false;
 
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
@@ -226,7 +226,7 @@ public static class LogModuleSamples
         {
             throw new Exception("Test failed due to JavaScript errors");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -234,7 +234,7 @@ public static class LogModuleSamples
     /// </summary>
     public static void LogToFile(BiDiDriver driver)
     {
-#region LogtoFile
+        #region LogtoFile
         string logFilePath = "browser-console.log";
 
         driver.Log.OnEntryAdded.AddObserver(async (EntryAddedEventArgs e) =>
@@ -243,6 +243,6 @@ public static class LogModuleSamples
             await File.AppendAllTextAsync(logFilePath, logLine);
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 }

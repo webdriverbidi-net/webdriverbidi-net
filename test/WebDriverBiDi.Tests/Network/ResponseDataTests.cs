@@ -93,7 +93,7 @@ public class ResponseDataTests
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
             Assert.That(response.AuthChallenges, Is.Null);
-        }       
+        }
     }
 
     [Test]
@@ -133,7 +133,7 @@ public class ResponseDataTests
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
             Assert.That(response.AuthChallenges, Is.Null);
-        }       
+        }
     }
 
     [Test]
@@ -172,7 +172,7 @@ public class ResponseDataTests
             Assert.That(response.BodySize, Is.Null);
             Assert.That(response.Content, Is.Not.Null);
             Assert.That(response.Content.Size, Is.EqualTo(300));
-        }       
+        }
     }
 
     [Test]

@@ -30,7 +30,7 @@ public class ErrorHandlingSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region WebDriverBiDiException
+        #region WebDriverBiDiException
         try
         {
             await driver.BrowsingContext.NavigateAsync(navParams);
@@ -40,7 +40,7 @@ public class ErrorHandlingSamples
             Console.WriteLine($"WebDriver BiDi error: {ex.Message}");
             Console.WriteLine($"Stack trace: {ex.StackTrace}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -50,7 +50,7 @@ public class ErrorHandlingSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region CommonErrorScenarios
+        #region CommonErrorScenarios
         try
         {
             NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(navParams);
@@ -75,7 +75,7 @@ public class ErrorHandlingSamples
             Console.WriteLine($"Other BiDi error: {ex.Message}");
             // Handle general errors
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public class ErrorHandlingSamples
         NavigateCommandParameters navParams,
         Action<EntryAddedEventArgs> processLogEntry)
     {
-#region IgnoreMode
+        #region IgnoreMode
         // Default behavior - errors are ignored
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -111,7 +111,7 @@ public class ErrorHandlingSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -123,7 +123,7 @@ public class ErrorHandlingSamples
         EvaluateCommandParameters evalParams,
         Action<BeforeRequestSentEventArgs> processNetworkRequest)
     {
-#region CollectMode
+        #region CollectMode
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection)
         {
@@ -189,7 +189,7 @@ public class ErrorHandlingSamples
         {
             await driver.DisposeAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -199,7 +199,7 @@ public class ErrorHandlingSamples
         SubscribeCommandParameters subscribeParams,
         NavigateCommandParameters navParams)
     {
-#region TerminateMode
+        #region TerminateMode
         // Create transport with Terminate behavior (opt-in to stricter error handling)
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection)
@@ -242,7 +242,7 @@ public class ErrorHandlingSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -252,7 +252,7 @@ public class ErrorHandlingSamples
         SubscribeCommandParameters subscribeParams,
         NavigateCommandParameters navParams)
     {
-#region ThreadingModel
+        #region ThreadingModel
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -287,7 +287,7 @@ public class ErrorHandlingSamples
             // Main thread catches the exception that originated on transport thread
             Console.WriteLine($"Main thread: Caught exception from transport: {ex.Message}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -295,7 +295,7 @@ public class ErrorHandlingSamples
     /// </summary>
     public static async Task ConnectionLevelErrorMonitoring()
     {
-#region Connection-LevelErrorMonitoring
+        #region Connection-LevelErrorMonitoring
         WebSocketConnection connection = new WebSocketConnection();
 
         // These run on the transport thread but don't throw to main thread
@@ -317,7 +317,7 @@ public class ErrorHandlingSamples
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
 
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -327,7 +327,7 @@ public class ErrorHandlingSamples
         BiDiDriver driver,
         string contextId)
     {
-#region FindElementSafelyAsyncUsage
+        #region FindElementSafelyAsyncUsage
         // Usage
         RemoteValue? element = await FindElementSafelyAsync(
             driver,
@@ -340,7 +340,7 @@ public class ErrorHandlingSamples
             Console.WriteLine("Submit button not found");
             // Handle missing element
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -348,10 +348,10 @@ public class ErrorHandlingSamples
     /// </summary>
     public static void ObservableEventHandlerOptionsValues()
     {
-#region ObservableEventHandlerOptions
+        #region ObservableEventHandlerOptions
         _ = ObservableEventHandlerOptions.RunHandlerSynchronously;
         _ = ObservableEventHandlerOptions.RunHandlerAsynchronously;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -361,14 +361,14 @@ public class ErrorHandlingSamples
         BiDiDriver driver,
         string contextId)
     {
-#region IsContextValidAsyncUsage
+        #region IsContextValidAsyncUsage
         // Usage
         if (!await IsContextValidAsync(driver, contextId))
         {
             Console.WriteLine("Context no longer exists");
             // Handle invalid context
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -379,7 +379,7 @@ public class ErrorHandlingSamples
         NavigateCommandParameters navParams,
         string contextId)
     {
-#region ErrorContextUsage
+        #region ErrorContextUsage
         // Usage
         try
         {
@@ -395,11 +395,11 @@ public class ErrorHandlingSamples
                 Url = navParams.Url,
                 Exception = ex
             };
-            
+
             context.SaveToFile();
             throw;
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -409,7 +409,7 @@ public class ErrorHandlingSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region CircuitBreakerUsage
+        #region CircuitBreakerUsage
         // Usage
         CircuitBreaker breaker = new CircuitBreaker();
 
@@ -423,11 +423,11 @@ public class ErrorHandlingSamples
             Console.WriteLine("Too many failures - circuit breaker activated");
             // Handle circuit breaker state
         }
-#endregion
+        #endregion
     }
 
-    private string webSocketUrl = string.Empty;
-    private string contextId = string.Empty;
+    private readonly string webSocketUrl = string.Empty;
+    private readonly string contextId = string.Empty;
 
     /// <summary>
     /// Simulating errors - navigation timeout test pattern.
@@ -437,7 +437,7 @@ public class ErrorHandlingSamples
     public async Task TestNavigationTimeout()
     {
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(1));
-        
+
         try
         {
             await driver.StartAsync(webSocketUrl);
@@ -446,9 +446,9 @@ public class ErrorHandlingSamples
             NavigateCommandParameters parameters = new NavigateCommandParameters(
                 contextId,
                 "https://httpstat.us/200?sleep=5000");  // 5 second delay
-            
+
             await driver.BrowsingContext.NavigateAsync(parameters);
-            
+
             Assert.Fail("Expected timeout exception");
         }
         catch (WebDriverBiDiTimeoutException ex)
@@ -456,12 +456,12 @@ public class ErrorHandlingSamples
             Assert.That(ex.Message, Does.Contain("Timed out"));
         }
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Simulating errors - invalid context test pattern.
     /// </summary>
-#region TestInvalidContextPattern
+    #region TestInvalidContextPattern
     [Test]
     public async Task TestInvalidContext()
     {
@@ -475,9 +475,9 @@ public class ErrorHandlingSamples
             NavigateCommandParameters parameters = new NavigateCommandParameters(
                 "invalid-context-id",
                 "https://example.com");
-            
+
             await driver.BrowsingContext.NavigateAsync(parameters);
-            
+
             Assert.Fail("Expected context error");
         }
         catch (WebDriverBiDiException ex)
@@ -485,7 +485,7 @@ public class ErrorHandlingSamples
             Assert.That(ex.Message, Does.Contain("no such frame").IgnoreCase);
         }
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Set error behavior on BiDiDriver directly (simpler).
@@ -507,13 +507,13 @@ public class ErrorHandlingSamples
         string webSocketUrl,
         NavigateCommandParameters navParams)
     {
-#region ResilientDriverUsage
+        #region ResilientDriverUsage
         // Usage
         ResilientDriver resilientDriver = new ResilientDriver();
 
         NavigateCommandResult result = await resilientDriver.ExecuteWithRetryAsync(
             async (d) => await d.BrowsingContext.NavigateAsync(navParams));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -527,15 +527,15 @@ public class ErrorHandlingSamples
         TimeSpan timeout)
     {
         DateTime endTime = DateTime.Now + timeout;
-        
+
         while (DateTime.Now < endTime)
         {
             try
             {
-                LocateNodesCommandResult result = 
+                LocateNodesCommandResult result =
                     await driver.BrowsingContext.LocateNodesAsync(
                         new LocateNodesCommandParameters(contextId, new CssLocator(selector)));
-                
+
                 if (result.Nodes.Count > 0)
                 {
                     return result.Nodes[0];
@@ -545,19 +545,19 @@ public class ErrorHandlingSamples
             {
                 Console.WriteLine($"Error locating element: {ex.Message}");
             }
-            
+
             await Task.Delay(100);
         }
-        
+
         Console.WriteLine($"Element not found after {timeout.TotalSeconds}s: {selector}");
         return null;
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Wait for element using JavaScript Promise.
     /// </summary>
-#region WaitForElementAsync
+    #region WaitForElementAsync
     public async Task<bool> WaitForElementAsync(
         BiDiDriver driver,
         string contextId,
@@ -578,7 +578,7 @@ public class ErrorHandlingSamples
                 setTimeout(() => resolve(false), {timeout.TotalMilliseconds});
             })
             """;
-        
+
         try
         {
             EvaluateResult result = await driver.Script.EvaluateAsync(
@@ -586,7 +586,7 @@ public class ErrorHandlingSamples
                     waitScript,
                     new ContextTarget(contextId),
                     true));
-            
+
             if (result is EvaluateResultSuccess success &&
                 success.Result is BooleanRemoteValue boolValue)
             {
@@ -597,10 +597,10 @@ public class ErrorHandlingSamples
         {
             Console.WriteLine($"Error waiting for element: {ex.Message}");
         }
-        
+
         return false;
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Synchronous vs asynchronous handlers - bad and good examples.
@@ -610,7 +610,7 @@ public class ErrorHandlingSamples
         Action<EntryAddedEventArgs> processLogEntry,
         Func<EntryAddedEventArgs, Task> processLogEntryAsync)
     {
-#region SynchronousvsAsynchronousHandlers
+        #region SynchronousvsAsynchronousHandlers
         // ❌ Bad: Synchronous handler blocks transport thread
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -635,7 +635,7 @@ public class ErrorHandlingSamples
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
 
@@ -648,7 +648,7 @@ public class ErrorHandlingSamples
         Func<BeforeRequestSentEventArgs, Task> processNetworkRequestAsync,
         Func<string, Task> logErrorAsync)
     {
-#region ExceptionHandlinginEventHandlers
+        #region ExceptionHandlinginEventHandlers
         // Unhandled exception - behavior depends on TransportErrorBehavior
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -689,7 +689,7 @@ public class ErrorHandlingSamples
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -699,7 +699,7 @@ public class ErrorHandlingSamples
         Action<EntryAddedEventArgs> processLogEntry,
         Func<ResponseCompletedEventArgs, Task> analyzeResponseAsync)
     {
-#region HandlerExecutionBehavior
+        #region HandlerExecutionBehavior
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID");
 
@@ -729,7 +729,7 @@ public class ErrorHandlingSamples
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -737,7 +737,7 @@ public class ErrorHandlingSamples
     /// </summary>
     public static void MultipleHandlersSync(BiDiDriver driver)
     {
-#region MultipleHandlersSync
+        #region MultipleHandlersSync
         // Handler 1 (synchronous)
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -756,7 +756,7 @@ public class ErrorHandlingSamples
         // - With Terminate: Exception thrown on next command
         // - With Collect: Exception collected, Handler 2 still executes
         // - With Ignore: Exception ignored, Handler 2 still executes
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -767,7 +767,7 @@ public class ErrorHandlingSamples
         Func<string, Task> logRequestAsync,
         Func<RequestData, Task> analyzeSecurityHeadersAsync)
     {
-#region MultipleHandlersAsync
+        #region MultipleHandlersAsync
         // Handler 1 (asynchronous)
         driver.Network.OnBeforeRequestSent.AddObserver(
             async (e) =>
@@ -790,7 +790,7 @@ public class ErrorHandlingSamples
         // - Both handlers start and run concurrently
         // - Transport thread doesn't wait for either to complete
         // - Exceptions handled according to TransportErrorBehavior
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -801,7 +801,7 @@ public class ErrorHandlingSamples
         Func<ResponseData, Task> saveResponseToFileAsync,
         Func<string, Task> logErrorAsync)
     {
-#region CompleteEventHandlerPattern
+        #region CompleteEventHandlerPattern
         // Use Collect mode to see all handler errors
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection)
@@ -870,54 +870,62 @@ public class ErrorHandlingSamples
         {
             await driver.DisposeAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
     /// Parameter validation - SafeNavigateAsync.
     /// </summary>
-#region ParameterValidation-SafeNavigateAsync
-        public async Task<NavigateCommandResult> SafeNavigateAsync(
-            BiDiDriver driver,
-            string contextId,
-            string url)
+    #region ParameterValidation-SafeNavigateAsync
+    public async Task<NavigateCommandResult> SafeNavigateAsync(
+        BiDiDriver driver,
+        string contextId,
+        string url)
+    {
+        // Validate inputs
+        if (driver == null)
         {
-            // Validate inputs
-            if (driver == null)
-                throw new ArgumentNullException(nameof(driver));
-            
-            if (string.IsNullOrWhiteSpace(contextId))
-                throw new ArgumentException("Context ID cannot be empty", nameof(contextId));
-            
-            if (string.IsNullOrWhiteSpace(url))
-                throw new ArgumentException("URL cannot be empty", nameof(url));
-            
-            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
-                throw new ArgumentException("Invalid URL format", nameof(url));
-            
-            // Execute with error handling
-            try
-            {
-                NavigateCommandParameters navParams = new NavigateCommandParameters(contextId, url)
-                {
-                    Wait = ReadinessState.Complete
-                };
-                
-                return await driver.BrowsingContext.NavigateAsync(navParams);
-            }
-            catch (WebDriverBiDiException ex)
-            {
-                throw new InvalidOperationException(
-                    $"Failed to navigate to {url}: {ex.Message}",
-                    ex);
-            }
+            throw new ArgumentNullException(nameof(driver));
         }
-#endregion
+
+        if (string.IsNullOrWhiteSpace(contextId))
+        {
+            throw new ArgumentException("Context ID cannot be empty", nameof(contextId));
+        }
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            throw new ArgumentException("URL cannot be empty", nameof(url));
+        }
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+        {
+            throw new ArgumentException("Invalid URL format", nameof(url));
+        }
+
+        // Execute with error handling
+        try
+        {
+            NavigateCommandParameters navParams = new NavigateCommandParameters(contextId, url)
+            {
+                Wait = ReadinessState.Complete
+            };
+
+            return await driver.BrowsingContext.NavigateAsync(navParams);
+        }
+        catch (WebDriverBiDiException ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to navigate to {url}: {ex.Message}",
+                ex);
+        }
+    }
+    #endregion
 
     /// <summary>
     /// Context validation - IsContextValidAsync.
     /// </summary>
-#region ContextValidation-IsContextValidAsync
+    #region ContextValidation-IsContextValidAsync
     public async Task<bool> IsContextValidAsync(BiDiDriver driver, string contextId)
     {
         try
@@ -933,16 +941,16 @@ public class ErrorHandlingSamples
             return false;
         }
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Comprehensive logging - DiagnosticDriver.
     /// </summary>
-#region ComprehensiveLogging-ExecuteWithLoggingAsync
+    #region ComprehensiveLogging-ExecuteWithLoggingAsync
     public class DiagnosticDriver
     {
-        private BiDiDriver driver;
-        private ILogger logger;
+        private readonly BiDiDriver driver;
+        private readonly ILogger logger;
 
         public async Task<T> ExecuteWithLoggingAsync<T>(
             string operationName,
@@ -950,30 +958,30 @@ public class ErrorHandlingSamples
         {
             logger.LogInformation($"Starting {operationName}");
             DateTime startTime = DateTime.Now;
-            
+
             try
             {
                 T result = await operation();
                 TimeSpan duration = DateTime.Now - startTime;
-                
+
                 logger.LogInformation(
                     $"Completed {operationName} in {duration.TotalMilliseconds}ms");
-                
+
                 return result;
             }
             catch (WebDriverBiDiException ex)
             {
                 TimeSpan duration = DateTime.Now - startTime;
-                
+
                 logger.LogError(
                     ex,
                     $"Failed {operationName} after {duration.TotalMilliseconds}ms: {ex.Message}");
-                
+
                 throw;
             }
         }
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Error context capture - ErrorContext class.
@@ -997,7 +1005,7 @@ public class ErrorHandlingSamples
                     "document.title",
                     new ContextTarget(contextId),
                     true));
-            
+
             if (result is EvaluateResultSuccess success &&
                 success.Result is StringRemoteValue stringValue)
             {
@@ -1008,13 +1016,13 @@ public class ErrorHandlingSamples
         {
             Console.WriteLine($"JavaScript method failed: {ex.Message}");
         }
-        
+
         // Fallback to context info
         try
         {
             GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
                 new GetTreeCommandParameters { RootBrowsingContextId = contextId });
-            
+
             if (tree.ContextTree.Count > 0)
             {
                 return tree.ContextTree[0].Url;
@@ -1024,10 +1032,10 @@ public class ErrorHandlingSamples
         {
             Console.WriteLine($"Context method failed: {ex.Message}");
         }
-        
+
         return "Unknown";
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Don't swallow exceptions - bad vs good.
@@ -1037,7 +1045,7 @@ public class ErrorHandlingSamples
         NavigateCommandParameters navParams,
         ILogger logger)
     {
-#region DontSwallowExceptions
+        #region DontSwallowExceptions
         // ❌ Bad: Silent failure
         try
         {
@@ -1058,7 +1066,7 @@ public class ErrorHandlingSamples
             logger.LogError(ex, "Navigation failed");
             throw; // or handle appropriately
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -1068,7 +1076,7 @@ public class ErrorHandlingSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region DontUseGenericCatch
+        #region DontUseGenericCatch
         // ❌ Bad: Too broad
         try
         {
@@ -1093,7 +1101,7 @@ public class ErrorHandlingSamples
             // Handle cancellation
         }
     }
-#endregion
+    #endregion
 
     private static void ProcessLogEntry(EntryAddedEventArgs e)
     {
@@ -1201,8 +1209,8 @@ public interface ILogger
 public class ResilientDriver
 {
     private BiDiDriver driver;
-    private string webSocketUrl;
-    private int maxRetries = 3;
+    private readonly string webSocketUrl;
+    private readonly int maxRetries = 3;
 
     public async Task<T> ExecuteWithRetryAsync<T>(
         Func<BiDiDriver, Task<T>> operation)
@@ -1217,17 +1225,17 @@ public class ResilientDriver
                 return await operation(driver);
             }
             catch (WebDriverBiDiException ex) when (
-                ex.Message.Contains("WebSocket") || 
+                ex.Message.Contains("WebSocket") ||
                 ex.Message.Contains("connection"))
             {
                 lastException = ex;
                 attempt++;
-                
+
                 if (attempt < maxRetries)
                 {
                     Console.WriteLine($"Connection lost. Reconnecting... (attempt {attempt})");
                     await Task.Delay(TimeSpan.FromSeconds(2));
-                    
+
                     // Reconnect
                     await driver.StopAsync();
                     driver = new BiDiDriver(TimeSpan.FromSeconds(30));
@@ -1237,7 +1245,7 @@ public class ResilientDriver
         }
 
         throw new Exception(
-            $"Operation failed after {maxRetries} attempts", 
+            $"Operation failed after {maxRetries} attempts",
             lastException);
     }
 }
@@ -1254,11 +1262,11 @@ public class ErrorContext
     public string? ContextId { get; set; }
     public string? Url { get; set; }
     public Exception Exception { get; set; }
-    
+
     public void SaveToFile()
     {
         string fileName = $"error-{Timestamp:yyyyMMdd-HHmmss}.log";
-        
+
         StringBuilder sb = new StringBuilder();
         sb.AppendLine($"Operation: {Operation}");
         sb.AppendLine($"Timestamp: {Timestamp:yyyy-MM-dd HH:mm:ss.fff}");
@@ -1266,12 +1274,12 @@ public class ErrorContext
         sb.AppendLine($"URL: {Url ?? "N/A"}");
         sb.AppendLine($"\nException: {Exception.Message}");
         sb.AppendLine($"\nStack Trace:\n{Exception.StackTrace}");
-        
+
         if (Exception.InnerException != null)
         {
             sb.AppendLine($"\nInner Exception: {Exception.InnerException.Message}");
         }
-        
+
         File.WriteAllText(fileName, sb.ToString());
     }
 }
@@ -1284,8 +1292,8 @@ public class ErrorContext
 public class CircuitBreaker
 {
     private int failureCount = 0;
-    private int threshold = 5;
-    private TimeSpan resetTimeout = TimeSpan.FromMinutes(1);
+    private readonly int threshold = 5;
+    private readonly TimeSpan resetTimeout = TimeSpan.FromMinutes(1);
     private DateTime? openedAt = null;
     private bool isOpen = false;
 
@@ -1293,7 +1301,7 @@ public class CircuitBreaker
     {
         if (isOpen)
         {
-            if (openedAt.HasValue && 
+            if (openedAt.HasValue &&
                 DateTime.Now - openedAt.Value > resetTimeout)
             {
                 // Try to reset
@@ -1311,25 +1319,25 @@ public class CircuitBreaker
         try
         {
             T result = await operation();
-            
+
             // Success - reset counter
             if (failureCount > 0)
             {
                 failureCount = 0;
             }
-            
+
             return result;
         }
         catch (Exception)
         {
             failureCount++;
-            
+
             if (failureCount >= threshold)
             {
                 isOpen = true;
                 openedAt = DateTime.Now;
             }
-            
+
             throw;
         }
     }

@@ -182,7 +182,7 @@ public class UserPromptHandlerTests
             Assert.That(handler.Prompt, Is.Null);
             Assert.That(handler.BeforeUnload, Is.Null);
             Assert.That(handler.File, Is.Null);
-         }
+        }
     }
 
     [Test]

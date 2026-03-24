@@ -47,7 +47,7 @@ public class ResponseStartedEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "response": {
                                "url": "https://example.com",
                                "protocol": "https",
@@ -105,7 +105,7 @@ public class ResponseStartedEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "response": {
                                "url": "https://example.com",
                                "protocol": "https",
@@ -135,7 +135,7 @@ public class ResponseStartedEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         ResponseStartedEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
-     }
+    }
 
     [Test]
     public void TestDeserializeWithMissingResponseThrows()
@@ -150,7 +150,7 @@ public class ResponseStartedEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<ResponseStartedEventArgs>(eventJson), Throws.InstanceOf<JsonException>());

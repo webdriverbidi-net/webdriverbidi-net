@@ -22,7 +22,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task SimpleWebSocketConnection()
     {
-#region SimpleWebSocketConnection
+        #region SimpleWebSocketConnection
         // BiDiDriver handles connection automatically
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
@@ -30,7 +30,7 @@ public static class ConnectionManagementSamples
         // Use driver...
 
         await driver.StopAsync();
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task UsingBrowserLauncher()
     {
-#region UsingaBrowserLauncher
+        #region UsingaBrowserLauncher
         // Launcher manages browser process and connection
         ChromeLauncher launcher = new ChromeLauncher("/path/to/chrome");
 
@@ -59,22 +59,22 @@ public static class ConnectionManagementSamples
             await launcher.QuitBrowserAsync();
             await launcher.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     public static void DriverTimeout()
     {
-#region Drivertimeout
+        #region Drivertimeout
         // Simpler and sufficient for most cases
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(60)); // Long timeout
-#endregion
+        #endregion
     }
 
     /// <summary>
     /// Connection timeout settings.
     /// </summary>
     public static void TimeoutSettings()
-#region TimeoutSettings
+    #region TimeoutSettings
     {
         WebSocketConnection connection = new WebSocketConnection()
         {
@@ -82,7 +82,7 @@ public static class ConnectionManagementSamples
             ShutdownTimeout = TimeSpan.FromSeconds(10),
             DataTimeout = TimeSpan.FromSeconds(10)
         };
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -90,9 +90,9 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static void BufferSize(WebSocketConnection connection)
     {
-#region BufferSize
+        #region BufferSize
         int bufferSize = connection.BufferSize; // 1048576 bytes (read-only)
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -100,13 +100,13 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static void OnDataReceivedEvent(WebSocketConnection connection)
     {
-#region OnDataReceivedEvent
+        #region OnDataReceivedEvent
         connection.OnDataReceived.AddObserver((ConnectionDataReceivedEventArgs e) =>
         {
             Console.WriteLine($"Received: {e.Data.Length} bytes");
             // e.Data contains the raw byte array
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -114,13 +114,13 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static void OnConnectionErrorEvent(WebSocketConnection connection)
     {
-#region OnConnectionErrorEvent
+        #region OnConnectionErrorEvent
         connection.OnConnectionError.AddObserver((ConnectionErrorEventArgs e) =>
         {
             Console.WriteLine($"Connection error: {e.Exception.Message}");
             Logger.Error($"Exception: {e.Exception}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -128,12 +128,12 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static void OnLogMessageEvent(WebSocketConnection connection)
     {
-#region OnLogMessageEvent
+        #region OnLogMessageEvent
         connection.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
         {
             Console.WriteLine($"[{e.Level}] {e.ComponentName}: {e.Message}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -141,7 +141,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task WebSocketUrlRequirements(BiDiDriver driver)
     {
-#region WebSocketURLRequirements
+        #region WebSocketURLRequirements
         // ✅ Valid
         await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
         await driver.StartAsync("wss://remote-host:9222/devtools/browser/abc-123");
@@ -149,7 +149,7 @@ public static class ConnectionManagementSamples
         // ❌ Invalid
         await driver.StartAsync("http://localhost:9222");  // Wrong scheme
         await driver.StartAsync("localhost:9222");         // Not absolute
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -157,13 +157,13 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static void AutomaticRetry()
     {
-#region AutomaticRetry
+        #region AutomaticRetry
         // Will retry every 500ms for up to 30 seconds
         WebSocketConnection connection = new WebSocketConnection()
         {
             StartupTimeout = TimeSpan.FromSeconds(30)
         };
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -171,12 +171,12 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static void ConnectionState(WebSocketConnection connection)
     {
-#region ConnectionState
+        #region ConnectionState
         if (connection.IsActive)
         {
             // Connection is open and ready
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -184,7 +184,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task UsingPipesWithLauncher()
     {
-#region UsingPipeswithLauncher
+        #region UsingPipeswithLauncher
         ChromeLauncher launcher = new ChromeLauncher()
         {
             ConnectionType = ConnectionType.Pipes  // Enable pipes
@@ -206,7 +206,7 @@ public static class ConnectionManagementSamples
             await launcher.QuitBrowserAsync();
             await launcher.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task ConnectionErrorHandling(BiDiDriver driver, string url)
     {
-#region ConnectionErrorHandling
+        #region ConnectionErrorHandling
         try
         {
             await driver.StartAsync(url);
@@ -234,7 +234,7 @@ public static class ConnectionManagementSamples
             Console.WriteLine($"Invalid URL: {ex.Message}");
             // URL format is incorrect
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -242,7 +242,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static void MonitoringConnectionHealth(WebSocketConnection connection)
     {
-#region MonitoringConnectionHealth
+        #region MonitoringConnectionHealth
         bool connectionHealthy = true;
 
         connection.OnConnectionError.AddObserver((e) =>
@@ -256,7 +256,7 @@ public static class ConnectionManagementSamples
         {
             // Handle error or reconnect
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -264,12 +264,12 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task DockerWebSocketConnection()
     {
-#region DockerWebSocketConnection
+        #region DockerWebSocketConnection
         // WebSocket to containerized browser
         string url = $"ws://172.17.0.2:9222/devtools/browser/abc-123";
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(url);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -277,7 +277,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task BestPracticeSimplest(string url)
     {
-#region BestPracticeSimplest
+        #region BestPracticeSimplest
         // ✅ Best: Let BiDiDriver handle everything
         BiDiDriver driver1 = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver1.StartAsync(url);
@@ -286,7 +286,7 @@ public static class ConnectionManagementSamples
         WebSocketConnection connection = new WebSocketConnection();
         Transport transport = new Transport(connection);
         BiDiDriver driver2 = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -294,13 +294,13 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task BestPracticeBrowserLauncher()
     {
-#region BestPracticeBrowserLauncher
+        #region BestPracticeBrowserLauncher
         // ✅ Recommended for local testing
         ChromeLauncher launcher = new ChromeLauncher();
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -308,7 +308,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task BestPracticeCleanup(string url)
     {
-#region BestPracticeCleanup
+        #region BestPracticeCleanup
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         try
         {
@@ -322,7 +322,7 @@ public static class ConnectionManagementSamples
                 await driver.StopAsync();
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -330,7 +330,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static void BestPracticeTimeouts()
     {
-#region BestPracticeTimeouts
+        #region BestPracticeTimeouts
         // ✅ Preferred: Simple and sufficient
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(60));
 
@@ -340,7 +340,7 @@ public static class ConnectionManagementSamples
             StartupTimeout = TimeSpan.FromSeconds(60),
             DataTimeout = TimeSpan.FromSeconds(60)
         };
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -348,7 +348,7 @@ public static class ConnectionManagementSamples
     /// </summary>
     public static async Task CustomConnectionConfiguration(string url)
     {
-#region CustomConnectionConfiguration
+        #region CustomConnectionConfiguration
         // Create and configure connection (rare need)
         WebSocketConnection connection = new WebSocketConnection()
         {
@@ -371,7 +371,7 @@ public static class ConnectionManagementSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     internal static class Logger
@@ -468,12 +468,12 @@ public static class CustomConnectionUsage
 {
     public static async Task UseCustomConnection(string customConnectionString)
     {
-#region CustomConnectionUsage
+        #region CustomConnectionUsage
         // Usage
         CustomConnection customConnection = new CustomConnection();
         Transport transport = new Transport(customConnection);
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync(customConnectionString);
-#endregion
+        #endregion
     }
 }

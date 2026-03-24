@@ -47,7 +47,7 @@ public class AuthRequiredEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "response": {
                                "url": "https://example.com",
                                "protocol": "https",
@@ -96,7 +96,7 @@ public class AuthRequiredEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "response": {
                                "url": "https://example.com",
                                "protocol": "https",
@@ -141,7 +141,7 @@ public class AuthRequiredEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<AuthRequiredEventArgs>(eventJson), Throws.InstanceOf<JsonException>());

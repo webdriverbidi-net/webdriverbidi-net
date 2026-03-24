@@ -19,6 +19,6 @@ public class EventReceivedEventArgsTests
     {
         EventReceivedEventArgs eventArgs = new(new EventMessage<TestEventArgs>());
         EventReceivedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));        
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 }

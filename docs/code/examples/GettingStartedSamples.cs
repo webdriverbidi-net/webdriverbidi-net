@@ -49,19 +49,19 @@ public static class GettingStartedSamples
                 "Ensure Chrome is running with --remote-debugging-port={port}", ex);
         }
     }
-#endregion
+    #endregion
 
     public static async Task DiscoverUsage()
     {
-#region DiscoverWebSocketUrlUsage
+        #region DiscoverWebSocketUrlUsage
         // Usage
         string webSocketUrl = await DiscoverWebSocketUrlAsync();
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
-#endregion
+        #endregion
     }
 
-#region ConnecttoBrowser
+    #region ConnecttoBrowser
     public class BrowserConnection
     {
         public static async Task<BiDiDriver> ConnectToBrowserAsync(int port = 9222)
@@ -111,14 +111,14 @@ public static class GettingStartedSamples
                 ?? throw new Exception("WebSocket URL is null");
         }
     }
-#endregion
+    #endregion
 
     public static async Task ConnectToBrowserUsage()
     {
-#region ConnectToBrowserUsage
+        #region ConnectToBrowserUsage
         // Usage
         BiDiDriver driver = await BrowserConnection.ConnectToBrowserAsync(9222);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -126,7 +126,7 @@ public static class GettingStartedSamples
     /// </summary>
     public static async Task FirstApplication()
     {
-#region FirstApplication
+        #region FirstApplication
         // Set the WebSocket URL for your browser
         string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-BROWSER-ID";
 
@@ -144,19 +144,19 @@ public static class GettingStartedSamples
             // Get the current browsing contexts (tabs/windows)
             GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
                 new GetTreeCommandParameters());
-            
+
             string contextId = tree.ContextTree[0].BrowsingContextId;
             Console.WriteLine($"Active context ID: {contextId}");
 
             // Navigate to a webpage
             Console.WriteLine("Navigating to example.com...");
             NavigateCommandParameters navParams = new NavigateCommandParameters(
-                contextId, 
+                contextId,
                 "https://example.com")
             {
                 Wait = ReadinessState.Complete
             };
-            
+
             NavigateCommandResult navResult = await driver.BrowsingContext.NavigateAsync(navParams);
             Console.WriteLine($"Navigation complete! URL: {navResult.Url}");
 
@@ -165,9 +165,9 @@ public static class GettingStartedSamples
                 "document.title",
                 new ContextTarget(contextId),
                 true);
-            
+
             EvaluateResult scriptResult = await driver.Script.EvaluateAsync(evalParams);
-            
+
             if (scriptResult is EvaluateResultSuccess success &&
                 success.Result is StringRemoteValue stringValue)
             {
@@ -188,7 +188,7 @@ public static class GettingStartedSamples
             await driver.StopAsync();
             Console.WriteLine("Disconnected from browser");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -196,9 +196,9 @@ public static class GettingStartedSamples
     /// </summary>
     public static void CreatingTheDriver()
     {
-#region CreatingtheDriver
+        #region CreatingtheDriver
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(10));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -206,9 +206,9 @@ public static class GettingStartedSamples
     /// </summary>
     public static async Task ConnectingToBrowser(BiDiDriver driver, string webSocketUrl)
     {
-#region ConnectingtoBrowser
+        #region ConnectingtoBrowser
         await driver.StartAsync(webSocketUrl);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -216,12 +216,12 @@ public static class GettingStartedSamples
     /// </summary>
     public static async Task<string> GettingBrowsingContext(BiDiDriver driver)
     {
-#region GettingBrowsingContext
+        #region GettingBrowsingContext
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
             new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
         return contextId;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -229,7 +229,7 @@ public static class GettingStartedSamples
     /// </summary>
     public static async Task Navigating(BiDiDriver driver, string contextId)
     {
-#region Navigating
+        #region Navigating
         NavigateCommandParameters navParams = new NavigateCommandParameters(
             contextId,
             "https://example.com")
@@ -237,7 +237,7 @@ public static class GettingStartedSamples
             Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.NavigateAsync(navParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -245,13 +245,13 @@ public static class GettingStartedSamples
     /// </summary>
     public static async Task ExecutingJavaScript(BiDiDriver driver, string contextId)
     {
-#region ExecutingJavaScript
+        #region ExecutingJavaScript
         EvaluateCommandParameters evalParams = new EvaluateCommandParameters(
             "document.title",
             new ContextTarget(contextId),
             true);
 
         EvaluateResult scriptResult = await driver.Script.EvaluateAsync(evalParams);
-#endregion
+        #endregion
     }
 }

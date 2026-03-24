@@ -31,7 +31,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task DriverCreationAndLifecycle()
     {
-#region DriverCreationandLifecycle
+        #region DriverCreationandLifecycle
         // Create a driver with default timeout (60 seconds)
         BiDiDriver driver = new BiDiDriver();
 
@@ -43,12 +43,12 @@ public static class CoreConceptsSamples
 
         // Stop the connection when done
         await driver.StopAsync();
-#endregion
+        #endregion
     }
 
     public class MyCustomModule : Module
     {
-        public MyCustomModule(IBiDiCommandExecutor driver) : base(driver) {}
+        public MyCustomModule(IBiDiCommandExecutor driver) : base(driver) { }
         public override string ModuleName => throw new NotImplementedException();
     }
 
@@ -60,7 +60,7 @@ public static class CoreConceptsSamples
         string webSocketUrl,
         NavigateCommandParameters navParams)
     {
-#region DriverLifecycle
+        #region DriverLifecycle
         // 1. Create driver
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -80,12 +80,12 @@ public static class CoreConceptsSamples
 
         // 5. Stop when done
         await driver.StopAsync();
-#endregion
+        #endregion
     }
 
     public static async Task IsStartedCheck(BiDiDriver driver, string webSocketUrl, NavigateCommandParameters navParams)
     {
-#region DriverLifecyclewithCheck
+        #region DriverLifecyclewithCheck
         if (!driver.IsStarted)
         {
             await driver.StartAsync(webSocketUrl);
@@ -96,7 +96,7 @@ public static class CoreConceptsSamples
         {
             await driver.BrowsingContext.NavigateAsync(navParams);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -104,7 +104,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task TimingRestrictionsCorrect(string webSocketUrl)
     {
-#region TimingRestrictions-Correct
+        #region TimingRestrictions-Correct
         // ✅ CORRECT: Register before starting
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -112,7 +112,7 @@ public static class CoreConceptsSamples
         driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
 
         await driver.StartAsync(webSocketUrl);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -120,14 +120,14 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task TimingRestrictionsWrong(string webSocketUrl)
     {
-#region TimingRestrictions-Wrong
+        #region TimingRestrictions-Wrong
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
 
         // ❌ WRONG: Cannot register after starting - This will throw an exception!
         driver.RegisterModule(new CustomModule(driver));
         driver.Log.OnEntryAdded.AddObserver((e) => Console.WriteLine(e.Text));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static void ThreadSafeRegistration(BiDiDriver driver)
     {
-#region ThreadSafeRegistration
+        #region ThreadSafeRegistration
         CoreConceptsDocModule customModule1 = new CoreConceptsDocModule(driver);
         CoreConceptsDocModule customModule2 = new CoreConceptsDocModule(driver);
 
@@ -143,7 +143,7 @@ public static class CoreConceptsSamples
         Parallel.Invoke(
             () => driver.RegisterModule(customModule1),
             () => driver.RegisterModule(customModule2));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -151,7 +151,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static void CommandTimeoutConfiguration()
     {
-#region CommandTimeoutConfiguration
+        #region CommandTimeoutConfiguration
         // Default timeout (60 seconds)
         BiDiDriver defaultDriver = new BiDiDriver();
 
@@ -163,7 +163,7 @@ public static class CoreConceptsSamples
 
         // Long timeout for slow operations
         BiDiDriver longDriver = new BiDiDriver(TimeSpan.FromMinutes(10));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -173,7 +173,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region Per-CommandTimeoutOverride
+        #region Per-CommandTimeoutOverride
         // Use driver's default timeout (30 seconds)
         await driver.BrowsingContext.NavigateAsync(navParams);
 
@@ -181,7 +181,7 @@ public static class CoreConceptsSamples
         await driver.ExecuteCommandAsync<NavigateCommandResult>(
             navParams,
             TimeSpan.FromSeconds(60));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -190,7 +190,7 @@ public static class CoreConceptsSamples
     public static async Task ProperDisposalTryFinally(
         string webSocketUrl)
     {
-#region ProperDisposal-tryfinally
+        #region ProperDisposal-tryfinally
         // Using statement (recommended)
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         try
@@ -202,7 +202,7 @@ public static class CoreConceptsSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -210,13 +210,13 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task ProperDisposalAwaitUsing(string webSocketUrl)
     {
-#region ProperDisposal-awaitusing
+        #region ProperDisposal-awaitusing
         // Or with async disposal
         await using BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
         // Use driver...
         // Automatically disposed at end of scope
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -225,7 +225,7 @@ public static class CoreConceptsSamples
     public static async Task CompleteLifecycleExample(
         string webSocketUrl)
     {
-#region CompleteLifecycleExample
+        #region CompleteLifecycleExample
         // Create driver with custom timeout
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -279,7 +279,7 @@ public static class CoreConceptsSamples
                 await driver.StopAsync();
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -287,12 +287,12 @@ public static class CoreConceptsSamples
     /// </summary>
     public static void AccessingModules(BiDiDriver driver)
     {
-#region AccessingModules
+        #region AccessingModules
         // Access a module through the driver
         BrowsingContextModule browsingContext = driver.BrowsingContext;
         NetworkModule network = driver.Network;
         ScriptModule script = driver.Script;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -301,10 +301,10 @@ public static class CoreConceptsSamples
 
     public static async Task CommandStructureExample(BiDiDriver driver, string contextId)
     {
-#region CommandStructure
+        #region CommandStructure
         // 1. Create parameters
         NavigateCommandParameters parameters = new NavigateCommandParameters(
-            contextId, 
+            contextId,
             "https://example.com")
         {
             Wait = ReadinessState.Complete
@@ -315,7 +315,7 @@ public static class CoreConceptsSamples
 
         // 3. Use the result
         Console.WriteLine($"Navigated to: {result.Url}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -326,7 +326,7 @@ public static class CoreConceptsSamples
         string contextId,
         string url)
     {
-#region CommandParameters
+        #region CommandParameters
         // Required parameters in constructor
         NavigateCommandParameters @params = new NavigateCommandParameters(contextId, url);
 
@@ -337,7 +337,7 @@ public static class CoreConceptsSamples
         await driver.BrowsingContext.NavigateAsync(
             @params,
             TimeSpan.FromSeconds(30));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -345,7 +345,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task OptionalParameters(BiDiDriver driver)
     {
-#region OptionalParameters
+        #region OptionalParameters
         // ✅ CORRECT: Parameters optional—use defaults
         GetTreeCommandResult tree1 = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         // Or equivalently:
@@ -354,7 +354,7 @@ public static class CoreConceptsSamples
         // ✅ CORRECT: Same for other optional-parameter commands
         StatusCommandResult status = await driver.Session.StatusAsync(null);
         GetCookiesCommandResult cookies = await driver.Storage.GetCookiesAsync(null);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -362,7 +362,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task RequiredParametersWithReset(BiDiDriver driver)
     {
-#region RequiredParameters
+        #region RequiredParameters
         // ✅ CORRECT: Use the reset property when resetting
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(
             SetClientHintsOverrideCommandParameters.ResetClientHintsOverride);
@@ -378,7 +378,7 @@ public static class CoreConceptsSamples
         // ❌ WRONG: SetClientHintsOverrideAsync always requires parameters
         // The command name alone doesn't indicate whether you're setting or resetting
         // await driver.UserAgentClientHints.SetClientHintsOverrideAsync(null);  // Not allowed
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -388,7 +388,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         NavigateCommandParameters @params)
     {
-#region CommandResultsErrorHandling
+        #region CommandResultsErrorHandling
         try
         {
             NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(@params);
@@ -400,7 +400,7 @@ public static class CoreConceptsSamples
         {
             Console.WriteLine($"Command failed: {ex.Message}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -408,7 +408,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static void ObservableEventNames(BiDiDriver driver)
     {
-#region ObservableEventNames
+        #region ObservableEventNames
         // Events on BrowsingContext module
         _ = driver.BrowsingContext.OnLoad;
         _ = driver.BrowsingContext.OnDomContentLoaded;
@@ -420,7 +420,7 @@ public static class CoreConceptsSamples
 
         // Events on Log module
         _ = driver.Log.OnEntryAdded;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -428,7 +428,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task EventSubscription(BiDiDriver driver)
     {
-#region EventSubscription
+        #region EventSubscription
         // Create subscription parameters
         SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
             [
@@ -439,7 +439,7 @@ public static class CoreConceptsSamples
 
         // Subscribe to events
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -447,7 +447,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static void EventObservers(BiDiDriver driver)
     {
-#region EventObservers
+        #region EventObservers
         // Add a simple observer
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
@@ -462,7 +462,7 @@ public static class CoreConceptsSamples
                 await Task.Delay(100); // Can perform async operations
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -472,7 +472,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region EventObserverPattern
+        #region EventObserverPattern
         // Create an observer with reference
         EventObserver<EntryAddedEventArgs> observer =
             driver.Log.OnEntryAdded.AddObserver((e) =>
@@ -491,7 +491,7 @@ public static class CoreConceptsSamples
 
         // Remove the observer
         observer.Unobserve();
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -501,7 +501,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         string url)
     {
-#region ContextIDs
+        #region ContextIDs
         // Get all contexts
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
             new GetTreeCommandParameters());
@@ -512,7 +512,7 @@ public static class CoreConceptsSamples
         // Navigate in that context
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, url));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -520,7 +520,7 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task ContextTree(BiDiDriver driver)
     {
-#region ContextTree
+        #region ContextTree
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
             new GetTreeCommandParameters());
 
@@ -530,7 +530,7 @@ public static class CoreConceptsSamples
             Console.WriteLine($"  URL: {context.Url}");
             Console.WriteLine($"  Children: {context.Children.Count}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -538,13 +538,13 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task CreatingContexts(BiDiDriver driver)
     {
-#region CreatingContexts
+        #region CreatingContexts
         // Create a new tab
         CreateCommandParameters createParams = new CreateCommandParameters(CreateType.Tab);
         CreateCommandResult newContext = await driver.BrowsingContext.CreateAsync(createParams);
 
         string newContextId = newContext.BrowsingContextId;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -554,7 +554,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         string contextId)
     {
-#region AccessingValues
+        #region AccessingValues
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("42", new ContextTarget(contextId), true));
 
@@ -567,7 +567,7 @@ public static class CoreConceptsSamples
             // Check the type
             Console.WriteLine($"Type: {remoteValue.Type}"); // "number"
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -577,7 +577,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         string contextId)
     {
-#region WorkingwithDOMElements
+        #region WorkingwithDOMElements
         // Get a script target against which to run JavaScript
         Target target = new ContextTarget(contextId);
 
@@ -606,7 +606,7 @@ public static class CoreConceptsSamples
             clickParams.Arguments.Add(elementRef);
             await driver.Script.CallFunctionAsync(clickParams);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -616,7 +616,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         string contextId)
     {
-#region CreatingLocalValues
+        #region CreatingLocalValues
         CallFunctionCommandParameters @params = new CallFunctionCommandParameters(
             "(a, b, c) => a + b + c.length",
             new ContextTarget(contextId),
@@ -629,7 +629,7 @@ public static class CoreConceptsSamples
 
         EvaluateResult result = await driver.Script.CallFunctionAsync(@params);
         // Result: 20 (5 + 10 + 5)
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -639,7 +639,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         NavigateCommandParameters parameters)
     {
-#region BestPracticesAwait
+        #region BestPracticesAwait
         // ✅ Good: Await async operations
         NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(parameters);
 
@@ -648,7 +648,7 @@ public static class CoreConceptsSamples
 
         // ✅ Good: Use ConfigureAwait(false) in library code
         await driver.BrowsingContext.NavigateAsync(parameters).ConfigureAwait(false);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -661,7 +661,7 @@ public static class CoreConceptsSamples
         string url1,
         string url2)
     {
-#region ParallelOperations
+        #region ParallelOperations
         // Execute multiple navigations in parallel
         Task<NavigateCommandResult> nav1 = driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId1, url1));
@@ -672,7 +672,7 @@ public static class CoreConceptsSamples
 
         Console.WriteLine($"Context 1: {nav1.Result.Url}");
         Console.WriteLine($"Context 2: {nav2.Result.Url}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -682,7 +682,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         NavigateCommandParameters @params)
     {
-#region WebDriverBiDiExceptionHandling
+        #region WebDriverBiDiExceptionHandling
         try
         {
             await driver.BrowsingContext.NavigateAsync(@params);
@@ -696,7 +696,7 @@ public static class CoreConceptsSamples
         {
             Console.WriteLine($"Unexpected error: {ex.Message}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -706,7 +706,7 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         Target target)
     {
-#region ScriptExceptions
+        #region ScriptExceptions
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("throw new Error('Oops!')", target, true));
 
@@ -716,7 +716,7 @@ public static class CoreConceptsSamples
             Console.WriteLine($"Line: {exception.ExceptionDetails.LineNumber}");
             Console.WriteLine($"Column: {exception.ExceptionDetails.ColumnNumber}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -725,7 +725,7 @@ public static class CoreConceptsSamples
     public static async Task TimeoutHandling(
         NavigateCommandParameters parameters)
     {
-#region TimeoutHandling
+        #region TimeoutHandling
         // Set a 5-second timeout for this driver
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(5));
 
@@ -738,7 +738,7 @@ public static class CoreConceptsSamples
         {
             Console.WriteLine("Navigation took too long");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -748,12 +748,12 @@ public static class CoreConceptsSamples
         BiDiDriver driver,
         NavigateCommandParameters @params)
     {
-#region ImmutableResult
+        #region ImmutableResult
         NavigateCommandResult result = await driver.BrowsingContext.NavigateAsync(@params);
 
         // ❌ Cannot modify - properties are read-only
         // result.Url = "something else"; // Compilation error
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -764,7 +764,7 @@ public static class CoreConceptsSamples
         string contextId,
         string url)
     {
-#region MutableParameters
+        #region MutableParameters
         NavigateCommandParameters parameters = new NavigateCommandParameters(contextId, url);
 
         // ✅ Can modify - properties are settable
@@ -774,7 +774,7 @@ public static class CoreConceptsSamples
         await driver.BrowsingContext.NavigateAsync(
             parameters,
             TimeSpan.FromSeconds(30));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -783,10 +783,10 @@ public static class CoreConceptsSamples
     public static async Task AdvancedAbstractions(
         string webSocketUrl)
     {
-#region AdvancedAbstractions
+        #region AdvancedAbstractions
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -795,7 +795,7 @@ public static class CoreConceptsSamples
     public static async Task RegisteringAndUsingCustomModule(
         string webSocketUrl)
     {
-#region RegisteringandUsingaCustomModule
+        #region RegisteringandUsingaCustomModule
         // Create driver
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -820,7 +820,7 @@ public static class CoreConceptsSamples
             CustomProperty = "value"
         };
         CustomCommandResult result = await customModule.MyCustomCommandAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -828,13 +828,13 @@ public static class CoreConceptsSamples
     /// </summary>
     public static async Task CustomJsonTypeResolvers(string webSocketUrl)
     {
-#region RegisterCustomResolverBeforeStarting
+        #region RegisterCustomResolverBeforeStarting
         // Register the custom resolver BEFORE starting
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.RegisterTypeInfoResolver(CustomJsonContext.Default);
 
         await driver.StartAsync(webSocketUrl);
-#endregion
+        #endregion
     }
 }
 

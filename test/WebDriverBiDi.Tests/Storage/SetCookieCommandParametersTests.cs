@@ -43,7 +43,7 @@ public class SetCookieCommandParametersTests
             Assert.That(cookieObject, Contains.Key("domain"));
             Assert.That(cookieObject["domain"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(cookieObject["domain"]!.Value<string>(), Is.EqualTo("cookieDomain"));
-        }        
+        }
     }
 
     [Test]
@@ -88,7 +88,7 @@ public class SetCookieCommandParametersTests
             Assert.That(partitionObject, Contains.Key("context"));
             Assert.That(partitionObject["context"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["context"]!.Value<string>(), Is.EqualTo("myContext"));
-        }        
+        }
     }
 
     [Test]
@@ -136,6 +136,6 @@ public class SetCookieCommandParametersTests
             Assert.That(partitionObject, Contains.Key("userContext"));
             Assert.That(partitionObject["userContext"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(partitionObject["userContext"]!.Value<string>(), Is.EqualTo("myUserContext"));
-        }        
+        }
     }
 }

@@ -47,7 +47,7 @@ public class ResponseCompletedEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "initiatorType": "other",
                              "destination": "document",
                              "response": {
@@ -107,7 +107,7 @@ public class ResponseCompletedEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}},
+                             "request": {{this.requestDataJson}},
                              "initiatorType": "other",
                              "destination": "document",
                              "response": {
@@ -154,7 +154,7 @@ public class ResponseCompletedEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<ResponseCompletedEventArgs>(eventJson), Throws.InstanceOf<JsonException>());

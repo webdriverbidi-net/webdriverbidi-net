@@ -20,7 +20,7 @@ public static class SubscribeSamples
     /// </summary>
     public static async Task BasicSubscription(BiDiDriver driver)
     {
-#region BasicSubscription
+        #region BasicSubscription
         SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
             [
                 driver.Log.OnEntryAdded.EventName,
@@ -30,7 +30,7 @@ public static class SubscribeSamples
 
         SubscribeCommandResult result = await driver.Session.SubscribeAsync(subscribe);
         Console.WriteLine($"Subscription ID: {result.SubscriptionId}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -38,12 +38,12 @@ public static class SubscribeSamples
     /// </summary>
     public static async Task SingleEventSubscription(BiDiDriver driver)
     {
-#region SingleEventSubscription
+        #region SingleEventSubscription
         SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
             driver.Log.OnEntryAdded.EventName);
 
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public static class SubscribeSamples
         BiDiDriver driver,
         string contextId)
     {
-#region SubscriptionwithContext
+        #region SubscriptionwithContext
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
 
@@ -61,7 +61,7 @@ public static class SubscribeSamples
         subscribe.Contexts.Add(contextId);
 
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -69,13 +69,13 @@ public static class SubscribeSamples
     /// </summary>
     public static async Task UnsubscribeById(BiDiDriver driver, string subscriptionId)
     {
-#region UnsubscribebyID
+        #region UnsubscribebyID
         // Unsubscribe by subscription ID
-        UnsubscribeByIdsCommandParameters unsubscribe = 
+        UnsubscribeByIdsCommandParameters unsubscribe =
             new UnsubscribeByIdsCommandParameters();
         unsubscribe.SubscriptionIds.Add(subscriptionId);
         await driver.Session.UnsubscribeAsync(unsubscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -83,14 +83,14 @@ public static class SubscribeSamples
     /// </summary>
     public static async Task UnsubscribeByEventNames(BiDiDriver driver)
     {
-#region UnsubscribebyEventNames
+        #region UnsubscribebyEventNames
         // Or unsubscribe by event names
         UnsubscribeByAttributesCommandParameters unsubscribe =
             new UnsubscribeByAttributesCommandParameters();
         unsubscribe.Events.Add(driver.Log.OnEntryAdded.EventName);
         unsubscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
         await driver.Session.UnsubscribeAsync(unsubscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -98,13 +98,13 @@ public static class SubscribeSamples
     /// </summary>
     public static async Task SubscribeMultipleEvents(BiDiDriver driver)
     {
-#region SubscribeMultipleEvents
+        #region SubscribeMultipleEvents
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
         subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
         subscribe.Events.Add(driver.BrowsingContext.OnLoad.EventName);
 
         SubscribeCommandResult result = await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 }

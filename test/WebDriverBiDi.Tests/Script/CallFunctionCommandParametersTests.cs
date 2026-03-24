@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class CallFunctionCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         CallFunctionCommandParameters properties = new("myFunction", new RealmTarget("myRealm"), true);

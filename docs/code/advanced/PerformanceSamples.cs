@@ -31,11 +31,11 @@ public class PerformanceSamples
     /// </summary>
     public static async Task WebSocketConnection()
     {
-#region WebSocketConnection
+        #region WebSocketConnection
         // Standard WebSocket connection
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync("ws://localhost:9222/devtools/browser/abc-123");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task PipeConnection()
     {
-#region PipeConnection
+        #region PipeConnection
         // Pipe connection (Chromium only)
         ChromeLauncher launcher = new ChromeLauncher()
         {
@@ -54,7 +54,7 @@ public class PerformanceSamples
         await launcher.LaunchBrowserAsync();
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
         await driver.StartAsync("pipes");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task ParallelCommands(BiDiDriver driver)
     {
-#region ParallelCommands
+        #region ParallelCommands
         // ❌ Slow: Sequential execution
         var tree = await driver.BrowsingContext.GetTreeAsync(new());
         var status = await driver.Session.StatusAsync(new());
@@ -78,7 +78,7 @@ public class PerformanceSamples
         var parallelTree = treeTask.Result;
         var parallelStatus = statusTask.Result;
         var parallelCookies = cookiesTask.Result;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task BatchNavigation(BiDiDriver driver, IEnumerable<string> urls, IEnumerable<string> contextIds, string contextId)
     {
-#region BatchNavigation
+        #region BatchNavigation
         // ❌ Slow: Multiple round trips
         foreach (string url in urls)
         {
@@ -104,7 +104,7 @@ public class PerformanceSamples
         }
 
         await Task.WhenAll(navigationTasks);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public class PerformanceSamples
     /// </summary>
     public static void ReadinessStates(string contextId, string url)
     {
-#region ReadinessStates
+        #region ReadinessStates
         // For content-only needs
         NavigateCommandParameters parameters1 = new NavigateCommandParameters(contextId, url)
         {
@@ -130,7 +130,7 @@ public class PerformanceSamples
         {
             Wait = ReadinessState.None  // Return immediately
         };
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -138,7 +138,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task SmartWaiting(BiDiDriver driver, string contextId, NavigateCommandParameters navParams)
     {
-#region SmartWaiting
+        #region SmartWaiting
         // ❌ Slow: Fixed delays
         await driver.BrowsingContext.NavigateAsync(navParams);
         await Task.Delay(5000);  // Always waits 5 seconds
@@ -164,7 +164,7 @@ public class PerformanceSamples
 
         await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(waitScript, new ContextTarget(contextId), true));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task MinimizeScriptCalls(BiDiDriver driver, string contextId)
     {
-#region MinimizeScriptCalls
+        #region MinimizeScriptCalls
         // ❌ Slow: Multiple script calls
         var title = await GetScriptValue("document.title");
         var url = await GetScriptValue("window.location.href");
@@ -198,7 +198,7 @@ public class PerformanceSamples
             string actualUrl = data["url"].ConvertTo<StringRemoteValue>().Value;
             long actualLinkCount = data["linkCount"].ConvertTo<LongRemoteValue>().Value;
         }
-#endregion
+        #endregion
     }
 
     private static async Task<string> GetScriptValue(string v)
@@ -211,7 +211,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task EfficientElementOperations(BiDiDriver driver, string contextId)
     {
-#region EfficientElementOperations
+        #region EfficientElementOperations
         // ❌ Slow: Multiple element queries
         for (int i = 0; i < 10; i++)
         {
@@ -228,7 +228,7 @@ public class PerformanceSamples
 
         await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), false));
-#endregion
+        #endregion
     }
 
     private static async Task ClickElementAsync(object element)
@@ -246,7 +246,7 @@ public class PerformanceSamples
     /// </summary>
     public static void AsyncEventHandler(BiDiDriver driver)
     {
-#region AsyncEventHandler
+        #region AsyncEventHandler
         // ❌ Slow: Synchronous handler blocks message processing
         driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
@@ -269,7 +269,7 @@ public class PerformanceSamples
     /// </summary>
     public static void FilterEventsEarly(BiDiDriver driver)
     {
-#region FilterEventsEarly
+        #region FilterEventsEarly
         // ❌ Slow: Process all events then filter
         driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
@@ -285,11 +285,13 @@ public class PerformanceSamples
         driver.Network.OnResponseCompleted.AddObserver((e) =>
         {
             if (!e.Response.Url.Contains(".json"))
+            {
                 return;  // Exit early
-            
+            }
+
             ProcessResponse(e);
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -297,21 +299,21 @@ public class PerformanceSamples
     /// </summary>
     public static async Task SelectiveEventSubscription(BiDiDriver driver, string contextId)
     {
-#region SelectiveEventSubscription
+        #region SelectiveEventSubscription
         // ❌ Slow: Subscribe to everything
-        SubscribeCommandParameters subscribe = 
+        SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
         subscribe.Events.Add(driver.Network.OnResponseStarted.EventName);
         subscribe.Events.Add(driver.Network.OnResponseCompleted.EventName);
         subscribe.Events.Add(driver.Network.OnFetchError.EventName);
 
         // ✅ Fast: Only subscribe to what you need
-        SubscribeCommandParameters subscribeParameters = 
+        SubscribeCommandParameters subscribeParameters =
             new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
 
         // Even better: Subscribe only for specific contexts
         subscribeParameters.Contexts.Add(contextId);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -319,7 +321,7 @@ public class PerformanceSamples
     /// </summary>
     public static void SlowHandlerProblem(BiDiDriver driver)
     {
-#region SlowHandlerProblem
+        #region SlowHandlerProblem
         // ⚠️ Problematic: Thousands of rapid events with slow handlers
         driver.Network.OnBeforeRequestSent.AddObserver((e) =>
         {
@@ -333,7 +335,7 @@ public class PerformanceSamples
         // - Queue growth: 95 events/second
         // - After 10 seconds: ~950 messages queued
         // - Memory usage grows unbounded
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -341,7 +343,7 @@ public class PerformanceSamples
     /// </summary>
     public static void AsyncHandlerGood(BiDiDriver driver)
     {
-#region AsyncHandlerGood
+        #region AsyncHandlerGood
         // ✅ Good: Async handler doesn't block message thread
         driver.Network.OnBeforeRequestSent.AddObserver(
             async (e) =>
@@ -352,7 +354,7 @@ public class PerformanceSamples
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously
         );
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -360,7 +362,7 @@ public class PerformanceSamples
     /// </summary>
     public static void OffloadHeavyWork(BiDiDriver driver, CancellationToken cancellationToken)
     {
-#region OffloadHeavyWork
+        #region OffloadHeavyWork
         // ❌ Bad: Heavy processing in handler
         driver.Log.OnEntryAdded.AddObserver((e) =>
         {
@@ -396,7 +398,7 @@ public class PerformanceSamples
                 }
             }
         });
-#endregion
+        #endregion
     }
 
     private static async Task SendNotificationAsync(AnalysisResult analysis)
@@ -429,7 +431,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task ScopeSubscriptions(BiDiDriver driver, SubscribeCommandParameters subscribe, string contextId)
     {
-#region ScopeSubscriptions
+        #region ScopeSubscriptions
         // ❌ Bad: Subscribe to high-frequency events you don't need
         subscribe.Events.Add("network.beforeRequestSent");   // Very high frequency
         subscribe.Events.Add("network.responseStarted");     // Very high frequency
@@ -441,7 +443,7 @@ public class PerformanceSamples
         // ✅ Even better: Scope to specific contexts
         subscribe.Events.Add("network.responseCompleted");
         subscribe.Contexts.Add(contextId);  // Only for this tab
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -449,7 +451,7 @@ public class PerformanceSamples
     /// </summary>
     public static void EventThrottling(BiDiDriver driver)
     {
-#region EventThrottling
+        #region EventThrottling
         // Throttle high-frequency events
         DateTime lastProcessed = DateTime.MinValue;
         TimeSpan throttleInterval = TimeSpan.FromMilliseconds(100);
@@ -465,7 +467,7 @@ public class PerformanceSamples
             lastProcessed = now;
             ProcessRequest(e);
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -473,7 +475,7 @@ public class PerformanceSamples
     /// </summary>
     public static void EventSampling(BiDiDriver driver)
     {
-#region EventSampling
+        #region EventSampling
         // Sample 10% of events for analysis
         Random random = new Random();
 
@@ -484,7 +486,7 @@ public class PerformanceSamples
                 AnalyzeResponse(e);
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -492,7 +494,7 @@ public class PerformanceSamples
     /// </summary>
     public static void MemoryMonitoring()
     {
-#region MemoryMonitoring
+        #region MemoryMonitoring
         // Monitor memory usage
         Process currentProcess = Process.GetCurrentProcess();
 
@@ -506,7 +508,7 @@ public class PerformanceSamples
                 Console.WriteLine($"⚠️ High memory usage: {memoryMB} MB");
             }
         }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -522,7 +524,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task DriverPoolUsage(string websocketUrl, NavigateCommandParameters navParams)
     {
-#region DriverPoolUsage
+        #region DriverPoolUsage
         // Usage
         DriverPool pool = new DriverPool();
 
@@ -536,7 +538,7 @@ public class PerformanceSamples
         {
             pool.Release(driver);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -544,9 +546,9 @@ public class PerformanceSamples
     /// </summary>
     public static async Task MemoryManagementCollectors(BiDiDriver driver, string requestId, AddDataCollectorCommandParameters collectorParams)
     {
-#region MemoryManagementCollectors
+        #region MemoryManagementCollectors
         // Always clean up data collectors
-        AddDataCollectorCommandResult collector = 
+        AddDataCollectorCommandResult collector =
             await driver.Network.AddDataCollectorAsync(collectorParams);
 
         try
@@ -566,7 +568,7 @@ public class PerformanceSamples
             CollectorId = collector.CollectorId,
             DisownCollectedData = true  // Free memory after retrieval
         };
-#endregion
+        #endregion
     }
 
     private static async Task CaptureNetworkTraffic()
@@ -579,7 +581,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task ManagedObserverUsage(BiDiDriver driver, NavigateCommandParameters navParams)
     {
-#region ManagedObserverUsage
+        #region ManagedObserverUsage
         // Usage with automatic cleanup
         using (new ManagedObserver<EntryAddedEventArgs>(
             driver.Log.OnEntryAdded,
@@ -589,7 +591,7 @@ public class PerformanceSamples
             await driver.BrowsingContext.NavigateAsync(navParams);
         }
         // Observer automatically removed
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -597,7 +599,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task ScopedInterception(BiDiDriver driver)
     {
-#region ScopedInterception
+        #region ScopedInterception
         // ❌ Slow: Intercept everything
         AddInterceptCommandParameters slowIntercept = new AddInterceptCommandParameters();
         slowIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
@@ -611,7 +613,7 @@ public class PerformanceSamples
             new UrlPatternPattern { HostName = "api.example.com" }
         };
         await driver.Network.AddInterceptAsync(fastIntercept);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -619,7 +621,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task BlockUnnecessaryResources(BiDiDriver driver)
     {
-#region BlockUnnecessaryResources
+        #region BlockUnnecessaryResources
         // Speed up page loads by blocking images, CSS, fonts
         AddInterceptCommandParameters intercept = new AddInterceptCommandParameters();
         intercept.Phases.Add(InterceptPhase.BeforeRequestSent);
@@ -643,7 +645,7 @@ public class PerformanceSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -651,9 +653,9 @@ public class PerformanceSamples
     /// </summary>
     public static async Task UserContextsForIsolation(BiDiDriver driver)
     {
-#region UserContextsforIsolation
+        #region UserContextsforIsolation
         // Create isolated user context once
-        CreateUserContextCommandResult userContext = 
+        CreateUserContextCommandResult userContext =
             await driver.Browser.CreateUserContextAsync(new());
 
         // Create multiple tabs in same user context (shares cache, cookies)
@@ -666,10 +668,10 @@ public class PerformanceSamples
                     UserContextId = userContext.UserContextId
                 });
             contextIds.Add(tab.BrowsingContextId);
-}
+        }
 
-// All tabs share cookies and cache = faster subsequent loads
-#endregion
+        // All tabs share cookies and cache = faster subsequent loads
+        #endregion
     }
 
     /// <summary>
@@ -677,7 +679,7 @@ public class PerformanceSamples
     /// </summary>
     public static async Task PerformanceTrackerUsage(BiDiDriver driver, NavigateCommandParameters navParams, EvaluateCommandParameters evalParams)
     {
-#region PerformanceTrackerUsage
+        #region PerformanceTrackerUsage
         // Usage
         PerformanceTracker tracker = new PerformanceTracker();
 
@@ -688,61 +690,61 @@ public class PerformanceSamples
             await driver.Script.EvaluateAsync(evalParams));
 
         tracker.PrintStats();
-#endregion
+        #endregion
     }
 
     /// <summary>
     /// Bottleneck identification - page load analysis.
     /// </summary>
-#region AnalyzePageLoad
-public async Task AnalyzePageLoadAsync(BiDiDriver driver, string contextId, string url)
-{
-    Dictionary<string, int> resourceCounts = new();
-    Dictionary<string, long> resourceSizes = new();
-    DateTime startTime = DateTime.Now;
-    
-    driver.Network.OnResponseCompleted.AddObserver((e) =>
+    #region AnalyzePageLoad
+    public async Task AnalyzePageLoadAsync(BiDiDriver driver, string contextId, string url)
     {
-        Uri uri = new Uri(e.Response.Url);
-        string extension = Path.GetExtension(uri.LocalPath).ToLower();
-        
-        resourceCounts[extension] = resourceCounts.GetValueOrDefault(extension) + 1;
-        resourceSizes[extension] = resourceSizes.GetValueOrDefault(extension) + 
-            (long)e.Response.BytesReceived;
-    });
-    
-    SubscribeCommandParameters subscribe = 
-        new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
-    await driver.Session.SubscribeAsync(subscribe);
-    
-    await driver.BrowsingContext.NavigateAsync(
-        new NavigateCommandParameters(contextId, url)
-        { Wait = ReadinessState.Complete });
-    
-    TimeSpan loadTime = DateTime.Now - startTime;
-    
-    Console.WriteLine($"\nPage Load Analysis for {url}");
-    Console.WriteLine($"Total Time: {loadTime.TotalSeconds:F2}s");
-    Console.WriteLine("\nResources by Type:");
-    
-    foreach (var kvp in resourceCounts.OrderByDescending(x => x.Value))
-    {
-        long sizeKB = resourceSizes[kvp.Key] / 1024;
-        Console.WriteLine($"  {kvp.Key,-10} {kvp.Value,3} files  {sizeKB,6} KB");
+        Dictionary<string, int> resourceCounts = new();
+        Dictionary<string, long> resourceSizes = new();
+        DateTime startTime = DateTime.Now;
+
+        driver.Network.OnResponseCompleted.AddObserver((e) =>
+        {
+            Uri uri = new Uri(e.Response.Url);
+            string extension = Path.GetExtension(uri.LocalPath).ToLower();
+
+            resourceCounts[extension] = resourceCounts.GetValueOrDefault(extension) + 1;
+            resourceSizes[extension] = resourceSizes.GetValueOrDefault(extension) +
+                (long)e.Response.BytesReceived;
+        });
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(
+            new NavigateCommandParameters(contextId, url)
+            { Wait = ReadinessState.Complete });
+
+        TimeSpan loadTime = DateTime.Now - startTime;
+
+        Console.WriteLine($"\nPage Load Analysis for {url}");
+        Console.WriteLine($"Total Time: {loadTime.TotalSeconds:F2}s");
+        Console.WriteLine("\nResources by Type:");
+
+        foreach (var kvp in resourceCounts.OrderByDescending(x => x.Value))
+        {
+            long sizeKB = resourceSizes[kvp.Key] / 1024;
+            Console.WriteLine($"  {kvp.Key,-10} {kvp.Value,3} files  {sizeKB,6} KB");
+        }
     }
-}
-#endregion
+    #endregion
 
     /// <summary>
     /// CachedContextInfo usage.
     /// </summary>
     public static async Task CachedContextInfoUsage(CachedContextInfo cachedInfo, string contextId)
     {
-#region CachedContextInfoUsage
+        #region CachedContextInfoUsage
         // Usage
         BrowsingContextInfo info = await cachedInfo.GetContextInfoAsync(contextId);
         cachedInfo.InvalidateCache(contextId);
-#endregion
+        #endregion
     }
 
     private static void ProcessRequest(BeforeRequestSentEventArgs e) { }
@@ -841,7 +843,7 @@ public class DriverPool
     private readonly Stack<BiDiDriver> availableDrivers = new();
     private readonly int maxPoolSize = 5;
     private readonly SemaphoreSlim semaphore;
-    
+
     public DriverPool()
     {
         semaphore = new SemaphoreSlim(maxPoolSize, maxPoolSize);
@@ -850,7 +852,7 @@ public class DriverPool
     public async Task<BiDiDriver> AcquireAsync(string webSocketUrl)
     {
         await semaphore.WaitAsync();
-        
+
         lock (availableDrivers)
         {
             if (availableDrivers.Count > 0)
@@ -858,7 +860,7 @@ public class DriverPool
                 return availableDrivers.Pop();
             }
         }
-        
+
         // Create new driver if none available
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
@@ -878,7 +880,7 @@ public class DriverPool
                 driver.StopAsync().Wait();
             }
         }
-        
+
         semaphore.Release();
     }
 }
@@ -891,12 +893,12 @@ public class DriverPool
 public class ManagedObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
 {
     private EventObserver<T>? observer;
-    
+
     public ManagedObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler)
     {
         observer = observableEvent.AddObserver(handler);
     }
-    
+
     public void Dispose()
     {
         observer?.Unobserve();
@@ -911,12 +913,12 @@ public class ManagedObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
 #region PerformanceTrackerClass
 public class PerformanceTracker
 {
-    private Dictionary<string, List<TimeSpan>> metrics = new();
-    
+    private readonly Dictionary<string, List<TimeSpan>> metrics = new();
+
     public async Task<T> TrackAsync<T>(string operationName, Func<Task<T>> operation)
     {
         DateTime start = DateTime.Now;
-        
+
         try
         {
             return await operation();
@@ -924,28 +926,28 @@ public class PerformanceTracker
         finally
         {
             TimeSpan duration = DateTime.Now - start;
-            
+
             if (!metrics.ContainsKey(operationName))
             {
                 metrics[operationName] = new List<TimeSpan>();
             }
-            
+
             metrics[operationName].Add(duration);
         }
     }
-    
+
     public void PrintStats()
     {
         Console.WriteLine("\n Performance Statistics");
         Console.WriteLine("========================");
-        
+
         foreach (var kvp in metrics)
         {
             var durations = kvp.Value;
             double avgMs = durations.Average(d => d.TotalMilliseconds);
             double minMs = durations.Min(d => d.TotalMilliseconds);
             double maxMs = durations.Max(d => d.TotalMilliseconds);
-            
+
             Console.WriteLine($"\n{kvp.Key}:");
             Console.WriteLine($"  Count: {durations.Count}");
             Console.WriteLine($"  Avg:   {avgMs:F2}ms");
@@ -962,28 +964,28 @@ public class PerformanceTracker
 #region CachedContextInfoClass
 public class CachedContextInfo
 {
-    private Dictionary<string, BrowsingContextInfo> cache = new();
-    private BiDiDriver driver;
-    
+    private readonly Dictionary<string, BrowsingContextInfo> cache = new();
+    private readonly BiDiDriver driver;
+
     public async Task<BrowsingContextInfo> GetContextInfoAsync(string contextId)
     {
         if (cache.TryGetValue(contextId, out var cachedInfo))
         {
             return cachedInfo;
         }
-        
+
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
             new GetTreeCommandParameters { RootBrowsingContextId = contextId });
-        
+
         if (tree.ContextTree.Count > 0)
         {
             cache[contextId] = tree.ContextTree[0];
             return tree.ContextTree[0];
         }
-        
+
         throw new Exception("Context not found");
     }
-    
+
     public void InvalidateCache(string contextId)
     {
         cache.Remove(contextId);

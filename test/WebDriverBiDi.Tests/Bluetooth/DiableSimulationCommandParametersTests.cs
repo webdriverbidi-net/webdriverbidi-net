@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class DisableSimulationCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         DisableSimulationCommandParameters properties = new("myContext");

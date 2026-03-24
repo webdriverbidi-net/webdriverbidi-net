@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulateCharacteristicCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulateCharacteristicCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", SimulateCharacteristicType.Add);
@@ -37,7 +37,7 @@ public class SimulateCharacteristicCommandParametersTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("add"));
-       }
+        }
     }
 
     [Test]
@@ -64,7 +64,7 @@ public class SimulateCharacteristicCommandParametersTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("remove"));
-       }
+        }
     }
 
     [Test]
@@ -97,7 +97,7 @@ public class SimulateCharacteristicCommandParametersTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("add"));
-       }
+        }
     }
 
     [Test]
@@ -137,6 +137,6 @@ public class SimulateCharacteristicCommandParametersTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("add"));
-       }
+        }
     }
 }

@@ -83,7 +83,7 @@ public class UserPromptClosedEventArgsTests
         }
     }
 
-   [Test]
+    [Test]
     public void TestCopySemantics()
     {
         string json = """

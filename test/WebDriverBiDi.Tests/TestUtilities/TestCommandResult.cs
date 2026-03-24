@@ -2,7 +2,7 @@ namespace WebDriverBiDi.TestUtilities;
 
 using System.Text.Json.Serialization;
 
-public record TestCommandResult: CommandResult
+public record TestCommandResult : CommandResult
 {
     private bool isError = false;
 

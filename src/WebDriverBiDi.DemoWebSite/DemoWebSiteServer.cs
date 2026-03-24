@@ -25,7 +25,7 @@ public class DemoWebSiteServer
     /// </summary>
     public async Task LaunchAsync()
     {
-        StoredContentRegistrar.RegisterDirectory(webServer, string.Empty, Path.Combine(AppContext.BaseDirectory, contentDirectoryName));
+        StoredContentRegistrar.RegisterDirectory(this.webServer, string.Empty, Path.Combine(AppContext.BaseDirectory, contentDirectoryName));
         this.webServer.RegisterHandler("/", new RedirectRequestHandler("/index.html"));
         this.webServer.RegisterHandler("/processForm", HttpRequestMethod.Post, new FormSubmitRequestHandler());
         this.webServer.RegisterHandler("/cookiePage.html", HttpRequestMethod.Get, new CookiePageRequestHandler());

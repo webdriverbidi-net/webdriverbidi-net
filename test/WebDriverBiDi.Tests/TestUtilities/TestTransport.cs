@@ -63,19 +63,19 @@ public class TestTransport : Transport
     {
         if (this.ReturnUncompletedCommand)
         {
-            return new TestCommand(LastCommandId, commandParameters);
+            return new TestCommand(this.LastCommandId, commandParameters);
         }
 
         if (this.ShouldCancelCommand)
         {
-            Command returnedCommand = new Command(LastCommandId, commandParameters);
+            Command returnedCommand = new Command(this.LastCommandId, commandParameters);
             returnedCommand.Cancel();
             return returnedCommand;
         }
 
         if (this.ReturnCustomValue)
         {
-            Command returnedCommand = new Command(LastCommandId, commandParameters);
+            Command returnedCommand = new Command(this.LastCommandId, commandParameters);
             returnedCommand.SetResult(this.CustomReturnValue!);
             return returnedCommand;
         }

@@ -76,7 +76,7 @@ public class TestPipeServer : IPipeServerProcessProvider
                         byte[] nullTerminator = [0];
                         pipeWriter.Write(nullTerminator, 0, 1);
                     }
-                    
+
                     pipeWriter.Flush();
                 }
             }

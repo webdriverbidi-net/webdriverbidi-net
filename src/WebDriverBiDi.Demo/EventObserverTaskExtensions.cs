@@ -14,7 +14,7 @@ public static class EventObserverTaskExtensions
     /// <param name="tasks">An array of <see cref="Task" /> objects to filter.</param>
     /// <returns>The filtered array of objects to only contain tasks of type T.</returns>
     public static Task<T>[] FilterTasksForType<T>(this Task[] tasks)
-        where T: CommandResult
+        where T : CommandResult
     {
         return Array.ConvertAll(Array.FindAll(tasks, t => t is Task<T>), t => (Task<T>)t);
     }

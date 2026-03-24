@@ -97,7 +97,8 @@ public class InputModuleTests
         InputModule module = driver.Input;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) => {
+        module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -131,7 +132,8 @@ public class InputModuleTests
         InputModule module = driver.Input;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) => {
+        module.OnFileDialogOpened.AddObserver((FileDialogOpenedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));

@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulateDescriptorResponseCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulateDescriptorResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", "myDescriptorUuid", SimulateDescriptorResponseType.Read, 0);
@@ -43,7 +43,7 @@ public class SimulateDescriptorResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       }
+        }
     }
 
     [Test]
@@ -76,7 +76,7 @@ public class SimulateDescriptorResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       }
+        }
     }
 
     [Test]
@@ -116,7 +116,7 @@ public class SimulateDescriptorResponseCommandParametersTests
             Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.Array));
             JArray? dataArray = serialized["data"] as JArray;
             Assert.That(dataArray, Is.Empty);
-       }
+        }
     }
 
     [Test]
@@ -160,6 +160,6 @@ public class SimulateDescriptorResponseCommandParametersTests
             Assert.That(dataArray[0].Value<uint>(), Is.EqualTo(123));
             Assert.That(dataArray![1].Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(dataArray[1].Value<uint>(), Is.EqualTo(456));
-       }
+        }
     }
 }

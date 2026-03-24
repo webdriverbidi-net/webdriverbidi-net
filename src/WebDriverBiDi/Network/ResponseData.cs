@@ -134,7 +134,7 @@ public record ResponseData
         {
             if (this.authChallenges is null && this.SerializableAuthChallenges is not null)
             {
-                this.authChallenges = [..this.SerializableAuthChallenges];
+                this.authChallenges = [.. this.SerializableAuthChallenges];
             }
 
             return this.authChallenges?.AsReadOnly();

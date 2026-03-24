@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulateServiceCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulateServiceCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", SimulateServiceType.Add);
@@ -34,7 +34,7 @@ public class SimulateServiceCommandParametersTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("add"));
-       }
+        }
     }
 
     [Test]
@@ -58,6 +58,6 @@ public class SimulateServiceCommandParametersTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("remove"));
-       }
+        }
     }
 }

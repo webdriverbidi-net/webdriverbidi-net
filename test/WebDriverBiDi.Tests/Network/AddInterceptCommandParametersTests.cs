@@ -110,7 +110,7 @@ public class AddInterceptCommandParametersTests
             Assert.That(urlPatternObject["pattern"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(urlPatternObject["pattern"]!.Value<string>(), Is.EqualTo("https://example.com/*"));
         }
-    } 
+    }
 
     [Test]
     public void TestOmittingPhaseInConstructorThrows()

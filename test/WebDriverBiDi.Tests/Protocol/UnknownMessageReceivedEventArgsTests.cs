@@ -16,6 +16,6 @@ public class UnknownMessageReceivedEventArgsTests
     {
         UnknownMessageReceivedEventArgs eventArgs = new("unknown message");
         UnknownMessageReceivedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));        
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 }

@@ -25,7 +25,7 @@ public class NetworkRequest
     private ulong responseStatusCode = 0;
     private string responseStatusText = string.Empty;
     private string responseProtocol = string.Empty;
-    private List<ReadOnlyHeader> responseHeaders = [];
+    private readonly List<ReadOnlyHeader> responseHeaders = [];
     private Task<GetDataCommandResult>? responseBodyAvailableTask;
     private string responseBody = string.Empty;
     private bool isResponseBodyBase64Encoded = false;

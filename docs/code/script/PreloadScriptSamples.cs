@@ -27,7 +27,7 @@ public static class PreloadScriptSamples
     /// </summary>
     public static async Task BasicPreloadScript()
     {
-#region BasicPreloadScript
+        #region BasicPreloadScript
         string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-ID-HERE";
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -62,12 +62,12 @@ public static class PreloadScriptSamples
                 }
                 """;
 
-            AddPreloadScriptCommandParameters preloadParams = 
+            AddPreloadScriptCommandParameters preloadParams =
                 new AddPreloadScriptCommandParameters(preloadScript);
 
-            AddPreloadScriptCommandResult preloadResult = 
+            AddPreloadScriptCommandResult preloadResult =
                 await driver.Script.AddPreloadScriptAsync(preloadParams);
-            
+
             Console.WriteLine($"Preload script added: {preloadResult.PreloadScriptId}");
 
             // Navigate - the preload script will run before page scripts
@@ -78,14 +78,14 @@ public static class PreloadScriptSamples
 
             // Use the injected utilities
             Console.WriteLine("\nUsing preload script utilities...");
-            
+
             EvaluateCommandParameters evalParams = new EvaluateCommandParameters(
                 "window.myUtils.getElementText('h1')",
                 new ContextTarget(contextId),
                 true);
 
             EvaluateResult result = await driver.Script.EvaluateAsync(evalParams);
-            
+
             if (result is EvaluateResultSuccess success &&
                 success.Result is StringRemoteValue textValue)
             {
@@ -109,7 +109,7 @@ public static class PreloadScriptSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -117,7 +117,7 @@ public static class PreloadScriptSamples
     /// </summary>
     public static async Task PreloadScriptWithChannel(BiDiDriver driver, string contextId)
     {
-#region PreloadScriptwithChannel
+        #region PreloadScriptwithChannel
         // Subscribe to script messages
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Script.OnMessage.EventName);
@@ -131,14 +131,14 @@ public static class PreloadScriptSamples
             if (e.ChannelId == "pageLoadChannel")
             {
                 Console.WriteLine($"📨 Received message from preload script");
-                
+
                 if (e.Data.Type == RemoteValueType.Object &&
                     e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue)
                 {
                     RemoteValueDictionary data = dataRemoteValue.Value;
                     Console.WriteLine($"Page ready: {data["ready"].ConvertTo<BooleanRemoteValue>().Value}");
                     Console.WriteLine($"Load time: {data["loadTime"].ConvertTo<LongRemoteValue>().Value}ms");
-                    
+
                     pageLoadedSignal.SetResult("complete");
                 }
             }
@@ -162,11 +162,11 @@ public static class PreloadScriptSamples
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("pageLoadChannel"));
 
-        AddPreloadScriptCommandParameters preloadParams = 
+        AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(preloadScript);
         preloadParams.Arguments.Add(channel);
 
-        AddPreloadScriptCommandResult preloadResult = 
+        AddPreloadScriptCommandResult preloadResult =
             await driver.Script.AddPreloadScriptAsync(preloadParams);
 
         Console.WriteLine("Preload script with channel added");
@@ -179,7 +179,7 @@ public static class PreloadScriptSamples
         // Wait for signal from preload script
         await pageLoadedSignal.Task;
         Console.WriteLine("✅ Page load detected by preload script");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ public static class PreloadScriptSamples
     /// </summary>
     public static async Task WaitForElementPreloadScript(BiDiDriver driver, string contextId)
     {
-#region WaitforElementPreloadScript
+        #region WaitforElementPreloadScript
         // This preload script waits for a specific element to appear
         string waitForElementScript = @"""
             (channel) => {
@@ -214,7 +214,7 @@ public static class PreloadScriptSamples
             }
             """;
 
-        TaskCompletionSource<RemoteValueDictionary> elementFoundSignal = 
+        TaskCompletionSource<RemoteValueDictionary> elementFoundSignal =
             new TaskCompletionSource<RemoteValueDictionary>();
 
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
@@ -229,7 +229,7 @@ public static class PreloadScriptSamples
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("elementWatcher"));
 
-        AddPreloadScriptCommandParameters preloadParams = 
+        AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(waitForElementScript);
         preloadParams.Arguments.Add(channel);
 
@@ -253,7 +253,7 @@ public static class PreloadScriptSamples
         {
             Console.WriteLine("❌ Timeout waiting for element");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -261,7 +261,7 @@ public static class PreloadScriptSamples
     /// </summary>
     public static async Task SandboxedPreloadScript(BiDiDriver driver, string contextId)
     {
-#region SandboxedPreloadScript
+        #region SandboxedPreloadScript
         // This preload script waits for a specific element to appear
         string waitForElementScript = @"""
             (channel) => {
@@ -288,7 +288,7 @@ public static class PreloadScriptSamples
             }
             """;
 
-        TaskCompletionSource<RemoteValueDictionary> elementFoundSignal = 
+        TaskCompletionSource<RemoteValueDictionary> elementFoundSignal =
             new TaskCompletionSource<RemoteValueDictionary>();
 
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
@@ -302,7 +302,7 @@ public static class PreloadScriptSamples
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("elementWatcher"));
 
-        AddPreloadScriptCommandParameters preloadParams = 
+        AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(waitForElementScript);
         preloadParams.Arguments.Add(channel);
 
@@ -326,7 +326,7 @@ public static class PreloadScriptSamples
         {
             Console.WriteLine("❌ Timeout waiting for element");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -334,7 +334,7 @@ public static class PreloadScriptSamples
     /// </summary>
     public static async Task InterceptFetchPreloadScript(BiDiDriver driver, string contextId)
     {
-#region InterceptFetchPreloadScript
+        #region InterceptFetchPreloadScript
         // Preload script that intercepts fetch calls
         string interceptFetchScript = """
             (channel) => {
@@ -369,7 +369,7 @@ public static class PreloadScriptSamples
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("fetchInterceptor"));
 
-        AddPreloadScriptCommandParameters preloadParams = 
+        AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(interceptFetchScript);
         preloadParams.Arguments.Add(channel);
 
@@ -383,7 +383,7 @@ public static class PreloadScriptSamples
         await Task.Delay(2000);  // Wait for fetch calls
 
         Console.WriteLine($"\n📊 Total fetch calls: {fetchCalls.Count}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -391,7 +391,7 @@ public static class PreloadScriptSamples
     /// </summary>
     public static async Task PerformanceMonitorPreloadScript(BiDiDriver driver, string contextId)
     {
-#region PerformanceMonitorPreloadScript
+        #region PerformanceMonitorPreloadScript
         string performanceMonitorScript = """
             (channel) => {
                 window.addEventListener('load', () => {
@@ -419,7 +419,7 @@ public static class PreloadScriptSamples
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("performanceMonitor"));
 
-        AddPreloadScriptCommandParameters preloadParams = 
+        AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(performanceMonitorScript);
         preloadParams.Arguments.Add(channel);
 
@@ -440,7 +440,7 @@ public static class PreloadScriptSamples
             Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"].ConvertTo<DoubleRemoteValue>().Value}ms");
             Console.WriteLine($"  Total Time: {performanceData["totalTime"].ConvertTo<DoubleRemoteValue>().Value}ms");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -448,7 +448,7 @@ public static class PreloadScriptSamples
     /// </summary>
     public static async Task MultiplePreloadScripts(BiDiDriver driver)
     {
-#region MultiplePreloadScripts
+        #region MultiplePreloadScripts
         // Script 1: Utilities
         string utilitiesScript = """
             () => {
@@ -479,7 +479,7 @@ public static class PreloadScriptSamples
             new AddPreloadScriptCommandParameters(utilitiesScript));
 
         ChannelValue channel = new ChannelValue(new ChannelProperties("clickMonitor"));
-        AddPreloadScriptCommandParameters monitorParams = 
+        AddPreloadScriptCommandParameters monitorParams =
             new AddPreloadScriptCommandParameters(monitoringScript);
         monitorParams.Arguments.Add(channel);
 
@@ -488,7 +488,7 @@ public static class PreloadScriptSamples
         Console.WriteLine("Multiple preload scripts added");
 
         // Both scripts will run on every navigation
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -499,19 +499,19 @@ public static class PreloadScriptSamples
         string contextId,
         string preloadScript)
     {
-#region ConditionalPreloadScripts
+        #region ConditionalPreloadScripts
         // Add preload script only for specific contexts
-        AddPreloadScriptCommandParameters preloadParams = 
+        AddPreloadScriptCommandParameters preloadParams =
             new AddPreloadScriptCommandParameters(preloadScript);
 
         // Limit to specific contexts
         preloadParams.Contexts = new List<string> { contextId };
 
-        AddPreloadScriptCommandResult result = 
+        AddPreloadScriptCommandResult result =
             await driver.Script.AddPreloadScriptAsync(preloadParams);
 
         // Script will only run in the specified context
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -523,9 +523,9 @@ public static class PreloadScriptSamples
         NavigateCommandParameters navParams1,
         NavigateCommandParameters navParams2)
     {
-#region TemporaryPreloadScript
+        #region TemporaryPreloadScript
         // Add preload script
-        AddPreloadScriptCommandResult preloadResult = 
+        AddPreloadScriptCommandResult preloadResult =
             await driver.Script.AddPreloadScriptAsync(preloadParams);
 
         try
@@ -542,7 +542,7 @@ public static class PreloadScriptSamples
         }
 
         // Future navigations won't have the preload script
-#endregion
+        #endregion
     }
 }
 

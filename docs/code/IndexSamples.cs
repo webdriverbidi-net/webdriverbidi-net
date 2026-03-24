@@ -22,7 +22,7 @@ public static class IndexSamples
     /// </summary>
     public static async Task QuickExample(string webSocketUrl)
     {
-#region QuickExample
+        #region QuickExample
         BiDiDriver driver = new(TimeSpan.FromSeconds(10));
         await driver.StartAsync(webSocketUrl);
 
@@ -39,6 +39,6 @@ public static class IndexSamples
             new EvaluateCommandParameters("document.title", new ContextTarget(contextId), true));
 
         await driver.StopAsync();
-#endregion
+        #endregion
     }
 }

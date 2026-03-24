@@ -22,8 +22,8 @@ public static class EventSynchronizationSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region WaitforSingleEvent
-        EventObserver<NavigationEventArgs> observer = 
+        #region WaitforSingleEvent
+        EventObserver<NavigationEventArgs> observer =
             driver.BrowsingContext.OnLoad.AddObserver((e) =>
             {
                 Console.WriteLine($"Loaded: {e.Url}");
@@ -46,7 +46,7 @@ public static class EventSynchronizationSamples
         {
             Console.WriteLine("Timeout waiting for page load");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -56,8 +56,8 @@ public static class EventSynchronizationSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region WaitforMultipleEvents
-        EventObserver<ResponseCompletedEventArgs> observer = 
+        #region WaitforMultipleEvents
+        EventObserver<ResponseCompletedEventArgs> observer =
             driver.Network.OnResponseCompleted.AddObserver((e) =>
             {
                 Console.WriteLine($"Response: {e.Response.Url}");
@@ -71,6 +71,6 @@ public static class EventSynchronizationSamples
         // Wait for all 5 responses
         bool allReceived = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
         Console.WriteLine($"Received all 5 responses: {allReceived}");
-#endregion
+        #endregion
     }
 }

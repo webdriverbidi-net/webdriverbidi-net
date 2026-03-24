@@ -11,10 +11,10 @@ using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Network;
+using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 using WebDriverBiDi.Storage;
-using WebDriverBiDi.Protocol;
 
 /// <summary>
 /// Snippets for quick reference cheat sheet. Compiled at build time to prevent API drift.
@@ -127,15 +127,15 @@ public static class QuickReferenceSamples
     /// </summary>
     public static async Task EventSubscriptionPattern(BiDiDriver driver)
     {
-#region EventSubscriptionPattern
+        #region EventSubscriptionPattern
         // 1. Add observer
         driver.Network.OnBeforeRequestSent.AddObserver((e) => Console.WriteLine(e.Request.Url));
 
         // 2. Subscribe via session
-        SubscribeCommandParameters sub = 
+        SubscribeCommandParameters sub =
             new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
         await driver.Session.SubscribeAsync(sub);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ public static class QuickReferenceSamples
     /// </summary>
     public static void ErrorConfiguration(BiDiDriver driver)
     {
-#region ErrorConfiguration
+        #region ErrorConfiguration
         // Fail fast during development
         driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Terminate;
         driver.ProtocolErrorBehavior = TransportErrorBehavior.Terminate;
@@ -151,6 +151,6 @@ public static class QuickReferenceSamples
         // Collect for debugging
         driver.EventHandlerExceptionBehavior = TransportErrorBehavior.Collect;
         driver.ProtocolErrorBehavior = TransportErrorBehavior.Collect;
-#endregion
+        #endregion
     }
 }

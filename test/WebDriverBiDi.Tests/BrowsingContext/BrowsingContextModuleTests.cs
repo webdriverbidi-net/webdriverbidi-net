@@ -28,7 +28,7 @@ public class BrowsingContextModuleTests
         Task<ActivateCommandResult> task = module.ActivateAsync(new ActivateCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         ActivateCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -85,7 +85,7 @@ public class BrowsingContextModuleTests
         Task<CloseCommandResult> task = module.CloseAsync(new CloseCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         CloseCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -95,7 +95,7 @@ public class BrowsingContextModuleTests
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-           string responseJson = $$"""
+            string responseJson = $$"""
                                   {
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
@@ -125,7 +125,7 @@ public class BrowsingContextModuleTests
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-           string responseJson = $$"""
+            string responseJson = $$"""
                                   {
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
@@ -170,7 +170,7 @@ public class BrowsingContextModuleTests
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-           string responseJson = $$"""
+            string responseJson = $$"""
                                   {
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
@@ -227,7 +227,7 @@ public class BrowsingContextModuleTests
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
         {
-           string responseJson = $$"""
+            string responseJson = $$"""
                                   {
                                     "type": "success",
                                     "id": {{e.SentCommandId}},
@@ -410,7 +410,7 @@ public class BrowsingContextModuleTests
         Task<SetViewportCommandResult> task = module.SetViewportAsync(new SetViewportCommandParameters());
         task.Wait(TimeSpan.FromSeconds(1));
         SetViewportCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -450,7 +450,8 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnContextCreated.AddObserver((BrowsingContextEventArgs e) => {
+        module.OnContextCreated.AddObserver((BrowsingContextEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -491,7 +492,8 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnContextDestroyed.AddObserver((BrowsingContextEventArgs e) => {
+        module.OnContextDestroyed.AddObserver((BrowsingContextEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -531,7 +533,8 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDomContentLoaded.AddObserver((NavigationEventArgs e) => {
+        module.OnDomContentLoaded.AddObserver((NavigationEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -570,7 +573,8 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDownloadWillBegin.AddObserver((DownloadWillBeginEventArgs e) => {
+        module.OnDownloadWillBegin.AddObserver((DownloadWillBeginEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -611,7 +615,8 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) => {
+        module.OnDownloadEnd.AddObserver((DownloadEndEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -654,7 +659,8 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnFragmentNavigated.AddObserver((NavigationEventArgs e) => {
+        module.OnFragmentNavigated.AddObserver((NavigationEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -693,7 +699,8 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnLoad.AddObserver((NavigationEventArgs e) => {
+        module.OnLoad.AddObserver((NavigationEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -732,7 +739,8 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationAborted.AddObserver((NavigationEventArgs e) => {
+        module.OnNavigationAborted.AddObserver((NavigationEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -761,30 +769,30 @@ public class BrowsingContextModuleTests
         Assert.That(eventRaised, Is.True);
     }
 
-  [Test]
-  public async Task TestCanReceiveNavigationCommittedEvent()
-  {
-      TestWebSocketConnection connection = new();
-      BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
-      await driver.StartAsync("ws:localhost");
-      BrowsingContextModule module = driver.BrowsingContext;
+    [Test]
+    public async Task TestCanReceiveNavigationCommittedEvent()
+    {
+        TestWebSocketConnection connection = new();
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new(connection));
+        await driver.StartAsync("ws:localhost");
+        BrowsingContextModule module = driver.BrowsingContext;
 
-      ManualResetEvent syncEvent = new(false);
-      long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-      module.OnNavigationCommitted.AddObserver((NavigationEventArgs e) =>
-      {
-          using (Assert.EnterMultipleScope())
-          {
-          Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
-          Assert.That(e.Url, Is.EqualTo("https://example.com"));
-          Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
-          Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
-          Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
-        }
-        syncEvent.Set();
-      });
+        ManualResetEvent syncEvent = new(false);
+        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
+        module.OnNavigationCommitted.AddObserver((NavigationEventArgs e) =>
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
+                Assert.That(e.Url, Is.EqualTo("https://example.com"));
+                Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
+                Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
+                Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
+            }
+            syncEvent.Set();
+        });
 
-      string eventJson = $$"""
+        string eventJson = $$"""
                            {
                              "type": "event",
                              "method": "browsingContext.navigationCommitted",
@@ -796,9 +804,9 @@ public class BrowsingContextModuleTests
                              }
                            }
                            """;
-      await connection.RaiseDataReceivedEventAsync(eventJson);
-      bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
-      Assert.That(eventRaised, Is.True);
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        bool eventRaised = syncEvent.WaitOne(TimeSpan.FromMilliseconds(250));
+        Assert.That(eventRaised, Is.True);
     }
 
     [Test]
@@ -811,7 +819,8 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationFailed.AddObserver((NavigationEventArgs e) => {
+        module.OnNavigationFailed.AddObserver((NavigationEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -850,7 +859,8 @@ public class BrowsingContextModuleTests
 
         ManualResetEvent syncEvent = new(false);
         long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        module.OnNavigationStarted.AddObserver((NavigationEventArgs e) => {
+        module.OnNavigationStarted.AddObserver((NavigationEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -888,7 +898,8 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnHistoryUpdated.AddObserver((HistoryUpdatedEventArgs e) => {
+        module.OnHistoryUpdated.AddObserver((HistoryUpdatedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -922,7 +933,8 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnUserPromptClosed.AddObserver((UserPromptClosedEventArgs e) => {
+        module.OnUserPromptClosed.AddObserver((UserPromptClosedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -957,7 +969,8 @@ public class BrowsingContextModuleTests
         BrowsingContextModule module = driver.BrowsingContext;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnUserPromptOpened.AddObserver((UserPromptOpenedEventArgs e) => {
+        module.OnUserPromptOpened.AddObserver((UserPromptOpenedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));

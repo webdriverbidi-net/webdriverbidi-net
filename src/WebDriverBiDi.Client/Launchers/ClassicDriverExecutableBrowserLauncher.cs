@@ -25,7 +25,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     private readonly string launcherExecutableName;
     private bool isLoggingLauncherProcessOutput;
     private Process? launcherProcess;
-    private string sessionId = string.Empty;
+    private readonly string sessionId = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClassicDriverExecutableBrowserLauncher"/> class.

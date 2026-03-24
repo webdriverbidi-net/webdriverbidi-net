@@ -47,7 +47,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
@@ -81,7 +81,7 @@ public class BaseNetworkEventArgsTests
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
                              "intercepts": [ "myInterceptId" ],
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
@@ -116,7 +116,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
@@ -149,7 +149,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
@@ -170,7 +170,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -189,7 +189,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -208,7 +208,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         BaseNetworkEventArgs? eventArgs = JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson);
@@ -240,7 +240,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -259,7 +259,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -277,10 +277,10 @@ public class BaseNetworkEventArgsTests
                              "navigation": "myNavigationId",
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
-       Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -296,7 +296,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": {},
                              "redirectCount": 0,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -314,7 +314,7 @@ public class BaseNetworkEventArgsTests
                              "navigation": "myNavigationId",
                              "isBlocked": false,
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -333,7 +333,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": {},
                              "timestamp": {{milliseconds}},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -351,7 +351,7 @@ public class BaseNetworkEventArgsTests
                              "navigation": "myNavigationId",
                              "isBlocked": false,
                              "redirectCount": 0,
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());
@@ -370,7 +370,7 @@ public class BaseNetworkEventArgsTests
                              "isBlocked": false,
                              "redirectCount": 0,
                              "timestamp": {},
-                             "request": {{requestDataJson}}
+                             "request": {{this.requestDataJson}}
                            }
                            """;
         Assert.That(() => JsonSerializer.Deserialize<BaseNetworkEventArgs>(eventJson), Throws.InstanceOf<JsonException>());

@@ -46,7 +46,7 @@ public class TraverseHistoryCommandParametersTests
             Assert.That(serialized, Contains.Key("delta"));
             Assert.That(serialized["delta"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["delta"]!.Value<long>(), Is.EqualTo(1));
-         }
+        }
     }
 
     [Test]

@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulateGattDisconnectionCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulateGattDisconnectionCommandParameters properties = new("myContext", "myAddress");
@@ -28,6 +28,6 @@ public class SimulateGattDisconnectionCommandParametersTests
             Assert.That(serialized, Contains.Key("address"));
             Assert.That(serialized["address"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["address"]!.Value<string>(), Is.EqualTo("myAddress"));
-       }
+        }
     }
 }

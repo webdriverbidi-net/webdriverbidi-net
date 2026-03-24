@@ -172,7 +172,7 @@ public class RegularExpressionValueTests
     [SuppressMessage("Assertion", "NUnit2010")]
     public void TestInequalityWithInvalidObjectType()
     {
-         string json = """
+        string json = """
                       {
                         "pattern": "myPattern",
                         "flags": "gi"

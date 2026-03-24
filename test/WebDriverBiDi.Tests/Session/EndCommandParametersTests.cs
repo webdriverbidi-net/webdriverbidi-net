@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class EndCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         EndCommandParameters properties = new();

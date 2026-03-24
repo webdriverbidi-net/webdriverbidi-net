@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class HandleRequestDevicePromptCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         HandleRequestDevicePromptCommandParameters acceptParameters = new HandleRequestDevicePromptAcceptCommandParameters("myContext", "myPrompt", "myDevice");

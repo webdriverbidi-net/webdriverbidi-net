@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class ReleaseActionsCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         ReleaseActionsCommandParameters properties = new("myContextId");

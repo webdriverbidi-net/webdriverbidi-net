@@ -22,7 +22,7 @@ public static class UserContextSamples
     /// </summary>
     public static async Task CreateContextInUserContext(BiDiDriver driver)
     {
-#region CreateContextinUserContext
+        #region CreateContextinUserContext
         CreateUserContextCommandResult userContext =
             await driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters());
 
@@ -31,6 +31,6 @@ public static class UserContextSamples
             UserContextId = userContext.UserContextId
         };
         CreateCommandResult result = await driver.BrowsingContext.CreateAsync(@params);
-#endregion
+        #endregion
     }
 }

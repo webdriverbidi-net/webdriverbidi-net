@@ -8,12 +8,12 @@ using WebDriverBiDi.Docs.Code.ErrorHandling;
 
 public class Wrapper
 {
-    private static BiDiDriver driver;
-    private static string url;
+    private static readonly BiDiDriver driver;
+    private static readonly string url;
 
     public class PerformanceReuseContextSamples
     {
-#region ReuseContext
+        #region ReuseContext
         // ❌ Slow: Create new context for each test
         [Test]
         public async Task SlowTest1()
@@ -50,5 +50,5 @@ public class Wrapper
                 new CloseCommandParameters(sharedContextId));
         }
     }
-#endregion
+    #endregion
 }

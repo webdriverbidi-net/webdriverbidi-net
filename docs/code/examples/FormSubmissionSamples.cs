@@ -26,7 +26,7 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task SubscribeToNavigationEvents(BiDiDriver driver)
     {
-#region SubscribetoNavigationEvents
+        #region SubscribetoNavigationEvents
         SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
             [
                 driver.BrowsingContext.OnNavigationStarted.EventName,
@@ -34,7 +34,7 @@ public static class FormSubmissionSamples
             ]
         );
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -42,11 +42,11 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task FindFormElements(BiDiDriver driver, Target target)
     {
-#region FindFormElements
+        #region FindFormElements
         string findInputScript = "document.querySelector('input[name=\"custname\"]')";
         EvaluateResult inputResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(findInputScript, target, true));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public static class FormSubmissionSamples
         string contextId,
         NodeRemoteValue inputElement)
     {
-#region ClicktoFocus
+        #region ClicktoFocus
         PerformActionsCommandParameters clickParams = new PerformActionsCommandParameters(contextId);
 
         PointerSourceActions mouseSource = new PointerSourceActions
@@ -75,7 +75,7 @@ public static class FormSubmissionSamples
 
         clickParams.Actions.Add(mouseSource);
         await driver.Input.PerformActionsAsync(clickParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public static class FormSubmissionSamples
         string contextId,
         string text)
     {
-#region SendKeyboardInput
+        #region SendKeyboardInput
         KeySourceActions keyboard = new KeySourceActions();
         foreach (char c in text)
         {
@@ -97,7 +97,7 @@ public static class FormSubmissionSamples
         PerformActionsCommandParameters typeParams = new PerformActionsCommandParameters(contextId);
         typeParams.Actions.Add(keyboard);
         await driver.Input.PerformActionsAsync(typeParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -105,8 +105,8 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task WaitForFormSubmission(BiDiDriver driver)
     {
-#region WaitforFormSubmission
-        EventObserver<NavigationEventArgs> navObserver = 
+        #region WaitforFormSubmission
+        EventObserver<NavigationEventArgs> navObserver =
             driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
         navObserver.SetCheckpoint();
@@ -114,7 +114,7 @@ public static class FormSubmissionSamples
         // Click submit button...
 
         bool navCompleted = await navObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -124,13 +124,13 @@ public static class FormSubmissionSamples
         BiDiDriver driver,
         string contextId)
     {
-#region FindInputwithLocateNodes
+        #region FindInputwithLocateNodes
         // Find input field using CSS selector
         LocateNodesCommandParameters locateParams = new LocateNodesCommandParameters(
             contextId,
             new CssLocator("input[name='custname']"));
 
-        LocateNodesCommandResult locateResult = 
+        LocateNodesCommandResult locateResult =
             await driver.BrowsingContext.LocateNodesAsync(locateParams);
 
         if (locateResult.Nodes.Count > 0)
@@ -138,7 +138,7 @@ public static class FormSubmissionSamples
             RemoteValue inputElement = locateResult.Nodes[0];
             // Continue with clicking and typing...
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -146,7 +146,7 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task SubmitWithEnterKey(BiDiDriver driver, string contextId)
     {
-#region SubmitwithEnterKey
+        #region SubmitwithEnterKey
         // After typing in the last field, press Enter
         // Keys.Enter is a hypothetical constant representing the Enter key.
         // In practice, use "\uE007" or appropriate value for your implementation.
@@ -157,7 +157,7 @@ public static class FormSubmissionSamples
         PerformActionsCommandParameters submitParams = new PerformActionsCommandParameters(contextId);
         submitParams.Actions.Add(keyboard);
         await driver.Input.PerformActionsAsync(submitParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -165,14 +165,14 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task SubmitFormWithJavaScript(BiDiDriver driver, Target target)
     {
-#region SubmitFormwithJavaScript
+        #region SubmitFormwithJavaScript
         // Find and fill fields...
 
         // Submit form with JavaScript
         string submitScript = "document.querySelector('form').submit()";
         await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(submitScript, target, false));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task FindAndClickCheckbox(BiDiDriver driver, string contextId)
     {
-#region FindandClickCheckbox
+        #region FindandClickCheckbox
         Target target = new ContextTarget(contextId);
         // Find checkbox
         EvaluateResult checkboxResult = await driver.Script.EvaluateAsync(
@@ -194,19 +194,19 @@ public static class FormSubmissionSamples
         {
             // Click to toggle
             // PointerSource is a hypothetical helper class to build input actions.
-            PerformActionsCommandParameters clickParams = 
+            PerformActionsCommandParameters clickParams =
                 new PerformActionsCommandParameters(contextId);
             PointerSource mouse = new PointerSource("mouse", PointerType.Mouse);
             mouse.CreatePointerMoveToElement(
-                checkboxElement.ToSharedReference(), 
-                0, 0, 
+                checkboxElement.ToSharedReference(),
+                0, 0,
                 TimeSpan.Zero);
             mouse.CreatePointerDown(MouseButton.Left);
             mouse.CreatePointerUp(MouseButton.Left);
             clickParams.Actions.Add(mouse.ToSourceActions());
             await driver.Input.PerformActionsAsync(clickParams);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task SetDropdownValue(BiDiDriver driver, Target target)
     {
-#region SetDropdownValue
+        #region SetDropdownValue
         // Set dropdown value with JavaScript
         string setSelectScript = @"
             const select = document.querySelector('select[name=""delivery""]');
@@ -224,7 +224,7 @@ public static class FormSubmissionSamples
 
         await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(setSelectScript, target, false));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -233,7 +233,7 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task RunCompleteFormSubmissionExample()
     {
-#region CompleteFormSubmissionExample
+        #region CompleteFormSubmissionExample
         string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-ID-HERE";
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -270,7 +270,7 @@ public static class FormSubmissionSamples
                 findInputScript,
                 new ContextTarget(contextId),
                 true);
-            
+
             EvaluateResult inputResult = await driver.Script.EvaluateAsync(evalParams);
 
             if (inputResult is EvaluateResultSuccess inputSuccess)
@@ -281,35 +281,35 @@ public static class FormSubmissionSamples
 
                 // Click the input to focus it
                 Console.WriteLine("Clicking input field...");
-                PerformActionsCommandParameters clickParams = 
+                PerformActionsCommandParameters clickParams =
                     new PerformActionsCommandParameters(contextId);
-                
+
                 // PointerSource and KeySource are hypothetical helper classes to build input actions.
                 PointerSource mouse = new PointerSource("mouse", PointerType.Mouse);
                 mouse.CreatePointerMoveToElement(
-                    inputElement.ToSharedReference(), 
-                    0, 0, 
+                    inputElement.ToSharedReference(),
+                    0, 0,
                     TimeSpan.Zero);
                 mouse.CreatePointerDown(MouseButton.Left);
                 mouse.CreatePointerUp(MouseButton.Left);
-                
+
                 clickParams.Actions.Add(mouse.ToSourceActions());
                 await driver.Input.PerformActionsAsync(clickParams);
 
                 // Type the customer name
                 Console.WriteLine("Typing customer name...");
-                PerformActionsCommandParameters typeParams = 
+                PerformActionsCommandParameters typeParams =
                     new PerformActionsCommandParameters(contextId);
-                
+
                 KeySource keyboard = new KeySource("keyboard");
                 string customerName = "John Doe";
-                
+
                 foreach (char c in customerName)
                 {
                     keyboard.CreateKeyDown(c.ToString());
                     keyboard.CreateKeyUp(c.ToString());
                 }
-                
+
                 typeParams.Actions.Add(keyboard.ToSourceActions());
                 await driver.Input.PerformActionsAsync(typeParams);
 
@@ -327,12 +327,12 @@ public static class FormSubmissionSamples
                     phoneSuccess.Result.TryConvertTo(out NodeRemoteValue? phoneElement);
 
                     // Click phone field
-                    PerformActionsCommandParameters clickPhoneParams = 
+                    PerformActionsCommandParameters clickPhoneParams =
                         new PerformActionsCommandParameters(contextId);
                     PointerSource mouse2 = new PointerSource("mouse", PointerType.Mouse);
                     mouse2.CreatePointerMoveToElement(
-                        phoneElement.ToSharedReference(), 
-                        0, 0, 
+                        phoneElement.ToSharedReference(),
+                        0, 0,
                         TimeSpan.Zero);
                     mouse2.CreatePointerDown(MouseButton.Left);
                     mouse2.CreatePointerUp(MouseButton.Left);
@@ -340,17 +340,17 @@ public static class FormSubmissionSamples
                     await driver.Input.PerformActionsAsync(clickPhoneParams);
 
                     // Type phone number
-                    PerformActionsCommandParameters typePhoneParams = 
+                    PerformActionsCommandParameters typePhoneParams =
                         new PerformActionsCommandParameters(contextId);
                     KeySource keyboard2 = new KeySource("keyboard");
                     string phoneNumber = "555-1234";
-                    
+
                     foreach (char c in phoneNumber)
                     {
                         keyboard2.CreateKeyDown(c.ToString());
                         keyboard2.CreateKeyUp(c.ToString());
                     }
-                    
+
                     typePhoneParams.Actions.Add(keyboard2.ToSourceActions());
                     await driver.Input.PerformActionsAsync(typePhoneParams);
                 }
@@ -371,7 +371,7 @@ public static class FormSubmissionSamples
                     Console.WriteLine($"Found submit button: {buttonElement.SharedId}");
 
                     // Set up navigation observer
-                    EventObserver<NavigationEventArgs> navObserver = 
+                    EventObserver<NavigationEventArgs> navObserver =
                         driver.BrowsingContext.OnLoad.AddObserver((e) =>
                         {
                             Console.WriteLine($"Navigation complete to: {e.Url}");
@@ -381,7 +381,7 @@ public static class FormSubmissionSamples
 
                     // Click submit button
                     Console.WriteLine("Clicking submit button...");
-                    PerformActionsCommandParameters clickSubmitParams = 
+                    PerformActionsCommandParameters clickSubmitParams =
                         new PerformActionsCommandParameters(contextId);
                     PointerSource mouse3 = new PointerSource("mouse", PointerType.Mouse);
                     mouse3.CreatePointerMoveToElement(
@@ -395,7 +395,7 @@ public static class FormSubmissionSamples
 
                     // Wait for navigation to complete
                     bool navCompleted = await navObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-                    
+
                     if (navCompleted)
                     {
                         Console.WriteLine("✓ Form submitted successfully!");
@@ -443,7 +443,7 @@ public static class FormSubmissionSamples
             await driver.StopAsync();
             Console.WriteLine("Disconnected from browser");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -454,7 +454,7 @@ public static class FormSubmissionSamples
         string contextId,
         ContextTarget target)
     {
-#region FindandClickRadioButton
+        #region FindandClickRadioButton
         // Find and click specific radio button
         EvaluateResult radioResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
@@ -463,7 +463,7 @@ public static class FormSubmissionSamples
                 true));
 
         // Click similar to checkbox
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -473,7 +473,7 @@ public static class FormSubmissionSamples
         BiDiDriver driver,
         string contextId)
     {
-#region TypeTextareawithNewlines
+        #region TypeTextareawithNewlines
         // Same as text input - click and type
         string longText = "This is a longer message\nthat spans multiple lines.";
 
@@ -496,7 +496,7 @@ public static class FormSubmissionSamples
         PerformActionsCommandParameters typeParams = new PerformActionsCommandParameters(contextId);
         typeParams.Actions.Add(keyboard);
         await driver.Input.PerformActionsAsync(typeParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -504,7 +504,7 @@ public static class FormSubmissionSamples
     /// </summary>
     public static async Task VerifyUrlAfterSubmission(BiDiDriver driver, Target target)
     {
-#region VerifyURLAfterSubmission
+        #region VerifyURLAfterSubmission
         // Check URL changed
         EvaluateResult urlResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
@@ -531,6 +531,6 @@ public static class FormSubmissionSamples
             string? message = messageValue.Value;
             Console.WriteLine($"Success message: {message}");
         }
-#endregion
+        #endregion
     }
 }

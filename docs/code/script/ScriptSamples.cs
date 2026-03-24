@@ -26,9 +26,9 @@ public class ScriptSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingtheModule
+        #region AccessingtheModule
         ScriptModule script = driver.Script;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region EvaluateExpression
+        #region EvaluateExpression
         EvaluateCommandParameters parameters = new EvaluateCommandParameters(
             "document.title",
             new ContextTarget(contextId),
@@ -52,7 +52,7 @@ public class ScriptSamples
             string title = titleValue.Value ?? "No title";
             Console.WriteLine($"Title: {title}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region EvaluateComplexExpression
+        #region EvaluateComplexExpression
         string expression = """
             {
                 title: document.title,
@@ -77,7 +77,7 @@ public class ScriptSamples
             true);
 
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -87,7 +87,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region CallFunctionwithArguments
+        #region CallFunctionwithArguments
         string functionDefinition = "(a, b) => a + b";
 
         CallFunctionCommandParameters parameters = new CallFunctionCommandParameters(
@@ -105,7 +105,7 @@ public class ScriptSamples
             long sum = sumValue.Value;
             Console.WriteLine($"Sum: {sum}");  // 15
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -115,7 +115,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region CallFunctionwithDOMElement
+        #region CallFunctionwithDOMElement
         EvaluateResult elementResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
                 "document.querySelector('button')",
@@ -135,7 +135,7 @@ public class ScriptSamples
 
             await driver.Script.CallFunctionAsync(parameters);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -145,7 +145,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region CallMethodonObject
+        #region CallMethodonObject
         // Get object reference
         EvaluateResult objectResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
@@ -175,7 +175,7 @@ public class ScriptSamples
                 Console.WriteLine($"Class: {className}");
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -183,14 +183,14 @@ public class ScriptSamples
     /// </summary>
     public static void ContextTargetExample(string contextId)
     {
-#region ContextTarget
+        #region ContextTarget
         ContextTarget target = new ContextTarget(contextId);
 
         EvaluateCommandParameters parameters = new EvaluateCommandParameters(
             "document.title",
             target,
             true);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -198,14 +198,14 @@ public class ScriptSamples
     /// </summary>
     public static void RealmTargetExample(string realmId)
     {
-#region RealmTarget
+        #region RealmTarget
         RealmTarget target = new RealmTarget(realmId);
 
         EvaluateCommandParameters parameters = new EvaluateCommandParameters(
             "window.myCustomProperty",
             target,
             true);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -213,7 +213,7 @@ public class ScriptSamples
     /// </summary>
     public static async Task GetRealms(BiDiDriver driver, string contextId)
     {
-#region GetRealms
+        #region GetRealms
         // Get all realms (parameters optional)
         GetRealmsCommandResult result = await driver.Script.GetRealmsAsync();
 
@@ -241,7 +241,7 @@ public class ScriptSamples
             RealmType = RealmType.Window,
         };
         result = await driver.Script.GetRealmsAsync(typeParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -249,7 +249,7 @@ public class ScriptSamples
     /// </summary>
     public static async Task DisownHandles(BiDiDriver driver, string contextId)
     {
-#region Disown
+        #region Disown
         EvaluateResult evalResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
                 "document.querySelector('button')",
@@ -271,7 +271,7 @@ public class ScriptSamples
                 await driver.Script.DisownAsync(parameters);
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -281,7 +281,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region SandboxedExecution
+        #region SandboxedExecution
         ContextTarget target = new ContextTarget(contextId)
         {
             Sandbox = "myIsolatedSandbox",
@@ -303,7 +303,7 @@ public class ScriptSamples
             target,
             true);
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -311,7 +311,7 @@ public class ScriptSamples
     /// </summary>
     public static async Task AddPreloadScript(BiDiDriver driver)
     {
-#region AddPreloadScript
+        #region AddPreloadScript
         string preloadScript = """
             () => {
                 window.myUtility = {
@@ -325,7 +325,7 @@ public class ScriptSamples
         AddPreloadScriptCommandResult result = await driver.Script.AddPreloadScriptAsync(parameters);
 
         string preloadScriptId = result.PreloadScriptId;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -333,7 +333,7 @@ public class ScriptSamples
     /// </summary>
     public static async Task PreloadScriptWithChannel(BiDiDriver driver)
     {
-#region PreloadScriptwithChannel
+        #region PreloadScriptwithChannel
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Script.OnMessage.EventName);
         await driver.Session.SubscribeAsync(subscribe);
@@ -360,7 +360,7 @@ public class ScriptSamples
         parameters.Arguments = new List<ChannelValue> { channel };
 
         await driver.Script.AddPreloadScriptAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -370,7 +370,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region SandboxedPreloadScript
+        #region SandboxedPreloadScript
         string preloadScript = """
             () => {
                 window.isolatedUtils = {
@@ -397,7 +397,7 @@ public class ScriptSamples
             target,
             true);
         EvaluateResult result = await driver.Script.EvaluateAsync(evalParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -405,12 +405,12 @@ public class ScriptSamples
     /// </summary>
     public static async Task RemovePreloadScript(BiDiDriver driver, string preloadScriptId)
     {
-#region RemovePreloadScript
+        #region RemovePreloadScript
         RemovePreloadScriptCommandParameters parameters =
             new RemovePreloadScriptCommandParameters(preloadScriptId);
 
         await driver.Script.RemovePreloadScriptAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -420,7 +420,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region AccessingPrimitiveValues
+        #region AccessingPrimitiveValues
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("42", new ContextTarget(contextId), true));
 
@@ -444,7 +444,7 @@ public class ScriptSamples
                     break;
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -454,7 +454,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region AccessingObjects
+        #region AccessingObjects
         string expression = """
             (
                 name: 'John',
@@ -478,7 +478,7 @@ public class ScriptSamples
             Console.WriteLine($"Name: {dict["name"].ConvertTo<StringRemoteValue>().Value}");
             Console.WriteLine($"Age: {dict["age"].ConvertTo<LongRemoteValue>().Value}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -488,7 +488,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region AccessingArrays
+        #region AccessingArrays
         string expression = "[1, 2, 3, 4, 5]";
 
         EvaluateCommandParameters parameters = new EvaluateCommandParameters(
@@ -509,7 +509,7 @@ public class ScriptSamples
                 Console.WriteLine($"  Item: {item.ConvertTo<LongRemoteValue>().Value}");
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -519,7 +519,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region WorkingwithDOMElements
+        #region WorkingwithDOMElements
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
                 "document.querySelector('button')",
@@ -554,7 +554,7 @@ public class ScriptSamples
                 SharedReference elementRef = element.ToSharedReference();
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -564,7 +564,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region LocalValuePrimitives
+        #region LocalValuePrimitives
         CallFunctionCommandParameters parameters = new CallFunctionCommandParameters(
             "(str, num, bool) => ({ str, num, bool })",
             new ContextTarget(contextId),
@@ -573,7 +573,7 @@ public class ScriptSamples
         parameters.Arguments.Add(LocalValue.String("Hello"));
         parameters.Arguments.Add(LocalValue.Number(42));
         parameters.Arguments.Add(LocalValue.Boolean(true));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -582,12 +582,12 @@ public class ScriptSamples
     public static void LocalValueSpecialValuesForCallFunction(
         CallFunctionCommandParameters parameters)
     {
-#region LocalValueSpecialValues
+        #region LocalValueSpecialValues
         parameters.Arguments.Add(LocalValue.Null);
         parameters.Arguments.Add(LocalValue.Undefined);
         parameters.Arguments.Add(LocalValue.Number(double.PositiveInfinity));
         parameters.Arguments.Add(LocalValue.Number(double.NaN));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -596,7 +596,7 @@ public class ScriptSamples
     public static void LocalValueObjectForCallFunction(
         CallFunctionCommandParameters parameters)
     {
-#region LocalValueObject
+        #region LocalValueObject
         Dictionary<string, LocalValue> obj = new Dictionary<string, LocalValue>
         {
             { "name", LocalValue.String("John") },
@@ -605,7 +605,7 @@ public class ScriptSamples
         };
 
         parameters.Arguments.Add(LocalValue.Object(obj));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -614,7 +614,7 @@ public class ScriptSamples
     public static void LocalValueArrayForCallFunction(
         CallFunctionCommandParameters parameters)
     {
-#region LocalValueArray
+        #region LocalValueArray
         List<LocalValue> array = new List<LocalValue>
         {
             LocalValue.Number(1),
@@ -623,7 +623,7 @@ public class ScriptSamples
         };
 
         parameters.Arguments.Add(LocalValue.Array(array));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -631,9 +631,9 @@ public class ScriptSamples
     /// </summary>
     public static void LocalValueDate(CallFunctionCommandParameters parameters)
     {
-#region LocalValueDate
+        #region LocalValueDate
         parameters.Arguments.Add(LocalValue.Date(DateTime.Now));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -641,9 +641,9 @@ public class ScriptSamples
     /// </summary>
     public static void LocalValueRegExp(CallFunctionCommandParameters parameters)
     {
-#region LocalValueRegExp
+        #region LocalValueRegExp
         parameters.Arguments.Add(LocalValue.RegExp("\\d+", "g"));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -653,7 +653,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region Try-CatchPattern
+        #region Try-CatchPattern
         EvaluateCommandParameters parameters = new EvaluateCommandParameters(
             "throw new Error('Something went wrong')",
             new ContextTarget(contextId),
@@ -672,7 +672,7 @@ public class ScriptSamples
                 Console.WriteLine($"Stack: {exception.ExceptionDetails.StackTrace.CallFrames.Count} frames");
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -682,7 +682,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region CatchingJavaScriptErrors
+        #region CatchingJavaScriptErrors
         string safeExpression = """
             try {
                 return dangerousOperation();
@@ -698,7 +698,7 @@ public class ScriptSamples
 
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
         // Will always be success, check for error property in result
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -708,9 +708,9 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region AutomaticPromiseResolution
+        #region AutomaticPromiseResolution
         // Fetch API returns a promise
-       string expression = """
+        string expression = """
             fetch('https://api.example.com/data')
                 .then(response => response.json())
             """;
@@ -723,7 +723,7 @@ public class ScriptSamples
 
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
         // Result will be the resolved JSON data
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -733,7 +733,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region AsyncFunctions
+        #region AsyncFunctions
         string functionDefinition = """
             async () => {
                 const response = await fetch('/api/data');
@@ -749,7 +749,7 @@ public class ScriptSamples
         );
 
         EvaluateResult result = await driver.Script.CallFunctionAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -758,7 +758,7 @@ public class ScriptSamples
     public static async Task ScriptMessageEvent(
         BiDiDriver driver)
     {
-#region ScriptMessageEvent
+        #region ScriptMessageEvent
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
             Console.WriteLine($"Channel: {e.ChannelId}");
@@ -769,7 +769,7 @@ public class ScriptSamples
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Script.OnMessage.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -777,7 +777,7 @@ public class ScriptSamples
     /// </summary>
     public static void RealmCreatedDestroyed(BiDiDriver driver)
     {
-#region RealmCreated/Destroyed
+        #region RealmCreated/Destroyed
         driver.Script.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) =>
         {
             Console.WriteLine($"Realm created: {e.RealmId}");
@@ -788,7 +788,7 @@ public class ScriptSamples
         {
             Console.WriteLine($"Realm destroyed: {e.RealmId}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -798,7 +798,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region ElementInteractionPattern
+        #region ElementInteractionPattern
         // Find element
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("button")));
@@ -812,7 +812,7 @@ public class ScriptSamples
             false);
         clickParams.Arguments.Add(element.ToSharedReference());
         await driver.Script.CallFunctionAsync(clickParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -823,7 +823,7 @@ public class ScriptSamples
         string contextId,
         SharedReference elementReference)
     {
-#region GetElementPropertiesPattern
+        #region GetElementPropertiesPattern
         // Get multiple properties at once
         string functionDefinition = """
             (element) => ({
@@ -842,7 +842,7 @@ public class ScriptSamples
         parameters.Arguments.Add(elementReference);
 
         EvaluateResult result = await driver.Script.CallFunctionAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -852,7 +852,7 @@ public class ScriptSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region WaitforConditionPattern
+        #region WaitforConditionPattern
         string preloadScript = """
             (channel) => {
                 const checkCondition = () => {
@@ -888,7 +888,7 @@ public class ScriptSamples
 
         await conditionMet.Task;
         Console.WriteLine("Condition met!");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -898,7 +898,7 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region HandlingJavaScriptExceptions
+        #region HandlingJavaScriptExceptions
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
                 "document.querySelector('.missing').textContent",
@@ -915,7 +915,7 @@ public class ScriptSamples
             Console.WriteLine($"JavaScript error: {exception.ExceptionDetails.Text}");
             Console.WriteLine($"Line: {exception.ExceptionDetails.LineNumber}");
             Console.WriteLine($"Column: {exception.ExceptionDetails.ColumnNumber}");
-            
+
             if (exception.ExceptionDetails.StackTrace != null)
             {
                 Console.WriteLine("Stack trace:");
@@ -924,17 +924,17 @@ public class ScriptSamples
                     Console.WriteLine($"  at {frame.FunctionName} ({frame.Url}:{frame.LineNumber})");
                 }
             }
-            
+
             // Handle the error appropriately
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
     /// Safe script execution pattern - TryEvaluateAsync.
     /// </summary>
 #region TryEvaluateAsync
-    public async Task<T?> TryEvaluateAsync<T> (
+    public async Task<T?> TryEvaluateAsync<T>(
         BiDiDriver driver,
         string expression,
         string contextId,
@@ -963,10 +963,10 @@ public class ScriptSamples
         {
             Console.WriteLine($"Command error: {ex.Message}");
         }
-        
+
         return defaultValue;
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Usage of TryEvaluateAsync.
@@ -975,14 +975,14 @@ public class ScriptSamples
         BiDiDriver driver,
         string contextId)
     {
-#region TryEvaluateAsyncUsage
+        #region TryEvaluateAsyncUsage
         // Usage
         string? title = await TryEvaluateAsync<string>(
-            driver, 
-            "document.title", 
+            driver,
+            "document.title",
             contextId,
             "Unknown");
-#endregion
+        #endregion
     }
 }
 

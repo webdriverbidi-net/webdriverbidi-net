@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Analyzers;
 
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -71,7 +72,7 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
         // Check if this method call is passing a CancellationToken
         bool hasExplicitToken = invocation.ArgumentList.Arguments.Any(arg =>
         {
-            var argType = context.SemanticModel.GetTypeInfo(arg.Expression).Type;
+            ITypeSymbol? argType = context.SemanticModel.GetTypeInfo(arg.Expression).Type;
             return argType?.Name == "CancellationToken";
         });
 
@@ -83,7 +84,7 @@ public class BiDiDriver004_CancellationTokenSuggestionAnalyzer : DiagnosticAnaly
 
         // Check if an overload exists that accepts CancellationToken
         INamedTypeSymbol containingType = methodSymbol.ContainingType;
-        var overloads = containingType.GetMembers(methodSymbol.Name).OfType<IMethodSymbol>();
+        IEnumerable<IMethodSymbol> overloads = containingType.GetMembers(methodSymbol.Name).OfType<IMethodSymbol>();
 
         bool hasTokenOverload = overloads.Any(overload => overload.Parameters.Any(p => p.Type.Name == "CancellationToken"));
 

@@ -28,7 +28,7 @@ public static class ObservabilitySamples
     /// </summary>
     public static async Task ConsoleLogging()
     {
-#region ConsoleLogging
+        #region ConsoleLogging
         // Create a simple console event listener
         using var listener = new ConsoleEventListener();
 
@@ -43,10 +43,10 @@ public static class ObservabilitySamples
     /// </summary>
     public static void CustomEventListenerUsage()
     {
-#region CustomEventListenerUsage
+        #region CustomEventListenerUsage
         // Usage
         using var listener = new MyEventListener();
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -71,12 +71,12 @@ public static class ObservabilitySamples
     /// </summary>
     public static void FilterByEventName(EventWrittenEventArgs eventData)
     {
-#region FilterbyEventName
+        #region FilterbyEventName
         if (eventData.EventName == "CommandError")
         {
             // Handle only command errors
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -84,9 +84,9 @@ public static class ObservabilitySamples
     /// </summary>
     public static void ResourceManagement()
     {
-#region ResourceManagement
+        #region ResourceManagement
         using var listener = new MyEventListener();
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -94,7 +94,7 @@ public static class ObservabilitySamples
     /// </summary>
     public static void ResourceManagementTryFinally()
     {
-#region ResourceManagementTryFinally
+        #region ResourceManagementTryFinally
         // or
         var listener = new MyEventListener();
         try
@@ -105,7 +105,7 @@ public static class ObservabilitySamples
         {
             listener?.Dispose();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -113,12 +113,12 @@ public static class ObservabilitySamples
     /// </summary>
     public static void VerifyEventSourceEnabled()
     {
-#region VerifyEventSourceEnabled
+        #region VerifyEventSourceEnabled
         if (WebDriverBiDiEventSource.RaiseEvent.IsEnabled())
         {
             Console.WriteLine("EventSource is enabled");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -126,12 +126,12 @@ public static class ObservabilitySamples
     /// </summary>
     public static void CheckVerboseEnabled()
     {
-#region CheckVerboseEnabled
+        #region CheckVerboseEnabled
         if (WebDriverBiDiEventSource.RaiseEvent.IsEnabled(EventLevel.Verbose, EventKeywords.None))
         {
             Console.WriteLine("Verbose events are enabled");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ public static class ObservabilitySamples
     /// </summary>
     public static async Task ListenerBeforeDriver()
     {
-#region ListenerBeforeDriver
+        #region ListenerBeforeDriver
         // CORRECT: Listener created first
         using var listener1 = new MyEventListener();
         await using var driver1 = new BiDiDriver();
@@ -147,7 +147,7 @@ public static class ObservabilitySamples
         // INCORRECT: Listener created after driver
         await using var driver2 = new BiDiDriver();
         using var listener2 = new MyEventListener(); // May miss early events
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public static class ObservabilitySamples
     /// </summary>
     public static async Task LoggingBasicConsoleApplication()
     {
-#region BasicConsoleApplication
+        #region BasicConsoleApplication
         // Setup dependency injection
         var services = new ServiceCollection();
 
@@ -185,7 +185,7 @@ public static class ObservabilitySamples
         // Logs will show:
         // [12:34:56 DBG] CommandSending, commandId=1, method=session.status
         // [12:34:56 INF] CommandCompleted, commandId=1, method=session.status, elapsedMilliseconds=42
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -193,7 +193,7 @@ public static class ObservabilitySamples
     /// </summary>
     public static WebApplication LoggingAspNetCoreWebApplication(string[] args)
     {
-#region ASPNETCoreWebApplication
+        #region ASPNETCoreWebApplication
         var builder = WebApplication.CreateBuilder(args);
 
         // Add WebDriverBiDi event logging to the ASP.NET Core logging pipeline
@@ -212,7 +212,7 @@ public static class ObservabilitySamples
         });
 
         app.Run();
-#endregion
+        #endregion
         return app;
     }
 
@@ -221,7 +221,7 @@ public static class ObservabilitySamples
     /// </summary>
     public static void LoggingWithApplicationInsights()
     {
-#region ApplicationInsights
+        #region ApplicationInsights
         var services = new ServiceCollection();
 
         // Add Application Insights
@@ -238,7 +238,7 @@ public static class ObservabilitySamples
 
         // WebDriverBiDi events will be sent to Application Insights with structured properties
         // allowing you to query and analyze automation telemetry
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -246,7 +246,7 @@ public static class ObservabilitySamples
     /// </summary>
     public static void LoggingFilterByEventLevel(ServiceCollection services, ILoggingBuilder builder)
     {
-#region FilterbyEventLevel
+        #region FilterbyEventLevel
         services.AddLogging(builder =>
         {
             builder.AddConsole();
@@ -257,7 +257,7 @@ public static class ObservabilitySamples
             // Or use ILogger filtering
             builder.AddFilter("WebDriverBiDi.Logging", LogLevel.Warning);
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -265,14 +265,14 @@ public static class ObservabilitySamples
     /// </summary>
     public static WebApplication LoggingConfigurationBasedSetup(string[] args)
     {
-#region Configuration-basedSetup
+        #region Configuration-basedSetup
         var builder = WebApplication.CreateBuilder(args);
 
         // Configuration is loaded from appsettings.json
         builder.Logging.AddWebDriverBiDi(); // Respects configured log levels
 
         var app = builder.Build();
-#endregion
+        #endregion
         return app;
     }
 
@@ -281,14 +281,14 @@ public static class ObservabilitySamples
     /// </summary>
     public static void LoggingCustomEventProcessingRegistration(IServiceCollection services)
     {
-#region RegisterCustomEventListener
+        #region RegisterCustomEventListener
         // Register as singleton
         services.AddSingleton(sp =>
         {
             var logger = sp.GetRequiredService<ILogger<CustomWebDriverEventListener>>();
             return new CustomWebDriverEventListener(logger);
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -296,14 +296,14 @@ public static class ObservabilitySamples
     /// </summary>
     public static void OpenTelemetryIntegration()
     {
-#region OpenTelemetryIntegration
+        #region OpenTelemetryIntegration
         var tracerProvider = Sdk.CreateTracerProviderBuilder()
             .AddSource("WebDriverBiDi")
             .AddConsoleExporter()
             .Build();
 
         // Now use WebDriverBiDi - traces will be collected
-#endregion
+        #endregion
     }
 }
 

@@ -47,7 +47,7 @@ public class BeforeRequestSentEventArgsTests
                             "isBlocked": false,
                             "redirectCount": 0,
                             "timestamp": {{milliseconds}},
-                            "request": {{requestDataJson}}
+                            "request": {{this.requestDataJson}}
                            }
                            """;
         BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
@@ -72,7 +72,7 @@ public class BeforeRequestSentEventArgsTests
                             "isBlocked": false,
                             "redirectCount": 0,
                             "timestamp": {{milliseconds}},
-                            "request": {{requestDataJson}},
+                            "request": {{this.requestDataJson}},
                             "initiator": {
                                 "type": "parser"
                             }
@@ -102,7 +102,7 @@ public class BeforeRequestSentEventArgsTests
                             "isBlocked": false,
                             "redirectCount": 0,
                             "timestamp": {{milliseconds}},
-                            "request": {{requestDataJson}}
+                            "request": {{this.requestDataJson}}
                            }
                            """;
         BeforeRequestSentEventArgs? eventArgs = JsonSerializer.Deserialize<BeforeRequestSentEventArgs>(eventJson);
@@ -124,7 +124,7 @@ public class BeforeRequestSentEventArgsTests
                             "isBlocked": false,
                             "redirectCount": 0,
                             "timestamp": {{milliseconds}},
-                            "request": {{requestDataJson}},
+                            "request": {{this.requestDataJson}},
                             "initiator": []
                            }
                            """;

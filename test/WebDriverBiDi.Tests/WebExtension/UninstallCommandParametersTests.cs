@@ -24,7 +24,7 @@ public class UninstallCommandParametersTests
         {
             Assert.That(serialized, Contains.Key("extension"));
             Assert.That(serialized["extension"]!.Type, Is.EqualTo(JTokenType.String));
-             Assert.That(serialized["extension"]!.Value<string>(), Is.EqualTo("myExtensionId"));
+            Assert.That(serialized["extension"]!.Value<string>(), Is.EqualTo("myExtensionId"));
         }
     }
 }

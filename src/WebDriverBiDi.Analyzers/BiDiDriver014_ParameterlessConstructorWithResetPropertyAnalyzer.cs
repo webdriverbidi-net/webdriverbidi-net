@@ -80,11 +80,11 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         }
 
         // Report diagnostics for variables that were never assigned properties
-        foreach (var kvp in trackedVariables)
+        foreach (KeyValuePair<string, VariableState> kvp in trackedVariables)
         {
             if (!kvp.Value.HasPropertyAssignment && kvp.Value.ResetPropertyName != null)
             {
-                var properties = ImmutableDictionary.CreateBuilder<string, string?>();
+                ImmutableDictionary<string, string?>.Builder properties = ImmutableDictionary.CreateBuilder<string, string?>();
                 properties.Add("TypeName", kvp.Value.TypeName);
                 properties.Add("ResetPropertyName", kvp.Value.ResetPropertyName);
 
@@ -142,7 +142,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
                 continue;
             }
 
-            var properties = ImmutableDictionary.CreateBuilder<string, string?>();
+            ImmutableDictionary<string, string?>.Builder properties = ImmutableDictionary.CreateBuilder<string, string?>();
             properties.Add("TypeName", type.Name);
             properties.Add("ResetPropertyName", resetPropertyName);
 
@@ -161,7 +161,7 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
         SemanticModel semanticModel,
         Dictionary<string, VariableState> trackedVariables)
     {
-        foreach (var variable in localDecl.Declaration.Variables)
+        foreach (VariableDeclaratorSyntax variable in localDecl.Declaration.Variables)
         {
             if (variable.Initializer?.Value is not ObjectCreationExpressionSyntax objectCreation)
             {
@@ -269,11 +269,11 @@ public class BiDiDriver014_ParameterlessConstructorWithResetPropertyAnalyzer : D
     private static string? GetResetPropertyName(ITypeSymbol type)
     {
         // Look for public static properties that start with "Reset" and return the same type
-        var properties = type.GetMembers()
+        IEnumerable<IPropertySymbol> properties = type.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => p.IsStatic && p.DeclaredAccessibility == Accessibility.Public);
 
-        foreach (var property in properties)
+        foreach (IPropertySymbol? property in properties)
         {
             // Check if property name starts with "Reset" and returns the same type
             if (property.Name.StartsWith("Reset") && SymbolEqualityComparer.Default.Equals(property.Type, type))

@@ -19,7 +19,7 @@ public static class AdditionalDataSamples
     /// </summary>
     public static async Task ProtocolExtensionsViaAdditionalData(BiDiDriver driver, string contextId)
     {
-#region ProtocolExtensionsviaAdditionalData
+        #region ProtocolExtensionsviaAdditionalData
         NavigateCommandParameters parameters = new NavigateCommandParameters(contextId, "https://example.com");
 
         // Add vendor-specific or pre-standard extension fields
@@ -27,6 +27,6 @@ public static class AdditionalDataSamples
         parameters.AdditionalData["experimentalFlag"] = true;
 
         await driver.BrowsingContext.NavigateAsync(parameters);
-#endregion
+        #endregion
     }
 }

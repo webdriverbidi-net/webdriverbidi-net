@@ -1,8 +1,8 @@
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
 using System.Diagnostics.Tracing;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
 
@@ -14,7 +14,7 @@ public static class SerilogObservabilitySamples
     /// </summary>
     public static async Task LoggingWithSerilog()
     {
-#region SerilogStructuredLogging
+        #region SerilogStructuredLogging
         // Configure Serilog with structured logging
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console(outputTemplate:
@@ -39,6 +39,6 @@ public static class SerilogObservabilitySamples
 
         // Serilog output includes structured properties:
         // [12:34:56 INF] CommandCompleted {"EventId":7,"EventName":"CommandCompleted","commandId":"1","method":"session.status","elapsedMilliseconds":42}
-#endregion
+        #endregion
     }
 }

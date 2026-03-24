@@ -44,7 +44,7 @@ public class DescriptorEventGeneratedEventArgsTests
                         "type": "write"
                       }
                       """;
-        DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize< DescriptorEventGeneratedEventArgs>(json);
+        DescriptorEventGeneratedEventArgs? eventArgs = JsonSerializer.Deserialize<DescriptorEventGeneratedEventArgs>(json);
         Assert.That(eventArgs, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {

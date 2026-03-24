@@ -25,23 +25,23 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region ValueAsNumber
+        #region ValueAsNumber
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("42", target, true));
 
         if (result is EvaluateResultSuccess success)
         {
             RemoteValue remoteValue = success.Result;
-            
+
             // Convert to long
             long number = remoteValue.ConvertTo<LongRemoteValue>().Value;
             Console.WriteLine(number); // 42
-            
+
             // Can also convert to double
             double doubleNumber = Convert.ToDouble(number);
             Console.WriteLine(doubleNumber); // 42.0
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region ValueAsString
+        #region ValueAsString
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("'Hello, World!'", target, true));
 
@@ -61,7 +61,7 @@ public static class RemoteValuesSamples
             string text = stringValue.Value;
             Console.WriteLine(text); // "Hello, World!"
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region ValueAsBoolean
+        #region ValueAsBoolean
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("true", target, true));
 
@@ -81,7 +81,7 @@ public static class RemoteValuesSamples
             bool flag = booleanValue.Value;
             Console.WriteLine(flag); // True
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region NullandUndefined
+        #region NullandUndefined
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("null", target, true));
 
@@ -102,7 +102,7 @@ public static class RemoteValuesSamples
                 Console.WriteLine("Value is null or undefined");
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region SimpleObject
+        #region SimpleObject
         string script = """
         (
             name: 'John',
@@ -127,15 +127,15 @@ public static class RemoteValuesSamples
         if (result is EvaluateResultSuccess success)
         {
             KeyValuePairCollectionRemoteValue obj = success.Result.ConvertTo<KeyValuePairCollectionRemoteValue>();
-            
+
             // Convert to RemoteValueDictionary; extract values with ValueAs<T>()
             RemoteValueDictionary dict = obj.Value;
-            
+
             Console.WriteLine(dict["name"].ConvertTo<StringRemoteValue>().Value);   // "John"
             Console.WriteLine(dict["age"].ConvertTo<LongRemoteValue>().Value);    // 30
             Console.WriteLine(dict["active"].ConvertTo<BooleanRemoteValue>().Value); // True
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -145,7 +145,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region NestedObjects
+        #region NestedObjects
         string script = """
             (
                 user: {
@@ -167,10 +167,10 @@ public static class RemoteValuesSamples
             RemoteValueDictionary dict = dictionaryValue.Value;
             RemoteValueDictionary user = dict["user"].ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
             RemoteValueDictionary address = user["address"].ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
-            
+
             Console.WriteLine(address["city"].ConvertTo<StringRemoteValue>().Value); // "New York"
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region ArraywithRemoteValueList
+        #region ArraywithRemoteValueList
         string script = "[1, 2, 3, 4, 5]";
 
         EvaluateResult result = await driver.Script.EvaluateAsync(
@@ -190,15 +190,15 @@ public static class RemoteValuesSamples
             success.Result is CollectionRemoteValue listValue)
         {
             RemoteValueList list = listValue.Value;
-            
+
             Console.WriteLine($"Length: {list.Count}"); // 5
-            
+
             foreach (RemoteValue item in list)
             {
                 Console.WriteLine(item.ConvertTo<LongRemoteValue>().Value);
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -208,7 +208,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region ArrayofObjects
+        #region ArrayofObjects
         string script = """
             [
                 { name: 'Alice', age: 25 },
@@ -231,43 +231,43 @@ public static class RemoteValuesSamples
                 Console.WriteLine($"{person["name"].ConvertTo<StringRemoteValue>().Value}, age {person["age"].ConvertTo<LongRemoteValue>().Value}");
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
     /// ToObject recursive helper for flattening RemoteValue.
     /// </summary>
-#region ToObjectHelper
-        static object? ToObject(RemoteValue value)
+    #region ToObjectHelper
+    static object? ToObject(RemoteValue value)
+    {
+        return value.Type switch
         {
-            return value.Type switch
-            {
-                RemoteValueType.String => value.ConvertTo<StringRemoteValue>().Value,
-                RemoteValueType.Number => value is LongRemoteValue l ? l.Value : value.ConvertTo<DoubleRemoteValue>().Value,
-                RemoteValueType.Boolean => value.ConvertTo<BooleanRemoteValue>().Value,
-                RemoteValueType.Null or RemoteValueType.Undefined => null,
-                RemoteValueType.Object or RemoteValueType.Map => value.ConvertTo<KeyValuePairCollectionRemoteValue>().Value
-                    .ToDictionary(kvp => kvp.Key.ToString() ?? "", kvp => ToObject(kvp.Value)),
-                RemoteValueType.Array or RemoteValueType.Set => value.ConvertTo<CollectionRemoteValue>().Value
-                    .Select(ToObject)
-                    .ToList(),
-                _ => (value as ValueHoldingRemoteValue)?.ValueObject ?? "(object)"
-            };
-        }
-#endregion
+            RemoteValueType.String => value.ConvertTo<StringRemoteValue>().Value,
+            RemoteValueType.Number => value is LongRemoteValue l ? l.Value : value.ConvertTo<DoubleRemoteValue>().Value,
+            RemoteValueType.Boolean => value.ConvertTo<BooleanRemoteValue>().Value,
+            RemoteValueType.Null or RemoteValueType.Undefined => null,
+            RemoteValueType.Object or RemoteValueType.Map => value.ConvertTo<KeyValuePairCollectionRemoteValue>().Value
+                .ToDictionary(kvp => kvp.Key.ToString() ?? "", kvp => ToObject(kvp.Value)),
+            RemoteValueType.Array or RemoteValueType.Set => value.ConvertTo<CollectionRemoteValue>().Value
+                .Select(ToObject)
+                .ToList(),
+            _ => (value as ValueHoldingRemoteValue)?.ValueObject ?? "(object)"
+        };
+    }
+    #endregion
 
     /// <summary>
     /// Usage: convert RemoteValueDictionary to Dictionary.
     /// </summary>
     public static void ToObjectUsage(EvaluateResultSuccess success)
     {
-#region ToObjectUsage
+        #region ToObjectUsage
         // Usage: convert RemoteValueDictionary to Dictionary<string, object>
         RemoteValueDictionary dict = success.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
         Dictionary<string, object?> flat = dict.ToDictionary(
             kvp => kvp.Key.ToString() ?? "",
             kvp => ToObject(kvp.Value));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -277,7 +277,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region GettingElementInformation
+        #region GettingElementInformation
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
                 "document.querySelector('button')",
@@ -288,17 +288,17 @@ public static class RemoteValuesSamples
         {
             RemoteValue elementRemoteValue = success.Result;
             elementRemoteValue.TryConvertTo(out NodeRemoteValue element);
-            
+
             Console.WriteLine($"Type: {element.Type}"); // "node"
             Console.WriteLine($"SharedId: {element.SharedId}");
-            
+
             // Get node properties
             NodeProperties nodeProps = element.Value;
-            
+
             Console.WriteLine($"Tag: {nodeProps.LocalName}");
             Console.WriteLine($"Node Type: {nodeProps.NodeType}");
             Console.WriteLine($"Child Count: {nodeProps.ChildNodeCount}");
-            
+
             // Get attributes
             if (nodeProps.Attributes != null)
             {
@@ -308,7 +308,7 @@ public static class RemoteValuesSamples
                 }
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -318,7 +318,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region ToSharedReference
+        #region ToSharedReference
         // Get element
         EvaluateResult getResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
@@ -329,20 +329,20 @@ public static class RemoteValuesSamples
         if (getResult is EvaluateResultSuccess getSuccess)
         {
             getSuccess.Result.TryConvertTo(out NodeRemoteValue? element);
-            
+
             // Create a reference
             SharedReference elementRef = element.ToSharedReference();
-            
+
             // Use in another script call
             CallFunctionCommandParameters clickParams = new CallFunctionCommandParameters(
                 "(element) => element.click()",
                 target,
                 false);
             clickParams.Arguments.Add(elementRef);
-            
+
             await driver.Script.CallFunctionAsync(clickParams);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -352,7 +352,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region LocalValuePrimitives
+        #region LocalValuePrimitives
         CallFunctionCommandParameters parameters = new CallFunctionCommandParameters(
             "(str, num, bool) => console.log(str, num, bool)",
             target,
@@ -363,7 +363,7 @@ public static class RemoteValuesSamples
         parameters.Arguments.Add(LocalValue.Boolean(true));
 
         await driver.Script.CallFunctionAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -371,7 +371,7 @@ public static class RemoteValuesSamples
     /// </summary>
     public static void LocalValueSpecialValues(CallFunctionCommandParameters parameters)
     {
-#region LocalValueSpecialValues
+        #region LocalValueSpecialValues
         parameters.Arguments.Add(LocalValue.Null);
         parameters.Arguments.Add(LocalValue.Undefined);
 
@@ -379,7 +379,7 @@ public static class RemoteValuesSamples
         parameters.Arguments.Add(LocalValue.Number(double.PositiveInfinity));
         parameters.Arguments.Add(LocalValue.Number(double.NegativeInfinity));
         parameters.Arguments.Add(LocalValue.Number(double.NaN));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -387,7 +387,7 @@ public static class RemoteValuesSamples
     /// </summary>
     public static void LocalValueObject(CallFunctionCommandParameters parameters)
     {
-#region LocalValueObject
+        #region LocalValueObject
         Dictionary<string, LocalValue> obj = new Dictionary<string, LocalValue>
         {
             { "name", LocalValue.String("John") },
@@ -401,7 +401,7 @@ public static class RemoteValuesSamples
         };
 
         parameters.Arguments.Add(LocalValue.Object(obj));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -409,7 +409,7 @@ public static class RemoteValuesSamples
     /// </summary>
     public static void LocalValueArray(CallFunctionCommandParameters parameters)
     {
-#region LocalValueArray
+        #region LocalValueArray
         List<LocalValue> array = new List<LocalValue>
         {
             LocalValue.Number(1),
@@ -418,7 +418,7 @@ public static class RemoteValuesSamples
         };
 
         parameters.Arguments.Add(LocalValue.Array(array));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -426,10 +426,10 @@ public static class RemoteValuesSamples
     /// </summary>
     public static void LocalValueDate(CallFunctionCommandParameters parameters)
     {
-#region LocalValueDate
+        #region LocalValueDate
         parameters.Arguments.Add(LocalValue.Date(DateTime.Now));
         parameters.Arguments.Add(LocalValue.Date(new DateTime(2024, 1, 1)));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -437,10 +437,10 @@ public static class RemoteValuesSamples
     /// </summary>
     public static void LocalValueRegExp(CallFunctionCommandParameters parameters)
     {
-#region LocalValueRegExp
+        #region LocalValueRegExp
         parameters.Arguments.Add(LocalValue.RegExp("\\d+", "g"));
         parameters.Arguments.Add(LocalValue.RegExp("[a-z]+", "i"));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -448,7 +448,7 @@ public static class RemoteValuesSamples
     /// </summary>
     public static void SafeTypeConversion(EvaluateResultSuccess success)
     {
-#region SafeTypeConversion
+        #region SafeTypeConversion
         RemoteValue value = success.Result;
 
         switch (value.Type)
@@ -456,7 +456,7 @@ public static class RemoteValuesSamples
             case RemoteValueType.String:
                 string str = value.ConvertTo<StringRemoteValue>().Value;
                 break;
-            
+
             case RemoteValueType.Number:
                 // Try long first, then double
                 if (value is LongRemoteValue l)
@@ -468,29 +468,29 @@ public static class RemoteValuesSamples
                     double doubleNum = value.ConvertTo<DoubleRemoteValue>().Value;
                 }
                 break;
-            
+
             case RemoteValueType.Boolean:
                 bool flag = value.ConvertTo<BooleanRemoteValue>().Value;
                 break;
-            
+
             case RemoteValueType.Object:
                 RemoteValueDictionary obj = value.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
                 break;
-            
+
             case RemoteValueType.Array:
                 RemoteValueList list = value.ConvertTo<CollectionRemoteValue>().Value;
                 break;
-            
+
             case RemoteValueType.Node:
                 NodeProperties? node = value.ConvertTo<NodeRemoteValue>().Value;
                 break;
-            
+
             case RemoteValueType.Null:
             case RemoteValueType.Undefined:
                 // Handle null/undefined
                 break;
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -498,7 +498,7 @@ public static class RemoteValuesSamples
     /// </summary>
     public static void CheckingForSpecificTypes(RemoteValue value)
     {
-#region CheckingforSpecificTypes
+        #region CheckingforSpecificTypes
         if (value.Type == RemoteValueType.Node)
         {
             // It's a DOM element
@@ -511,7 +511,7 @@ public static class RemoteValuesSamples
             value.TryConvertTo(out CollectionRemoteValue? listValue);
             RemoteValueList list = listValue.Value;
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -521,7 +521,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region ExtractMultipleValues
+        #region ExtractMultipleValues
         string script = """
             (
                 title: document.title,
@@ -538,13 +538,13 @@ public static class RemoteValuesSamples
             success.Result is KeyValuePairCollectionRemoteValue dictionaryValue)
         {
             RemoteValueDictionary data = dictionaryValue.Value;
-            
+
             string title = data["title"].ConvertTo<StringRemoteValue>().Value;
             string url = data["url"].ConvertTo<StringRemoteValue>().Value;
             long linkCount = data["linkCount"].ConvertTo<LongRemoteValue>().Value;
             bool ready = data["ready"].ConvertTo<BooleanRemoteValue>().Value;
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -554,7 +554,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region ElementCollection
+        #region ElementCollection
         string script = "Array.from(document.querySelectorAll('a')).map(a => a.href)";
 
         EvaluateResult result = await driver.Script.EvaluateAsync(
@@ -563,13 +563,13 @@ public static class RemoteValuesSamples
         if (result is EvaluateResultSuccess success)
         {
             RemoteValueList links = success.Result.ConvertTo<CollectionRemoteValue>().Value;
-            
+
             foreach (RemoteValue link in links)
             {
                 Console.WriteLine(link.ConvertTo<StringRemoteValue>().Value);
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -579,7 +579,7 @@ public static class RemoteValuesSamples
         BiDiDriver driver,
         Target target)
     {
-#region Round-tripElement
+        #region Round-tripElement
         // Get element
         EvaluateResult getResult = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters(
@@ -605,7 +605,7 @@ public static class RemoteValuesSamples
         EvaluateResult propsResult = await driver.Script.CallFunctionAsync(propsParams);
         RemoteValueDictionary props = ((EvaluateResultSuccess)propsResult).Result
             .ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
-#endregion
+        #endregion
     }
 }
 

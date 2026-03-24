@@ -20,7 +20,7 @@ public class TimeoutSamples
     /// </summary>
     public static async Task PreferredApproach(NavigateCommandParameters navParams)
     {
-#region PreferredApproach
+        #region PreferredApproach
         // Per-driver default timeout (set when creating the driver)
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -33,7 +33,7 @@ public class TimeoutSamples
         StatusCommandResult status = await driver.Session.StatusAsync(
             null,
             timeoutOverride: TimeSpan.FromSeconds(5));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -41,11 +41,11 @@ public class TimeoutSamples
     /// </summary>
     public static async Task ExecuteCommandTimeout(BiDiDriver driver, NavigateCommandParameters navParams)
     {
-#region ExecuteCommandAsync
+        #region ExecuteCommandAsync
         NavigateCommandResult result = await driver.ExecuteCommandAsync<NavigateCommandResult>(
             navParams,
             TimeSpan.FromSeconds(60));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -57,9 +57,9 @@ public class TimeoutSamples
         NavigateCommandParameters parameters,
         TimeSpan timeout)
     {
-        Task<NavigateCommandResult> navigationTask = 
+        Task<NavigateCommandResult> navigationTask =
             driver.BrowsingContext.NavigateAsync(parameters, timeout);
-        
+
         try
         {
             return await navigationTask;
@@ -70,7 +70,7 @@ public class TimeoutSamples
             return null;
         }
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Usage of NavigateWithTimeoutAsync.
@@ -79,7 +79,7 @@ public class TimeoutSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region Usage
+        #region Usage
         // Usage
         NavigateCommandResult? result = await NavigateWithTimeoutAsync(
             driver,
@@ -91,6 +91,6 @@ public class TimeoutSamples
             Console.WriteLine("Navigation failed - timeout");
             // Handle timeout
         }
-#endregion
+        #endregion
     }
 }

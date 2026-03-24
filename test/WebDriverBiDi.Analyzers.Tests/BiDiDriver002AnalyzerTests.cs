@@ -64,7 +64,7 @@ public class BiDiDriver002AnalyzerTests
             .WithLocation(0)
             .WithArguments("RegisterEvent");
 
-        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new ()
+        CSharpAnalyzerTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = test,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
@@ -446,7 +446,7 @@ public class BiDiDriver002AnalyzerTests
             .WithLocation(0)
             .WithArguments("AddObserver");
 
-        CSharpCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider, DefaultVerifier> testState = new ()
+        CSharpCodeFixTest<BiDiDriver002_EventRegistrationAfterStartAnalyzer, BiDiDriver002_EventRegistrationAfterStartCodeFixProvider, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
             FixedCode = fixedCode,

@@ -5,7 +5,7 @@ using TestUtilities;
 [TestFixture]
 public class SpeculationModuleTests
 {
-     [Test]
+    [Test]
     public async Task TestCanReceivePrefetchStatusUpdatedEvent()
     {
         TestWebSocketConnection connection = new();
@@ -14,7 +14,8 @@ public class SpeculationModuleTests
         SpeculationModule module = driver.Speculation;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnPrefetchStatusUpdated.AddObserver((PrefetchStatusUpdatedEventArgs e) => {
+        module.OnPrefetchStatusUpdated.AddObserver((PrefetchStatusUpdatedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));

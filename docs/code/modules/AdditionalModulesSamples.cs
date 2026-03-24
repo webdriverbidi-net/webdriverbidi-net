@@ -27,7 +27,7 @@ public static class AdditionalModulesSamples
     /// </summary>
     public static async Task GrantGeolocationPermission(BiDiDriver driver)
     {
-#region GrantGeolocationPermission
+        #region GrantGeolocationPermission
         // Grant geolocation permission
         SetPermissionCommandParameters parameters =
             new SetPermissionCommandParameters(
@@ -44,7 +44,7 @@ public static class AdditionalModulesSamples
     /// </summary>
     public static async Task SimulateBluetoothDevice(BiDiDriver driver, string contextId)
     {
-#region SimulateBluetoothDevice
+        #region SimulateBluetoothDevice
         // Simulate a Bluetooth device
         SimulatePreconnectedPeripheralCommandParameters parameters =
             new SimulatePreconnectedPeripheralCommandParameters(
@@ -54,7 +54,7 @@ public static class AdditionalModulesSamples
             );
 
         await driver.Bluetooth.SimulatePreconnectedPeripheralAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public static class AdditionalModulesSamples
     /// </summary>
     public static async Task InstallExtension(BiDiDriver driver)
     {
-#region InstallExtension
+        #region InstallExtension
         // Install an extension
         InstallCommandParameters parameters = new InstallCommandParameters(
             new ExtensionArchivePath("/path/to/extension.crx")
@@ -72,7 +72,7 @@ public static class AdditionalModulesSamples
         string extensionId = result.ExtensionId;
 
         Console.WriteLine($"Extension installed: {extensionId}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public static class AdditionalModulesSamples
     /// </summary>
     public static async Task SetClientHintsOverride(BiDiDriver driver)
     {
-#region SetClientHintsOverride
+        #region SetClientHintsOverride
         // Override client hints for cross-browser brand testing
         SetClientHintsOverrideCommandParameters parameters = new SetClientHintsOverrideCommandParameters();
         parameters.ClientHints = new ClientHintsMetadata
@@ -97,7 +97,7 @@ public static class AdditionalModulesSamples
         };
 
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public static class AdditionalModulesSamples
     /// </summary>
     public static async Task SubscribeToPrefetchStatus(BiDiDriver driver)
     {
-#region SubscribetoPrefetchStatus
+        #region SubscribetoPrefetchStatus
         // Subscribe to prefetch status updates
         driver.Speculation.OnPrefetchStatusUpdated.AddObserver((e) =>
         {
@@ -115,6 +115,6 @@ public static class AdditionalModulesSamples
         SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
             driver.Speculation.OnPrefetchStatusUpdated.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 }

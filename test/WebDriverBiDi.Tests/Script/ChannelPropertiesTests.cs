@@ -52,7 +52,7 @@ public class ChannelPropertiesTests
         string json = JsonSerializer.Serialize(properties);
         JObject parsed = JObject.Parse(json);
         using (Assert.EnterMultipleScope())
-        { 
+        {
             Assert.That(parsed, Has.Count.EqualTo(2));
             Assert.That(parsed, Contains.Key("channel"));
             Assert.That(parsed["channel"]!.Type, Is.EqualTo(JTokenType.String));

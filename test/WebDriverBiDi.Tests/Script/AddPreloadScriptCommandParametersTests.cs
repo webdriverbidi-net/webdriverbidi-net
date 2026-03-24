@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class AddPreloadScriptCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         AddPreloadScriptCommandParameters properties = new("myFunctionDeclaration");

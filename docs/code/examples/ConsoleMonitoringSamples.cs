@@ -27,7 +27,7 @@ public static class ConsoleMonitoringSamples
     /// </summary>
     public static async Task BasicConsoleMonitoring()
     {
-#region BasicConsoleMonitoring
+        #region BasicConsoleMonitoring
         string webSocketUrl = "ws://localhost:9222/devtools/browser/YOUR-ID-HERE";
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
@@ -44,7 +44,7 @@ public static class ConsoleMonitoringSamples
             });
 
             // Subscribe to log events
-            SubscribeCommandParameters subscribe = 
+            SubscribeCommandParameters subscribe =
                 new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
             await driver.Session.SubscribeAsync(subscribe);
 
@@ -63,7 +63,7 @@ public static class ConsoleMonitoringSamples
 
             // Trigger some console logs via JavaScript
             Console.WriteLine("\nGenerating console messages...\n");
-            
+
             await driver.Script.EvaluateAsync(
                 new EvaluateCommandParameters(
                     "console.log('Info message')",
@@ -103,7 +103,7 @@ public static class ConsoleMonitoringSamples
         {
             await driver.StopAsync();
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public static class ConsoleMonitoringSamples
     /// </summary>
     public static async Task ErrorDetectionAndReporting(BiDiDriver driver)
     {
-#region ErrorDetectionandReporting
+        #region ErrorDetectionandReporting
         // Track JavaScript errors
         List<EntryAddedEventArgs> errors = new List<EntryAddedEventArgs>();
         List<EntryAddedEventArgs> warnings = new List<EntryAddedEventArgs>();
@@ -144,7 +144,7 @@ public static class ConsoleMonitoringSamples
         });
 
         // Subscribe
-        SubscribeCommandParameters subscribe = 
+        SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
@@ -165,7 +165,7 @@ public static class ConsoleMonitoringSamples
         {
             Console.WriteLine("\n✅ No JavaScript errors detected");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -173,14 +173,14 @@ public static class ConsoleMonitoringSamples
     /// </summary>
     public static void FilterConsoleLogs(BiDiDriver driver)
     {
-#region FilterConsoleLogs
+        #region FilterConsoleLogs
         // Only capture errors and warnings
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             if (e.Level == LogLevel.Error || e.Level == LogLevel.Warn)
             {
                 Console.WriteLine($"[{e.Level}] {e.Text}");
-                
+
                 // Additional processing for errors/warnings
                 if (e.Source != null && e.Source.Context != null)
                 {
@@ -188,7 +188,7 @@ public static class ConsoleMonitoringSamples
                 }
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -196,22 +196,22 @@ public static class ConsoleMonitoringSamples
     /// </summary>
     public static void FilterByConsoleApiCalls(BiDiDriver driver)
     {
-#region FilterbyConsoleAPICalls
-// Only capture console API calls (not JavaScript errors)
+        #region FilterbyConsoleAPICalls
+        // Only capture console API calls (not JavaScript errors)
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
             if (e.Type == "console")
             {
                 Console.WriteLine($"console.{e.Method}() called");
                 Console.WriteLine($"  Arguments: {e.Arguments.Count}");
-                
+
                 foreach (var arg in e.Arguments)
                 {
                     Console.WriteLine($"    Type: {arg.Type}, Value: {arg.ConvertTo<StringRemoteValue>().Value}");
                 }
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -219,7 +219,7 @@ public static class ConsoleMonitoringSamples
     /// </summary>
     public static void FilterJavaScriptExceptions(BiDiDriver driver)
     {
-#region FilterJavaScriptExceptions
+        #region FilterJavaScriptExceptions
         // Only capture JavaScript exceptions
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
@@ -228,7 +228,7 @@ public static class ConsoleMonitoringSamples
                 Console.WriteLine($"JavaScript Exception: {e.Text}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -236,13 +236,13 @@ public static class ConsoleMonitoringSamples
     /// </summary>
     public static void LoggingToFile(BiDiDriver driver)
     {
-#region LoggingtoFile
+        #region LoggingtoFile
         string logFilePath = $"browser-console-{DateTime.Now:yyyyMMdd-HHmmss}.log";
 
         driver.Log.OnEntryAdded.AddObserver(async (EntryAddedEventArgs e) =>
         {
             string logLine = $"{e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{e.Level,-5}] [{e.Type}] {e.Text}";
-            
+
             if (e.Source != null)
             {
                 logLine += $" (Source: {e.Source.RealmId})";
@@ -255,7 +255,7 @@ public static class ConsoleMonitoringSamples
                 logLine += "Stack Trace:" + Environment.NewLine;
                 foreach (var frame in e.StackTrace.CallFrames)
                 {
-                    logLine += $"  at {frame.FunctionName} ({frame.Url}:{frame.LineNumber}:{frame.ColumnNumber})" 
+                    logLine += $"  at {frame.FunctionName} ({frame.Url}:{frame.LineNumber}:{frame.ColumnNumber})"
                         + Environment.NewLine;
                 }
             }
@@ -269,7 +269,7 @@ public static class ConsoleMonitoringSamples
         // ... perform test ...
 
         Console.WriteLine($"\n✓ Complete log saved to {logFilePath}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -277,7 +277,7 @@ public static class ConsoleMonitoringSamples
     /// </summary>
     public static void RealTimeConsoleDisplay(BiDiDriver driver)
     {
-#region Real-TimeConsoleDisplay
+        #region Real-TimeConsoleDisplay
         // Display console logs with color coding
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
@@ -292,7 +292,7 @@ public static class ConsoleMonitoringSamples
             };
 
             Console.ForegroundColor = color;
-            
+
             string icon = e.Level switch
             {
                 LogLevel.Error => "❌",
@@ -304,9 +304,9 @@ public static class ConsoleMonitoringSamples
 
             Console.Write($"{icon} ");
             Console.ResetColor();
-            
+
             Console.Write($"[{e.Timestamp:HH:mm:ss.fff}] ");
-            
+
             Console.ForegroundColor = color;
             Console.WriteLine(e.Text);
             Console.ResetColor();
@@ -319,7 +319,7 @@ public static class ConsoleMonitoringSamples
                 Console.ResetColor();
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -327,7 +327,7 @@ public static class ConsoleMonitoringSamples
     /// </summary>
     public static void LogAnalyzerUsage(BiDiDriver driver)
     {
-#region LogAnalyzerusage
+        #region LogAnalyzerusage
         // Usage
         LogAnalyzer analyzer = new LogAnalyzer();
 
@@ -340,14 +340,14 @@ public static class ConsoleMonitoringSamples
         // ... navigate and perform actions ...
 
         analyzer.PrintSummary();
-#endregion
+        #endregion
     }
     /// <summary>
     /// ConsoleAsserter usage - add observer, perform actions, verify expectations.
     /// </summary>
     public static void ConsoleAsserterUsage(BiDiDriver driver)
     {
-    #region ConsoleAsserterusage
+        #region ConsoleAsserterusage
         // Usage
         ConsoleAsserter asserter = new ConsoleAsserter();
 
@@ -365,7 +365,7 @@ public static class ConsoleMonitoringSamples
         asserter.AssertMessageCount(LogLevel.Warn, 0);
 
         Console.WriteLine("✅ All console log assertions passed");
-    #endregion
+        #endregion
     }
 }
 
@@ -375,7 +375,7 @@ public static class ConsoleMonitoringSamples
 #region LogAnalyzerclass
 public class LogAnalyzer
 {
-    private List<EntryAddedEventArgs> allLogs = new List<EntryAddedEventArgs>();
+    private readonly List<EntryAddedEventArgs> allLogs = new List<EntryAddedEventArgs>();
 
     public void AddLog(EntryAddedEventArgs log)
     {
@@ -449,7 +449,7 @@ public class LogAnalyzer
 #region ConsoleAsserterclass
 public class ConsoleAsserter
 {
-    private List<EntryAddedEventArgs> logs = new List<EntryAddedEventArgs>();
+    private readonly List<EntryAddedEventArgs> logs = new List<EntryAddedEventArgs>();
 
     public void AddLog(EntryAddedEventArgs log)
     {
@@ -500,7 +500,7 @@ public class ConsoleAsserter
 #region TestLoggerclass
 public class TestLogger
 {
-    private List<EntryAddedEventArgs> testLogs = new List<EntryAddedEventArgs>();
+    private readonly List<EntryAddedEventArgs> testLogs = new List<EntryAddedEventArgs>();
     private EventObserver<EntryAddedEventArgs>? observer;
 
     public void StartLogging(BiDiDriver driver)
@@ -530,7 +530,7 @@ public class TestLogger
     public void SaveToFile(string testName)
     {
         string fileName = $"test-{testName}-{DateTime.Now:yyyyMMdd-HHmmss}.log";
-        var lines = testLogs.Select(l => 
+        var lines = testLogs.Select(l =>
             $"{l.Timestamp:HH:mm:ss.fff} [{l.Level}] {l.Text}");
         File.WriteAllLines(fileName, lines);
     }
@@ -544,7 +544,7 @@ public static class TestLoggerUsage
 {
     public static void Demonstrate(BiDiDriver driver)
     {
-#region TestLoggerusage
+        #region TestLoggerusage
         // Usage in test framework
         TestLogger logger = new TestLogger();
 
@@ -561,6 +561,6 @@ public static class TestLoggerUsage
         }
 
         logger.StopLogging();
-#endregion
+        #endregion
     }
 }

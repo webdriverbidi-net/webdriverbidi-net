@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class NewCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         NewCommandParameters properties = new();
@@ -39,7 +39,7 @@ public class NewCommandParametersTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(serialized, Contains.Key("capabilities"));
-            
+
             Assert.That(serialized["capabilities"], Contains.Key("alwaysMatch"));
             Assert.That(serialized["capabilities"]!["alwaysMatch"]!.Type, Is.EqualTo(JTokenType.Object));
         }

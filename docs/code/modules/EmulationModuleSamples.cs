@@ -24,9 +24,9 @@ public class EmulationModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         EmulationModule emulation = driver.Emulation;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetViewportSize(BiDiDriver driver, string contextId)
     {
-#region SetViewportSize
+        #region SetViewportSize
         SetViewportCommandParameters parameters = new SetViewportCommandParameters
         {
             BrowsingContextId = contextId,
@@ -48,7 +48,7 @@ public class EmulationModuleSamples
 
         await driver.BrowsingContext.SetViewportAsync(parameters);
         Console.WriteLine("Viewport set to mobile size");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task CommonDeviceViewports(BiDiDriver driver, string contextId)
     {
-#region CommonDeviceViewports
+        #region CommonDeviceViewports
         // iPhone 12/13
         await driver.BrowsingContext.SetViewportAsync(new SetViewportCommandParameters
         {
@@ -80,7 +80,7 @@ public class EmulationModuleSamples
             Viewport = new Viewport { Width = 1920, Height = 1080 },
             DevicePixelRatio = 1.0
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetCustomUserAgent(BiDiDriver driver, string contextId)
     {
-#region SetCustomUserAgent
+        #region SetCustomUserAgent
         SetUserAgentOverrideCommandParameters parameters = new SetUserAgentOverrideCommandParameters
         {
             UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1",
@@ -97,7 +97,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetUserAgentOverrideAsync(parameters);
         Console.WriteLine("User agent set to iPhone");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task CommonUserAgents(BiDiDriver driver, string contextId)
     {
-#region CommonUserAgents
+        #region CommonUserAgents
         // Mobile Safari (iPhone)
         string iPhoneUA = "Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1";
 
@@ -124,7 +124,7 @@ public class EmulationModuleSamples
                 UserAgent = iPhoneUA,
                 Contexts = new List<string> { contextId }
             });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -132,14 +132,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearUserAgentOverride(BiDiDriver driver, string contextId)
     {
-#region ClearUserAgentOverride
+        #region ClearUserAgentOverride
         SetUserAgentOverrideCommandParameters parameters =
             SetUserAgentOverrideCommandParameters.ResetUserAgentOverride;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetUserAgentOverrideAsync(parameters);
         Console.WriteLine("User agent override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task EmulateDarkMode(BiDiDriver driver, string contextId)
     {
-#region EmulateDarkMode
+        #region EmulateDarkMode
         SetForcedColorsModeThemeOverrideCommandParameters parameters =
             new SetForcedColorsModeThemeOverrideCommandParameters
             {
@@ -169,7 +169,7 @@ public class EmulationModuleSamples
             bool isDarkMode = success.Result.ConvertTo<BooleanRemoteValue>().Value;
             Console.WriteLine($"Dark mode active: {isDarkMode}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -177,7 +177,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearForcedColorsOverride(BiDiDriver driver, string contextId)
     {
-#region ClearForcedColorsOverride
+        #region ClearForcedColorsOverride
         // Use reset property of command parameters to clear the override
         SetForcedColorsModeThemeOverrideCommandParameters parameters =
             SetForcedColorsModeThemeOverrideCommandParameters.ResetForcedColorsModeThemeOverride;
@@ -185,7 +185,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetForcedColorsModeThemeOverrideAsync(parameters);
         Console.WriteLine("Forced colors override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -193,7 +193,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetGeolocation(BiDiDriver driver, string contextId)
     {
-#region SetGeolocation
+        #region SetGeolocation
         SetGeolocationOverrideCoordinatesCommandParameters parameters =
             new SetGeolocationOverrideCoordinatesCommandParameters
             {
@@ -223,7 +223,7 @@ public class EmulationModuleSamples
             RemoteValueDictionary location = success.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
             Console.WriteLine($"Browser location: {location["lat"].ConvertTo<DoubleRemoteValue>().Value}, {location["lng"].ConvertTo<DoubleRemoteValue>().Value}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -231,7 +231,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task CommonLocations(BiDiDriver driver, string contextId)
     {
-#region CommonLocations
+        #region CommonLocations
         // New York
         await driver.Emulation.SetGeolocationOverrideAsync(
             new SetGeolocationOverrideCoordinatesCommandParameters
@@ -255,7 +255,7 @@ public class EmulationModuleSamples
                 Coordinates = new GeolocationCoordinates(139.6503, 35.6762) { Accuracy = 100 },
                 Contexts = new List<string> { contextId }
             });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -263,14 +263,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearGeolocationOverride(BiDiDriver driver, string contextId)
     {
-#region ClearGeolocationOverride
+        #region ClearGeolocationOverride
         SetGeolocationOverrideCommandParameters parameters =
             SetGeolocationOverrideCommandParameters.ResetGeolocationOverrideCoordinates;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetGeolocationOverrideAsync(parameters);
         Console.WriteLine("Geolocation override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -278,7 +278,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetTimezone(BiDiDriver driver, string contextId)
     {
-#region SetTimezone
+        #region SetTimezone
         SetTimeZoneOverrideCommandParameters parameters = new SetTimeZoneOverrideCommandParameters
         {
             TimeZone = "America/Los_Angeles",
@@ -300,7 +300,7 @@ public class EmulationModuleSamples
             string timezone = success.Result.ConvertTo<StringRemoteValue>().Value;
             Console.WriteLine($"Browser timezone: {timezone}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -308,7 +308,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task CommonTimezones(BiDiDriver driver, string contextId)
     {
-#region CommonTimezones
+        #region CommonTimezones
         // Pacific Time (US West Coast)
         await driver.Emulation.SetTimeZoneOverrideAsync(
             new SetTimeZoneOverrideCommandParameters
@@ -340,7 +340,7 @@ public class EmulationModuleSamples
                 TimeZone = "Asia/Tokyo",
                 Contexts = new List<string> { contextId }
             });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -348,14 +348,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearTimezoneOverride(BiDiDriver driver, string contextId)
     {
-#region ClearTimezoneOverride
+        #region ClearTimezoneOverride
         SetTimeZoneOverrideCommandParameters parameters =
             SetTimeZoneOverrideCommandParameters.ResetTimeZoneOverride;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetTimeZoneOverrideAsync(parameters);
         Console.WriteLine("Timezone override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -363,7 +363,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetLocale(BiDiDriver driver, string contextId)
     {
-#region SetLocale
+        #region SetLocale
         SetLocaleOverrideCommandParameters parameters = new SetLocaleOverrideCommandParameters
         {
             Locale = "fr-FR",
@@ -385,7 +385,7 @@ public class EmulationModuleSamples
             string locale = success.Result.ConvertTo<StringRemoteValue>().Value;
             Console.WriteLine($"Browser locale: {locale}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -393,14 +393,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearLocaleOverride(BiDiDriver driver, string contextId)
     {
-#region ClearLocaleOverride
+        #region ClearLocaleOverride
         SetLocaleOverrideCommandParameters parameters =
             SetLocaleOverrideCommandParameters.ResetLocaleOverride;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetLocaleOverrideAsync(parameters);
         Console.WriteLine("Locale override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -408,7 +408,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task EmulateOffline(BiDiDriver driver, string contextId)
     {
-#region EmulateOffline
+        #region EmulateOffline
         SetNetworkConditionsCommandParameters parameters = new SetNetworkConditionsCommandParameters
         {
             NetworkConditions = new NetworkConditionsOffline(),
@@ -417,7 +417,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetNetworkConditionsAsync(parameters);
         Console.WriteLine("Network set to offline");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -425,14 +425,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearNetworkConditionsOverride(BiDiDriver driver, string contextId)
     {
-#region ClearNetworkConditionsOverride
+        #region ClearNetworkConditionsOverride
         SetNetworkConditionsCommandParameters parameters =
             SetNetworkConditionsCommandParameters.ResetNetworkConditions;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetNetworkConditionsAsync(parameters);
         Console.WriteLine("Network conditions override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -440,7 +440,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetPortraitOrientation(BiDiDriver driver, string contextId)
     {
-#region SetPortraitOrientation
+        #region SetPortraitOrientation
         SetScreenOrientationOverrideCommandParameters parameters =
             new SetScreenOrientationOverrideCommandParameters
             {
@@ -452,7 +452,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
         Console.WriteLine("Screen orientation set to portrait");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -460,7 +460,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetLandscapeOrientation(BiDiDriver driver, string contextId)
     {
-#region SetLandscapeOrientation
+        #region SetLandscapeOrientation
         SetScreenOrientationOverrideCommandParameters parameters =
             new SetScreenOrientationOverrideCommandParameters
             {
@@ -472,7 +472,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
         Console.WriteLine("Screen orientation set to landscape");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -480,14 +480,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearScreenOrientationOverride(BiDiDriver driver, string contextId)
     {
-#region ClearScreenOrientationOverride
+        #region ClearScreenOrientationOverride
         SetScreenOrientationOverrideCommandParameters parameters =
             SetScreenOrientationOverrideCommandParameters.ResetScreenOrientationOverride;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetScreenOrientationOverrideAsync(parameters);
         Console.WriteLine("Screen orientation override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -495,7 +495,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetScreenDimensions(BiDiDriver driver, string contextId)
     {
-#region SetScreenDimensions
+        #region SetScreenDimensions
         SetScreenSettingsOverrideCommandParameters parameters =
             new SetScreenSettingsOverrideCommandParameters
             {
@@ -505,7 +505,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetScreenSettingsOverrideAsync(parameters);
         Console.WriteLine("Screen dimensions set to 1920x1080");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -513,14 +513,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearScreenSettingsOverride(BiDiDriver driver, string contextId)
     {
-#region ClearScreenSettingsOverride
+        #region ClearScreenSettingsOverride
         SetScreenSettingsOverrideCommandParameters parameters =
             SetScreenSettingsOverrideCommandParameters.ResetScreenSettingsOverride;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetScreenSettingsOverrideAsync(parameters);
         Console.WriteLine("Screen settings override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -528,7 +528,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task DisableJavaScript(BiDiDriver driver, string contextId)
     {
-#region DisableJavaScript
+        #region DisableJavaScript
         SetScriptingEnabledCommandParameters parameters = new SetScriptingEnabledCommandParameters
         {
             IsScriptingEnabled = false,
@@ -537,7 +537,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetScriptingEnabledAsync(parameters);
         Console.WriteLine("JavaScript disabled");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -545,14 +545,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearScriptingOverride(BiDiDriver driver, string contextId)
     {
-#region ClearScriptingOverride
+        #region ClearScriptingOverride
         SetScriptingEnabledCommandParameters parameters =
             SetScriptingEnabledCommandParameters.ResetScriptingEnabled;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetScriptingEnabledAsync(parameters);
         Console.WriteLine("Scripting override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -560,7 +560,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task SetOverlayScrollbars(BiDiDriver driver, string contextId)
     {
-#region SetOverlayScrollbars
+        #region SetOverlayScrollbars
         SetScrollbarTypeOverrideCommandParameters parameters =
             new SetScrollbarTypeOverrideCommandParameters
             {
@@ -570,7 +570,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetScrollbarTypeOverrideAsync(parameters);
         Console.WriteLine("Scrollbar type set to overlay");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -578,14 +578,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearScrollbarTypeOverride(BiDiDriver driver, string contextId)
     {
-#region ClearScrollbarTypeOverride
+        #region ClearScrollbarTypeOverride
         SetScrollbarTypeOverrideCommandParameters parameters =
             SetScrollbarTypeOverrideCommandParameters.ResetScrollbarTypeOverride;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetScrollbarTypeOverrideAsync(parameters);
         Console.WriteLine("Scrollbar type override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -593,7 +593,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task EnableTouchEmulation(BiDiDriver driver, string contextId)
     {
-#region EnableTouchEmulation
+        #region EnableTouchEmulation
         SetTouchOverrideCommandParameters parameters = new SetTouchOverrideCommandParameters
         {
             MaxTouchPoints = 5,
@@ -602,7 +602,7 @@ public class EmulationModuleSamples
 
         await driver.Emulation.SetTouchOverrideAsync(parameters);
         Console.WriteLine("Touch emulation enabled with 5 touch points");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -610,14 +610,14 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ClearTouchOverride(BiDiDriver driver, string contextId)
     {
-#region ClearTouchOverride
+        #region ClearTouchOverride
         SetTouchOverrideCommandParameters parameters =
             SetTouchOverrideCommandParameters.ResetTouchOverride;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.Emulation.SetTouchOverrideAsync(parameters);
         Console.WriteLine("Touch override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -678,14 +678,14 @@ public class EmulationModuleSamples
 
         Console.WriteLine($"Emulating {deviceName}");
     }
-#endregion
+    #endregion
 
     public async Task EmulateMobileDeviceUsage(BiDiDriver driver, string contextId)
     {
-#region MobileDeviceEmulationUsage
+        #region MobileDeviceEmulationUsage
         // Usage
         await EmulateMobileDevice(driver, contextId, "iphone");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -693,7 +693,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task ResponsiveTesting(BiDiDriver driver, string contextId)
     {
-#region ResponsiveTesting
+        #region ResponsiveTesting
         // Test at multiple viewport sizes
         List<(int Width, int Height, string Name)> viewports = new()
         {
@@ -726,7 +726,7 @@ public class EmulationModuleSamples
                 $"screenshot-{viewport.Name.Replace(" ", "-")}.png",
                 imageBytes);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -734,7 +734,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task DarkModeTesting(BiDiDriver driver, string contextId)
     {
-#region DarkModeTesting
+        #region DarkModeTesting
         // Test both light and dark modes
         string[] colorSchemes = { "light", "dark" };
 
@@ -776,7 +776,7 @@ public class EmulationModuleSamples
             byte[] imageBytes = Convert.FromBase64String(screenshot.Data);
             await File.WriteAllBytesAsync($"screenshot-{scheme}.png", imageBytes);
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -784,7 +784,7 @@ public class EmulationModuleSamples
     /// </summary>
     public static async Task LocationBasedTesting(BiDiDriver driver, string contextId)
     {
-#region Location-BasedTesting
+        #region Location-BasedTesting
         // Test application behavior in different locations
         Dictionary<string, (double Lat, double Lng)> locations = new()
         {
@@ -823,6 +823,6 @@ public class EmulationModuleSamples
                 Console.WriteLine($"Detected: {detectedLocation}");
             }
         }
-#endregion
+        #endregion
     }
 }

@@ -18,7 +18,7 @@ public class TestWebSocketConnection : WebSocketConnection
     public bool BypassCloseClientWebSocket { get; set; } = true;
 
     public bool ThrowOnStop { get; set; }
-    
+
     public int StopCallCount => this.stopCallCount;
 
     public string? DataSent { get; set; }

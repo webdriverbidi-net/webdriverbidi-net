@@ -7,7 +7,7 @@ using WebDriverBiDi.Script;
 [TestFixture]
 public class SetFilesCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SharedReference element = new("mySharedId");

@@ -188,7 +188,7 @@ public class ObservableEventTests
     public void TestEventName()
     {
         TestEventSource testEventSource = new();
-        Assert.That(testEventSource.TestObservableEvent.EventName, Is.EqualTo("testModule.testEvent"));        
+        Assert.That(testEventSource.TestObservableEvent.EventName, Is.EqualTo("testModule.testEvent"));
     }
 
     [Test]
@@ -242,10 +242,10 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(async (TestObservableEventArgs e) => { });
-        
+
         observer.SetCheckpoint(1);
         observer.UnsetCheckpoint();  // First call disposes counter
-        
+
         // Second call would try to dispose already-disposed counter
         Assert.DoesNotThrow(() => observer.UnsetCheckpoint());
     }
@@ -633,14 +633,14 @@ public class ObservableEventTests
 
     private class TestEventSource
     {
-        private ObservableEvent<TestObservableEventArgs> testObservableEvent = new("testModule.testEvent");
+        private readonly ObservableEvent<TestObservableEventArgs> testObservableEvent = new("testModule.testEvent");
 
         public TestEventSource(uint maxObserverCount = 0)
         {
             this.testObservableEvent = new ObservableEvent<TestObservableEventArgs>("testModule.testEvent", maxObserverCount);
         }
 
-        public ObservableEvent<TestObservableEventArgs> TestObservableEvent => testObservableEvent;
+        public ObservableEvent<TestObservableEventArgs> TestObservableEvent => this.testObservableEvent;
 
         public async Task RaiseTestEventAsync(string eventValue)
         {
@@ -648,9 +648,9 @@ public class ObservableEventTests
         }
     }
 
-    private record TestObservableEventArgs: WebDriverBiDiEventArgs
+    private record TestObservableEventArgs : WebDriverBiDiEventArgs
     {
-        private string eventValue = string.Empty;
+        private readonly string eventValue = string.Empty;
 
         public TestObservableEventArgs(string eventValue)
         {

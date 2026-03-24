@@ -23,13 +23,13 @@ public static class TimeoutAndCancellationSamples
     /// </summary>
     public static async Task OptionalParameters(BiDiDriver driver)
     {
-#region OptionalParameters
+        #region OptionalParameters
         // All equivalent—parameters optional
         GetTreeCommandResult tree1 = await driver.BrowsingContext.GetTreeAsync(null);
         GetTreeCommandResult tree2 = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         StatusCommandResult status = await driver.Session.StatusAsync(null);
         GetCookiesCommandResult cookies = await driver.Storage.GetCookiesAsync(null);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -37,7 +37,7 @@ public static class TimeoutAndCancellationSamples
     /// </summary>
     public static async Task RequiredParameters(BiDiDriver driver)
     {
-#region RequiredParameters
+        #region RequiredParameters
         // ✅ Explicit reset
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(
             SetClientHintsOverrideCommandParameters.ResetClientHintsOverride);
@@ -46,7 +46,7 @@ public static class TimeoutAndCancellationSamples
         SetClientHintsOverrideCommandParameters setParams = new SetClientHintsOverrideCommandParameters();
         setParams.ClientHints = new ClientHintsMetadata { /* ... */ };
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(setParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public static class TimeoutAndCancellationSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region TimeoutandCancellationExamples
+        #region TimeoutandCancellationExamples
         // Use default timeout
         await driver.BrowsingContext.NavigateAsync(navParams);
 
@@ -66,6 +66,6 @@ public static class TimeoutAndCancellationSamples
         // With cancellation
         using CancellationTokenSource cts = new(TimeSpan.FromSeconds(30));
         await driver.BrowsingContext.NavigateAsync(navParams, cancellationToken: cts.Token);
-#endregion
+        #endregion
     }
 }

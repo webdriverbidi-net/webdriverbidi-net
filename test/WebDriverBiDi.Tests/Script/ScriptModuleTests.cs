@@ -133,7 +133,7 @@ public class ScriptModuleTests
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
-        
+
         Task<EvaluateResult> task = module.EvaluateAsync(new EvaluateCommandParameters("myFunction() {}", new ContextTarget("myContextId"), true));
         task.Wait(TimeSpan.FromSeconds(1));
         EvaluateResult result = task.Result;
@@ -314,7 +314,7 @@ public class ScriptModuleTests
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.TypeOf<DisownCommandResult>());
-   }
+    }
 
     [Test]
     public async Task TestCanReceiveRealmCreatedEvent()
@@ -325,7 +325,8 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) => {
+        module.OnRealmCreated.AddObserver((RealmCreatedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.RealmId, Is.EqualTo("myRealm"));
@@ -430,7 +431,8 @@ public class ScriptModuleTests
         await driver.StartAsync("ws:localhost");
 
         ManualResetEvent syncEvent = new(false);
-        module.OnMessage.AddObserver((MessageEventArgs e) => {
+        module.OnMessage.AddObserver((MessageEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.ChannelId, Is.EqualTo("myChannel"));
@@ -500,7 +502,7 @@ public class ScriptModuleTests
     public async Task TestCanRemovePreloadScript()
     {
         TestWebSocketConnection connection = new();
-        connection.DataSendComplete +=  async (sender, e) =>
+        connection.DataSendComplete += async (sender, e) =>
         {
             string responseJson = $$"""
                                   {
@@ -515,7 +517,7 @@ public class ScriptModuleTests
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), new Transport(connection));
         ScriptModule module = driver.Script;
         await driver.StartAsync("ws:localhost");
-        
+
         Task<RemovePreloadScriptCommandResult> task = module.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters("loadScriptId"));
         task.Wait(TimeSpan.FromSeconds(1));
         RemovePreloadScriptCommandResult result = task.Result;

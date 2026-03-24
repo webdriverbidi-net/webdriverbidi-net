@@ -24,9 +24,9 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         UserAgentClientHintsModule userAgentClientHints = driver.UserAgentClientHints;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static async Task BasicOverride(BiDiDriver driver)
     {
-#region BasicOverride
+        #region BasicOverride
         SetClientHintsOverrideCommandParameters parameters =
             new SetClientHintsOverrideCommandParameters();
         parameters.ClientHints = new ClientHintsMetadata
@@ -52,7 +52,7 @@ public static class UserAgentClientHintsModuleSamples
 
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
         Console.WriteLine("Client hints override set");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -60,7 +60,7 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static async Task CommonBrowserBrands(BiDiDriver driver)
     {
-#region CommonBrowserBrands
+        #region CommonBrowserBrands
         // Chrome on Windows
         SetClientHintsOverrideCommandParameters parameters =
             new SetClientHintsOverrideCommandParameters();
@@ -114,7 +114,7 @@ public static class UserAgentClientHintsModuleSamples
         };
 
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -122,11 +122,11 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static async Task ResetClientHints(BiDiDriver driver)
     {
-#region ResetClientHints
+        #region ResetClientHints
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(
             SetClientHintsOverrideCommandParameters.ResetClientHintsOverride);
         Console.WriteLine("Client hints override cleared");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -134,7 +134,7 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static async Task TargetSpecificContexts(BiDiDriver driver, string contextId)
     {
-#region TargetSpecificContexts
+        #region TargetSpecificContexts
         SetClientHintsOverrideCommandParameters parameters =
             new SetClientHintsOverrideCommandParameters();
         parameters.ClientHints = new ClientHintsMetadata
@@ -145,7 +145,7 @@ public static class UserAgentClientHintsModuleSamples
         parameters.Contexts = new List<string> { contextId };
 
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -153,7 +153,7 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static async Task TargetSpecificUserContexts(BiDiDriver driver, string userContextId)
     {
-#region TargetSpecificUserContexts
+        #region TargetSpecificUserContexts
         SetClientHintsOverrideCommandParameters parameters =
             new SetClientHintsOverrideCommandParameters();
         parameters.ClientHints = new ClientHintsMetadata
@@ -164,7 +164,7 @@ public static class UserAgentClientHintsModuleSamples
         parameters.UserContexts = new List<string> { userContextId };
 
         await driver.UserAgentClientHints.SetClientHintsOverrideAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static async Task MobileDeviceTesting(BiDiDriver driver, string contextId)
     {
-#region MobileDeviceTesting
+        #region MobileDeviceTesting
         // Emulate mobile client hints for responsive design testing
         SetClientHintsOverrideCommandParameters parameters = new SetClientHintsOverrideCommandParameters();
         parameters.ClientHints = new ClientHintsMetadata
@@ -200,7 +200,7 @@ public static class UserAgentClientHintsModuleSamples
                 Viewport = new Viewport { Width = 412, Height = 915 },
                 DevicePixelRatio = 2.625
             });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -208,7 +208,7 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static async Task CrossBrowserBrandTesting(BiDiDriver driver, string contextId)
     {
-#region Cross-BrowserBrandTesting
+        #region Cross-BrowserBrandTesting
         // Test how a site behaves with different browser brands
         Dictionary<string, ClientHintsMetadata> browserConfigs = new()
         {
@@ -269,7 +269,7 @@ public static class UserAgentClientHintsModuleSamples
                 Console.WriteLine($"Detected brands: {brands}");
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -277,7 +277,7 @@ public static class UserAgentClientHintsModuleSamples
     /// </summary>
     public static async Task VerifyClientHintsInPage(BiDiDriver driver, string contextId)
     {
-#region VerifyClientHintsinPage
+        #region VerifyClientHintsinPage
         // Set override
         SetClientHintsOverrideCommandParameters parameters =
             new SetClientHintsOverrideCommandParameters();
@@ -307,6 +307,6 @@ public static class UserAgentClientHintsModuleSamples
             string hintsJson = hintsValue.Value;
             Console.WriteLine($"Client hints: {hintsJson}");
         }
-#endregion
+        #endregion
     }
 }

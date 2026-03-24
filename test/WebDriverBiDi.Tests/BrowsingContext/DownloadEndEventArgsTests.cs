@@ -106,7 +106,7 @@ public class DownloadEndEventArgsTests
         Assert.That(eventArgs, Is.Not.Null);
         DownloadEndEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
-   }
+    }
 
     [Test]
     public void TestDeserializeWithMissingStatusValueThrows()

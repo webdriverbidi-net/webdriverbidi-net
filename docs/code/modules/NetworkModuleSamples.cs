@@ -27,9 +27,9 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         NetworkModule network = driver.Network;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public static class NetworkModuleSamples
         string contextId,
         string url)
     {
-#region BasicResponseMonitoring
+        #region BasicResponseMonitoring
         // Add observer
         driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
@@ -56,7 +56,7 @@ public static class NetworkModuleSamples
         // Navigate - events will fire for all requests
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, "https://example.com"));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task MonitorRequestDetails(BiDiDriver driver)
     {
-#region MonitorRequestDetails
+        #region MonitorRequestDetails
         driver.Network.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
         {
             Console.WriteLine($"Request: {e.Request.Method} {e.Request.Url}");
@@ -78,7 +78,7 @@ public static class NetworkModuleSamples
         SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
         await driver.Session.SubscribeAsync(subscribe);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -86,7 +86,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void FilterByContentType(BiDiDriver driver)
     {
-#region FilterbyContentType
+        #region FilterbyContentType
         // Find Content-Type header
         driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
@@ -98,7 +98,7 @@ public static class NetworkModuleSamples
                 Console.WriteLine($"JSON response from: {e.Response.Url}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void FilterByUrlPattern(BiDiDriver driver)
     {
-#region FilterbyURLPattern
+        #region FilterbyURLPattern
         driver.Network.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
         {
             if (e.Request.Url.Contains("/api/"))
@@ -114,7 +114,7 @@ public static class NetworkModuleSamples
                 Console.WriteLine($"API call: {e.Request.Url}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void BeforeRequestSent(BiDiDriver driver)
     {
-#region BeforeRequestSent
+        #region BeforeRequestSent
         driver.Network.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
         {
             Console.WriteLine($"Method: {e.Request.Method}");
@@ -131,7 +131,7 @@ public static class NetworkModuleSamples
             Console.WriteLine($"Timestamp: {e.Request.Timings.TimeOrigin}");
             Console.WriteLine($"Is Blocked: {e.IsBlocked}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -139,13 +139,13 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void ResponseStarted(BiDiDriver driver)
     {
-#region ResponseStarted
+        #region ResponseStarted
         driver.Network.OnResponseStarted.AddObserver((ResponseStartedEventArgs e) =>
         {
             Console.WriteLine($"Status: {e.Response.Status}");
             Console.WriteLine($"Headers received for: {e.Response.Url}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -153,13 +153,13 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void ResponseCompleted(BiDiDriver driver)
     {
-#region ResponseCompleted
+        #region ResponseCompleted
         driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
             Console.WriteLine($"Response complete: {e.Response.Url}");
             Console.WriteLine($"Bytes received: {e.Response.BytesReceived}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -167,13 +167,13 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void FetchError(BiDiDriver driver)
     {
-#region FetchError
+        #region FetchError
         driver.Network.OnFetchError.AddObserver((FetchErrorEventArgs e) =>
         {
             Console.WriteLine($"Network error for: {e.Request.Url}");
             Console.WriteLine($"Error: {e.ErrorText}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -181,7 +181,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void AuthRequired(BiDiDriver driver)
     {
-#region AuthRequired
+        #region AuthRequired
         driver.Network.OnAuthRequired.AddObserver(async (AuthRequiredEventArgs e) =>
         {
             // Provide credentials
@@ -195,7 +195,7 @@ public static class NetworkModuleSamples
             await driver.Network.ContinueWithAuthAsync(parameters);
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -203,7 +203,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task AddIntercept(BiDiDriver driver, string contextId)
     {
-#region AddIntercept
+        #region AddIntercept
         AddInterceptCommandParameters parameters = new AddInterceptCommandParameters();
 
         // Specify which phase to intercept
@@ -220,7 +220,7 @@ public static class NetworkModuleSamples
 
         AddInterceptCommandResult result = await driver.Network.AddInterceptAsync(parameters);
         string interceptId = result.InterceptId;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -228,7 +228,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task InterceptSpecificUrls(BiDiDriver driver)
     {
-#region InterceptSpecificURLs
+        #region InterceptSpecificURLs
         AddInterceptCommandParameters parameters = new AddInterceptCommandParameters();
         parameters.Phases.Add(InterceptPhase.BeforeRequestSent);
 
@@ -239,7 +239,7 @@ public static class NetworkModuleSamples
         };
 
         await driver.Network.AddInterceptAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -247,7 +247,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task BlockRequests(BiDiDriver driver)
     {
-#region BlockRequests
+        #region BlockRequests
         // Add intercept
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
         addIntercept.Phases.Add(InterceptPhase.BeforeRequestSent);
@@ -270,7 +270,7 @@ public static class NetworkModuleSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -278,7 +278,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task ContinueRequest(BiDiDriver driver)
     {
-#region ContinueRequest
+        #region ContinueRequest
         driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs e) =>
         {
             if (e.IsBlocked)
@@ -299,7 +299,7 @@ public static class NetworkModuleSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -307,7 +307,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task ProvideCustomResponse(BiDiDriver driver)
     {
-#region ProvideCustomResponse
+        #region ProvideCustomResponse
         driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs e) =>
         {
             if (e.IsBlocked && e.Request.Url.Contains("/api/data"))
@@ -332,7 +332,7 @@ public static class NetworkModuleSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -340,12 +340,12 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task RemoveIntercept(BiDiDriver driver, string interceptId)
     {
-#region RemoveIntercept
+        #region RemoveIntercept
         RemoveInterceptCommandParameters parameters =
             new RemoveInterceptCommandParameters(interceptId);
 
         await driver.Network.RemoveInterceptAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -353,7 +353,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task CreateDataCollector(BiDiDriver driver, string contextId)
     {
-#region CreateDataCollector
+        #region CreateDataCollector
         // Allocate memory for data collection (in bytes)
         ulong maxSize = Convert.ToUInt64(Math.Pow(2, 24));  // 16 MB
 
@@ -366,7 +366,7 @@ public static class NetworkModuleSamples
             await driver.Network.AddDataCollectorAsync(parameters);
 
         string collectorId = result.CollectorId;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -377,7 +377,7 @@ public static class NetworkModuleSamples
         string collectorId,
         List<string> capturedBodies)
     {
-#region GetResponseBody
+        #region GetResponseBody
         driver.Network.OnResponseCompleted.AddObserver(async (ResponseCompletedEventArgs e) =>
         {
             // Only capture specific responses
@@ -398,7 +398,7 @@ public static class NetworkModuleSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -406,12 +406,12 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task DisownData(BiDiDriver driver, string collectorId, string requestId)
     {
-#region DisownData
+        #region DisownData
         DisownDataCommandParameters parameters =
             new DisownDataCommandParameters(collectorId, requestId);
 
         await driver.Network.DisownDataAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -419,12 +419,12 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task RemoveDataCollector(BiDiDriver driver, string collectorId)
     {
-#region RemoveDataCollector
+        #region RemoveDataCollector
         RemoveDataCollectorCommandParameters parameters =
             new RemoveDataCollectorCommandParameters(collectorId);
 
         await driver.Network.RemoveDataCollectorAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -432,7 +432,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void ReadingHeaders(BiDiDriver driver)
     {
-#region ReadingHeaders
+        #region ReadingHeaders
         driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
             foreach (ReadOnlyHeader header in e.Response.Headers)
@@ -442,7 +442,7 @@ public static class NetworkModuleSamples
                 Console.WriteLine($"{name}: {value}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -450,7 +450,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void SettingCustomHeaders(BiDiDriver driver)
     {
-#region SettingCustomHeaders
+        #region SettingCustomHeaders
         driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs e) =>
         {
             if (e.IsBlocked)
@@ -472,7 +472,7 @@ public static class NetworkModuleSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -480,7 +480,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task SetGlobalExtraHeaders(BiDiDriver driver, string contextId)
     {
-#region SetGlobalExtraHeaders
+        #region SetGlobalExtraHeaders
         SetExtraHeadersCommandParameters parameters = new SetExtraHeadersCommandParameters
         {
             Headers =
@@ -492,7 +492,7 @@ public static class NetworkModuleSamples
         };
 
         await driver.Network.SetExtraHeadersAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -500,12 +500,12 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task ClearExtraHeaders(BiDiDriver driver)
     {
-#region ClearExtraHeaders
+        #region ClearExtraHeaders
         SetExtraHeadersCommandParameters parameters =
             SetExtraHeadersCommandParameters.ResetExtraHeaders;
 
         await driver.Network.SetExtraHeadersAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -513,7 +513,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task BypassCache(BiDiDriver driver, string contextId)
     {
-#region BypassCache
+        #region BypassCache
         SetCacheBehaviorCommandParameters parameters =
             new SetCacheBehaviorCommandParameters(CacheBehavior.Bypass)
             {
@@ -521,7 +521,7 @@ public static class NetworkModuleSamples
             };
 
         await driver.Network.SetCacheBehaviorAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -529,7 +529,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task RestoreDefaultCacheBehavior(BiDiDriver driver, string contextId)
     {
-#region RestoreDefaultCacheBehavior
+        #region RestoreDefaultCacheBehavior
         SetCacheBehaviorCommandParameters parameters =
             new SetCacheBehaviorCommandParameters(CacheBehavior.Default)
             {
@@ -537,7 +537,7 @@ public static class NetworkModuleSamples
             };
 
         await driver.Network.SetCacheBehaviorAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -545,7 +545,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task AddCookie(BiDiDriver driver)
     {
-#region AddCookie
+        #region AddCookie
         // Use Storage module for cookies
         SetCookieCommandParameters parameters = new SetCookieCommandParameters(
             new PartialCookie("sessionId", BytesValue.FromString("abc123"), "example.com")
@@ -557,7 +557,7 @@ public static class NetworkModuleSamples
             });
 
         await driver.Storage.SetCookieAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -565,7 +565,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task GetCookies(BiDiDriver driver, string contextId)
     {
-#region GetCookies
+        #region GetCookies
         GetCookiesCommandParameters parameters = new GetCookiesCommandParameters();
         parameters.Partition = new BrowsingContextPartitionDescriptor(contextId);
 
@@ -577,7 +577,7 @@ public static class NetworkModuleSamples
             Console.WriteLine($"  Domain: {cookie.Domain}");
             Console.WriteLine($"  Expires: {cookie.Expires}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -585,7 +585,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static void TimingInformation(BiDiDriver driver)
     {
-#region TimingInformation
+        #region TimingInformation
         driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
             FetchTimingInfo timings = e.Request.Timings;
@@ -595,7 +595,7 @@ public static class NetworkModuleSamples
             Console.WriteLine($"Response start: {timings.ResponseStart}");
             Console.WriteLine($"Response end: {timings.ResponseEnd}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -605,7 +605,7 @@ public static class NetworkModuleSamples
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-#region CollectAllRequests
+        #region CollectAllRequests
         List<RequestData> allRequests = new List<RequestData>();
 
         driver.Network.OnBeforeRequestSent.AddObserver((BeforeRequestSentEventArgs e) =>
@@ -627,7 +627,7 @@ public static class NetworkModuleSamples
         {
             Console.WriteLine($"  {request.Method} {request.Url}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -635,11 +635,11 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task BlockAdDomains(BiDiDriver driver)
     {
-#region BlockAdDomains
-        List<string> adDomains = new List<string> 
-        { 
-            "ads.example.com", 
-            "tracker.example.com" 
+        #region BlockAdDomains
+        List<string> adDomains = new List<string>
+        {
+            "ads.example.com",
+            "tracker.example.com"
         };
 
         AddInterceptCommandParameters addIntercept = new AddInterceptCommandParameters();
@@ -663,7 +663,7 @@ public static class NetworkModuleSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -671,7 +671,7 @@ public static class NetworkModuleSamples
     /// </summary>
     public static async Task MockApiResponses(BiDiDriver driver)
     {
-#region MockAPIResponses
+        #region MockAPIResponses
         Dictionary<string, string> mockResponses = new Dictionary<string, string>
         {
             { "/api/user", "{\"name\": \"Test User\", \"id\": 123}" },
@@ -712,7 +712,7 @@ public static class NetworkModuleSamples
             }
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -722,7 +722,7 @@ public static class NetworkModuleSamples
         BiDiDriver driver,
         string contextId)
     {
-#region CaptureCompleteHTTPTransaction
+        #region CaptureCompleteHTTPTransaction
         Dictionary<string, HttpTransaction> transactions =
             new Dictionary<string, HttpTransaction>();
 
@@ -767,7 +767,7 @@ public static class NetworkModuleSamples
         },
         ObservableEventHandlerOptions.RunHandlerAsynchronously);
     }
-#endregion
+    #endregion
 
     /// <summary>
     /// Basic network interception setup.

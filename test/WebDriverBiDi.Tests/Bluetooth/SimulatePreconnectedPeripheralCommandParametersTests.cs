@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulatePreconnectedPeripheralCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulatePreconnectedPeripheralCommandParameters properties = new("myContext", "AD:D2:E5:55", "myPeripheral");

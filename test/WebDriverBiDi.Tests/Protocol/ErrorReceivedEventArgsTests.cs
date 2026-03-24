@@ -26,7 +26,8 @@ public class ErrorReceivedEventArgsTests
             Assert.That(eventArgs.ErrorData.ErrorType, Is.EqualTo("my error code"));
             Assert.That(eventArgs.ErrorData.ErrorMessage, Is.EqualTo("error message"));
             Assert.That(eventArgs.ErrorData.StackTrace, Is.EqualTo("stack trace"));
-        };
+        }
+        ;
     }
 
     [Test]
@@ -50,6 +51,6 @@ public class ErrorReceivedEventArgsTests
         ErrorResponseMessage? errorMessage = JsonSerializer.Deserialize<ErrorResponseMessage>(json)!;
         ErrorReceivedEventArgs eventArgs = new(errorMessage.GetErrorResponseData());
         ErrorReceivedEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));        
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 }

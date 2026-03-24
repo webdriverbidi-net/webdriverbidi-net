@@ -25,9 +25,9 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         PermissionsModule permissions = driver.Permissions;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -35,7 +35,7 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task GrantGeolocationPermission(BiDiDriver driver)
     {
-#region GrantGeolocationPermission
+        #region GrantGeolocationPermission
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("geolocation"),
             PermissionState.Granted,
@@ -43,7 +43,7 @@ public static class PermissionsModuleSamples
 
         await driver.Permissions.SetPermissionAsync(@params);
         Console.WriteLine("Geolocation permission granted");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task DenyPermission(BiDiDriver driver)
     {
-#region DenyPermission
+        #region DenyPermission
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("geolocation"),
             PermissionState.Denied,
@@ -59,7 +59,7 @@ public static class PermissionsModuleSamples
 
         await driver.Permissions.SetPermissionAsync(@params);
         Console.WriteLine("Geolocation permission denied");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -67,14 +67,14 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task GrantNotificationsPermission(BiDiDriver driver)
     {
-#region GrantNotificationsPermission
+        #region GrantNotificationsPermission
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("notifications"),
             PermissionState.Granted,
             "https://example.com");
 
         await driver.Permissions.SetPermissionAsync(@params);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -82,14 +82,14 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task GrantCameraPermission(BiDiDriver driver)
     {
-#region GrantCameraPermission
+        #region GrantCameraPermission
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("camera"),
             PermissionState.Granted,
             "https://example.com");
 
         await driver.Permissions.SetPermissionAsync(@params);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -97,14 +97,14 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task GrantMicrophonePermission(BiDiDriver driver)
     {
-#region GrantMicrophonePermission
+        #region GrantMicrophonePermission
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("microphone"),
             PermissionState.Granted,
             "https://example.com");
 
         await driver.Permissions.SetPermissionAsync(@params);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -112,14 +112,14 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task GrantMidiPermission(BiDiDriver driver)
     {
-#region GrantMIDIPermission
+        #region GrantMIDIPermission
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("midi"),
             PermissionState.Granted,
             "https://example.com");
 
         await driver.Permissions.SetPermissionAsync(@params);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task SetPermissionToPrompt(BiDiDriver driver)
     {
-#region SetPermissiontoPrompt
+        #region SetPermissiontoPrompt
         // Set permission to prompt user
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("notifications"),
@@ -135,7 +135,7 @@ public static class PermissionsModuleSamples
             "https://example.com");
 
         await driver.Permissions.SetPermissionAsync(@params);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -143,7 +143,7 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task TestingGeolocationFunctionality(BiDiDriver driver, string contextId)
     {
-#region TestingGeolocationFunctionality
+        #region TestingGeolocationFunctionality
         // Grant geolocation permission
         SetPermissionCommandParameters permParams = new SetPermissionCommandParameters(
             new PermissionDescriptor("geolocation"),
@@ -178,7 +178,7 @@ public static class PermissionsModuleSamples
             string location = locationValue.Value;
             Console.WriteLine($"Location: {location}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -186,7 +186,7 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task TestingNotificationPermissions(BiDiDriver driver, string contextId)
     {
-#region TestingNotificationPermissions
+        #region TestingNotificationPermissions
         // Grant notification permission
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("notifications"),
@@ -212,7 +212,7 @@ public static class PermissionsModuleSamples
             string permissionState = permissionValue.Value;
             Console.WriteLine($"Notification permission: {permissionState}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -220,7 +220,7 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task TestingPermissionDenial(BiDiDriver driver, string contextId)
     {
-#region TestingPermissionDenial
+        #region TestingPermissionDenial
         // Deny camera permission
         SetPermissionCommandParameters @params = new SetPermissionCommandParameters(
             new PermissionDescriptor("camera"),
@@ -243,7 +243,7 @@ public static class PermissionsModuleSamples
             string accessResult = accessValue.Value;
             Console.WriteLine($"Camera access: {accessResult}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -251,7 +251,7 @@ public static class PermissionsModuleSamples
     /// </summary>
     public static async Task TestingMultiplePermissions(BiDiDriver driver, string contextId)
     {
-#region TestingMultiplePermissions
+        #region TestingMultiplePermissions
         // Grant multiple permissions
         string[] permissionTypes = { "camera", "microphone" };
 
@@ -280,5 +280,5 @@ public static class PermissionsModuleSamples
             Console.WriteLine($"Media access: {accessResult}");
         }
     }
-#endregion
+    #endregion
 }

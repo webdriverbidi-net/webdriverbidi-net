@@ -8,12 +8,12 @@
 
 namespace WebDriverBiDi.Docs.Code.Advanced;
 
+using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
-using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Docs.Code.CoreConcepts;
-using System.Runtime.CompilerServices;
+using WebDriverBiDi.Protocol;
 
 /// <summary>
 /// Snippets for AOT compatibility documentation.
@@ -25,14 +25,14 @@ public static class AotCompatibilitySamples
     /// </summary>
     public static async Task BuiltInModulesInAot(string webSocketUrl, string contextId)
     {
-#region Built-inModulesinAOT
+        #region Built-inModulesinAOT
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
         await driver.StartAsync(webSocketUrl);
 
         // All built-in modules work in AOT with no extra setup
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, "https://example.com"));
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public static class AotCompatibilitySamples
     /// </summary>
     public static async Task RegisterAndConnect(string webSocketUrl)
     {
-#region RegisterandConnect
+        #region RegisterandConnect
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Register your serialization metadata for AOT support
@@ -52,24 +52,24 @@ public static class AotCompatibilitySamples
 
         // Now connect — the transport will use both the built-in and your custom metadata
         await driver.StartAsync(webSocketUrl);
-#endregion
+        #endregion
     }
 
     public static async Task MultipleContextsOptionARegistration(BiDiDriver driver)
     {
-#region MultipleCustomModulesOptionARegistration
+        #region MultipleCustomModulesOptionARegistration
         // Register once
         await driver.RegisterTypeInfoResolver(AllCustomModulesJsonContext.Default);
-#endregion
+        #endregion
     }
 
     public static async Task MultipleContextsOptionBRegistration(BiDiDriver driver)
     {
-#region MultipleCustomModulesOptionBRegistration
+        #region MultipleCustomModulesOptionBRegistration
         // Option B: Separate contexts per module
         await driver.RegisterTypeInfoResolver(ModuleAJsonContext.Default);
         await driver.RegisterTypeInfoResolver(ModuleBJsonContext.Default);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -78,15 +78,15 @@ public static class AotCompatibilitySamples
     public static async Task ConsumerRegistersExtension(
         BiDiDriver driver)
     {
-#region ConsumerRegistersExtension
+        #region ConsumerRegistersExtension
         await driver.RegisterTypeInfoResolver(MyExtensionJsonSerializerContext.Default);
         driver.RegisterModule(new MyExtensionModule(driver));
-#endregion
+        #endregion
     }
 }
 
 [JsonSerializable(typeof(MyExtensionCommandParameters))]
-internal partial class MyExtensionJsonSerializerContext : JsonSerializerContext {}
+internal partial class MyExtensionJsonSerializerContext : JsonSerializerContext { }
 
 public class MyExtensionModule : Module
 {
@@ -187,17 +187,17 @@ public record ModuleBEventArgs : WebDriverBiDiEventArgs
 }
 
 #region MultipleCustomModulesOptionA
-    // Option A: One context for everything
-    [JsonSerializable(typeof(ModuleACommandParameters))]
-    [JsonSerializable(typeof(CommandResponseMessage<ModuleACommandResult>))]
-    [JsonSerializable(typeof(ModuleBCommandParameters))]
-    [JsonSerializable(typeof(CommandResponseMessage<ModuleBCommandResult>))]
-    [JsonSerializable(typeof(EventMessage<ModuleBEventArgs>))]
-    public partial class AllCustomModulesJsonContext : JsonSerializerContext{}
+// Option A: One context for everything
+[JsonSerializable(typeof(ModuleACommandParameters))]
+[JsonSerializable(typeof(CommandResponseMessage<ModuleACommandResult>))]
+[JsonSerializable(typeof(ModuleBCommandParameters))]
+[JsonSerializable(typeof(CommandResponseMessage<ModuleBCommandResult>))]
+[JsonSerializable(typeof(EventMessage<ModuleBEventArgs>))]
+public partial class AllCustomModulesJsonContext : JsonSerializerContext { }
 #endregion
 
 [JsonSerializable(typeof(ModuleACommandParameters))]
-public partial class ModuleAJsonContext : JsonSerializerContext {}
+public partial class ModuleAJsonContext : JsonSerializerContext { }
 
 [JsonSerializable(typeof(ModuleBCommandParameters))]
-public partial class ModuleBJsonContext : JsonSerializerContext {}
+public partial class ModuleBJsonContext : JsonSerializerContext { }

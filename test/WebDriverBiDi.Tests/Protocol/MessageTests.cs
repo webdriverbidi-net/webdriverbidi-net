@@ -149,7 +149,7 @@ public class MessageTests
             Assert.That(result.StackTrace, Is.EqualTo("full stack trace"));
         }
     }
-    
+
     [Test]
     public void TestCanDeserializeMessageWithAdditionalData()
     {

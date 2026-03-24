@@ -93,5 +93,5 @@ public class FileDialogOpenedEventArgsTests
         FileDialogOpenedEventArgs eventArgs = new(info);
         FileDialogOpenedEventArgs copy = eventArgs with { };
         Assert.That(copy, Is.EqualTo(eventArgs));
-     }
+    }
 }

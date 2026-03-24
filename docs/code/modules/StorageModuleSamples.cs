@@ -23,9 +23,9 @@ public static class StorageModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         StorageModule storage = driver.Storage;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task GetAllCookies(BiDiDriver driver, string contextId)
     {
-#region GetAllCookies
+        #region GetAllCookies
         GetCookiesCommandParameters parameters = new GetCookiesCommandParameters();
         parameters.Partition = new BrowsingContextPartitionDescriptor(contextId);
 
@@ -49,7 +49,7 @@ public static class StorageModuleSamples
             Console.WriteLine($"HttpOnly: {cookie.HttpOnly}");
             Console.WriteLine($"SameSite: {cookie.SameSite}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task GetCookiesByFilter(BiDiDriver driver, string contextId)
     {
-#region GetCookiesbyFilter
+        #region GetCookiesbyFilter
         GetCookiesCommandParameters parameters = new GetCookiesCommandParameters();
         parameters.Partition = new BrowsingContextPartitionDescriptor(contextId);
         parameters.Filter = new CookieFilter
@@ -66,7 +66,7 @@ public static class StorageModuleSamples
         };
 
         GetCookiesCommandResult result = await driver.Storage.GetCookiesAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task SetCookie(BiDiDriver driver)
     {
-#region SetCookie
+        #region SetCookie
         PartialCookie cookie = new PartialCookie(
             "sessionId",
             BytesValue.FromString("abc123"),
@@ -88,7 +88,7 @@ public static class StorageModuleSamples
 
         SetCookieCommandParameters parameters = new SetCookieCommandParameters(cookie);
         await driver.Storage.SetCookieAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task SetCookieWithExpiry(BiDiDriver driver)
     {
-#region SetCookiewithExpiry
+        #region SetCookiewithExpiry
         PartialCookie cookie = new PartialCookie(
             "rememberMe",
             BytesValue.FromString("true"),
@@ -108,7 +108,7 @@ public static class StorageModuleSamples
 
         SetCookieCommandParameters parameters = new SetCookieCommandParameters(cookie);
         await driver.Storage.SetCookieAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -116,7 +116,7 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task DeleteCookie(BiDiDriver driver)
     {
-#region DeleteCookie
+        #region DeleteCookie
         CookieFilter filter = new CookieFilter
         {
             Name = "sessionId",
@@ -127,7 +127,7 @@ public static class StorageModuleSamples
         parameters.Filter = filter;
 
         await driver.Storage.DeleteCookiesAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -135,12 +135,12 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task DeleteAllCookies(BiDiDriver driver, string contextId)
     {
-#region DeleteAllCookies
+        #region DeleteAllCookies
         DeleteCookiesCommandParameters parameters = new DeleteCookiesCommandParameters();
         parameters.Partition = new BrowsingContextPartitionDescriptor(contextId);
 
         await driver.Storage.DeleteCookiesAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -148,7 +148,7 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task SaveAndRestoreSession(BiDiDriver driver, string contextId)
     {
-#region SaveandRestoreSession
+        #region SaveandRestoreSession
         // Save cookies
         GetCookiesCommandResult savedCookies = await driver.Storage.GetCookiesAsync(
             new GetCookiesCommandParameters
@@ -170,7 +170,7 @@ public static class StorageModuleSamples
 
             await driver.Storage.SetCookieAsync(new SetCookieCommandParameters(newCookie));
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -178,14 +178,14 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task CleanStateBetweenTests(BiDiDriver driver, string contextId)
     {
-#region CleanStateBetweenTests
+        #region CleanStateBetweenTests
         // Clear all cookies
         await driver.Storage.DeleteCookiesAsync(
             new DeleteCookiesCommandParameters
             {
                 Partition = new BrowsingContextPartitionDescriptor(contextId)
             });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -193,7 +193,7 @@ public static class StorageModuleSamples
     /// </summary>
     public static async Task SetAuthenticationCookie(BiDiDriver driver, string contextId)
     {
-#region SetAuthenticationCookie
+        #region SetAuthenticationCookie
         PartialCookie authCookie = new PartialCookie(
             "authToken",
             BytesValue.FromString("your-auth-token"),
@@ -211,6 +211,6 @@ public static class StorageModuleSamples
         // Now navigate - cookie will be sent
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, "https://example.com/dashboard"));
-#endregion
+        #endregion
     }
 }

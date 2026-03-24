@@ -52,7 +52,7 @@ public class HistoryUpdatedEventArgsTests
             Assert.That(eventArgs.EpochTimestamp, Is.EqualTo(milliseconds));
             Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(milliseconds)));
             Assert.That(eventArgs.UserContextId, Is.EqualTo("myUserContextId"));
-         }
+        }
     }
 
     [Test]
@@ -120,9 +120,9 @@ public class HistoryUpdatedEventArgsTests
         Assert.That(() => JsonSerializer.Deserialize<HistoryUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
-  [Test]
-  public void TestDeserializeWithInvalidUrlValueThrows()
-  {
+    [Test]
+    public void TestDeserializeWithInvalidUrlValueThrows()
+    {
         DateTime now = DateTime.UtcNow;
         DateTime eventTime = new(now.Ticks - (now.Ticks % TimeSpan.TicksPerMillisecond));
         ulong milliseconds = Convert.ToUInt64(eventTime.Subtract(DateTime.UnixEpoch).TotalMilliseconds);

@@ -163,7 +163,7 @@ public class PointerMoveActionTests
     [Test]
     public void TestCanSerializeParametersWithOptionalElementOrigin()
     {
-       string nodeJson = """
+        string nodeJson = """
                           {
                             "type": "node",
                             "value": {

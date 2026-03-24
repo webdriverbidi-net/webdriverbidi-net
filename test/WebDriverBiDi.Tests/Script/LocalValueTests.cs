@@ -108,7 +108,7 @@ public class LocalValueTests
             Assert.That(parsed["value"]!.Value<double>(), Is.EqualTo(123.23));
         }
     }
-    
+
     [Test]
     public void TestCanSerializeDouble()
     {
@@ -464,7 +464,7 @@ public class LocalValueTests
         {
             Assert.That(itemObject!, Contains.Key("type"));
             Assert.That(itemObject!["type"]!.Value<string>(), Is.EqualTo("null"));
-       }
+        }
 
         Assert.That(valueObject[3].Type, Is.EqualTo(JTokenType.Object));
         itemObject = valueObject[3] as JObject;

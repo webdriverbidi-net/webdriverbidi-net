@@ -6,7 +6,7 @@ using System.Text.Json;
 [TestFixture]
 public class RemoteValueTests
 {
-   [Test]
+    [Test]
     public void TestCanDeserializeStringRemoteValue()
     {
         string json = """
@@ -152,7 +152,7 @@ public class RemoteValueTests
         }
     }
 
-   [Test]
+    [Test]
     public void TestCopySemantics()
     {
         string json = """
@@ -178,7 +178,7 @@ public class RemoteValueTests
                       """;
         Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("invalid value 'invalid' for 'value' property of number"));
     }
-    
+
     [Test]
     public void TestDeserializingInvalidNumericRemoteValueThrows()
     {

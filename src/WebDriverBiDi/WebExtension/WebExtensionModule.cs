@@ -15,7 +15,7 @@ public sealed class WebExtensionModule : Module
     /// </summary>
     public const string WebExtensionModuleName = "webExtension";
 
-     /// <summary>
+    /// <summary>
     /// Initializes a new instance of the <see cref="WebExtensionModule"/> class.
     /// </summary>
     /// <param name="driver">The <see cref="IBiDiCommandExecutor"/> used in the module commands and events.</param>

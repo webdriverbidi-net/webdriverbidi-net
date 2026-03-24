@@ -432,10 +432,10 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             // of the coding style rules for this project, which require braces
             // for all control blocks. Therefore, we disable those style rules
             // for this block only.
-            #pragma warning disable IDE0011, SA1503
+#pragma warning disable IDE0011, SA1503
             if (command.ThrownException is not null)
                 ExceptionDispatchInfo.Capture(command.ThrownException).Throw();
-            #pragma warning restore IDE0011, SA1503
+#pragma warning restore IDE0011, SA1503
 
             if (command.IsCanceled)
             {

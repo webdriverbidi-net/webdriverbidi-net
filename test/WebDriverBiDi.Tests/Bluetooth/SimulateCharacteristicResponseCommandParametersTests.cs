@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulateCharacteristicResponseCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulateCharacteristicResponseCommandParameters properties = new("myContext", "myAddress", "myServiceUuid", "myCharacteristicUuid", SimulateCharacteristicResponseType.Read, 0);
@@ -40,7 +40,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       }
+        }
     }
 
     [Test]
@@ -70,7 +70,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       }
+        }
     }
 
     [Test]
@@ -100,7 +100,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       }
+        }
     }
 
     [Test]
@@ -130,7 +130,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized, Contains.Key("code"));
             Assert.That(serialized["code"]!.Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(serialized["code"]!.Value<uint>(), Is.Zero);
-       }
+        }
     }
 
     [Test]
@@ -167,7 +167,7 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(serialized["data"]!.Type, Is.EqualTo(JTokenType.Array));
             JArray? dataArray = serialized["data"] as JArray;
             Assert.That(dataArray, Is.Empty);
-       }
+        }
     }
 
     [Test]
@@ -208,6 +208,6 @@ public class SimulateCharacteristicResponseCommandParametersTests
             Assert.That(dataArray[0].Value<uint>(), Is.EqualTo(123));
             Assert.That(dataArray![1].Type, Is.EqualTo(JTokenType.Integer));
             Assert.That(dataArray[1].Value<uint>(), Is.EqualTo(456));
-       }
+        }
     }
 }

@@ -28,7 +28,7 @@ public class BluetoothModuleTests
         Task<DisableSimulationCommandResult> task = module.DisableSimulationAsync(new DisableSimulationCommandParameters("myContextId"));
         task.Wait(TimeSpan.FromSeconds(1));
         DisableSimulationCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -55,7 +55,7 @@ public class BluetoothModuleTests
         Task<HandleRequestDevicePromptCommandResult> task = module.HandleRequestDevicePromptAsync(new HandleRequestDevicePromptAcceptCommandParameters("myContextId", "myPromptId", "myDeviceId"));
         task.Wait(TimeSpan.FromSeconds(1));
         EmptyResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -82,7 +82,7 @@ public class BluetoothModuleTests
         Task<HandleRequestDevicePromptCommandResult> task = module.HandleRequestDevicePromptAsync(new HandleRequestDevicePromptCancelCommandParameters("myContextId", "myPromptId"));
         task.Wait(TimeSpan.FromSeconds(1));
         HandleRequestDevicePromptCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -108,7 +108,7 @@ public class BluetoothModuleTests
 
         Task<SimulateAdapterCommandResult> task = module.SimulateAdapterAsync(new SimulateAdapterCommandParameters("myContextId", AdapterState.PoweredOn));
         task.Wait(TimeSpan.FromSeconds(1));
-        SimulateAdapterCommandResult result = task.Result;        
+        SimulateAdapterCommandResult result = task.Result;
         Assert.That(result, Is.Not.Null);
     }
 
@@ -135,7 +135,7 @@ public class BluetoothModuleTests
         Task<SimulateAdvertisementCommandResult> task = module.SimulateAdvertisementAsync(new SimulateAdvertisementCommandParameters("myContextId", new SimulateAdvertisementScanEntry("08:08:08:08:08", -10, new ScanRecord())));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulateAdvertisementCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -162,7 +162,7 @@ public class BluetoothModuleTests
         Task<SimulateCharacteristicCommandResult> task = module.SimulateCharacteristicAsync(new SimulateCharacteristicCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", SimulateCharacteristicType.Add));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulateCharacteristicCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -189,7 +189,7 @@ public class BluetoothModuleTests
         Task<SimulateCharacteristicResponseCommandResult> task = module.SimulateCharacteristicResponseAsync(new SimulateCharacteristicResponseCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", SimulateCharacteristicResponseType.Read, 0));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulateCharacteristicResponseCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -216,7 +216,7 @@ public class BluetoothModuleTests
         Task<SimulateDescriptorCommandResult> task = module.SimulateDescriptorAsync(new SimulateDescriptorCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", "my-descriptor-uuid", SimulateDescriptorType.Add));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulateDescriptorCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -243,7 +243,7 @@ public class BluetoothModuleTests
         Task<SimulateDescriptorResponseCommandResult> task = module.SimulateDescriptorResponseAsync(new SimulateDescriptorResponseCommandParameters("myContextId", "myAddress", "my-service-uuid", "my-characteristic-uuid", "my-descriptor-uuid", SimulateDescriptorResponseType.Read, 0));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulateDescriptorResponseCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -270,7 +270,7 @@ public class BluetoothModuleTests
         Task<SimulateGattConnectionResponseCommandResult> task = module.SimulateGattConnectionResponseAsync(new SimulateGattConnectionResponseCommandParameters("myContextId", "myAddress", 0));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulateGattConnectionResponseCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -297,7 +297,7 @@ public class BluetoothModuleTests
         Task<SimulateGattDisconnectionCommandResult> task = module.SimulateGattDisconnectionAsync(new SimulateGattDisconnectionCommandParameters("myContextId", "myAddress"));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulateGattDisconnectionCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -324,7 +324,7 @@ public class BluetoothModuleTests
         Task<SimulatePreconnectedPeripheralCommandResult> task = module.SimulatePreconnectedPeripheralAsync(new SimulatePreconnectedPeripheralCommandParameters("myContextId", "08:08:08:08:08", "myDeviceName"));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulatePreconnectedPeripheralCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -351,7 +351,7 @@ public class BluetoothModuleTests
         Task<SimulateServiceCommandResult> task = module.SimulateServiceAsync(new SimulateServiceCommandParameters("myContextId", "myAddress", "my-service-uuid", SimulateServiceType.Add));
         task.Wait(TimeSpan.FromSeconds(1));
         SimulateServiceCommandResult result = task.Result;
-        
+
         Assert.That(result, Is.Not.Null);
     }
 
@@ -364,7 +364,8 @@ public class BluetoothModuleTests
         BluetoothModule module = driver.Bluetooth;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnCharacteristicGeneratedEvent.AddObserver((CharacteristicEventGeneratedEventArgs e) => {
+        module.OnCharacteristicGeneratedEvent.AddObserver((CharacteristicEventGeneratedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -373,7 +374,7 @@ public class BluetoothModuleTests
                 Assert.That(e.CharacteristicUuid, Is.EqualTo("my-characteristic-uuid"));
                 Assert.That(e.Type, Is.EqualTo(CharacteristicEventGeneratedType.Read));
                 Assert.That(e.Data, Is.Null);
-           }
+            }
             syncEvent.Set();
         });
 
@@ -404,7 +405,8 @@ public class BluetoothModuleTests
         BluetoothModule module = driver.Bluetooth;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnDescriptorGeneratedEvent.AddObserver((DescriptorEventGeneratedEventArgs e) => {
+        module.OnDescriptorGeneratedEvent.AddObserver((DescriptorEventGeneratedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
@@ -414,7 +416,7 @@ public class BluetoothModuleTests
                 Assert.That(e.DescriptorUuid, Is.EqualTo("my-descriptor-uuid"));
                 Assert.That(e.Type, Is.EqualTo(DescriptorEventGeneratedType.Read));
                 Assert.That(e.Data, Is.Null);
-           }
+            }
             syncEvent.Set();
         });
 
@@ -446,12 +448,13 @@ public class BluetoothModuleTests
         BluetoothModule module = driver.Bluetooth;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnGattConnectionAttempted.AddObserver((GattConnectionAttemptedEventArgs e) => {
+        module.OnGattConnectionAttempted.AddObserver((GattConnectionAttemptedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));
                 Assert.That(e.Address, Is.EqualTo("myAddress"));
-           }
+            }
             syncEvent.Set();
         });
 
@@ -479,7 +482,8 @@ public class BluetoothModuleTests
         BluetoothModule module = driver.Bluetooth;
 
         ManualResetEvent syncEvent = new(false);
-        module.OnRequestDevicePromptUpdated.AddObserver((RequestDevicePromptUpdatedEventArgs e) => {
+        module.OnRequestDevicePromptUpdated.AddObserver((RequestDevicePromptUpdatedEventArgs e) =>
+        {
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(e.BrowsingContextId, Is.EqualTo("myContext"));

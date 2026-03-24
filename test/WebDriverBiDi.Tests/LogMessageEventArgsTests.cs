@@ -20,6 +20,6 @@ public class LogMessageEventArgsTests
     {
         LogMessageEventArgs eventArgs = new("log message", WebDriverBiDiLogLevel.Info, "test component");
         LogMessageEventArgs copy = eventArgs with { };
-        Assert.That(copy, Is.EqualTo(eventArgs));        
+        Assert.That(copy, Is.EqualTo(eventArgs));
     }
 }

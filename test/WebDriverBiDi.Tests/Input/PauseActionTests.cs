@@ -18,7 +18,7 @@ public class PauseActionTests
             Assert.That(serialized, Contains.Key("type"));
             Assert.That(serialized["type"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["type"]!.Value<string>(), Is.EqualTo("pause"));
-       }
+        }
     }
 
     [Test]

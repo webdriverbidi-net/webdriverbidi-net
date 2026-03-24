@@ -68,7 +68,7 @@ public class StackFrameTests
                         "url": "http://some.url/file.js"
                       }
                       """;
-       Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<StackFrame>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

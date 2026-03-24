@@ -14,7 +14,7 @@ public class CharacteristicPropertiesTests
         JObject serialized = JObject.Parse(json);
         Assert.That(serialized, Has.Count.EqualTo(0));
     }
-    
+
     [Test]
     public void TestCanSerializeWithAllValuesTrue()
     {
@@ -60,7 +60,7 @@ public class CharacteristicPropertiesTests
             Assert.That(serialized["extendedProperties"]!.Value<bool>(), Is.True);
         }
     }
-    
+
     [Test]
     public void TestCanSerializeWithAllValuesFalse()
     {

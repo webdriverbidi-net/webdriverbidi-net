@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class UnsubscribeCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         UnsubscribeByAttributesCommandParameters byAttributesProperties = new();

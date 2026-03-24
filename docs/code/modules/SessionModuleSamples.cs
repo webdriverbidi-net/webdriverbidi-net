@@ -19,9 +19,9 @@ public static class SessionModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         SessionModule session = driver.Session;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public static class SessionModuleSamples
     /// </summary>
     public static async Task NewSession(BiDiDriver driver)
     {
-#region NewSession
+        #region NewSession
         NewCommandParameters parameters = new NewCommandParameters();
 
         NewCommandResult result = await driver.Session.NewSessionAsync(parameters);
@@ -37,7 +37,7 @@ public static class SessionModuleSamples
         string sessionId = result.SessionId;
         Console.WriteLine($"Session ID: {result.SessionId}");
         Console.WriteLine($"Browser: {result.Capabilities.BrowserName} {result.Capabilities.BrowserVersion}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ public static class SessionModuleSamples
     /// </summary>
     public static async Task NewSessionWithCapabilities(BiDiDriver driver)
     {
-#region NewSessionWithCapabilities
+        #region NewSessionWithCapabilities
         CapabilityRequest capabilities = new CapabilityRequest
         {
             BrowserName = "chrome",
@@ -61,7 +61,7 @@ public static class SessionModuleSamples
         };
 
         NewCommandResult result = await driver.Session.NewSessionAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -69,12 +69,12 @@ public static class SessionModuleSamples
     /// </summary>
     public static async Task CheckSessionStatus(BiDiDriver driver)
     {
-#region CheckSessionStatus
+        #region CheckSessionStatus
         StatusCommandParameters parameters = new StatusCommandParameters();
         StatusCommandResult result = await driver.Session.StatusAsync(parameters);
 
         Console.WriteLine($"Is ready: {result.IsReady}");
         Console.WriteLine($"Message: {result.Message}");
-#endregion
+        #endregion
     }
 }

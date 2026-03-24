@@ -10,7 +10,7 @@ namespace WebDriverBiDi.Session;
 /// </summary>
 public record UserPromptHandlerResult
 {
-    private UserPromptHandler userPromptHandler;
+    private readonly UserPromptHandler userPromptHandler;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserPromptHandlerResult"/> class.

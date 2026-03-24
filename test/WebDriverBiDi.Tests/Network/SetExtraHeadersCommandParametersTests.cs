@@ -47,7 +47,7 @@ public class SetExtraHeadersCommandParametersTests
             Assert.That(headersArray[0].Type, Is.EqualTo(JTokenType.String));
             Assert.That(headersArray[0].Value<string>(), Is.EqualTo("X-Extra-Header: headerValue"));
         }
-        
+
     }
 
     [Test]

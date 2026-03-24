@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class RemovePreloadScriptCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         RemovePreloadScriptCommandParameters properties = new("myLoadScriptId");

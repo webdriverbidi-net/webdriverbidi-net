@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 [TestFixture]
 public class SimulateAdvertisementCommandParametersTests
 {
-   [Test]
+    [Test]
     public void TestCommandName()
     {
         SimulateAdvertisementCommandParameters properties = new("myContext", new SimulateAdvertisementScanEntry("08:08:08:08:08", -10.1, new ScanRecord()));

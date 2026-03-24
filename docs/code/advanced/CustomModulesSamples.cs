@@ -103,7 +103,7 @@ public static class Registrar
     public static async Task RegisterAndUseModule(
         string webSocketUrl)
     {
-#region RegisterandUseModule
+        #region RegisterandUseModule
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Register custom module (must be done before calling StartAsync)
@@ -113,7 +113,7 @@ public static class Registrar
 
         // Access module
         var myModule = driver.GetModule<MyCustomModule>("myCustom");
-#endregion
+        #endregion
     }
 }
 
@@ -131,7 +131,7 @@ public class WaitForElementCommandParameters : CommandParameters<WaitForElementC
         this.ContextId = contextId;
         this.Selector = selector;
         this.TimeoutMs = timeoutMs;
-        
+
         // Build JavaScript that waits for element
         this.Expression = $$"""
             new Promise((resolve) => {
@@ -147,7 +147,7 @@ public class WaitForElementCommandParameters : CommandParameters<WaitForElementC
                 setTimeout(() => resolve({ found: false }), {timeoutMs});
             })
             """;
-        
+
         this.Target = new ContextTarget(contextId);
         this.AwaitPromise = true;
     }
@@ -198,14 +198,14 @@ public class PageUtilitiesModule : Module
     /// <param name="timeout">Maximum time to wait.</param>
     /// <returns>True if element found, false otherwise.</returns>
     public async Task<bool> WaitForElementAsync(
-        string contextId, 
-        string selector, 
+        string contextId,
+        string selector,
         TimeSpan timeout)
     {
-        WaitForElementCommandParameters parameters = 
+        WaitForElementCommandParameters parameters =
             new WaitForElementCommandParameters(
-                contextId, 
-                selector, 
+                contextId,
+                selector,
                 (int)timeout.TotalMilliseconds);
 
         EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
@@ -323,7 +323,7 @@ public static class PageUtilitiesModuleUse
 {
     public static async Task UsePageUtilitiesModule(string webSocketUrl)
     {
-#region UsingPageUtilitiesModule
+        #region UsingPageUtilitiesModule
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Register custom module (must be done before calling StartAsync)
@@ -342,15 +342,15 @@ public static class PageUtilitiesModuleUse
 
         // Use custom module
         bool elementFound = await pageUtils.WaitForElementAsync(
-            contextId, 
-            ".content", 
+            contextId,
+            ".content",
             TimeSpan.FromSeconds(10));
 
         if (elementFound)
         {
             string? text = await pageUtils.GetElementTextAsync(contextId, ".content");
             Console.WriteLine($"Content: {text}");
-            
+
             bool isVisible = await pageUtils.IsElementVisibleAsync(contextId, ".content");
             Console.WriteLine($"Visible: {isVisible}");
         }
@@ -359,7 +359,7 @@ public static class PageUtilitiesModuleUse
         var metrics = await pageUtils.GetPageMetricsAsync(contextId);
         Console.WriteLine($"Links: {metrics["linkCount"]}");
         Console.WriteLine($"Images: {metrics["imageCount"]}");
-#endregion
+        #endregion
     }
 }
 
@@ -405,7 +405,7 @@ public class TestUtilitiesModule : Module
             long height = dimensions["height"].ConvertTo<LongRemoteValue>().Value;
 
             // Capture screenshot with full page dimensions
-            CaptureScreenshotCommandParameters screenshotParams = 
+            CaptureScreenshotCommandParameters screenshotParams =
                 new CaptureScreenshotCommandParameters(contextId)
                 {
                     Clip = new BoxClipRectangle
@@ -495,7 +495,7 @@ public class CustomEventsModule : Module
 
     public override string ModuleName => CustomModuleName;
 
-    public ObservableEvent<CustomEventArgs> OnCustomEvent { get; } = 
+    public ObservableEvent<CustomEventArgs> OnCustomEvent { get; } =
         new ObservableEvent<CustomEventArgs>(CustomEventName);
 }
 
@@ -541,15 +541,15 @@ public class Waiter
     /// </summary>
 #region OptionalTimeoutDefault
     public async Task<bool> WaitForElementAsync(
-        string contextId, 
-        string selector, 
+        string contextId,
+        string selector,
         TimeSpan? timeout = null)  // Optional timeout
     {
         timeout = timeout ?? TimeSpan.FromSeconds(30);  // Default
         // ...
         return true; // Placeholder
     }
-#endregion
+    #endregion
 
     private readonly IBiDiCommandExecutor Driver;
 
@@ -567,7 +567,7 @@ public class Waiter
                 true);
 
             EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
-            
+
             if (result is EvaluateResultSuccess success &&
                 success.Result is StringRemoteValue stringValue)
             {
@@ -582,10 +582,10 @@ public class Waiter
         {
             Console.WriteLine($"Command error: {ex.Message}");
         }
-        
+
         return null;  // Graceful fallback
     }
-#endregion
+    #endregion
 }
 
 /// <summary>

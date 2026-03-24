@@ -31,7 +31,7 @@ public class BrowserModuleTests
 
         Assert.That(result, Is.Not.Null);
     }
-    
+
     [Test]
     public async Task TestExecuteCloseCommandWithNoArgument()
     {

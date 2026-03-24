@@ -62,7 +62,7 @@ public class EntryAddedEventArgsTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
-            Assert.That(eventArgs.Text,Is.EqualTo("my log message"));
+            Assert.That(eventArgs.Text, Is.EqualTo("my log message"));
             Assert.That(eventArgs.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             Assert.That(eventArgs.Type, Is.EqualTo("console"));
@@ -102,7 +102,7 @@ public class EntryAddedEventArgsTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("realmId"));
-            Assert.That(eventArgs.Text,Is.EqualTo("my log message"));
+            Assert.That(eventArgs.Text, Is.EqualTo("my log message"));
             Assert.That(eventArgs.Level, Is.EqualTo(LogLevel.Debug));
             Assert.That(eventArgs.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
             Assert.That(eventArgs.Type, Is.EqualTo("console"));

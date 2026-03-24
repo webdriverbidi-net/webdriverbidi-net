@@ -29,9 +29,9 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static void AccessingModule(BiDiDriver driver)
     {
-#region AccessingModule
+        #region AccessingModule
         BrowsingContextModule browsingContext = driver.BrowsingContext;
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task GetAllContexts(BiDiDriver driver)
     {
-#region GetAllContexts
+        #region GetAllContexts
         GetTreeCommandParameters parameters = new GetTreeCommandParameters();
         GetTreeCommandResult result = await driver.BrowsingContext.GetTreeAsync(parameters);
 
@@ -50,7 +50,7 @@ public static class BrowsingContextModuleSamples
             Console.WriteLine($"Parent: {context.Parent ?? "none"}");
             Console.WriteLine($"Children: {context.Children.Count}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -58,13 +58,13 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task GetSpecificContext(BiDiDriver driver, string contextId)
     {
-#region GetSpecificContext
+        #region GetSpecificContext
         GetTreeCommandParameters parameters = new GetTreeCommandParameters()
         {
             RootBrowsingContextId = contextId  // Only get this context and its descendants
         };
         GetTreeCommandResult result = await driver.BrowsingContext.GetTreeAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -72,13 +72,13 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task GetOnlyTopLevelContexts(BiDiDriver driver)
     {
-#region GetOnlyTop-LevelContexts
+        #region GetOnlyTop-LevelContexts
         GetTreeCommandParameters parameters = new GetTreeCommandParameters()
         {
             MaxDepth = 0  // Don't include child contexts (iframes)
         };
         GetTreeCommandResult result = await driver.BrowsingContext.GetTreeAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -86,13 +86,13 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task CreateNewTab(BiDiDriver driver)
     {
-#region CreateNewTab
+        #region CreateNewTab
         CreateCommandParameters parameters = new CreateCommandParameters(CreateType.Tab);
         CreateCommandResult result = await driver.BrowsingContext.CreateAsync(parameters);
 
         string newTabId = result.BrowsingContextId;
         Console.WriteLine($"Created tab: {newTabId}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -100,19 +100,19 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task CreateNewWindow(BiDiDriver driver)
     {
-#region CreateNewWindow
+        #region CreateNewWindow
         CreateCommandParameters parameters = new CreateCommandParameters(CreateType.Window);
         CreateCommandResult result = await driver.BrowsingContext.CreateAsync(parameters);
 
         string newWindowId = result.BrowsingContextId;
-#endregion
+        #endregion
     }
 
     public static async Task CreateContextInUserContext(BiDiDriver driver)
     {
-#region CreateContextinUserContext
+        #region CreateContextinUserContext
         // First create a user context
-        CreateUserContextCommandResult userContext = 
+        CreateUserContextCommandResult userContext =
             await driver.Browser.CreateUserContextAsync(new CreateUserContextCommandParameters());
 
         // Create tab in that user context
@@ -121,15 +121,15 @@ public static class BrowsingContextModuleSamples
             UserContextId = userContext.UserContextId
         };
         CreateCommandResult result = await driver.BrowsingContext.CreateAsync(parameters);
-#endregion
-     }
+        #endregion
+    }
 
     /// <summary>
     /// Basic navigation.
     /// </summary>
     public static async Task BasicNavigation(BiDiDriver driver, string contextId)
     {
-#region BasicNavigation
+        #region BasicNavigation
         NavigateCommandParameters parameters = new NavigateCommandParameters(
             contextId,
             "https://example.com");
@@ -138,7 +138,7 @@ public static class BrowsingContextModuleSamples
 
         Console.WriteLine($"Navigation ID: {result.NavigationId}");
         Console.WriteLine($"URL: {result.Url}");
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -146,7 +146,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task WaitForPageLoad(BiDiDriver driver, string contextId)
     {
-#region WaitforPageLoad
+        #region WaitforPageLoad
         NavigateCommandParameters parameters = new NavigateCommandParameters(
             contextId,
             "https://example.com")
@@ -154,7 +154,7 @@ public static class BrowsingContextModuleSamples
             Wait = ReadinessState.Complete  // Wait for full page load
         };
         await driver.BrowsingContext.NavigateAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task NavigationWithTimeout(BiDiDriver driver, string contextId)
     {
-#region NavigationwithTimeout
+        #region NavigationwithTimeout
         NavigateCommandParameters parameters = new NavigateCommandParameters(
             contextId,
             "https://example.com")
@@ -172,7 +172,7 @@ public static class BrowsingContextModuleSamples
         await driver.BrowsingContext.NavigateAsync(
             parameters,
             TimeSpan.FromSeconds(30));  // Fail if not loaded in 30 seconds
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task BackForwardNavigation(BiDiDriver driver, string contextId)
     {
-#region Back/ForwardNavigation
+        #region Back/ForwardNavigation
         // Navigate back
         TraverseHistoryCommandParameters backParams =
             new TraverseHistoryCommandParameters(contextId, -1);
@@ -190,7 +190,7 @@ public static class BrowsingContextModuleSamples
         TraverseHistoryCommandParameters forwardParams =
             new TraverseHistoryCommandParameters(contextId, 1);
         await driver.BrowsingContext.TraverseHistoryAsync(forwardParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -198,7 +198,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task ReloadPage(BiDiDriver driver, string contextId)
     {
-#region ReloadPage
+        #region ReloadPage
         ReloadCommandParameters parameters = new ReloadCommandParameters(contextId);
         await driver.BrowsingContext.ReloadAsync(parameters);
 
@@ -208,7 +208,7 @@ public static class BrowsingContextModuleSamples
             Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.ReloadAsync(reloadParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -216,10 +216,10 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task CloseTab(BiDiDriver driver, string contextId)
     {
-#region CloseTab
+        #region CloseTab
         CloseCommandParameters parameters = new CloseCommandParameters(contextId);
         await driver.BrowsingContext.CloseAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -227,7 +227,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task CloseAllTabsInUserContext(BiDiDriver driver, string userContextId)
     {
-#region CloseAllTabsinUserContext
+        #region CloseAllTabsinUserContext
         // Get all contexts in user context
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(
             new GetTreeCommandParameters());
@@ -240,7 +240,7 @@ public static class BrowsingContextModuleSamples
                     new CloseCommandParameters(context.BrowsingContextId));
             }
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -248,7 +248,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task LocateByCssSelector(BiDiDriver driver, string contextId)
     {
-#region LocatebyCSSSelector
+        #region LocatebyCSSSelector
         LocateNodesCommandParameters parameters = new LocateNodesCommandParameters(
             contextId,
             new CssLocator("button.submit"));
@@ -259,7 +259,7 @@ public static class BrowsingContextModuleSamples
         {
             Console.WriteLine($"Found element: {node.SharedId}");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -267,13 +267,13 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task LocateByXPath(BiDiDriver driver, string contextId)
     {
-#region LocatebyXPath
+        #region LocatebyXPath
         LocateNodesCommandParameters parameters = new LocateNodesCommandParameters(
             contextId,
             new XPathLocator("//button[@type='submit']"));
 
         LocateNodesCommandResult result = await driver.BrowsingContext.LocateNodesAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -281,7 +281,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task LocateWithMaxResults(BiDiDriver driver, string contextId)
     {
-#region LocatewithMaximumResults
+        #region LocatewithMaximumResults
         LocateNodesCommandParameters parameters = new LocateNodesCommandParameters(
             contextId,
             new CssLocator("input"))
@@ -289,7 +289,7 @@ public static class BrowsingContextModuleSamples
             MaxNodeCount = 5  // Return at most 5 elements
         };
         LocateNodesCommandResult result = await driver.BrowsingContext.LocateNodesAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -297,7 +297,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task LocateWithinElement(BiDiDriver driver, string contextId)
     {
-#region LocateWithinElement
+        #region LocateWithinElement
         LocateNodesCommandResult parentResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("#container")));
 
@@ -310,7 +310,7 @@ public static class BrowsingContextModuleSamples
         };
         parameters.StartNodes.Add(parent.ToSharedReference());
         LocateNodesCommandResult result = await driver.BrowsingContext.LocateNodesAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -318,7 +318,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task SetViewportSize(BiDiDriver driver, string contextId)
     {
-#region SetViewportSize
+        #region SetViewportSize
         SetViewportCommandParameters parameters = new SetViewportCommandParameters
         {
             BrowsingContextId = contextId,
@@ -331,7 +331,7 @@ public static class BrowsingContextModuleSamples
         };
 
         await driver.BrowsingContext.SetViewportAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -339,7 +339,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task ResetViewportToDefault(BiDiDriver driver, string contextId)
     {
-#region ResetViewportToDefault
+        #region ResetViewportToDefault
         SetViewportCommandParameters parameters = new SetViewportCommandParameters
         {
             BrowsingContextId = contextId,
@@ -347,7 +347,7 @@ public static class BrowsingContextModuleSamples
         };
 
         await driver.BrowsingContext.SetViewportAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -355,7 +355,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task EnableCSPBypass(BiDiDriver driver, string contextId)
     {
-#region EnableCSPBypass
+        #region EnableCSPBypass
         SetBypassCSPCommandParameters parameters = new SetBypassCSPCommandParameters
         {
             Contexts = new List<string> { contextId },
@@ -363,7 +363,7 @@ public static class BrowsingContextModuleSamples
         };
 
         await driver.BrowsingContext.SetBypassCSPAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -371,12 +371,12 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task ClearCSPBypassOverride(BiDiDriver driver, string contextId)
     {
-#region ClearCSPBypassOverride
+        #region ClearCSPBypassOverride
         SetBypassCSPCommandParameters parameters = SetBypassCSPCommandParameters.ResetBypassCSP;
         parameters.Contexts = new List<string> { contextId };
 
         await driver.BrowsingContext.SetBypassCSPAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -384,7 +384,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task ScreenshotOfViewport(BiDiDriver driver, string contextId)
     {
-#region ScreenshotofViewport
+        #region ScreenshotofViewport
         CaptureScreenshotCommandParameters parameters =
             new CaptureScreenshotCommandParameters(contextId);
 
@@ -394,7 +394,7 @@ public static class BrowsingContextModuleSamples
         // result.Data is base64-encoded PNG
         byte[] imageBytes = Convert.FromBase64String(result.Data);
         await File.WriteAllBytesAsync("screenshot.png", imageBytes);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -402,7 +402,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task ScreenshotOfElement(BiDiDriver driver, string contextId)
     {
-#region ScreenshotofElement
+        #region ScreenshotofElement
         // First locate the element
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("#chart")));
@@ -418,7 +418,7 @@ public static class BrowsingContextModuleSamples
 
         CaptureScreenshotCommandResult result =
             await driver.BrowsingContext.CaptureScreenshotAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -426,7 +426,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task ClippedScreenshot(BiDiDriver driver, string contextId)
     {
-#region ClippedScreenshot
+        #region ClippedScreenshot
         CaptureScreenshotCommandParameters parameters =
             new CaptureScreenshotCommandParameters(contextId)
             {
@@ -441,7 +441,7 @@ public static class BrowsingContextModuleSamples
 
         CaptureScreenshotCommandResult result =
             await driver.BrowsingContext.CaptureScreenshotAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -449,14 +449,14 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task PrintToPdf(BiDiDriver driver, string contextId)
     {
-#region PrinttoPDF
+        #region PrinttoPDF
         PrintCommandParameters parameters = new PrintCommandParameters(contextId);
         PrintCommandResult result = await driver.BrowsingContext.PrintAsync(parameters);
 
         // result.Data is base64-encoded PDF
         byte[] pdfBytes = Convert.FromBase64String(result.Data);
         await File.WriteAllBytesAsync("page.pdf", pdfBytes);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -464,7 +464,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task PdfWithCustomSettings(BiDiDriver driver, string contextId)
     {
-#region PDFwithCustomSettings
+        #region PDFwithCustomSettings
         PrintCommandParameters parameters = new PrintCommandParameters(contextId)
         {
             Orientation = PrintOrientation.Landscape,
@@ -484,7 +484,7 @@ public static class BrowsingContextModuleSamples
             },
         };
         PrintCommandResult result = await driver.BrowsingContext.PrintAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -492,7 +492,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task AcceptAlert(BiDiDriver driver, string contextId)
     {
-#region AcceptAlert
+        #region AcceptAlert
         driver.BrowsingContext.OnUserPromptOpened.AddObserver((UserPromptOpenedEventArgs e) =>
         {
             Console.WriteLine($"Prompt: {e.Message}");
@@ -508,7 +508,7 @@ public static class BrowsingContextModuleSamples
         handleParams.Accept = true;  // Click OK/Accept
 
         await driver.BrowsingContext.HandleUserPromptAsync(handleParams);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -516,12 +516,12 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task DismissPrompt(BiDiDriver driver, string contextId)
     {
-#region DismissPrompt
+        #region DismissPrompt
         HandleUserPromptCommandParameters parameters =
             new HandleUserPromptCommandParameters(contextId);
         parameters.Accept = false;  // Click Cancel
         await driver.BrowsingContext.HandleUserPromptAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -529,14 +529,14 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task EnterTextInPrompt(BiDiDriver driver, string contextId)
     {
-#region EnterTextinPrompt
+        #region EnterTextinPrompt
         // For prompt() dialogs that accept user input
         HandleUserPromptCommandParameters parameters =
             new HandleUserPromptCommandParameters(contextId);
         parameters.Accept = true;
         parameters.UserText = "My input text";
         await driver.BrowsingContext.HandleUserPromptAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -544,10 +544,10 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task ActivateTab(BiDiDriver driver, string contextId)
     {
-#region ActivateTab
+        #region ActivateTab
         ActivateCommandParameters parameters = new ActivateCommandParameters(contextId);
         await driver.BrowsingContext.ActivateAsync(parameters);
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -555,7 +555,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static void NavigationEvents(BiDiDriver driver)
     {
-#region NavigationEvents
+        #region NavigationEvents
         // Page load complete
         driver.BrowsingContext.OnLoad.AddObserver((NavigationEventArgs e) =>
         {
@@ -607,7 +607,7 @@ public static class BrowsingContextModuleSamples
                 Console.WriteLine($"Saved to: {e.FilePath}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -615,7 +615,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static void ContextLifecycleEvents(BiDiDriver driver)
     {
-#region ContextLifecycleEvents
+        #region ContextLifecycleEvents
         // New tab/window/iframe created
         driver.BrowsingContext.OnContextCreated.AddObserver((BrowsingContextEventArgs e) =>
         {
@@ -629,7 +629,7 @@ public static class BrowsingContextModuleSamples
         {
             Console.WriteLine($"Context destroyed: {e.BrowsingContextId}");
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -637,7 +637,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static void UserPromptEvents(BiDiDriver driver)
     {
-#region UserPromptEvents
+        #region UserPromptEvents
         // Alert/confirm/prompt opened
         driver.BrowsingContext.OnUserPromptOpened.AddObserver((UserPromptOpenedEventArgs e) =>
         {
@@ -654,7 +654,7 @@ public static class BrowsingContextModuleSamples
                 Console.WriteLine($"User entered: {e.UserText}");
             }
         });
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -665,12 +665,12 @@ public static class BrowsingContextModuleSamples
         string contextId,
         string url)
     {
-#region WaitforPageLoadPattern
-        SubscribeCommandParameters subscribe = 
+        #region WaitforPageLoadPattern
+        SubscribeCommandParameters subscribe =
             new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
-        EventObserver<NavigationEventArgs> observer = 
+        EventObserver<NavigationEventArgs> observer =
             driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
         observer.SetCheckpoint();
@@ -682,7 +682,7 @@ public static class BrowsingContextModuleSamples
         {
             Console.WriteLine("Page load timeout!");
         }
-#endregion
+        #endregion
     }
 
     /// <summary>
@@ -690,7 +690,7 @@ public static class BrowsingContextModuleSamples
     /// </summary>
     public static async Task MultiTabPattern(BiDiDriver driver)
     {
-#region Multi-TabPattern
+        #region Multi-TabPattern
         // Open multiple tabs
         List<string> contextIds = new List<string>();
         for (int i = 0; i < 3; i++)
@@ -713,6 +713,6 @@ public static class BrowsingContextModuleSamples
             await driver.BrowsingContext.CloseAsync(
                 new CloseCommandParameters(contextId));
         }
-#endregion
+        #endregion
     }
 }

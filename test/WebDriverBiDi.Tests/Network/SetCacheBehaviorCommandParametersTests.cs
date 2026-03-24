@@ -57,7 +57,7 @@ public class SetCacheBehaviorCommandParametersTests
             Assert.That(serialized["cacheBehavior"]!.Type, Is.EqualTo(JTokenType.String));
             Assert.That(serialized["cacheBehavior"]!.Value<string>(), Is.EqualTo("bypass"));
         }
-    } 
+    }
 
     [Test]
     public void TestCanSerializeWithContexts()

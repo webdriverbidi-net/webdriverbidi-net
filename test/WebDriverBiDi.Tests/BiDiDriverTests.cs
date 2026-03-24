@@ -2,24 +2,24 @@ namespace WebDriverBiDi;
 
 using System.Globalization;
 using System.Text.Json.Serialization.Metadata;
-using TestUtilities;
+using NUnit.Framework.Internal;
 using PinchHitter;
+using TestUtilities;
+using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
+using WebDriverBiDi.Permissions;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
-using WebDriverBiDi.Storage;
-using WebDriverBiDi.Permissions;
-using WebDriverBiDi.WebExtension;
-using WebDriverBiDi.Bluetooth;
-using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Speculation;
+using WebDriverBiDi.Storage;
 using WebDriverBiDi.UserAgentClientHints;
-using NUnit.Framework.Internal;
+using WebDriverBiDi.WebExtension;
 
 [TestFixture]
 public class BiDiDriverTests
@@ -840,7 +840,7 @@ public class BiDiDriverTests
                                    """;
                 await connection.RaiseDataReceivedEventAsync(eventJson);
             });
-       };
+        };
 
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(1500), transport);

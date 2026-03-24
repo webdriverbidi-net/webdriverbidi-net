@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 /// <summary>
 /// Code fix provider for BIDI004 that adds CancellationToken parameters to method calls.
@@ -34,13 +35,13 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken)
+        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken)
             .ConfigureAwait(false);
 
-        var diagnostic = context.Diagnostics.First();
-        var diagnosticSpan = diagnostic.Location.SourceSpan;
+        Diagnostic diagnostic = context.Diagnostics.First();
+        TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        var invocation = root?.FindToken(diagnosticSpan.Start)
+        InvocationExpressionSyntax? invocation = root?.FindToken(diagnosticSpan.Start)
             .Parent?.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
             .First();
@@ -72,23 +73,23 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
         InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (root == null)
         {
             return document;
         }
 
         // Add CancellationToken.None as last argument
-        var tokenArgument = SyntaxFactory.Argument(
+        ArgumentSyntax tokenArgument = SyntaxFactory.Argument(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName("CancellationToken"),
                 SyntaxFactory.IdentifierName("None")));
 
-        var newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);
-        var newInvocation = invocation.WithArgumentList(newArgumentList);
+        ArgumentListSyntax newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);
+        InvocationExpressionSyntax newInvocation = invocation.WithArgumentList(newArgumentList);
 
-        var newRoot = root.ReplaceNode(invocation, newInvocation);
+        SyntaxNode newRoot = root.ReplaceNode(invocation, newInvocation);
         return document.WithSyntaxRoot(newRoot);
     }
 
@@ -97,20 +98,20 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
         InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (root == null)
         {
             return document;
         }
 
         // Add a cancellationToken variable reference
-        var tokenArgument = SyntaxFactory.Argument(
+        ArgumentSyntax tokenArgument = SyntaxFactory.Argument(
             SyntaxFactory.IdentifierName("cancellationToken"));
 
-        var newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);
-        var newInvocation = invocation.WithArgumentList(newArgumentList);
+        ArgumentListSyntax newArgumentList = invocation.ArgumentList.AddArguments(tokenArgument);
+        InvocationExpressionSyntax newInvocation = invocation.WithArgumentList(newArgumentList);
 
-        var newRoot = root.ReplaceNode(invocation, newInvocation);
+        SyntaxNode newRoot = root.ReplaceNode(invocation, newInvocation);
         return document.WithSyntaxRoot(newRoot);
     }
 }
