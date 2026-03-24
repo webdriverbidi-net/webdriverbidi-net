@@ -6,6 +6,7 @@
 namespace WebDriverBiDi;
 
 using System.Collections.Concurrent;
+using System.Runtime.ExceptionServices;
 using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
@@ -424,16 +425,17 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
         if (command.Result is null)
         {
+            // Some code coverage tools do not recognize full coverage when using
+            // ExceptionDispatchInfo.Throw() to throw the exception; They see a
+            // closing brace as unreachable. To work around this, we can omit the
+            // braces for the single-line if statement. However, this runs afoul
+            // of the coding style rules for this project, which require braces
+            // for all control blocks. Therefore, we disable those style rules
+            // for this block only.
+            #pragma warning disable IDE0011, SA1503
             if (command.ThrownException is not null)
-            {
-                // Some code coverage tools do not recognize full coverage when using this pattern
-                // to rethrow the exception. We choose to throw the exception in the ThrownException
-                // property instead, so that we can maintain full code coverage. If this causes issues
-                // for users with confusing stack traces, we can consider using the
-                // ExceptionDispatchInfo.Capture in the future.
-                // ExceptionDispatchInfo.Capture(command.ThrownException).Throw();
-                throw command.ThrownException;
-            }
+                ExceptionDispatchInfo.Capture(command.ThrownException).Throw();
+            #pragma warning restore IDE0011, SA1503
 
             if (command.IsCanceled)
             {
