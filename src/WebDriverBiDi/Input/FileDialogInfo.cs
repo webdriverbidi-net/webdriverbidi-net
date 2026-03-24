@@ -57,7 +57,7 @@ public record FileDialogInfo
     [JsonPropertyName("element")]
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    internal RemoteValue? SerializableElement
+    internal NodeRemoteValue? SerializableElement
     {
         set
         {

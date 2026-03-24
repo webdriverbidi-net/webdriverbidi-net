@@ -83,7 +83,7 @@ public static class InputModuleSamples
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("button")));
 
-        RemoteValue element = locateResult.Nodes[0];
+        NodeRemoteValue element = locateResult.Nodes[0];
 
         // Click the element
         PerformActionsCommandParameters parameters = new PerformActionsCommandParameters(contextId);
@@ -181,7 +181,7 @@ public static class InputModuleSamples
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("input[type='file']")));
 
-        RemoteValue element = locateResult.Nodes[0];
+        NodeRemoteValue element = locateResult.Nodes[0];
 
         SetFilesCommandParameters parameters = new SetFilesCommandParameters(
             contextId,

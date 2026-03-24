@@ -10,21 +10,13 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object representing the properties of a window proxy object.
 /// </summary>
-public record WindowProxyProperties
+public record struct WindowProxyProperties
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WindowProxyProperties"/> class.
-    /// </summary>
-    [JsonConstructor]
-    internal WindowProxyProperties()
-    {
-    }
-
     /// <summary>
     /// Gets the browsing context ID for the window proxy.
     /// </summary>
     [JsonPropertyName("context")]
     [JsonRequired]
     [JsonInclude]
-    public string Context { get; internal set; } = string.Empty;
+    public string Context { get; internal set; }
 }

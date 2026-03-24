@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing a remote reference.
 /// </summary>
-public record RemoteReference : ArgumentValue
+public record RemoteReference : LocalValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteReference"/> class.

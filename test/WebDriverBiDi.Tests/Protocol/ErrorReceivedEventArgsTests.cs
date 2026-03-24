@@ -5,6 +5,7 @@ using System.Text.Json;
 [TestFixture]
 public class ErrorReceivedEventArgsTests
 {
+    [Test]
     public void TestCanCreateErrorReceivedEventArgs()
     {
         string json = """

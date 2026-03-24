@@ -166,6 +166,7 @@ public class WebDriverBiDiJsonSerializerContextTests
         {
             if (!assemblyType.IsEnum && IsLibraryNamespace(assemblyType) &&
                 assemblyType.GetCustomAttribute<JsonConverterAttribute>() is not null &&
+                !(assemblyType.IsAbstract && assemblyType.IsGenericType) &&
                 !coveredTypes.Contains(assemblyType))
             {
                 missingTypes.Add(assemblyType);

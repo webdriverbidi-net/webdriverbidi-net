@@ -51,15 +51,15 @@ public static class DemoScenarios
         EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
         {
-            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type} (.NET type: {scriptSuccessResult.Result.Value!.GetType()})");
-            Console.WriteLine($"Script returned element with ID {scriptSuccessResult.Result.SharedId}");
-
             RemoteValue scriptResultValue = scriptSuccessResult.Result;
-            NodeProperties? nodeProperties = scriptResultValue.ValueAs<NodeProperties>();
-            if (nodeProperties is not null)
+            Console.WriteLine($"Script result type: {scriptResultValue.Type}");
+
+            if (scriptResultValue is NodeRemoteValue nodeRemoteValue)
             {
+                Console.WriteLine($"Script returned element with ID {nodeRemoteValue.SharedId}");
+                NodeProperties nodeProperties = nodeRemoteValue.Value;
                 Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
-                SharedReference elementReference = scriptResultValue.ToSharedReference();
+                SharedReference elementReference = nodeRemoteValue.ToSharedReference();
 
                 InputBuilder inputBuilder = new();
                 inputBuilder.AddClickOnElementAction(elementReference);
@@ -145,9 +145,9 @@ public static class DemoScenarios
         EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
         {
-            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type} (.NET type: {scriptSuccessResult.Result.Value!.GetType()})");
+            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type}");
             RemoteValue scriptResultValue = scriptSuccessResult.Result;
-            Console.WriteLine($"Element background color is {scriptResultValue.ValueAs<string>()}");
+            Console.WriteLine($"Element background color is {scriptResultValue.ConvertTo<StringRemoteValue>().Value}");
         }
     }
 
@@ -280,7 +280,7 @@ public static class DemoScenarios
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         string functionDefinition = "(first, second) => first + second";
-        List<ArgumentValue> arguments =
+        List<LocalValue> arguments =
         [
             LocalValue.Number(3),
             LocalValue.Number(5),
@@ -291,9 +291,9 @@ public static class DemoScenarios
         EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultSuccess scriptSuccessResultNumber)
         {
-            Console.WriteLine($"Script result type: {scriptSuccessResultNumber.Result.Type} (.NET type: {scriptSuccessResultNumber.Result.Value!.GetType()})");
+            Console.WriteLine($"Script result type: {scriptSuccessResultNumber.Result.Type}");
             RemoteValue scriptResultValue = scriptSuccessResultNumber.Result;
-            Console.WriteLine($"Return value of function is {scriptResultValue.ValueAs<long>()}");
+            Console.WriteLine($"Return value of function is {scriptResultValue.ConvertTo<LongRemoteValue>().Value}");
         }
 
         arguments =
@@ -307,9 +307,9 @@ public static class DemoScenarios
         scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultSuccess scriptSuccessResultString)
         {
-            Console.WriteLine($"Script result type: {scriptSuccessResultString.Result.Type} (.NET type: {scriptSuccessResultString.Result.Value!.GetType()})");
-            RemoteValue scriptResultValue = scriptSuccessResultString.Result;
-            Console.WriteLine($"Return value of function is {scriptResultValue.ValueAs<string>()}");
+            Console.WriteLine($"Script result type: {scriptSuccessResultString.Result.Type}");
+            StringRemoteValue scriptResultValue = scriptSuccessResultString.Result.ConvertTo<StringRemoteValue>();
+            Console.WriteLine($"Return value of function is {scriptResultValue.Value}");
         }
     }
 
@@ -347,7 +347,12 @@ public static class DemoScenarios
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator(".text")));
-        RemoteValue node = locateResult.Nodes[0];
+        NodeRemoteValue? node;
+        if (!locateResult.Nodes[0].TryConvertTo(out node))
+        {
+            Console.WriteLine("Failed to convert located node to NodeRemoteValue");
+            return;
+        }
 
         // This function will access the "bidi" object added to its window object
         // and execute the defined function. Calling the function without specifying
@@ -371,9 +376,9 @@ public static class DemoScenarios
         scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
         {
-            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type} (.NET type: {scriptSuccessResult.Result.Value!.GetType()})");
-            RemoteValue scriptResultValue = scriptSuccessResult.Result;
-            Console.WriteLine($"Return value of function is {scriptResultValue.ValueAs<string>()}");
+            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type}");
+            StringRemoteValue scriptResultValue = scriptSuccessResult.Result.ConvertTo<StringRemoteValue>();
+            Console.WriteLine($"Return value of function is {scriptResultValue.Value}");
         }
 
         await driver.Script.RemovePreloadScriptAsync(new RemovePreloadScriptCommandParameters(preloadScriptId));
@@ -386,7 +391,11 @@ public static class DemoScenarios
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("h1")));
-        node = locateResult.Nodes[0];
+        if (!locateResult.Nodes[0].TryConvertTo(out node))
+        {
+            Console.WriteLine("Failed to convert located node to NodeRemoteValue");
+            return;
+        }
 
         // Calling the function again after removing the preload script and another navigation
         // yields an exception that the object can't be found, because the preload script didn't
@@ -422,13 +431,15 @@ public static class DemoScenarios
         string firstFunctionDefinition = @"() => document.querySelector('input[name=""dataToSend""]')";
         CallFunctionCommandParameters callFunctionParams = new(firstFunctionDefinition, new ContextTarget(contextId), true);
         EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
-        RemoteValue? elementResultValue = null;
-        if (scriptResult is EvaluateResultSuccess firstScriptSuccessResult)
+        NodeRemoteValue? elementResultValue = null;
+        if (scriptResult is EvaluateResultSuccess firstScriptSuccessResult && firstScriptSuccessResult.Result.TryConvertTo(out elementResultValue))
         {
-            Console.WriteLine($"Script result type: {firstScriptSuccessResult.Result.Type} (.NET type: {firstScriptSuccessResult.Result.Value!.GetType()})");
-            Console.WriteLine($"Script returned element with ID {firstScriptSuccessResult.Result.SharedId}");
-
-            elementResultValue = firstScriptSuccessResult.Result;
+            RemoteValue scriptResultValue = firstScriptSuccessResult.Result;
+            Console.WriteLine($"Script result type: {scriptResultValue.Type}");
+            if (scriptResultValue.TryConvertTo(out NodeRemoteValue? element))
+            {
+                Console.WriteLine($"Script returned element with ID {element.SharedId}");
+            }
         }
         else if (scriptResult is EvaluateResultException scriptExceptionResult)
         {
@@ -443,8 +454,8 @@ public static class DemoScenarios
             scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
             if (scriptResult is EvaluateResultSuccess secondScriptSuccessResult)
             {
-                Console.WriteLine($"Script result type: {secondScriptSuccessResult.Result.Type} (.NET type: {secondScriptSuccessResult.Result.Value!.GetType()})");
-                Console.WriteLine($"Script result: {secondScriptSuccessResult.Result.ValueAs<string>()}");
+                Console.WriteLine($"Script result type: {secondScriptSuccessResult.Result.Type}");
+                Console.WriteLine($"Script result: {secondScriptSuccessResult.Result.ConvertTo<StringRemoteValue>().Value}");
             }
             else if (scriptResult is EvaluateResultException scriptExceptionResult)
             {
@@ -737,15 +748,15 @@ public static class DemoScenarios
         EvaluateResult scriptResult = await driver.Script.CallFunctionAsync(callFunctionParams);
         if (scriptResult is EvaluateResultSuccess scriptSuccessResult)
         {
-            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type} (.NET type: {scriptSuccessResult.Result.Value!.GetType()})");
-            Console.WriteLine($"Script returned element with ID {scriptSuccessResult.Result.SharedId}");
+            Console.WriteLine($"Script result type: {scriptSuccessResult.Result.Type}");
 
             RemoteValue scriptResultValue = scriptSuccessResult.Result;
-            NodeProperties? nodeProperties = scriptResultValue.ValueAs<NodeProperties>();
-            if (nodeProperties is not null)
+            if (scriptResultValue is NodeRemoteValue nodeValue)
             {
+                Console.WriteLine($"Script returned element with ID {nodeValue.SharedId}");
+                NodeProperties nodeProperties = nodeValue.Value;
                 Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
-                SharedReference elementReference = scriptResultValue.ToSharedReference();
+                SharedReference elementReference = nodeValue.ToSharedReference();
 
                 InputBuilder inputBuilder = new();
                 inputBuilder.AddClickOnElementAction(elementReference);
@@ -845,7 +856,7 @@ public static class DemoScenarios
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
         LocateNodesCommandResult locateButtonResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("#toggle-button")));
-        RemoteValue toggleButtonNode = locateButtonResult.Nodes[0];
+        NodeRemoteValue toggleButtonNode = locateButtonResult.Nodes[0];
         SharedReference toggleButton = toggleButtonNode.ToSharedReference();
 
         // This function will access the "webdriverInspector" object added to its window object
@@ -867,7 +878,7 @@ public static class DemoScenarios
         Console.WriteLine("Wait for element ready for interaction was successful");
 
         LocateNodesCommandResult locateImageResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, new CssLocator("img")));
-        RemoteValue imageElementNode = locateImageResult.Nodes[0];
+        NodeRemoteValue imageElementNode = locateImageResult.Nodes[0];
         SharedReference imageElement = imageElementNode.ToSharedReference();
 
         // Check the visibility of the image element on the page (it should be invisible).
@@ -1012,11 +1023,11 @@ public static class DemoScenarios
             Name = "Open Shadow Button",
         };
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(new LocateNodesCommandParameters(contextId, locator));
-        IList<RemoteValue> locateValues = locateResult.Nodes;
+        IList<NodeRemoteValue> locateValues = locateResult.Nodes;
         Console.WriteLine($"Found {locateValues.Count} custom-button elements");
         foreach(RemoteValue locateValue in locateValues)
         {
-            NodeProperties properties = locateValue.ValueAs<NodeProperties>()!;
+            NodeProperties properties = locateValue.ConvertTo<NodeRemoteValue>().Value;
             Console.WriteLine($"Custom button element (local name {properties.LocalName}, id {properties.Attributes?["id"]})");
             if (properties.ShadowRoot is not null)
             {
@@ -1027,11 +1038,11 @@ public static class DemoScenarios
                 LocateNodesCommandParameters shadowLocateParams = new(contextId, shadowLocator);
                 shadowLocateParams.StartNodes.Add(properties.ShadowRoot.ToSharedReference());
                 LocateNodesCommandResult locateShadowResult = await driver.BrowsingContext.LocateNodesAsync(shadowLocateParams);
-                IList<RemoteValue> locateShadowValues = locateShadowResult.Nodes;
+                IList<NodeRemoteValue> locateShadowValues = locateShadowResult.Nodes;
                 Console.WriteLine($"Found {locateShadowValues.Count} button elements in web component");
                 foreach(RemoteValue locateShadowValue in locateShadowValues)
                 {
-                    NodeProperties shadowProperties = locateShadowValue.ValueAs<NodeProperties>()!;
+                    NodeProperties shadowProperties = locateShadowValue.ConvertTo<NodeRemoteValue>().Value;
                     if (shadowProperties.LocalName?.ToLower() != "script" && shadowProperties.LocalName?.ToLower() != "style")
                     {
                         Console.WriteLine($"Found button (local name {shadowProperties.LocalName}, id {shadowProperties.Attributes?["id"]} in web component)");

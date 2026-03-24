@@ -31,6 +31,14 @@ namespace System.Diagnostics.CodeAnalysis
     }
 
     /// <summary>
+    /// Specifies that the associated parameter or return value is not null even if the corresponding type allows it.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter | AttributeTargets.ReturnValue, Inherited = false)]
+    internal sealed class NotNullAttribute : Attribute
+    {
+    }
+
+    /// <summary>
     /// Specifies that when a method or property returns the specified return value, the specified member will not be null even if the corresponding type allows it.
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Property, Inherited = false, AllowMultiple = true)]

@@ -19,12 +19,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("string"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<string>());
-            Assert.That(remoteValue.ValueAs<string>(), Is.EqualTo("myValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(remoteValue, Is.InstanceOf<StringRemoteValue>());
+            Assert.That(((StringRemoteValue)remoteValue).Value, Is.EqualTo("myValue"));
         }
     }
 
@@ -53,12 +50,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("number"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<long>());
-            Assert.That(remoteValue.ValueAs<long>(), Is.EqualTo(1));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Number));
+            Assert.That(remoteValue, Is.InstanceOf<LongRemoteValue>());
+            Assert.That(((LongRemoteValue)remoteValue).Value, Is.EqualTo(1));
         }
     }
 
@@ -75,12 +69,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("number"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<double>());
-            Assert.That(remoteValue.ValueAs<double>(), Is.EqualTo(3.14));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Number));
+            Assert.That(remoteValue, Is.InstanceOf<DoubleRemoteValue>());
+            Assert.That(((DoubleRemoteValue)remoteValue).Value, Is.EqualTo(3.14));
         }
     }
 
@@ -97,12 +88,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("number"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<double>());
-            Assert.That(remoteValue.ValueAs<double>(), Is.EqualTo(double.NaN));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Number));
+            Assert.That(remoteValue, Is.InstanceOf<DoubleRemoteValue>());
+            Assert.That(((DoubleRemoteValue)remoteValue).Value, Is.EqualTo(double.NaN));
         }
     }
 
@@ -119,13 +107,10 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("number"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<double>());
-            Assert.That(remoteValue.ValueAs<double>(), Is.EqualTo(double.NegativeZero));
-            Assert.That(double.IsNegative(remoteValue.ValueAs<double>()), Is.True);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Number));
+            Assert.That(remoteValue, Is.InstanceOf<DoubleRemoteValue>());
+            Assert.That(((DoubleRemoteValue)remoteValue).Value, Is.EqualTo(double.NegativeZero));
+            Assert.That(double.IsNegative(((DoubleRemoteValue)remoteValue).Value), Is.True);
         }
     }
 
@@ -142,12 +127,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("number"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<double>());
-            Assert.That(remoteValue.ValueAs<double>(), Is.EqualTo(double.PositiveInfinity));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Number));
+            Assert.That(remoteValue, Is.InstanceOf<DoubleRemoteValue>());
+            Assert.That(((DoubleRemoteValue)remoteValue).Value, Is.EqualTo(double.PositiveInfinity));
         }
     }
 
@@ -164,12 +146,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("number"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<double>());
-            Assert.That(remoteValue.ValueAs<double>(), Is.EqualTo(double.NegativeInfinity));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Number));
+            Assert.That(remoteValue, Is.InstanceOf<DoubleRemoteValue>());
+            Assert.That(((DoubleRemoteValue)remoteValue).Value, Is.EqualTo(double.NegativeInfinity));
         }
     }
 
@@ -240,12 +219,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("boolean"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<bool>());
-            Assert.That(remoteValue.ValueAs<bool>(), Is.EqualTo(true));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Boolean));
+            Assert.That(remoteValue, Is.InstanceOf<BooleanRemoteValue>());
+            Assert.That(((BooleanRemoteValue)remoteValue).Value, Is.EqualTo(true));
         }
     }
 
@@ -274,12 +250,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("bigint"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<BigInteger>());
-            Assert.That(remoteValue.ValueAs<BigInteger>(), Is.EqualTo(new BigInteger(123)));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.BigInt));
+            Assert.That(remoteValue, Is.InstanceOf<BigIntegerRemoteValue>());
+            Assert.That(((BigIntegerRemoteValue)remoteValue).Value, Is.EqualTo(new BigInteger(123)));
         }
     }
 
@@ -320,12 +293,9 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("date"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<DateTime>());
-            Assert.That(remoteValue.ValueAs<DateTime>(), Is.EqualTo(new DateTime(2020, 07, 19, 23, 47, 26, 56, DateTimeKind.Utc)));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Date));
+            Assert.That(remoteValue, Is.InstanceOf<DateRemoteValue>());
+            Assert.That(((DateRemoteValue)remoteValue).Value, Is.EqualTo(new DateTime(2020, 07, 19, 23, 47, 26, 56, DateTimeKind.Utc)));
         }
     }
 
@@ -356,6 +326,11 @@ public class RemoteValueTests
     [Test]
     public void TestDeserializingRegularExpressionRemoteValue()
     {
+        LocalValue regexLocalValue = LocalValue.RegExp("myPattern", "gi");
+        LocalArgumentValue primitiveValue = (LocalArgumentValue)regexLocalValue;
+        Assert.That(primitiveValue.Value, Is.Not.Null);
+        RegularExpressionValue expectedRegexValue = (RegularExpressionValue)primitiveValue.Value;
+
         string json = """
                       {
                         "type": "regexp",
@@ -369,18 +344,23 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("regexp"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RegularExpressionValue>());
-            Assert.That(remoteValue.ValueAs<RegularExpressionValue>(), Is.EqualTo(new RegularExpressionValue("myPattern", "gi")));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.RegExp));
+            Assert.That(remoteValue, Is.InstanceOf<RegExpRemoteValue>());
+            RegExpRemoteValue regExpRemoteValue = (RegExpRemoteValue)remoteValue;
+            Assert.That(regExpRemoteValue.Handle, Is.Null);
+            Assert.That(regExpRemoteValue.InternalId, Is.Null);
+            Assert.That(regExpRemoteValue.Value, Is.EqualTo(expectedRegexValue));
         }
     }
 
     [Test]
     public void TestDeserializingRegularExpressionWithNullFlagsRemoteValue()
     {
+        LocalValue regexLocalValue = LocalValue.RegExp("myPattern");
+        LocalArgumentValue primitiveValue = (LocalArgumentValue)regexLocalValue;
+        Assert.That(primitiveValue.Value, Is.Not.Null);
+        RegularExpressionValue expectedRegexValue = (RegularExpressionValue)primitiveValue.Value;
+
         string json = """
                       {
                         "type": "regexp",
@@ -393,12 +373,12 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("regexp"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RegularExpressionValue>());
-            Assert.That(remoteValue.ValueAs<RegularExpressionValue>(), Is.EqualTo(new RegularExpressionValue("myPattern")));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.RegExp));
+            Assert.That(remoteValue, Is.InstanceOf<RegExpRemoteValue>());
+            RegExpRemoteValue regExpRemoteValue = (RegExpRemoteValue)remoteValue;
+            Assert.That(regExpRemoteValue.Handle, Is.Null);
+            Assert.That(regExpRemoteValue.InternalId, Is.Null);
+            Assert.That(regExpRemoteValue.Value, Is.EqualTo(expectedRegexValue));
         }
     }
 
@@ -431,16 +411,13 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("node"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<NodeProperties>());
-        }
-        NodeProperties? nodeProperties = remoteValue.ValueAs<NodeProperties>();
-        Assert.That(nodeProperties, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Node));
+            Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+            NodeRemoteValue nodeRemoteValue = remoteValue.ConvertTo<NodeRemoteValue>();
+            Assert.That(nodeRemoteValue.Handle, Is.Null);
+            Assert.That(nodeRemoteValue.InternalId, Is.Null);
+            Assert.That(nodeRemoteValue.SharedId, Is.Null);
+            NodeProperties nodeProperties = nodeRemoteValue.Value;
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.NodeValue, Is.EqualTo(string.Empty));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -465,17 +442,13 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("node"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.SharedId, Is.EqualTo("mySharedId"));
-            Assert.That(remoteValue.Value, Is.InstanceOf<NodeProperties>());
-        }
-        NodeProperties? nodeProperties = remoteValue.ValueAs<NodeProperties>();
-        Assert.That(nodeProperties, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Node));
+            Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+            NodeRemoteValue nodeRemoteValue = remoteValue.ConvertTo<NodeRemoteValue>();
+            Assert.That(nodeRemoteValue.Handle, Is.Null);
+            Assert.That(nodeRemoteValue.InternalId, Is.Null);
+            Assert.That(nodeRemoteValue.SharedId, Is.EqualTo("mySharedId"));
+            NodeProperties nodeProperties = nodeRemoteValue.Value;
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
             Assert.That(nodeProperties.NodeValue, Is.EqualTo(string.Empty));
             Assert.That(nodeProperties.ChildNodeCount, Is.EqualTo(0));
@@ -526,20 +499,20 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("array"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
-        }
-        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
-        Assert.That(arrayValue, Is.Not.Null);
-        Assert.That(arrayValue, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(arrayValue[0].ValueAs<string>, Is.EqualTo("stringValue"));
-            Assert.That(arrayValue[1].ValueAs<long>, Is.EqualTo(123));
-            Assert.That(arrayValue[2].ValueAs<bool>, Is.EqualTo(true));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Array));
+            Assert.That(remoteValue, Is.InstanceOf<CollectionRemoteValue>());
+            CollectionRemoteValue listRemoteValue = (CollectionRemoteValue)remoteValue;
+            Assert.That(listRemoteValue.Handle, Is.Null);
+            Assert.That(listRemoteValue.InternalId, Is.Null);
+            RemoteValueList arrayValue = listRemoteValue.Value;
+            Assert.That(arrayValue, Is.Not.Null);
+            Assert.That(arrayValue, Has.Count.EqualTo(3));
+            Assert.That(arrayValue[0], Is.InstanceOf<StringRemoteValue>());
+            Assert.That(((StringRemoteValue)arrayValue[0]).Value, Is.EqualTo("stringValue"));
+            Assert.That(arrayValue[1], Is.InstanceOf<LongRemoteValue>());
+            Assert.That(((LongRemoteValue)arrayValue[1]).Value, Is.EqualTo(123));
+            Assert.That(arrayValue[2], Is.InstanceOf<BooleanRemoteValue>());
+            Assert.That(((BooleanRemoteValue)arrayValue[2]).Value, Is.EqualTo(true));
         }
     }
 
@@ -581,20 +554,20 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("array"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
-        }
-        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
-        Assert.That(arrayValue, Is.Not.Null);
-        Assert.That(arrayValue, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(arrayValue[0].ValueAs<string>(), Is.EqualTo("stringValue"));
-            Assert.That(arrayValue[1].ValueAs<long>(), Is.EqualTo(123));
-            Assert.That(arrayValue[2].ValueAs<bool>(), Is.EqualTo(true));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Array));
+            Assert.That(remoteValue, Is.InstanceOf<CollectionRemoteValue>());
+            CollectionRemoteValue listRemoteValue = (CollectionRemoteValue)remoteValue;
+            Assert.That(listRemoteValue.Handle, Is.Null);
+            Assert.That(listRemoteValue.InternalId, Is.Null);
+            RemoteValueList arrayValue = listRemoteValue.Value;
+            Assert.That(arrayValue, Is.Not.Null);
+            Assert.That(arrayValue, Has.Count.EqualTo(3));
+            Assert.That(arrayValue[0], Is.InstanceOf<StringRemoteValue>());
+            Assert.That(((StringRemoteValue)arrayValue[0]).Value, Is.EqualTo("stringValue"));
+            Assert.That(arrayValue[1], Is.InstanceOf<LongRemoteValue>());
+            Assert.That(((LongRemoteValue)arrayValue[1]).Value, Is.EqualTo(123));
+            Assert.That(arrayValue[2], Is.InstanceOf<BooleanRemoteValue>());
+            Assert.That(((BooleanRemoteValue)arrayValue[2]).Value, Is.EqualTo(true));
         }
     }
 
@@ -652,20 +625,19 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("set"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
-        }
-        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
-        Assert.That(arrayValue, Is.Not.Null);
-        Assert.That(arrayValue, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(arrayValue[0].ValueAs<string>, Is.EqualTo("stringValue"));
-            Assert.That(arrayValue[1].ValueAs<long>, Is.EqualTo(123));
-            Assert.That(arrayValue[2].ValueAs<bool>, Is.EqualTo(true));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Set));
+            CollectionRemoteValue listRemoteValue = (CollectionRemoteValue)remoteValue;
+            Assert.That(listRemoteValue.Handle, Is.Null);
+            Assert.That(listRemoteValue.InternalId, Is.Null);
+            RemoteValueList setValue = listRemoteValue.Value;
+            Assert.That(setValue, Is.Not.Null);
+            Assert.That(setValue, Has.Count.EqualTo(3));
+            Assert.That(setValue[0], Is.InstanceOf<StringRemoteValue>());
+            Assert.That(((StringRemoteValue)setValue[0]).Value, Is.EqualTo("stringValue"));
+            Assert.That(setValue[1], Is.InstanceOf<LongRemoteValue>());
+            Assert.That(((LongRemoteValue)setValue[1]).Value, Is.EqualTo(123));
+            Assert.That(setValue[2], Is.InstanceOf<BooleanRemoteValue>());
+            Assert.That(((BooleanRemoteValue)setValue[2]).Value, Is.EqualTo(true));
         }
     }
 
@@ -718,19 +690,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("nodelist"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
-        }
-        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
-        Assert.That(arrayValue, Is.Not.Null);
-        Assert.That(arrayValue!, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(arrayValue![0].Type, Is.EqualTo("node"));
-            Assert.That(arrayValue![0].ValueAs<NodeProperties>()!.NodeType, Is.EqualTo(1));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.NodeList));
+            CollectionRemoteValue listRemoteValue = (CollectionRemoteValue)remoteValue;
+            Assert.That(listRemoteValue.Handle, Is.Null);
+            Assert.That(listRemoteValue.InternalId, Is.Null);
+            RemoteValueList nodeListValue = listRemoteValue.Value;
+            Assert.That(nodeListValue, Is.Not.Null);
+            Assert.That(nodeListValue, Has.Count.EqualTo(1));
+            Assert.That(nodeListValue[0], Is.InstanceOf<NodeRemoteValue>());
+            NodeRemoteValue nodeRemoteValue = (NodeRemoteValue)nodeListValue[0];
+            Assert.That(nodeRemoteValue.Value.NodeType, Is.EqualTo(1));
         }
     }
 
@@ -783,19 +752,16 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("htmlcollection"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueList>());
-        }
-        RemoteValueList? arrayValue = remoteValue.ValueAs<RemoteValueList>();
-        Assert.That(arrayValue, Is.Not.Null);
-        Assert.That(arrayValue!, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(arrayValue![0].Type, Is.EqualTo("node"));
-            Assert.That(arrayValue![0].ValueAs<NodeProperties>()!.NodeType, Is.EqualTo(1));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.HtmlCollection));
+            CollectionRemoteValue listRemoteValue = (CollectionRemoteValue)remoteValue;
+            Assert.That(listRemoteValue.Handle, Is.Null);
+            Assert.That(listRemoteValue.InternalId, Is.Null);
+            RemoteValueList htmlCollectionValue = listRemoteValue.Value;
+            Assert.That(htmlCollectionValue, Is.Not.Null);
+            Assert.That(htmlCollectionValue, Has.Count.EqualTo(1));
+            Assert.That(htmlCollectionValue[0], Is.InstanceOf<NodeRemoteValue>());
+            NodeRemoteValue nodeRemoteValue = (NodeRemoteValue)htmlCollectionValue[0];
+            Assert.That(nodeRemoteValue.Value.NodeType, Is.EqualTo(1));
         }
     }
 
@@ -862,23 +828,22 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            Assert.That(remoteValue, Is.InstanceOf<KeyValuePairCollectionRemoteValue>());
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(3));
             Assert.That(dictionaryValue, Contains.Key("stringProperty"));
-            Assert.That(dictionaryValue["stringProperty"].ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(dictionaryValue["stringProperty"], Is.InstanceOf<StringRemoteValue>());
+            Assert.That(((StringRemoteValue)dictionaryValue["stringProperty"]).Value, Is.EqualTo("stringValue"));
             Assert.That(dictionaryValue, Contains.Key("numberProperty"));
-            Assert.That(dictionaryValue["numberProperty"].ValueAs<long>(), Is.EqualTo(123));
+            Assert.That(dictionaryValue["numberProperty"], Is.InstanceOf<LongRemoteValue>());
+            Assert.That(((LongRemoteValue)dictionaryValue["numberProperty"]).Value, Is.EqualTo(123));
             Assert.That(dictionaryValue, Contains.Key("booleanProperty"));
-            Assert.That(dictionaryValue["booleanProperty"].ValueAs<bool>(), Is.EqualTo(true));
+            Assert.That(dictionaryValue["booleanProperty"], Is.InstanceOf<BooleanRemoteValue>());
+            Assert.That(((BooleanRemoteValue)dictionaryValue["booleanProperty"]).Value, Is.EqualTo(true));
         }
     }
 
@@ -906,22 +871,19 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<string>());
-            Assert.That((string)dictionaryItem.Key, Is.EqualTo("stringProperty"));
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<StringRemoteValue>());
+            Assert.That(((StringRemoteValue)dictionaryItem.Key).Value, Is.EqualTo("stringProperty"));
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -949,22 +911,19 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<long>());
-            Assert.That((long)dictionaryItem.Key, Is.EqualTo(2));
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<LongRemoteValue>());
+            Assert.That(((LongRemoteValue)dictionaryItem.Key).Value, Is.EqualTo(2));
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -992,22 +951,19 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<bool>());
-            Assert.That((bool)dictionaryItem.Key, Is.True);
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<BooleanRemoteValue>());
+            Assert.That(((BooleanRemoteValue)dictionaryItem.Key).Value, Is.True);
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -1035,22 +991,19 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<BigInteger>());
-            Assert.That((BigInteger)dictionaryItem.Key, Is.EqualTo(new BigInteger(1234)));
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<BigIntegerRemoteValue>());
+            Assert.That(((BigIntegerRemoteValue)dictionaryItem.Key).Value, Is.EqualTo(new BigInteger(1234)));
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -1077,22 +1030,18 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<RemoteValue>());
-            Assert.That(((RemoteValue)dictionaryItem.Key).Value, Is.Null);
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<NullRemoteValue>());
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -1119,22 +1068,18 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<RemoteValue>());
-            Assert.That(((RemoteValue)dictionaryItem.Key).Value, Is.Null);
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<UndefinedRemoteValue>());
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -1162,22 +1107,20 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<DateTime>());
-            Assert.That((DateTime)dictionaryItem.Key, Is.EqualTo(new DateTime(2020, 07, 19, 23, 47, 26, 56, DateTimeKind.Utc)));
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<DateRemoteValue>());
+            DateRemoteValue dateRemoteValue = (DateRemoteValue)dictionaryItem.Key;
+            Assert.That(dateRemoteValue.Value, Is.EqualTo(new DateTime(2020, 07, 19, 23, 47, 26, 56, DateTimeKind.Utc)));
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -1205,22 +1148,21 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<string>());
-            Assert.That((string)dictionaryItem.Key, Is.EqualTo("myHandle"));
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)dictionaryItem.Key;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.EqualTo("myHandle"));
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -1248,22 +1190,21 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("map"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(1));
-        KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(dictionaryItem.Key, Is.InstanceOf<string>());
-            Assert.That((string)dictionaryItem.Key, Is.EqualTo("123"));
-            Assert.That(dictionaryItem.Value.Type, Is.EqualTo("string"));
-            Assert.That(dictionaryItem.Value.ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Map));
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(1));
+            KeyValuePair<object, RemoteValue> dictionaryItem = dictionaryValue.ElementAt(0);
+            Assert.That(dictionaryItem.Key, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)dictionaryItem.Key;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.EqualTo("123"));
+            Assert.That(dictionaryItem.Value, Is.InstanceOf<StringRemoteValue>());
+            StringRemoteValue stringRemoteValue = (StringRemoteValue)dictionaryItem.Value;
+            Assert.That(stringRemoteValue.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(stringRemoteValue.Value, Is.EqualTo("stringValue"));
         }
     }
 
@@ -1409,23 +1350,22 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("object"));
-            Assert.That(remoteValue.HasValue);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.InstanceOf<RemoteValueDictionary>());
-        }
-        RemoteValueDictionary? dictionaryValue = remoteValue.ValueAs<RemoteValueDictionary>();
-        Assert.That(dictionaryValue, Is.Not.Null);
-        Assert.That(dictionaryValue, Has.Count.EqualTo(3));
-        using (Assert.EnterMultipleScope())
-        {
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Object));
+            Assert.That(remoteValue, Is.InstanceOf<KeyValuePairCollectionRemoteValue>());
+            KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+            Assert.That(keyValuePairRemoteValue.Handle, Is.Null);
+            Assert.That(keyValuePairRemoteValue.InternalId, Is.Null);
+            RemoteValueDictionary dictionaryValue = keyValuePairRemoteValue.Value;
+            Assert.That(dictionaryValue, Has.Count.EqualTo(3));
             Assert.That(dictionaryValue, Contains.Key("stringProperty"));
-            Assert.That(dictionaryValue["stringProperty"].ValueAs<string>(), Is.EqualTo("stringValue"));
+            Assert.That(dictionaryValue["stringProperty"], Is.InstanceOf<StringRemoteValue>());
+            Assert.That(((StringRemoteValue)dictionaryValue["stringProperty"]).Value, Is.EqualTo("stringValue"));
             Assert.That(dictionaryValue, Contains.Key("numberProperty"));
-            Assert.That(dictionaryValue["numberProperty"].ValueAs<long>(), Is.EqualTo(123));
+            Assert.That(dictionaryValue["numberProperty"], Is.InstanceOf<LongRemoteValue>());
+            Assert.That(((LongRemoteValue)dictionaryValue["numberProperty"]).Value, Is.EqualTo(123));
             Assert.That(dictionaryValue, Contains.Key("booleanProperty"));
-            Assert.That(dictionaryValue["booleanProperty"].ValueAs<bool>(), Is.EqualTo(true));
+            Assert.That(dictionaryValue["booleanProperty"], Is.InstanceOf<BooleanRemoteValue>());
+            Assert.That(((BooleanRemoteValue)dictionaryValue["booleanProperty"]).Value, Is.EqualTo(true));
         }
     }
 
@@ -1469,10 +1409,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("symbol"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Symbol));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1488,10 +1429,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("function"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Function));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1507,10 +1449,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("weakmap"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.WeakMap));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1526,10 +1469,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("weakset"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.WeakSet));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1545,10 +1489,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("generator"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Generator));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1564,10 +1509,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("error"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Error));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1583,10 +1529,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("proxy"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Proxy));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1602,10 +1549,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("promise"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Promise));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1621,10 +1569,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("typedarray"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.TypedArray));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1640,10 +1589,11 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("arraybuffer"));
-            Assert.That(remoteValue.HasValue, Is.False);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.ArrayBuffer));
+            Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+            ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+            Assert.That(objectReferenceRemoteValue.Handle, Is.Null);
+            Assert.That(objectReferenceRemoteValue.InternalId, Is.Null);
         }
     }
 
@@ -1662,15 +1612,13 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("window"));
-            Assert.That(remoteValue.HasValue, Is.True);
-            Assert.That(remoteValue.Handle, Is.Null);
-            Assert.That(remoteValue.InternalId, Is.Null);
-            Assert.That(remoteValue.Value, Is.TypeOf<WindowProxyProperties>());
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Window));
+            Assert.That(remoteValue, Is.InstanceOf<WindowProxyRemoteValue>());
+            WindowProxyRemoteValue windowProxyRemoteValue = (WindowProxyRemoteValue)remoteValue;
+            Assert.That(windowProxyRemoteValue.Handle, Is.Null);
+            Assert.That(windowProxyRemoteValue.InternalId, Is.Null);
+            Assert.That(windowProxyRemoteValue.Value.Context, Is.EqualTo("myContext"));
         }
-        WindowProxyProperties? windowProxyObject = remoteValue.ValueAs<WindowProxyProperties>();
-        Assert.That(windowProxyObject, Is.Not.Null);
-        Assert.That(windowProxyObject.Context, Is.EqualTo("myContext"));
     }
 
     [Test]
@@ -1690,13 +1638,14 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(remoteValue.Type, Is.EqualTo("window"));
-            Assert.That(remoteValue.HasValue, Is.True);
-            Assert.That(remoteValue.Handle, Is.Not.Null);
-            Assert.That(remoteValue.Handle, Is.EqualTo("myHandle"));
-            Assert.That(remoteValue.InternalId, Is.Not.Null);
-            Assert.That(remoteValue.InternalId, Is.EqualTo("123"));
-            Assert.That(remoteValue.Value, Is.TypeOf<WindowProxyProperties>());
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.Window));
+            Assert.That(remoteValue, Is.InstanceOf<WindowProxyRemoteValue>());
+            WindowProxyRemoteValue windowProxyRemoteValue = (WindowProxyRemoteValue)remoteValue;
+            Assert.That(windowProxyRemoteValue.Handle, Is.Not.Null);
+            Assert.That(windowProxyRemoteValue.Handle, Is.EqualTo("myHandle"));
+            Assert.That(windowProxyRemoteValue.InternalId, Is.Not.Null);
+            Assert.That(windowProxyRemoteValue.InternalId, Is.EqualTo("123"));
+            Assert.That(windowProxyRemoteValue.Value.Context, Is.EqualTo("myContext"));
         }
     }
 
@@ -1804,7 +1753,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => remoteValue.ValueAs<string>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("RemoteValue could not be cast to the desired type"));
+            Assert.That(() => remoteValue.ConvertTo<StringRemoteValue>().Value, Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo($"RemoteValue of type '{remoteValue.Type}' cannot be converted to type 'StringRemoteValue'"));
         }
     }
 
@@ -1818,26 +1767,7 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(() => remoteValue.ValueAs<int>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("RemoteValue has null value, but desired type is a value type"));
-        }
-    }
-
-    [Test]
-    public void TestNullRemoteValueAsNullableType()
-    {
-        string json = """
-                      {
-                        "type": "null"
-                      }
-                      """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(remoteValue.ValueAs<string>(), Is.Null);
-        }
+        Assert.That(remoteValue, Is.InstanceOf<NullRemoteValue>());
     }
 
     [Test]
@@ -1865,14 +1795,16 @@ public class RemoteValueTests
     {
         string json = """
                       {
-                        "type": "window",
+                        "type": "symbol",
                         "handle": "myHandle",
                         "internalId": "123"
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
-        RemoteReference reference = remoteValue.ToRemoteReference();
+        Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+        ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
+        RemoteReference reference = objectReferenceRemoteValue.ToRemoteReference();
         Assert.That(reference, Is.InstanceOf<RemoteObjectReference>());
     }
 
@@ -1881,15 +1813,17 @@ public class RemoteValueTests
     {
         string json = """
                       {
-                        "type": "window",
+                        "type": "symbol",
                         "internalId": "123"
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
+        ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => remoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
+            Assert.That(() => objectReferenceRemoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
         }
     }
 
@@ -1909,7 +1843,9 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
-        RemoteReference reference = remoteValue.ToRemoteReference();
+        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        NodeRemoteValue nodeRemoteValue = (NodeRemoteValue)remoteValue;
+        RemoteReference reference = nodeRemoteValue.ToRemoteReference();
         Assert.That(reference, Is.InstanceOf<SharedReference>());
     }
 
@@ -1928,26 +1864,11 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        NodeRemoteValue nodeRemoteValue = (NodeRemoteValue)remoteValue;
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => remoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid shared ID"));
-        }
-    }
-
-    [Test]
-    public void TestConvertPrimitiveRemoteValueToRemoteReferenceThrows()
-    {
-        string json = """
-                      {
-                        "type": "string",
-                        "value": "myValue"
-                      }
-                      """;
-        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(() => remoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Primitive values cannot be used as remote references"));
+            Assert.That(() => nodeRemoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid shared ID"));
         }
     }
 
@@ -1967,7 +1888,8 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
-        SharedReference reference = remoteValue.ToSharedReference();
+        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        SharedReference reference = ((NodeRemoteValue)remoteValue).ToSharedReference();
         Assert.That(reference, Is.InstanceOf<SharedReference>());
     }
 
@@ -1983,9 +1905,6 @@ public class RemoteValueTests
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
         Assert.That(remoteValue, Is.Not.Null);
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(() => remoteValue.ToSharedReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Remote value cannot be converted to SharedReference"));
-        }
-     }
+        Assert.That(remoteValue.TryConvertTo(out NodeRemoteValue? _), Is.False);
+    }
 }

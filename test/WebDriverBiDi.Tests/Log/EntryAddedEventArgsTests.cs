@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.Log;
 
 using System.Text.Json;
+using WebDriverBiDi.Script;
 
 [TestFixture]
 public class EntryAddedEventArgsTests
@@ -107,9 +108,8 @@ public class EntryAddedEventArgsTests
             Assert.That(eventArgs.Type, Is.EqualTo("console"));
             Assert.That(eventArgs.Method, Is.EqualTo("myMethod"));
             Assert.That(eventArgs.Arguments, Has.Count.EqualTo(1));
-            Assert.That(eventArgs.Arguments![0].HasValue);
-            Assert.That(eventArgs.Arguments![0].Type, Is.EqualTo("string"));
-            Assert.That(eventArgs.Arguments![0].ValueAs<string>(), Is.EqualTo("argValue"));
+            Assert.That(eventArgs.Arguments![0].Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(eventArgs.Arguments![0].ConvertTo<StringRemoteValue>().Value, Is.EqualTo("argValue"));
             Assert.That(eventArgs.StackTrace, Is.Not.Null);
         }
     }

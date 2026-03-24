@@ -46,10 +46,8 @@ public class ScriptModuleTests
             Assert.That(successResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(successResult.ResultType, Is.EqualTo(EvaluateResultType.Success));
             Assert.That(successResult.Result, Is.Not.Null);
-            Assert.That(successResult.Result.Type, Is.EqualTo("string"));
-            Assert.That(successResult.Result.HasValue);
-            Assert.That(successResult.Result.Value, Is.TypeOf<string>());
-            Assert.That(successResult.Result.ValueAs<string>(), Is.EqualTo("myStringValue"));
+            Assert.That(successResult.Result.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(successResult.Result.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myStringValue"));
         }
     }
 
@@ -105,9 +103,7 @@ public class ScriptModuleTests
             Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
             Assert.That(exceptionResult.ExceptionDetails.StackTrace, Is.Not.Null);
             Assert.That(exceptionResult.ExceptionDetails.StackTrace.CallFrames, Is.Empty);
-            Assert.That(exceptionResult.ExceptionDetails.Exception.HasValue);
-            Assert.That(exceptionResult.ExceptionDetails.Exception.Value, Is.TypeOf<string>());
-            Assert.That(exceptionResult.ExceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("myStringValue"));
+            Assert.That(exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myStringValue"));
         }
     }
 
@@ -151,10 +147,8 @@ public class ScriptModuleTests
             Assert.That(successResult.RealmId, Is.EqualTo("myRealmId"));
             Assert.That(successResult.ResultType, Is.EqualTo(EvaluateResultType.Success));
             Assert.That(successResult.Result, Is.Not.Null);
-            Assert.That(successResult.Result.Type, Is.EqualTo("string"));
-            Assert.That(successResult.Result.HasValue);
-            Assert.That(successResult.Result.Value, Is.TypeOf<string>());
-            Assert.That(successResult.Result.ValueAs<string>(), Is.EqualTo("myStringValue"));
+            Assert.That(successResult.Result.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(successResult.Result.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myStringValue"));
         }
     }
 
@@ -210,9 +204,7 @@ public class ScriptModuleTests
             Assert.That(exceptionResult.ExceptionDetails.ColumnNumber, Is.EqualTo(5));
             Assert.That(exceptionResult.ExceptionDetails.StackTrace, Is.Not.Null);
             Assert.That(exceptionResult.ExceptionDetails.StackTrace.CallFrames, Is.Empty);
-            Assert.That(exceptionResult.ExceptionDetails.Exception.HasValue);
-            Assert.That(exceptionResult.ExceptionDetails.Exception.Value, Is.TypeOf<string>());
-            Assert.That(exceptionResult.ExceptionDetails.Exception.ValueAs<string>(), Is.EqualTo("myStringValue"));
+            Assert.That(exceptionResult.ExceptionDetails.Exception.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myStringValue"));
         }
     }
 
@@ -443,8 +435,8 @@ public class ScriptModuleTests
             {
                 Assert.That(e.ChannelId, Is.EqualTo("myChannel"));
                 Assert.That(e.Data, Is.Not.Null);
-                Assert.That(e.Data.Type, Is.EqualTo("string"));
-                Assert.That(e.Data.ValueAs<string>(), Is.EqualTo("myChannelValue"));
+                Assert.That(e.Data.Type, Is.EqualTo(RemoteValueType.String));
+                Assert.That(e.Data.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myChannelValue"));
                 Assert.That(e.Source, Is.Not.Null);
                 Assert.That(e.Source.RealmId, Is.EqualTo("myRealm"));
             }

@@ -46,9 +46,10 @@ public class ScriptSamples
 
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue titleValue)
         {
-            string title = success.Result.ValueAs<string>();
+            string title = titleValue.Value ?? "No title";
             Console.WriteLine($"Title: {title}");
         }
 #endregion
@@ -98,9 +99,10 @@ public class ScriptSamples
 
         EvaluateResult result = await driver.Script.CallFunctionAsync(parameters);
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is LongRemoteValue sumValue)
         {
-            long sum = success.Result.ValueAs<long>();
+            long sum = sumValue.Value;
             Console.WriteLine($"Sum: {sum}");  // 15
         }
 #endregion
@@ -120,10 +122,9 @@ public class ScriptSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (elementResult is EvaluateResultSuccess elementSuccess)
+        if (elementResult is EvaluateResultSuccess elementSuccess &&
+            elementSuccess.Result is NodeRemoteValue element)
         {
-            RemoteValue element = elementSuccess.Result;
-
             string functionDefinition = "(element) => element.click()";
 
             CallFunctionCommandParameters parameters = new CallFunctionCommandParameters(
@@ -154,7 +155,7 @@ public class ScriptSamples
 
         if (objectResult is EvaluateResultSuccess objectSuccess)
         {
-            RemoteValue divElement = objectSuccess.Result;
+            objectSuccess.Result.TryConvertTo(out NodeRemoteValue? divElement);
 
             // Call getAttribute method
             string functionDefinition = "(element, attrName) => element.getAttribute(attrName)";
@@ -167,9 +168,10 @@ public class ScriptSamples
             parameters.Arguments.Add(LocalValue.String("class"));
 
             EvaluateResult result = await driver.Script.CallFunctionAsync(parameters);
-            if (result is EvaluateResultSuccess success)
+            if (result is EvaluateResultSuccess success &&
+                success.Result is StringRemoteValue classNameValue)
             {
-                string className = success.Result.ValueAs<string>();
+                string className = classNameValue.Value;
                 Console.WriteLine($"Class: {className}");
             }
         }
@@ -254,9 +256,9 @@ public class ScriptSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (evalResult is EvaluateResultSuccess success)
+        if (evalResult is EvaluateResultSuccess success &&
+            success.Result is NodeRemoteValue element)
         {
-            RemoteValue element = success.Result;
             string? handle = element.SharedId;
 
             if (handle != null)
@@ -340,7 +342,7 @@ public class ScriptSamples
         {
             if (e.ChannelId == "myChannel")
             {
-                Console.WriteLine($"Message from preload: {e.Data.ValueAs<string>()}");
+                Console.WriteLine($"Message from preload: {e.Data.ConvertTo<StringRemoteValue>().Value}");
             }
         });
 
@@ -428,17 +430,17 @@ public class ScriptSamples
 
             switch (value.Type)
             {
-                case "string":
-                    string str = value.ValueAs<string>();
+                case RemoteValueType.String:
+                    string str = value.ConvertTo<StringRemoteValue>().Value;
                     break;
-                case "number":
-                    long num = value.ValueAs<long>();
+                case RemoteValueType.Number:
+                    long num = value.ConvertTo<LongRemoteValue>().Value;
                     break;
-                case "boolean":
-                    bool flag = value.ValueAs<bool>();
+                case RemoteValueType.Boolean:
+                    bool flag = value.ConvertTo<BooleanRemoteValue>().Value;
                     break;
-                case "null":
-                case "undefined":
+                case RemoteValueType.Null:
+                case RemoteValueType.Undefined:
                     break;
             }
         }
@@ -468,14 +470,13 @@ public class ScriptSamples
 
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is KeyValuePairCollectionRemoteValue obj)
         {
-            RemoteValue obj = success.Result;
-
             // Access as RemoteValueDictionary
-            RemoteValueDictionary dict = obj.ValueAs<RemoteValueDictionary>();
-            Console.WriteLine($"Name: {dict["name"].ValueAs<string>()}");
-            Console.WriteLine($"Age: {dict["age"].ValueAs<long>()}");
+            RemoteValueDictionary dict = obj.Value;
+            Console.WriteLine($"Name: {dict["name"].ConvertTo<StringRemoteValue>().Value}");
+            Console.WriteLine($"Age: {dict["age"].ConvertTo<LongRemoteValue>().Value}");
         }
 #endregion
     }
@@ -497,16 +498,15 @@ public class ScriptSamples
 
         EvaluateResult result = await driver.Script.EvaluateAsync(parameters);
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is CollectionRemoteValue listValue)
         {
-            RemoteValue array = success.Result;
-
             // Access as RemoteValueList
-            RemoteValueList list = array.ValueAs<RemoteValueList>();
+            RemoteValueList list = listValue.Value;
             Console.WriteLine($"Array length: {list.Count}");
             foreach (RemoteValue item in list)
             {
-                Console.WriteLine($"  Item: {item.ValueAs<long>()}");
+                Console.WriteLine($"  Item: {item.ConvertTo<LongRemoteValue>().Value}");
             }
         }
 #endregion
@@ -528,26 +528,22 @@ public class ScriptSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            RemoteValue element = success.Result;
+            RemoteValue elementRemoteValue = success.Result;
 
             // Check if it's a node
-            if (element.Type == "node")
+            if (elementRemoteValue.TryConvertTo(out NodeRemoteValue element))
             {
                 // Get node properties
-                NodeProperties? nodeProps = element.ValueAs<NodeProperties>();
+                NodeProperties nodeProps = element.Value;
+                Console.WriteLine($"Tag: {nodeProps.LocalName}");
+                Console.WriteLine($"Node type: {nodeProps.NodeType}");
 
-                if (nodeProps != null)
+                // Get attributes
+                if (nodeProps.Attributes != null)
                 {
-                    Console.WriteLine($"Tag: {nodeProps.LocalName}");
-                    Console.WriteLine($"Node type: {nodeProps.NodeType}");
-
-                    // Get attributes
-                    if (nodeProps.Attributes != null)
+                    foreach (var attr in nodeProps.Attributes)
                     {
-                        foreach (var attr in nodeProps.Attributes)
-                        {
-                            Console.WriteLine($"  {attr.Key} = {attr.Value}");
-                        }
+                        Console.WriteLine($"  {attr.Key} = {attr.Value}");
                     }
                 }
 
@@ -766,7 +762,7 @@ public class ScriptSamples
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
             Console.WriteLine($"Channel: {e.ChannelId}");
-            Console.WriteLine($"Data: {e.Data.ValueAs<string>()}");
+            Console.WriteLine($"Data: {e.Data.ConvertTo<StringRemoteValue>().Value}");
             Console.WriteLine($"Source context: {e.Source.Context}");
         });
 
@@ -807,7 +803,7 @@ public class ScriptSamples
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("button")));
 
-        RemoteValue element = locateResult.Nodes[0];
+        locateResult.Nodes[0].TryConvertTo(out NodeRemoteValue? element);
 
         // Click element
         CallFunctionCommandParameters clickParams = new CallFunctionCommandParameters(
@@ -911,7 +907,7 @@ public class ScriptSamples
 
         if (result is EvaluateResultSuccess success)
         {
-            string text = success.Result.ValueAs<string>();
+            string text = success.Result.ConvertTo<StringRemoteValue>().Value;
             Console.WriteLine($"Text: {text}");
         }
         else if (result is EvaluateResultException exception)
@@ -938,7 +934,7 @@ public class ScriptSamples
     /// Safe script execution pattern - TryEvaluateAsync.
     /// </summary>
 #region TryEvaluateAsync
-    public async Task<T?> TryEvaluateAsync<T>(
+    public async Task<T?> TryEvaluateAsync<T> (
         BiDiDriver driver,
         string expression,
         string contextId,
@@ -952,9 +948,10 @@ public class ScriptSamples
                     new ContextTarget(contextId),
                     true));
 
-            if (result is EvaluateResultSuccess success)
+            if (result is EvaluateResultSuccess success &&
+                success.Result is ITypeSafeRemoteValue<T> typeSafeValue)
             {
-                return success.Result.ValueAs<T>();
+                return typeSafeValue.Value;
             }
             else if (result is EvaluateResultException exception)
             {

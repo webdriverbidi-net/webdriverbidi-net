@@ -1,0 +1,33 @@
+// <copyright file="WindowProxyRemoteValue.cs" company="WebDriverBiDi.NET Committers">
+// Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// </copyright>
+
+namespace WebDriverBiDi.Script;
+
+using System.Text.Json.Serialization;
+using WebDriverBiDi.JsonConverters;
+
+/// <summary>
+/// Represents a remote value for a window proxy representing the JavaScript window object.
+/// It also provides the ability to convert to a local value for use as an argument for
+/// script execution on the remote end.
+/// </summary>
+[JsonConverter(typeof(RemoteValueJsonConverter))]
+public record WindowProxyRemoteValue : ObjectReferenceRemoteValue, ITypeSafeRemoteValue<WindowProxyProperties>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WindowProxyRemoteValue"/> class.
+    /// </summary>
+    /// <param name="value">The properties of the proxy object representing the window.</param>
+    internal WindowProxyRemoteValue(WindowProxyProperties value)
+        : base(RemoteValueType.Window)
+    {
+        this.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the properties of the proxy object representing the window.
+    /// </summary>
+    public WindowProxyProperties Value { get; private set; }
+}

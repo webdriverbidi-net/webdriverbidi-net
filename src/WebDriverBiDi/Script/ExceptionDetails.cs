@@ -58,5 +58,5 @@ public record ExceptionDetails
     [JsonPropertyName("exception")]
     [JsonRequired]
     [JsonInclude]
-    public RemoteValue Exception { get; internal set; } = new("null");
+    public RemoteValue Exception { get; internal set; } = new NullRemoteValue();
 }

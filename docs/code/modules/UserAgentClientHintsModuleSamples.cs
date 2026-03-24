@@ -262,9 +262,10 @@ public static class UserAgentClientHintsModuleSamples
                     new ContextTarget(contextId),
                     true));
 
-            if (result is EvaluateResultSuccess success)
+            if (result is EvaluateResultSuccess success &&
+                success.Result is StringRemoteValue brandsValue)
             {
-                string brands = success.Result.ValueAs<string>();
+                string brands = brandsValue.Value;
                 Console.WriteLine($"Detected brands: {brands}");
             }
         }
@@ -300,9 +301,10 @@ public static class UserAgentClientHintsModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue hintsValue)
         {
-            string hintsJson = success.Result.ValueAs<string>();
+            string hintsJson = hintsValue.Value;
             Console.WriteLine($"Client hints: {hintsJson}");
         }
 #endregion

@@ -168,9 +168,10 @@ public static class GettingStartedSamples
             
             EvaluateResult scriptResult = await driver.Script.EvaluateAsync(evalParams);
             
-            if (scriptResult is EvaluateResultSuccess success)
+            if (scriptResult is EvaluateResultSuccess success &&
+                success.Result is StringRemoteValue stringValue)
             {
-                string title = success.Result.ValueAs<string>() ?? "No title";
+                string title = stringValue.Value ?? "No title";
                 Console.WriteLine($"Page title: {title}");
             }
 

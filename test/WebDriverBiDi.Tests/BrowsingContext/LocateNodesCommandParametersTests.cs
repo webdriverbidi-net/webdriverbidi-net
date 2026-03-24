@@ -116,7 +116,7 @@ public class LocateNodesCommandParametersTests
         string nodeJson = @"{ ""type"": ""node"", ""sharedId"": ""mySharedId"", ""value"": { ""nodeType"": 1, ""nodeValue"": """", ""childNodeCount"": 0 } }";
         RemoteValue nodeValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!;
         LocateNodesCommandParameters properties = new("myContextId", new CssLocator(".selector"));
-        properties.StartNodes.Add(nodeValue.ToSharedReference());
+        properties.StartNodes.Add(((NodeRemoteValue)nodeValue).ToSharedReference());
 
         string json = JsonSerializer.Serialize(properties);
         JObject serialized = JObject.Parse(json);

@@ -263,8 +263,8 @@ public class ModuleTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(innerAggregateException.InnerExceptions, Has.Count.EqualTo(2));
-            Assert.That(innerAggregateException.InnerExceptions[0], Is.InstanceOf<InvalidOperationException>().With.Message.EqualTo("First aggregate failure"));
-            Assert.That(innerAggregateException.InnerExceptions[1], Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Second aggregate failure"));
+            Assert.That(innerAggregateException.InnerExceptions, Has.One.InstanceOf<InvalidOperationException>().With.Message.EqualTo("First aggregate failure"));
+            Assert.That(innerAggregateException.InnerExceptions, Has.One.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("Second aggregate failure"));
         }
     }
 

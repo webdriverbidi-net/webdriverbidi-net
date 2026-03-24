@@ -25,8 +25,8 @@ public class MessageEventArgsTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(eventArgs.ChannelId, Is.EqualTo("myChannel"));
-            Assert.That(eventArgs.Data.Type, Is.EqualTo("string"));
-            Assert.That(eventArgs.Data.ValueAs<string>(), Is.EqualTo("myChannelValue"));
+            Assert.That(eventArgs.Data.Type, Is.EqualTo(RemoteValueType.String));
+            Assert.That(eventArgs.Data.ConvertTo<StringRemoteValue>().Value, Is.EqualTo("myChannelValue"));
             Assert.That(eventArgs.Source.RealmId, Is.EqualTo("myRealm"));
         }
     }

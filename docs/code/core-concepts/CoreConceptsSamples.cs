@@ -558,12 +558,11 @@ public static class CoreConceptsSamples
         EvaluateResult result = await driver.Script.EvaluateAsync(
             new EvaluateCommandParameters("42", new ContextTarget(contextId), true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is LongRemoteValue remoteValue)
         {
-            RemoteValue remoteValue = success.Result;
-
             // Convert to appropriate .NET type
-            long number = remoteValue.ValueAs<long>(); // JavaScript number -> long
+            long number = remoteValue.Value; // JavaScript number -> long
 
             // Check the type
             Console.WriteLine($"Type: {remoteValue.Type}"); // "number"
@@ -589,13 +588,12 @@ public static class CoreConceptsSamples
                 target,
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is NodeRemoteValue element)
         {
-            RemoteValue element = success.Result;
-
             // Get node properties
-            NodeProperties? nodeProps = element.ValueAs<NodeProperties>();
-            Console.WriteLine($"Tag: {nodeProps?.LocalName}");
+            NodeProperties nodeProps = element.Value;
+            Console.WriteLine($"Tag: {nodeProps.LocalName}");
 
             // Create a reference to use in other commands
             SharedReference elementRef = element.ToSharedReference();

@@ -211,10 +211,11 @@ public class PageUtilitiesModule : Module
         EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             parameters);
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is KeyValuePairCollectionRemoteValue remoteValue)
         {
-            RemoteValueDictionary data = success.Result.ValueAs<RemoteValueDictionary>();
-            return data["found"].ValueAs<bool>();
+            RemoteValueDictionary data = remoteValue.Value;
+            return data["found"].ConvertTo<BooleanRemoteValue>().Value;
         }
 
         return false;
@@ -229,9 +230,10 @@ public class PageUtilitiesModule : Module
 
         EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue stringValue)
         {
-            return success.Result.ValueAs<string>();
+            return stringValue.Value;
         }
 
         return null;
@@ -257,9 +259,10 @@ public class PageUtilitiesModule : Module
 
         EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is BooleanRemoteValue boolValue)
         {
-            return success.Result.ValueAs<bool>();
+            return boolValue.Value;
         }
 
         return false;
@@ -288,9 +291,10 @@ public class PageUtilitiesModule : Module
 
         EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is KeyValuePairCollectionRemoteValue remoteValue)
         {
-            return ToDictionary(success.Result.ValueAs<RemoteValueDictionary>());
+            return ToDictionary(remoteValue.Value);
         }
 
         return new Dictionary<string, object>();
@@ -303,11 +307,11 @@ public class PageUtilitiesModule : Module
         {
             result[kvp.Key.ToString() ?? ""] = kvp.Value.Type switch
             {
-                "string" => kvp.Value.ValueAs<string>() ?? "",
-                "number" => kvp.Value.Value is long l ? (object)l : kvp.Value.ValueAs<double>(),
-                "boolean" => kvp.Value.ValueAs<bool>(),
-                "null" or "undefined" => (object?)null!,
-                _ => kvp.Value.Value ?? (object)""
+                RemoteValueType.String => kvp.Value.ConvertTo<StringRemoteValue>().Value ?? "",
+                RemoteValueType.Number => kvp.Value is LongRemoteValue l ? l : kvp.Value.ConvertTo<DoubleRemoteValue>().Value,
+                RemoteValueType.Boolean => kvp.Value.ConvertTo<BooleanRemoteValue>().Value,
+                RemoteValueType.Null or RemoteValueType.Undefined => (object?)null!,
+                _ => (kvp.Value as ValueHoldingRemoteValue)?.ValueObject ?? (object)""
             };
         }
         return result;
@@ -393,11 +397,12 @@ public class TestUtilitiesModule : Module
         EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is KeyValuePairCollectionRemoteValue remoteValue)
         {
-            RemoteValueDictionary dimensions = success.Result.ValueAs<RemoteValueDictionary>();
-            long width = dimensions["width"].ValueAs<long>();
-            long height = dimensions["height"].ValueAs<long>();
+            RemoteValueDictionary dimensions = remoteValue.Value;
+            long width = dimensions["width"].ConvertTo<LongRemoteValue>().Value;
+            long height = dimensions["height"].ConvertTo<LongRemoteValue>().Value;
 
             // Capture screenshot with full page dimensions
             CaptureScreenshotCommandParameters screenshotParams = 
@@ -428,10 +433,11 @@ public class TestUtilitiesModule : Module
         EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(
             new EvaluateCommandParameters(script, new ContextTarget(contextId), true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is CollectionRemoteValue remoteValue)
         {
-            RemoteValueList links = success.Result.ValueAs<RemoteValueList>();
-            return links.Select(l => l.ValueAs<string>()).ToList();
+            RemoteValueList links = remoteValue.Value;
+            return links.Select(l => l.ConvertTo<StringRemoteValue>().Value ?? "").ToList();
         }
 
         return new List<string>();
@@ -562,9 +568,10 @@ public class Waiter
 
             EvaluateResult result = await this.Driver.ExecuteCommandAsync<EvaluateResult>(parameters);
             
-            if (result is EvaluateResultSuccess success)
+            if (result is EvaluateResultSuccess success &&
+                success.Result is StringRemoteValue stringValue)
             {
-                return success.Result.ValueAs<string>();
+                return stringValue.Value;
             }
             else if (result is EvaluateResultException exception)
             {

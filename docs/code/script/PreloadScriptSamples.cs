@@ -11,6 +11,7 @@
 namespace WebDriverBiDi.Docs.Code.Script;
 
 using System.Collections.Generic;
+using OpenQA.Selenium.BiDi.Modules.Input;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;
@@ -85,10 +86,11 @@ public static class PreloadScriptSamples
 
             EvaluateResult result = await driver.Script.EvaluateAsync(evalParams);
             
-            if (result is EvaluateResultSuccess success)
+            if (result is EvaluateResultSuccess success &&
+                success.Result is StringRemoteValue textValue)
             {
-                string? text = success.Result.ValueAs<string>();
-                Console.WriteLine($"Page heading: {text}");
+                string heading = textValue.Value ?? "No heading";
+                Console.WriteLine($"Page heading: {heading}");
             }
 
             // Clean up
@@ -130,11 +132,12 @@ public static class PreloadScriptSamples
             {
                 Console.WriteLine($"📨 Received message from preload script");
                 
-                if (e.Data.Type == "object")
+                if (e.Data.Type == RemoteValueType.Object &&
+                    e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue)
                 {
-                    RemoteValueDictionary data = e.Data.ValueAs<RemoteValueDictionary>();
-                    Console.WriteLine($"Page ready: {data["ready"].ValueAs<bool>()}");
-                    Console.WriteLine($"Load time: {data["loadTime"].ValueAs<long>()}ms");
+                    RemoteValueDictionary data = dataRemoteValue.Value;
+                    Console.WriteLine($"Page ready: {data["ready"].ConvertTo<BooleanRemoteValue>().Value}");
+                    Console.WriteLine($"Load time: {data["loadTime"].ConvertTo<LongRemoteValue>().Value}ms");
                     
                     pageLoadedSignal.SetResult("complete");
                 }
@@ -216,9 +219,10 @@ public static class PreloadScriptSamples
 
         driver.Script.OnMessage.AddObserver((MessageEventArgs e) =>
         {
-            if (e.ChannelId == "elementWatcher")
+            if (e.ChannelId == "elementWatcher" &&
+                e.Data is KeyValuePairCollectionRemoteValue dataRemoteValue)
             {
-                RemoteValueDictionary data = e.Data.ValueAs<RemoteValueDictionary>();
+                RemoteValueDictionary data = dataRemoteValue.Value;
                 elementFoundSignal.SetResult(data);
             }
         });
@@ -243,7 +247,7 @@ public static class PreloadScriptSamples
         if (await Task.WhenAny(elementTask, timeoutTask) == elementTask)
         {
             RemoteValueDictionary data = await elementTask;
-            Console.WriteLine($"✅ Element found: {data["text"].ValueAs<string>()}");
+            Console.WriteLine($"✅ Element found: {data["text"].ConvertTo<StringRemoteValue>().Value}");
         }
         else
         {
@@ -291,7 +295,7 @@ public static class PreloadScriptSamples
         {
             if (e.ChannelId == "elementWatcher")
             {
-                RemoteValueDictionary data = e.Data.ValueAs<RemoteValueDictionary>();
+                RemoteValueDictionary data = e.Data.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
                 elementFoundSignal.SetResult(data);
             }
         });
@@ -316,7 +320,7 @@ public static class PreloadScriptSamples
         if (await Task.WhenAny(elementTask, timeoutTask) == elementTask)
         {
             RemoteValueDictionary data = await elementTask;
-            Console.WriteLine($"✅ Element found: {data["text"].ValueAs<string>()}");
+            Console.WriteLine($"✅ Element found: {data["text"].ConvertTo<StringRemoteValue>().Value}");
         }
         else
         {
@@ -357,9 +361,9 @@ public static class PreloadScriptSamples
         {
             if (e.ChannelId == "fetchInterceptor")
             {
-                RemoteValueDictionary data = e.Data.ValueAs<RemoteValueDictionary>();
+                RemoteValueDictionary data = e.Data.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
                 fetchCalls.Add(data);
-                Console.WriteLine($"🌐 Fetch intercepted: {data["url"].ValueAs<string>()}");
+                Console.WriteLine($"🌐 Fetch intercepted: {data["url"].ConvertTo<StringRemoteValue>().Value}");
             }
         });
 
@@ -409,7 +413,7 @@ public static class PreloadScriptSamples
         {
             if (e.ChannelId == "performanceMonitor")
             {
-                performanceData = e.Data.ValueAs<RemoteValueDictionary>();
+                performanceData = e.Data.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
             }
         });
 
@@ -431,10 +435,10 @@ public static class PreloadScriptSamples
         if (performanceData != null)
         {
             Console.WriteLine("\n⏱️ Performance Metrics:");
-            Console.WriteLine($"  DOM Content Loaded: {performanceData["domContentLoaded"].ValueAs<double>()}ms");
-            Console.WriteLine($"  Load Complete: {performanceData["loadComplete"].ValueAs<double>()}ms");
-            Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"].ValueAs<double>()}ms");
-            Console.WriteLine($"  Total Time: {performanceData["totalTime"].ValueAs<double>()}ms");
+            Console.WriteLine($"  DOM Content Loaded: {performanceData["domContentLoaded"].ConvertTo<DoubleRemoteValue>().Value}ms");
+            Console.WriteLine($"  Load Complete: {performanceData["loadComplete"].ConvertTo<DoubleRemoteValue>().Value}ms");
+            Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"].ConvertTo<DoubleRemoteValue>().Value}ms");
+            Console.WriteLine($"  Total Time: {performanceData["totalTime"].ConvertTo<DoubleRemoteValue>().Value}ms");
         }
 #endregion
     }

@@ -41,8 +41,11 @@ public class OriginTests
                             "sharedId": "testSharedId"
                           }
                           """;
-        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!.ToSharedReference();
-        
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        SharedReference node = ((NodeRemoteValue)remoteValue).ToSharedReference();
+
         ElementOrigin elementOrigin = new(node);
         Origin origin = Origin.Element(elementOrigin);
         string json = JsonSerializer.Serialize(origin.Value);
@@ -80,8 +83,11 @@ public class OriginTests
                             "sharedId": "testSharedId"
                           }
                           """;
-        SharedReference node = JsonSerializer.Deserialize<RemoteValue>(nodeJson)!.ToSharedReference();
-        
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(nodeJson);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        SharedReference node = ((NodeRemoteValue)remoteValue).ToSharedReference();
+
         Origin origin = Origin.Element(node);
         string json = JsonSerializer.Serialize(origin.Value);
         JObject serialized = JObject.Parse(json);

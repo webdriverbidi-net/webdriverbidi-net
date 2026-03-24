@@ -587,9 +587,10 @@ public class ErrorHandlingSamples
                     new ContextTarget(contextId),
                     true));
             
-            if (result is EvaluateResultSuccess success)
+            if (result is EvaluateResultSuccess success &&
+                success.Result is BooleanRemoteValue boolValue)
             {
-                return success.Result.ValueAs<bool>();
+                return boolValue.Value;
             }
         }
         catch (WebDriverBiDiException ex)
@@ -997,9 +998,10 @@ public class ErrorHandlingSamples
                     new ContextTarget(contextId),
                     true));
             
-            if (result is EvaluateResultSuccess success)
+            if (result is EvaluateResultSuccess success &&
+                success.Result is StringRemoteValue stringValue)
             {
-                return success.Result.ValueAs<string>() ?? "Unknown";
+                return stringValue.Value ?? "Unknown";
             }
         }
         catch (WebDriverBiDiException ex)

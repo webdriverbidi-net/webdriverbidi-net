@@ -6,58 +6,62 @@ Remote values represent JavaScript data returned from the browser. This guide ex
 
 When you execute JavaScript in the browser, the results are returned as `RemoteValue` objects. These represent JavaScript values in a .NET-friendly way while preserving type information and references to browser objects.
 
-## RemoteValue Structure
+## RemoteValue Class Hierarchy
 
-Every `RemoteValue` has:
+Every `RemoteValue` has a `Type` property indicating the JavaScript type as a string. The library deserializes each value into a concrete subclass rather than a single generic type:
 
-- `Type` - The JavaScript type as a string
-- `Value` - The .NET representation (may be null for non-primitive types)
-- `SharedId` - Unique identifier for objects that can be referenced later
-- `Handle` - Internal handle (less commonly used than SharedId)
+- **`RemoteValue`** (abstract base) – all remote values expose `Type`, `As<T>()`, `TryConvertTo<T>()`, and `ToLocalValue()`
+- **`ValueHoldingRemoteValue<T>`** – subclass for values that carry a .NET payload; exposes a typed `Value` property
+- **`ObjectReferenceRemoteValue`** – subclass for JavaScript objects that can be referenced by handle; exposes `Handle` and `InternalId`, and `ToRemoteReference()` to build a reference
+- **`NodeRemoteValue`** – extends `ValueHoldingRemoteValue<NodeProperties>` and also implements `IObjectReferenceRemoteValue`, providing `SharedId` and `ToSharedReference()`
+
+`NullRemoteValue` and `UndefinedRemoteValue` have no `Value` property — only a `Type`.
 
 ## JavaScript Type Mapping
 
 ### Primitive Types
 
-| JavaScript Type | RemoteValue.Type | .NET Type | Example |
-|----------------|------------------|-----------|---------|
-| `string` | `"string"` | `string` | `"hello"` |
-| `number` | `"number"` | `long` or `double` | `42`, `3.14` |
-| `boolean` | `"boolean"` | `bool` | `true` |
-| `undefined` | `"undefined"` | `null` | - |
-| `null` | `"null"` | `null` | - |
+| JavaScript Type | `Type` string | Concrete Class | `Value` Property Type |
+|----------------|---------------|----------------|-----------------------|
+| `string` | `"string"` | `StringRemoteValue` | `string` |
+| `number` (integer) | `"number"` | `LongRemoteValue` | `long` |
+| `number` (float) | `"number"` | `DoubleRemoteValue` | `double` |
+| `boolean` | `"boolean"` | `BooleanRemoteValue` | `bool` |
+| `bigint` | `"bigint"` | `BigIntegerRemoteValue` | `BigInteger` |
+| `undefined` | `"undefined"` | `UndefinedRemoteValue` | _(none)_ |
+| `null` | `"null"` | `NullRemoteValue` | _(none)_ |
 
 ### Complex Types
 
-| JavaScript Type | RemoteValue.Type | .NET Type |
-|----------------|------------------|-----------|
-| `Object` | `"object"` | `RemoteValueDictionary` |
-| `Array` | `"array"` | `RemoteValueList` |
-| `Function` | `"function"` | - |
-| `Promise` | `"promise"` | - |
-| `DOM Element` | `"node"` | `NodeProperties` |
-| `Date` | `"date"` | `DateTime` |
-| `RegExp` | `"regexp"` | - |
-| `Map` | `"map"` | `RemoteValueDictionary` |
-| `Set` | `"set"` | `RemoteValueList` |
+| JavaScript Type | `Type` string | Concrete Class | `Value` Property Type |
+|----------------|---------------|----------------|-----------------------|
+| `Object` | `"object"` | `KeyValuePairRemoteValue` | `RemoteValueDictionary` |
+| `Map` | `"map"` | `KeyValuePairRemoteValue` | `RemoteValueDictionary` |
+| `Array` | `"array"` | `ListRemoteValue` | `RemoteValueList` |
+| `Set` | `"set"` | `ListRemoteValue` | `RemoteValueList` |
+| `Date` | `"date"` | `DateRemoteValue` | `DateTime` |
+| `RegExp` | `"regexp"` | `RegExpRemoteValue` | `RegularExpressionValue` |
+| `DOM Element` | `"node"` | `NodeRemoteValue` | `NodeProperties` |
+| `Window` | `"window"` | `WindowProxyRemoteValue` | `WindowProxyProperties` |
+| `Function`, `Promise`, etc. | various | `ObjectReferenceRemoteValue` | _(none; use `Handle`)_ |
 
-`RemoteValueDictionary` is a read-only dictionary mapping keys to `RemoteValue` instances. Use `dict[key].ValueAs<T>()` to extract values. `RemoteValueList` is a read-only collection of `RemoteValue` instances. Use `list[index].ValueAs<T>()` to extract elements.
+`RemoteValueDictionary` is a read-only dictionary mapping keys to `RemoteValue` instances. Use `dict[key].As<SpecificType>().Value` to extract values. `RemoteValueList` is a read-only collection of `RemoteValue` instances. Use `list[index].As<SpecificType>().Value` to extract elements.
 
 ## Accessing Values
 
-### Using ValueAs<T>()
+### Using As<T>() and Pattern Matching
 
-The `ValueAs<T>()` method converts the remote value to the specified .NET type:
+Remote values are deserialized into their concrete types. Use C# pattern matching to check and cast in one step, or use `As<T>()` to perform a casting conversion (throws if the type is wrong) and `TryConvertTo<T>()` for a safe try-pattern:
 
-[!code-csharp[ValueAs Number](../code/remote-values/RemoteValuesSamples.cs#ValueAsNumber)]
+[!code-csharp[Number Values](../code/remote-values/RemoteValuesSamples.cs#ValueAsNumber)]
 
 ### String Values
 
-[!code-csharp[ValueAs String](../code/remote-values/RemoteValuesSamples.cs#ValueAsString)]
+[!code-csharp[String Values](../code/remote-values/RemoteValuesSamples.cs#ValueAsString)]
 
 ### Boolean Values
 
-[!code-csharp[ValueAs Boolean](../code/remote-values/RemoteValuesSamples.cs#ValueAsBoolean)]
+[!code-csharp[Boolean Values](../code/remote-values/RemoteValuesSamples.cs#ValueAsBoolean)]
 
 ### Null and Undefined
 

@@ -92,10 +92,9 @@ public static class CommonScenariosSamples
             EvaluateResult inputResult = await driver.Script.EvaluateAsync(
                 new EvaluateCommandParameters(findInputScript, new ContextTarget(contextId), true));
 
-            if (inputResult is EvaluateResultSuccess inputSuccess)
+            if (inputResult is EvaluateResultSuccess inputSuccess &&
+                inputSuccess.Result is NodeRemoteValue inputElement)
             {
-                RemoteValue inputElement = inputSuccess.Result;
-                
                 // Click the input to focus it
                 // PointerSource and KeySource are hypothetical helper classes to build input actions.
                 PerformActionsCommandParameters clickParams = new PerformActionsCommandParameters(contextId);
@@ -336,9 +335,10 @@ public static class CommonScenariosSamples
                         new ContextTarget(tabIds[i]),
                         true));
                 
-                if (result is EvaluateResultSuccess success)
+                if (result is EvaluateResultSuccess success &&
+                    success.Result is StringRemoteValue stringValue)
                 {
-                    string title = success.Result.ValueAs<string>();
+                    string title = stringValue.Value ?? "No title";
                     Console.WriteLine($"Tab {i + 1} title: {title}");
                 }
             }
@@ -390,9 +390,10 @@ public static class CommonScenariosSamples
                         new ContextTarget(contextId),
                         true));
 
-                if (result is EvaluateResultSuccess success)
+                if (result is EvaluateResultSuccess success &&
+                    success.Result is BooleanRemoteValue boolValue)
                 {
-                    elementFound = success.Result.ValueAs<bool>();
+                    elementFound = boolValue.Value;
                     if (elementFound)
                     {
                         Console.WriteLine($"Element found after {attempt * 100}ms");
@@ -499,9 +500,10 @@ public static class CommonScenariosSamples
             EvaluateResult titleResult = await driver.Script.EvaluateAsync(
                 new EvaluateCommandParameters("document.title", new ContextTarget(contextId), true));
 
-            if (titleResult is EvaluateResultSuccess titleSuccess)
+            if (titleResult is EvaluateResultSuccess titleSuccess &&
+                titleSuccess.Result is StringRemoteValue titleValue)
             {
-                Console.WriteLine($"Title: {titleSuccess.Result.ValueAs<string>()}");
+                Console.WriteLine($"Page title: {titleValue.Value}");
             }
 
             // Call function with arguments
@@ -514,9 +516,10 @@ public static class CommonScenariosSamples
             funcParams.Arguments.Add(LocalValue.Number(20));
 
             EvaluateResult sumResult = await driver.Script.CallFunctionAsync(funcParams);
-            if (sumResult is EvaluateResultSuccess sumSuccess)
+            if (sumResult is EvaluateResultSuccess sumSuccess &&
+                sumSuccess.Result is LongRemoteValue sumValue)
             {
-                Console.WriteLine($"10 + 20 = {sumSuccess.Result.ValueAs<long>()}");
+                Console.WriteLine($"10 + 20 = {sumValue.Value}");
             }
 
             // Execute complex script
@@ -533,12 +536,12 @@ public static class CommonScenariosSamples
 
             if (complexResult is EvaluateResultSuccess complexSuccess)
             {
-                RemoteValueDictionary data = complexSuccess.Result.ValueAs<RemoteValueDictionary>();
+                RemoteValueDictionary data = complexSuccess.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
                 Console.WriteLine($"\nPage analysis:");
-                Console.WriteLine($"  URL: {data["url"].ValueAs<string>()}");
-                Console.WriteLine($"  Links: {data["linkCount"].ValueAs<long>()}");
-                Console.WriteLine($"  Images: {data["imageCount"].ValueAs<long>()}");
-                Console.WriteLine($"  Has title: {data["hasTitle"].ValueAs<bool>()}");
+                Console.WriteLine($"  URL: {data["url"].ConvertTo<StringRemoteValue>().Value}");
+                Console.WriteLine($"  Links: {data["linkCount"].ConvertTo<LongRemoteValue>().Value}");
+                Console.WriteLine($"  Images: {data["imageCount"].ConvertTo<LongRemoteValue>().Value}");
+                Console.WriteLine($"  Has title: {data["hasTitle"].ConvertTo<BooleanRemoteValue>().Value}");
             }
         }
         finally

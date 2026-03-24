@@ -14,8 +14,7 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -39,9 +38,8 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
-        NodeProperties copy = nodeProperties with { };
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties copy = nodeProperties;
         Assert.That(copy, Is.EqualTo(nodeProperties));
     }
 
@@ -101,8 +99,7 @@ public class NodePropertiesTests
                         "nodeValue": "myNodeValue"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -140,8 +137,7 @@ public class NodePropertiesTests
                         "localName": "myLocalName"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -179,8 +175,7 @@ public class NodePropertiesTests
                         "namespaceURI": "myNamespace"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -220,8 +215,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -303,8 +297,7 @@ public class NodePropertiesTests
                         ]
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -315,8 +308,6 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Attributes, Is.Null);
             Assert.That(nodeProperties.Children, Is.Not.Null);
             Assert.That(nodeProperties.Children, Has.Count.EqualTo(1));
-            Assert.That(nodeProperties.Children![0].HasValue, Is.True);
-            Assert.That(nodeProperties.Children[0].Value, Is.TypeOf<NodeProperties>());
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
         }
@@ -332,8 +323,7 @@ public class NodePropertiesTests
                         "children": []
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -385,8 +375,7 @@ public class NodePropertiesTests
                         "mode": "open"
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -444,8 +433,7 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -456,8 +444,6 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Attributes, Is.Null);
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Not.Null);
-            Assert.That(nodeProperties.ShadowRoot!.HasValue, Is.True);
-            Assert.That(nodeProperties.ShadowRoot.Value, Is.TypeOf<NodeProperties>());
             Assert.That(nodeProperties.Mode, Is.Null);
         }
     }

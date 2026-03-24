@@ -143,9 +143,10 @@ public static class BluetoothModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue deviceNameValue)
         {
-            string deviceName = success.Result.ValueAs<string>();
+            string deviceName = deviceNameValue.Value;
             Console.WriteLine($"Found device: {deviceName}");
         }
 #endregion
@@ -225,9 +226,10 @@ public static class BluetoothModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue connectionValue)
         {
-            string connectionStatus = success.Result.ValueAs<string>();
+            string connectionStatus = connectionValue.Value;
             Console.WriteLine($"Connection status: {connectionStatus}");
         }
 #endregion

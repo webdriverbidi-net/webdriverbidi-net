@@ -3,6 +3,8 @@ namespace WebDriverBiDi.Protocol;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using PinchHitter;
@@ -699,7 +701,17 @@ public class WebSocketConnectionTests
     [Test]
     public async Task TestCanStartWithSecuredWebSocketUrl()
     {
+        using RSA rsa = RSA.Create(2048);
+        CertificateRequest request = new("CN=localhost", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        using X509Certificate2 ephemeral = request.CreateSelfSigned(DateTimeOffset.Now.AddDays(-1), DateTimeOffset.Now.AddYears(1));
+
+        // Export to PFX and reimport so the private key is stored in a key container
+        // rather than as an ephemeral key. This is required on Windows (Schannel) for
+        // SslStream.AuthenticateAsServerAsync to succeed.
+        using X509Certificate2 certificate = X509CertificateLoader.LoadPkcs12(ephemeral.Export(X509ContentType.Pfx), password: null);
+
         await using Server server = this.CreateServer();
+        server.Certificate = certificate;
         await server.StartAsync();
 
         WebSocketConnection connection = new()
@@ -707,8 +719,7 @@ public class WebSocketConnectionTests
             StartupTimeout = TimeSpan.FromMilliseconds(10),
         };
 
-        // Since the test server does not support secure WebSocket connections,
-        // we expect this to fail with a timeout, but it verifies that the connection
+        // We expect this to fail with a timeout, but it verifies that the connection
         // attempts to connect to the correct URL and that the URL is accepted as valid.
         Assert.That(async () => await connection.StartAsync($"wss://localhost:{server.Port}"), Throws.InstanceOf<WebDriverBiDiTimeoutException>());
     }
@@ -1031,8 +1042,10 @@ public class WebSocketConnectionTests
             StartupTimeout = TimeSpan.FromSeconds(1),
             ShutdownTimeout = TimeSpan.FromSeconds(1),
         };
-        connection.OnRemoteDisconnected.AddObserver((ConnectionDisconnectedEventArgs _) =>
+        ConnectionDisconnectedEventArgs? receivedEventArgs = null;
+        connection.OnRemoteDisconnected.AddObserver((ConnectionDisconnectedEventArgs e) =>
         {
+            receivedEventArgs = e with { };
             remoteDisconnectedEvent.Set();
             return Task.CompletedTask;
         });
@@ -1045,6 +1058,7 @@ public class WebSocketConnectionTests
 
         bool disconnected = remoteDisconnectedEvent.Wait(TimeSpan.FromSeconds(3));
         Assert.That(disconnected, Is.True, "Expected OnRemoteDisconnected to fire when server gracefully closes");
+        Assert.That(receivedEventArgs, Is.Not.Null);
         await connection.StopAsync();
     }
 

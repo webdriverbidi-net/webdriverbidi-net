@@ -255,7 +255,7 @@ public static class BrowsingContextModuleSamples
 
         LocateNodesCommandResult result = await driver.BrowsingContext.LocateNodesAsync(parameters);
 
-        foreach (RemoteValue node in result.Nodes)
+        foreach (NodeRemoteValue node in result.Nodes)
         {
             Console.WriteLine($"Found element: {node.SharedId}");
         }
@@ -301,7 +301,7 @@ public static class BrowsingContextModuleSamples
         LocateNodesCommandResult parentResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("#container")));
 
-        RemoteValue parent = parentResult.Nodes[0];
+        parentResult.Nodes[0].TryConvertTo(out NodeRemoteValue? parent);
 
         LocateNodesCommandParameters parameters = new LocateNodesCommandParameters(
             contextId,
@@ -407,7 +407,7 @@ public static class BrowsingContextModuleSamples
         LocateNodesCommandResult locateResult = await driver.BrowsingContext.LocateNodesAsync(
             new LocateNodesCommandParameters(contextId, new CssLocator("#chart")));
 
-        RemoteValue element = locateResult.Nodes[0];
+        locateResult.Nodes[0].TryConvertTo(out NodeRemoteValue? element);
 
         // Capture element screenshot
         CaptureScreenshotCommandParameters parameters =

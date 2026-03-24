@@ -54,7 +54,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// </summary>
     [JsonPropertyName("this")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public ArgumentValue? ThisObject { get; set; }
+    public LocalValue? ThisObject { get; set; }
 
     /// <summary>
     /// Gets the list of arguments to pass to the function.
@@ -66,7 +66,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     /// the list is sent to the remote end.
     /// </remarks>
     [JsonIgnore]
-    public List<ArgumentValue> Arguments { get; } = [];
+    public List<LocalValue> Arguments { get; } = [];
 
     /// <summary>
     /// Gets or sets the ownership model to use for objects in the function call.
@@ -95,7 +95,7 @@ public class CallFunctionCommandParameters : CommandParameters<EvaluateResult>
     [JsonPropertyName("arguments")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonInclude]
-    internal IList<ArgumentValue>? SerializableArguments
+    internal IList<LocalValue>? SerializableArguments
     {
         get
         {

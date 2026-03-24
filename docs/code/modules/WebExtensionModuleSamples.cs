@@ -101,9 +101,10 @@ public static class WebExtensionModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (result is EvaluateResultSuccess success)
+        if (result is EvaluateResultSuccess success &&
+            success.Result is BooleanRemoteValue boolValue)
         {
-            bool extensionActive = success.Result.ValueAs<bool>();
+            bool extensionActive = boolValue.Value;
             Console.WriteLine($"Extension active: {extensionActive}");
         }
 
@@ -139,9 +140,10 @@ public static class WebExtensionModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (evalResult is EvaluateResultSuccess success)
+        if (evalResult is EvaluateResultSuccess success &&
+            success.Result is StringRemoteValue loadedValue)
         {
-            string loaded = success.Result.ValueAs<string>();
+            string loaded = loadedValue.Value;
             Console.WriteLine($"Content script loaded: {loaded}");
         }
 
@@ -218,9 +220,10 @@ public static class WebExtensionModuleSamples
                 new ContextTarget(contextId),
                 true));
 
-        if (evalResult is EvaluateResultSuccess success)
+        if (evalResult is EvaluateResultSuccess success &&
+            success.Result is BooleanRemoteValue hasPermissionValue)
         {
-            bool hasPermission = success.Result.ValueAs<bool>();
+            bool hasPermission = hasPermissionValue.Value;
             Console.WriteLine($"Extension has storage permission: {hasPermission}");
         }
 
