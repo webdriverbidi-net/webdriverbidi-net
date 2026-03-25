@@ -536,6 +536,8 @@ public class CustomModulesNamespacedCommandParameters : CommandParameters<MyComm
 
 public class Waiter
 {
+    private readonly IBiDiCommandExecutor Driver;
+
     /// <summary>
     /// Optional timeout with default.
     /// </summary>
@@ -550,8 +552,6 @@ public class Waiter
         return true; // Placeholder
     }
     #endregion
-
-    private readonly IBiDiCommandExecutor Driver;
 
     /// <summary>
     /// Handle errors gracefully in GetElementTextAsync.

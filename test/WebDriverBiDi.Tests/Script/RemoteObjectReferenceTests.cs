@@ -83,7 +83,7 @@ public class RemoteObjectReferenceTests
     public void TestSettingRemoteObjectReferenceSharedIdToNullThrows()
     {
         RemoteObjectReference reference = new("myHandle");
-        Assert.That(() => reference.Handle = null!, Throws.InstanceOf<ArgumentNullException>());;
+        Assert.That(() => reference.Handle = null!, Throws.InstanceOf<ArgumentNullException>());
     }
 
     [Test]

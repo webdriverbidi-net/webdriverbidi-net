@@ -23,14 +23,15 @@ public class FirefoxLauncher : BrowserLauncher
 {
     private static readonly SemaphoreSlim LockObject = new(1, 1);
     private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("firefoxLauncher.logMessage");
-    private string userDataDirectory = string.Empty;
-    private Process? browserProcess;
 
     private readonly List<string> firefoxArguments = [
       "--no-remote",
     ];
 
     private readonly Dictionary<string, object> userPreferences = [];
+
+    private Process? browserProcess;
+    private string userDataDirectory = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FirefoxLauncher"/> class.

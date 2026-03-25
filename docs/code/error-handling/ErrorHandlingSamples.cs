@@ -23,6 +23,9 @@ using WebDriverBiDi.Session;
 /// </summary>
 public class ErrorHandlingSamples
 {
+    private readonly string webSocketUrl = string.Empty;
+    private readonly string contextId = string.Empty;
+
     /// <summary>
     /// WebDriverBiDiException - basic try/catch.
     /// </summary>
@@ -425,9 +428,6 @@ public class ErrorHandlingSamples
         }
         #endregion
     }
-
-    private readonly string webSocketUrl = string.Empty;
-    private readonly string contextId = string.Empty;
 
     /// <summary>
     /// Simulating errors - navigation timeout test pattern.

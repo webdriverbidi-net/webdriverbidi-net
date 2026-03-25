@@ -83,14 +83,14 @@ public class SharedReferenceTests
     public void TestSettingSharedReferenceHandleToNullThrows()
     {
         SharedReference reference = new("mySharedId");
-        Assert.That(() => reference.SharedId = null!, Throws.InstanceOf<ArgumentNullException>());;
+        Assert.That(() => reference.SharedId = null!, Throws.InstanceOf<ArgumentNullException>());
     }
 
     [Test]
     public void TestDeserializingSharedReferenceThrowsWhenSharedIdIsMissing()
     {
         string json = "{}";
-        Assert.That(() =>JsonSerializer.Deserialize<SharedReference>(json), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<SharedReference>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -101,7 +101,7 @@ public class SharedReferenceTests
                         "sharedId": 123
                       }
                       """;
-        Assert.That(() =>JsonSerializer.Deserialize<SharedReference>(json), Throws.InstanceOf<JsonException>());
+        Assert.That(() => JsonSerializer.Deserialize<SharedReference>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

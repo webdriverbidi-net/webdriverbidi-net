@@ -23,9 +23,9 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
 
     private static readonly SemaphoreSlim LockObject = new(1, 1);
     private readonly string launcherExecutableName;
+    private readonly string sessionId = string.Empty;
     private bool isLoggingLauncherProcessOutput;
     private Process? launcherProcess;
-    private readonly string sessionId = string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClassicDriverExecutableBrowserLauncher"/> class.

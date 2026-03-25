@@ -23,8 +23,8 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
 
     private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("classicBrowserLauncher.logMessage");
 
-    private string launcherHostName = "localhost";
     private readonly bool useSsl = false;
+    private string launcherHostName = "localhost";
     private string sessionId = string.Empty;
 
     /// <summary>

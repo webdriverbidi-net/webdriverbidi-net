@@ -36,8 +36,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         "PdfOopif",
     ];
 
-    private string userDataDirectory = string.Empty;
-
     private readonly List<string> chromeArguments = [
         "--allow-browser-signin=false",
         "--allow-pre-commit-input",
@@ -70,6 +68,8 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         "--password-store=basic",
         "--use-mock-keychain",
     ];
+
+    private string userDataDirectory = string.Empty;
 
     private Connection? connection;
 
