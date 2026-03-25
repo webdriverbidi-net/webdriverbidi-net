@@ -43,8 +43,8 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 
 | Operation | Code |
 |-----------|------|
-| Add intercept | `AddInterceptCommandParameters p = new AddInterceptCommandParameters(); p.Phases.Add(InterceptPhase.BeforeRequestSent); await driver.Network.AddInterceptAsync(p);` |
-| Add data collector | `AddDataCollectorCommandParameters p = new AddDataCollectorCommandParameters(); p.BrowsingContexts.Add(contextId); await driver.Network.AddDataCollectorAsync(p);` |
+| Add intercept | `AddInterceptCommandParameters p = new AddInterceptCommandParameters(InterceptPhase.BeforeRequestSent); await driver.Network.AddInterceptAsync(p);` |
+| Add data collector | `AddDataCollectorCommandParameters p = new AddDataCollectorCommandParameters(1024 * 1024); p.BrowsingContexts.Add(contextId); await driver.Network.AddDataCollectorAsync(p);` |
 | Continue request | `await driver.Network.ContinueRequestAsync(new ContinueRequestCommandParameters(requestId));` |
 | Provide response | `ProvideResponseCommandParameters p = new ProvideResponseCommandParameters(requestId) { Body = BytesValue.FromString(body) }; await driver.Network.ProvideResponseAsync(p);` |
 
@@ -53,14 +53,14 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Operation | Code |
 |-----------|------|
 | Get cookies | `GetCookiesCommandParameters p = new GetCookiesCommandParameters(); p.Partition = new BrowsingContextPartitionDescriptor(contextId); GetCookiesCommandResult r = await driver.Storage.GetCookiesAsync(p);` |
-| Set cookie | `await driver.Storage.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie(name, value) { Domain = domain }));` |
+| Set cookie | `await driver.Storage.SetCookieAsync(new SetCookieCommandParameters(new PartialCookie(name, value, domain)));` |
 | Delete cookies | `DeleteCookiesCommandParameters p = new DeleteCookiesCommandParameters(); p.Partition = new BrowsingContextPartitionDescriptor(contextId); await driver.Storage.DeleteCookiesAsync(p);` |
 
 ## Input
 
 | Operation | Code |
 |-----------|------|
-| Perform actions | `PerformActionsCommandParameters p = new PerformActionsCommandParameters(contextId); p.Actions.Add(new Action(p.AddPointerInput("mouse", PointerType.Mouse))); await driver.Input.PerformActionsAsync(p);` |
+| Perform actions | `PerformActionsCommandParameters p = new PerformActionsCommandParameters(contextId); PointerSourceActions mouse = new PointerSourceActions(); mouse.Actions.Add(new PointerMoveAction(100, 100)); p.Actions.Add(mouse); await driver.Input.PerformActionsAsync(p);` |
 
 ## Event Subscription Pattern
 

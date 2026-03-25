@@ -158,6 +158,7 @@ See `BrowsingContextModule` in the WebDriverBiDi.BrowsingContext namespace. Each
 - `BluetoothModule`: Web Bluetooth API
 - `WebExtensionModule`: Extension management
 - `SpeculationModule`: Navigation prefetching
+- `UserAgentClientHintsModule`: User agent client hints emulation
 
 ## Connection Types
 
