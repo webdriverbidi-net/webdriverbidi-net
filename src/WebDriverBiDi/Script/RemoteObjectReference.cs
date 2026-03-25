@@ -12,28 +12,37 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record RemoteObjectReference : RemoteReference
 {
+    private string handle = string.Empty;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteObjectReference"/> class.
     /// </summary>
     /// <param name="handle">The handle of the remote object.</param>
+    [JsonConstructor]
     public RemoteObjectReference(string handle)
-        : base(handle, null)
+        : base()
     {
+        this.handle = handle;
     }
 
     /// <summary>
     /// Gets or sets the handle of the remote object.
     /// </summary>
-    [JsonIgnore]
+    /// <exception cref="ArgumentNullException">Thrown if setting the value to <see langword="null"/>.</exception>
+    [JsonPropertyName("handle")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonRequired]
     public string Handle
     {
-        get => this.InternalHandle ?? throw new InvalidOperationException("Handle cannot be null");
-        set => this.InternalHandle = value ?? throw new ArgumentNullException(nameof(value));
+        get => this.handle;
+        set => this.handle = value ?? throw new ArgumentNullException(nameof(value));
     }
 
     /// <summary>
     /// Gets or sets the shared ID of the remote object.
     /// </summary>
-    [JsonIgnore]
-    public string? SharedId { get => this.InternalSharedId; set => this.InternalSharedId = value; }
+    [JsonPropertyName("sharedId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? SharedId { get; set; }
 }

@@ -107,7 +107,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(CommandResponseMessage<PerformActionsCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<ReleaseActionsCommandResult>))]
 [JsonSerializable(typeof(CommandResponseMessage<SetFilesCommandResult>))]
-[JsonSerializable(typeof(EventMessage<FileDialogInfo>))]
+[JsonSerializable(typeof(EventMessage<FileDialogOpenedEventArgs>))]
 
 // -- Log module (event handlers) --
 [JsonSerializable(typeof(EventMessage<LogEntry>))]
@@ -277,7 +277,6 @@ using WebDriverBiDi.WebExtension;
 
 // ── Input module ──
 [JsonSerializable(typeof(ElementOrigin))]
-[JsonSerializable(typeof(FileDialogInfo))]
 [JsonSerializable(typeof(KeyDownAction))]
 [JsonSerializable(typeof(KeySourceActions))]
 [JsonSerializable(typeof(KeyUpAction))]

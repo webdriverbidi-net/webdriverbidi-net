@@ -12,28 +12,37 @@ using System.Text.Json.Serialization;
 /// </summary>
 public record SharedReference : RemoteReference
 {
+    private string sharedId = string.Empty;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SharedReference"/> class.
     /// </summary>
     /// <param name="sharedId">The shared ID of the remote object.</param>
+    [JsonConstructor]
     public SharedReference(string sharedId)
-        : base(null, sharedId)
+        : base()
     {
+        this.sharedId = sharedId;
     }
 
     /// <summary>
     /// Gets or sets the shared ID of the remote object.
     /// </summary>
-    [JsonIgnore]
+    /// <exception cref="ArgumentNullException">Thrown if setting the value to <see langword="null"/>.</exception>
+    [JsonPropertyName("sharedId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonRequired]
     public string SharedId
     {
-        get => this.InternalSharedId ?? throw new InvalidOperationException("SharedId cannot be null");
-        set => this.InternalSharedId = value ?? throw new ArgumentNullException(nameof(value));
+        get => this.sharedId;
+        set => this.sharedId = value ?? throw new ArgumentNullException(nameof(value));
     }
 
     /// <summary>
     /// Gets or sets the handle of the remote object.
     /// </summary>
-    [JsonIgnore]
-    public string? Handle { get => this.InternalHandle; set => this.InternalHandle = value; }
+    [JsonPropertyName("handle")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? Handle { get; set; }
 }

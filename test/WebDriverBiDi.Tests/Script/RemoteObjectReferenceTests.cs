@@ -4,7 +4,7 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 
 [TestFixture]
-public class RemoteReferenceTests
+public class RemoteObjectReferenceTests
 {
     [Test]
     public void TestCanSerializeRemoteObjectReference()
@@ -65,64 +65,6 @@ public class RemoteReferenceTests
     }
 
     [Test]
-    public void TestCanSerializeSharedReference()
-    {
-        SharedReference reference = new("mySharedId");
-        string json = JsonSerializer.Serialize(reference);
-        JObject referenceObject = JObject.Parse(json);
-        Assert.That(referenceObject, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(referenceObject, Contains.Key("sharedId"));
-            Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-        }
-    }
-
-    [Test]
-    public void TestCanEditSharedReferenceSharedId()
-    {
-        SharedReference reference = new("mySharedId")
-        {
-            SharedId = "myNewSharedId"
-        };
-        string json = JsonSerializer.Serialize(reference);
-        JObject referenceObject = JObject.Parse(json);
-        Assert.That(referenceObject, Has.Count.EqualTo(1));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(referenceObject, Contains.Key("sharedId"));
-            Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("myNewSharedId"));
-        }
-    }
-
-    [Test]
-    public void TestCanSerializeSharedReferenceWithHandle()
-    {
-        SharedReference reference = new("mySharedId")
-        {
-            Handle = "myHandle"
-        };
-        string json = JsonSerializer.Serialize(reference);
-        JObject referenceObject = JObject.Parse(json);
-        Assert.That(referenceObject, Has.Count.EqualTo(2));
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(referenceObject, Contains.Key("sharedId"));
-            Assert.That(referenceObject["sharedId"]!.Value<string>(), Is.EqualTo("mySharedId"));
-            Assert.That(referenceObject, Contains.Key("handle"));
-            Assert.That(referenceObject["handle"]!.Value<string>(), Is.EqualTo("myHandle"));
-        }
-    }
-
-    [Test]
-    public void TestSharedReferenceCopySemantics()
-    {
-        SharedReference reference = new("mySharedId");
-        SharedReference copy = reference with { };
-        Assert.That(copy, Is.EqualTo(reference));
-    }
-
-    [Test]
     public void TestRemoteObjectReferenceHandleGetterReturnsValue()
     {
         RemoteObjectReference reference = new("myHandle");
@@ -138,50 +80,28 @@ public class RemoteReferenceTests
     }
 
     [Test]
-    public void TestRemoteObjectReferenceThrowsWhenHandleIsNull()
-    {
-        string json = "{}";
-        RemoteObjectReference? reference = JsonSerializer.Deserialize<RemoteObjectReference>(json);
-        Assert.That(reference, Is.Not.Null);
-        Assert.That(() => _ = reference!.Handle, Throws.InvalidOperationException.With.Message.EqualTo("Handle cannot be null"));
-    }
-
-    [Test]
-    public void TestRemoteObjectReferenceThrowsWhenSettingHandleToNull()
+    public void TestSettingRemoteObjectReferenceSharedIdToNullThrows()
     {
         RemoteObjectReference reference = new("myHandle");
-        Assert.That(() => reference.Handle = null!, Throws.ArgumentNullException);
+        Assert.That(() => reference.Handle = null!, Throws.InstanceOf<ArgumentNullException>());;
     }
 
     [Test]
-    public void TestSharedReferenceSharedIdGetterReturnsValue()
-    {
-        SharedReference reference = new("mySharedId");
-        Assert.That(reference.SharedId, Is.EqualTo("mySharedId"));
-    }
-
-    [Test]
-    public void TestSharedReferenceSharedIdSetterSetsValue()
-    {
-        SharedReference reference = new("mySharedId");
-        reference.SharedId = "myNewSharedId";
-        Assert.That(reference.SharedId, Is.EqualTo("myNewSharedId"));
-    }
-
-    [Test]
-    public void TestSharedReferenceThrowsWhenSharedIdIsNull()
+    public void TestDeserializingRemoteObjectReferenceThrowsWhenHandleIsMissing()
     {
         string json = "{}";
-        SharedReference? reference = JsonSerializer.Deserialize<SharedReference>(json);
-        Assert.That(reference, Is.Not.Null);
-        Assert.That(() => _ = reference!.SharedId, Throws.InvalidOperationException.With.Message.EqualTo("SharedId cannot be null"));
+        Assert.That(() => JsonSerializer.Deserialize<RemoteObjectReference>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
-    public void TestSharedReferenceThrowsWhenSettingSharedIdToNull()
+    public void TestDeserializingRemoteObjectReferenceThrowsWhenHandleIsInvalidType()
     {
-        SharedReference reference = new("mySharedId");
-        Assert.That(() => reference.SharedId = null!, Throws.ArgumentNullException);
+        string json = """
+                      {
+                        "handle": 123
+                      }
+                      """;
+        Assert.That(() => JsonSerializer.Deserialize<RemoteObjectReference>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

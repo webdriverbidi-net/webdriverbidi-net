@@ -24,7 +24,7 @@ public sealed class InputModule : Module
     public InputModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
-        this.RegisterObservableEvent<FileDialogInfo, FileDialogOpenedEventArgs>(this.OnFileDialogOpened, info => new FileDialogOpenedEventArgs(info));
+        this.RegisterObservableEvent(this.OnFileDialogOpened);
     }
 
     /// <summary>

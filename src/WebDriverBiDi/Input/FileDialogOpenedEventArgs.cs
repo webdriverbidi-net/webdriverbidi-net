@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Input;
 
+using System.Text.Json.Serialization;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -12,29 +13,43 @@ using WebDriverBiDi.Script;
 /// </summary>
 public record FileDialogOpenedEventArgs : WebDriverBiDiEventArgs
 {
-    private readonly FileDialogInfo info;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="FileDialogOpenedEventArgs"/> class.
     /// </summary>
-    /// <param name="info">The <see cref="FileDialogInfo"/> object containing information about the file dialog.</param>
-    public FileDialogOpenedEventArgs(FileDialogInfo info)
+    [JsonConstructor]
+    public FileDialogOpenedEventArgs()
     {
-        this.info = info;
     }
 
     /// <summary>
-    /// Gets the ID of the browsing context displaying the file dialog.
+    /// Gets the ID of the browsing context for which the user prompt was opened.
     /// </summary>
-    public string BrowsingContextId => this.info.BrowsingContextId;
+    [JsonPropertyName("context")]
+    [JsonRequired]
+    [JsonInclude]
+    public string BrowsingContextId { get; internal set; } = string.Empty;
 
     /// <summary>
-    /// Gets a value indicating whether the file dialog supports multiple files.
+    /// Gets a value indicating whether the file dialog supports multiple file names.
     /// </summary>
-    public bool IsMultiple => this.info.Multiple;
+    [JsonPropertyName("multiple")]
+    [JsonRequired]
+    [JsonInclude]
+    public bool IsMultiple { get; internal set; }
 
     /// <summary>
-    /// Gets a reference to the element that displayed the file dialog, if any.
+    /// Gets the ID of the user context for which the user prompt was opened.
     /// </summary>
-    public SharedReference? Element => this.info.Element;
+    [JsonPropertyName("userContext")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
+    public string? UserContextId { get; internal set; }
+
+    /// <summary>
+    /// Gets the reference to the element that invoked the file dialog, if present.
+    /// </summary>
+    [JsonPropertyName("element")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SharedReference? Element { get; internal set; }
 }
