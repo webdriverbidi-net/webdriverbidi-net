@@ -282,7 +282,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -309,7 +309,7 @@ public class UserPromptOpenedEventArgsTests
                         "message": "some prompt message"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptOpenedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

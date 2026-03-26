@@ -1,4 +1,4 @@
-// <copyright file="EnumValueJsonConverter.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="EnumValueJsonConverter{T}.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -61,7 +61,7 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     {
         if (reader.TokenType != JsonTokenType.String)
         {
-            throw new WebDriverBiDiSerializationException("Deserialization error reading enumerated string value");
+            throw new JsonException("Deserialization error reading enumerated string value");
         }
 
         // We can rely on the string not being null because we know the
@@ -82,7 +82,7 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
 
         // There is no match, and no default value for unmatched
         // strings is provided. Throw an exception.
-        throw new WebDriverBiDiSerializationException($"Deserialization error: value '{stringValue}' is not valid for enum type {typeof(T)}");
+        throw new JsonException($"Deserialization error: value '{stringValue}' is not valid for enum type {typeof(T).Name}");
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ public class EnumValueJsonConverter<T> : JsonConverter<T>
     {
         if (!this.enumValuesToStrings.TryGetValue(value, out string? stringValue))
         {
-            throw new WebDriverBiDiSerializationException($"Serialization error: value {value} is not valid for the enum type {typeof(T)}");
+            throw new JsonException($"Serialization error: value {value} is not valid for the enum type {typeof(T).Name}");
         }
 
         writer.WriteStringValue(stringValue);

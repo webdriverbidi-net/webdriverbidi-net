@@ -14,32 +14,38 @@ using WebDriverBiDi.JsonConverters;
 /// to convert to a local value for use as an argument for script execution on the
 /// remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record RegExpRemoteValue : ValueHoldingRemoteValue<RegularExpressionValue>, IObjectReferenceRemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="RegExpRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The regular expression value.</param>
-    internal RegExpRemoteValue(RegularExpressionValue value)
+    [JsonConstructor]
+    internal RegExpRemoteValue()
         : base(RemoteValueType.RegExp)
     {
-        this.Value = value;
     }
 
     /// <summary>
-    /// Gets or setsthe regular expression value of this remote value.
+    /// Gets the regular expression value of this remote value.
     /// </summary>
-    public override RegularExpressionValue Value { get; protected set; }
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    public override RegularExpressionValue Value { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>

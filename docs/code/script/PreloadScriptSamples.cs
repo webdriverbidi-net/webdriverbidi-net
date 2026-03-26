@@ -137,7 +137,7 @@ public static class PreloadScriptSamples
                 {
                     RemoteValueDictionary data = dataRemoteValue.Value;
                     Console.WriteLine($"Page ready: {data["ready"].ConvertTo<BooleanRemoteValue>().Value}");
-                    Console.WriteLine($"Load time: {data["loadTime"].ConvertTo<LongRemoteValue>().Value}ms");
+                    Console.WriteLine($"Load time: {data["loadTime"].ConvertTo<NumberRemoteValue>().Value}ms");
 
                     pageLoadedSignal.SetResult("complete");
                 }
@@ -435,10 +435,10 @@ public static class PreloadScriptSamples
         if (performanceData != null)
         {
             Console.WriteLine("\n⏱️ Performance Metrics:");
-            Console.WriteLine($"  DOM Content Loaded: {performanceData["domContentLoaded"].ConvertTo<DoubleRemoteValue>().Value}ms");
-            Console.WriteLine($"  Load Complete: {performanceData["loadComplete"].ConvertTo<DoubleRemoteValue>().Value}ms");
-            Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"].ConvertTo<DoubleRemoteValue>().Value}ms");
-            Console.WriteLine($"  Total Time: {performanceData["totalTime"].ConvertTo<DoubleRemoteValue>().Value}ms");
+            Console.WriteLine($"  DOM Content Loaded: {performanceData["domContentLoaded"].ConvertTo<NumberRemoteValue>().Value}ms");
+            Console.WriteLine($"  Load Complete: {performanceData["loadComplete"].ConvertTo<NumberRemoteValue>().Value}ms");
+            Console.WriteLine($"  DOM Interactive: {performanceData["domInteractive"].ConvertTo<NumberRemoteValue>().Value}ms");
+            Console.WriteLine($"  Total Time: {performanceData["totalTime"].ConvertTo<NumberRemoteValue>().Value}ms");
         }
         #endregion
     }

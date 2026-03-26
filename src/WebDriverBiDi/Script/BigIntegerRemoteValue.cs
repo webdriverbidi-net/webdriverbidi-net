@@ -14,23 +14,24 @@ using WebDriverBiDi.JsonConverters;
 /// value and the ability to convert to a local value for use as an argument for
 /// script execution on the remote end..
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record BigIntegerRemoteValue : ValueHoldingRemoteValue<BigInteger>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BigIntegerRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The BigInteger value.</param>
-    internal BigIntegerRemoteValue(BigInteger value)
+    [JsonConstructor]
+    internal BigIntegerRemoteValue()
         : base(RemoteValueType.BigInt)
     {
-        this.Value = value;
     }
 
     /// <summary>
-    /// Gets or sets the BigInteger value of this remote value.
+    /// Gets the BigInteger value of this remote value.
     /// </summary>
-    public override BigInteger Value { get; protected set; }
+    [JsonConverter(typeof(BigIntegerJsonConverter))]
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    public override BigInteger Value { get; internal set; } = BigInteger.Zero;
 
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.

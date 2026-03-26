@@ -16,8 +16,9 @@ public abstract record ValueHoldingRemoteValue : RemoteValue
     /// </summary>
     /// <param name="type">The type of the remote value.</param>
     protected ValueHoldingRemoteValue(RemoteValueType type)
-        : base(type)
+        : base()
     {
+        this.Type = type;
     }
 
     /// <summary>

@@ -517,7 +517,7 @@ public static class CommonScenariosSamples
 
             EvaluateResult sumResult = await driver.Script.CallFunctionAsync(funcParams);
             if (sumResult is EvaluateResultSuccess sumSuccess &&
-                sumSuccess.Result is LongRemoteValue sumValue)
+                sumSuccess.Result is NumberRemoteValue sumValue)
             {
                 Console.WriteLine($"10 + 20 = {sumValue.Value}");
             }
@@ -539,8 +539,8 @@ public static class CommonScenariosSamples
                 RemoteValueDictionary data = complexSuccess.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
                 Console.WriteLine($"\nPage analysis:");
                 Console.WriteLine($"  URL: {data["url"].ConvertTo<StringRemoteValue>().Value}");
-                Console.WriteLine($"  Links: {data["linkCount"].ConvertTo<LongRemoteValue>().Value}");
-                Console.WriteLine($"  Images: {data["imageCount"].ConvertTo<LongRemoteValue>().Value}");
+                Console.WriteLine($"  Links: {data["linkCount"].ConvertTo<NumberRemoteValue>().Value}");
+                Console.WriteLine($"  Images: {data["imageCount"].ConvertTo<NumberRemoteValue>().Value}");
                 Console.WriteLine($"  Has title: {data["hasTitle"].ConvertTo<BooleanRemoteValue>().Value}");
             }
         }

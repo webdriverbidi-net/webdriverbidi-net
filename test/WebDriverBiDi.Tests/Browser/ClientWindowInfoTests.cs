@@ -199,7 +199,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -216,7 +216,7 @@ public class ClientWindowsInfoTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<ClientWindowInfo>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

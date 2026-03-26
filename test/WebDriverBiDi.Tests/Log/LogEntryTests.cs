@@ -248,7 +248,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -285,7 +285,7 @@ public class LogEntryTests
                         "timestamp": {{epochTimestamp}}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -559,26 +559,5 @@ public class LogEntryTests
     {
         string json = @"[ ""invalid log entry"" ]";
         Assert.That(() => JsonSerializer.Deserialize<LogEntry>(json), Throws.InstanceOf<JsonException>());
-    }
-
-    [Test]
-    public void TestCannotSerialize()
-    {
-        // NOTE: LogEntry does not provide a way to instantiate one directly
-        // using a constructor, so we will deserialize one from JSON.
-        long epochTimestamp = Convert.ToInt64((DateTime.Now - DateTime.UnixEpoch).TotalMilliseconds);
-        string json = $$"""
-                      {
-                        "type": "generic",
-                        "level": "debug",
-                        "source": {
-                          "realm": "realmId"
-                        },
-                        "text": null,
-                        "timestamp": {{epochTimestamp}}
-                      }
-                      """;
-        LogEntry entry = JsonSerializer.Deserialize<LogEntry>(json)!;
-        Assert.That(() => JsonSerializer.Serialize(entry), Throws.InstanceOf<NotImplementedException>());
     }
 }

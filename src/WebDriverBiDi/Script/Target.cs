@@ -11,7 +11,10 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Abstract base class for script targets.
 /// </summary>
-[JsonConverter(typeof(ScriptTargetJsonConverter))]
+[JsonConverter(typeof(DiscriminatedUnionJsonConverter<Target>))]
+[DiscriminatedTypePresence]
+[DiscriminatedDerivedType(typeof(ContextTarget), "context")]
+[DiscriminatedDerivedType(typeof(RealmTarget), "realm")]
 public abstract record Target
 {
 }

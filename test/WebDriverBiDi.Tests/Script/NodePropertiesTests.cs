@@ -400,7 +400,7 @@ public class NodePropertiesTests
                         "mode": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -413,7 +413,7 @@ public class NodePropertiesTests
                         "mode": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<NodeProperties>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

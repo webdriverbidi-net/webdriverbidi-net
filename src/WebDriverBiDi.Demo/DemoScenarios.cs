@@ -293,7 +293,7 @@ public static class DemoScenarios
         {
             Console.WriteLine($"Script result type: {scriptSuccessResultNumber.Result.Type}");
             RemoteValue scriptResultValue = scriptSuccessResultNumber.Result;
-            Console.WriteLine($"Return value of function is {scriptResultValue.ConvertTo<LongRemoteValue>().Value}");
+            Console.WriteLine($"Return value of function is {scriptResultValue.ConvertTo<NumberRemoteValue>().Value}");
         }
 
         arguments =

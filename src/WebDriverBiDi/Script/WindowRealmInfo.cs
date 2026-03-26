@@ -15,6 +15,7 @@ public record WindowRealmInfo : RealmInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="WindowRealmInfo"/> class.
     /// </summary>
+    [JsonConstructor]
     internal WindowRealmInfo()
         : base()
     {
@@ -24,6 +25,7 @@ public record WindowRealmInfo : RealmInfo
     /// Gets the ID of the browsing context containing this window realm.
     /// </summary>
     [JsonPropertyName("context")]
+    [JsonInclude]
     [JsonRequired]
     public string BrowsingContext { get; internal set; } = string.Empty;
 
@@ -32,6 +34,7 @@ public record WindowRealmInfo : RealmInfo
     /// </summary>
     [JsonPropertyName("sandbox")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonInclude]
     public string? Sandbox { get; internal set; }
 
     /// <summary>

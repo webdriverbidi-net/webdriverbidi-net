@@ -6,22 +6,20 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents a remote value for a null value from the remote end, providing
 /// the ability to convert to a local value for use as an argument for script
 /// execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record ObjectReferenceRemoteValue : RemoteValue, IObjectReferenceRemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ObjectReferenceRemoteValue"/> class.
     /// </summary>
-    /// <param name="type">The type of the remote value.</param>
-    internal ObjectReferenceRemoteValue(RemoteValueType type)
-        : base(type)
+    [JsonConstructor]
+    internal ObjectReferenceRemoteValue()
+        : base()
     {
     }
 
@@ -29,12 +27,16 @@ public record ObjectReferenceRemoteValue : RemoteValue, IObjectReferenceRemoteVa
     /// Gets the handle of this RemoteValue.
     /// </summary>
     [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
     [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>

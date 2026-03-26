@@ -221,7 +221,7 @@ public class EmulationModuleSamples
         if (result is EvaluateResultSuccess success)
         {
             RemoteValueDictionary location = success.Result.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
-            Console.WriteLine($"Browser location: {location["lat"].ConvertTo<DoubleRemoteValue>().Value}, {location["lng"].ConvertTo<DoubleRemoteValue>().Value}");
+            Console.WriteLine($"Browser location: {location["lat"].ConvertTo<NumberRemoteValue>().Value}, {location["lng"].ConvertTo<NumberRemoteValue>().Value}");
         }
         #endregion
     }

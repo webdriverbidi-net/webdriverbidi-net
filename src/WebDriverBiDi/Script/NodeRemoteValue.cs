@@ -13,38 +13,46 @@ using WebDriverBiDi.JsonConverters;
 /// NodeProperties value and the ability to convert to a local value for use as
 /// an argument for script execution on the remote end..
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record NodeRemoteValue : ValueHoldingRemoteValue<NodeProperties>, IObjectReferenceRemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="NodeRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The NodeProperties value for the remote node.</param>
     [JsonConstructor]
-    internal NodeRemoteValue(NodeProperties value)
+    internal NodeRemoteValue()
         : base(RemoteValueType.Node)
     {
-        this.Value = value;
     }
 
     /// <summary>
-    /// Gets or setsthe NodeProperties value of this remote value.
+    /// Gets the NodeProperties value of this remote value.
     /// </summary>
-    public override NodeProperties Value { get; protected set; }
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    public override NodeProperties Value { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>
     /// Gets the shared ID of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("sharedId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SharedId { get; internal set; }
 
     /// <summary>

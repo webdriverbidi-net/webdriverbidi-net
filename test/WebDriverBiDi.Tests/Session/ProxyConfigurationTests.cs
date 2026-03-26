@@ -374,7 +374,7 @@ public class ProxyConfigurationTests
                         "proxyType": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<ProxyConfiguration>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'ProxyConfiguration' proxyType property contains unknown value 'invalid'"));
     }
 
     [Test]

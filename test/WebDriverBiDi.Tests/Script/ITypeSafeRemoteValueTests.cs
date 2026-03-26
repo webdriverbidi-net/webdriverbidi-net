@@ -56,8 +56,8 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<DoubleRemoteValue>());
-        bool conversionResult = remoteValue.TryConvertTo(out DoubleRemoteValue? doubleValue);
+        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? doubleValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(doubleValue, Is.Not.Null);
         Assert.That(doubleValue, Is.InstanceOf<ValueHoldingRemoteValue<double>>());
@@ -92,8 +92,8 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<DoubleRemoteValue>());
-        bool conversionResult = remoteValue.TryConvertTo(out DoubleRemoteValue? doubleValue);
+        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? doubleValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(doubleValue, Is.Not.Null);
         LocalValue localValue = doubleValue.ToLocalValue();
@@ -113,11 +113,11 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<DoubleRemoteValue>());
-        bool conversionResult = remoteValue.TryConvertTo(out DoubleRemoteValue? doubleValue);
+        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? doubleValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(doubleValue, Is.Not.Null);
-        DoubleRemoteValue copy = doubleValue with { };
+        NumberRemoteValue copy = doubleValue with { };
         Assert.That(copy, Is.EqualTo(doubleValue));
     }
 
@@ -131,8 +131,8 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<LongRemoteValue>());
-        bool conversionResult = remoteValue.TryConvertTo(out LongRemoteValue? longValue);
+        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? longValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(longValue, Is.Not.Null);
         Assert.That(longValue.Value, Is.EqualTo(123));
@@ -148,8 +148,8 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<LongRemoteValue>());
-        bool conversionResult = remoteValue.TryConvertTo(out LongRemoteValue? longValue);
+        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? longValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(longValue, Is.Not.Null);
         LocalValue localValue = longValue.ToLocalValue();
@@ -169,11 +169,11 @@ public class ITypeSafeRemoteValueTests
                       }
                       """;
         RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
-        Assert.That(remoteValue, Is.InstanceOf<LongRemoteValue>());
-        bool conversionResult = remoteValue.TryConvertTo(out LongRemoteValue? longValue);
+        Assert.That(remoteValue, Is.InstanceOf<NumberRemoteValue>());
+        bool conversionResult = remoteValue.TryConvertTo(out NumberRemoteValue? longValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(longValue, Is.Not.Null);
-        LongRemoteValue copy = longValue with { };
+        NumberRemoteValue copy = longValue with { };
         Assert.That(copy, Is.EqualTo(longValue));
     }
 
@@ -526,7 +526,7 @@ public class ITypeSafeRemoteValueTests
             conversionResult = arrayValue[0].TryConvertTo(out StringRemoteValue? stringValue);
             Assert.That(conversionResult, Is.True);
             Assert.That(stringValue!.Value, Is.EqualTo("stringValue"));
-            conversionResult = arrayValue[1].TryConvertTo(out LongRemoteValue? longValue);
+            conversionResult = arrayValue[1].TryConvertTo(out NumberRemoteValue? longValue);
             Assert.That(conversionResult, Is.True);
             Assert.That(longValue!.Value, Is.EqualTo(123));
             conversionResult = arrayValue[2].TryConvertTo(out BooleanRemoteValue? booleanValue);
@@ -607,7 +607,7 @@ public class ITypeSafeRemoteValueTests
         Assert.That(stringValue, Is.Not.Null);
         Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
 
-        conversionResult = arrayValue[1].TryConvertTo(out LongRemoteValue? longValue);
+        conversionResult = arrayValue[1].TryConvertTo(out NumberRemoteValue? longValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(longValue, Is.Not.Null);
         Assert.That(longValue.Value, Is.EqualTo(123));
@@ -730,7 +730,7 @@ public class ITypeSafeRemoteValueTests
         Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
 
         RemoteValue longPropertyValue = dictionaryValue["numberProperty"];
-        conversionResult = longPropertyValue.TryConvertTo(out LongRemoteValue? longValue);
+        conversionResult = longPropertyValue.TryConvertTo(out NumberRemoteValue? longValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(longValue, Is.Not.Null);
         Assert.That(longValue.Value, Is.EqualTo(123));
@@ -1032,7 +1032,7 @@ public class ITypeSafeRemoteValueTests
         Assert.That(stringValue.Value, Is.EqualTo("stringValue"));
 
         RemoteValue longPropertyValue = dictionaryValue["numberProperty"];
-        conversionResult = longPropertyValue.TryConvertTo(out LongRemoteValue? longValue);
+        conversionResult = longPropertyValue.TryConvertTo(out NumberRemoteValue? longValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(longValue, Is.Not.Null);
         Assert.That(longValue.Value, Is.EqualTo(123));

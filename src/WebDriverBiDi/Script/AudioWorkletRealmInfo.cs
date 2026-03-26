@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Object representing an audio worklet realm for executing script.
 /// </summary>
@@ -13,6 +15,7 @@ public record AudioWorkletRealmInfo : RealmInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="AudioWorkletRealmInfo"/> class.
     /// </summary>
+    [JsonConstructor]
     internal AudioWorkletRealmInfo()
         : base()
     {

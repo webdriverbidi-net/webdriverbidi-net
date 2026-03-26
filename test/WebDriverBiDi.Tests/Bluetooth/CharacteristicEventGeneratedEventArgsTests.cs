@@ -346,7 +346,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -361,7 +361,7 @@ public class CharacteristicEventGeneratedEventArgsTests
                         "type": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<CharacteristicEventGeneratedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

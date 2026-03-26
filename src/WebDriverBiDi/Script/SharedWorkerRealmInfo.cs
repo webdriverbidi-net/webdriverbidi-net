@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Object representing a shared worker realm for executing script.
 /// </summary>
@@ -13,6 +15,7 @@ public record SharedWorkerRealmInfo : RealmInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="SharedWorkerRealmInfo"/> class.
     /// </summary>
+    [JsonConstructor]
     internal SharedWorkerRealmInfo()
         : base()
     {

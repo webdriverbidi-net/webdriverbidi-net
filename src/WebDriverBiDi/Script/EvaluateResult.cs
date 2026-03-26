@@ -11,7 +11,10 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Base class for the result of a script evaluation.
 /// </summary>
-[JsonConverter(typeof(ScriptEvaluateResultJsonConverter))]
+[JsonConverter(typeof(DiscriminatedUnionJsonConverter<EvaluateResult>))]
+[DiscriminatedTypeProperty("type")]
+[DiscriminatedDerivedType(typeof(EvaluateResultSuccess), "success")]
+[DiscriminatedDerivedType(typeof(EvaluateResultException), "exception")]
 public record EvaluateResult : CommandResult
 {
     /// <summary>

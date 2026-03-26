@@ -71,6 +71,8 @@ public record LocalArgumentValue : LocalValue
             {
                 // One of the two cases (key is string, or key is LocalValue)
                 // must be true.
+                // Note carefully, objects/maps are serialized in the protocol
+                // as lists of key-value pairs
                 List<object> serializablePairList = [];
                 Dictionary<LocalValue, LocalValue>? dictionaryValue = this.Value as Dictionary<LocalValue, LocalValue>;
                 Dictionary<string, LocalValue>? stringDictionaryValue = this.Value as Dictionary<string, LocalValue>;

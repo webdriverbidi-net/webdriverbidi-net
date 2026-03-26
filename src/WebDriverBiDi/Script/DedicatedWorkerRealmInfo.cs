@@ -15,6 +15,7 @@ public record DedicatedWorkerRealmInfo : RealmInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="DedicatedWorkerRealmInfo"/> class.
     /// </summary>
+    [JsonConstructor]
     internal DedicatedWorkerRealmInfo()
         : base()
     {
@@ -26,8 +27,10 @@ public record DedicatedWorkerRealmInfo : RealmInfo
     public IList<string> Owners => this.SerializableOwners.AsReadOnly();
 
     /// <summary>
-    /// Gets the list of IDs of realms that are owners of this realm for serialization purposes.
+    /// Gets or sets the list of IDs of realms that are owners of this realm for serialization purposes.
     /// </summary>
     [JsonPropertyName("owners")]
-    internal List<string> SerializableOwners { get; } = [];
+    [JsonRequired]
+    [JsonInclude]
+    internal List<string> SerializableOwners { get; set; } = [];
 }

@@ -13,33 +13,39 @@ using WebDriverBiDi.JsonConverters;
 /// type-safe access to the dictionary containing the values and the ability to convert
 /// to a local value for use as an argument for script execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record KeyValuePairCollectionRemoteValue : ValueHoldingRemoteValue<RemoteValueDictionary>, IObjectReferenceRemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="KeyValuePairCollectionRemoteValue"/> class.
     /// </summary>
-    /// <param name="type">The type of the key-value pair object from the remote end.</param>
-    /// <param name="value">The RemoteValueDictionary value holding the key-value pairs.</param>
-    internal KeyValuePairCollectionRemoteValue(RemoteValueType type, RemoteValueDictionary value)
-        : base(type)
+    [JsonConstructor]
+    internal KeyValuePairCollectionRemoteValue()
+        : base(RemoteValueType.Object)
     {
-        this.Value = value;
     }
 
     /// <summary>
-    /// Gets or sets the RemoteValueDictionary containing the key-value pairs of this remote value.
+    /// Gets the RemoteValueDictionary containing the key-value pairs of this remote value.
     /// </summary>
-    public override RemoteValueDictionary Value { get; protected set; }
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    [JsonConverter(typeof(RemoteValueDictionaryJsonConverter))]
+    public override RemoteValueDictionary Value { get; internal set; } = new RemoteValueDictionary([]);
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>

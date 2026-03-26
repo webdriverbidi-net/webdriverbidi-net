@@ -308,7 +308,7 @@ public class PageUtilitiesModule : Module
             result[kvp.Key.ToString() ?? ""] = kvp.Value.Type switch
             {
                 RemoteValueType.String => kvp.Value.ConvertTo<StringRemoteValue>().Value ?? "",
-                RemoteValueType.Number => kvp.Value is LongRemoteValue l ? l : kvp.Value.ConvertTo<DoubleRemoteValue>().Value,
+                RemoteValueType.Number => kvp.Value is NumberRemoteValue number,
                 RemoteValueType.Boolean => kvp.Value.ConvertTo<BooleanRemoteValue>().Value,
                 RemoteValueType.Null or RemoteValueType.Undefined => (object?)null!,
                 _ => (kvp.Value as ValueHoldingRemoteValue)?.ValueObject ?? (object)""
@@ -401,8 +401,8 @@ public class TestUtilitiesModule : Module
             success.Result is KeyValuePairCollectionRemoteValue remoteValue)
         {
             RemoteValueDictionary dimensions = remoteValue.Value;
-            long width = dimensions["width"].ConvertTo<LongRemoteValue>().Value;
-            long height = dimensions["height"].ConvertTo<LongRemoteValue>().Value;
+            long width = dimensions["width"].ConvertTo<NumberRemoteValue>();
+            long height = dimensions["height"].ConvertTo<NumberRemoteValue>();
 
             // Capture screenshot with full page dimensions
             CaptureScreenshotCommandParameters screenshotParams =

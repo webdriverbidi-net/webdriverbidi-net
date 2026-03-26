@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Object representing a paint worklet realm for executing script.
 /// </summary>
@@ -13,6 +15,7 @@ public record PaintWorkletRealmInfo : RealmInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="PaintWorkletRealmInfo"/> class.
     /// </summary>
+    [JsonConstructor]
     internal PaintWorkletRealmInfo()
         : base()
     {

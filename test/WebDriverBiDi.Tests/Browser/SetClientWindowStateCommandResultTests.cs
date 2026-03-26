@@ -200,7 +200,7 @@ public class SetClientWindowStateCommandResultTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<SetClientWindowStateCommandResult>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<SetClientWindowStateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -217,7 +217,7 @@ public class SetClientWindowStateCommandResultTests
                         "height": 400
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<SetClientWindowStateCommandResult>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<SetClientWindowStateCommandResult>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

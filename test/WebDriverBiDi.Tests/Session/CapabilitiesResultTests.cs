@@ -342,7 +342,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'proxyautoconfig' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'ProxyConfiguration' proxyType property contains unknown value 'proxyautoconfig'"));
         // spell-checker: enable
     }
 

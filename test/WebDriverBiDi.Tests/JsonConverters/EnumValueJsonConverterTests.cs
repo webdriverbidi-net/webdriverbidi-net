@@ -45,19 +45,19 @@ public class EnumValueJsonConverterTests
     [Test]
     public void DeserializeNonStringValueThrows()
     {
-        Assert.That(() => JsonSerializer.Deserialize<BasicEnum>("1"), Throws.InstanceOf<WebDriverBiDiSerializationException>().With.Message.EqualTo($"Deserialization error reading enumerated string value"));
+        Assert.That(() => JsonSerializer.Deserialize<BasicEnum>("1"), Throws.InstanceOf<JsonException>().With.Message.EqualTo($"Deserialization error reading enumerated string value"));
     }
 
     [Test]
     public void DeserializeInvalidValueThrows()
     {
-        Assert.That(() => JsonSerializer.Deserialize<BasicEnum>("\"invalid\""), Throws.InstanceOf<WebDriverBiDiSerializationException>().With.Message.EqualTo($"Deserialization error: value 'invalid' is not valid for enum type WebDriverBiDi.JsonConverters.EnumValueJsonConverterTests+BasicEnum"));
+        Assert.That(() => JsonSerializer.Deserialize<BasicEnum>("\"invalid\""), Throws.InstanceOf<JsonException>().With.Message.EqualTo($"Deserialization error: value 'invalid' is not valid for enum type BasicEnum"));
     }
 
     [Test]
     public void SerializeInvalidValueThrows()
     {
-        Assert.That(() => JsonSerializer.Serialize(FlagEnum.FirstValue | FlagEnum.SecondValue), Throws.InstanceOf<WebDriverBiDiSerializationException>().With.Message.StartsWith("Serialization error: value"));
+        Assert.That(() => JsonSerializer.Serialize(FlagEnum.FirstValue | FlagEnum.SecondValue), Throws.InstanceOf<JsonException>().With.Message.StartsWith("Serialization error: value"));
     }
 
     [JsonConverter(typeof(EnumValueJsonConverter<BasicEnum>))]

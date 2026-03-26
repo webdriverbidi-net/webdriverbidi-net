@@ -6,30 +6,36 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents a remote value for a boolean, providing type-safe access to the
 /// value and the ability to convert to a local value for use as an argument for
 /// script execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record BooleanRemoteValue : ValueHoldingRemoteValue<bool>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BooleanRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The boolean value.</param>
-    internal BooleanRemoteValue(bool value)
+    [JsonConstructor]
+    internal BooleanRemoteValue()
         : base(RemoteValueType.Boolean)
     {
-        this.Value = value;
     }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the boolean value of this remote value is true.
+    /// Gets a value indicating whether the boolean value of this remote value is true.
     /// </summary>
-    public override bool Value { get; protected set; }
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    public override bool Value { get; internal set; } = false;
+
+    /// <summary>
+    /// Defines an implicit conversion from a BooleanRemoteValue to a bool, allowing
+    /// for easy access to the boolean value of this remote value.
+    /// </summary>
+    /// <param name="value">The boolean remote value.</param>
+    public static implicit operator bool(BooleanRemoteValue value) => value.Value;
 
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.

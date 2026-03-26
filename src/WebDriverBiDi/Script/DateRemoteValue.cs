@@ -13,23 +13,30 @@ using WebDriverBiDi.JsonConverters;
 /// type-safe access to the value and the ability to convert to a local value
 /// for use as an argument for script execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DateRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The DateTime value.</param>
-    internal DateRemoteValue(DateTime value)
+    [JsonConstructor]
+    internal DateRemoteValue()
         : base(RemoteValueType.Date)
     {
-        this.Value = value;
     }
 
     /// <summary>
-    /// Gets or sets the DateTime value of this remote value.
+    /// Gets the DateTime value of this remote value.
     /// </summary>
-    public override DateTime Value { get; protected set; }
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    public override DateTime Value { get; internal set; } = DateTime.MinValue;
+
+    /// <summary>
+    /// Defines an implicit conversion from a DateRemoteValue to a DateTime, allowing
+    /// for easy access to the date value of this remote value.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    public static implicit operator DateTime(DateRemoteValue value) => value.Value;
 
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
