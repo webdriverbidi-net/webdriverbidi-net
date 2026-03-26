@@ -8,7 +8,7 @@ namespace WebDriverBiDi;
 /// <summary>
 /// Describes a failure raised by an observable event observer.
 /// </summary>
-internal sealed record EventObserverErrorInfo
+public sealed record EventObserverErrorInfo
 {
     /// <summary>
     /// Gets the name of the observable event whose observer faulted.

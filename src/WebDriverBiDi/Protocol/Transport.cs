@@ -65,6 +65,7 @@ public class Transport : IAsyncDisposable
     private const string EventReceivedEventName = "transport.eventReceived";
     private const string ErrorReceivedEventName = "transport.errorReceived";
     private const string UnknownMessageReceivedEventName = "transport.unknownMessageReceived";
+    private const string EventHandlerErrorOccurredEventName = "transport.eventHandlerErrorOccurred";
     private const string LogMessageEventName = "transport.logMessage";
     private const string TransportEventObserverDescription = "transport event observer";
     private const string TransportErrorObserverDescription = "transport error observer";
@@ -118,6 +119,7 @@ public class Transport : IAsyncDisposable
         this.OnEventReceived = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
         this.OnErrorEventReceived = this.CreateObservableEvent<ErrorReceivedEventArgs>(ErrorReceivedEventName);
         this.OnUnknownMessageReceived = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
+        this.OnEventHandlerErrorOccurred = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
         this.OnLogMessage = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
 
         this.connectionDataReceivedObserver = connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
@@ -141,6 +143,11 @@ public class Transport : IAsyncDisposable
     /// Gets an observable event that notifies when an unknown message is received from the protocol.
     /// </summary>
     public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; }
+
+    /// <summary>
+    /// Gets an observable event that notifies when an error occurs in an observer of an observable event.
+    /// </summary>
+    public ObservableEvent<EventHandlerErrorOccurredEventArgs> OnEventHandlerErrorOccurred { get; } = new(EventHandlerErrorOccurredEventName);
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.
@@ -419,9 +426,11 @@ public class Transport : IAsyncDisposable
     /// Reports a late observer execution error to this transport's unhandled-error pipeline.
     /// </summary>
     /// <param name="errorInfo">The details of the observer failure.</param>
-    internal void ReportEventObserverError(EventObserverErrorInfo errorInfo)
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    internal async Task ReportEventObserverError(EventObserverErrorInfo errorInfo)
     {
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
+        await this.OnEventHandlerErrorOccurred.NotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo));
         this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
     }
 
@@ -637,7 +646,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            this.ReportEventObserverError(e.EventName, TransportEventObserverDescription, ex);
+            await this.ReportEventObserverError(e.EventName, TransportEventObserverDescription, ex);
         }
     }
 
@@ -649,7 +658,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            this.ReportEventObserverError(this.OnErrorEventReceived.EventName, TransportErrorObserverDescription, ex);
+            await this.ReportEventObserverError(this.OnErrorEventReceived.EventName, TransportErrorObserverDescription, ex);
         }
     }
 
@@ -661,7 +670,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            this.ReportEventObserverError(this.OnUnknownMessageReceived.EventName, TransportUnknownMessageObserverDescription, ex);
+            await this.ReportEventObserverError(this.OnUnknownMessageReceived.EventName, TransportUnknownMessageObserverDescription, ex);
         }
     }
 
@@ -989,9 +998,9 @@ public class Transport : IAsyncDisposable
         return observableEvent;
     }
 
-    private void ReportEventObserverError(string eventName, string observerDescription, Exception exception)
+    private async Task ReportEventObserverError(string eventName, string observerDescription, Exception exception)
     {
-        this.ReportEventObserverError(new EventObserverErrorInfo()
+        await this.ReportEventObserverError(new EventObserverErrorInfo()
         {
             ObservableEventName = eventName,
             ObserverId = string.Empty,

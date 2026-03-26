@@ -47,12 +47,14 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     private const string EventReceivedEventName = "driver.eventReceived";
     private const string UnexpectedErrorReceivedEventName = "driver.unexpectedErrorReceived";
     private const string UnknownMessageReceivedEventName = "driver.unknownMessageReceived";
+    private const string EventHandlerErrorOccurredEventName = "driver.eventHandlerErrorOccurred";
     private const string LogMessageEventName = "driver.logMessage";
 
     private readonly EventObserver<EventReceivedEventArgs> transportEventReceivedObserver;
     private readonly EventObserver<ErrorReceivedEventArgs> transportErrorReceivedObserver;
     private readonly EventObserver<UnknownMessageReceivedEventArgs> transportUnknownMessageReceivedObserver;
     private readonly EventObserver<LogMessageEventArgs> transportLogMessageObserver;
+    private readonly EventObserver<EventHandlerErrorOccurredEventArgs> transportEventHandlerErrorOccurredObserver;
 
     private readonly Transport transport;
     private readonly ConcurrentDictionary<string, Module> modules = [];
@@ -114,10 +116,12 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         this.transportErrorReceivedObserver = this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
         this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
         this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
+        this.transportEventHandlerErrorOccurredObserver = this.transport.OnEventHandlerErrorOccurred.AddObserver(this.OnTransportEventHandlerErrorOccurredAsync);
 
         this.OnEventReceived = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
         this.OnUnexpectedErrorReceived = this.CreateObservableEvent<ErrorReceivedEventArgs>(UnexpectedErrorReceivedEventName);
         this.OnUnknownMessageReceived = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
+        this.OnEventHandlerErrorOccurred = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
         this.OnLogMessage = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
 
         this.Bluetooth = new BluetoothModule(this);
@@ -177,6 +181,15 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// Gets an observable event that notifies when an unknown message is received from protocol transport.
     /// </summary>
     public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; }
+
+    /// <summary>
+    /// Gets an observable event that notifies when an error occurs in an observer of an observable event.
+    /// </summary>
+    /// <remarks>
+    /// This event is for diagnostic and observability purposes, and does not prevent
+    /// the propagation of the error back to the Transport class.
+    /// </remarks>
+    public ObservableEvent<EventHandlerErrorOccurredEventArgs> OnEventHandlerErrorOccurred { get; }
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by this driver.
@@ -325,7 +338,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <summary>
     /// Gets the callback used to report late observer execution errors to the underlying transport.
     /// </summary>
-    Action<EventObserverErrorInfo> IEventObserverErrorReporter.EventObserverErrorReporter => this.ReportObservableEventObserverError;
+    Func<EventObserverErrorInfo, Task> IEventObserverErrorReporter.EventObserverErrorReporter => this.ReportObservableEventObserverError;
 
     /// <summary>
     /// Gets a value indicating whether this driver is disposed.
@@ -672,9 +685,9 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         }
     }
 
-    private void ReportObservableEventObserverError(EventObserverErrorInfo errorInfo)
+    private Task ReportObservableEventObserverError(EventObserverErrorInfo errorInfo)
     {
-        this.transport.ReportEventObserverError(errorInfo);
+        return this.transport.ReportEventObserverError(errorInfo);
     }
 
     private ObservableEvent<T> CreateObservableEvent<T>(string eventName)
@@ -703,6 +716,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     private async Task OnTransportUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
         await this.OnUnknownMessageReceived.NotifyObserversAsync(e).ConfigureAwait(false);
+    }
+
+    private async Task OnTransportEventHandlerErrorOccurredAsync(EventHandlerErrorOccurredEventArgs e)
+    {
+        await this.OnEventHandlerErrorOccurred.NotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportLogMessageAsync(LogMessageEventArgs e)

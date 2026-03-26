@@ -336,6 +336,64 @@ public class BiDiDriverTests
     }
 
     [Test]
+    public async Task TestNotificationOfEventHandlerError()
+    {
+        EventObserverErrorInfo? errorInfo = null;
+        ManualResetEvent syncEvent = new(false);
+        ManualResetEvent handlerReturnedEvent = new(false);
+
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+        EventObserver<BrowsingContextEventArgs> browsingContextObserver = driver.BrowsingContext.OnContextCreated.AddObserver(async e =>
+        {
+            try
+            {
+                throw new InvalidOperationException("This is a test exception from an event handler");
+            }
+            finally
+            {
+                await Task.Delay(50);
+                syncEvent.Set();
+            }
+        }, ObservableEventHandlerOptions.RunHandlerAsynchronously, "Test observer");
+
+        driver.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            errorInfo = e.ErrorInfo with { };
+            handlerReturnedEvent.Set();
+        });
+        await driver.StartAsync("ws://localhost:5555");
+
+        string eventJson = """
+                           {
+                             "type": "event",
+                             "method": "browsingContext.contextCreated",
+                             "params": {
+                               "context": "myContextId",
+                               "clientWindow": "myClientWindowId",
+                               "url": "http://example.com",
+                               "originalOpener": "openerContext",
+                               "userContext": "myUserContextId",
+                               "children": []
+                             }
+                           }
+                           """;
+        await connection.RaiseDataReceivedEventAsync(eventJson);
+        syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
+        bool handlerReturned = handlerReturnedEvent.WaitOne(TimeSpan.FromMilliseconds(100));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(handlerReturned, Is.True);
+            Assert.That(errorInfo, Is.Not.Null);
+            Assert.That(errorInfo!.ObserverId, Is.EqualTo(browsingContextObserver.Id));
+            Assert.That(errorInfo.Exception, Is.TypeOf<InvalidOperationException>());
+            Assert.That(errorInfo.ObservableEventName, Is.EqualTo("browsingContext.contextCreated"));
+            Assert.That(errorInfo.ObserverDescription, Is.EqualTo("Test observer"));
+        };
+    }
+
+    [Test]
     public async Task TestModuleAvailability()
     {
         TestWebSocketConnection connection = new();

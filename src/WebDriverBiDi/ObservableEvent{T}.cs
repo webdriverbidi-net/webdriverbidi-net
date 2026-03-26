@@ -26,7 +26,7 @@ public class ObservableEvent<T>
 {
     private readonly object observerLock = new();
     private readonly Dictionary<string, EventObserver<T>> observers = [];
-    private Action<EventObserverErrorInfo>? observerErrorReporter;
+    private Func<EventObserverErrorInfo, Task>? observerErrorReporter;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
@@ -227,7 +227,7 @@ public class ObservableEvent<T>
     /// after the handler has already returned to the caller.
     /// </summary>
     /// <param name="reporter">The reporter callback.</param>
-    internal void SetObserverErrorReporter(Action<EventObserverErrorInfo> reporter)
+    internal void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
     {
         this.observerErrorReporter = reporter;
     }

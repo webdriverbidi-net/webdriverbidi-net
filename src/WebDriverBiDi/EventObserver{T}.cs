@@ -43,7 +43,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
-    private readonly Action<EventObserverErrorInfo>? observerErrorReporter;
+    private readonly Func<EventObserverErrorInfo, Task>? observerErrorReporter;
     private readonly List<Task> capturedTasks = [];
     private TaskCompletionSource<bool>? checkpointTaskCompletionSource;
     private CountdownEvent synchronizationCounter = new(0);
@@ -57,7 +57,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <param name="handlerOptions">The options to use when executing the event handler.</param>
     /// <param name="description">The optional description of this observer.</param>
     /// <param name="observerErrorReporter">The callback used to report late observer execution errors, if any.</param>
-    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, Action<EventObserverErrorInfo>? observerErrorReporter)
+    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, Func<EventObserverErrorInfo, Task>? observerErrorReporter)
     {
         this.observableEvent = observableEvent;
         this.handler = handler;

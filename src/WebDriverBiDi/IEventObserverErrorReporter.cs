@@ -14,5 +14,5 @@ internal interface IEventObserverErrorReporter
     /// <summary>
     /// Gets the callback used to report a late observer execution error.
     /// </summary>
-    Action<EventObserverErrorInfo> EventObserverErrorReporter { get; }
+    Func<EventObserverErrorInfo, Task> EventObserverErrorReporter { get; }
 }
