@@ -663,6 +663,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             this.transportErrorReceivedObserver.Dispose();
             this.transportUnknownMessageReceivedObserver.Dispose();
             this.transportLogMessageObserver.Dispose();
+            this.transportEventHandlerErrorOccurredObserver.Dispose();
             await this.transport.DisposeAsync().ConfigureAwait(false);
         }
     }

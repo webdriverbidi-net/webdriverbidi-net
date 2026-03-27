@@ -94,10 +94,8 @@ public class ObservableEvent<T>
     {
         Func<T, Task> wrappedHandler = (T args) =>
         {
-            TaskCompletionSource<bool> taskCompletionSource = new();
             handler(args);
-            taskCompletionSource.SetResult(true);
-            return taskCompletionSource.Task;
+            return Task.CompletedTask;
         };
 
         return this.AddObserver(wrappedHandler, handlerOptions, description);
