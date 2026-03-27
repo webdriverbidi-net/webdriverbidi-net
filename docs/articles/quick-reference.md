@@ -16,15 +16,15 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 
 | Operation | Code |
 |-----------|------|
-| Check status | `await driver.Session.StatusAsync(null);` |
+| Check status | `await driver.Session.StatusAsync();` |
 | Subscribe to events | `SubscribeCommandParameters sub = new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName); await driver.Session.SubscribeAsync(sub);` |
-| End session | `await driver.Session.EndAsync(null);` |
+| End session | `await driver.Session.EndAsync();` |
 
 ## Browsing Context
 
 | Operation | Code |
 |-----------|------|
-| Get context tree | `GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(null);` |
+| Get context tree | `GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync();` |
 | Create context | `CreateCommandResult ctx = await driver.BrowsingContext.CreateAsync(new CreateCommandParameters(CreateType.Tab));` |
 | Navigate | `await driver.BrowsingContext.NavigateAsync(new NavigateCommandParameters(contextId, url) { Wait = ReadinessState.Complete });` |
 | Close context | `await driver.BrowsingContext.CloseAsync(new CloseCommandParameters(contextId));` |
@@ -37,7 +37,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 | Evaluate expression | `EvaluateResult r = await driver.Script.EvaluateAsync(new EvaluateCommandParameters(expression, new ContextTarget(contextId), true));` |
 | Call function | `EvaluateResult r = await driver.Script.CallFunctionAsync(new CallFunctionCommandParameters(functionDeclaration, new ContextTarget(contextId), true));` |
 | Add preload script | `AddPreloadScriptCommandResult r = await driver.Script.AddPreloadScriptAsync(new AddPreloadScriptCommandParameters(script));` |
-| Get realms | `GetRealmsCommandResult realms = await driver.Script.GetRealmsAsync(null);` |
+| Get realms | `GetRealmsCommandResult realms = await driver.Script.GetRealmsAsync();` |
 
 ## Network
 

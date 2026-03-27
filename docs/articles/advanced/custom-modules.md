@@ -70,6 +70,15 @@ You can also expose observable events from your custom module:
 
 [!code-csharp[Custom Events Module](../../code/advanced/CustomModulesSamples.cs#CustomEventsModule)]
 
+> **Why `IBiDiCommandExecutor`, not `IBiDiDriverConfiguration`?**
+> The `Module` base class constructor requires `IBiDiCommandExecutor` because event registration
+> goes through that interface. When your module calls `this.RegisterObservableEvent<T>(...)` in its
+> constructor, the base class calls `this.Driver.RegisterEvent<T>(...)` internally.
+> `RegisterEvent<T>` is defined on `IBiDiCommandExecutor`; it is not present on
+> `IBiDiDriverConfiguration`, which only exposes `RegisterModule` and `RegisterTypeInfoResolver`.
+> Passing a `BiDiDriver` instance satisfies both interfaces, so your module constructor always
+> receives a `BiDiDriver` in practice.
+
 ## Best Practices
 
 ### 1. Namespace Your Commands
