@@ -143,7 +143,7 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             result = new ObjectReferenceRemoteValue(valueType);
         }
 
-        if (jsonObject.TryGetProperty("handle", out JsonElement handleToken) && result is ObjectReferenceRemoteValue handleRemoteValue)
+        if (jsonObject.TryGetProperty("handle", out JsonElement handleToken))
         {
             if (handleToken.ValueKind != JsonValueKind.String)
             {
@@ -151,10 +151,17 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             }
 
             string? handle = handleToken.GetString();
-            handleRemoteValue.Handle = handle;
+            switch (result)
+            {
+                case ObjectReferenceRemoteValue orv: orv.Handle = handle; break;
+                case CollectionRemoteValue crv: crv.Handle = handle; break;
+                case KeyValuePairCollectionRemoteValue kvpcrv: kvpcrv.Handle = handle; break;
+                case NodeRemoteValue nrv: nrv.Handle = handle; break;
+                case RegExpRemoteValue rerv: rerv.Handle = handle; break;
+            }
         }
 
-        if (jsonObject.TryGetProperty("internalId", out JsonElement internalIdToken) && result is ObjectReferenceRemoteValue internalIdRemoteValue)
+        if (jsonObject.TryGetProperty("internalId", out JsonElement internalIdToken))
         {
             if (internalIdToken.ValueKind != JsonValueKind.String)
             {
@@ -162,7 +169,14 @@ public class RemoteValueJsonConverter : JsonConverter<RemoteValue>
             }
 
             string? internalId = internalIdToken.GetString();
-            internalIdRemoteValue.InternalId = internalId;
+            switch (result)
+            {
+                case ObjectReferenceRemoteValue orv: orv.InternalId = internalId; break;
+                case CollectionRemoteValue crv: crv.InternalId = internalId; break;
+                case KeyValuePairCollectionRemoteValue kvpcrv: kvpcrv.InternalId = internalId; break;
+                case NodeRemoteValue nrv: nrv.InternalId = internalId; break;
+                case RegExpRemoteValue rerv: rerv.InternalId = internalId; break;
+            }
         }
 
         // The sharedId property is only valid for RemoteValue objects with type "node"
