@@ -69,4 +69,19 @@ public record CollectionRemoteValue : ValueHoldingRemoteValue<RemoteValueList>, 
         // If type is "array", "htmlcolletion", or "nodelist", create an array local value.
         return LocalValue.Array(localValues);
     }
+
+    /// <summary>
+    /// Converts this RemoteValue into a RemoteReference.
+    /// </summary>
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the RemoteValue does not have a handle set.</exception>
+    public RemoteObjectReference ToRemoteObjectReference()
+    {
+        if (this.Handle is null)
+        {
+            throw new WebDriverBiDiException("Collection remote values must have a valid handle to be used as remote references");
+        }
+
+        return new RemoteObjectReference(this.Handle);
+    }
 }

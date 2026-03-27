@@ -49,6 +49,21 @@ public record RegExpRemoteValue : ValueHoldingRemoteValue<RegularExpressionValue
     public string? InternalId { get; internal set; }
 
     /// <summary>
+    /// Converts this RemoteValue into a RemoteObjectReference.
+    /// </summary>
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the RemoteValue does not have a handle set.</exception>
+    public RemoteObjectReference ToRemoteObjectReference()
+    {
+        if (this.Handle is null)
+        {
+            throw new WebDriverBiDiException("RegExp remote values must have a valid handle to be used as remote references");
+        }
+
+        return new RemoteObjectReference(this.Handle);
+    }
+
+    /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
     /// </summary>
     /// <returns>A LocalValue representing the regular expression value.</returns>

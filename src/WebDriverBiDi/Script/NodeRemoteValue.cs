@@ -65,32 +65,18 @@ public record NodeRemoteValue : ValueHoldingRemoteValue<NodeProperties>, IObject
     }
 
     /// <summary>
-    /// Converts this RemoteValue into a RemoteReference.
+    /// Converts this RemoteValue into a RemoteObjectReference.
     /// </summary>
-    /// <returns>The RemoteReference object representing this RemoteValue.</returns>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown when the RemoteValue meets one of the following conditions:
-    /// <list type="bulleted">
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue is a primitive value (string, number, boolean, bigint, null, or undefined)
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue has a type of "node", but there is no shared ID set
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue does not have a handle set
-    ///     </description>
-    ///   </item>
-    /// </list>
-    /// </exception>
-    public RemoteReference ToRemoteReference()
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when there is no shared ID set.</exception>
+    public RemoteObjectReference ToRemoteObjectReference()
     {
-        return this.ToSharedReference();
+        if (this.Handle is null)
+        {
+            throw new WebDriverBiDiException("Node remote values must have a valid handle to be used as remote references");
+        }
+
+        return new(this.Handle) { SharedId = this.SharedId };
     }
 
     /// <summary>

@@ -390,6 +390,33 @@ public class RemoteValueTests
     }
 
     [Test]
+    public void TestConvertingRegularExpressionRemoteValueToRemoteReference()
+    {
+        string json = """
+                      {
+                        "type": "regexp",
+                        "handle": "myHandle",
+                        "value": {
+                          "pattern": "myPattern",
+                          "flags": "gi"
+                        }
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(remoteValue.Type, Is.EqualTo(RemoteValueType.RegExp));
+            Assert.That(remoteValue, Is.InstanceOf<RegExpRemoteValue>());
+            RegExpRemoteValue regExpRemoteValue = (RegExpRemoteValue)remoteValue;
+            Assert.That(regExpRemoteValue.Handle, Is.EqualTo("myHandle"));
+            Assert.That(regExpRemoteValue.InternalId, Is.Null);
+            RemoteObjectReference remoteReference = regExpRemoteValue.ToRemoteObjectReference();
+            Assert.That(remoteReference.Handle, Is.EqualTo("myHandle"));
+        }
+    }
+
+    [Test]
     public void TestDeserializingInvalidRegularExpressionValueRemoteValueThrows()
     {
         string json = """
@@ -399,6 +426,25 @@ public class RemoteValueTests
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON value could not be converted"));
+    }
+
+    [Test]
+    public void TestConvertingRegularExpressionRemoteValueToRemoteReferenceWithoutHandleThrows()
+    {
+        string json = """
+                      {
+                        "type": "regexp",
+                        "value": {
+                          "pattern": "myPattern",
+                          "flags": "gi"
+                        }
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<RegExpRemoteValue>());
+        RegExpRemoteValue regExpRemoteValue = (RegExpRemoteValue)remoteValue;
+        Assert.That(() => regExpRemoteValue.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
     }
 
     [Test]
@@ -576,6 +622,66 @@ public class RemoteValueTests
             Assert.That(arrayValue[2], Is.InstanceOf<BooleanRemoteValue>());
             Assert.That(((BooleanRemoteValue)arrayValue[2]).Value, Is.EqualTo(true));
         }
+    }
+
+    [Test]
+    public void TestConvertingCollectionRemoteValueToRemoteObjectReference()
+    {
+        string json = """
+                      {
+                        "type": "array",
+                        "handle": "myHandle",
+                        "value": [
+                          {
+                            "type": "string",
+                            "value": "stringValue"
+                          },
+                          {
+                            "type": "number",
+                            "value": 123
+                          },
+                          {
+                            "type": "boolean",
+                            "value": true
+                          }
+                        ]
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<CollectionRemoteValue>());
+        CollectionRemoteValue listRemoteValue = (CollectionRemoteValue)remoteValue;
+        RemoteObjectReference remoteReference = listRemoteValue.ToRemoteObjectReference();
+        Assert.That(remoteReference.Handle, Is.EqualTo("myHandle"));
+    }
+
+    [Test]
+    public void TestConvertingCollectionRemoteValueToRemoteObjectReferenceWithMissingHandleThrows()
+    {
+        string json = """
+                      {
+                        "type": "array",
+                        "value": [
+                          {
+                            "type": "string",
+                            "value": "stringValue"
+                          },
+                          {
+                            "type": "number",
+                            "value": 123
+                          },
+                          {
+                            "type": "boolean",
+                            "value": true
+                          }
+                        ]
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<CollectionRemoteValue>());
+        CollectionRemoteValue listRemoteValue = (CollectionRemoteValue)remoteValue;
+        Assert.That(() => listRemoteValue.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
     }
 
     [Test]
@@ -1216,6 +1322,46 @@ public class RemoteValueTests
     }
 
     [Test]
+    public void TestConvertingMapRemoteValueToRemoteObjectReference()
+    {
+        string json = """
+                      {
+                        "type": "map",
+                        "handle": "myHandle",
+                        "value": [
+                          [
+                            "stringProperty",
+                            {
+                              "type": "string",
+                              "value": "stringValue"
+                            }
+                          ],
+                          [
+                            "numberProperty",
+                            {
+                              "type": "number",
+                              "value": 123
+                            }
+                          ],
+                          [
+                            "booleanProperty",
+                            {
+                              "type": "boolean",
+                              "value": true
+                            }
+                          ]
+                        ]
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<KeyValuePairCollectionRemoteValue>());
+        KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+        RemoteObjectReference remoteObjectReference = keyValuePairRemoteValue.ToRemoteObjectReference();
+        Assert.That(remoteObjectReference.Handle, Is.EqualTo("myHandle"));
+    }
+
+    [Test]
     public void TestDeserializingInvalidMapValueRemoteValueThrows()
     {
         string json = """
@@ -1320,6 +1466,44 @@ public class RemoteValueTests
                       }
                       """;
         Assert.That(() => JsonSerializer.Deserialize<RemoteValue>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a second element (value) that is an object"));
+    }
+
+    [Test]
+    public void TestConvertingMapRemoteValueToRemoteObjectReferenceWithMissingHandleThrows()
+    {
+        string json = """
+                      {
+                        "type": "map",
+                        "value": [
+                          [
+                            "stringProperty",
+                            {
+                              "type": "string",
+                              "value": "stringValue"
+                            }
+                          ],
+                          [
+                            "numberProperty",
+                            {
+                              "type": "number",
+                              "value": 123
+                            }
+                          ],
+                          [
+                            "booleanProperty",
+                            {
+                              "type": "boolean",
+                              "value": true
+                            }
+                          ]
+                        ]
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<KeyValuePairCollectionRemoteValue>());
+        KeyValuePairCollectionRemoteValue keyValuePairRemoteValue = (KeyValuePairCollectionRemoteValue)remoteValue;
+        Assert.That(() => keyValuePairRemoteValue.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
     }
 
     [Test]
@@ -1798,7 +1982,7 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.That(remoteValue, Is.InstanceOf<ObjectReferenceRemoteValue>());
         ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
-        RemoteReference reference = objectReferenceRemoteValue.ToRemoteReference();
+        RemoteReference reference = objectReferenceRemoteValue.ToRemoteObjectReference();
         Assert.That(reference, Is.InstanceOf<RemoteObjectReference>());
     }
 
@@ -1817,7 +2001,7 @@ public class RemoteValueTests
         ObjectReferenceRemoteValue objectReferenceRemoteValue = (ObjectReferenceRemoteValue)remoteValue;
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => objectReferenceRemoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
+            Assert.That(() => objectReferenceRemoteValue.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
         }
     }
 
@@ -1828,6 +2012,7 @@ public class RemoteValueTests
                       {
                         "type": "node",
                         "sharedId": "mySharedId",
+                        "handle": "myHandle",
                         "value": {
                           "nodeType": 1,
                           "nodeValue": "",
@@ -1839,12 +2024,12 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.Not.Null);
         Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
         NodeRemoteValue nodeRemoteValue = (NodeRemoteValue)remoteValue;
-        RemoteReference reference = nodeRemoteValue.ToRemoteReference();
-        Assert.That(reference, Is.InstanceOf<SharedReference>());
+        RemoteObjectReference reference = nodeRemoteValue.ToRemoteObjectReference();
+        Assert.That(reference.Handle, Is.EqualTo("myHandle"));
     }
 
     [Test]
-    public void TestConvertNodeRemoteValueWithoutSharedIdToRemoteReferenceThrows()
+    public void TestConvertNodeRemoteValueWithoutHandleToRemoteReferenceThrows()
     {
         string json = """
                       {
@@ -1862,7 +2047,7 @@ public class RemoteValueTests
         NodeRemoteValue nodeRemoteValue = (NodeRemoteValue)remoteValue;
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => nodeRemoteValue.ToRemoteReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid shared ID"));
+            Assert.That(() => nodeRemoteValue.ToRemoteObjectReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid handle"));
         }
     }
 
@@ -1885,6 +2070,26 @@ public class RemoteValueTests
         Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
         SharedReference reference = ((NodeRemoteValue)remoteValue).ToSharedReference();
         Assert.That(reference, Is.InstanceOf<SharedReference>());
+    }
+
+    [Test]
+    public void TestConvertNodeRemoteValueToSharedReferenceWithoutSharedIdThrows()
+    {
+        string json = """
+                      {
+                        "type": "node",
+                        "value": {
+                          "nodeType": 1,
+                          "nodeValue": "",
+                          "childNodeCount": 0
+                        }
+                      }
+                      """;
+        RemoteValue? remoteValue = JsonSerializer.Deserialize<RemoteValue>(json);
+        Assert.That(remoteValue, Is.Not.Null);
+        Assert.That(remoteValue, Is.InstanceOf<NodeRemoteValue>());
+        NodeRemoteValue nodeRemoteValue = (NodeRemoteValue)remoteValue;
+        Assert.That(() => nodeRemoteValue.ToSharedReference(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("must have a valid shared ID"));
     }
 
     [Test]

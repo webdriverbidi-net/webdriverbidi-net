@@ -21,4 +21,10 @@ public interface IObjectReferenceRemoteValue
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
     string? InternalId { get; }
+
+    /// <summary>
+    /// Converts this RemoteValue into a RemoteObjectReference.
+    /// </summary>
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    RemoteObjectReference ToRemoteObjectReference();
 }

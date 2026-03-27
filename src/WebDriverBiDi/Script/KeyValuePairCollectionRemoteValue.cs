@@ -74,4 +74,19 @@ public record KeyValuePairCollectionRemoteValue : ValueHoldingRemoteValue<Remote
 
         return LocalValue.Object(dict);
     }
+
+    /// <summary>
+    /// Converts this RemoteValue into a RemoteObjectReference.
+    /// </summary>
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the RemoteValue does not have a handle set.</exception>
+    public RemoteObjectReference ToRemoteObjectReference()
+    {
+        if (this.Handle is null)
+        {
+            throw new WebDriverBiDiException("Collection remote values must have a valid handle to be used as remote references");
+        }
+
+        return new RemoteObjectReference(this.Handle);
+    }
 }
