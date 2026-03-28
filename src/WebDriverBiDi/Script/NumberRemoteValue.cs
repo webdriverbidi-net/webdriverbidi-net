@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.JsonConverters;
 
 /// <summary>
@@ -31,6 +30,7 @@ public record NumberRemoteValue : ValueHoldingRemoteValue<double>
     [JsonPropertyName("value")]
     [JsonInclude]
     [JsonConverter(typeof(NumberJsonConverter))]
+    [JsonRequired]
     public override double Value { get; internal set; } = 0;
 
     /// <summary>

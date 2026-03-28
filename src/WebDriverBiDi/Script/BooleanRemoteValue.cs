@@ -28,6 +28,7 @@ public record BooleanRemoteValue : ValueHoldingRemoteValue<bool>
     /// </summary>
     [JsonPropertyName("value")]
     [JsonInclude]
+    [JsonRequired]
     public override bool Value { get; internal set; } = false;
 
     /// <summary>

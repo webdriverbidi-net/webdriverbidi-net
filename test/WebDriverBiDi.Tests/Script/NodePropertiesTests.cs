@@ -14,7 +14,8 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -38,9 +39,14 @@ public class NodePropertiesTests
                         "childNodeCount": 0
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
-        NodeProperties copy = nodeProperties;
-        Assert.That(copy, Is.EqualTo(nodeProperties));
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
+        NodeProperties copy = nodeProperties with { };
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(copy, Is.EqualTo(nodeProperties));
+            Assert.That(copy, Is.Not.SameAs(nodeProperties));
+        }
     }
 
     [Test]
@@ -99,7 +105,8 @@ public class NodePropertiesTests
                         "nodeValue": "myNodeValue"
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -137,7 +144,8 @@ public class NodePropertiesTests
                         "localName": "myLocalName"
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -175,7 +183,8 @@ public class NodePropertiesTests
                         "namespaceURI": "myNamespace"
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -215,7 +224,8 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -230,6 +240,32 @@ public class NodePropertiesTests
             Assert.That(nodeProperties.Children, Is.Null);
             Assert.That(nodeProperties.ShadowRoot, Is.Null);
             Assert.That(nodeProperties.Mode, Is.Null);
+        }
+    }
+
+    [Test]
+    public void TestAttributesPropertyCachesValue()
+    {
+        string json = """
+                      {
+                        "nodeType": 1,
+                        "childNodeCount": 0,
+                        "attributes": {
+                          "attributeName": "attributeValue"
+                        }
+                      }
+                      """;
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
+
+        // Access Attributes property twice to verify caching behavior
+        NodeAttributes? firstAccess = nodeProperties.Attributes;
+        NodeAttributes? secondAccess = nodeProperties.Attributes;
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(firstAccess, Is.Not.Null);
+            Assert.That(secondAccess, Is.SameAs(firstAccess));
         }
     }
 
@@ -297,7 +333,8 @@ public class NodePropertiesTests
                         ]
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -323,7 +360,8 @@ public class NodePropertiesTests
                         "children": []
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -375,7 +413,8 @@ public class NodePropertiesTests
                         "mode": "open"
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
@@ -433,7 +472,8 @@ public class NodePropertiesTests
                         }
                       }
                       """;
-        NodeProperties nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        NodeProperties? nodeProperties = JsonSerializer.Deserialize<NodeProperties>(json);
+        Assert.That(nodeProperties, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(nodeProperties.NodeType, Is.EqualTo(1));

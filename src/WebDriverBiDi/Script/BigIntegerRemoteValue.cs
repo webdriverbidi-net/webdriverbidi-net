@@ -31,6 +31,7 @@ public record BigIntegerRemoteValue : ValueHoldingRemoteValue<BigInteger>
     [JsonConverter(typeof(BigIntegerJsonConverter))]
     [JsonPropertyName("value")]
     [JsonInclude]
+    [JsonRequired]
     public override BigInteger Value { get; internal set; } = BigInteger.Zero;
 
     /// <summary>

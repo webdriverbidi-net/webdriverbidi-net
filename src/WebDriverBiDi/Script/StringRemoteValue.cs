@@ -28,6 +28,7 @@ public record StringRemoteValue : ValueHoldingRemoteValue<string>
     /// </summary>
     [JsonPropertyName("value")]
     [JsonInclude]
+    [JsonRequired]
     public override string Value { get; internal set; } = string.Empty;
 
     /// <summary>

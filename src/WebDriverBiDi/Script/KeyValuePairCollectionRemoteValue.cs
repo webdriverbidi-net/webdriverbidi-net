@@ -13,24 +13,28 @@ using WebDriverBiDi.JsonConverters;
 /// type-safe access to the dictionary containing the values and the ability to convert
 /// to a local value for use as an argument for script execution on the remote end.
 /// </summary>
-public record KeyValuePairCollectionRemoteValue : ValueHoldingRemoteValue<RemoteValueDictionary>, IObjectReferenceRemoteValue
+public record KeyValuePairCollectionRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeSafeRemoteValue<RemoteValueDictionary?>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="KeyValuePairCollectionRemoteValue"/> class.
     /// </summary>
     [JsonConstructor]
     internal KeyValuePairCollectionRemoteValue()
-        : base(RemoteValueType.Object)
     {
+        this.Type = RemoteValueType.Object;
     }
 
     /// <summary>
     /// Gets the RemoteValueDictionary containing the key-value pairs of this remote value.
     /// </summary>
+    /// <remarks>
+    /// This value may be null if the remote value was deserialized without a value property.
+    /// </remarks>
     [JsonPropertyName("value")]
     [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(RemoteValueDictionaryJsonConverter))]
-    public override RemoteValueDictionary Value { get; internal set; } = new RemoteValueDictionary([]);
+    public RemoteValueDictionary? Value { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
@@ -52,8 +56,14 @@ public record KeyValuePairCollectionRemoteValue : ValueHoldingRemoteValue<Remote
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
     /// </summary>
     /// <returns>A LocalValue representing the key-value pair container.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the Value property is null.</exception>
     public override LocalValue ToLocalValue()
     {
+        if (this.Value is null)
+        {
+            throw new WebDriverBiDiException("Cannot convert KeyValuePairCollectionRemoteValue to LocalValue when Value is null");
+        }
+
         RemoteValueDictionary mapping = this.Value;
         Dictionary<object, LocalValue> dict = new();
         foreach (KeyValuePair<object, RemoteValue> entry in mapping)

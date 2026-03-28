@@ -438,6 +438,7 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out NodeRemoteValue? nodeRemoteValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(nodeRemoteValue, Is.Not.Null);
+        Assert.That(nodeRemoteValue.Value, Is.Not.Null);
         NodeProperties nodeProperties = nodeRemoteValue.Value;
         Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
         Assert.That(nodeProperties.NodeValue, Is.EqualTo(string.Empty));
@@ -518,6 +519,7 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out CollectionRemoteValue? listRemoteValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(listRemoteValue, Is.Not.Null);
+        Assert.That(listRemoteValue.Value, Is.Not.Null);
         RemoteValueList arrayValue = listRemoteValue.Value;
         Assert.That(arrayValue, Is.Not.Null);
         Assert.That(arrayValue, Has.Count.EqualTo(3));
@@ -598,6 +600,7 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out CollectionRemoteValue? listRemoteValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(listRemoteValue, Is.Not.Null);
+        Assert.That(listRemoteValue.Value, Is.Not.Null);
         RemoteValueList arrayValue = listRemoteValue.Value;
         Assert.That(arrayValue, Is.Not.Null);
         Assert.That(arrayValue, Has.Count.EqualTo(3));
@@ -721,6 +724,7 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.That(mapRemoteValue.Value, Is.Not.Null);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
 
         RemoteValue stringPropertyValue = dictionaryValue["stringProperty"];
@@ -767,6 +771,7 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.That(mapRemoteValue.Value, Is.Not.Null);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
         object keyValueObject = dictionaryValue.ElementAt(0).Key;
@@ -812,6 +817,7 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.That(mapRemoteValue.Value, Is.Not.Null);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
 
         RemoteValue stringPropertyValue = dictionaryValue["stringProperty"];
@@ -1023,6 +1029,8 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.That(mapRemoteValue.Value, Is.Not.Null);
+        Assert.That(mapRemoteValue.Value, Is.Not.Null);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
 
         RemoteValue stringPropertyValue = dictionaryValue["stringProperty"];
@@ -1069,6 +1077,7 @@ public class ITypeSafeRemoteValueTests
         bool conversionResult = remoteValue.TryConvertTo(out KeyValuePairCollectionRemoteValue? mapRemoteValue);
         Assert.That(conversionResult, Is.True);
         Assert.That(mapRemoteValue, Is.Not.Null);
+        Assert.That(mapRemoteValue.Value, Is.Not.Null);
         RemoteValueDictionary dictionaryValue = mapRemoteValue.Value;
         Assert.That(dictionaryValue, Has.Count.EqualTo(1));
         object keyValueObject = dictionaryValue.ElementAt(0).Key;

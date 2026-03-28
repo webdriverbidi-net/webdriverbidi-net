@@ -31,5 +31,6 @@ public record WindowProxyRemoteValue : ObjectReferenceRemoteValue, ITypeSafeRemo
     /// </summary>
     [JsonPropertyName("value")]
     [JsonInclude]
+    [JsonRequired]
     public WindowProxyProperties Value { get; internal set; }
 }

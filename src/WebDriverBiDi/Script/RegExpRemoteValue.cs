@@ -30,6 +30,7 @@ public record RegExpRemoteValue : ValueHoldingRemoteValue<RegularExpressionValue
     /// </summary>
     [JsonPropertyName("value")]
     [JsonInclude]
+    [JsonRequired]
     public override RegularExpressionValue Value { get; internal set; }
 
     /// <summary>
@@ -47,6 +48,13 @@ public record RegExpRemoteValue : ValueHoldingRemoteValue<RegularExpressionValue
     [JsonInclude]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
+
+    /// <summary>
+    /// Defines an implicit conversion from a RegExpRemoteValue to a RegularExpressionValue, allowing
+    /// for easy access to the regular expression value of this remote value.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    public static implicit operator RegularExpressionValue(RegExpRemoteValue value) => value.Value;
 
     /// <summary>
     /// Converts this RemoteValue into a RemoteObjectReference.

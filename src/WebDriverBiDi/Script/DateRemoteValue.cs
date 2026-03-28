@@ -13,7 +13,7 @@ using WebDriverBiDi.JsonConverters;
 /// type-safe access to the value and the ability to convert to a local value
 /// for use as an argument for script execution on the remote end.
 /// </summary>
-public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>
+public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>, IObjectReferenceRemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DateRemoteValue"/> class.
@@ -29,7 +29,24 @@ public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>
     /// </summary>
     [JsonPropertyName("value")]
     [JsonInclude]
+    [JsonRequired]
     public override DateTime Value { get; internal set; } = DateTime.MinValue;
+
+    /// <summary>
+    /// Gets the handle of this remote value.
+    /// </summary>
+    [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Handle { get; internal set; }
+
+    /// <summary>
+    /// Gets the internal ID of this remote value.
+    /// </summary>
+    [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? InternalId { get; internal set; }
 
     /// <summary>
     /// Defines an implicit conversion from a DateRemoteValue to a DateTime, allowing
@@ -43,4 +60,19 @@ public record DateRemoteValue : ValueHoldingRemoteValue<DateTime>
     /// </summary>
     /// <returns>A LocalValue representing the date value.</returns>
     public override LocalValue ToLocalValue() => LocalValue.Date(this.Value);
+
+    /// <summary>
+    /// Converts this RemoteValue into a RemoteObjectReference.
+    /// </summary>
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when there is no shared ID set.</exception>
+    public RemoteObjectReference ToRemoteObjectReference()
+    {
+        if (this.Handle is null)
+        {
+            throw new WebDriverBiDiException("Date remote values must have a valid handle to be used as remote references");
+        }
+
+        return new RemoteObjectReference(this.Handle);
+    }
 }

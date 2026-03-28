@@ -6,30 +6,33 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents a remote value for a DOM node, providing type-safe access to the
 /// NodeProperties value and the ability to convert to a local value for use as
 /// an argument for script execution on the remote end..
 /// </summary>
-public record NodeRemoteValue : ValueHoldingRemoteValue<NodeProperties>, IObjectReferenceRemoteValue
+public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeSafeRemoteValue<NodeProperties?>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="NodeRemoteValue"/> class.
     /// </summary>
     [JsonConstructor]
     internal NodeRemoteValue()
-        : base(RemoteValueType.Node)
     {
+        this.Type = RemoteValueType.Node;
     }
 
     /// <summary>
     /// Gets the NodeProperties value of this remote value.
     /// </summary>
+    /// <remarks>
+    /// This value may be null if the remote value was deserialized without a value property.
+    /// </remarks>
     [JsonPropertyName("value")]
     [JsonInclude]
-    public override NodeProperties Value { get; internal set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NodeProperties? Value { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.

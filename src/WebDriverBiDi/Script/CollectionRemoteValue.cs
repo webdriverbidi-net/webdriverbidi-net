@@ -13,24 +13,28 @@ using WebDriverBiDi.JsonConverters;
 /// value and the ability to convert to a local value for use as an argument for
 /// script execution on the remote end.
 /// </summary>
-public record CollectionRemoteValue : ValueHoldingRemoteValue<RemoteValueList>, IObjectReferenceRemoteValue
+public record CollectionRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeSafeRemoteValue<RemoteValueList?>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CollectionRemoteValue"/> class.
     /// </summary>
     [JsonConstructor]
     internal CollectionRemoteValue()
-        : base(RemoteValueType.Array)
     {
+        this.Type = RemoteValueType.Array;
     }
 
     /// <summary>
     /// Gets the RemoteValueList containing the values of this remote value.
     /// </summary>
+    /// <remarks>
+    /// This value may be null if the remote value was deserialized without a value property.
+    /// </remarks>
     [JsonPropertyName("value")]
     [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonConverter(typeof(RemoteValueListJsonConverter))]
-    public override RemoteValueList Value { get; internal set; } = new RemoteValueList([]);
+    public RemoteValueList? Value { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
@@ -52,8 +56,14 @@ public record CollectionRemoteValue : ValueHoldingRemoteValue<RemoteValueList>, 
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
     /// </summary>
     /// <returns>A LocalValue representing the list-like value.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the Value property is null.</exception>
     public override LocalValue ToLocalValue()
     {
+        if (this.Value is null)
+        {
+            throw new WebDriverBiDiException("Cannot convert CollectionRemoteValue to LocalValue when Value is null");
+        }
+
         RemoteValueList originalList = this.Value;
         List<LocalValue> localValues = new();
         foreach (RemoteValue item in originalList)
@@ -66,7 +76,7 @@ public record CollectionRemoteValue : ValueHoldingRemoteValue<RemoteValueList>, 
             return LocalValue.Set(localValues);
         }
 
-        // If type is "array", "htmlcolletion", or "nodelist", create an array local value.
+        // If type is "array", "htmlcollection", or "nodelist", create an array local value.
         return LocalValue.Array(localValues);
     }
 
