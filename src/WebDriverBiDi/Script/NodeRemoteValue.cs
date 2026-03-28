@@ -59,6 +59,26 @@ public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeS
     public string? SharedId { get; internal set; }
 
     /// <summary>
+    /// Gets the properties of the node represented by the Value property.
+    /// </summary>
+    /// <returns>The NodeProperties object representing the node.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if the node properties are not returned from the remote end.</exception>
+    /// <remarks>
+    /// The Value property may be null if the remote value was deserialized without a value
+    /// property. This method provides a way to avoid having to check for null when using
+    /// the Value property.
+    /// </remarks>
+    public NodeProperties GetNodeProperties()
+    {
+        if (this.Value is null)
+        {
+            throw new WebDriverBiDiException("Node remote value does not have a value property set.");
+        }
+
+        return this.Value;
+    }
+
+    /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
     /// </summary>
     /// <returns>A LocalValue representing the DOM node.</returns>

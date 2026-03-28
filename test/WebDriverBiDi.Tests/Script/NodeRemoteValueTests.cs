@@ -113,6 +113,42 @@ public class NodeRemoteValueTests
     }
 
     [Test]
+    public void TestCanGetNodeProperties()
+    {
+        string json = """
+                      {
+                        "type": "node",
+                        "value": {
+                          "nodeType": 1,
+                          "childNodeCount": 0
+                        }
+                      }
+                      """;
+
+        NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Type, Is.EqualTo(RemoteValueType.Node));
+        NodeProperties nodeProperties = result.GetNodeProperties();
+        Assert.That(nodeProperties.NodeType, Is.EqualTo(1));
+        Assert.That(nodeProperties.ChildNodeCount, Is.Zero);
+    }
+
+    [Test]
+    public void TestGettingNodePropertiesWithNullValueThrows()
+    {
+        string json = """
+                      {
+                        "type": "node"
+                      }
+                      """;
+
+        NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(() => result.GetNodeProperties(), Throws.InstanceOf<WebDriverBiDiException>());
+    }
+
+    [Test]
     public void TestCanConvertToLocalValue()
     {
         string json = """

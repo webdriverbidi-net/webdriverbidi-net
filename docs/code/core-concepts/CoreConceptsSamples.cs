@@ -592,7 +592,7 @@ public static class CoreConceptsSamples
             success.Result is NodeRemoteValue element)
         {
             // Get node properties
-            NodeProperties nodeProps = element.Value;
+            NodeProperties nodeProps = element.GetNodeProperties();
             Console.WriteLine($"Tag: {nodeProps.LocalName}");
 
             // Create a reference to use in other commands
