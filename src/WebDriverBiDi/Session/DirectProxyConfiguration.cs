@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Session;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Object representing a direct connection proxy to be used by the browser.
 /// </summary>
@@ -13,6 +15,7 @@ public class DirectProxyConfiguration : ProxyConfiguration
     /// <summary>
     /// Initializes a new instance of the <see cref="DirectProxyConfiguration"/> class.
     /// </summary>
+    [JsonConstructor]
     public DirectProxyConfiguration()
         : base(ProxyType.Direct)
     {

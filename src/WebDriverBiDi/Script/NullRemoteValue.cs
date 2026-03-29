@@ -13,15 +13,16 @@ using WebDriverBiDi.JsonConverters;
 /// the ability to convert to a local value for use as an argument for script
 /// execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record NullRemoteValue : RemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="NullRemoteValue"/> class.
     /// </summary>
+    [JsonConstructor]
     internal NullRemoteValue()
-        : base(RemoteValueType.Null)
+        : base()
     {
+        this.Type = RemoteValueType.Null;
     }
 
     /// <summary>

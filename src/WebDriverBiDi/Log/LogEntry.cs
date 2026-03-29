@@ -13,7 +13,10 @@ using WebDriverBiDi.Script;
 /// <summary>
 /// Represents a log entry in the browser.
 /// </summary>
-[JsonConverter(typeof(LogEntryJsonConverter))]
+[JsonConverter(typeof(DiscriminatedUnionJsonConverter<LogEntry>))]
+[DiscriminatedTypeProperty("type", UnmatchedValueType = typeof(GenericLogEntry))]
+[DiscriminatedDerivedType(typeof(ConsoleLogEntry), "console")]
+[DiscriminatedDerivedType(typeof(JavaScriptLogEntry), "javascript")]
 public class LogEntry
 {
     /// <summary>
@@ -52,7 +55,7 @@ public class LogEntry
     /// Gets the text of the log entry.
     /// </summary>
     [JsonPropertyName("text")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonRequired]
     [JsonInclude]
     public string? Text { get; internal set; }
 

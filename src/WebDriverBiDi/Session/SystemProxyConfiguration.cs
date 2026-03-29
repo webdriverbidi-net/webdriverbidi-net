@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Session;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Object representing a system proxy to be used by the browser.
 /// </summary>
@@ -13,6 +15,7 @@ public class SystemProxyConfiguration : ProxyConfiguration
     /// <summary>
     /// Initializes a new instance of the <see cref="SystemProxyConfiguration"/> class.
     /// </summary>
+    [JsonConstructor]
     public SystemProxyConfiguration()
         : base(ProxyType.System)
     {

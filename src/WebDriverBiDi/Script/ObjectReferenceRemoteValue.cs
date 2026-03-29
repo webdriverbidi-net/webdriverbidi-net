@@ -6,22 +6,20 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents a remote value for a null value from the remote end, providing
 /// the ability to convert to a local value for use as an argument for script
 /// execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record ObjectReferenceRemoteValue : RemoteValue, IObjectReferenceRemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ObjectReferenceRemoteValue"/> class.
     /// </summary>
-    /// <param name="type">The type of the remote value.</param>
-    internal ObjectReferenceRemoteValue(RemoteValueType type)
-        : base(type)
+    [JsonConstructor]
+    internal ObjectReferenceRemoteValue()
+        : base()
     {
     }
 
@@ -29,12 +27,16 @@ public record ObjectReferenceRemoteValue : RemoteValue, IObjectReferenceRemoteVa
     /// Gets the handle of this RemoteValue.
     /// </summary>
     [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
     [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>
@@ -43,34 +45,15 @@ public record ObjectReferenceRemoteValue : RemoteValue, IObjectReferenceRemoteVa
     /// <returns>A LocalValue representing the null value.</returns>
     public override LocalValue ToLocalValue()
     {
-        return this.ToRemoteReference();
+        return this.ToRemoteObjectReference();
     }
 
     /// <summary>
-    /// Converts this RemoteValue into a RemoteReference.
+    /// Converts this RemoteValue into a RemoteObjectReference.
     /// </summary>
-    /// <returns>The RemoteReference object representing this RemoteValue.</returns>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown when the RemoteValue meets one of the following conditions:
-    /// <list type="bulleted">
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue is a primitive value (string, number, boolean, bigint, null, or undefined)
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue has a type of "node", but there is no shared ID set
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue does not have a handle set
-    ///     </description>
-    ///   </item>
-    /// </list>
-    /// </exception>
-    public virtual RemoteReference ToRemoteReference()
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the RemoteValue does not have a handle set.</exception>
+    public virtual RemoteObjectReference ToRemoteObjectReference()
     {
         if (this.Handle is null)
         {

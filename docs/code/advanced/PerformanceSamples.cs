@@ -196,7 +196,7 @@ public class PerformanceSamples
             RemoteValueDictionary data = remoteValue.Value;
             string actualTitle = data["title"].ConvertTo<StringRemoteValue>().Value;
             string actualUrl = data["url"].ConvertTo<StringRemoteValue>().Value;
-            long actualLinkCount = data["linkCount"].ConvertTo<LongRemoteValue>().Value;
+            long actualLinkCount = data["linkCount"].ConvertTo<NumberRemoteValue>();
         }
         #endregion
     }

@@ -15,6 +15,7 @@ public class ManualProxyConfiguration : ProxyConfiguration
     /// <summary>
     /// Initializes a new instance of the <see cref="ManualProxyConfiguration"/> class.
     /// </summary>
+    [JsonConstructor]
     public ManualProxyConfiguration()
         : base(ProxyType.Manual)
     {

@@ -14,33 +14,62 @@ using WebDriverBiDi.JsonConverters;
 /// to convert to a local value for use as an argument for script execution on the
 /// remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record RegExpRemoteValue : ValueHoldingRemoteValue<RegularExpressionValue>, IObjectReferenceRemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="RegExpRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The regular expression value.</param>
-    internal RegExpRemoteValue(RegularExpressionValue value)
+    [JsonConstructor]
+    internal RegExpRemoteValue()
         : base(RemoteValueType.RegExp)
     {
-        this.Value = value;
     }
 
     /// <summary>
-    /// Gets or setsthe regular expression value of this remote value.
+    /// Gets the regular expression value of this remote value.
     /// </summary>
-    public override RegularExpressionValue Value { get; protected set; }
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    [JsonRequired]
+    public override RegularExpressionValue Value { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
+
+    /// <summary>
+    /// Defines an implicit conversion from a RegExpRemoteValue to a RegularExpressionValue, allowing
+    /// for easy access to the regular expression value of this remote value.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    public static implicit operator RegularExpressionValue(RegExpRemoteValue value) => value.Value;
+
+    /// <summary>
+    /// Converts this RemoteValue into a RemoteObjectReference.
+    /// </summary>
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the RemoteValue does not have a handle set.</exception>
+    public RemoteObjectReference ToRemoteObjectReference()
+    {
+        if (this.Handle is null)
+        {
+            throw new WebDriverBiDiException("RegExp remote values must have a valid handle to be used as remote references");
+        }
+
+        return new RemoteObjectReference(this.Handle);
+    }
 
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.

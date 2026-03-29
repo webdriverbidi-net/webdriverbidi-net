@@ -488,6 +488,6 @@ public class CookieTests
                         "size": 100
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
     }
 }

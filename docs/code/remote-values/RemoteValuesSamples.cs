@@ -34,7 +34,7 @@ public static class RemoteValuesSamples
             RemoteValue remoteValue = success.Result;
 
             // Convert to long
-            long number = remoteValue.ConvertTo<LongRemoteValue>().Value;
+            long number = remoteValue.ConvertTo<NumberRemoteValue>();
             Console.WriteLine(number); // 42
 
             // Can also convert to double
@@ -132,7 +132,7 @@ public static class RemoteValuesSamples
             RemoteValueDictionary dict = obj.Value;
 
             Console.WriteLine(dict["name"].ConvertTo<StringRemoteValue>().Value);   // "John"
-            Console.WriteLine(dict["age"].ConvertTo<LongRemoteValue>().Value);    // 30
+            Console.WriteLine(dict["age"].ConvertTo<NumberRemoteValue>().Value);    // 30
             Console.WriteLine(dict["active"].ConvertTo<BooleanRemoteValue>().Value); // True
         }
         #endregion
@@ -195,7 +195,7 @@ public static class RemoteValuesSamples
 
             foreach (RemoteValue item in list)
             {
-                Console.WriteLine(item.ConvertTo<LongRemoteValue>().Value);
+                Console.WriteLine(item.ConvertTo<NumberRemoteValue>().Value);
             }
         }
         #endregion
@@ -228,7 +228,7 @@ public static class RemoteValuesSamples
             foreach (RemoteValue item in list)
             {
                 RemoteValueDictionary person = item.ConvertTo<KeyValuePairCollectionRemoteValue>().Value;
-                Console.WriteLine($"{person["name"].ConvertTo<StringRemoteValue>().Value}, age {person["age"].ConvertTo<LongRemoteValue>().Value}");
+                Console.WriteLine($"{person["name"].ConvertTo<StringRemoteValue>().Value}, age {person["age"].ConvertTo<NumberRemoteValue>().Value}");
             }
         }
         #endregion
@@ -243,7 +243,7 @@ public static class RemoteValuesSamples
         return value.Type switch
         {
             RemoteValueType.String => value.ConvertTo<StringRemoteValue>().Value,
-            RemoteValueType.Number => value is LongRemoteValue l ? l.Value : value.ConvertTo<DoubleRemoteValue>().Value,
+            RemoteValueType.Number => value.ConvertTo<NumberRemoteValue>().Value,
             RemoteValueType.Boolean => value.ConvertTo<BooleanRemoteValue>().Value,
             RemoteValueType.Null or RemoteValueType.Undefined => null,
             RemoteValueType.Object or RemoteValueType.Map => value.ConvertTo<KeyValuePairCollectionRemoteValue>().Value
@@ -458,15 +458,7 @@ public static class RemoteValuesSamples
                 break;
 
             case RemoteValueType.Number:
-                // Try long first, then double
-                if (value is LongRemoteValue l)
-                {
-                    long longNum = l.Value;
-                }
-                else
-                {
-                    double doubleNum = value.ConvertTo<DoubleRemoteValue>().Value;
-                }
+                double num = value.ConvertTo<NumberRemoteValue>().Value;
                 break;
 
             case RemoteValueType.Boolean:
@@ -541,7 +533,7 @@ public static class RemoteValuesSamples
 
             string title = data["title"].ConvertTo<StringRemoteValue>().Value;
             string url = data["url"].ConvertTo<StringRemoteValue>().Value;
-            long linkCount = data["linkCount"].ConvertTo<LongRemoteValue>().Value;
+            long linkCount = data["linkCount"].ConvertTo<NumberRemoteValue>();
             bool ready = data["ready"].ConvertTo<BooleanRemoteValue>().Value;
         }
         #endregion

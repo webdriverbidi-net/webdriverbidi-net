@@ -13,41 +13,57 @@ using WebDriverBiDi.JsonConverters;
 /// value and the ability to convert to a local value for use as an argument for
 /// script execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
-public record CollectionRemoteValue : ValueHoldingRemoteValue<RemoteValueList>, IObjectReferenceRemoteValue
+public record CollectionRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeSafeRemoteValue<RemoteValueList?>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="CollectionRemoteValue"/> class.
     /// </summary>
-    /// <param name="type">The type of the list-like object from the remote end.</param>
-    /// <param name="value">The RemoteValueList value holding the values of the list.</param>
-    internal CollectionRemoteValue(RemoteValueType type, RemoteValueList value)
-        : base(type)
+    [JsonConstructor]
+    internal CollectionRemoteValue()
     {
-        this.Value = value;
+        this.Type = RemoteValueType.Array;
     }
 
     /// <summary>
-    /// Gets or sets the RemoteValueList containing the values of this remote value.
+    /// Gets the RemoteValueList containing the values of this remote value.
     /// </summary>
-    public override RemoteValueList Value { get; protected set; }
+    /// <remarks>
+    /// This value may be null if the remote value was deserialized without a value property.
+    /// </remarks>
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(RemoteValueListJsonConverter))]
+    public RemoteValueList? Value { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
     /// </summary>
     /// <returns>A LocalValue representing the list-like value.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the Value property is null.</exception>
     public override LocalValue ToLocalValue()
     {
+        if (this.Value is null)
+        {
+            throw new WebDriverBiDiException("Cannot convert CollectionRemoteValue to LocalValue when Value is null");
+        }
+
         RemoteValueList originalList = this.Value;
         List<LocalValue> localValues = new();
         foreach (RemoteValue item in originalList)
@@ -60,7 +76,22 @@ public record CollectionRemoteValue : ValueHoldingRemoteValue<RemoteValueList>, 
             return LocalValue.Set(localValues);
         }
 
-        // If type is "array", "htmlcolletion", or "nodelist", create an array local value.
+        // If type is "array", "htmlcollection", or "nodelist", create an array local value.
         return LocalValue.Array(localValues);
+    }
+
+    /// <summary>
+    /// Converts this RemoteValue into a RemoteReference.
+    /// </summary>
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when the RemoteValue does not have a handle set.</exception>
+    public RemoteObjectReference ToRemoteObjectReference()
+    {
+        if (this.Handle is null)
+        {
+            throw new WebDriverBiDiException("Collection remote values must have a valid handle to be used as remote references");
+        }
+
+        return new RemoteObjectReference(this.Handle);
     }
 }

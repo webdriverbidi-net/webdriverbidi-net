@@ -12,23 +12,40 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Object representing a remote value in the browser.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
+[JsonConverter(typeof(DiscriminatedUnionJsonConverter<RemoteValue>))]
+[DiscriminatedTypeProperty("type", UnmatchedValueType = typeof(ObjectReferenceRemoteValue))]
+[DiscriminatedDerivedType(typeof(NullRemoteValue), "null")]
+[DiscriminatedDerivedType(typeof(UndefinedRemoteValue), "undefined")]
+[DiscriminatedDerivedType(typeof(StringRemoteValue), "string")]
+[DiscriminatedDerivedType(typeof(NumberRemoteValue), "number")]
+[DiscriminatedDerivedType(typeof(BooleanRemoteValue), "boolean")]
+[DiscriminatedDerivedType(typeof(BigIntegerRemoteValue), "bigint")]
+[DiscriminatedDerivedType(typeof(DateRemoteValue), "date")]
+[DiscriminatedDerivedType(typeof(RegExpRemoteValue), "regexp")]
+[DiscriminatedDerivedType(typeof(NodeRemoteValue), "node")]
+[DiscriminatedDerivedType(typeof(WindowProxyRemoteValue), "window")]
+[DiscriminatedDerivedType(typeof(CollectionRemoteValue), "array")]
+[DiscriminatedDerivedType(typeof(CollectionRemoteValue), "set")]
+[DiscriminatedDerivedType(typeof(CollectionRemoteValue), "nodelist")]
+[DiscriminatedDerivedType(typeof(CollectionRemoteValue), "htmlcollection")]
+[DiscriminatedDerivedType(typeof(KeyValuePairCollectionRemoteValue), "object")]
+[DiscriminatedDerivedType(typeof(KeyValuePairCollectionRemoteValue), "map")]
 public abstract record RemoteValue
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteValue"/> class.
     /// </summary>
-    /// <param name="valueType">The string describing the type of this RemoteValue.</param>
     [JsonConstructor]
-    internal RemoteValue(RemoteValueType valueType)
+    internal RemoteValue()
     {
-        this.Type = valueType;
     }
 
     /// <summary>
     /// Gets the type of this RemoteValue.
     /// </summary>
     [JsonPropertyName("type")]
+    [JsonInclude]
+    [JsonConverter(typeof(EnumValueJsonConverter<RemoteValueType>))]
     public virtual RemoteValueType Type { get; internal set; }
 
     /// <summary>

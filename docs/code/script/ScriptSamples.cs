@@ -100,9 +100,9 @@ public class ScriptSamples
         EvaluateResult result = await driver.Script.CallFunctionAsync(parameters);
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is LongRemoteValue sumValue)
+            success.Result is NumberRemoteValue sumValue)
         {
-            long sum = sumValue.Value;
+            long sum = sumValue;
             Console.WriteLine($"Sum: {sum}");  // 15
         }
         #endregion
@@ -434,7 +434,7 @@ public class ScriptSamples
                     string str = value.ConvertTo<StringRemoteValue>().Value;
                     break;
                 case RemoteValueType.Number:
-                    long num = value.ConvertTo<LongRemoteValue>().Value;
+                    long num = value.ConvertTo<NumberRemoteValue>();
                     break;
                 case RemoteValueType.Boolean:
                     bool flag = value.ConvertTo<BooleanRemoteValue>().Value;
@@ -476,7 +476,7 @@ public class ScriptSamples
             // Access as RemoteValueDictionary
             RemoteValueDictionary dict = obj.Value;
             Console.WriteLine($"Name: {dict["name"].ConvertTo<StringRemoteValue>().Value}");
-            Console.WriteLine($"Age: {dict["age"].ConvertTo<LongRemoteValue>().Value}");
+            Console.WriteLine($"Age: {dict["age"].ConvertTo<NumberRemoteValue>().Value}");
         }
         #endregion
     }
@@ -506,7 +506,7 @@ public class ScriptSamples
             Console.WriteLine($"Array length: {list.Count}");
             foreach (RemoteValue item in list)
             {
-                Console.WriteLine($"  Item: {item.ConvertTo<LongRemoteValue>().Value}");
+                Console.WriteLine($"  Item: {item.ConvertTo<NumberRemoteValue>().Value}");
             }
         }
         #endregion

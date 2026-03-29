@@ -13,21 +13,24 @@ using WebDriverBiDi.JsonConverters;
 /// It also provides the ability to convert to a local value for use as an argument for
 /// script execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record WindowProxyRemoteValue : ObjectReferenceRemoteValue, ITypeSafeRemoteValue<WindowProxyProperties>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="WindowProxyRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The properties of the proxy object representing the window.</param>
-    internal WindowProxyRemoteValue(WindowProxyProperties value)
-        : base(RemoteValueType.Window)
+    [JsonConstructor]
+    internal WindowProxyRemoteValue()
+        : base()
     {
-        this.Value = value;
+        this.Type = RemoteValueType.Window;
+        this.Value = default;
     }
 
     /// <summary>
     /// Gets the properties of the proxy object representing the window.
     /// </summary>
-    public WindowProxyProperties Value { get; private set; }
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    [JsonRequired]
+    public WindowProxyProperties Value { get; internal set; }
 }

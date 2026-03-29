@@ -390,7 +390,7 @@ public class BiDiDriverTests
             Assert.That(errorInfo.Exception, Is.TypeOf<InvalidOperationException>());
             Assert.That(errorInfo.ObservableEventName, Is.EqualTo("browsingContext.contextCreated"));
             Assert.That(errorInfo.ObserverDescription, Is.EqualTo("Test observer"));
-        };
+        }
     }
 
     [Test]

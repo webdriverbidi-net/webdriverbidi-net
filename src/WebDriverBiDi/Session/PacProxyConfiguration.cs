@@ -16,6 +16,7 @@ public class PacProxyConfiguration : ProxyConfiguration
     /// Initializes a new instance of the <see cref="PacProxyConfiguration"/> class.
     /// </summary>
     /// <param name="proxyAutoConfigUrl">The URL to the proxy autoconfig file.</param>
+    [JsonConstructor]
     public PacProxyConfiguration(string proxyAutoConfigUrl)
         : base(ProxyType.ProxyAutoConfig)
     {

@@ -77,7 +77,7 @@ public class SentinelNullJsonConverterTests
     public void TestCannotDeserialize()
     {
         string json = """{ "double": 3 }""";
-        Assert.That(() => JsonSerializer.Deserialize<TestClass>(json), Throws.InstanceOf<NotImplementedException>());
+        Assert.That(() => JsonSerializer.Deserialize<TestClass>(json), Throws.InstanceOf<NotSupportedException>());
     }
 
     private class TestClass

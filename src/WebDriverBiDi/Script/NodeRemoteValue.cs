@@ -6,46 +6,77 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents a remote value for a DOM node, providing type-safe access to the
 /// NodeProperties value and the ability to convert to a local value for use as
 /// an argument for script execution on the remote end..
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
-public record NodeRemoteValue : ValueHoldingRemoteValue<NodeProperties>, IObjectReferenceRemoteValue
+public record NodeRemoteValue : RemoteValue, IObjectReferenceRemoteValue, ITypeSafeRemoteValue<NodeProperties?>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="NodeRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The NodeProperties value for the remote node.</param>
     [JsonConstructor]
-    internal NodeRemoteValue(NodeProperties value)
-        : base(RemoteValueType.Node)
+    internal NodeRemoteValue()
     {
-        this.Value = value;
+        this.Type = RemoteValueType.Node;
     }
 
     /// <summary>
-    /// Gets or setsthe NodeProperties value of this remote value.
+    /// Gets the NodeProperties value of this remote value.
     /// </summary>
-    public override NodeProperties Value { get; protected set; }
+    /// <remarks>
+    /// This value may be null if the remote value was deserialized without a value property.
+    /// </remarks>
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NodeProperties? Value { get; internal set; }
 
     /// <summary>
     /// Gets the handle of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("handle")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Handle { get; internal set; }
 
     /// <summary>
     /// Gets the internal ID of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("internalId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? InternalId { get; internal set; }
 
     /// <summary>
     /// Gets the shared ID of this RemoteValue.
     /// </summary>
+    [JsonPropertyName("sharedId")]
+    [JsonInclude]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? SharedId { get; internal set; }
+
+    /// <summary>
+    /// Gets the properties of the node represented by the Value property.
+    /// </summary>
+    /// <returns>The NodeProperties object representing the node.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown if the node properties are not returned from the remote end.</exception>
+    /// <remarks>
+    /// The Value property may be null if the remote value was deserialized without a value
+    /// property. This method provides a way to avoid having to check for null when using
+    /// the Value property.
+    /// </remarks>
+    public NodeProperties GetNodeProperties()
+    {
+        if (this.Value is null)
+        {
+            throw new WebDriverBiDiException("Node remote value does not have a value property set.");
+        }
+
+        return this.Value;
+    }
 
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
@@ -57,32 +88,18 @@ public record NodeRemoteValue : ValueHoldingRemoteValue<NodeProperties>, IObject
     }
 
     /// <summary>
-    /// Converts this RemoteValue into a RemoteReference.
+    /// Converts this RemoteValue into a RemoteObjectReference.
     /// </summary>
-    /// <returns>The RemoteReference object representing this RemoteValue.</returns>
-    /// <exception cref="WebDriverBiDiException">
-    /// Thrown when the RemoteValue meets one of the following conditions:
-    /// <list type="bulleted">
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue is a primitive value (string, number, boolean, bigint, null, or undefined)
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue has a type of "node", but there is no shared ID set
-    ///     </description>
-    ///   </item>
-    ///   <item>
-    ///     <description>
-    ///       The RemoteValue does not have a handle set
-    ///     </description>
-    ///   </item>
-    /// </list>
-    /// </exception>
-    public RemoteReference ToRemoteReference()
+    /// <returns>The RemoteObjectReference object representing this RemoteValue.</returns>
+    /// <exception cref="WebDriverBiDiException">Thrown when there is no shared ID set.</exception>
+    public RemoteObjectReference ToRemoteObjectReference()
     {
-        return this.ToSharedReference();
+        if (this.Handle is null)
+        {
+            throw new WebDriverBiDiException("Node remote values must have a valid handle to be used as remote references");
+        }
+
+        return new(this.Handle) { SharedId = this.SharedId };
     }
 
     /// <summary>

@@ -57,7 +57,7 @@ public static class DemoScenarios
             if (scriptResultValue is NodeRemoteValue nodeRemoteValue)
             {
                 Console.WriteLine($"Script returned element with ID {nodeRemoteValue.SharedId}");
-                NodeProperties nodeProperties = nodeRemoteValue.Value;
+                NodeProperties nodeProperties = nodeRemoteValue.GetNodeProperties();
                 Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
                 SharedReference elementReference = nodeRemoteValue.ToSharedReference();
 
@@ -293,7 +293,7 @@ public static class DemoScenarios
         {
             Console.WriteLine($"Script result type: {scriptSuccessResultNumber.Result.Type}");
             RemoteValue scriptResultValue = scriptSuccessResultNumber.Result;
-            Console.WriteLine($"Return value of function is {scriptResultValue.ConvertTo<LongRemoteValue>().Value}");
+            Console.WriteLine($"Return value of function is {scriptResultValue.ConvertTo<NumberRemoteValue>().Value}");
         }
 
         arguments =
@@ -754,7 +754,7 @@ public static class DemoScenarios
             if (scriptResultValue is NodeRemoteValue nodeValue)
             {
                 Console.WriteLine($"Script returned element with ID {nodeValue.SharedId}");
-                NodeProperties nodeProperties = nodeValue.Value;
+                NodeProperties nodeProperties = nodeValue.GetNodeProperties();
                 Console.WriteLine($"Found element on page with local name '{nodeProperties.LocalName}'");
                 SharedReference elementReference = nodeValue.ToSharedReference();
 
@@ -1027,7 +1027,7 @@ public static class DemoScenarios
         Console.WriteLine($"Found {locateValues.Count} custom-button elements");
         foreach (RemoteValue locateValue in locateValues)
         {
-            NodeProperties properties = locateValue.ConvertTo<NodeRemoteValue>().Value;
+            NodeProperties properties = locateValue.ConvertTo<NodeRemoteValue>().GetNodeProperties();
             Console.WriteLine($"Custom button element (local name {properties.LocalName}, id {properties.Attributes?["id"]})");
             if (properties.ShadowRoot is not null)
             {
@@ -1042,7 +1042,7 @@ public static class DemoScenarios
                 Console.WriteLine($"Found {locateShadowValues.Count} button elements in web component");
                 foreach (RemoteValue locateShadowValue in locateShadowValues)
                 {
-                    NodeProperties shadowProperties = locateShadowValue.ConvertTo<NodeRemoteValue>().Value;
+                    NodeProperties shadowProperties = locateShadowValue.ConvertTo<NodeRemoteValue>().GetNodeProperties();
                     if (shadowProperties.LocalName?.ToLower() != "script" && shadowProperties.LocalName?.ToLower() != "style")
                     {
                         Console.WriteLine($"Found button (local name {shadowProperties.LocalName}, id {shadowProperties.Attributes?["id"]} in web component)");

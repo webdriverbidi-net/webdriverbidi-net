@@ -559,10 +559,10 @@ public static class CoreConceptsSamples
             new EvaluateCommandParameters("42", new ContextTarget(contextId), true));
 
         if (result is EvaluateResultSuccess success &&
-            success.Result is LongRemoteValue remoteValue)
+            success.Result is NumberRemoteValue remoteValue)
         {
             // Convert to appropriate .NET type
-            long number = remoteValue.Value; // JavaScript number -> long
+            long number = remoteValue; // JavaScript number -> long
 
             // Check the type
             Console.WriteLine($"Type: {remoteValue.Type}"); // "number"
@@ -592,7 +592,7 @@ public static class CoreConceptsSamples
             success.Result is NodeRemoteValue element)
         {
             // Get node properties
-            NodeProperties nodeProps = element.Value;
+            NodeProperties nodeProps = element.GetNodeProperties();
             Console.WriteLine($"Tag: {nodeProps.LocalName}");
 
             // Create a reference to use in other commands

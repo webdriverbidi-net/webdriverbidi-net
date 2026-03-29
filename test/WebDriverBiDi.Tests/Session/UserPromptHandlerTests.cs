@@ -369,6 +369,6 @@ public class UserPromptHandlerTests
                         "default": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<UserPromptHandler>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<UserPromptHandler>(json), Throws.InstanceOf<JsonException>());
     }
 }

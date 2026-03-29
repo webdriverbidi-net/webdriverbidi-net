@@ -149,7 +149,7 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -161,7 +161,7 @@ public class BytesValueTests
                         "value": "this is my string"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<BytesValue>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]

@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Script;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Object representing a service worker realm for executing script.
 /// </summary>
@@ -13,6 +15,7 @@ public record ServiceWorkerRealmInfo : RealmInfo
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceWorkerRealmInfo"/> class.
     /// </summary>
+    [JsonConstructor]
     internal ServiceWorkerRealmInfo()
         : base()
     {

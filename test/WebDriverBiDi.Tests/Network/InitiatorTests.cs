@@ -79,6 +79,6 @@ public class InitiatorTests
                         "type": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<Initiator>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<Initiator>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value 'invalid' is not valid for enum type"));
     }
 }

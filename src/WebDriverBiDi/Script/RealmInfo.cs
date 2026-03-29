@@ -11,7 +11,16 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Object containing information about a script realm.
 /// </summary>
-[JsonConverter(typeof(RealmInfoJsonConverter))]
+[JsonConverter(typeof(DiscriminatedUnionJsonConverter<RealmInfo>))]
+[DiscriminatedTypeProperty("type")]
+[DiscriminatedDerivedType(typeof(WindowRealmInfo), "window")]
+[DiscriminatedDerivedType(typeof(DedicatedWorkerRealmInfo), "dedicated-worker")]
+[DiscriminatedDerivedType(typeof(SharedWorkerRealmInfo), "shared-worker")]
+[DiscriminatedDerivedType(typeof(ServiceWorkerRealmInfo), "service-worker")]
+[DiscriminatedDerivedType(typeof(WorkerRealmInfo), "worker")]
+[DiscriminatedDerivedType(typeof(PaintWorkletRealmInfo), "paint-worklet")]
+[DiscriminatedDerivedType(typeof(AudioWorkletRealmInfo), "audio-worklet")]
+[DiscriminatedDerivedType(typeof(WorkletRealmInfo), "worklet")]
 public record RealmInfo
 {
     /// <summary>

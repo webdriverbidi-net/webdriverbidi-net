@@ -173,7 +173,7 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "status": {}
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 
     [Test]
@@ -186,6 +186,6 @@ public class PrefetchStatusUpdatedEventArgsTests
                         "status": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<WebDriverBiDiException>());
+        Assert.That(() => JsonSerializer.Deserialize<PrefetchStatusUpdatedEventArgs>(json), Throws.InstanceOf<JsonException>());
     }
 }

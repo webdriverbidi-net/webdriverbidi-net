@@ -6,30 +6,37 @@
 namespace WebDriverBiDi.Script;
 
 using System.Text.Json.Serialization;
-using WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Represents a remote value for a string from the remote end, providing type-safe
 /// access to the string value and the ability to convert to a local value for use
 /// as an argument for script execution on the remote end.
 /// </summary>
-[JsonConverter(typeof(RemoteValueJsonConverter))]
 public record StringRemoteValue : ValueHoldingRemoteValue<string>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="StringRemoteValue"/> class.
     /// </summary>
-    /// <param name="value">The string value.</param>
-    internal StringRemoteValue(string value)
+    [JsonConstructor]
+    internal StringRemoteValue()
         : base(RemoteValueType.String)
     {
-        this.Value = value;
     }
 
     /// <summary>
-    /// Gets or setsthe string value of this remote value.
+    /// Gets the string value of this remote value.
     /// </summary>
-    public override string Value { get; protected set; }
+    [JsonPropertyName("value")]
+    [JsonInclude]
+    [JsonRequired]
+    public override string Value { get; internal set; } = string.Empty;
+
+    /// <summary>
+    /// Defines an implicit conversion from a StringRemoteValue to a string, allowing
+    /// for easy access to the string value of this remote value.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    public static implicit operator string(StringRemoteValue value) => value.Value;
 
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.

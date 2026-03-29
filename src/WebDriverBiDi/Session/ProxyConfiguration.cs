@@ -11,7 +11,13 @@ using WebDriverBiDi.JsonConverters;
 /// <summary>
 /// Object representing a proxy to be used by the browser.
 /// </summary>
-[JsonConverter(typeof(ProxyConfigurationJsonConverter))]
+[JsonConverter(typeof(DiscriminatedUnionJsonConverter<ProxyConfiguration>))]
+[DiscriminatedTypeProperty("proxyType", PropertyMissingBehavior = DiscriminatorPropertyMissingValueBehavior.ReturnNull)]
+[DiscriminatedDerivedType(typeof(DirectProxyConfiguration), "direct")]
+[DiscriminatedDerivedType(typeof(AutoDetectProxyConfiguration), "autodetect")]
+[DiscriminatedDerivedType(typeof(ManualProxyConfiguration), "manual")]
+[DiscriminatedDerivedType(typeof(PacProxyConfiguration), "pac")]
+[DiscriminatedDerivedType(typeof(SystemProxyConfiguration), "system")]
 public class ProxyConfiguration
 {
     /// <summary>
@@ -36,5 +42,5 @@ public class ProxyConfiguration
     /// </summary>
     [JsonExtensionData]
     [JsonInclude]
-    public Dictionary<string, object?> AdditionalData { get; } = [];
+    public Dictionary<string, object?> AdditionalData { get; internal set; } = [];
 }

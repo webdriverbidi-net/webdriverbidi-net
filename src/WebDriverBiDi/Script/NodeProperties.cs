@@ -10,7 +10,7 @@ using System.Text.Json.Serialization;
 /// <summary>
 /// Object containing information about a Node object.
 /// </summary>
-public record struct NodeProperties
+public record NodeProperties
 {
     /// <summary>
     /// Gets the type of node.

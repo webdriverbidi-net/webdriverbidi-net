@@ -126,7 +126,7 @@ public class EvaluateResultTests
                        "noWoman": "noCry"
                      }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("unknown type 'invalid' for script result"));
+        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'EvaluateResult' type property contains unknown value 'invalid'"));
     }
 
     [Test]
@@ -138,7 +138,7 @@ public class EvaluateResultTests
                        "noWoman": "noCry"
                      }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("Script response must contain a 'type' property"));
+        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'EvaluateResult' must contain a 'type' property"));
     }
 
     [Test]
@@ -153,7 +153,7 @@ public class EvaluateResultTests
                        "noWoman": "noCry"
                      }
                      """;
-        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("Script response 'type' property must be a string"));
+        Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON 'type' property must be a string"));
     }
 
     [Test]
@@ -194,24 +194,5 @@ public class EvaluateResultTests
     {
         string json = @"[ ""invalid script result"" ]";
         Assert.That(() => JsonSerializer.Deserialize<EvaluateResult>(json), Throws.InstanceOf<JsonException>());
-    }
-
-    [Test]
-    public void TestCannotSerialize()
-    {
-        // NOTE: ScriptEvaluateResult and subclasses do not provide a way to instantiate
-        // one directly using a constructor, so we will deserialize one from JSON.
-        string json = """
-                      {
-                        "type": "success",
-                        "realm": "myRealm",
-                        "result": {
-                          "type": "string",
-                          "value": "myResult"
-                        }
-                      }
-                      """;
-        EvaluateResult? result = JsonSerializer.Deserialize<EvaluateResult>(json);
-        Assert.That(() => JsonSerializer.Serialize(result), Throws.InstanceOf<NotImplementedException>());
     }
 }

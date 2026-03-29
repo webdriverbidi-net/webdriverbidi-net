@@ -34,12 +34,12 @@ public abstract record ValueHoldingRemoteValue<T> : ValueHoldingRemoteValue, ITy
     public override object ValueObject { get => this.Value; }
 
     /// <summary>
-    /// Gets or sets the value of this remote value converted to the native .NET type.
+    /// Gets the value of this remote value converted to the native .NET type.
     /// </summary>
     /// <remarks>
     /// This value is guaranteed to be non-null, even if the type T allows null
     /// values.
     /// </remarks>
     [NotNull]
-    public abstract T Value { get; protected set; }
+    public abstract T Value { get; internal set; }
 }

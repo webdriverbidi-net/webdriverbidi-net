@@ -1,4 +1,4 @@
-// <copyright file="SentinelNullJsonConverter.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="SentinelNullJsonConverter{T,TSentinelChecker}.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -36,16 +36,17 @@ public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
     }
 
     /// <summary>
-    /// Deserializes the JSON string to an object value.
+    /// Not implemented. This converter is write-only; it is applied to outbound command
+    /// parameter properties and is never used to deserialize incoming JSON.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>
     /// <param name="options">The JsonSerializationOptions used for deserializing the JSON.</param>
-    /// <returns>This method always throws; it does not return a value.</returns>
-    /// <exception cref="NotImplementedException">Always thrown, as this converter does not support deserialization.</exception>
+    /// <returns>Never returns; always throws.</returns>
+    /// <exception cref="NotSupportedException">Always thrown.</exception>
     public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException("SentinelNullJsonConverter does not support deserialization; it is applied only to outbound command parameter properties.");
     }
 
     /// <summary>
@@ -58,14 +59,14 @@ public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
     {
         if (value is not null)
         {
-            string json = "null";
-            if (!this.sentinelChecker.IsSentinelValue(value))
+            if (this.sentinelChecker.IsSentinelValue(value))
             {
-                json = JsonSerializer.Serialize(value, value.GetType(), options);
+                writer.WriteNullValue();
             }
-
-            writer.WriteRawValue(json);
-            writer.Flush();
+            else
+            {
+                JsonSerializer.Serialize(writer, value, value.GetType(), options);
+            }
         }
     }
 }

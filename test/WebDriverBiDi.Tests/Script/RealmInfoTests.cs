@@ -67,6 +67,24 @@ public class RealmInfoTests
     }
 
     [Test]
+    public void TestWorkletRealmInfoCopySemantics()
+    {
+        string json = """
+                      {
+                        "realm": "myRealm",
+                        "origin": "myOrigin",
+                        "type": "worklet"
+                      }
+                      """;
+        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
+        Assert.That(info, Is.Not.Null);
+        Assert.That(info, Is.InstanceOf<WorkletRealmInfo>());
+        WorkletRealmInfo realmInfo = (WorkletRealmInfo)info;
+        WorkletRealmInfo copy = realmInfo with { };
+        Assert.That(copy, Is.EqualTo(info));
+    }
+
+    [Test]
     public void TestCanDeserializeWindowRealmInfo()
     {
         string json = """
@@ -421,7 +439,7 @@ public class RealmInfoTests
                         "type": "worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'realm' property is required"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'realm'"));
     }
 
     [Test]
@@ -429,12 +447,12 @@ public class RealmInfoTests
     {
         string json = """
                       {
-                        "realm": null,
+                        "realm": 123,
                         "origin": "myOrigin",
                         "type": "worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'realm' property must be a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("could not be converted"));
     }
 
     [Test]
@@ -446,7 +464,7 @@ public class RealmInfoTests
                         "type": "worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'origin' property is required"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'origin'"));
     }
 
     [Test]
@@ -455,11 +473,11 @@ public class RealmInfoTests
         string json = """
                       {
                         "realm": "myRealm",
-                        "origin": null,
+                        "origin": 123,
                         "type": "worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'origin' property must be a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("could not be converted"));
     }
 
     [Test]
@@ -471,7 +489,7 @@ public class RealmInfoTests
                         "origin": "myOrigin"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'type' property is required"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'type' property"));
     }
 
     [Test]
@@ -484,7 +502,7 @@ public class RealmInfoTests
                         "type": "invalid"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("'invalid' is not valid for enum type"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("JSON for 'RealmInfo' type property contains unknown value 'invalid'"));
     }
 
     [Test]
@@ -510,7 +528,7 @@ public class RealmInfoTests
                         "type": "window"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'context' property is required"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'context'"));
     }
 
     [Test]
@@ -521,10 +539,10 @@ public class RealmInfoTests
                         "realm": "myRealm",
                         "origin": "myOrigin",
                         "type": "window",
-                        "context": null
+                        "context": 123
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'context' property must be a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
     }
 
     [Test]
@@ -539,7 +557,7 @@ public class RealmInfoTests
                         "sandbox": 2
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'sandbox' property must be a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
     }
 
     [Test]
@@ -554,7 +572,7 @@ public class RealmInfoTests
                         "userContext": 2
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("'userContext' property must be a string"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
     }
 
     [Test]
@@ -567,7 +585,7 @@ public class RealmInfoTests
                         "type": "dedicated-worker"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("DedicatedWorkerRealmInfo 'owners' property is required"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'owners'"));
     }
 
     [Test]
@@ -581,7 +599,7 @@ public class RealmInfoTests
                         "owners": ""
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("DedicatedWorkerRealmInfo 'owners' property must be an array"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
     }
 
     [Test]
@@ -595,21 +613,7 @@ public class RealmInfoTests
                         "owners": [ 123 ]
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("All elements of DedicatedWorkerRealmInfo 'owners' property array must be strings"));
-    }
-
-    [Test]
-    public void TestDeserializingDedicatedWorkerRealmInfoWithInvalidOwnersEntryValueThrows()
-    {
-        string json = """
-                      {
-                        "realm": "myRealm",
-                        "origin": "myOrigin",
-                        "type": "dedicated-worker",
-                        "owners": [ "" ]
-                      }
-                      """;
-        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("All elements of DedicatedWorkerRealmInfo 'owners' property array must be non-null and non-empty strings"));
+        Assert.That(() => JsonSerializer.Deserialize<RealmInfo>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("value could not be converted"));
     }
 
     [Test]
@@ -651,21 +655,5 @@ public class RealmInfoTests
         Assert.That(info, Is.Not.Null);
         Assert.That(info, Is.InstanceOf<ServiceWorkerRealmInfo>());
         Assert.That(() => info.As<SharedWorkerRealmInfo>(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("cannot be cast"));
-    }
-
-    [Test]
-    public void TestCannotSerialize()
-    {
-        // NOTE: RealmInfo does not provide a way to instantiate one directly
-        // using a constructor, so we will deserialize one from JSON.
-        string json = """
-                      {
-                        "realm": "myRealm",
-                        "origin": "myOrigin",
-                        "type": "worker"
-                      }
-                      """;
-        RealmInfo? info = JsonSerializer.Deserialize<RealmInfo>(json);
-        Assert.That(() => JsonSerializer.Serialize(info), Throws.InstanceOf<NotImplementedException>());
     }
 }
