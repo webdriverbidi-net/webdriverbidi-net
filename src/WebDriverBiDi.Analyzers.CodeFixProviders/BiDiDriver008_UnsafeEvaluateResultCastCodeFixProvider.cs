@@ -200,12 +200,12 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
                 castExpression.Type,
                 SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(existingVariableName))));
 
-        // Create the statements for the if block
+        // Create the statements for the if block, preserving their formatting
         List<StatementSyntax> ifBlockStatements = [];
 
         foreach (StatementSyntax stmt in dependentStatements)
         {
-            ifBlockStatements.Add(stmt);
+            ifBlockStatements.Add(stmt.WithoutLeadingTrivia());
         }
 
         // Create the if statement
@@ -213,7 +213,8 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
             isPattern,
             SyntaxFactory.Block(SyntaxFactory.List(ifBlockStatements)))
             .WithLeadingTrivia(declarationStatement.GetLeadingTrivia())
-            .WithTrailingTrivia(dependentStatements.LastOrDefault()?.GetTrailingTrivia() ?? declarationStatement.GetTrailingTrivia());
+            .WithTrailingTrivia(dependentStatements.LastOrDefault()?.GetTrailingTrivia() ?? declarationStatement.GetTrailingTrivia())
+            .WithAdditionalAnnotations(Microsoft.CodeAnalysis.Formatting.Formatter.Annotation);
 
         // Build a new statement list for the containing block
         List<StatementSyntax> newStatements = [];
@@ -243,6 +244,16 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
 
         // Replace the block in the tree
         SyntaxNode newRoot = root.ReplaceNode(containingBlock, newBlock);
+
+        // Apply formatting to normalize whitespace
+        newRoot = Microsoft.CodeAnalysis.Formatting.Formatter.Format(newRoot, document.Project.Solution.Workspace);
+
+        // Normalize line endings to match the original document's line ending style
+        string originalText = root.ToFullString();
+        string lineEnding = originalText.Contains("\r\n") ? "\r\n" : "\n";
+        string newRootText = newRoot.ToFullString();
+        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", lineEnding);
+        newRoot = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(normalizedText).GetRoot();
 
         return document.WithSyntaxRoot(newRoot);
     }
@@ -380,12 +391,12 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
                 (TypeSyntax)asExpression.Right,
                 SyntaxFactory.SingleVariableDesignation(SyntaxFactory.Identifier(existingVariableName))));
 
-        // Create the statements for the if block
+        // Create the statements for the if block, preserving their formatting
         List<StatementSyntax> ifBlockStatements = [];
 
         foreach (StatementSyntax stmt in dependentStatements)
         {
-            ifBlockStatements.Add(stmt);
+            ifBlockStatements.Add(stmt.WithoutLeadingTrivia());
         }
 
         // Create the if statement
@@ -393,7 +404,8 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
             isPattern,
             SyntaxFactory.Block(SyntaxFactory.List(ifBlockStatements)))
             .WithLeadingTrivia(declarationStatement.GetLeadingTrivia())
-            .WithTrailingTrivia(dependentStatements.LastOrDefault()?.GetTrailingTrivia() ?? declarationStatement.GetTrailingTrivia());
+            .WithTrailingTrivia(dependentStatements.LastOrDefault()?.GetTrailingTrivia() ?? declarationStatement.GetTrailingTrivia())
+            .WithAdditionalAnnotations(Microsoft.CodeAnalysis.Formatting.Formatter.Annotation);
 
         // Build a new statement list for the containing block
         List<StatementSyntax> newStatements = [];
@@ -423,6 +435,16 @@ public class BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider : CodeFixProv
 
         // Replace the block in the tree
         SyntaxNode newRoot = root.ReplaceNode(containingBlock, newBlock);
+
+        // Apply formatting to normalize whitespace
+        newRoot = Microsoft.CodeAnalysis.Formatting.Formatter.Format(newRoot, document.Project.Solution.Workspace);
+
+        // Normalize line endings to match the original document's line ending style
+        string originalText = root.ToFullString();
+        string lineEnding = originalText.Contains("\r\n") ? "\r\n" : "\n";
+        string newRootText = newRoot.ToFullString();
+        string normalizedText = newRootText.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", lineEnding);
+        newRoot = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(normalizedText).GetRoot();
 
         return document.WithSyntaxRoot(newRoot);
     }

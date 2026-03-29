@@ -1518,4 +1518,624 @@ public class BiDiDriver007AnalyzerTests
 
         await testState.RunAsync();
     }
+
+    /// <summary>
+    /// Tests SupportedDiagnostics property.
+    /// </summary>
+    [Test]
+    public void SupportedDiagnostics_ContainsBIDI007()
+    {
+        BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer analyzer = new();
+        System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
+
+        Assert.That(diagnostics, Has.Length.EqualTo(1));
+        Assert.That(diagnostics[0].Id, Is.EqualTo(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId));
+    }
+
+    /// <summary>
+    /// Tests GetFixAllProvider property.
+    /// </summary>
+    [Test]
+    public void GetFixAllProvider_ReturnsBatchFixer()
+    {
+        BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider provider = new();
+        Microsoft.CodeAnalysis.CodeFixes.FixAllProvider fixAllProvider = provider.GetFixAllProvider();
+
+        Assert.That(fixAllProvider, Is.Not.Null);
+        Assert.That(fixAllProvider, Is.EqualTo(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer));
+    }
+
+    /// <summary>
+    /// Tests FixableDiagnosticIds property.
+    /// </summary>
+    [Test]
+    public void FixableDiagnosticIds_ContainsBIDI007()
+    {
+        BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider provider = new();
+        System.Collections.Immutable.ImmutableArray<string> ids = provider.FixableDiagnosticIds;
+
+        Assert.That(ids, Has.Length.EqualTo(1));
+        Assert.That(ids[0], Is.EqualTo(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId));
+    }
+
+    /// <summary>
+    /// Tests that AddObserver invoked via delegate is not analyzed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task AddObserver_ViaDelegate_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Func<Func<LogEntryAddedEventArgs, Task>, EventObserver<LogEntryAddedEventArgs>> addObserverFunc = driver.Log.OnEntryAdded.AddObserver;
+                        var observer = addObserverFunc(args =>
+                        {
+                            Thread.Sleep(1000);
+                            return Task.CompletedTask;
+                        });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that AddObserver with unresolved method symbol is not analyzed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task AddObserver_UnresolvedMethod_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    // No AddObserver method defined
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.{|CS1061:AddObserver|}(args =>
+                        {
+                            Thread.Sleep(1000);
+                            return Task.CompletedTask;
+                        });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that AddObserver with no arguments is not analyzed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task AddObserver_NoArguments_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver() => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver();
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that handler with expression body method is analyzed.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task ExpressionBodyMethod_WithBlockingOperation_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public enum ObservableEventHandlerOptions
+                {
+                    None = 0,
+                    RunHandlerAsynchronously = 1
+                }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading;
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private Task HandleLogEntry(LogEntryAddedEventArgs args)
+                    {
+                        {|#0:Thread.Sleep(100)|};
+                        return Task.CompletedTask;
+                    }
+
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(HandleLogEntry);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that local function with blocking operation reports a warning.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task LocalFunction_WithBlockingOperation_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public enum ObservableEventHandlerOptions
+                {
+                    None = 0,
+                    RunHandlerAsynchronously = 1
+                }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading;
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        Task HandleLogEntry(LogEntryAddedEventArgs args)
+                        {
+                            {|#0:Thread.Sleep(100)|};
+                            return Task.CompletedTask;
+                        }
+
+                        var observer = driver.Log.OnEntryAdded.AddObserver(HandleLogEntry);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Sleep()");
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that invocations with unresolved method symbols in handler body are handled gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task HandlerBody_WithUnresolvedMethodInvocation_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public enum ObservableEventHandlerOptions
+                {
+                    None = 0,
+                    RunHandlerAsynchronously = 1
+                }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args =>
+                        {
+                            {|CS0103:NonExistentMethod|}();
+                            return Task.CompletedTask;
+                        });
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that simple lambda expression without block body is handled.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task SimpleLambdaExpression_WithoutBlockBody_NoDiagnostic()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public enum ObservableEventHandlerOptions
+                {
+                    None = 0,
+                    RunHandlerAsynchronously = 1
+                }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that expression with Task.Result in simple expression body is detected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task SimpleLambda_WithExpressionBodyTaskResult_ReportsWarning()
+    {
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public enum ObservableEventHandlerOptions
+                {
+                    None = 0,
+                    RunHandlerAsynchronously = 1
+                }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Threading.Tasks;
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var task = Task.FromResult(42);
+                        var observer = driver.Log.OnEntryAdded.AddObserver(args => Task.FromResult({|#0:task.Result|}));
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("Result");
+
+        CSharpAnalyzerTest<BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
 }
+
+

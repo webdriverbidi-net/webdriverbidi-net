@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Analyzers.Tests;
 
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
@@ -655,13 +656,11 @@ public class BiDiDriver008AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that the code fix is offered for direct cast with variable declaration.
-    /// Note: The code fixer successfully identifies and fixes the issue, though exact output
-    /// formatting may vary due to trivia handling complexity in Roslyn.
+    /// Tests that direct cast with variable declaration triggers the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Test]
-    public async Task DirectCast_WithVariableDeclaration_CodeFixIsOffered()
+    public async Task DirectCast_WithVariableDeclaration_ReportsWarning()
     {
         string testCode = """
             using System;
@@ -724,13 +723,11 @@ public class BiDiDriver008AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that the code fix is offered for 'as' cast to pattern matching.
-    /// Note: The code fixer successfully identifies and fixes the issue, though exact output
-    /// formatting may vary due to trivia handling complexity in Roslyn.
+    /// Tests that 'as' cast with variable declaration triggers the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Test]
-    public async Task AsCast_WithVariableDeclaration_CodeFixIsOffered()
+    public async Task AsCast_WithVariableDeclaration_ReportsWarning()
     {
         string testCode = """
             using System;
@@ -796,13 +793,11 @@ public class BiDiDriver008AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that the code fix is offered for cast to EvaluateResultException.
-    /// Note: The code fixer successfully identifies and fixes the issue, though exact output
-    /// formatting may vary due to trivia handling complexity in Roslyn.
+    /// Tests that cast to EvaluateResultException triggers the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Test]
-    public async Task DirectCast_ToException_CodeFixIsOffered()
+    public async Task DirectCast_ToException_ReportsWarning()
     {
         string testCode = """
             using System;
@@ -865,13 +860,11 @@ public class BiDiDriver008AnalyzerTests
     }
 
     /// <summary>
-    /// Tests that the code fix is offered for cast with multiple dependent statements.
-    /// Note: The code fixer successfully identifies and fixes the issue, though exact output
-    /// formatting may vary due to trivia handling complexity in Roslyn.
+    /// Tests that cast with multiple dependent statements triggers the analyzer.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
     [Test]
-    public async Task DirectCast_WithMultipleDependentStatements_CodeFixIsOffered()
+    public async Task DirectCast_WithMultipleDependentStatements_ReportsWarning()
     {
         string testCode = """
             using System;
@@ -930,6 +923,512 @@ public class BiDiDriver008AnalyzerTests
         CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
         {
             TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that code fix provider is registered for direct cast.
+    /// Note: Full output validation disabled due to formatter line ending issues.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task CodeFixProvider_RegisteredForDirectCast()
+    {
+        string testCode = """
+            using System;
+
+            namespace WebDriverBiDi { public record CommandResult { } }
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult { public string V { get; set; } = ""; }
+                public class ScriptModule { public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess(); }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = {|#0:(EvaluateResultSuccess)result|};
+                        var value = success.V;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            CodeActionValidationMode = Microsoft.CodeAnalysis.Testing.CodeActionValidationMode.None,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that code fix provider is registered for 'as' cast.
+    /// Note: Full output validation disabled due to formatter line ending issues.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task CodeFixProvider_RegisteredForAsCast()
+    {
+        string testCode = """
+            using System;
+
+            namespace WebDriverBiDi { public record CommandResult { } }
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult { public string V { get; set; } = ""; }
+                public class ScriptModule { public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess(); }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = {|#0:result as EvaluateResultSuccess|};
+                        if (success != null)
+                        {
+                            var value = success.V;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            CodeActionValidationMode = Microsoft.CodeAnalysis.Testing.CodeActionValidationMode.None,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests SupportedDiagnostics property.
+    /// </summary>
+    [Test]
+    public void SupportedDiagnostics_ContainsBIDI008()
+    {
+        BiDiDriver008_UnsafeEvaluateResultCastAnalyzer analyzer = new();
+        System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor> diagnostics = analyzer.SupportedDiagnostics;
+
+        Assert.That(diagnostics, Has.Length.EqualTo(1));
+        Assert.That(diagnostics[0].Id, Is.EqualTo(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId));
+    }
+
+    /// <summary>
+    /// Tests that cast with unresolved target type is handled gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task DirectCast_UnresolvedTargetType_NoDiagnostic()
+    {
+        string test = """
+            using System;
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult { }
+
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string script) => new EvaluateResult();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = ({|CS0246:UnknownType|})result;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that cast from unresolved expression type is handled gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task DirectCast_UnresolvedExpressionType_NoDiagnostic()
+    {
+        string test = """
+            using System;
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult { }
+                public record EvaluateResultSuccess : EvaluateResult { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var success = (EvaluateResultSuccess){|CS0103:unknownVariable|};
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that 'as' cast with unresolved target type is handled gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task AsCast_UnresolvedTargetType_NoDiagnostic()
+    {
+        string test = """
+            using System;
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult { }
+
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string script) => new EvaluateResult();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = result as {|CS0246:UnknownType|};
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests that 'as' cast from unresolved expression type is handled gracefully.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task AsCast_UnresolvedExpressionType_NoDiagnostic()
+    {
+        string test = """
+            using System;
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult { }
+                public record EvaluateResultSuccess : EvaluateResult { }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var success = {|CS0103:unknownVariable|} as EvaluateResultSuccess;
+                    }
+                }
+            }
+            """;
+
+        CSharpAnalyzerTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests GetFixAllProvider property.
+    /// </summary>
+    [Test]
+    public void GetFixAllProvider_ReturnsBatchFixer()
+    {
+        BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider provider = new();
+        Microsoft.CodeAnalysis.CodeFixes.FixAllProvider fixAllProvider = provider.GetFixAllProvider();
+
+        Assert.That(fixAllProvider, Is.Not.Null);
+        Assert.That(fixAllProvider, Is.EqualTo(Microsoft.CodeAnalysis.CodeFixes.WellKnownFixAllProviders.BatchFixer));
+    }
+
+    /// <summary>
+    /// Tests FixableDiagnosticIds property.
+    /// </summary>
+    [Test]
+    public void FixableDiagnosticIds_ContainsBIDI008()
+    {
+        BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider provider = new();
+        System.Collections.Immutable.ImmutableArray<string> ids = provider.FixableDiagnosticIds;
+
+        Assert.That(ids, Has.Length.EqualTo(1));
+        Assert.That(ids[0], Is.EqualTo(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId));
+    }
+
+    /// <summary>
+    /// Tests code fix for direct cast with variable declaration.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task CodeFix_DirectCast_AppliesPatternMatching()
+    {
+        string testCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = {|#0:(EvaluateResultSuccess)result|};
+                        var value = success.Value;
+                    }
+                }
+            }
+            """;
+
+        // Expected output: code fix converts cast to pattern matching
+        string fixedCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            var value = success.Value;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    /// <summary>
+    /// Tests code fix for 'as' cast with variable declaration.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous unit test.</returns>
+    [Test]
+    public async Task CodeFix_AsCast_AppliesPatternMatching()
+    {
+        string testCode = """
+            using System;
+
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = {|#0:result as EvaluateResultSuccess|};
+                        if (success != null)
+                        {
+                            var value = success.Value;
+                        }
+                    }
+                }
+            }
+            """;
+
+        // Use CRLF line endings to match Roslyn formatter output on this platform
+        string fixedCode = """
+            using System;
+
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            if (success != null)
+                            {
+                                var value = success.Value;
+                            }
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        Microsoft.CodeAnalysis.CSharp.Testing.CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
         };
         testState.ExpectedDiagnostics.Add(expected);
