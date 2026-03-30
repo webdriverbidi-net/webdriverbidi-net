@@ -18,10 +18,12 @@ BrowserLauncher launcher;
 switch (browser)
 {
     case "firefox":
-        string firefoxPath = await FirefoxNightlyFetcher.GetFirefoxPathAsync();
+        string firefoxPath = await BrowserLocator.Firefox.Nightly.GetBrowserExecutablePathAsync();
         Console.WriteLine($"Firefox path: {firefoxPath}");
-        FirefoxLauncher firefoxLauncher = new(firefoxPath);
-        firefoxLauncher.IsBrowserHeadless = true;
+        FirefoxLauncher firefoxLauncher = new(firefoxPath)
+        {
+            IsBrowserHeadless = true
+        };
         launcher = firefoxLauncher;
         break;
     case "chrome":
@@ -89,9 +91,9 @@ try
     string? title = success.Result.ConvertTo<StringRemoteValue>().Value;
     Console.WriteLine($"Page title: {title}");
 
-    if (title is null || !title.Contains("GitHub", StringComparison.OrdinalIgnoreCase))
+    if (title is null || !title.Contains("WebDriverBiDi.NET", StringComparison.OrdinalIgnoreCase))
     {
-        throw new InvalidOperationException($"Expected page title to contain 'GitHub', but got: '{title}'");
+        throw new InvalidOperationException($"Expected page title to contain 'WebDriverBiDi.NET', but got: '{title}'");
     }
 
     // Call a function with arguments — this exercises the CallFunctionCommandParameters
