@@ -22,7 +22,7 @@ public class AotSmokeTests
     [OneTimeSetUp]
     public async Task PublishAotBinary()
     {
-        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("INTEGRATION")))
+        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI")))
         {
             Assert.Ignore("Skipped outside CI. Set CI=true to run locally.");
         }
