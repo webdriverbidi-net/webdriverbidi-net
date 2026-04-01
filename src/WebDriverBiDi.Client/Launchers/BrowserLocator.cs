@@ -63,6 +63,9 @@ public abstract class BrowserLocator
             return envPath;
         }
 
+        // This is a very naive implementation. It will result in downloading once per day,
+        // without regard to browser binary version. A future implementation should account
+        // for the binary version number.
         string executablePath = this.GetExpectedExecutablePath();
         if (File.Exists(executablePath) && !this.IsCacheStale())
         {
