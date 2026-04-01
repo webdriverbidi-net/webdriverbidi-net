@@ -7,6 +7,7 @@ namespace WebDriverBiDi.Integration;
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using PinchHitter;
 
 [TestFixture]
 [Category("Integration")]
@@ -47,24 +48,29 @@ public class AotSmokeTests
     [Test]
     public async Task AotSmokeTestPassesWithFirefox()
     {
-        await RunSmokeTestAsync("firefox http://github.com");
+        await RunSmokeTestAsync("firefox");
     }
 
     [Test]
     public async Task AotSmokeTestPassesWithChrome()
     {
-        await RunSmokeTestAsync("chrome http://github.com");
+        await RunSmokeTestAsync("chrome");
     }
 
     private static async Task RunSmokeTestAsync(string browserArg)
     {
+        await using Server server = new();
+        server.RegisterHandler("/test", new WebResourceRequestHandler(WebContent.AsHtmlDocument("<h1>Welcome to the WebDriverBiDi.NET project</h1><p>You can browse using localhost</p>", "<title>WebDriverBiDi.NET Testing</title>")));
+        await server.StartAsync();
+        string testUrl = $"{browserArg} http://localhost:{server.Port}/test";
+
         int runExit = await RunProcessAsync(
             executablePath,
-            browserArg,
+            testUrl,
             workingDirectory: publishDir,
             timeoutSeconds: 120);
 
-        Assert.That(runExit, Is.EqualTo(0), $"AotSmokeTest ({browserArg}) exited with non-zero exit code.");
+        Assert.That(runExit, Is.EqualTo(0), $"AotSmokeTest ({testUrl}) exited with non-zero exit code.");
     }
 
     private static async Task<int> RunProcessAsync(string fileName, string arguments, string workingDirectory, int timeoutSeconds)
