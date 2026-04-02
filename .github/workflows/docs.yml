@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Build job
+  # Build job - only builds what's needed for documentation
   build:
     runs-on: ubuntu-latest
     steps:

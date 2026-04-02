@@ -1,0 +1,84 @@
+# Integration tests with browser matrix
+# These tests run separately from CI to test against multiple browsers in parallel
+
+name: Integration Tests
+
+on:
+  # Run on push to main after CI passes
+  push:
+    branches: [ "main" ]
+  # Allow manual trigger with browser selection
+  workflow_dispatch:
+    inputs:
+      browsers:
+        description: 'Browsers to test (comma-separated: firefox-nightly, chrome-canary)'
+        required: false
+        default: 'firefox-nightly,chrome-canary'
+  # Run nightly to catch browser regressions
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC daily
+
+jobs:
+  integration-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # Continue testing other browsers even if one fails
+      matrix:
+        browser:
+          - name: firefox-nightly
+            display: Firefox Nightly
+            browser-type: firefox
+          - name: chrome-canary
+            display: Chrome Canary
+            browser-type: chrome
+
+    name: Integration Tests (${{ matrix.browser.display }})
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+          10.0.x
+
+    - name: Create Local Browser Directory
+      run: mkdir -p $GITHUB_WORKSPACE/browsers
+
+    - name: Install Firefox Nightly
+      if: matrix.browser.name == 'firefox-nightly'
+      run: |
+        curl -s -L -o firefox-nightly.tar.xz "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64&lang=en-US"
+        tar xJf firefox-nightly.tar.xz -C $GITHUB_WORKSPACE/browsers
+
+    - name: Install Chrome Canary
+      if: matrix.browser.name == 'chrome-canary'
+      run: |
+        curl -s -L "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq '.channels["Canary"]["downloads"]["chrome"].[] | select(.platform == "linux64") | .url' | xargs curl -s -L -o chrome-canary.zip
+        unzip chrome-canary.zip -d $GITHUB_WORKSPACE/browsers
+        mv $GITHUB_WORKSPACE/browsers/chrome-linux64 $GITHUB_WORKSPACE/browsers/chrome-canary
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore
+
+    - name: Run Integration Tests
+      run: dotnet test test/WebDriverBiDi.Integration.Tests --no-build --verbosity normal --logger "console;verbosity=detailed"
+      env:
+        CI: true
+        FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
+        CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: integration-test-results-${{ matrix.browser.name }}
+        path: |
+          test/WebDriverBiDi.Integration.Tests/TestResults/**
+        retention-days: 7

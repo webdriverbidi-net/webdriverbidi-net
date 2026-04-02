@@ -4,12 +4,14 @@ on:
     tags:
     - "v[0-9]+.[0-9]+.[0-9]+"
 jobs:
-  build:
+  # Build and publish release packages (skip tests since they passed on main)
+  release:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
@@ -17,32 +19,76 @@ jobs:
           8.0.x
           9.0.x
           10.0.x
+
     - name: Verify commit exists in origin/main
       run: |
         git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
         git branch --remote --contains | grep origin/main
+
+    - name: Verify CI and Integration Tests passed for this commit
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Check .NET CI workflow
+        CI_STATUS=$(gh run list \
+          --commit ${{ github.sha }} \
+          --workflow ".NET" \
+          --json conclusion \
+          --jq '.[0].conclusion')
+
+        echo ".NET CI Status: $CI_STATUS"
+
+        if [ "$CI_STATUS" != "success" ]; then
+          echo "❌ .NET CI workflow did not pass for this commit. Status: $CI_STATUS"
+          exit 1
+        fi
+
+        # Check Integration Tests workflow
+        INTEGRATION_STATUS=$(gh run list \
+          --commit ${{ github.sha }} \
+          --workflow "Integration Tests" \
+          --json conclusion \
+          --jq '.[0].conclusion')
+
+        echo "Integration Tests Status: $INTEGRATION_STATUS"
+
+        if [ "$INTEGRATION_STATUS" != "success" ]; then
+          echo "❌ Integration Tests workflow did not pass for this commit. Status: $INTEGRATION_STATUS"
+          exit 1
+        fi
+
+        echo "✅ Both CI and Integration Tests passed for this commit"
+
     - name: Set VERSION variable from tag
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+
+    - name: Restore dependencies
+      run: dotnet restore
+
     - name: Build
-      run: dotnet build --configuration Release -p:Version=${VERSION}
-    - name: Test
-      run: dotnet test --configuration Release -p:Version=${VERSION} --no-build
+      run: dotnet build --configuration Release -p:Version=${VERSION} --no-restore
+
     - name: Pack library package
       run: dotnet pack src/WebDriverBiDi --configuration Release -p:Version=${VERSION} --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output .
+
     - name: Pack analyzer package
       run: dotnet pack src/WebDriverBiDi.Analyzers --configuration Release -p:Version=${VERSION} --no-build --output .
+
     - name: Pack structured logging package
       run: dotnet pack src/WebDriverBiDi.Logging --configuration Release -p:Version=${VERSION} --no-build -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output .
+
     - name: Push library package
       run: dotnet nuget push WebDriverBiDi.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
     - name: Push analyzer package
       run: dotnet nuget push WebDriverBiDi.Analyzers.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
     - name: Push structured logging package
       run: dotnet nuget push WebDriverBiDi.Logging.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_API_KEY}
       env:
