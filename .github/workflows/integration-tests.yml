@@ -7,6 +7,8 @@ on:
   # Run on push to main after CI passes
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   # Allow manual trigger with browser selection
   workflow_dispatch:
     inputs:
@@ -14,9 +16,6 @@ on:
         description: 'Browsers to test (comma-separated: firefox-nightly, chrome-canary)'
         required: false
         default: 'firefox-nightly,chrome-canary'
-  # Run nightly to catch browser regressions
-  schedule:
-    - cron: '0 2 * * *'  # 2 AM UTC daily
 
 jobs:
   integration-test:
@@ -73,12 +72,3 @@ jobs:
         CI: true
         FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
         CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: integration-test-results-${{ matrix.browser.name }}
-        path: |
-          test/WebDriverBiDi.Integration.Tests/TestResults/**
-        retention-days: 7
