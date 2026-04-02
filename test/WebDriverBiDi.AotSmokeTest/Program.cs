@@ -116,7 +116,7 @@ try
         throw new InvalidOperationException($"Expected 'Hello, World!' but got: '{greeting}'");
     }
 
-    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to GitHub, verified page title and callFunction.");
+    Console.WriteLine($"PASS: Integration test succeeded — connected to {browser}, navigated to web page, verified page title, and callFunction.");
     return 0;
 }
 catch (Exception ex)

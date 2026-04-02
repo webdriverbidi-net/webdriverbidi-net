@@ -39,13 +39,15 @@ jobs:
       run: dotnet build --no-restore
     - name: Test Library
       run: dotnet test test/WebDriverBiDi.Tests --no-build --verbosity normal -p:CollectCoverage=true -p:CoverletOutputFormat=lcov -p:CoverletOutput=../coverage/lcov
-      env:
-        FIREFOX_EXECUTABLE: ${{ github.workspace }}/browsers/firefox/firefox
-        CHROME_EXECUTABLE: ${{ github.workspace }}/browsers/chrome-linux64/chrome
     - name: Test Roslyn Analyzers
       run: dotnet test test/WebDriverBiDi.Analyzers.Tests --no-build --verbosity normal
     - name: Test Structured Logging Library
       run: dotnet test test/WebDriverBiDi.Logging.Tests --no-build --verbosity normal
+    - name: Run Integration Tests
+      run: dotnet test test/WebDriverBiDi.Integration.Tests --no-build --verbosity normal
+      env:
+        FIREFOX_EXECUTABLE: ${{ github.workspace }}/browsers/firefox/firefox
+        CHROME_EXECUTABLE: ${{ github.workspace }}/browsers/chrome-linux64/chrome
     - name: Upload code coverage
       uses: coverallsapp/github-action@master
       with:
