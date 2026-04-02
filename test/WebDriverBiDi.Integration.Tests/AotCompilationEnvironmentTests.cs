@@ -1,4 +1,4 @@
-// <copyright file="AotSmokeTests.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="AotCompilationEnvironmentTests.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -10,8 +10,7 @@ using System.Runtime.InteropServices;
 using PinchHitter;
 
 [TestFixture]
-[Category("Integration")]
-public class AotSmokeTests
+public class AotCompilationEnvironmentTests
 {
     private static readonly string SmokeTestProjectDir = Path.GetFullPath(
         Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "WebDriverBiDi.AotSmokeTest"));
@@ -22,11 +21,6 @@ public class AotSmokeTests
     [OneTimeSetUp]
     public async Task PublishAotBinary()
     {
-        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI")))
-        {
-            Assert.Ignore("Skipped outside CI. Set CI=true to run locally.");
-        }
-
         publishDir = Path.Combine(SmokeTestProjectDir, "bin", "AotTestPublish");
 
         int publishExit = await RunProcessAsync(
@@ -45,23 +39,19 @@ public class AotSmokeTests
         Assert.That(File.Exists(executablePath), Is.True, $"Published AOT executable not found at: {executablePath}");
     }
 
-    [Test]
-    public async Task AotSmokeTestPassesWithFirefox()
+    [TestCase(Browser.Firefox)]
+    [TestCase(Browser.Chrome)]
+    public async Task TestCanExecuteInAotCompilationEnvironment(Browser browser)
     {
-        await RunSmokeTestAsync("firefox");
-    }
+        // Ensure the browser is available before running each test
+        // In CI: skips test if browser executable not configured
+        // Locally: allows test to run with system-installed browser
+        BrowserTestHelper.EnsureBrowserAvailable(browser);
 
-    [Test]
-    public async Task AotSmokeTestPassesWithChrome()
-    {
-        await RunSmokeTestAsync("chrome");
-    }
-
-    private static async Task RunSmokeTestAsync(string browserArg)
-    {
         await using Server server = new();
         server.RegisterHandler("/test", new WebResourceRequestHandler(WebContent.AsHtmlDocument("<h1>Welcome to the WebDriverBiDi.NET project</h1><p>You can browse using localhost</p>", "<title>WebDriverBiDi.NET Testing</title>")));
         await server.StartAsync();
+        string browserArg = BrowserTestHelper.ToBrowserString(browser);
         string testUrl = $"{browserArg} http://localhost:{server.Port}/test";
 
         int runExit = await RunProcessAsync(
@@ -70,7 +60,7 @@ public class AotSmokeTests
             workingDirectory: publishDir,
             timeoutSeconds: 120);
 
-        Assert.That(runExit, Is.EqualTo(0), $"AotSmokeTest ({testUrl}) exited with non-zero exit code.");
+        Assert.That(runExit, Is.Zero, $"AotSmokeTest ({testUrl}) exited with non-zero exit code.");
     }
 
     private static async Task<int> RunProcessAsync(string fileName, string arguments, string workingDirectory, int timeoutSeconds)

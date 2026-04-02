@@ -62,7 +62,7 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are 11 projects in this repository:
+There are 12 projects in this repository:
 * src/WebDriverBiDi/WebDriverBiDi.csproj - The main library source code.
 * src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj - Source code for Roslyn analyzers
 to help users avoid antipatterns when using the main library.
@@ -82,10 +82,12 @@ but is designed as a demonstration and is explicitly recommended against product
 * src/WebDriverBiDi.Logging/WebDriverBiDi.Logging.csproj - A library that provides support for
 structured logging by providing integration with `Microsoft.Extensions.Logging.ILogger`.
 * test/WebDriverBiDi.Analyzers.Tests/WebDriver.Analyzers.Tests.csproj - Tests for the Roslyn analyzers
-and associated code fixers.
-* test/WebDriverBiDi.AotSmokeTest - A console application used to smoke test proper JSON serializatin in
+and associated code fix providers.
+* test/WebDriverBiDi.AotSmokeTest/WebDriverBiDi.AotSmokeTest.csproj - A console application used to smoke test proper JSON serializatin in
 ahead-of-time (AOT) compilation scenarios.
-* test/WebDriverBiDi.Logging.Tests - Tests for the structured logging extension project.
+* test/WebDriverBiDi.Integration.Tests/WebDriverBiDi.Integration.Tests.csproj - Integration tests for
+the main library. These tests use actual browsers to test WebDriver BiDi functionality.
+* test/WebDriverBiDi.Logging.Tests/WebDriverBiDi.Logging.Tests.csproj - Tests for the structured logging extension project.
 * test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj - The unit tests for the main library.
 
 [Visual Studio Code](https://code.visualstudio.com/) is the preferred IDE for development of this library.
