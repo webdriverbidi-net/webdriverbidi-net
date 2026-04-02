@@ -62,18 +62,18 @@ try
 
     await DemoScenarios.SubmitFormAsync(driver, baseDemoSiteUrl);
     // await DemoScenarios.WaitForDelayLoadAsync(driver, baseDemoSiteUrl);
-    // await DemoScenarios.ManipulateCookies(driver, baseDemoSiteUrl);
-    // await DemoScenarios.MonitorNetworkTraffic(driver, baseDemoSiteUrl);
-    // await DemoScenarios.MonitorBrowserConsole(driver, baseDemoSiteUrl);
-    // await DemoScenarios.ExecuteJavaScriptFunctions(driver, baseDemoSiteUrl);
-    // await DemoScenarios.ExecutePreloadScript(driver, baseDemoSiteUrl);
-    // await DemoScenarios.InterceptBeforeRequestSentEvent(driver, baseDemoSiteUrl);
-    // await DemoScenarios.InterceptAndReplaceNetworkData(driver, baseDemoSiteUrl);
-    // await DemoScenarios.ExecuteElementRoundtripInJavaScript(driver, baseDemoSiteUrl);
-    // await DemoScenarios.CaptureNetworkResponse(driver, baseDemoSiteUrl);
-    // await DemoScenarios.CaptureAllNetworkTraffic(driver, baseDemoSiteUrl);
-    // await DemoScenarios.HandleEventsInMultipleUserContexts(driver, baseDemoSiteUrl);
-    // await DemoScenarios.ManipulateShadowRoots(driver, baseDemoSiteUrl);
+    // await DemoScenarios.ManipulateCookiesAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.MonitorNetworkTrafficAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.MonitorBrowserConsoleAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.ExecuteJavaScriptFunctionsAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.ExecutePreloadScriptAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.InterceptBeforeRequestSentEventAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.InterceptAndReplaceNetworkDataAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.ExecuteElementRoundtripInJavaScriptAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.CaptureNetworkResponseAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.CaptureAllNetworkTrafficAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.HandleEventsInMultipleUserContextsAsync(driver, baseDemoSiteUrl);
+    // await DemoScenarios.ManipulateShadowRootsAsync(driver, baseDemoSiteUrl);
 
     Console.WriteLine($"Pausing {viewResultsDelayTimeSpan.TotalSeconds} seconds to view results");
     await Task.Delay(viewResultsDelayTimeSpan);

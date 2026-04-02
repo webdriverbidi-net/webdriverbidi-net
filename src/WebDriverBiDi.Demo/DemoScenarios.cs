@@ -158,7 +158,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task ManipulateCookies(BiDiDriver driver, string baseUrl)
+    public static async Task ManipulateCookiesAsync(BiDiDriver driver, string baseUrl)
     {
         // IMPORTANT: For this demo to work properly, you will need to add an entry
         // to your computer's hosts file. This typically requires administrative or
@@ -193,7 +193,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task MonitorNetworkTraffic(BiDiDriver driver, string baseUrl)
+    public static async Task MonitorNetworkTrafficAsync(BiDiDriver driver, string baseUrl)
     {
         driver.Network.OnResponseCompleted.AddObserver((ResponseCompletedEventArgs e) =>
         {
@@ -240,7 +240,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task MonitorBrowserConsole(BiDiDriver driver, string baseUrl)
+    public static async Task MonitorBrowserConsoleAsync(BiDiDriver driver, string baseUrl)
     {
         driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
         {
@@ -267,7 +267,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task ExecuteJavaScriptFunctions(BiDiDriver driver, string baseUrl)
+    public static async Task ExecuteJavaScriptFunctionsAsync(BiDiDriver driver, string baseUrl)
     {
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
@@ -321,7 +321,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task ExecutePreloadScript(BiDiDriver driver, string baseUrl)
+    public static async Task ExecutePreloadScriptAsync(BiDiDriver driver, string baseUrl)
     {
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
@@ -417,7 +417,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task ExecuteElementRoundtripInJavaScript(BiDiDriver driver, string baseUrl)
+    public static async Task ExecuteElementRoundtripInJavaScriptAsync(BiDiDriver driver, string baseUrl)
     {
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
@@ -471,7 +471,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task InterceptBeforeRequestSentEvent(BiDiDriver driver, string baseUrl)
+    public static async Task InterceptBeforeRequestSentEventAsync(BiDiDriver driver, string baseUrl)
     {
         // List<Task> beforeRequestSentTasks = new();
         EventObserver<BeforeRequestSentEventArgs> observer = driver.Network.OnBeforeRequestSent.AddObserver(async (BeforeRequestSentEventArgs e) =>
@@ -539,7 +539,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task InterceptAndReplaceNetworkData(BiDiDriver driver, string baseUrl)
+    public static async Task InterceptAndReplaceNetworkDataAsync(BiDiDriver driver, string baseUrl)
     {
         SubscribeCommandParameters subscribe = new(driver.Network.OnBeforeRequestSent.EventName);
         await driver.Session.SubscribeAsync(subscribe);
@@ -550,9 +550,9 @@ public static class DemoScenarios
 
         AddInterceptCommandParameters addIntercept = new(InterceptPhase.BeforeRequestSent)
         {
-            BrowsingContextIds = [contextId]
+            BrowsingContextIds = [contextId],
+            UrlPatterns = [new UrlPatternPattern() { PathName = "simpleContent.html" }],
         };
-        addIntercept.UrlPatterns = [new UrlPatternPattern() { PathName = "simpleContent.html" }];
         await driver.Network.AddInterceptAsync(addIntercept);
 
         // Calling a command within an event observer must be done asynchronously.
@@ -603,7 +603,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task CaptureNetworkResponse(BiDiDriver driver, string baseUrl)
+    public static async Task CaptureNetworkResponseAsync(BiDiDriver driver, string baseUrl)
     {
         SubscribeCommandParameters subscribe = new(driver.Network.OnResponseCompleted.EventName);
         await driver.Session.SubscribeAsync(subscribe);
@@ -712,7 +712,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task CaptureAllNetworkTraffic(BiDiDriver driver, string baseUrl)
+    public static async Task CaptureAllNetworkTrafficAsync(BiDiDriver driver, string baseUrl)
     {
         List<string> eventsToSubscribe =
         [
@@ -833,7 +833,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task InteractWithComplexWebPage(BiDiDriver driver, string baseUrl)
+    public static async Task InteractWithComplexWebPageAsync(BiDiDriver driver, string baseUrl)
     {
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
@@ -915,7 +915,7 @@ public static class DemoScenarios
     /// It is assumed the driver is initialized and connected to the remote end.</param>
     /// <param name="baseUrl">The base URL to the web server.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
-    public static async Task HandleEventsInMultipleUserContexts(BiDiDriver driver, string baseUrl)
+    public static async Task HandleEventsInMultipleUserContextsAsync(BiDiDriver driver, string baseUrl)
     {
         Dictionary<string, string> userContextMap = [];
         EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver((e) => userContextMap[e.BrowsingContextId] = e.UserContextId);
@@ -1004,7 +1004,7 @@ public static class DemoScenarios
         Task.WaitAll([thirdNavigationTask, fourthNavigationTask]);
     }
 
-    public static async Task ManipulateShadowRoots(BiDiDriver driver, string baseUrl)
+    public static async Task ManipulateShadowRootsAsync(BiDiDriver driver, string baseUrl)
     {
         GetTreeCommandResult tree = await driver.BrowsingContext.GetTreeAsync(new GetTreeCommandParameters());
         string contextId = tree.ContextTree[0].BrowsingContextId;
