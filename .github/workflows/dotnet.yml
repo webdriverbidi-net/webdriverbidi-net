@@ -23,11 +23,16 @@ jobs:
           8.0.x
           9.0.x
           10.0.x
+    - name: Create Local Browser Directory
+      run: mkdir -p $PWD/browsers
     - name: Install Firefox Nightly
       run: |
-        wget -q "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64&lang=en-US" -O firefox-nightly.tar.xz
-        tar xJf firefox-nightly.tar.xz
-        echo "$PWD/firefox" >> $GITHUB_PATH
+        curl -s -L -o firefox-nightly.tar.xz "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64&lang=en-US" 
+        tar xJf firefox-nightly.tar.xz -C $PWD/browsers
+    - name: Install Chrome for Testing Canary
+      run: |
+        curl -s -L "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" | jq '.channels["Canary"]["downloads"]["chrome"].[] | select(.platform == "linux64") | .url' | xargs curl -s -L -o chrome-canary.zip
+        unzip chrome-canary.zip -d $PWD/browsers
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
@@ -35,8 +40,8 @@ jobs:
     - name: Test Library
       run: dotnet test test/WebDriverBiDi.Tests --no-build --verbosity normal -p:CollectCoverage=true -p:CoverletOutputFormat=lcov -p:CoverletOutput=../coverage/lcov
       env:
-        FIREFOX_EXECUTABLE: firefox
-        CHROME_EXECUTABLE: google-chrome-stable
+        FIREFOX_EXECUTABLE: $PWD/browsers/firefox/firefox
+        CHROME_EXECUTABLE: $PWD/browsers/chrome/chrome
     - name: Test Roslyn Analyzers
       run: dotnet test test/WebDriverBiDi.Analyzers.Tests --no-build --verbosity normal
     - name: Test Structured Logging Library
