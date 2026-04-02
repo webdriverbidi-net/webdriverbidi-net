@@ -39,6 +39,24 @@ public class SerializationOptionsTests
     }
 
     [Test]
+    public void TestCanSerializeOptionsWithOptionalInfiniteMaxDomDepth()
+    {
+        SerializationOptions options = new()
+        {
+            MaxDomDepth = SerializationOptions.InfiniteMaxDomDepth
+        };
+        string json = JsonSerializer.Serialize(options);
+        JObject serialized = JObject.Parse(json);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(serialized.Type, Is.EqualTo(JTokenType.Object));
+            Assert.That(serialized, Has.Count.EqualTo(1));
+            Assert.That(serialized, Contains.Key("maxDomDepth"));
+            Assert.That(serialized["maxDomDepth"]!.Type, Is.EqualTo(JTokenType.Null));
+        }
+    }
+
+    [Test]
     public void TestCanSerializeOptionsWithOptionalMaxObjectDepth()
     {
         SerializationOptions options = new()

@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="NUnit.Framework" />
+    <ProjectReference Include="..\..\src\WebDriverBiDi\WebDriverBiDi.csproj" />
+    <ProjectReference Include="..\..\src\WebDriverBiDi.Client\WebDriverBiDi.Client.csproj" />
   </ItemGroup>
 
 </Project>

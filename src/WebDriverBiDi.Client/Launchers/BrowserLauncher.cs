@@ -10,7 +10,7 @@ using WebDriverBiDi.Protocol;
 /// <summary>
 /// Abstract base class for launching a browser to connect to using a WebDriverBiDi session.
 /// </summary>
-public abstract class BrowserLauncher
+public abstract class BrowserLauncher : IAsyncDisposable
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
@@ -150,6 +150,27 @@ public abstract class BrowserLauncher
     public virtual Transport CreateTransport()
     {
         return new Transport(this.CreateConnection());
+    }
+
+    /// <summary>
+    /// Asynchronously releases the resources used by this browser launcher.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        await this.DisposeAsyncCore().ConfigureAwait(false);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Asynchronously releases the resources used by this browser launcher.
+    /// Override this method in derived classes to add custom cleanup logic.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous dispose operation.</returns>
+    protected virtual async ValueTask DisposeAsyncCore()
+    {
+        await this.QuitBrowserAsync();
+        await this.StopAsync();
     }
 
     /// <summary>

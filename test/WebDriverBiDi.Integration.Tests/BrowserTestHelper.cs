@@ -5,6 +5,8 @@
 
 namespace WebDriverBiDi.Integration;
 
+using WebDriverBiDi.Client.Launchers;
+
 /// <summary>
 /// Helper class for managing browser-specific integration tests across different environments.
 /// </summary>
@@ -55,6 +57,17 @@ public static class BrowserTestHelper
         return browser.ToString().ToLowerInvariant();
     }
 
+    public static BrowserLauncher GetBrowserLauncher(Browser browser)
+    {
+        string executablePath = GetBrowserExecutable(browser);
+        return browser switch
+        {
+            Browser.Firefox => new FirefoxLauncher(executablePath),
+            Browser.Chrome => new ChromeLauncher(executablePath),
+            _ => throw new ArgumentException($"Unsupported browser: {browser}")
+        };
+    }
+
     /// <summary>
     /// Gets the environment variable name for the specified browser's executable.
     /// </summary>
@@ -66,7 +79,6 @@ public static class BrowserTestHelper
         {
             Browser.Firefox => "FIREFOX_EXECUTABLE",
             Browser.Chrome => "CHROME_EXECUTABLE",
-            Browser.Edge => "EDGE_EXECUTABLE",
             _ => $"{browser.ToString().ToUpperInvariant()}_EXECUTABLE"
         };
     }

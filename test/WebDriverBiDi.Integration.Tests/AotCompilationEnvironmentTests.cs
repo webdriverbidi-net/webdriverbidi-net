@@ -1,4 +1,4 @@
-// <copyright file="AotSmokeTests.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="AotCompilationEnvironmentTests.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -10,8 +10,7 @@ using System.Runtime.InteropServices;
 using PinchHitter;
 
 [TestFixture]
-[Category("Integration")]
-public class AotSmokeTests
+public class AotCompilationEnvironmentTests
 {
     private static readonly string SmokeTestProjectDir = Path.GetFullPath(
         Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "WebDriverBiDi.AotSmokeTest"));
@@ -42,7 +41,7 @@ public class AotSmokeTests
 
     [TestCase(Browser.Firefox)]
     [TestCase(Browser.Chrome)]
-    public async Task AotSmokeTestPasses(Browser browser)
+    public async Task TestCanExecuteInAotCompilationEnvironment(Browser browser)
     {
         // Ensure the browser is available before running each test
         // In CI: skips test if browser executable not configured

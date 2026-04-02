@@ -7,7 +7,8 @@ namespace WebDriverBiDi.JsonConverters;
 
 /// <summary>
 /// Sentinel checker for <see cref="double"/> that treats any negative value as the
-/// sentinel null value, used to indicate a reset to the default device pixel ratio.
+/// sentinel null value, used to indicate a writing an explicit null value in the
+/// JSON payload.
 /// </summary>
 public class NegativeDoubleSentinelChecker : SentinelValueChecker<double>
 {
