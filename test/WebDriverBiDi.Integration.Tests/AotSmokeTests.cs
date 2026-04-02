@@ -24,7 +24,7 @@ public class AotSmokeTests
     {
         if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI")))
         {
-            // Assert.Ignore("Skipped outside CI. Set CI=true to run locally.");
+            Assert.Ignore("Skipped outside CI. Set CI=true to run locally.");
         }
 
         publishDir = Path.Combine(SmokeTestProjectDir, "bin", "AotTestPublish");
