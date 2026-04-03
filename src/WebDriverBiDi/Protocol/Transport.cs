@@ -190,7 +190,8 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Gets or sets the timeout to wait for message processing to complete during shutdown.
     /// If message processing does not complete within this timeout, the shutdown will proceed
-    /// without waiting for the remaining processing to finish. The default is 10 seconds.
+    /// without waiting for the remaining processing to finish. Messages still in the queue
+    /// will not be processed, and any pending commands will be canceled. The default is 10 seconds.
     /// </summary>
     public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
