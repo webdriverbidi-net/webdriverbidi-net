@@ -659,11 +659,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
                         "BiDiDriver")).ConfigureAwait(false);
             }
 
-            this.transportEventReceivedObserver.Dispose();
-            this.transportErrorReceivedObserver.Dispose();
-            this.transportUnknownMessageReceivedObserver.Dispose();
-            this.transportLogMessageObserver.Dispose();
-            this.transportEventHandlerErrorOccurredObserver.Dispose();
+            await this.transportEventReceivedObserver.DisposeAsync().ConfigureAwait(false);
+            await this.transportErrorReceivedObserver.DisposeAsync().ConfigureAwait(false);
+            await this.transportUnknownMessageReceivedObserver.DisposeAsync().ConfigureAwait(false);
+            await this.transportLogMessageObserver.DisposeAsync().ConfigureAwait(false);
+            await this.transportEventHandlerErrorOccurredObserver.DisposeAsync().ConfigureAwait(false);
             await this.transport.DisposeAsync().ConfigureAwait(false);
         }
     }
