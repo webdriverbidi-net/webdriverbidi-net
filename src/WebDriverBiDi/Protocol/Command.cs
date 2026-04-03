@@ -70,9 +70,10 @@ public class Command
     {
         get
         {
-            if (this.taskCompletionSource.Task.IsCompleted && !this.taskCompletionSource.Task.IsFaulted && !this.taskCompletionSource.Task.IsCanceled)
+            Task<CommandResult> task = this.taskCompletionSource.Task;
+            if (task.IsCompleted && !task.IsFaulted && !task.IsCanceled)
             {
-                return this.taskCompletionSource.Task.Result;
+                return task.Result;
             }
 
             return null;
