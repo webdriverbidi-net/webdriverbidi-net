@@ -348,7 +348,7 @@ public class CapabilitiesResultTests
 
     // TODO (Issue #19): Remove this test and enable the one below
     // once https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
-    [Test]
+    // [Test]
     public void TestDeserializeWithEmptyProxyYieldsNull()
     {
         string json = """
@@ -379,9 +379,7 @@ public class CapabilitiesResultTests
         }
     }
 
-    // TODO (Issue #19): Reenable this test and remove the one above
-    // once https://bugzilla.mozilla.org/show_bug.cgi?id=1916463 is fixed.
-    // [Test]
+    [Test]
     public void TestCannotDeserializeWithEmptyProxy()
     {
         string json = """
@@ -396,7 +394,7 @@ public class CapabilitiesResultTests
                         "capName": "capValue"
                       }
                       """;
-        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must have a 'proxyType' property"));
+        Assert.That(() => JsonSerializer.Deserialize<CapabilitiesResult>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("must contain a 'proxyType' property"));
     }
 
     [Test]
