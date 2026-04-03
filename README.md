@@ -62,7 +62,7 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are 12 projects in this repository:
+There are 13 projects in this repository:
 * src/WebDriverBiDi/WebDriverBiDi.csproj - The main library source code.
 * src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj - Source code for Roslyn analyzers
 to help users avoid antipatterns when using the main library.
@@ -85,6 +85,7 @@ structured logging by providing integration with `Microsoft.Extensions.Logging.I
 and associated code fix providers.
 * test/WebDriverBiDi.AotSmokeTest/WebDriverBiDi.AotSmokeTest.csproj - A console application used to smoke test proper JSON serializatin in
 ahead-of-time (AOT) compilation scenarios.
+* test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj - Performance benchmarks for the library.
 * test/WebDriverBiDi.Integration.Tests/WebDriverBiDi.Integration.Tests.csproj - Integration tests for
 the main library. These tests use actual browsers to test WebDriver BiDi functionality.
 * test/WebDriverBiDi.Logging.Tests/WebDriverBiDi.Logging.Tests.csproj - Tests for the structured logging extension project.
@@ -107,9 +108,13 @@ For testing of browsing web pages and WebSocket traffic, this project uses the
 [PinchHitter](https://github.com/jimevans/PinchHitter) test server library.
 
 The project has enabled Roslyn analyzers to help with code quality, and uses the
-[StyleCop analyzers](https://www.nuget.org/packages/StyleCop.Analyzers) to enforce a consistent code style.
+[StyleCop analyzers](https://www.nuget.org/packages/StyleCop.Analyzers) along with
+a `.editorconfig` file to enforce a consistent code style.
 PRs should contain no warnings from any of the analyzers. Use of warning suppression in the source code
 is mostly prohibited, and will only be allowed on a very strictly reviewed case-by-case basis.
+
+The project has some performance benchmarks, using [BenchmarkDotNet](https://benchmarkdotnet.org/)
+to provide baseline tracking of performance metrics.
 
 The project uses [GitHub Actions](https://github.com/webdriverbidi-net/webdriverbidi-net/actions) for continuous
 integration (CI). Code coverage statistics are generated and gathered by

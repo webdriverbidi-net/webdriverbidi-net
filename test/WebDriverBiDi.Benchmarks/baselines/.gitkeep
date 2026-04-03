@@ -1,0 +1,24 @@
+# Benchmark Baselines
+
+Store historical benchmark results here for comparison purposes.
+
+## Naming Convention
+`v{VERSION}-baseline.json` - Full benchmark results for a specific release
+`v{VERSION}-{DATE}-baseline.json` - Additional runs for the same version
+
+## Example
+```
+v1.0.0-baseline.json
+v1.1.0-baseline.json
+v1.2.0-baseline.json
+```
+
+## Usage
+After running benchmarks:
+```bash
+cp BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
+   test/WebDriverBiDi.Benchmarks/baselines/v1.0.0-baseline.json
+```
+
+These files can optionally be committed to git to provide historical reference,
+or kept locally for your own comparison purposes.
