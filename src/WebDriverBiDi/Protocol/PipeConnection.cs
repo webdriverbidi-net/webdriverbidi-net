@@ -58,6 +58,8 @@ public class PipeConnection : Connection
     private readonly IPipeServerProcessProvider processProvider;
     private Task? dataReceiveTask;
     private CancellationTokenSource connectionTokenSource = new();
+
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isConnectionActiveTypeSafeFlag = 0;
     private int areConnectionPipesDisposedTypeSafeFlag = 0;
 

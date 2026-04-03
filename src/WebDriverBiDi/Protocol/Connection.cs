@@ -40,6 +40,8 @@ public abstract class Connection : IAsyncDisposable
     private const string ConnectionErrorEventName = "connection.connectionError";
     private const string RemoteDisconnectedEventName = "connection.remoteDisconnected";
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
+
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isDisposedFlag;
 
     /// <summary>

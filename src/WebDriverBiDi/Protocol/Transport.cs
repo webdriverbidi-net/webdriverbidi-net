@@ -97,8 +97,10 @@ public class Transport : IAsyncDisposable
 
     private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
-    private int isConnectedTypeSafeFlag = 0;
     private string terminationReason = "Normal shutdown";
+
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
+    private int isConnectedTypeSafeFlag = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Transport"/> class.

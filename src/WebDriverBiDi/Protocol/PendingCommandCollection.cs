@@ -15,8 +15,10 @@ public class PendingCommandCollection : IDisposable
 {
     private readonly SemaphoreSlim commandAdditionSemaphore = new(1, 1);
     private readonly ConcurrentDictionary<long, Command> pendingCommands = new();
-    private int isAcceptingCommands = 1;
     private bool isDisposed;
+
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
+    private int isAcceptingCommands = 1;
 
     /// <summary>
     /// Gets a value indicating whether this collection is accepting commands.

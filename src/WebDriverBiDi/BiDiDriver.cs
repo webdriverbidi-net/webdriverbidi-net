@@ -61,6 +61,8 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     private readonly ConcurrentDictionary<string, EventInvoker> eventInvokers = [];
     private readonly object moduleRegistrationLock = new();
     private readonly object eventRegistrationLock = new();
+
+    // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isDisposedFlag = 0;
 
     /// <summary>
