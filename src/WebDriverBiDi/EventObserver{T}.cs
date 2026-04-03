@@ -302,7 +302,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <summary>
     /// Gets the <see cref="Task"/> objects captured while waiting for the checkpoint to be fulfilled.
     /// Calling this method unsets the checkpoint, and transfers the ownership of the captured
-    ///  <see cref="Task"/>s to the calling method.
+    /// <see cref="Task"/>s to the calling method.
     /// </summary>
     /// <returns>An array of <see cref="Task"/> objects captured while waiting for the checkpoints to be fulfilled.</returns>
     /// <remarks>
@@ -341,8 +341,17 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// Unsets an established checkpoint for this observer.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// This method is thread-safe. Call this when you no longer need to wait for the checkpoint
     /// (e.g., when cancelling an operation or cleaning up).
+    /// </para>
+    /// <para>
+    /// If this method is called while the checkpoint has active tasks that have been captured,
+    /// those tasks will be abandoned. If any of those tasks later fault, you may encounter
+    /// unobserved task exceptions. To ensure that captured tasks are observed, use
+    /// <see cref="GetCheckpointTasks"/> to transfer ownership of the tasks to the caller
+    /// before unsetting the checkpoint.
+    /// </para>
     /// </remarks>
     /// <example>
     /// <code>
