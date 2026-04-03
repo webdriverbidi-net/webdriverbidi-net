@@ -438,7 +438,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             throw;
         }
 
-        if (command.Result is null)
+        if (!command.TryGetResult(out CommandResult? result))
         {
             // Some code coverage tools do not recognize full coverage when using
             // ExceptionDispatchInfo.Throw() to throw the exception; They see a
@@ -456,11 +456,17 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             {
                 throw new WebDriverBiDiException($"Command {commandParameters.MethodName} with id {command.CommandId} was canceled before a result was received");
             }
+        }
 
+        // This is purely defensive. The transport should never complete a command
+        // with a null result, but if it does, that's an error condition that we want
+        // to report explicitly rather than having it manifest as a null reference
+        // exception later in the code.
+        if (result is null)
+        {
             throw new WebDriverBiDiException($"Result for command {commandParameters.MethodName} with id {command.CommandId} is unexpectedly null");
         }
 
-        CommandResult result = command.Result;
         if (result.IsError)
         {
             if (result is not ErrorResult errorResponse)

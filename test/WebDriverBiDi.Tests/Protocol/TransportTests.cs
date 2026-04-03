@@ -86,7 +86,8 @@ public class TransportTests
             await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
-        CommandResult? actualResult = command.Result;
+        bool hasResult = command.TryGetResult(out CommandResult? actualResult);
+        Assert.That(hasResult, Is.True);
         Assert.That(actualResult, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -124,7 +125,8 @@ public class TransportTests
             await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
-        CommandResult? actualResult = command.Result;
+        bool hasResult = command.TryGetResult(out CommandResult? actualResult);
+        Assert.That(hasResult, Is.True);
         Assert.That(actualResult, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -165,7 +167,8 @@ public class TransportTests
             await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(250));
-        CommandResult? actualResult = command.Result;
+        bool hasResult = command.TryGetResult(out CommandResult? actualResult);
+        Assert.That(hasResult, Is.True);
         Assert.That(actualResult, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -233,9 +236,11 @@ public class TransportTests
 
         TestCommandParameters commandParameters = new(commandName);
         Command command = await transport.SendCommandAsync(commandParameters);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(command.Result, Is.Null);
+            Assert.That(hasResult, Is.False);
+            Assert.That(commandResult, Is.Null);
             Assert.That(command.ThrownException, Is.Null);
         }
     }
@@ -448,7 +453,8 @@ public class TransportTests
             await connection.RaiseDataReceivedEventAsync(json);
         });
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(250));
-        CommandResult? actualResult = command.Result;
+        bool hasResult = command.TryGetResult(out CommandResult? actualResult);
+        Assert.That(hasResult, Is.True);
         Assert.That(actualResult, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
@@ -1728,11 +1734,13 @@ public class TransportTests
 
         await command.WaitForCompletionAsync(TimeSpan.FromSeconds(1));
 
-        Assert.That(command.Result, Is.Not.Null);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.True);
+        Assert.That(commandResult, Is.Not.Null);
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(command.Result.IsError, Is.False);
-            Assert.That(command.Result, Is.TypeOf<TestCommandResult>());
+            Assert.That(commandResult.IsError, Is.False);
+            Assert.That(commandResult, Is.TypeOf<TestCommandResult>());
             Assert.That(logs, Has.Some.Matches<LogMessageEventArgs>(
                 log => log.Message.Contains("Unexpected error in message processing loop")
                        && log.Message.Contains("Simulated deserialization failure")
@@ -1784,10 +1792,12 @@ public class TransportTests
         Assert.That(command.IsCanceled, Is.False);
 
         transport.CancelCommand(command);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(command.IsCanceled, Is.True);
-            Assert.That(command.Result, Is.Null);
+            Assert.That(hasResult, Is.False);
+            Assert.That(commandResult, Is.Null);
         }
     }
 
@@ -1817,10 +1827,12 @@ public class TransportTests
         await connection.RaiseDataReceivedEventAsync(responseJson);
         await Task.Delay(50);
 
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(command.IsCanceled, Is.True);
-            Assert.That(command.Result, Is.Null);
+            Assert.That(hasResult, Is.False);
+            Assert.That(commandResult, Is.Null);
         }
     }
 

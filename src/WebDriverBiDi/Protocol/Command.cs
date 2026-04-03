@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using WebDriverBiDi.JsonConverters;
 
@@ -60,25 +61,6 @@ public class Command
     /// </summary>
     [JsonIgnore]
     public Type ResponseType => this.commandData.ResponseType;
-
-    /// <summary>
-    /// Gets the result of the command, or <see langword="null"/> if the command has not
-    /// completed successfully.
-    /// </summary>
-    [JsonIgnore]
-    public virtual CommandResult? Result
-    {
-        get
-        {
-            Task<CommandResult> task = this.taskCompletionSource.Task;
-            if (task.IsCompleted && !task.IsFaulted && !task.IsCanceled)
-            {
-                return task.Result;
-            }
-
-            return null;
-        }
-    }
 
     /// <summary>
     /// Gets the exception thrown during execution of the command, or <see langword="null"/>
@@ -136,6 +118,24 @@ public class Command
         }
 
         return commandTaskCompleted;
+    }
+
+    /// <summary>
+    /// Attempts to get the result of the command if it has completed successfully.
+    /// </summary>
+    /// <param name="commandResult">When this method returns, contains the result of the command, or <see langword="null"/> if the command has not completed successfully.</param>
+    /// <returns><see langword="true"/> if the result was retrieved successfully; otherwise, <see langword="false"/>.</returns>
+    public virtual bool TryGetResult([NotNullWhen(true)] out CommandResult? commandResult)
+    {
+        Task<CommandResult> task = this.taskCompletionSource.Task;
+        if (task.IsCompleted && !task.IsFaulted && !task.IsCanceled)
+        {
+            commandResult = task.Result;
+            return true;
+        }
+
+        commandResult = null;
+        return false;
     }
 
     /// <summary>

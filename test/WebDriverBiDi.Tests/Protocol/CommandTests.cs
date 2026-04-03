@@ -90,15 +90,19 @@ public class CommandTests
         commandParams.AdditionalData["overflowParameterName"] = "overflowParameterValue";
 
         Command command = new(1, commandParams);
-        Assert.That(command.Result, Is.Null);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.False);
+        Assert.That(commandResult, Is.Null);
         Assert.That(command.ThrownException, Is.Null);
         TestCommandResult result = new();
         command.SetResult(result);
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
-        Assert.That(command.Result, Is.Not.Null);
-        Assert.That(command.Result, Is.InstanceOf<TestCommandResult>());
+        hasResult = command.TryGetResult(out commandResult);
+        Assert.That(hasResult, Is.True);
+        Assert.That(commandResult, Is.Not.Null);
+        Assert.That(commandResult, Is.InstanceOf<TestCommandResult>());
         Assert.That(command.ThrownException, Is.Null);
-        Assert.That(command.Result, Is.EqualTo(result with { }));
+        Assert.That(commandResult, Is.EqualTo(result with { }));
     }
 
     [Test]
@@ -121,11 +125,15 @@ public class CommandTests
         commandParams.AdditionalData["overflowParameterName"] = "overflowParameterValue";
 
         Command command = new(1, commandParams);
-        Assert.That(command.Result, Is.Null);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.False);
+        Assert.That(commandResult, Is.Null);
         Assert.That(command.ThrownException, Is.Null);
         command.SetException(new WebDriverBiDiException("test exception"));
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
-        Assert.That(command.Result, Is.Null);
+        hasResult = command.TryGetResult(out commandResult);
+        Assert.That(hasResult, Is.False);
+        Assert.That(commandResult, Is.Null);
         Assert.That(command.ThrownException, Is.Not.Null);
         Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiException>().With.Message.EqualTo("test exception"));
     }
@@ -150,12 +158,16 @@ public class CommandTests
         commandParams.AdditionalData["overflowParameterName"] = "overflowParameterValue";
 
         Command command = new(1, commandParams);
-        Assert.That(command.Result, Is.Null);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.False);
+        Assert.That(commandResult, Is.Null);
         Assert.That(command.ThrownException, Is.Null);
         Assert.That(command.IsCanceled, Is.False);
         command.Cancel();
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
-        Assert.That(command.Result, Is.Null);
+        hasResult = command.TryGetResult(out commandResult);
+        Assert.That(hasResult, Is.False);
+        Assert.That(commandResult, Is.Null);
         Assert.That(command.ThrownException, Is.Null);
         Assert.That(command.IsCanceled, Is.True);
     }
@@ -170,7 +182,9 @@ public class CommandTests
         command.SetException(new WebDriverBiDiException("custom fault message"));
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
 
-        Assert.That(command.Result, Is.Null);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.False);
+        Assert.That(commandResult, Is.Null);
         Assert.That(command.ThrownException, Is.Not.Null);
         Assert.That(command.ThrownException, Is.InstanceOf<WebDriverBiDiException>());
         Assert.That(command.ThrownException!.Message, Is.EqualTo("custom fault message"));
@@ -184,10 +198,12 @@ public class CommandTests
         Command command = new(1, commandParams);
 
         bool completed = await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
         using (Assert.EnterMultipleScope())
         {
             Assert.That(completed, Is.False);
-            Assert.That(command.Result, Is.Null);
+            Assert.That(hasResult, Is.False);
+            Assert.That(commandResult, Is.Null);
             Assert.That(command.ThrownException, Is.Null);
             Assert.That(command.IsCanceled, Is.False);
         }
@@ -205,7 +221,9 @@ public class CommandTests
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
 
         Assert.That(() => command.SetResult(new TestCommandResult()), Throws.Nothing);
-        Assert.That(command.Result, Is.EqualTo(firstResult with { }));
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.True);
+        Assert.That(commandResult, Is.EqualTo(firstResult with { }));
     }
 
     [Test]
@@ -220,7 +238,9 @@ public class CommandTests
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
 
         Assert.That(() => command.SetException(new WebDriverBiDiException("late exception")), Throws.Nothing);
-        Assert.That(command.Result, Is.Not.Null);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.True);
+        Assert.That(commandResult, Is.Not.Null);
         Assert.That(command.ThrownException, Is.Null);
     }
 
@@ -236,7 +256,9 @@ public class CommandTests
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
 
         Assert.That(() => command.Cancel(), Throws.Nothing);
-        Assert.That(command.Result, Is.Not.Null);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.True);
+        Assert.That(commandResult, Is.Not.Null);
         Assert.That(command.IsCanceled, Is.False);
     }
 
@@ -251,7 +273,9 @@ public class CommandTests
         await command.WaitForCompletionAsync(TimeSpan.FromMilliseconds(50));
 
         Assert.That(() => command.SetResult(new TestCommandResult()), Throws.Nothing);
-        Assert.That(command.Result, Is.Null);
+        bool hasResult = command.TryGetResult(out CommandResult? commandResult);
+        Assert.That(hasResult, Is.False);
+        Assert.That(commandResult, Is.Null);
         Assert.That(command.IsCanceled, Is.True);
     }
 
