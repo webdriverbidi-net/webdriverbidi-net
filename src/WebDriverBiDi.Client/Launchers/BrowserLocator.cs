@@ -5,10 +5,13 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Base class for locating and downloading browsers for testing.
 /// </summary>
-public abstract class BrowserLocator
+public class BrowserLocator
 {
     /// <summary>
     /// Gets the base cache directory for downloaded browsers, which is a subdirectory of the user's profile directory.
@@ -21,114 +24,154 @@ public abstract class BrowserLocator
     // 1 MB buffer for downloads
     private const int BufferSize = 1024 * 1024;
 
-    private static readonly string TimestampFile = Path.Combine(BaseCacheDir, "last-download.txt");
+    private static readonly string CacheInfoFile = Path.Combine(BaseCacheDir, "cache-info.json");
+
+    private readonly BrowserLocatorSettings settings;
+
+    private BrowserLocator(BrowserLocatorSettings settings)
+    {
+        this.settings = settings;
+    }
 
     /// <summary>
-    /// Gets a locator for Firefox binaries.
+    /// Creates a new instance of the <see cref="BrowserLocator"/> class for the stable channel of the specified browser type.
     /// </summary>
-    public static FirefoxLocator Firefox { get; } = new FirefoxLocator();
+    /// <param name="browserType">The type of browser to locate.</param>
+    /// <returns>A new instance of the <see cref="BrowserLocator"/> class.</returns>
+    public static BrowserLocator Create(BrowserType browserType)
+    {
+        return browserType switch
+        {
+            BrowserType.Chrome => new BrowserLocator(new ChromeBrowserLocatorSettings(ChromeChannel.Stable)),
+            BrowserType.ChromePipe => new BrowserLocator(new ChromeBrowserLocatorSettings(ChromeChannel.Stable)),
+            BrowserType.Firefox => new BrowserLocator(new FirefoxBrowserLocatorSettings(FirefoxChannel.Stable)),
+            _ => throw new ArgumentException($"Unsupported browser type: {browserType}"),
+        };
+    }
 
     /// <summary>
-    /// Gets a locator for Chrome binaries.
+    /// Creates a new instance of the <see cref="BrowserLocator"/> class for the specified browser type and version.
     /// </summary>
-    public static ChromeLocator Chrome { get; } = new ChromeLocator();
+    /// <param name="browserType">The type of browser to locate.</param>
+    /// <param name="version">The version of the browser to locate.</param>
+    /// <returns>A new instance of the <see cref="BrowserLocator"/> class.</returns>
+    /// <exception cref="ArgumentException">Thrown when an unsupported browser type is specified, or when no version is specified.</exception>
+    public static BrowserLocator Create(BrowserType browserType, string version)
+    {
+        if (string.IsNullOrEmpty(version))
+        {
+            throw new ArgumentException("Version must be specified when creating a BrowserLocator with a specific version.", nameof(version));
+        }
+
+        return browserType switch
+        {
+            BrowserType.Chrome => new BrowserLocator(new ChromeBrowserLocatorSettings(version)),
+            BrowserType.ChromePipe => new BrowserLocator(new ChromeBrowserLocatorSettings(version)),
+            BrowserType.Firefox => new BrowserLocator(new FirefoxBrowserLocatorSettings(version)),
+            _ => throw new ArgumentException($"Unsupported browser type: {browserType}"),
+        };
+    }
 
     /// <summary>
-    /// Gets the name of the environment variable that can be used to specify a custom path to the Firefox executable.
-    /// If this environment variable is set, the locator will return its value directly instead of downloading Firefox.
+    /// Creates a new instance of the <see cref="BrowserLocator"/> class for Chrome browsers
+    /// using the specified channel. This will return the current active version for the
+    /// specified channel.
     /// </summary>
-    protected abstract string EnvironmentVariableName { get; }
+    /// <param name="channel">The channel of the Chrome browser to locate.</param>
+    /// <returns>A new instance of the <see cref="BrowserLocator"/> class.</returns>
+    public static BrowserLocator Create(ChromeChannel channel)
+    {
+        return new BrowserLocator(new ChromeBrowserLocatorSettings(channel));
+    }
 
     /// <summary>
-    /// Gets the user-friendly name of the browser being located, used for logging and error messages.
+    /// Creates a new instance of the <see cref="BrowserLocator"/> class for Firefox browsers
+    /// using the specified channel. This will return the current active version for the
+    /// specified channel.
     /// </summary>
-    protected abstract string BrowserName { get; }
-
-    /// <summary>
-    /// Gets the cache directory specific to this browser, which is a subdirectory of the base cache directory.
-    /// </summary>
-    protected abstract string CacheDir { get; }
+    /// <param name="channel">The channel of the Firefox browser to locate.</param>
+    /// <returns>A new instance of the <see cref="BrowserLocator"/> class.</returns>
+    public static BrowserLocator Create(FirefoxChannel channel)
+    {
+        return new BrowserLocator(new FirefoxBrowserLocatorSettings(channel));
+    }
 
     /// <summary>
     /// Gets the path to the browser executable, downloading it if necessary.
     /// If the browser-specific environment variable is set, returns that path directly.
     /// </summary>
-    /// <returns>The path to the Firefox executable.</returns>
-    public async Task<string> GetBrowserExecutablePathAsync()
+    /// <returns>The path to the browser executable.</returns>
+    public async Task<string> LocateBrowserExecutablePathAsync()
     {
-        string? envPath = Environment.GetEnvironmentVariable(this.EnvironmentVariableName);
+        string? envPath = Environment.GetEnvironmentVariable(this.settings.EnvironmentVariableName);
         if (!string.IsNullOrEmpty(envPath))
         {
-            Console.WriteLine($"Using '{this.EnvironmentVariableName}': {envPath}");
+            Console.WriteLine($"Using '{this.settings.EnvironmentVariableName}': {envPath}");
             return envPath;
         }
 
-        // This is a very naive implementation. It will result in downloading once per day,
-        // without regard to browser binary version. A future implementation should account
-        // for the binary version number.
-        string executablePath = this.GetExpectedExecutablePath();
-        if (File.Exists(executablePath) && !this.IsCacheStale())
+        BrowserCacheInfo cacheInfo = this.LoadCacheInfo();
+        InstalledBrowserInfo? browserInfo = cacheInfo.GetCachedBrowser(this.settings);
+
+        string browserVersion;
+        string directDownloadUrl = string.Empty;
+        bool ignoreVersionMatch = false;
+        if (browserInfo is not null && !browserInfo.IsCachedVersionInfoStale())
         {
-            Console.WriteLine($"Using cached {this.BrowserName}.");
-            return executablePath;
+            browserVersion = browserInfo.Version;
+        }
+        else
+        {
+            BrowserDownloadInfo downloadInfo = await this.settings.GetBrowserDownloadInfo().ConfigureAwait(false);
+            browserVersion = downloadInfo.Version;
+            directDownloadUrl = downloadInfo.DownloadUrl;
+            ignoreVersionMatch = downloadInfo.IgnoreVersionMatch;
+            browserInfo = new InstalledBrowserInfo
+            {
+                BrowserName = this.settings.BrowserName,
+                Channel = this.settings.Channel,
+                Version = browserVersion,
+                DirectDownloadUrl = downloadInfo.DownloadUrl,
+            };
+
+            cacheInfo.AddBrowserToCache(browserInfo, this.settings.IsLatestChannelVersion);
         }
 
-        Console.WriteLine($"Downloading {this.BrowserName}...");
-        await this.DownloadAndExtractAsync();
+        string cachedInstallDirectory = Path.Combine(BaseCacheDir, this.settings.BrowserName, this.settings.Channel, browserVersion);
+        string executablePath = Path.Combine(cachedInstallDirectory, this.settings.ExpectedExecutablePath);
+        if (File.Exists(executablePath))
+        {
+            if (ignoreVersionMatch)
+            {
+                Directory.Delete(cachedInstallDirectory, true);
+            }
+            else
+            {
+                Console.WriteLine($"Using cached {this.settings.BrowserDisplayName}.");
+                return executablePath;
+            }
+        }
+
+        if (!Directory.Exists(cachedInstallDirectory))
+        {
+            Directory.CreateDirectory(cachedInstallDirectory);
+        }
+
+        Console.WriteLine($"Downloading {this.settings.BrowserDisplayName}...");
+        string downloadedInstallerPath = Path.Combine(cachedInstallDirectory, this.settings.InstallerFileName);
+        using HttpClient client = new();
+        await this.DownloadFileAsync(client, directDownloadUrl, downloadedInstallerPath).ConfigureAwait(false);
+        await this.settings.Extractor.ExtractBrowserAsync(downloadedInstallerPath, cachedInstallDirectory).ConfigureAwait(false);
 
         if (!File.Exists(executablePath))
         {
-            throw new FileNotFoundException($"{this.BrowserName} executable not found after extraction at: {executablePath}");
+            throw new FileNotFoundException($"{this.settings.BrowserDisplayName} executable not found after extraction at: {executablePath}");
         }
 
-        File.WriteAllText(TimestampFile, DateTimeOffset.UtcNow.ToString("o"));
-        Console.WriteLine($"{this.BrowserName} ready at: {executablePath}");
+        browserInfo.LastDownload = DateTime.UtcNow;
+        this.SaveCacheInfo(cacheInfo);
+        Console.WriteLine($"{this.settings.BrowserDisplayName} ready at: {executablePath}");
         return executablePath;
-    }
-
-    /// <summary>
-    /// Gets the direct download URL for the Firefox installer for the current platform.
-    /// </summary>
-    /// <returns>The direct download URL for the Firefox installer for the current platform.</returns>
-    protected abstract Task<string> GetDownloadUrl();
-
-    /// <summary>
-    /// Gets the file name used for the downloaded installer for the current platform.
-    /// </summary>
-    /// <returns>The file name for the downloaded installer.</returns>
-    protected abstract string GetInstallerFileName();
-
-    /// <summary>
-    /// Gets the expected path to the Firefox executable after extraction, based on the platform.
-    /// </summary>
-    /// <returns>The expected path to the Firefox executable after extraction, based on the platform.</returns>
-    /// <exception cref="PlatformNotSupportedException">Thrown when the platform is not supported.</exception>
-    protected abstract string GetExpectedExecutablePath();
-
-    /// <summary>
-    /// Performs the download and extraction of the browser for the current platform.
-    /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    protected abstract Task DownloadAndExtractAsync();
-
-    /// <summary>
-    /// Gets a value indicating whether the browser cache has been updated within the last 24 hours.
-    /// </summary>
-    /// <returns><see langword="true"/> if the cache needs to be refreshed; otherwise <see langword="false"/>.</returns>
-    protected bool IsCacheStale()
-    {
-        if (!File.Exists(TimestampFile))
-        {
-            return true;
-        }
-
-        string text = File.ReadAllText(TimestampFile).Trim();
-        if (DateTimeOffset.TryParse(text, out DateTimeOffset lastDownload))
-        {
-            return DateTimeOffset.UtcNow - lastDownload > TimeSpan.FromHours(24);
-        }
-
-        return true;
     }
 
     /// <summary>
@@ -166,6 +209,143 @@ public abstract class BrowserLocator
                     lastPercent = percent;
                 }
             }
+        }
+    }
+
+    private BrowserCacheInfo LoadCacheInfo()
+    {
+        if (File.Exists(CacheInfoFile))
+        {
+            try
+            {
+                string text = File.ReadAllText(CacheInfoFile).Trim();
+                BrowserCacheInfo? cacheInfo = JsonSerializer.Deserialize<BrowserCacheInfo>(text);
+                if (cacheInfo is not null)
+                {
+                    return cacheInfo;
+                }
+            }
+            catch
+            {
+                // If parsing fails, treat as stale cache and overwrite on next download.
+            }
+        }
+
+        return new BrowserCacheInfo();
+    }
+
+    private void SaveCacheInfo(BrowserCacheInfo cacheInfo)
+    {
+        string json = JsonSerializer.Serialize(cacheInfo, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(CacheInfoFile, json);
+    }
+
+    private class BrowserCacheInfo
+    {
+        [JsonPropertyName("installedBrowsers")]
+        [JsonInclude]
+        public Dictionary<string, BrowserInfo> InstalledBrowsers { get; set; } = [];
+
+        public InstalledBrowserInfo? GetCachedBrowser(BrowserLocatorSettings settings)
+        {
+            if (this.InstalledBrowsers.TryGetValue(settings.BrowserName, out BrowserInfo? browserInfo))
+            {
+                if (browserInfo.Channels.TryGetValue(settings.Channel, out BrowserChannelInfo? browserChannel))
+                {
+                    string version = settings.Version;
+                    foreach (InstalledBrowserInfo info in browserChannel.Versions)
+                    {
+                        if (info.Version == version)
+                        {
+                            return info;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public void AddBrowserToCache(InstalledBrowserInfo browserInfo, bool isDefaultChannelVersion = false)
+        {
+            if (!this.InstalledBrowsers.TryGetValue(browserInfo.BrowserName, out BrowserInfo? browserCacheInfo))
+            {
+                browserCacheInfo = new BrowserInfo
+                {
+                    Channels = [],
+                };
+                this.InstalledBrowsers[browserInfo.BrowserName] = browserCacheInfo;
+            }
+
+            if (!browserCacheInfo.Channels.TryGetValue(browserInfo.Channel, out BrowserChannelInfo? channelCacheInfo))
+            {
+                channelCacheInfo = new BrowserChannelInfo
+                {
+                    Versions = [],
+                };
+                browserCacheInfo.Channels[browserInfo.Channel] = channelCacheInfo;
+            }
+
+            if (isDefaultChannelVersion)
+            {
+                channelCacheInfo.DefaultVersion = browserInfo.Version;
+            }
+
+            channelCacheInfo.Versions.Add(browserInfo);
+        }
+    }
+
+    private class BrowserInfo
+    {
+        [JsonPropertyName("channels")]
+        [JsonInclude]
+        public Dictionary<string, BrowserChannelInfo> Channels { get; set; } = [];
+    }
+
+    private class BrowserChannelInfo
+    {
+        [JsonPropertyName("defaultVersion")]
+        [JsonInclude]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? DefaultVersion { get; set; }
+
+        [JsonPropertyName("versions")]
+        [JsonInclude]
+        public List<InstalledBrowserInfo> Versions { get; set; } = [];
+    }
+
+    private class InstalledBrowserInfo
+    {
+        [JsonPropertyName("lastDownload")]
+        [JsonInclude]
+        public DateTime LastDownload { get; set; } = DateTime.MinValue;
+
+        [JsonPropertyName("browserName")]
+        [JsonInclude]
+        public string BrowserName { get; set; } = string.Empty;
+
+        [JsonPropertyName("channel")]
+        [JsonInclude]
+        public string Channel { get; set; } = string.Empty;
+
+        [JsonPropertyName("version")]
+        [JsonInclude]
+        public string Version { get; set; } = string.Empty;
+
+        [JsonPropertyName("directDownloadUrl")]
+        [JsonInclude]
+        public string DirectDownloadUrl { get; set; } = string.Empty;
+
+        public bool IsCachedVersionInfoValid()
+        {
+            bool cacheExpired = DateTime.UtcNow - this.LastDownload <= TimeSpan.FromHours(24);
+            return cacheExpired;
+        }
+
+        public bool IsCachedVersionInfoStale()
+        {
+            bool cacheExpired = DateTime.UtcNow - this.LastDownload > TimeSpan.FromHours(24);
+            return cacheExpired;
         }
     }
 }

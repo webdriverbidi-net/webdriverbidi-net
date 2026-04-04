@@ -486,6 +486,9 @@
         parseSendCommandParams(params) {
             return params;
         }
+        parseSetClientHintsOverrideParams(params) {
+            return params;
+        }
         parseSetForcedColorsModeThemeOverrideParams(params) {
             return params;
         }
@@ -505,6 +508,9 @@
             return params;
         }
         parseSetScriptingEnabledParams(params) {
+            return params;
+        }
+        parseSetScrollbarTypeOverrideParams(params) {
             return params;
         }
         parseSetTimezoneOverrideParams(params) {
@@ -636,7 +642,7 @@
             this.#userContextStorage = userContextStorage;
         }
         close() {
-            setTimeout(() => this.#browserCdpClient.sendCommand('Browser.close'), 0);
+            setTimeout(() => this.#browserCdpClient.sendCommand('Browser.close').catch(() => { }), 0);
             return {};
         }
         async createUserContext(params) {
@@ -709,6 +715,46 @@
                 width: windowInfo.bounds.width ?? 0,
                 x: windowInfo.bounds.left ?? 0,
                 y: windowInfo.bounds.top ?? 0,
+            };
+        }
+        async setClientWindowState(params) {
+            const { clientWindow } = params;
+            const bounds = {
+                windowState: params.state,
+            };
+            if (params.state === 'normal') {
+                if (params.width !== undefined) {
+                    bounds.width = params.width;
+                }
+                if (params.height !== undefined) {
+                    bounds.height = params.height;
+                }
+                if (params.x !== undefined) {
+                    bounds.left = params.x;
+                }
+                if (params.y !== undefined) {
+                    bounds.top = params.y;
+                }
+            }
+            const windowId = Number.parseInt(clientWindow);
+            if (isNaN(windowId)) {
+                throw new InvalidArgumentException('no such client window');
+            }
+            await this.#browserCdpClient.sendCommand('Browser.setWindowBounds', {
+                windowId,
+                bounds,
+            });
+            const result = await this.#browserCdpClient.sendCommand('Browser.getWindowBounds', {
+                windowId,
+            });
+            return {
+                active: false,
+                clientWindow: `${windowId}`,
+                state: result.bounds.windowState ?? 'normal',
+                height: result.bounds.height ?? 0,
+                width: result.bounds.width ?? 0,
+                x: result.bounds.left ?? 0,
+                y: result.bounds.top ?? 0,
             };
         }
         async getClientWindows() {
@@ -1186,7 +1232,7 @@
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await Promise.all([
                     context.setLocaleOverride(config.locale ?? null),
-                    context.setUserAgentAndAcceptLanguage(config.userAgent, config.locale),
+                    context.setUserAgentAndAcceptLanguage(config.userAgent, config.locale, config.clientHints),
                 ]);
             }));
             return {};
@@ -1207,6 +1253,24 @@
             await Promise.all(browsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
                 await context.setScriptingEnabled(config.scriptingEnabled ?? null);
+            }));
+            return {};
+        }
+        async setScrollbarTypeOverride(params) {
+            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts);
+            for (const browsingContextId of params.contexts ?? []) {
+                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
+                    scrollbarType: params.scrollbarType,
+                });
+            }
+            for (const userContextId of params.userContexts ?? []) {
+                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
+                    scrollbarType: params.scrollbarType,
+                });
+            }
+            await Promise.all(browsingContexts.map(async (context) => {
+                const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
+                await context.setScrollbarTypeOverride(config.scrollbarType ?? null);
             }));
             return {};
         }
@@ -1354,7 +1418,31 @@
             }
             await Promise.all(browsingContexts.map(async (context) => {
                 const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
-                await context.setUserAgentAndAcceptLanguage(config.userAgent, config.locale);
+                await context.setUserAgentAndAcceptLanguage(config.userAgent, config.locale, config.clientHints);
+            }));
+            return {};
+        }
+        async setClientHintsOverride(params) {
+            const clientHints = params.clientHints ?? null;
+            const browsingContexts = await this.#getRelatedTopLevelBrowsingContexts(params.contexts, params.userContexts, true);
+            for (const browsingContextId of params.contexts ?? []) {
+                this.#contextConfigStorage.updateBrowsingContextConfig(browsingContextId, {
+                    clientHints,
+                });
+            }
+            for (const userContextId of params.userContexts ?? []) {
+                this.#contextConfigStorage.updateUserContextConfig(userContextId, {
+                    clientHints,
+                });
+            }
+            if (params.contexts === undefined && params.userContexts === undefined) {
+                this.#contextConfigStorage.updateGlobalConfig({
+                    clientHints,
+                });
+            }
+            await Promise.all(browsingContexts.map(async (context) => {
+                const config = this.#contextConfigStorage.getActiveConfig(context.id, context.userContext);
+                await context.setUserAgentAndAcceptLanguage(config.userAgent, config.locale, config.clientHints);
             }));
             return {};
         }
@@ -3472,7 +3560,6 @@
         };
         result[`goog:session`] = cookie.session;
         result[`goog:priority`] = cookie.priority;
-        result[`goog:sameParty`] = cookie.sameParty;
         result[`goog:sourceScheme`] = cookie.sourceScheme;
         result[`goog:sourcePort`] = cookie.sourcePort;
         if (cookie.partitionKey !== undefined) {
@@ -3516,9 +3603,6 @@
         }
         if (params.cookie[`goog:priority`] !== undefined) {
             result.priority = params.cookie[`goog:priority`];
-        }
-        if (params.cookie[`goog:sameParty`] !== undefined) {
-            result.sameParty = params.cookie[`goog:sameParty`];
         }
         if (params.cookie[`goog:sourceScheme`] !== undefined) {
             result.sourceScheme = params.cookie[`goog:sourceScheme`];
@@ -5051,8 +5135,7 @@
                 case 'browser.removeUserContext':
                     return await this.#browserProcessor.removeUserContext(this.#parser.parseRemoveUserContextParameters(command.params));
                 case 'browser.setClientWindowState':
-                    this.#parser.parseSetClientWindowStateParameters(command.params);
-                    throw new UnsupportedOperationException(`Method ${command.method} is not implemented.`);
+                    return await this.#browserProcessor.setClientWindowState(this.#parser.parseSetClientWindowStateParameters(command.params));
                 case 'browser.setDownloadBehavior':
                     return await this.#browserProcessor.setDownloadBehavior(this.#parser.parseSetDownloadBehaviorParameters(command.params));
                 case 'browsingContext.activate':
@@ -5100,12 +5183,16 @@
                     return await this.#emulationProcessor.setScreenSettingsOverride(this.#parser.parseSetScreenSettingsOverrideParams(command.params));
                 case 'emulation.setScriptingEnabled':
                     return await this.#emulationProcessor.setScriptingEnabled(this.#parser.parseSetScriptingEnabledParams(command.params));
+                case 'emulation.setScrollbarTypeOverride':
+                    return await this.#emulationProcessor.setScrollbarTypeOverride(this.#parser.parseSetScrollbarTypeOverrideParams(command.params));
                 case 'emulation.setTimezoneOverride':
                     return await this.#emulationProcessor.setTimezoneOverride(this.#parser.parseSetTimezoneOverrideParams(command.params));
                 case 'emulation.setTouchOverride':
                     return await this.#emulationProcessor.setTouchOverride(this.#parser.parseSetTouchOverrideParams(command.params));
                 case 'emulation.setUserAgentOverride':
                     return await this.#emulationProcessor.setUserAgentOverrideParams(this.#parser.parseSetUserAgentOverrideParams(command.params));
+                case 'userAgentClientHints.setClientHintsOverride':
+                    return await this.#emulationProcessor.setClientHintsOverride(this.#parser.parseSetClientHintsOverrideParams(command.params));
                 case 'input.performActions':
                     return await this.#inputProcessor.performActions(this.#parser.parsePerformActionsParams(command.params));
                 case 'input.releaseActions':
@@ -5620,6 +5707,7 @@
      */
     class ContextConfig {
         acceptInsecureCerts;
+        clientHints;
         devicePixelRatio;
         disableNetworkDurableMessages;
         downloadBehavior;
@@ -5632,6 +5720,7 @@
         screenArea;
         screenOrientation;
         scriptingEnabled;
+        scrollbarType;
         timezone;
         userAgent;
         userPromptHandler;
@@ -6341,13 +6430,15 @@
             this.realmStorage.knownHandlesToRealmMap.delete(handle);
         }
         dispose() {
-            this.#registerEvent({
-                type: 'event',
-                method: Script$2.EventNames.RealmDestroyed,
-                params: {
-                    realm: this.realmId,
-                },
-            });
+            if (!this.isHidden()) {
+                this.#registerEvent({
+                    type: 'event',
+                    method: Script$2.EventNames.RealmDestroyed,
+                    params: {
+                        realm: this.realmId,
+                    },
+                });
+            }
         }
     }
 
@@ -7099,6 +7190,9 @@
                 if (!auxData || auxData.frameId !== this.id) {
                     return;
                 }
+                if (auxData.type === 'isolated' && name === '') {
+                    return;
+                }
                 let origin;
                 let sandbox;
                 switch (auxData.type) {
@@ -7411,7 +7505,7 @@
         }
         async setViewport(viewport, devicePixelRatio, screenOrientation) {
             const config = this.#configStorage.getActiveConfig(this.id, this.userContext);
-            await this.cdpTarget.setDeviceMetricsOverride(viewport, devicePixelRatio, screenOrientation, config.screenArea ?? null);
+            await this.cdpTarget.setDeviceMetricsOverride(viewport, devicePixelRatio, screenOrientation, config.screenArea ?? null, config.scrollbarType ?? null);
         }
         async handleUserPrompt(accept, userText) {
             await this.top.#cdpTarget.cdpClient.sendCommand('Page.handleJavaScriptDialog', {
@@ -7625,9 +7719,10 @@
         async locateNodes(params) {
             return await this.#locateNodesByLocator(await this.#defaultRealmDeferred, params.locator, params.startNodes ?? [], params.maxNodeCount, params.serializationOptions);
         }
-        async #getLocatorDelegate(realm, locator, maxNodeCount, startNodes) {
+        #getLocatorDelegate(locator, maxNodeCount, startNodes) {
             switch (locator.type) {
                 case 'context':
+                case 'accessibility':
                     throw new Error('Unreachable');
                 case 'css':
                     return {
@@ -7764,118 +7859,16 @@
                             ...startNodes,
                         ],
                     };
-                case 'accessibility': {
-                    if (!locator.value.name && !locator.value.role) {
-                        throw new InvalidSelectorException('Either name or role has to be specified');
-                    }
-                    await Promise.all([
-                        this.#cdpTarget.cdpClient.sendCommand('Accessibility.enable'),
-                        this.#cdpTarget.cdpClient.sendCommand('Accessibility.getRootAXNode'),
-                    ]);
-                    const bindings = await realm.evaluate(
-                     '({getAccessibleName, getAccessibleRole})',
-                     false, "root" ,
-                     undefined,
-                     false,
-                     true);
-                    if (bindings.type !== 'success') {
-                        throw new Error('Could not get bindings');
-                    }
-                    if (bindings.result.type !== 'object') {
-                        throw new Error('Could not get bindings');
-                    }
-                    return {
-                        functionDeclaration: String((name, role, bindings, maxNodeCount, ...startNodes) => {
-                            const returnedNodes = [];
-                            let aborted = false;
-                            function collect(contextNodes, selector) {
-                                if (aborted) {
-                                    return;
-                                }
-                                for (const contextNode of contextNodes) {
-                                    let match = true;
-                                    if (selector.role) {
-                                        const role = bindings.getAccessibleRole(contextNode);
-                                        if (selector.role !== role) {
-                                            match = false;
-                                        }
-                                    }
-                                    if (selector.name) {
-                                        const name = bindings.getAccessibleName(contextNode);
-                                        if (selector.name !== name) {
-                                            match = false;
-                                        }
-                                    }
-                                    if (match) {
-                                        if (maxNodeCount !== 0 &&
-                                            returnedNodes.length === maxNodeCount) {
-                                            aborted = true;
-                                            break;
-                                        }
-                                        returnedNodes.push(contextNode);
-                                    }
-                                    const childNodes = [];
-                                    for (const child of contextNode.children) {
-                                        if (child instanceof HTMLElement) {
-                                            childNodes.push(child);
-                                        }
-                                    }
-                                    collect(childNodes, selector);
-                                }
-                            }
-                            startNodes =
-                                startNodes.length > 0
-                                    ? startNodes
-                                    : Array.from(document.documentElement.children).filter((c) => c instanceof HTMLElement);
-                            collect(startNodes, {
-                                role,
-                                name,
-                            });
-                            return returnedNodes;
-                        }),
-                        argumentsLocalValues: [
-                            { type: 'string', value: locator.value.name || '' },
-                            { type: 'string', value: locator.value.role || '' },
-                            { handle: bindings.result.handle },
-                            { type: 'number', value: maxNodeCount ?? 0 },
-                            ...startNodes,
-                        ],
-                    };
-                }
             }
         }
         async #locateNodesByLocator(realm, locator, startNodes, maxNodeCount, serializationOptions) {
             if (locator.type === 'context') {
-                if (startNodes.length !== 0) {
-                    throw new InvalidArgumentException('Start nodes are not supported');
-                }
-                const contextId = locator.value.context;
-                if (!contextId) {
-                    throw new InvalidSelectorException('Invalid context');
-                }
-                const context = this.#browsingContextStorage.getContext(contextId);
-                const parent = context.parent;
-                if (!parent) {
-                    throw new InvalidArgumentException('This context has no container');
-                }
-                try {
-                    const { backendNodeId } = await parent.#cdpTarget.cdpClient.sendCommand('DOM.getFrameOwner', {
-                        frameId: contextId,
-                    });
-                    const { object } = await parent.#cdpTarget.cdpClient.sendCommand('DOM.resolveNode', {
-                        backendNodeId,
-                    });
-                    const locatorResult = await realm.callFunction(`function () { return this; }`, false, { handle: object.objectId }, [], "none" , serializationOptions);
-                    if (locatorResult.type === 'exception') {
-                        throw new Error('Unknown exception');
-                    }
-                    return { nodes: [locatorResult.result] };
-                }
-                catch {
-                    throw new InvalidArgumentException('Context does not exist');
-                }
+                return await this.#locateNodesByContextLocator(locator, startNodes, realm, serializationOptions);
             }
-            const locatorDelegate = await this.#getLocatorDelegate(realm, locator, maxNodeCount, startNodes);
+            if (locator.type === 'accessibility') {
+                return await this.#locateNodesByAccessibility(locator, startNodes, maxNodeCount, realm);
+            }
+            const locatorDelegate = this.#getLocatorDelegate(locator, maxNodeCount, startNodes);
             serializationOptions = {
                 ...serializationOptions,
                 maxObjectDepth: 1,
@@ -7905,6 +7898,99 @@
             });
             return { nodes };
         }
+        async #locateNodesByContextLocator(locator, startNodes, realm, serializationOptions) {
+            if (startNodes.length !== 0) {
+                throw new InvalidArgumentException('Start nodes are not supported');
+            }
+            const contextId = locator.value.context;
+            if (!contextId) {
+                throw new InvalidSelectorException('Invalid context');
+            }
+            const context = this.#browsingContextStorage.getContext(contextId);
+            const parent = context.parent;
+            if (!parent) {
+                throw new InvalidArgumentException('This context has no container');
+            }
+            try {
+                const { backendNodeId } = await parent.#cdpTarget.cdpClient.sendCommand('DOM.getFrameOwner', {
+                    frameId: contextId,
+                });
+                const { object } = await parent.#cdpTarget.cdpClient.sendCommand('DOM.resolveNode', {
+                    backendNodeId,
+                });
+                const locatorResult = await realm.callFunction(`function () { return this; }`, false, { handle: object.objectId }, [], "none" , serializationOptions);
+                if (locatorResult.type === 'exception') {
+                    throw new Error('Unknown exception');
+                }
+                return { nodes: [locatorResult.result] };
+            }
+            catch {
+                throw new InvalidArgumentException('Context does not exist');
+            }
+        }
+        async #locateNodesByAccessibility(locator, startNodes, maxNodeCount, realm) {
+            if (!locator.value.name && !locator.value.role) {
+                throw new InvalidSelectorException('Either name or role has to be specified');
+            }
+            await this.#cdpTarget.cdpClient.sendCommand('Accessibility.enable');
+            const startBackendNodeIds = [];
+            if (startNodes.length === 0) {
+                const { root: documentRoot } = await this.#cdpTarget.cdpClient.sendCommand('DOM.getDocument');
+                startBackendNodeIds.push(documentRoot.backendNodeId);
+            }
+            else {
+                for (const node of startNodes) {
+                    if (node.sharedId) {
+                        const parsed = parseSharedId(node.sharedId);
+                        if (!parsed) {
+                            throw new NoSuchNodeException(`Invalid sharedId: ${node.sharedId}`);
+                        }
+                        startBackendNodeIds.push(parsed.backendNodeId);
+                    }
+                    else {
+                        if (node.handle) {
+                            const { nodeId } = await this.#cdpTarget.cdpClient.sendCommand('DOM.requestNode', {
+                                objectId: node.handle,
+                            });
+                            const { node: describedNode } = await this.#cdpTarget.cdpClient.sendCommand('DOM.describeNode', {
+                                nodeId,
+                            });
+                            startBackendNodeIds.push(describedNode.backendNodeId);
+                        }
+                        else {
+                            throw new NoSuchNodeException('Start node must have sharedId or handle');
+                        }
+                    }
+                }
+            }
+            const matchedBackendNodeIds = new Set();
+            for (const backendNodeId of startBackendNodeIds) {
+                const { nodes } = await this.#cdpTarget.cdpClient.sendCommand('Accessibility.queryAXTree', {
+                    backendNodeId,
+                    accessibleName: locator.value.name,
+                    role: locator.value.role,
+                });
+                for (const node of nodes) {
+                    if (node.backendDOMNodeId && node.role?.type === 'role') {
+                        matchedBackendNodeIds.add(node.backendDOMNodeId);
+                        if (maxNodeCount !== undefined &&
+                            maxNodeCount > 0 &&
+                            matchedBackendNodeIds.size >= maxNodeCount) {
+                            break;
+                        }
+                    }
+                }
+            }
+            const resultNodes = await Promise.all(Array.from(matchedBackendNodeIds).map(async (backendNodeId) => {
+                const { object } = await this.#cdpTarget.cdpClient.sendCommand('DOM.resolveNode', {
+                    backendNodeId,
+                });
+                return await realm.serializeCdpObject(object, "none" );
+            }));
+            return {
+                nodes: resultNodes.filter((result) => result.type === 'node'),
+            };
+        }
         #getAllRelatedCdpTargets() {
             const targets = new Set();
             targets.add(this.cdpTarget);
@@ -7923,8 +8009,8 @@
         async setScriptingEnabled(scriptingEnabled) {
             await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setScriptingEnabled(scriptingEnabled)));
         }
-        async setUserAgentAndAcceptLanguage(userAgent, acceptLanguage) {
-            await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setUserAgentAndAcceptLanguage(userAgent, acceptLanguage)));
+        async setUserAgentAndAcceptLanguage(userAgent, acceptLanguage, clientHints) {
+            await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setUserAgentAndAcceptLanguage(userAgent, acceptLanguage, clientHints)));
         }
         async setEmulatedNetworkConditions(networkConditions) {
             await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setEmulatedNetworkConditions(networkConditions)));
@@ -7934,6 +8020,10 @@
         }
         async setExtraHeaders(cdpExtraHeaders) {
             await Promise.all(this.#getAllRelatedCdpTargets().map(async (cdpTarget) => await cdpTarget.setExtraHeaders(cdpExtraHeaders)));
+        }
+        async setScrollbarTypeOverride(scrollbarType) {
+            const config = this.#configStorage.getActiveConfig(this.id, this.userContext);
+            await this.cdpTarget.setDeviceMetricsOverride(config.viewport ?? null, config.devicePixelRatio ?? null, config.screenOrientation ?? null, config.screenArea ?? null, scrollbarType);
         }
     }
     _a$5 = BrowsingContextImpl;
@@ -9657,6 +9747,7 @@
         #networkStorage;
         contextConfigStorage;
         #unblocked = new Deferred();
+        #defaultUserAgent;
         #logger;
         #windowId;
         #deviceAccessEnabled = false;
@@ -9667,14 +9758,15 @@
             response: false,
             auth: false,
         };
-        static create(targetId, cdpClient, browserCdpClient, parentCdpClient, realmStorage, eventManager, preloadScriptStorage, browsingContextStorage, networkStorage, configStorage, userContext, logger) {
-            const cdpTarget = new CdpTarget(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, logger);
+        static create(targetId, cdpClient, browserCdpClient, parentCdpClient, realmStorage, eventManager, preloadScriptStorage, browsingContextStorage, networkStorage, configStorage, userContext, defaultUserAgent, logger) {
+            const cdpTarget = new CdpTarget(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, defaultUserAgent, logger);
             LogManager.create(cdpTarget, realmStorage, eventManager, logger);
             cdpTarget.#setEventListeners();
             void cdpTarget.#unblock();
             return cdpTarget;
         }
-        constructor(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, logger) {
+        constructor(targetId, cdpClient, browserCdpClient, parentCdpClient, eventManager, realmStorage, preloadScriptStorage, browsingContextStorage, configStorage, networkStorage, userContext, defaultUserAgent, logger) {
+            this.#defaultUserAgent = defaultUserAgent;
             this.userContext = userContext;
             this.#id = targetId;
             this.#cdpClient = cdpClient;
@@ -9987,11 +10079,12 @@
                 return script.initInTarget(this, true);
             }));
         }
-        async setDeviceMetricsOverride(viewport, devicePixelRatio, screenOrientation, screenArea) {
+        async setDeviceMetricsOverride(viewport, devicePixelRatio, screenOrientation, screenArea, scrollbarType = null) {
             if (viewport === null &&
                 devicePixelRatio === null &&
                 screenOrientation === null &&
-                screenArea === null) {
+                screenArea === null &&
+                scrollbarType === null) {
                 await this.cdpClient.sendCommand('Emulation.clearDeviceMetricsOverride');
                 return;
             }
@@ -10003,6 +10096,7 @@
                 mobile: false,
                 screenWidth: screenArea?.width,
                 screenHeight: screenArea?.height,
+                scrollbarType: scrollbarType === 'overlay' ? 'overlay' : 'default',
             };
             await this.cdpClient.sendCommand('Emulation.setDeviceMetricsOverride', metricsOverride);
         }
@@ -10018,7 +10112,7 @@
                 config.devicePixelRatio !== undefined ||
                 config.screenOrientation !== undefined ||
                 config.screenArea !== undefined) {
-                promises.push(this.setDeviceMetricsOverride(config.viewport ?? null, config.devicePixelRatio ?? null, config.screenOrientation ?? null, config.screenArea ?? null).catch(() => {
+                promises.push(this.setDeviceMetricsOverride(config.viewport ?? null, config.devicePixelRatio ?? null, config.screenOrientation ?? null, config.screenArea ?? null, config.scrollbarType ?? null).catch(() => {
                 }));
             }
             if (config.geolocation !== undefined && config.geolocation !== null) {
@@ -10033,8 +10127,10 @@
             if (config.extraHeaders !== undefined) {
                 promises.push(this.setExtraHeaders(config.extraHeaders));
             }
-            if (config.userAgent !== undefined || config.locale !== undefined) {
-                promises.push(this.setUserAgentAndAcceptLanguage(config.userAgent, config.locale));
+            if (config.userAgent !== undefined ||
+                config.locale !== undefined ||
+                config.clientHints !== undefined) {
+                promises.push(this.setUserAgentAndAcceptLanguage(config.userAgent, config.locale, config.clientHints));
             }
             if (config.scriptingEnabled !== undefined) {
                 promises.push(this.setScriptingEnabled(config.scriptingEnabled));
@@ -10189,10 +10285,29 @@
                 headers,
             });
         }
-        async setUserAgentAndAcceptLanguage(userAgent, acceptLanguage) {
+        async setUserAgentAndAcceptLanguage(userAgent, acceptLanguage, clientHints) {
+            const userAgentMetadata = clientHints
+                ? {
+                    brands: clientHints.brands?.map((b) => ({
+                        brand: b.brand,
+                        version: b.version,
+                    })),
+                    fullVersionList: clientHints.fullVersionList,
+                    platform: clientHints.platform ?? '',
+                    platformVersion: clientHints.platformVersion ?? '',
+                    architecture: clientHints.architecture ?? '',
+                    model: clientHints.model ?? '',
+                    mobile: clientHints.mobile ?? false,
+                    bitness: clientHints.bitness ?? undefined,
+                    wow64: clientHints.wow64 ?? undefined,
+                    formFactors: clientHints.formFactors ?? undefined,
+                }
+                : undefined;
             await this.cdpClient.sendCommand('Emulation.setUserAgentOverride', {
-                userAgent: userAgent ?? '',
+                userAgent: userAgent || (userAgentMetadata ? this.#defaultUserAgent : ''),
                 acceptLanguage: acceptLanguage ?? undefined,
+                platform: clientHints?.platform ?? undefined,
+                userAgentMetadata,
             });
         }
         async setEmulatedNetworkConditions(networkConditions) {
@@ -10240,8 +10355,9 @@
         #configStorage;
         #speculationProcessor;
         #defaultUserContextId;
+        #defaultUserAgent;
         #logger;
-        constructor(cdpConnection, browserCdpClient, selfTargetId, eventManager, browsingContextStorage, realmStorage, networkStorage, configStorage, bluetoothProcessor, speculationProcessor, preloadScriptStorage, defaultUserContextId, logger) {
+        constructor(cdpConnection, browserCdpClient, selfTargetId, eventManager, browsingContextStorage, realmStorage, networkStorage, configStorage, bluetoothProcessor, speculationProcessor, preloadScriptStorage, defaultUserContextId, defaultUserAgent, logger) {
             this.#cdpConnection = cdpConnection;
             this.#browserCdpClient = browserCdpClient;
             this.#targetKeysToBeIgnoredByAutoAttach.add(selfTargetId);
@@ -10255,6 +10371,7 @@
             this.#speculationProcessor = speculationProcessor;
             this.#realmStorage = realmStorage;
             this.#defaultUserContextId = defaultUserContextId;
+            this.#defaultUserAgent = defaultUserAgent;
             this.#logger = logger;
             this.#setEventListeners(browserCdpClient);
         }
@@ -10369,7 +10486,8 @@
         #createCdpTarget(targetCdpClient, parentCdpClient, targetInfo, userContext) {
             this.#setEventListeners(targetCdpClient);
             this.#preloadScriptStorage.onCdpTargetCreated(targetInfo.targetId, userContext);
-            const target = CdpTarget.create(targetInfo.targetId, targetCdpClient, this.#browserCdpClient, parentCdpClient, this.#realmStorage, this.#eventManager, this.#preloadScriptStorage, this.#browsingContextStorage, this.#networkStorage, this.#configStorage, userContext, this.#logger);
+            const target = CdpTarget.create(targetInfo.targetId, targetCdpClient, this.#browserCdpClient, parentCdpClient, this.#realmStorage, this.#eventManager, this.#preloadScriptStorage, this.#browsingContextStorage, this.#networkStorage, this.#configStorage, userContext,
+            this.#defaultUserAgent, this.#logger);
             this.#networkStorage.onCdpTargetCreated(target);
             this.#bluetoothProcessor.onCdpTargetCreated(target);
             this.#speculationProcessor.onCdpTargetCreated(target);
@@ -11277,7 +11395,7 @@
             }
             await this.#transport.sendMessage(message);
         };
-        constructor(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, parser, logger) {
+        constructor(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, defaultUserAgent, parser, logger) {
             super();
             this.#logger = logger;
             this.#messageQueue = new ProcessingQueue(this.#processOutgoingMessage, this.#logger);
@@ -11299,7 +11417,7 @@
                     prerenderingDisabled: options?.['goog:prerenderingDisabled'] ?? false,
                     disableNetworkDurableMessages: options?.['goog:disableNetworkDurableMessages'],
                 });
-                new CdpTargetManager(cdpConnection, browserCdpClient, selfTargetId, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, networkStorage, contextConfigStorage, this.#bluetoothProcessor, this.#speculationProcessor, this.#preloadScriptStorage, defaultUserContextId, logger);
+                new CdpTargetManager(cdpConnection, browserCdpClient, selfTargetId, this.#eventManager, this.#browsingContextStorage, this.#realmStorage, networkStorage, contextConfigStorage, this.#bluetoothProcessor, this.#speculationProcessor, this.#preloadScriptStorage, defaultUserContextId, defaultUserAgent, logger);
                 await browserCdpClient.sendCommand('Target.setDiscoverTargets', {
                     discover: true,
                 });
@@ -11325,14 +11443,15 @@
             });
         }
         static async createAndStart(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, parser, logger) {
-            const [defaultUserContextId] = await Promise.all([
+            const [defaultUserContextId, version] = await Promise.all([
                 this.#getDefaultUserContextId(browserCdpClient),
+                browserCdpClient.sendCommand('Browser.getVersion'),
                 browserCdpClient.sendCommand('Browser.setDownloadBehavior', {
                     behavior: 'default',
                     eventsEnabled: true,
                 }),
             ]);
-            const server = new BidiServer(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, parser, logger);
+            const server = new BidiServer(bidiTransport, cdpConnection, browserCdpClient, selfTargetId, defaultUserContextId, version.userAgent, parser, logger);
             return server;
         }
         static async #getDefaultUserContextId(browserCdpClient) {
@@ -15973,6 +16092,63 @@
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
+    z.lazy(() => UserAgentClientHints.SetClientHintsOverrideCommandSchema);
+    var UserAgentClientHints;
+    (function (UserAgentClientHints) {
+        UserAgentClientHints.SetClientHintsOverrideCommandSchema = z.lazy(() => z.object({
+            method: z.literal('userAgentClientHints.setClientHintsOverride'),
+            params: z.object({
+                clientHints: z.union([
+                    UserAgentClientHints.ClientHintsMetadataSchema,
+                    z.null(),
+                ]),
+                contexts: z.array(z.string()).min(1).optional(),
+                userContexts: z.array(z.string()).min(1).optional(),
+            }),
+        }));
+    })(UserAgentClientHints || (UserAgentClientHints = {}));
+    (function (UserAgentClientHints) {
+        UserAgentClientHints.ClientHintsMetadataSchema = z.lazy(() => z.object({
+            brands: z.array(UserAgentClientHints.BrandVersionSchema).optional(),
+            fullVersionList: z
+                .array(UserAgentClientHints.BrandVersionSchema)
+                .optional(),
+            platform: z.string().optional(),
+            platformVersion: z.string().optional(),
+            architecture: z.string().optional(),
+            model: z.string().optional(),
+            mobile: z.boolean().optional(),
+            bitness: z.string().optional(),
+            wow64: z.boolean().optional(),
+            formFactors: z.array(z.string()).optional(),
+        }));
+    })(UserAgentClientHints || (UserAgentClientHints = {}));
+    (function (UserAgentClientHints) {
+        UserAgentClientHints.BrandVersionSchema = z.lazy(() => z.object({
+            brand: z.string(),
+            version: z.string(),
+        }));
+    })(UserAgentClientHints || (UserAgentClientHints = {}));
+    (function (UserAgentClientHints) {
+        UserAgentClientHints.SetClientHintsOverrideResultSchema = z.lazy(() => z.object({}));
+    })(UserAgentClientHints || (UserAgentClientHints = {}));
+
+    /**
+     * Copyright 2024 Google LLC.
+     * Copyright (c) Microsoft Corporation.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *     http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
     z.lazy(() => z
         .object({
         id: JsUintSchema,
@@ -16568,6 +16744,7 @@
             navigation: z.union([BrowsingContext.NavigationSchema, z.null()]),
             timestamp: JsUintSchema,
             url: z.string(),
+            userContext: Browser$1.UserContextSchema.optional(),
         }));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
     (function (BrowsingContext) {
@@ -16674,6 +16851,7 @@
     (function (BrowsingContext) {
         BrowsingContext.CreateResultSchema = z.lazy(() => z.object({
             context: BrowsingContext.BrowsingContextSchema,
+            userContext: Browser$1.UserContextSchema.optional(),
         }));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
     (function (BrowsingContext) {
@@ -16877,6 +17055,7 @@
             context: BrowsingContext.BrowsingContextSchema,
             timestamp: JsUintSchema,
             url: z.string(),
+            userContext: Browser$1.UserContextSchema.optional(),
         }));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
     (function (BrowsingContext) {
@@ -16960,6 +17139,7 @@
             context: BrowsingContext.BrowsingContextSchema,
             accepted: z.boolean(),
             type: BrowsingContext.UserPromptTypeSchema,
+            userContext: Browser$1.UserContextSchema.optional(),
             userText: z.string().optional(),
         }));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
@@ -16975,6 +17155,7 @@
             handler: Session$1.UserPromptHandlerTypeSchema,
             message: z.string(),
             type: BrowsingContext.UserPromptTypeSchema,
+            userContext: Browser$1.UserContextSchema.optional(),
             defaultValue: z.string().optional(),
         }));
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
@@ -16986,6 +17167,7 @@
         Emulation$1.SetScreenOrientationOverrideSchema,
         Emulation$1.SetScreenSettingsOverrideSchema,
         Emulation$1.SetScriptingEnabledSchema,
+        Emulation$1.SetScrollbarTypeOverrideSchema,
         Emulation$1.SetTimezoneOverrideSchema,
         Emulation$1.SetTouchOverrideSchema,
         Emulation$1.SetUserAgentOverrideSchema,
@@ -16996,6 +17178,7 @@
         Emulation$1.SetLocaleOverrideResultSchema,
         Emulation$1.SetScreenOrientationOverrideResultSchema,
         Emulation$1.SetScriptingEnabledResultSchema,
+        Emulation$1.SetScrollbarTypeOverrideResultSchema,
         Emulation$1.SetTimezoneOverrideResultSchema,
         Emulation$1.SetTouchOverrideResultSchema,
         Emulation$1.SetUserAgentOverrideResultSchema,
@@ -17219,6 +17402,29 @@
         Emulation.SetScriptingEnabledResultSchema = z.lazy(() => EmptyResultSchema);
     })(Emulation$1 || (Emulation$1 = {}));
     (function (Emulation) {
+        Emulation.SetScrollbarTypeOverrideSchema = z.lazy(() => z.object({
+            method: z.literal('emulation.setScrollbarTypeOverride'),
+            params: Emulation.SetScrollbarTypeOverrideParametersSchema,
+        }));
+    })(Emulation$1 || (Emulation$1 = {}));
+    (function (Emulation) {
+        Emulation.SetScrollbarTypeOverrideParametersSchema = z.lazy(() => z.object({
+            scrollbarType: z.union([
+                z.literal('classic'),
+                z.literal('overlay'),
+                z.null(),
+            ]),
+            contexts: z
+                .array(BrowsingContext$1.BrowsingContextSchema)
+                .min(1)
+                .optional(),
+            userContexts: z.array(Browser$1.UserContextSchema).min(1).optional(),
+        }));
+    })(Emulation$1 || (Emulation$1 = {}));
+    (function (Emulation) {
+        Emulation.SetScrollbarTypeOverrideResultSchema = z.lazy(() => EmptyResultSchema);
+    })(Emulation$1 || (Emulation$1 = {}));
+    (function (Emulation) {
         Emulation.SetTimezoneOverrideSchema = z.lazy(() => z.object({
             method: z.literal('emulation.setTimezoneOverride'),
             params: Emulation.SetTimezoneOverrideParametersSchema,
@@ -17315,6 +17521,7 @@
             redirectCount: JsUintSchema,
             request: Network.RequestDataSchema,
             timestamp: JsUintSchema,
+            userContext: z.union([Browser$1.UserContextSchema, z.null()]).optional(),
             intercepts: z.array(Network.InterceptSchema).min(1).optional(),
         }));
     })(Network$1 || (Network$1 = {}));
@@ -17986,6 +18193,7 @@
         Script.WindowRealmInfoSchema = z.lazy(() => Script.BaseRealmInfoSchema.and(z.object({
             type: z.literal('window'),
             context: BrowsingContext$1.BrowsingContextSchema,
+            userContext: Browser$1.UserContextSchema.optional(),
             sandbox: z.string().optional(),
         })));
     })(Script$1 || (Script$1 = {}));
@@ -18291,6 +18499,7 @@
         Script.SourceSchema = z.lazy(() => z.object({
             realm: Script.RealmSchema,
             context: BrowsingContext$1.BrowsingContextSchema.optional(),
+            userContext: Browser$1.UserContextSchema.optional(),
         }));
     })(Script$1 || (Script$1 = {}));
     (function (Script) {
@@ -18835,6 +19044,7 @@
     (function (Input) {
         Input.FileDialogInfoSchema = z.lazy(() => z.object({
             context: BrowsingContext$1.BrowsingContextSchema,
+            userContext: Browser$1.UserContextSchema.optional(),
             element: Script$1.SharedReferenceSchema.optional(),
             multiple: z.boolean(),
         }));
@@ -19099,6 +19309,19 @@
     })(Session || (Session = {}));
     var Emulation;
     (function (Emulation) {
+        function parseSetClientHintsOverrideParams(params) {
+            const SetClientHintsOverrideParametersSchema = objectType({
+                clientHints: unionType([
+                    UserAgentClientHints
+                        .ClientHintsMetadataSchema,
+                    nullType(),
+                ]),
+                contexts: arrayType(stringType()).min(1).optional(),
+                userContexts: arrayType(stringType()).min(1).optional(),
+            });
+            return parseObject(params, SetClientHintsOverrideParametersSchema);
+        }
+        Emulation.parseSetClientHintsOverrideParams = parseSetClientHintsOverrideParams;
         function parseSetForcedColorsModeThemeOverrideParams(params) {
             return parseObject(params, Emulation$1.SetForcedColorsModeThemeOverrideParametersSchema);
         }
@@ -19130,6 +19353,10 @@
             return parseObject(params, Emulation$1.SetScriptingEnabledParametersSchema);
         }
         Emulation.parseSetScriptingEnabledParams = parseSetScriptingEnabledParams;
+        function parseSetScrollbarTypeOverrideParams(params) {
+            return parseObject(params, Emulation$1.SetScrollbarTypeOverrideParametersSchema);
+        }
+        Emulation.parseSetScrollbarTypeOverrideParams = parseSetScrollbarTypeOverrideParams;
         function parseSetTimezoneOverrideParams(params) {
             return parseObject(params, Emulation$1.SetTimezoneOverrideParametersSchema);
         }
@@ -19373,6 +19600,9 @@
         parseSendCommandParams(params) {
             return Cdp.parseSendCommandRequest(params);
         }
+        parseSetClientHintsOverrideParams(params) {
+            return Emulation.parseSetClientHintsOverrideParams(params);
+        }
         parseSetForcedColorsModeThemeOverrideParams(params) {
             return Emulation.parseSetForcedColorsModeThemeOverrideParams(params);
         }
@@ -19393,6 +19623,9 @@
         }
         parseSetScriptingEnabledParams(params) {
             return Emulation.parseSetScriptingEnabledParams(params);
+        }
+        parseSetScrollbarTypeOverrideParams(params) {
+            return Emulation.parseSetScrollbarTypeOverrideParams(params);
         }
         parseSetTimezoneOverrideParams(params) {
             return Emulation.parseSetTimezoneOverrideParams(params);

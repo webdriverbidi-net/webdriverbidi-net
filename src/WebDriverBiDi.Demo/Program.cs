@@ -1,4 +1,5 @@
-﻿using WebDriverBiDi;
+﻿using System.Data;
+using WebDriverBiDi;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.Client;
 using WebDriverBiDi.Client.Launchers;
@@ -28,6 +29,17 @@ BrowserType testBrowserType = BrowserType.Chrome;
 // Optionally select the location of the browser executable to use.
 // The empty string will launch the browser executable from its default
 // installed location.
+// You can also use a BrowserLocator to automatically locate and download a browser
+// executable, using either a specific version of the browser, or the latest version
+// from a specific browser distribution channel.
+// Examples of using a BrowserLocator:
+// BrowserLocator browserLocator = BrowserLocator.Create(FirefoxChannel.Stable);
+// BrowserLocator browserLocator = BrowserLocator.Create(FirefoxChannel.Nightly);
+// BrowserLocator browserLocator = BrowserLocator.Create(BrowserType.Firefox, "148.0.2");
+// BrowserLocator browserLocator = BrowserLocator.Create(ChromeChannel.Stable);
+// BrowserLocator browserLocator = BrowserLocator.Create(ChromeChannel.Canary);
+// BrowserLocator browserLocator = BrowserLocator.Create(BrowserType.Chrome, "146.0.7680.165");
+// string browserExecutableLocation = await browserLocator.LocateBrowserExecutablePathAsync();
 string browserExecutableLocation = string.Empty;
 
 // Optionally change the below value run the browsers invisibly (headless).
