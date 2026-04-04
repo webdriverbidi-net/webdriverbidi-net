@@ -18,7 +18,7 @@ BrowserLauncher launcher;
 switch (browser)
 {
     case "firefox":
-        string firefoxPath = await BrowserLocator.Firefox.Nightly.GetBrowserExecutablePathAsync();
+        string firefoxPath = await BrowserLocator.Create(FirefoxChannel.Nightly).LocateBrowserExecutablePathAsync();
         Console.WriteLine($"Firefox path: {firefoxPath}");
         FirefoxLauncher firefoxLauncher = new(firefoxPath)
         {
@@ -27,16 +27,13 @@ switch (browser)
         launcher = firefoxLauncher;
         break;
     case "chrome":
-        string chromePath = Environment.GetEnvironmentVariable("CHROME_EXECUTABLE") ?? string.Empty;
-        if (!string.IsNullOrEmpty(chromePath))
-        {
-            Console.WriteLine($"Chrome path (from env): {chromePath}");
-        }
+        string chromePath = await BrowserLocator.Create(ChromeChannel.Canary).LocateBrowserExecutablePathAsync();
+        Console.WriteLine($"Chrome path: {chromePath}");
 
-        ChromeLauncher chromeLauncher = string.IsNullOrEmpty(chromePath)
-            ? new ChromeLauncher()
-            : new ChromeLauncher(chromePath);
-        chromeLauncher.IsBrowserHeadless = true;
+        ChromeLauncher chromeLauncher = new ChromeLauncher(chromePath)
+        {
+            IsBrowserHeadless = true
+        };
         launcher = chromeLauncher;
         break;
     default:
