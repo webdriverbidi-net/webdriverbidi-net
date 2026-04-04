@@ -33,10 +33,12 @@ BrowserType testBrowserType = BrowserType.Chrome;
 // executable, using either a specific version of the browser, or the latest version
 // from a specific browser distribution channel.
 // Examples of using a BrowserLocator:
-// BrowserLocator browserLocator = BrowserLocator.Create(browserType, "148.0.2");
+// BrowserLocator browserLocator = BrowserLocator.Create(FirefoxChannel.Stable);
 // BrowserLocator browserLocator = BrowserLocator.Create(FirefoxChannel.Nightly);
-// BrowserLocator browserLocator = BrowserLocator.CreateChromeLocator(browserType, "146.0.7680.165");
+// BrowserLocator browserLocator = BrowserLocator.Create(BrowserType.Firefox, "148.0.2");
 // BrowserLocator browserLocator = BrowserLocator.Create(ChromeChannel.Stable);
+// BrowserLocator browserLocator = BrowserLocator.Create(ChromeChannel.Canary);
+// BrowserLocator browserLocator = BrowserLocator.Create(BrowserType.Chrome, "146.0.7680.165");
 // string browserExecutableLocation = await browserLocator.LocateBrowserExecutablePathAsync();
 string browserExecutableLocation = string.Empty;
 
