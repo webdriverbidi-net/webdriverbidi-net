@@ -155,7 +155,7 @@ public class DiscriminatedUnionJsonConverterTests
             PropertyB = 42
         };
         string json = JsonSerializer.Serialize(derivedB);
-        Assert.That(json, Is.Not.Null.Or.Empty);
+        Assert.That(json, Is.Not.Null.And.Not.Empty);
     }
 
     [Test]
