@@ -870,8 +870,8 @@ public class BiDiDriver001AnalyzerTests
     [Test]
     public void GetFixAllProvider_ReturnsBatchFixer()
     {
-        var provider = new BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider();
-        var fixAllProvider = provider.GetFixAllProvider();
+        BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider provider = new BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider();
+        FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
         Assert.That(fixAllProvider, Is.EqualTo(WellKnownFixAllProviders.BatchFixer));
     }
@@ -1018,7 +1018,7 @@ public class BiDiDriver001AnalyzerTests
     [Test]
     public void FixableDiagnosticIds_ContainsBIDI001()
     {
-        var provider = new BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider();
+        BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider provider = new BiDiDriver001_ModuleRegistrationAfterStartCodeFixProvider();
 
         Assert.That(provider.FixableDiagnosticIds, Does.Contain(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId));
         Assert.That(provider.FixableDiagnosticIds.Length, Is.EqualTo(1));
@@ -1030,7 +1030,7 @@ public class BiDiDriver001AnalyzerTests
     [Test]
     public void SupportedDiagnostics_ContainsBIDI001()
     {
-        var analyzer = new BiDiDriver001_ModuleRegistrationAfterStartAnalyzer();
+        BiDiDriver001_ModuleRegistrationAfterStartAnalyzer analyzer = new BiDiDriver001_ModuleRegistrationAfterStartAnalyzer();
 
         Assert.That(analyzer.SupportedDiagnostics.Length, Is.EqualTo(1));
         Assert.That(analyzer.SupportedDiagnostics[0].Id, Is.EqualTo(BiDiDriver001_ModuleRegistrationAfterStartAnalyzer.DiagnosticId));

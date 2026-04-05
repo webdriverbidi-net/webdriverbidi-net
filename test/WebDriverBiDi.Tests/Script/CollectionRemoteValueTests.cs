@@ -26,7 +26,7 @@ public class CollectionRemoteValueTests
         Assert.That(result.Value, Is.Not.Null);
         Assert.That(result.Value, Is.Empty);
         Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);    
+        Assert.That(result.InternalId, Is.Null);
     }
 
     [Test]
@@ -55,7 +55,7 @@ public class CollectionRemoteValueTests
         Assert.That(result.Value, Is.Not.Null);
         Assert.That(result.Value, Has.Count.EqualTo(1));
         Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);    
+        Assert.That(result.InternalId, Is.Null);
     }
 
     [Test]
@@ -208,7 +208,7 @@ public class CollectionRemoteValueTests
                         "internalId": "myInternalId"
                       }
                       """;
-        
+
         CollectionRemoteValue? result = JsonSerializer.Deserialize<CollectionRemoteValue>(json);
 
         Assert.That(result, Is.Not.Null);

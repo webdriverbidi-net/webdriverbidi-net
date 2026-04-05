@@ -34,7 +34,7 @@ public class DriverIntegrationTests
         navigationObserver.SetCheckpoint();
         NavigateCommandParameters navigateParams = new(browsingContextId, $"http://localhost:{server.Port}/index.html")
         {
-            Wait  = ReadinessState.Complete
+            Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.NavigateAsync(navigateParams);
 
@@ -63,7 +63,7 @@ public class DriverIntegrationTests
         string browsingContextId = await this.GetBrowsingContext(driver);
         NavigateCommandParameters navigateParams = new(browsingContextId, $"http://localhost:{server.Port}/index.html")
         {
-            Wait  = ReadinessState.Complete
+            Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.NavigateAsync(navigateParams);
 
@@ -105,7 +105,7 @@ public class DriverIntegrationTests
         string browsingContextId = await this.GetBrowsingContext(driver);
         NavigateCommandParameters navigateParams = new(browsingContextId, $"http://localhost:{server.Port}/index.html")
         {
-            Wait  = ReadinessState.Complete
+            Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.NavigateAsync(navigateParams);
         await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName));
@@ -152,7 +152,7 @@ public class DriverIntegrationTests
         string browsingContextId = await this.GetBrowsingContext(driver);
         NavigateCommandParameters navigateParams = new(browsingContextId, $"http://localhost:{server.Port}/formInput.html")
         {
-            Wait  = ReadinessState.Complete
+            Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.NavigateAsync(navigateParams);
         await driver.Session.SubscribeAsync(new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName));

@@ -83,7 +83,7 @@ public class CommandProcessingBenchmarks
     [Benchmark]
     public CallFunctionCommandParameters CreateScriptCallFunctionCommand()
     {
-        CallFunctionCommandParameters command = new (
+        CallFunctionCommandParameters command = new(
             "function(a, b, c) { return a + b + c; }",
             new ContextTarget("test-context-id"),
             awaitPromise: false);

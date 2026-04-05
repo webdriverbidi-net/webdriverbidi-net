@@ -65,7 +65,7 @@ public class RegExpRemoteValueTests
                         "internalId": "myInternalId"
                       }
                       """;
-        
+
         RegExpRemoteValue? result = JsonSerializer.Deserialize<RegExpRemoteValue>(json);
 
         Assert.That(result, Is.Not.Null);

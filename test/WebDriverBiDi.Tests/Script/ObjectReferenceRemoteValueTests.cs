@@ -91,7 +91,7 @@ public class ObjectReferenceRemoteValueTests
                         "internalId": "myInternalId"
                       }
                       """;
-        
+
         ObjectReferenceRemoteValue? result = JsonSerializer.Deserialize<ObjectReferenceRemoteValue>(json);
 
         Assert.That(result, Is.Not.Null);

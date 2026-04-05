@@ -26,7 +26,7 @@ public class NodeRemoteValueTests
         Assert.That(result.Value.NodeType, Is.EqualTo(1));
         Assert.That(result.Value.ChildNodeCount, Is.Zero);
         Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);    
+        Assert.That(result.InternalId, Is.Null);
         Assert.That(result.SharedId, Is.Null);
     }
 
@@ -181,7 +181,7 @@ public class NodeRemoteValueTests
                         "internalId": "myInternalId"
                       }
                       """;
-        
+
         NodeRemoteValue? result = JsonSerializer.Deserialize<NodeRemoteValue>(json);
 
         Assert.That(result, Is.Not.Null);

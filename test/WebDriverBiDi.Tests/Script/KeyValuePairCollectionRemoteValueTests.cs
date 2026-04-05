@@ -26,7 +26,7 @@ public class KeyValuePairCollectionRemoteValueTests
         Assert.That(result.Value, Is.Not.Null);
         Assert.That(result.Value, Is.Empty);
         Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);    
+        Assert.That(result.InternalId, Is.Null);
     }
 
     [Test]
@@ -232,7 +232,7 @@ public class KeyValuePairCollectionRemoteValueTests
                         "internalId": "myInternalId"
                       }
                       """;
-        
+
         KeyValuePairCollectionRemoteValue? result = JsonSerializer.Deserialize<KeyValuePairCollectionRemoteValue>(json);
 
         Assert.That(result, Is.Not.Null);

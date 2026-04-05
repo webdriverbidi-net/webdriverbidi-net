@@ -23,7 +23,7 @@ public class WindowProxyRemoteValueTests
         Assert.That(result.Type, Is.EqualTo(RemoteValueType.Window));
         Assert.That(result.Value.Context, Is.EqualTo("myContextid"));
         Assert.That(result.Handle, Is.Null);
-        Assert.That(result.InternalId, Is.Null);    
+        Assert.That(result.InternalId, Is.Null);
     }
 
     [Test]
@@ -86,7 +86,7 @@ public class WindowProxyRemoteValueTests
                         }
                       }
                       """;
-        
+
         WindowProxyRemoteValue? result = JsonSerializer.Deserialize<WindowProxyRemoteValue>(json);
 
         Assert.That(result, Is.Not.Null);

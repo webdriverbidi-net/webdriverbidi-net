@@ -712,8 +712,8 @@ public class BiDiDriver004AnalyzerTests
     [Test]
     public void GetFixAllProvider_ReturnsBatchFixer()
     {
-        var provider = new BiDiDriver004_CancellationTokenSuggestionCodeFixProvider();
-        var fixAllProvider = provider.GetFixAllProvider();
+        BiDiDriver004_CancellationTokenSuggestionCodeFixProvider provider = new BiDiDriver004_CancellationTokenSuggestionCodeFixProvider();
+        FixAllProvider fixAllProvider = provider.GetFixAllProvider();
 
         Assert.That(fixAllProvider, Is.EqualTo(WellKnownFixAllProviders.BatchFixer));
     }
@@ -724,7 +724,7 @@ public class BiDiDriver004AnalyzerTests
     [Test]
     public void FixableDiagnosticIds_ContainsBIDI004()
     {
-        var provider = new BiDiDriver004_CancellationTokenSuggestionCodeFixProvider();
+        BiDiDriver004_CancellationTokenSuggestionCodeFixProvider provider = new BiDiDriver004_CancellationTokenSuggestionCodeFixProvider();
 
         Assert.That(provider.FixableDiagnosticIds, Does.Contain(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId));
         Assert.That(provider.FixableDiagnosticIds.Length, Is.EqualTo(1));
@@ -736,7 +736,7 @@ public class BiDiDriver004AnalyzerTests
     [Test]
     public void SupportedDiagnostics_ContainsBIDI004()
     {
-        var analyzer = new BiDiDriver004_CancellationTokenSuggestionAnalyzer();
+        BiDiDriver004_CancellationTokenSuggestionAnalyzer analyzer = new BiDiDriver004_CancellationTokenSuggestionAnalyzer();
 
         Assert.That(analyzer.SupportedDiagnostics.Length, Is.EqualTo(1));
         Assert.That(analyzer.SupportedDiagnostics[0].Id, Is.EqualTo(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId));

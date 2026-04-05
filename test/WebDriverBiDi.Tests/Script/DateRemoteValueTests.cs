@@ -55,7 +55,7 @@ public class DateRemoteValueTests
                         "internalId": "myInternalId"
                       }
                       """;
-        
+
         DateRemoteValue? result = JsonSerializer.Deserialize<DateRemoteValue>(json);
 
         Assert.That(result, Is.Not.Null);

@@ -1,5 +1,4 @@
-﻿using System.Data;
-using WebDriverBiDi;
+﻿using WebDriverBiDi;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.Client;
 using WebDriverBiDi.Client.Launchers;
