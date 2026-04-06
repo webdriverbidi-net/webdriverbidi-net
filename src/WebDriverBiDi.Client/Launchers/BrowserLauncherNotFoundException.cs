@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Client.Launchers;
 
 /// <summary>
-/// The exception that is thrown when an element is not visible.
+/// The exception that is thrown when the browser launcher is not found.
 /// </summary>
 public class BrowserLauncherNotFoundException : Exception
 {

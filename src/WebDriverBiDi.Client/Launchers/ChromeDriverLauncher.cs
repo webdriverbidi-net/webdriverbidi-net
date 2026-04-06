@@ -92,7 +92,9 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
             chromeOptions["args"] = chromeCommandLineArgs;
         }
 
-        // TODO: Create a more fully-featured generation of capabilities.
+        // CONSIDER: This is a very naive and simple set of capabilities.
+        // A future implementation could create a more fully-featured
+        // generation of capabilities.
         Dictionary<string, object> capabilities = new()
         {
             ["browserName"] = "chrome",

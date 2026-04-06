@@ -20,9 +20,9 @@ public abstract class BrowserLocatorSettings
         "webdriverbidi-net");
 
     /// <summary>
-    /// Gets or sets the name of the browser (e.g., "chrome", "firefox").
+    /// Gets the name of the browser (e.g., "chrome", "firefox").
     /// </summary>
-    public string BrowserName { get; protected set; } = string.Empty;
+    public abstract string BrowserName { get; }
 
     /// <summary>
     /// Gets or sets the channel of the browser (e.g., "stable", "beta", "dev", "nightly").

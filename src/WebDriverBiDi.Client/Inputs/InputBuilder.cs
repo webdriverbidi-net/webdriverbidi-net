@@ -81,7 +81,7 @@ public class InputBuilder
     }
 
     /// <summary>
-    /// Creates a wheel input source, like a mouse wheel, for primarily for
+    /// Creates a wheel input source, like a mouse wheel, primarily for
     /// providing discrete consecutive input values.
     /// </summary>
     /// <returns>The wheel input source.</returns>
@@ -110,7 +110,7 @@ public class InputBuilder
     /// </summary>
     /// <param name="actionToAdd">The action to add to the set of actions.</param>
     /// <returns>A self reference.</returns>
-    public InputBuilder AddAction(Action actionToAdd)
+    public InputBuilder AddAction(InputAction actionToAdd)
     {
         this.AddActions(actionToAdd);
         return this;
@@ -123,7 +123,7 @@ public class InputBuilder
     /// </summary>
     /// <param name="actionsToAdd">The set actions to add to the existing set of actions.</param>
     /// <returns>A self reference.</returns>
-    public InputBuilder AddActions(params Action[] actionsToAdd)
+    public InputBuilder AddActions(params InputAction[] actionsToAdd)
     {
         this.ProcessTick(actionsToAdd);
         return this;
@@ -139,36 +139,36 @@ public class InputBuilder
         return this.sources.Values.ToList();
     }
 
-    private void ProcessTick(params Action[] interactionsToAdd)
+    private void ProcessTick(params InputAction[] inputActionsToAdd)
     {
         List<string> unusedDevices = this.sources.Keys.ToList();
         List<string> usedDevices = [];
-        foreach (Action interaction in interactionsToAdd)
+        foreach (InputAction inputAction in inputActionsToAdd)
         {
-            if (!this.sources.TryGetValue(interaction.SourceId, out SourceActions source))
+            if (!this.sources.TryGetValue(inputAction.SourceId, out SourceActions source))
             {
-                throw new ArgumentException($"Builder does not contain an input source for ID {interaction.SourceId}");
+                throw new ArgumentException($"Builder does not contain an input source for ID {inputAction.SourceId}");
             }
 
-            if (usedDevices.Contains(interaction.SourceId))
+            if (usedDevices.Contains(inputAction.SourceId))
             {
                 throw new ArgumentException("You can only add one action per input source for a single tick.");
             }
 
-            usedDevices.Add(interaction.SourceId);
-            unusedDevices.Remove(interaction.SourceId);
+            usedDevices.Add(inputAction.SourceId);
+            unusedDevices.Remove(inputAction.SourceId);
 
             if (source is KeySourceActions keySource)
             {
-                keySource.Actions.Add(interaction.AsActionType<IKeySourceAction>());
+                keySource.Actions.Add(inputAction.AsActionType<IKeySourceAction>());
             }
             else if (source is PointerSourceActions pointerSource)
             {
-                pointerSource.Actions.Add(interaction.AsActionType<IPointerSourceAction>());
+                pointerSource.Actions.Add(inputAction.AsActionType<IPointerSourceAction>());
             }
             else if (source is WheelSourceActions wheelSource)
             {
-                wheelSource.Actions.Add(interaction.AsActionType<IWheelSourceAction>());
+                wheelSource.Actions.Add(inputAction.AsActionType<IWheelSourceAction>());
             }
         }
 

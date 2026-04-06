@@ -50,7 +50,7 @@ public abstract class BrowserExtractor
 
         string stdout = await process.StandardOutput.ReadToEndAsync();
         string stderr = await process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(Convert.ToInt32(timeout.Value.TotalMilliseconds)))
+        if (!process.WaitForExit(timeout.Value.TotalMilliseconds > int.MaxValue ? int.MaxValue : Convert.ToInt32(timeout.Value.TotalMilliseconds)))
         {
             process.Kill();
         }

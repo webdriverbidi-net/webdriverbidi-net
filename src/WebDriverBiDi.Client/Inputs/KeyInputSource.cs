@@ -30,21 +30,21 @@ public class KeyInputSource : InputSource
     /// Creates a key-down action for simulating a press of a key.
     /// </summary>
     /// <param name="codePoint">The unicode character to be sent.</param>
-    /// <returns>The <see cref="Action"/> representing the action.</returns>
-    public Action CreateKeyDown(char codePoint)
+    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
+    public InputAction CreateKeyDown(char codePoint)
     {
         KeyDownAction action = new(codePoint.ToString());
-        return new Action(this.SourceId, action);
+        return new InputAction(this.SourceId, action);
     }
 
     /// <summary>
     /// Creates a key-up action for simulating a release of a key.
     /// </summary>
     /// <param name="codePoint">The unicode character to be sent.</param>
-    /// <returns>The <see cref="Action"/> representing the action.</returns>
-    public Action CreateKeyUp(char codePoint)
+    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
+    public InputAction CreateKeyUp(char codePoint)
     {
         KeyUpAction action = new(codePoint.ToString());
-        return new Action(this.SourceId, action);
+        return new InputAction(this.SourceId, action);
     }
 }

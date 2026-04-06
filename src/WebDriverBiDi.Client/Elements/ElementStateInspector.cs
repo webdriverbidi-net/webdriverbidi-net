@@ -38,6 +38,11 @@ public class ElementStateInspector
         Assembly executingAssembly = Assembly.GetExecutingAssembly();
         using (Stream resourceStream = executingAssembly.GetManifestResourceStream("acquiescence-library"))
         {
+            if (resourceStream is null)
+            {
+                throw new InvalidOperationException("Unable to find the Acquiescence library script as an embedded resource.");
+            }
+
             using StreamReader reader = new(resourceStream);
             libraryScript = reader.ReadToEnd();
         }

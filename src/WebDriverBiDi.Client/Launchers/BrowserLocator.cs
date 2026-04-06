@@ -34,6 +34,11 @@ public class BrowserLocator
     }
 
     /// <summary>
+    /// Gets an observable event that notifies when a log message is emitted by the browser locator.
+    /// </summary>
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("browserLocator.logMessage");
+
+    /// <summary>
     /// Creates a new instance of the <see cref="BrowserLocator"/> class for the stable channel of the specified browser type.
     /// </summary>
     /// <param name="browserType">The type of browser to locate.</param>
@@ -106,7 +111,7 @@ public class BrowserLocator
         string? envPath = Environment.GetEnvironmentVariable(this.settings.EnvironmentVariableName);
         if (!string.IsNullOrEmpty(envPath))
         {
-            Console.WriteLine($"Using '{this.settings.EnvironmentVariableName}': {envPath}");
+            await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs($"Using '{this.settings.EnvironmentVariableName}': {envPath}", WebDriverBiDiLogLevel.Info, "browserLocator"));
             return envPath;
         }
 
@@ -116,7 +121,7 @@ public class BrowserLocator
         string browserVersion;
         string directDownloadUrl = string.Empty;
         bool ignoreVersionMatch = false;
-        if (browserInfo is not null && !browserInfo.IsCachedVersionInfoStale())
+        if (browserInfo is not null && browserInfo.IsCachedVersionInfoValid())
         {
             browserVersion = browserInfo.Version;
         }
@@ -147,7 +152,7 @@ public class BrowserLocator
             }
             else
             {
-                Console.WriteLine($"Using cached {this.settings.BrowserDisplayName}.");
+                await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs($"Using cached {this.settings.BrowserDisplayName}.", WebDriverBiDiLogLevel.Info, "browserLocator"));
                 return executablePath;
             }
         }
@@ -157,7 +162,7 @@ public class BrowserLocator
             Directory.CreateDirectory(cachedInstallDirectory);
         }
 
-        Console.WriteLine($"Downloading {this.settings.BrowserDisplayName}...");
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs($"Downloading {this.settings.BrowserDisplayName}...", WebDriverBiDiLogLevel.Info, "browserLocator"));
         string downloadedInstallerPath = Path.Combine(cachedInstallDirectory, this.settings.InstallerFileName);
         using HttpClient client = new();
         await this.DownloadFileAsync(client, directDownloadUrl, downloadedInstallerPath).ConfigureAwait(false);
@@ -170,7 +175,7 @@ public class BrowserLocator
 
         browserInfo.LastDownload = DateTime.UtcNow;
         this.SaveCacheInfo(cacheInfo);
-        Console.WriteLine($"{this.settings.BrowserDisplayName} ready at: {executablePath}");
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs($"{this.settings.BrowserDisplayName} ready at: {executablePath}", WebDriverBiDiLogLevel.Info, "browserLocator"));
         return executablePath;
     }
 
@@ -205,7 +210,7 @@ public class BrowserLocator
                 int percent = (int)(totalRead * 100 / totalBytes.Value);
                 if (percent != lastPercent && percent % 10 == 0)
                 {
-                    Console.WriteLine($"  Download progress: {percent}%");
+                    await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs($"  Download progress: {percent}%", WebDriverBiDiLogLevel.Info, "browserLocator"));
                     lastPercent = percent;
                 }
             }
@@ -219,13 +224,13 @@ public class BrowserLocator
             try
             {
                 string text = File.ReadAllText(CacheInfoFile).Trim();
-                BrowserCacheInfo? cacheInfo = JsonSerializer.Deserialize<BrowserCacheInfo>(text);
+                BrowserCacheInfo? cacheInfo = JsonSerializer.Deserialize(text, BrowserLocatorJsonContext.Default.BrowserCacheInfo);
                 if (cacheInfo is not null)
                 {
                     return cacheInfo;
                 }
             }
-            catch
+            catch (Exception ex) when (ex is JsonException || ex is InvalidOperationException)
             {
                 // If parsing fails, treat as stale cache and overwrite on next download.
             }
@@ -236,21 +241,33 @@ public class BrowserLocator
 
     private void SaveCacheInfo(BrowserCacheInfo cacheInfo)
     {
-        string json = JsonSerializer.Serialize(cacheInfo, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(cacheInfo, BrowserLocatorJsonContext.Default.BrowserCacheInfo);
         File.WriteAllText(CacheInfoFile, json);
     }
 
-    private class BrowserCacheInfo
+    /// <summary>
+    /// Represents the structure of the browser cache information stored in the cache file.
+    /// </summary>
+    internal class BrowserCacheInfo
     {
+        /// <summary>
+        /// Gets or sets the dictionary of installed browsers, keyed by browser name.
+        /// </summary>
         [JsonPropertyName("installedBrowsers")]
         [JsonInclude]
-        public Dictionary<string, BrowserInfo> InstalledBrowsers { get; set; } = [];
+        public Dictionary<string, CachedBrowserInfo> InstalledBrowsers { get; set; } = [];
 
+        /// <summary>
+        /// Gets the cached browser information matching the specified locator settings,
+        /// returning null if no matching cached information is found.
+        /// </summary>
+        /// <param name="settings">The <see cref="BrowserLocatorSettings"/> object to match for installed browsers.</param>
+        /// <returns>The cached browser information, or null if not found.</returns>
         public InstalledBrowserInfo? GetCachedBrowser(BrowserLocatorSettings settings)
         {
-            if (this.InstalledBrowsers.TryGetValue(settings.BrowserName, out BrowserInfo? browserInfo))
+            if (this.InstalledBrowsers.TryGetValue(settings.BrowserName, out CachedBrowserInfo? browserInfo))
             {
-                if (browserInfo.Channels.TryGetValue(settings.Channel, out BrowserChannelInfo? browserChannel))
+                if (browserInfo.Channels.TryGetValue(settings.Channel, out CachedBrowserChannelInfo? browserChannel))
                 {
                     string version = settings.Version;
                     foreach (InstalledBrowserInfo info in browserChannel.Versions)
@@ -266,20 +283,26 @@ public class BrowserLocator
             return null;
         }
 
+        /// <summary>
+        /// Adds the specified browser information to the cache, creating entries for the browser
+        /// and channel if they do not already exist.
+        /// </summary>
+        /// <param name="browserInfo">The <see cref="InstalledBrowserInfo"/> object to add to the cache.</param>
+        /// <param name="isDefaultChannelVersion">A value indicating whether the browser information represents the most recent version for its channel.</param>
         public void AddBrowserToCache(InstalledBrowserInfo browserInfo, bool isDefaultChannelVersion = false)
         {
-            if (!this.InstalledBrowsers.TryGetValue(browserInfo.BrowserName, out BrowserInfo? browserCacheInfo))
+            if (!this.InstalledBrowsers.TryGetValue(browserInfo.BrowserName, out CachedBrowserInfo? browserCacheInfo))
             {
-                browserCacheInfo = new BrowserInfo
+                browserCacheInfo = new CachedBrowserInfo
                 {
                     Channels = [],
                 };
                 this.InstalledBrowsers[browserInfo.BrowserName] = browserCacheInfo;
             }
 
-            if (!browserCacheInfo.Channels.TryGetValue(browserInfo.Channel, out BrowserChannelInfo? channelCacheInfo))
+            if (!browserCacheInfo.Channels.TryGetValue(browserInfo.Channel, out CachedBrowserChannelInfo? channelCacheInfo))
             {
-                channelCacheInfo = new BrowserChannelInfo
+                channelCacheInfo = new CachedBrowserChannelInfo
                 {
                     Versions = [],
                 };
@@ -295,57 +318,104 @@ public class BrowserLocator
         }
     }
 
-    private class BrowserInfo
+    /// <summary>
+    /// Represents the cached information about a specific browser.
+    /// </summary>
+    internal class CachedBrowserInfo
     {
+        /// <summary>
+        /// Gets or sets the dictionary of channels for the browser, keyed by channel name.
+        /// </summary>
         [JsonPropertyName("channels")]
         [JsonInclude]
-        public Dictionary<string, BrowserChannelInfo> Channels { get; set; } = [];
+        public Dictionary<string, CachedBrowserChannelInfo> Channels { get; set; } = [];
     }
 
-    private class BrowserChannelInfo
+    /// <summary>
+    /// Represents the cached information about a specific browser channel.
+    /// </summary>
+    internal class CachedBrowserChannelInfo
     {
+        /// <summary>
+        /// Gets or sets the most recent version for the channel.
+        /// </summary>
         [JsonPropertyName("defaultVersion")]
         [JsonInclude]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? DefaultVersion { get; set; }
 
+        /// <summary>
+        /// Gets or sets the information for each version of the browser installed for the channel.
+        /// </summary>
         [JsonPropertyName("versions")]
         [JsonInclude]
         public List<InstalledBrowserInfo> Versions { get; set; } = [];
     }
 
-    private class InstalledBrowserInfo
+    /// <summary>
+    /// Represents the cached information about a specific installed browser version, including
+    /// the last download time, version, and direct download URL.
+    /// </summary>
+    internal class InstalledBrowserInfo
     {
+        /// <summary>
+        /// Gets or sets the last time the browser version was downloaded and installed.
+        /// </summary>
         [JsonPropertyName("lastDownload")]
         [JsonInclude]
         public DateTime LastDownload { get; set; } = DateTime.MinValue;
 
+        /// <summary>
+        /// Gets or sets the name of the browser (e.g., "chrome", "firefox").
+        /// </summary>
         [JsonPropertyName("browserName")]
         [JsonInclude]
         public string BrowserName { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Gets or sets the channel of the browser (e.g., "stable", "beta", "canary", "nightly").
+        /// </summary>
         [JsonPropertyName("channel")]
         [JsonInclude]
         public string Channel { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Gets or sets the version of the browser.
+        /// </summary>
         [JsonPropertyName("version")]
         [JsonInclude]
         public string Version { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Gets or sets the direct download URL for the browser version.
+        /// </summary>
         [JsonPropertyName("directDownloadUrl")]
         [JsonInclude]
         public string DirectDownloadUrl { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Gets a value indicating whether the cached browser information is still valid based on the last download time.
+        /// </summary>
+        /// <returns><see langword="true"/> if the cached information is valid; otherwise, <see langword="false"/>.</returns>
         public bool IsCachedVersionInfoValid()
         {
-            bool cacheExpired = DateTime.UtcNow - this.LastDownload <= TimeSpan.FromHours(24);
-            return cacheExpired;
-        }
-
-        public bool IsCachedVersionInfoStale()
-        {
-            bool cacheExpired = DateTime.UtcNow - this.LastDownload > TimeSpan.FromHours(24);
-            return cacheExpired;
+            bool isCacheValid = DateTime.UtcNow - this.LastDownload <= TimeSpan.FromHours(24);
+            return isCacheValid;
         }
     }
+}
+
+#pragma warning disable SA1402 // File may only contain a single type
+/// <summary>
+/// A source generation context for JSON serialization of browser locator cache information.
+/// This is used to enable serialization and deserialization of the browser cache information
+/// when used in AOT environments.
+/// </summary>
+[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSerializable(typeof(BrowserLocator.BrowserCacheInfo))]
+[JsonSerializable(typeof(Dictionary<string, BrowserLocator.CachedBrowserInfo>))]
+[JsonSerializable(typeof(Dictionary<string, BrowserLocator.CachedBrowserChannelInfo>))]
+[JsonSerializable(typeof(List<BrowserLocator.InstalledBrowserInfo>))]
+internal partial class BrowserLocatorJsonContext : JsonSerializerContext
+{
 }

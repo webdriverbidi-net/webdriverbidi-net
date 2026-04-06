@@ -96,7 +96,9 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
             firefoxOptions["args"] = new List<string>() { "--headless" };
         }
 
-        // TODO: Create a more fully-featured generation of capabilities.
+        // CONSIDER: This is a very naive and simple set of capabilities.
+        // A future implementation could create a more fully-featured
+        // generation of capabilities.
         Dictionary<string, object> capabilities = new()
         {
             ["browserName"] = "firefox",

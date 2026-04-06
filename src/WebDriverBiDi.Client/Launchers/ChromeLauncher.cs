@@ -100,7 +100,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     public ChromeLauncher(string browserExecutableLocation, int port)
         : base(string.Empty, port, browserExecutableLocation)
     {
-        // this.CreateConnection();
         if (string.IsNullOrEmpty(browserExecutableLocation))
         {
             this.BrowserExecutableLocation = this.GetDefaultBrowserExecutableLocation();
@@ -203,8 +202,8 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             {
                 StartInfo = this.CreateProcessStartInfo(),
             };
-            this.browserProcess.ErrorDataReceived += this.ReadStandardError;
-            this.browserProcess.OutputDataReceived += this.ReadStandardOutput;
+            this.browserProcess.ErrorDataReceived += this.ReadConsoleOutputForWebSocketUrl;
+            this.browserProcess.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
             this.browserProcess.Start();
             this.browserProcess.BeginOutputReadLine();
             this.browserProcess.BeginErrorReadLine();
@@ -313,35 +312,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         }
 
         return argument;
-    }
-
-    /// <summary>
-    /// Finds a random, free port to be listened on.
-    /// </summary>
-    /// <returns>A random, free port to be listened on.</returns>
-    private static int FindFreePort()
-    {
-        // Locate a free port on the local machine by binding a socket to
-        // an IPEndPoint using IPAddress.Any and port 0. The socket will
-        // select a free port.
-        int listeningPort = 0;
-        Socket portSocket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        try
-        {
-            IPEndPoint socketEndPoint = new(IPAddress.Any, 0);
-            portSocket.Bind(socketEndPoint);
-            if (portSocket.LocalEndPoint is not null)
-            {
-                socketEndPoint = (IPEndPoint)portSocket.LocalEndPoint;
-                listeningPort = socketEndPoint.Port;
-            }
-        }
-        finally
-        {
-            portSocket.Close();
-        }
-
-        return listeningPort;
     }
 
     private ProcessStartInfo CreateProcessStartInfo()
@@ -453,32 +423,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             }
             catch (IOException)
             {
-            }
-        }
-    }
-
-    private void ReadStandardError(object sender, DataReceivedEventArgs e)
-    {
-        Regex websocketUrlMatcher = new(@"DevTools listening on (ws:\/\/.*)$", RegexOptions.IgnoreCase);
-        if (e.Data is not null)
-        {
-            Match regexMatch = websocketUrlMatcher.Match(e.Data);
-            if (regexMatch.Success)
-            {
-                this.WebSocketUrl = regexMatch.Groups[1].Value;
-            }
-        }
-    }
-
-    private void ReadStandardOutput(object sender, DataReceivedEventArgs e)
-    {
-        Regex websocketUrlMatcher = new(@"DevTools listening on (ws:\/\/.*)$", RegexOptions.IgnoreCase);
-        if (e.Data is not null)
-        {
-            Match regexMatch = websocketUrlMatcher.Match(e.Data);
-            if (regexMatch.Success)
-            {
-                this.WebSocketUrl = regexMatch.Groups[1].Value;
             }
         }
     }

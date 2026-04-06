@@ -35,11 +35,11 @@ public class PointerInputSource : InputSource
     /// </summary>
     /// <param name="button">The button to simulate the press of. Defaults to the "left" (primary) button.</param>
     /// <param name="additionalProperties">Optional additional properties for the pointer down action. Defaults to <see langword="null"/>.</param>
-    /// <returns>The <see cref="Action"/> representing the action.</returns>
+    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown if the pointer type is a touch pointer, and the button is other than the "left" button.
     /// </exception>
-    public Action CreatePointerDown(PointerButton button = PointerButton.Left, PointerActionProperties? additionalProperties = null)
+    public InputAction CreatePointerDown(PointerButton button = PointerButton.Left, PointerActionProperties? additionalProperties = null)
     {
         if (this.pointerType == PointerType.Touch && button != PointerButton.Left)
         {
@@ -58,18 +58,18 @@ public class PointerInputSource : InputSource
             action.AzimuthAngle = additionalProperties.AzimuthAngle;
         }
 
-        return new Action(this.SourceId, action);
+        return new InputAction(this.SourceId, action);
     }
 
     /// <summary>
     /// Creates a pointer up action for simulating the press of a pointer button.
     /// </summary>
     /// <param name="button">The button to simulate the press of. Defaults to the "left" (primary) button.</param>
-    /// <returns>The <see cref="Action"/> representing the action.</returns>
+    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown if the pointer type is a touch pointer, and the button is other than the "left" button.
     /// </exception>
-    public Action CreatePointerUp(PointerButton button = PointerButton.Left)
+    public InputAction CreatePointerUp(PointerButton button = PointerButton.Left)
     {
         if (this.pointerType == PointerType.Touch && button != PointerButton.Left)
         {
@@ -77,7 +77,7 @@ public class PointerInputSource : InputSource
         }
 
         PointerUpAction action = new((long)button);
-        return new Action(this.SourceId, action);
+        return new InputAction(this.SourceId, action);
     }
 
     /// <summary>
@@ -88,8 +88,8 @@ public class PointerInputSource : InputSource
     /// <param name="origin">Optional origin point for the pointer move. Defaults to <see langword="null"/>, which implies the origin is the browser view port.</param>
     /// <param name="duration">Optional duration for the pointer move. Defaults to <see langword="null"/>, which implies a zero duration.</param>
     /// <param name="additionalProperties">Optional additional properties for the pointer move action. Defaults to <see langword="null"/>.</param>
-    /// <returns>The <see cref="Action"/> representing the action.</returns>
-    public Action CreatePointerMove(long x, long y, Origin? origin = null, TimeSpan? duration = null, PointerActionProperties? additionalProperties = null)
+    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
+    public InputAction CreatePointerMove(long x, long y, Origin? origin = null, TimeSpan? duration = null, PointerActionProperties? additionalProperties = null)
     {
         PointerMoveAction action = new()
         {
@@ -109,6 +109,6 @@ public class PointerInputSource : InputSource
             action.AzimuthAngle = additionalProperties.AzimuthAngle;
         }
 
-        return new Action(this.SourceId, action);
+        return new InputAction(this.SourceId, action);
     }
 }

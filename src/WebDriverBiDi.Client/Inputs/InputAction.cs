@@ -1,4 +1,4 @@
-// <copyright file="Action.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="InputAction.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -8,16 +8,16 @@ namespace WebDriverBiDi.Client.Inputs;
 /// <summary>
 /// Represents a user action to be taken in the browser being automated.
 /// </summary>
-public class Action
+public class InputAction
 {
     private readonly object action;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Action"/> class.
+    /// Initializes a new instance of the <see cref="InputAction"/> class.
     /// </summary>
     /// <param name="sourceId">The ID of the <see cref="InputSource"/> for which the action applies.</param>
     /// <param name="action">The object representing the action.</param>
-    public Action(string sourceId, object action)
+    public InputAction(string sourceId, object action)
     {
         this.SourceId = sourceId;
         this.action = action;

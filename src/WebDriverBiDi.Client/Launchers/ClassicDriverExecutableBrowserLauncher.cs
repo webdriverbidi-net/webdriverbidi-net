@@ -221,35 +221,6 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         }
     }
 
-    /// <summary>
-    /// Finds a random, free port to be listened on.
-    /// </summary>
-    /// <returns>A random, free port to be listened on.</returns>
-    private static int FindFreePort()
-    {
-        // Locate a free port on the local machine by binding a socket to
-        // an IPEndPoint using IPAddress.Any and port 0. The socket will
-        // select a free port.
-        int listeningPort = 0;
-        Socket portSocket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        try
-        {
-            IPEndPoint socketEndPoint = new(IPAddress.Any, 0);
-            portSocket.Bind(socketEndPoint);
-            if (portSocket.LocalEndPoint is not null)
-            {
-                socketEndPoint = (IPEndPoint)portSocket.LocalEndPoint;
-                listeningPort = socketEndPoint.Port;
-            }
-        }
-        finally
-        {
-            portSocket.Close();
-        }
-
-        return listeningPort;
-    }
-
     private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
     {
         await this.OnLauncherProcessStarting.NotifyObserversAsync(eventArgs);
@@ -275,7 +246,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         this.isLoggingLauncherProcessOutput = false;
     }
 
-    private async void ReadStandardOutput()
+    private async Task ReadStandardOutput()
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {
@@ -283,7 +254,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         }
     }
 
-    private async void ReadStandardError()
+    private async Task ReadStandardError()
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {

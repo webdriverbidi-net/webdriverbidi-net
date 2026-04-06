@@ -5,6 +5,10 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
+using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
@@ -163,6 +167,35 @@ public abstract class BrowserLauncher : IAsyncDisposable
     }
 
     /// <summary>
+    /// Finds a random, free port to be listened on.
+    /// </summary>
+    /// <returns>A random, free port to be listened on.</returns>
+    protected static int FindFreePort()
+    {
+        // Locate a free port on the local machine by binding a socket to
+        // an IPEndPoint using IPAddress.Any and port 0. The socket will
+        // select a free port.
+        int listeningPort = 0;
+        Socket portSocket = new(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        try
+        {
+            IPEndPoint socketEndPoint = new(IPAddress.Any, 0);
+            portSocket.Bind(socketEndPoint);
+            if (portSocket.LocalEndPoint is not null)
+            {
+                socketEndPoint = (IPEndPoint)portSocket.LocalEndPoint;
+                listeningPort = socketEndPoint.Port;
+            }
+        }
+        finally
+        {
+            portSocket.Close();
+        }
+
+        return listeningPort;
+    }
+
+    /// <summary>
     /// Asynchronously releases the resources used by this browser launcher.
     /// Override this method in derived classes to add custom cleanup logic.
     /// </summary>
@@ -180,5 +213,25 @@ public abstract class BrowserLauncher : IAsyncDisposable
     protected virtual Connection CreateConnection()
     {
         return new WebSocketConnection();
+    }
+
+    /// <summary>
+    /// Provides a handler for reading the standard error stream of the browser launcher process.
+    /// This allows the launcher to detect the WebSocket URL on which to connect to the WebDriver
+    /// BiDi remote end.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="e">The event data.</param>
+    protected virtual void ReadConsoleOutputForWebSocketUrl(object sender, DataReceivedEventArgs e)
+    {
+        Regex websocketUrlMatcher = new(@"DevTools listening on (ws:\/\/.*)$", RegexOptions.IgnoreCase);
+        if (e.Data is not null)
+        {
+            Match regexMatch = websocketUrlMatcher.Match(e.Data);
+            if (regexMatch.Success)
+            {
+                this.WebSocketUrl = regexMatch.Groups[1].Value;
+            }
+        }
     }
 }

@@ -112,7 +112,7 @@ public class NetworkRequest
             {
                 if (base64EncodedBodyDisplayBehavior == Base64DisplayBehavior.Decode)
                 {
-                    requestBuilder.Append(Convert.FromBase64String(this.requestBody));
+                    requestBuilder.Append(Encoding.UTF8.GetString(Convert.FromBase64String(this.requestBody)));
                 }
                 else if (base64EncodedBodyDisplayBehavior == Base64DisplayBehavior.NoDisplay)
                 {
@@ -147,7 +147,7 @@ public class NetworkRequest
         {
             if (base64EncodedBodyDisplayBehavior == Base64DisplayBehavior.Decode)
             {
-                responseBuilder.Append(Convert.FromBase64String(this.responseBody));
+                responseBuilder.Append(Encoding.UTF8.GetString(Convert.FromBase64String(this.responseBody)));
             }
             else if (base64EncodedBodyDisplayBehavior == Base64DisplayBehavior.NoDisplay)
             {

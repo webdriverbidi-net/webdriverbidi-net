@@ -53,6 +53,11 @@ public class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
     }
 
     /// <summary>
+    /// Gets the name of the browser (e.g., "firefox").
+    /// </summary>
+    public override string BrowserName { get; } = "firefox";
+
+    /// <summary>
     /// Gets the browser download information for the Firefox browser version or channel specified..
     /// </summary>
     /// <returns>A task representing the asynchronous operation, with the browser download information as the result.</returns>

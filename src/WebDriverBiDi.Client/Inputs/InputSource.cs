@@ -39,8 +39,8 @@ public abstract class InputSource
     /// <summary>
     /// Creates a pause action for synchronization with other action sequences.
     /// </summary>
-    /// <returns>The <see cref="Action"/> representing the action.</returns>
-    public Action CreatePause()
+    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
+    public InputAction CreatePause()
     {
         return this.CreatePause(TimeSpan.Zero);
     }
@@ -53,8 +53,8 @@ public abstract class InputSource
     /// that <see cref="TimeSpan.Zero"/> pauses to synchronize with other action
     /// sequences for other input sources.
     /// </param>
-    /// <returns>The <see cref="Action"/> representing the action.</returns>
-    public Action CreatePause(TimeSpan duration)
+    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
+    public InputAction CreatePause(TimeSpan duration)
     {
         PauseAction action = new();
         if (duration != TimeSpan.Zero)
@@ -62,7 +62,7 @@ public abstract class InputSource
             action.Duration = duration;
         }
 
-        return new Action(this.SourceId, action);
+        return new InputAction(this.SourceId, action);
     }
 
     /// <summary>

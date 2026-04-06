@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Client.Inputs;
 using WebDriverBiDi.Input;
 
 /// <summary>
-/// A wheel input source, like a mouse wheel, for primarily for providing discrete consecutive input values.
+/// A wheel input source, like a mouse wheel, primarily for providing discrete consecutive input values.
 /// </summary>
 public class WheelInputSource : InputSource
 {
@@ -35,8 +35,8 @@ public class WheelInputSource : InputSource
     /// <param name="deltaY">The vertical distance of each increment of the scroll, measured in pixels.</param>
     /// <param name="origin">Optional origin point for the wheel scroll. Defaults to <see langword="null"/>, which implies the origin is the browser view port.</param>
     /// <param name="duration">Optional duration for the wheel scroll. Defaults to <see langword="null"/>, which implies a zero duration.</param>
-    /// <returns>The <see cref="Action"/> representing the action.</returns>
-    public Action CreateScroll(ulong x, ulong y, long deltaX, long deltaY, Origin? origin = null, TimeSpan? duration = null)
+    /// <returns>The <see cref="InputAction"/> representing the action.</returns>
+    public InputAction CreateScroll(ulong x, ulong y, long deltaX, long deltaY, Origin? origin = null, TimeSpan? duration = null)
     {
         WheelScrollAction action = new()
         {
@@ -47,6 +47,6 @@ public class WheelInputSource : InputSource
             Duration = duration,
             Origin = origin,
         };
-        return new Action(this.SourceId, action);
+        return new InputAction(this.SourceId, action);
     }
 }
