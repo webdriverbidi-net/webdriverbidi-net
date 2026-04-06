@@ -483,7 +483,7 @@ public class TransportTests
         Transport transport = new(connection);
         transport.OnLogMessage.AddObserver((e) =>
         {
-            if (e.ComponentName == "Transport")
+            if (e.ComponentName == Transport.LoggerComponentName)
             {
                 logs.Add(e);
                 syncEvent.Set();
@@ -1689,7 +1689,7 @@ public class TransportTests
             log => log.Message.Contains("Unexpected exception during disposal")
                    && log.Message.Contains("Simulated disconnect failure")
                    && log.Level == WebDriverBiDiLogLevel.Warn
-                   && log.ComponentName == "Transport"));
+                   && log.ComponentName == Transport.LoggerComponentName));
     }
 
     [Test]

@@ -23,7 +23,6 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
 
     private static readonly SemaphoreSlim LockObject = new(1, 1);
     private readonly string launcherExecutableName;
-    private readonly string sessionId = string.Empty;
     private bool isLoggingLauncherProcessOutput;
     private Process? launcherProcess;
 
@@ -124,6 +123,8 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         {
             throw new BrowserLauncherNotFoundException($"Could not find browser launcher executable '{browserLauncherFullPath}'");
         }
+
+        await this.LogAsync($"Launching WebDriver classic driver executable from {browserLauncherFullPath}").ConfigureAwait(false);
 
         // A word about the locking mechanism. It's not entirely possible to make
         // atomic the finding of a free port, then using that port as the port for
@@ -236,8 +237,8 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         if (this.CaptureBrowserLauncherOutput)
         {
             this.isLoggingLauncherProcessOutput = true;
-            _ = Task.Run(() => this.ReadStandardOutput());
-            _ = Task.Run(() => this.ReadStandardError());
+            _ = Task.Run(() => this.ReadStandardOutputAsync());
+            _ = Task.Run(() => this.ReadStandardErrorAsync());
         }
     }
 
@@ -246,7 +247,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         this.isLoggingLauncherProcessOutput = false;
     }
 
-    private async Task ReadStandardOutput()
+    private async Task ReadStandardOutputAsync()
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {
@@ -254,7 +255,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
         }
     }
 
-    private async Task ReadStandardError()
+    private async Task ReadStandardErrorAsync()
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {

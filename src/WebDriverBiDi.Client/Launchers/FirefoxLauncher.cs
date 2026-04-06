@@ -8,10 +8,7 @@ namespace WebDriverBiDi.Client.Launchers;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
 
@@ -22,7 +19,6 @@ using WebDriverBiDi.Protocol;
 public class FirefoxLauncher : BrowserLauncher
 {
     private static readonly SemaphoreSlim LockObject = new(1, 1);
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("firefoxLauncher.logMessage");
 
     private readonly List<string> firefoxArguments = [
       "--no-remote",
@@ -71,7 +67,7 @@ public class FirefoxLauncher : BrowserLauncher
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
     /// </summary>
-    public override ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
+    public override ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("firefoxLauncher.logMessage");
 
     /// <summary>
     /// Gets a value indicating whether the service is running.
@@ -123,6 +119,8 @@ public class FirefoxLauncher : BrowserLauncher
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
     public override async Task LaunchBrowserAsync()
     {
+        await this.LogAsync($"Launching Firefox browser from {this.BrowserExecutableLocation}").ConfigureAwait(false);
+
         // A word about the locking mechanism. It's not entirely possible to make
         // atomic the finding of a free port, then using that port as the port for
         // the launcher to listen on. There will always be a race condition between

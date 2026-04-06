@@ -40,6 +40,11 @@ using WebDriverBiDi.WebExtension;
 public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiDriverEvents, IEventObserverErrorReporter
 {
     /// <summary>
+    /// Gets the the component name for this class to use in log messages.
+    /// </summary>
+    public const string LoggerComponentName = "BiDiDriver";
+
+    /// <summary>
     /// Gets the default command timeout if a timeout is not specified in the constructor.
     /// </summary>
     public static readonly TimeSpan DefaultCommandWaitTimeout = TimeSpan.FromSeconds(60);
@@ -660,11 +665,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             }
             catch (Exception ex)
             {
-                await this.OnLogMessage.NotifyObserversAsync(
-                    new LogMessageEventArgs(
-                        $"Unexpected exception during disposal: {ex.Message}",
-                        WebDriverBiDiLogLevel.Warn,
-                        "BiDiDriver")).ConfigureAwait(false);
+                await this.LogAsync($"Unexpected exception during disposal: {ex.Message}", WebDriverBiDiLogLevel.Warn).ConfigureAwait(false);
             }
 
             await this.transportEventReceivedObserver.DisposeAsync().ConfigureAwait(false);
@@ -684,6 +685,17 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     protected bool SetDisposed()
     {
         return Interlocked.Exchange(ref this.isDisposedFlag, 1) == 0;
+    }
+
+    /// <summary>
+    /// Asynchronously raises a logging event at the specified log level.
+    /// </summary>
+    /// <param name="message">The log message to raise in the event.</param>
+    /// <param name="logLevel">The <see cref="WebDriverBiDiLogLevel"/> at which to raise the event.</param>
+    /// <returns>The task object representing the asynchronous operation.</returns>
+    protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel)
+    {
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, logLevel, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private void ThrowIfDisposed()

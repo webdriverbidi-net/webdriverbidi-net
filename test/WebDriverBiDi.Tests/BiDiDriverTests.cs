@@ -1100,7 +1100,7 @@ public class BiDiDriverTests
             log => log.Message.Contains("Unexpected exception during disposal")
                    && log.Message.Contains("Simulated disconnect failure")
                    && log.Level == WebDriverBiDiLogLevel.Warn
-                   && log.ComponentName == "BiDiDriver"));
+                   && log.ComponentName == BiDiDriver.LoggerComponentName));
     }
 
     [Test]

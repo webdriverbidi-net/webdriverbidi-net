@@ -62,6 +62,11 @@ using WebDriverBiDi.JsonConverters;
 /// </remarks>
 public class Transport : IAsyncDisposable
 {
+    /// <summary>
+    /// Gets the the component name for this class to use in log messages.
+    /// </summary>
+    public const string LoggerComponentName = "Transport";
+
     private const string EventReceivedEventName = "transport.eventReceived";
     private const string ErrorReceivedEventName = "transport.errorReceived";
     private const string UnknownMessageReceivedEventName = "transport.unknownMessageReceived";
@@ -964,7 +969,7 @@ public class Transport : IAsyncDisposable
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Transport")).ConfigureAwait(false);
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)

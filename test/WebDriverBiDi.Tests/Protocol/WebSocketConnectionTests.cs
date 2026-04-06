@@ -881,7 +881,7 @@ public class WebSocketConnectionTests
             log => log.Message.Contains("Unexpected exception during disposal")
                    && log.Message.Contains("Simulated stop failure")
                    && log.Level == WebDriverBiDiLogLevel.Warn
-                   && log.ComponentName == "Connection"));
+                   && log.ComponentName == Connection.LoggerComponentName));
     }
 
     [Test]

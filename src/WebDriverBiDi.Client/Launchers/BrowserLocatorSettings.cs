@@ -12,6 +12,12 @@ namespace WebDriverBiDi.Client.Launchers;
 public abstract class BrowserLocatorSettings
 {
     /// <summary>
+    /// Marker value for the version property indicating to use the latest published
+    /// version of the browser for the specified channel.
+    /// </summary>
+    public const string LatestVersionString = "latest";
+
+    /// <summary>
     /// Gets the base cache directory for downloaded browsers, which is a subdirectory of the user's profile directory.
     /// </summary>
     protected static readonly string BaseCacheDir = Path.Combine(
@@ -37,7 +43,7 @@ public abstract class BrowserLocatorSettings
     /// <summary>
     /// Gets or sets the version of the browser.
     /// </summary>
-    public string Version { get; protected set; } = string.Empty;
+    public string Version { get; protected set; } = LatestVersionString;
 
     /// <summary>
     /// Gets or sets the name of the environment variable that can be used to override the browser executable path.

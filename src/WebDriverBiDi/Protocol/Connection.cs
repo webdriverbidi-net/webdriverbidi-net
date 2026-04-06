@@ -35,6 +35,11 @@ namespace WebDriverBiDi.Protocol;
 /// </remarks>
 public abstract class Connection : IAsyncDisposable
 {
+    /// <summary>
+    /// Gets the the component name for this class to use in log messages.
+    /// </summary>
+    public const string LoggerComponentName = "Connection";
+
     private const string DataReceivedEventName = "connection.dataReceived";
     private const string LogMessageEventName = "connection.logMessage";
     private const string ConnectionErrorEventName = "connection.connectionError";
@@ -180,6 +185,6 @@ public abstract class Connection : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, "Connection")).ConfigureAwait(false);
+        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 }

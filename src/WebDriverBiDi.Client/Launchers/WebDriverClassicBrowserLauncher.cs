@@ -21,8 +21,6 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
 {
     private readonly HttpClient httpClient = new();
 
-    private readonly ObservableEvent<LogMessageEventArgs> onLogMessageEvent = new("classicBrowserLauncher.logMessage");
-
     private readonly bool useSsl = false;
     private string launcherHostName = "localhost";
     private string sessionId = string.Empty;
@@ -70,7 +68,7 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
     /// </summary>
-    public override ObservableEvent<LogMessageEventArgs> OnLogMessage => this.onLogMessageEvent;
+    public override ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("classicBrowserLauncher.logMessage");
 
     /// <summary>
     /// Gets or sets the host name of the launcher. Defaults to "localhost".
@@ -242,22 +240,5 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
 
         initializationStopwatch.Stop();
         return isInitialized;
-    }
-
-    /// <summary>
-    /// Asynchronously raises the OnLogMessageAsync event.
-    /// </summary>
-    /// <param name="message">The message to log.</param>
-    /// <param name="level">The <see cref="WebDriverBiDiLogLevel"/> of the message.</param>
-    /// <param name="component">The component providing the message.</param>
-    /// <returns>The task object representing the asynchronous operation.</returns>
-    protected async Task LogAsync(string message, WebDriverBiDiLogLevel level, string component = "Browser Launcher")
-    {
-        await this.OnLogMessageAsync(new LogMessageEventArgs(message, level, component));
-    }
-
-    private async Task OnLogMessageAsync(LogMessageEventArgs eventArgs)
-    {
-        await this.onLogMessageEvent.NotifyObserversAsync(eventArgs);
     }
 }

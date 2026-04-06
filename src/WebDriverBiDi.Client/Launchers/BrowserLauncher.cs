@@ -17,6 +17,11 @@ using WebDriverBiDi.Protocol;
 public abstract class BrowserLauncher : IAsyncDisposable
 {
     /// <summary>
+    /// Gets the the component name for this class to use in log messages.
+    /// </summary>
+    public const string LoggerComponentName = "Browser Launcher";
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
     /// </summary>
     /// <param name="launcherExecutablePath">The path to the directory containing the launcher executable.</param>
@@ -233,5 +238,18 @@ public abstract class BrowserLauncher : IAsyncDisposable
                 this.WebSocketUrl = regexMatch.Groups[1].Value;
             }
         }
+    }
+
+    /// <summary>
+    /// Logs a message from the browser launcher to the OnLogMessage observable event with the specified log level.
+    /// </summary>
+    /// <param name="message">The message to log.</param>
+    /// <param name="logLevel">The log level.</param>
+    /// <param name="component">The component name.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel = WebDriverBiDiLogLevel.Info, string component = LoggerComponentName)
+    {
+        LogMessageEventArgs logMessageArgs = new(message, logLevel, component);
+        await this.OnLogMessage.NotifyObserversAsync(logMessageArgs);
     }
 }
