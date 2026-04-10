@@ -28,7 +28,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Text.Json" Version="10.0.3" />
+    <PackageReference Include="System.Text.Json" Version="10.0.5" />
     <PackageReference Include="System.Threading.Channels" Version="10.0.5" />
   </ItemGroup>
   <ItemGroup>

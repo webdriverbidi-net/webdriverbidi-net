@@ -11,7 +11,6 @@
 namespace WebDriverBiDi.Docs.Code.Script;
 
 using System.Collections.Generic;
-using OpenQA.Selenium.BiDi.Modules.Input;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Script;

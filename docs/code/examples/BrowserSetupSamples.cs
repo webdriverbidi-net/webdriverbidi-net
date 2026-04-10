@@ -4,13 +4,12 @@
 // </copyright>
 // Code snippets for docs/articles/browser-setup.md
 
-#pragma warning disable CS8600, CS8602
+#pragma warning disable CS8600, CS8602, CS8620
 
 namespace WebDriverBiDi.Docs.Code.Examples;
 
 using System.Diagnostics;
 using System.Net.Http;
-using System.Text.Json;
 using OpenQA.Selenium.Chrome;
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
