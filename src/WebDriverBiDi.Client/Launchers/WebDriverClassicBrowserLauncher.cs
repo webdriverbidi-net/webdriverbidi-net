@@ -17,7 +17,7 @@ using WebDriverBiDi;
 /// and is suitable for using with any remote end compatible with WebDriver Classic and WebDriver
 /// BiDi, including Selenium Grid.
 /// </summary>
-public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
+public class WebDriverClassicBrowserLauncher : BrowserLauncher
 {
     private readonly HttpClient httpClient = new();
 
@@ -42,20 +42,20 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <param name="port">The port of the WebDriver Classic remote end.</param>
     /// <param name="useSsl"><see langword="true"/> to use HTTPS to connect to the remote end; otherwise <see langword="false"/>.</param>
     public WebDriverClassicBrowserLauncher(string hostName, int port, bool useSsl)
-        : this(string.Empty, port, string.Empty)
+        : base(port)
     {
         this.launcherHostName = hostName;
         this.useSsl = useSsl;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WebDriverClassicBrowserLauncher"/> class.
+    /// Initializes a new instance of the <see cref="WebDriverClassicBrowserLauncher"/> class using browser locator settings.
+    /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
-    /// <param name="launcherExecutablePath">The path to the directory containing the launcher executable.</param>
-    /// <param name="port">The port on which the launcher executable should listen for connections.</param>
-    /// <param name="browserExecutableLocation">The path containing the directory and file name of the browser executable. Default to an empty string, indicating to use the default installed browser.</param>
-    protected WebDriverClassicBrowserLauncher(string launcherExecutablePath, int port, string browserExecutableLocation = "")
-        : base(launcherExecutablePath, port, browserExecutableLocation)
+    /// <param name="browserLocatorSettings">The browser locator settings to use for locating the browser and driver executables.</param>
+    /// <param name="port">The port on which the launcher will listen.</param>
+    public WebDriverClassicBrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port = 0)
+        : base(browserLocatorSettings, port)
     {
     }
 
@@ -79,6 +79,11 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// that an IP address (like "127.0.0.1" or "::1") can be used instead.
     /// </remarks>
     public string HostName { get => this.launcherHostName; set => this.launcherHostName = value; }
+
+    /// <summary>
+    /// Gets or sets the location of the browser executable.
+    /// </summary>
+    protected string BrowserExecutableLocation { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets a value indicating whether the service has a shutdown API that can be called to terminate
@@ -132,6 +137,7 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
     public override async Task LaunchBrowserAsync()
     {
+        string url = await this.BrowserLocator.LocateBrowserAsync();
         Dictionary<string, object> classicCapabilities = new()
         {
             ["capabilities"] = new Dictionary<string, object>()
@@ -161,14 +167,14 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
             {
                 if (returnedValue.TryGetProperty("sessionId", out JsonElement returnedSessionId))
                 {
-                    this.sessionId = returnedSessionId.GetString()!;
+                    this.sessionId = returnedSessionId.GetString() ?? string.Empty;
                 }
 
                 if (returnedValue.TryGetProperty("capabilities", out JsonElement capabilities))
                 {
                     if (capabilities.TryGetProperty("webSocketUrl", out JsonElement returnedWebSocketUrl))
                     {
-                        this.WebSocketUrl = returnedWebSocketUrl.GetString()!;
+                        this.WebSocketUrl = returnedWebSocketUrl.GetString() ?? string.Empty;
                     }
                 }
             }
@@ -208,7 +214,15 @@ public abstract class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// Creates the WebDriver Classic capabilities used to launch the browser.
     /// </summary>
     /// <returns>A dictionary containing the capabilities.</returns>
-    protected abstract Dictionary<string, object> CreateBrowserLaunchCapabilities();
+    protected virtual Dictionary<string, object> CreateBrowserLaunchCapabilities()
+    {
+        Dictionary<string, object> capabilities = new()
+        {
+            ["browserName"] = this.BrowserLocator.BrowserName.ToLowerInvariant(),
+            ["webSocketUrl"] = true,
+        };
+        return capabilities;
+    }
 
     /// <summary>
     /// Asynchronously waits for the initialization of the browser launcher.

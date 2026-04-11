@@ -7,7 +7,6 @@ namespace WebDriverBiDi.Client.Launchers;
 
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Runtime.InteropServices;
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
@@ -32,36 +31,11 @@ public class FirefoxLauncher : BrowserLauncher
     /// <summary>
     /// Initializes a new instance of the <see cref="FirefoxLauncher"/> class.
     /// </summary>
-    public FirefoxLauncher()
-        : this(string.Empty, 0)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FirefoxLauncher"/> class.
-    /// </summary>
-    /// <param name="browserExecutableLocation">The path and executable name of the browser executable.</param>
-    public FirefoxLauncher(string browserExecutableLocation)
-        : this(browserExecutableLocation, 0)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FirefoxLauncher"/> class.
-    /// </summary>
-    /// <param name="browserExecutableLocation">The path and executable name of the browser executable.</param>
+    /// <param name="browserLocatorSettings">The <see cref="FirefoxBrowserLocatorSettings"/> settings to use for locating the Firefox browser executable.</param>
     /// <param name="port">The port on which the browser should listen for connections.</param>
-    public FirefoxLauncher(string browserExecutableLocation, int port)
-        : base(string.Empty, port, browserExecutableLocation)
+    public FirefoxLauncher(FirefoxBrowserLocatorSettings browserLocatorSettings, int port = 0)
+        : base(browserLocatorSettings, port)
     {
-        if (string.IsNullOrEmpty(browserExecutableLocation))
-        {
-            this.BrowserExecutableLocation = this.GetDefaultBrowserExecutableLocation();
-        }
-        else
-        {
-            this.BrowserExecutableLocation = browserExecutableLocation;
-        }
     }
 
     /// <summary>
@@ -119,7 +93,8 @@ public class FirefoxLauncher : BrowserLauncher
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
     public override async Task LaunchBrowserAsync()
     {
-        await this.LogAsync($"Launching Firefox browser from {this.BrowserExecutableLocation}").ConfigureAwait(false);
+        string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
+        await this.LogAsync($"Launching Firefox browser from {browserExecutableLocation}").ConfigureAwait(false);
 
         // A word about the locking mechanism. It's not entirely possible to make
         // atomic the finding of a free port, then using that port as the port for
@@ -140,13 +115,10 @@ public class FirefoxLauncher : BrowserLauncher
             this.CreateUserDataDirectory();
             this.CreateProfile();
 
-            this.browserProcess = new Process();
-            this.browserProcess.StartInfo.FileName = this.BrowserExecutableLocation;
-            this.browserProcess.StartInfo.Arguments = string.Join(" ", this.CommandLineArguments);
-            this.browserProcess.StartInfo.UseShellExecute = false;
-            this.browserProcess.StartInfo.RedirectStandardOutput = true;
-            this.browserProcess.StartInfo.RedirectStandardError = true;
-            this.browserProcess.StartInfo.CreateNoWindow = true;
+            this.browserProcess = new Process()
+            {
+                StartInfo = this.CreateProcessStartInfo(browserExecutableLocation),
+            };
             this.browserProcess.ErrorDataReceived += this.ReadConsoleOutputForWebSocketUrl;
             this.browserProcess.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
             this.browserProcess.Start();
@@ -467,6 +439,21 @@ public class FirefoxLauncher : BrowserLauncher
         };
     }
 
+    private ProcessStartInfo CreateProcessStartInfo(string browserExecutableLocation)
+    {
+        ProcessStartInfo startInfo = new()
+        {
+            FileName = browserExecutableLocation,
+            Arguments = string.Join(" ", this.CommandLineArguments),
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+
+        return startInfo;
+    }
+
     private void CreateProfile()
     {
         // If the tempUserDataDirectory begins and ends with a quote, remove the quote
@@ -536,26 +523,5 @@ public class FirefoxLauncher : BrowserLauncher
             {
             }
         }
-    }
-
-    private string GetDefaultBrowserExecutableLocation()
-    {
-        // NOTE: This is a naive algorithm for demonstration purposes only.
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return "/Applications/Firefox.app/Contents/MacOS/firefox";
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return "C:\\Program Files\\Mozilla Firefox\\firefox.exe";
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            return "/usr/bin/firefox";
-        }
-
-        return string.Empty;
     }
 }

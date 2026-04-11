@@ -50,7 +50,10 @@ public static class ArchitectureSamples
     {
         #region PipeExample
         // Launcher implements IPipeServerProcessProvider
-        ChromeLauncher launcher = new ChromeLauncher()
+        ChromeBrowserLocatorSettings locatorSettings = new ChromeBrowserLocatorSettings(
+            ChromeChannel.Stable,
+            FileLocationBehavior.AutoLocateAndDownload);
+        ChromeLauncher launcher = new ChromeLauncher(locatorSettings)
         {
             ConnectionType = ConnectionType.Pipes
         };

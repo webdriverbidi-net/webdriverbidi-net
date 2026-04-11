@@ -1,4 +1,4 @@
-// <copyright file="BrowserExtractor.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="FileExtractor.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -8,18 +8,18 @@ namespace WebDriverBiDi.Client.Launchers;
 using System.Diagnostics;
 
 /// <summary>
-/// Base class for extracting downloaded browser binaries from downloaded installers to obtain the browser executable.
+/// Base class for extracting downloaded binary files from downloaded installers to obtain the executable.
 /// </summary>
-public abstract class BrowserExtractor
+public abstract class FileExtractor
 {
     /// <summary>
-    /// Extracts the browser from the downloaded installer to the specified directory,
+    /// Extracts the file from the downloaded installer to the specified directory,
     /// and returns the path to the extracted browser executable.
     /// </summary>
     /// <param name="installerPath">The path to the downloaded installer.</param>
-    /// <param name="extractDir">The directory where the browser should be extracted.</param>
+    /// <param name="extractDir">The directory where the file should be extracted.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public abstract Task ExtractBrowserAsync(string installerPath, string extractDir);
+    public abstract Task ExtractFileContentsAsync(string installerPath, string extractDir);
 
     /// <summary>
     /// Runs a process with the specified file name and arguments, and waits for it to complete.

@@ -6,8 +6,8 @@
 namespace WebDriverBiDi.Client.Launchers;
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Sockets;
 using WebDriverBiDi;
 
 /// <summary>
@@ -27,16 +27,21 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     private Process? launcherProcess;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ClassicDriverExecutableBrowserLauncher"/> class.
+    /// Initializes a new instance of the <see cref="ClassicDriverExecutableBrowserLauncher"/> class using browser locator settings.
+    /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
-    /// <param name="launcherExecutablePath">The path to the directory containing the launcher executable.</param>
-    /// <param name="launcherExecutableName">The name of the launcher executable.</param>
-    /// <param name="port">The port on which the launcher executable should listen for connections.</param>
-    /// <param name="browserExecutableLocation">The path containing the directory and file name of the browser executable. Default to an empty string, indicating to use the default installed browser.</param>
-    protected ClassicDriverExecutableBrowserLauncher(string launcherExecutablePath, string launcherExecutableName, int port, string browserExecutableLocation = "")
-        : base(launcherExecutablePath, port, browserExecutableLocation)
+    /// <param name="browserLocatorSettings">The browser locator settings to use for locating the browser and driver executables.</param>
+    /// <param name="port">The port on which the launcher will listen.</param>
+    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
+    protected ClassicDriverExecutableBrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port = 0)
+        : base(browserLocatorSettings, port)
     {
-        this.launcherExecutableName = launcherExecutableName;
+        if (!browserLocatorSettings.IncludeDriver)
+        {
+            throw new ArgumentException("The settings must have IncludeDriver set to true.", nameof(browserLocatorSettings));
+        }
+
+        this.launcherExecutableName = browserLocatorSettings.DriverExecutableName;
     }
 
     /// <summary>
@@ -68,6 +73,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// <summary>
     /// Gets a value indicating whether the service is running.
     /// </summary>
+    [MemberNotNullWhen(true, nameof(launcherProcess))]
     public bool IsRunning => this.launcherProcess is not null && !this.launcherProcess.HasExited;
 
     /// <summary>
@@ -85,7 +91,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
                 try
                 {
                     // IsRunning contains a null check for the process.
-                    return this.launcherProcess!.Id;
+                    return this.launcherProcess.Id;
                 }
                 catch (InvalidOperationException)
                 {
@@ -118,13 +124,38 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             return;
         }
 
-        string browserLauncherFullPath = Path.Combine(this.LauncherPath, this.launcherExecutableName);
-        if (!File.Exists(browserLauncherFullPath))
+        // Locate executables using BrowserLocator
+        BrowserExecutableInfo executableInfo = await this.BrowserLocator.LocateExecutablesAsync().ConfigureAwait(false);
+
+        if (executableInfo.DriverPath is null || string.IsNullOrEmpty(executableInfo.DriverPath))
         {
-            throw new BrowserLauncherNotFoundException($"Could not find browser launcher executable '{browserLauncherFullPath}'");
+            throw new InvalidOperationException($"Failed to locate {this.launcherExecutableName} executable.");
         }
 
-        await this.LogAsync($"Launching WebDriver classic driver executable from {browserLauncherFullPath}").ConfigureAwait(false);
+        this.BrowserExecutableLocation = executableInfo.BrowserPath;
+
+        // Determine the launcher path and full path
+        string browserLauncherFullPath = executableInfo.DriverPath;
+        string driverDirectory = Path.GetDirectoryName(executableInfo.DriverPath);
+
+        // If the driver path has no directory (e.g., just "chromedriver"), it's on the system PATH
+        string logDetail;
+        if (string.IsNullOrEmpty(driverDirectory))
+        {
+            // Driver is on system PATH - executableInfo.DriverPath is just the executable name
+            logDetail = $"'{browserLauncherFullPath}' on system PATH";
+        }
+        else
+        {
+            if (!File.Exists(browserLauncherFullPath))
+            {
+                throw new BrowserLauncherNotFoundException($"Could not find browser launcher executable '{browserLauncherFullPath}'");
+            }
+
+            logDetail = $"from {browserLauncherFullPath}";
+        }
+
+        await this.LogAsync($"Launching WebDriver classic driver executable {logDetail} (browser launched from: {this.BrowserExecutableLocation})").ConfigureAwait(false);
 
         // A word about the locking mechanism. It's not entirely possible to make
         // atomic the finding of a free port, then using that port as the port for
@@ -193,7 +224,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
                         // for a failed HTTP request due to a closed socket is particularly
                         // expensive.
                         using HttpResponseMessage response = await this.HttpClient.GetAsync($"{this.ServiceUrl}/shutdown").ConfigureAwait(false);
-                        this.launcherProcess!.WaitForExit(3000);
+                        this.launcherProcess.WaitForExit(3000);
                     }
                     catch (WebException)
                     {
@@ -208,7 +239,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             // that falling into this branch of code should be exceedingly rare.
             if (this.IsRunning)
             {
-                this.launcherProcess!.WaitForExit(Convert.ToInt32(this.TerminationTimeout.TotalMilliseconds));
+                this.launcherProcess.WaitForExit(Convert.ToInt32(this.TerminationTimeout.TotalMilliseconds));
                 if (!this.launcherProcess.HasExited)
                 {
                     this.launcherProcess.Kill();
@@ -216,7 +247,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
             }
 
             this.StopLoggingProcessOutput();
-            this.launcherProcess!.Dispose();
+            this.launcherProcess.Dispose();
             this.launcherProcess = null;
             await this.LogAsync("Browser launcher exited", WebDriverBiDiLogLevel.Info);
         }
@@ -259,7 +290,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     {
         while (this.launcherProcess is not null && this.isLoggingLauncherProcessOutput)
         {
-            await this.LogAsync(this.launcherProcess!.StandardError.ReadLine(), WebDriverBiDiLogLevel.Debug, this.launcherExecutableName);
+            await this.LogAsync(this.launcherProcess.StandardError.ReadLine(), WebDriverBiDiLogLevel.Debug, this.launcherExecutableName);
         }
     }
 }

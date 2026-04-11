@@ -5,55 +5,34 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
-using System.Runtime.InteropServices;
-
 /// <summary>
 /// Object for launching a Chrome browser to connect to using a WebDriverBiDi session
 /// using a local instance of the chromedriver browser driver executable.
 /// </summary>
 public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
 {
-    private const string DefaultChromeLauncherFileName = "chromedriver";
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="ChromeDriverLauncher" /> class.
+    /// Initializes a new instance of the <see cref="ChromeDriverLauncher" /> class using Chrome browser locator settings.
+    /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
-    /// <param name="launcherPath">The path of the directory containing the launcher executable.</param>
-    /// <param name="browserExecutableLocation">
-    /// The location of the Chrome browser executable the launcher will launch.
-    /// Defaults to an empty string, indicating to launch Chrome from its default location.
-    /// </param>
-    public ChromeDriverLauncher(string launcherPath, string browserExecutableLocation = "")
-        : this(launcherPath, ChromeLauncherFileName(), 0, browserExecutableLocation)
+    /// <param name="settings">The Chrome browser locator settings to use for locating the browser and driver executables.</param>
+    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
+    public ChromeDriverLauncher(ChromeBrowserLocatorSettings settings)
+        : this(settings, 0)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ChromeDriverLauncher" /> class.
+    /// Initializes a new instance of the <see cref="ChromeDriverLauncher" /> class using Chrome browser locator settings.
+    /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
-    /// <param name="launcherPath">The path of the directory containing the launcher executable.</param>
-    /// <param name="executableName">The name of the launcher executable.</param>
-    /// <param name="browserExecutableLocation">
-    /// The location of the Chrome browser executable the launcher will launch.
-    /// Defaults to an empty string, indicating to launch Chrome from its default location.
-    /// </param>
-    public ChromeDriverLauncher(string launcherPath, string executableName, string browserExecutableLocation = "")
-        : this(launcherPath, executableName, 0, browserExecutableLocation)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ChromeDriverLauncher" /> class.
-    /// </summary>
-    /// <param name="launcherPath">The path of the directory containing the launcher executable.</param>
-    /// <param name="executableName">The name of the launcher executable.</param>
+    /// <param name="settings">The Chrome browser locator settings to use for locating the browser and driver executables.</param>
     /// <param name="port">The port on which the launcher will listen.</param>
-    /// <param name="browserExecutableLocation">
-    /// The location of the Chrome browser executable the launcher will launch.
-    /// Defaults to an empty string, indicating to launch Chrome from its default location.
-    /// </param>
-    public ChromeDriverLauncher(string launcherPath, string executableName, int port, string browserExecutableLocation = "")
-        : base(launcherPath, executableName, port, browserExecutableLocation)
+    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
+    public ChromeDriverLauncher(ChromeBrowserLocatorSettings settings, int port)
+        : base(settings, port)
     {
     }
 
@@ -103,20 +82,5 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
         };
 
         return capabilities;
-    }
-
-    /// <summary>
-    /// Returns the Chrome driver filename for the currently running platform.
-    /// </summary>
-    /// <returns>The file name of the Chrome driver service executable.</returns>
-    private static string ChromeLauncherFileName()
-    {
-        string fileName = DefaultChromeLauncherFileName;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            fileName += ".exe";
-        }
-
-        return fileName;
     }
 }

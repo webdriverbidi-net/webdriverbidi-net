@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.Integration;
 
+using WebDriverBiDi.Client;
 using WebDriverBiDi.Client.Launchers;
 
 /// <summary>
@@ -59,13 +60,20 @@ public static class BrowserTestHelper
 
     public static BrowserLauncher GetBrowserLauncher(Browser browser)
     {
-        string executablePath = GetBrowserExecutable(browser);
-        return browser switch
+        BrowserType browserType = browser switch
         {
-            Browser.Firefox => new FirefoxLauncher(executablePath),
-            Browser.Chrome => new ChromeLauncher(executablePath),
+            Browser.Firefox => BrowserType.Firefox,
+            Browser.Chrome => BrowserType.Chrome,
             _ => throw new ArgumentException($"Unsupported browser: {browser}")
         };
+
+        string executablePath = GetBrowserExecutable(browser);
+        BrowserLauncher.Creator creator = BrowserLauncher.ForBrowser(browserType)
+            .UsingReleaseChannel(BrowserReleaseChannel.Alpha);
+        
+        return string.IsNullOrEmpty(executablePath)
+            ? creator.AutoLocateBrowser().Create()
+            : creator.AtLocation(executablePath).Create();
     }
 
     /// <summary>

@@ -5,55 +5,34 @@
 
 namespace WebDriverBiDi.Client.Launchers;
 
-using System.Runtime.InteropServices;
-
 /// <summary>
 /// Object for launching a Firefox browser to connect to using a WebDriverBiDi session
 /// using a local instance of the geckodriver browser driver executable.
 /// </summary>
 public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
 {
-    private const string DefaultFirefoxLauncherFileName = "geckodriver";
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="GeckoDriverLauncher" /> class.
+    /// Initializes a new instance of the <see cref="GeckoDriverLauncher" /> class using Firefox browser locator settings.
+    /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
-    /// <param name="launcherPath">The path of the directory containing the launcher executable.</param>
-    /// <param name="browserExecutableLocation">
-    /// The location of the Firefox browser executable the launcher will launch.
-    /// Defaults to an empty string, indicating to launch Firefox from its default location.
-    /// </param>
-    public GeckoDriverLauncher(string launcherPath, string browserExecutableLocation = "")
-        : this(launcherPath, FirefoxLauncherFileName(), 0, browserExecutableLocation)
+    /// <param name="settings">The Firefox browser locator settings to use for locating the browser and driver executables.</param>
+    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
+    public GeckoDriverLauncher(FirefoxBrowserLocatorSettings settings)
+        : this(settings, 0)
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GeckoDriverLauncher" /> class.
+    /// Initializes a new instance of the <see cref="GeckoDriverLauncher" /> class using Firefox browser locator settings.
+    /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
-    /// <param name="launcherPath">The path of the directory containing the launcher executable.</param>
-    /// <param name="executableName">The name of the launcher executable.</param>
-    /// <param name="browserExecutableLocation">
-    /// The location of the Firefox browser executable the launcher will launch.
-    /// Defaults to an empty string, indicating to launch Firefox from its default location.
-    /// </param>
-    public GeckoDriverLauncher(string launcherPath, string executableName, string browserExecutableLocation = "")
-        : this(launcherPath, executableName, 0, browserExecutableLocation)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GeckoDriverLauncher" /> class.
-    /// </summary>
-    /// <param name="launcherPath">The path of the directory containing the launcher executable.</param>
-    /// <param name="executableName">The name of the launcher executable.</param>
+    /// <param name="settings">The Firefox browser locator settings to use for locating the browser and driver executables.</param>
     /// <param name="port">The port on which the launcher will listen.</param>
-    /// <param name="browserExecutableLocation">
-    /// The location of the Firefox browser executable the launcher will launch.
-    /// Defaults to an empty string, indicating to launch Firefox from its default location.
-    /// </param>
-    public GeckoDriverLauncher(string launcherPath, string executableName, int port, string browserExecutableLocation = "")
-        : base(launcherPath, executableName, port, browserExecutableLocation)
+    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
+    public GeckoDriverLauncher(FirefoxBrowserLocatorSettings settings, int port)
+        : base(settings, port)
     {
     }
 
@@ -107,20 +86,5 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
         };
 
         return capabilities;
-    }
-
-    /// <summary>
-    /// Returns the Firefox driver filename for the currently running platform.
-    /// </summary>
-    /// <returns>The file name of the Firefox driver service executable.</returns>
-    private static string FirefoxLauncherFileName()
-    {
-        string fileName = DefaultFirefoxLauncherFileName;
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            fileName += ".exe";
-        }
-
-        return fileName;
     }
 }

@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Client.Launchers;
 
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.InteropServices;
 using WebDriverBiDi;
 using WebDriverBiDi.Protocol;
@@ -74,36 +73,11 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// <summary>
     /// Initializes a new instance of the <see cref="ChromeLauncher"/> class.
     /// </summary>
-    public ChromeLauncher()
-        : this(string.Empty)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ChromeLauncher"/> class.
-    /// </summary>
-    /// <param name="browserExecutableLocation">The path and executable name of the browser executable.</param>
-    public ChromeLauncher(string browserExecutableLocation)
-        : this(browserExecutableLocation, 0)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ChromeLauncher"/> class.
-    /// </summary>
-    /// <param name="browserExecutableLocation">The path and executable name of the browser executable.</param>
+    /// <param name="browserLocatorSettings">The <see cref="ChromeBrowserLocatorSettings"/> settings to use for locating the Chrome browser executable.</param>
     /// <param name="port">The port on which the browser should listen for connections.</param>
-    public ChromeLauncher(string browserExecutableLocation, int port)
-        : base(string.Empty, port, browserExecutableLocation)
+    public ChromeLauncher(ChromeBrowserLocatorSettings browserLocatorSettings, int port = 0)
+        : base(browserLocatorSettings, port)
     {
-        if (string.IsNullOrEmpty(browserExecutableLocation))
-        {
-            this.BrowserExecutableLocation = this.GetDefaultBrowserExecutableLocation();
-        }
-        else
-        {
-            this.BrowserExecutableLocation = browserExecutableLocation;
-        }
     }
 
     /// <summary>
@@ -176,7 +150,8 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
     public override async Task LaunchBrowserAsync()
     {
-        await this.LogAsync($"Launching Chrome browser from {this.BrowserExecutableLocation}").ConfigureAwait(false);
+        string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
+        await this.LogAsync($"Launching Chrome browser from {browserExecutableLocation}").ConfigureAwait(false);
 
         // A word about the locking mechanism. It's not entirely possible to make
         // atomic the finding of a free port, then using that port as the port for
@@ -198,7 +173,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
 
             this.browserProcess = new Process
             {
-                StartInfo = this.CreateProcessStartInfo(),
+                StartInfo = this.CreateProcessStartInfo(browserExecutableLocation),
             };
             this.browserProcess.ErrorDataReceived += this.ReadConsoleOutputForWebSocketUrl;
             this.browserProcess.OutputDataReceived += this.ReadConsoleOutputForWebSocketUrl;
@@ -312,9 +287,9 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
         return argument;
     }
 
-    private ProcessStartInfo CreateProcessStartInfo()
+    private ProcessStartInfo CreateProcessStartInfo(string browserExecutableLocation)
     {
-        string fileName = this.BrowserExecutableLocation;
+        string fileName = browserExecutableLocation;
         string args = string.Join(" ", RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? this.CommandLineArguments.Select(EscapeWindowsArgument) : this.CommandLineArguments);
         if (this.connection is not null && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection pipeConnection)
         {
@@ -327,7 +302,7 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             else
             {
                 // Escape the browser path and arguments for shell usage
-                string escapedBrowserPath = EscapeShellArgument(this.BrowserExecutableLocation);
+                string escapedBrowserPath = EscapeShellArgument(browserExecutableLocation);
                 string escapedArgs = string.Join(" ", this.CommandLineArguments.Select(EscapeShellArgument));
 
                 // For pipe connection in non-Windows OSes, create a bash command that:
@@ -379,9 +354,9 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
                 break;
             }
 
-            if (this.browserProcess is not null && this.connection is not null && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection pipeConnection)
+            if (this.browserProcess is not null && this.connection is not null && this.connection.ConnectionType == ConnectionType.Pipes && this.connection is PipeConnection)
             {
-                this.WebSocketUrl = $"pipe://{this.BrowserExecutableLocation}:{this.browserProcess.Id}";
+                this.WebSocketUrl = $"pipe://chrome:{this.browserProcess.Id}";
             }
 
             if (!string.IsNullOrEmpty(this.WebSocketUrl))
@@ -423,53 +398,5 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
             {
             }
         }
-    }
-
-    private string GetDefaultBrowserExecutableLocation()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            if (File.Exists("C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"))
-            {
-                return "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
-            }
-
-            return "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
-        }
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            List<string> linuxLocations =
-            [
-                "/usr/local/sbin",
-                "/usr/local/bin",
-                "/usr/sbin",
-                "/usr/bin",
-                "/sbin",
-                "/bin",
-                "/opt/google/chrome",
-            ];
-            foreach (string linuxLocation in linuxLocations)
-            {
-                string fullPath = Path.Combine(linuxLocation, "chrome");
-                if (File.Exists(fullPath))
-                {
-                    return fullPath;
-                }
-
-                fullPath = Path.Combine(linuxLocation, "google-chrome");
-                if (File.Exists(fullPath))
-                {
-                    return fullPath;
-                }
-            }
-        }
-
-        return string.Empty;
     }
 }

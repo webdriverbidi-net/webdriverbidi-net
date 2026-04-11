@@ -5,6 +5,7 @@
 
 using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.Client;
 using WebDriverBiDi.Client.Launchers;
 using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
@@ -18,23 +19,18 @@ BrowserLauncher launcher;
 switch (browser)
 {
     case "firefox":
-        string firefoxPath = await BrowserLocator.Create(FirefoxChannel.Nightly).LocateBrowserExecutablePathAsync();
-        Console.WriteLine($"Firefox path: {firefoxPath}");
-        FirefoxLauncher firefoxLauncher = new(firefoxPath)
-        {
-            IsBrowserHeadless = true
-        };
-        launcher = firefoxLauncher;
+        launcher = BrowserLauncher.ForBrowser(BrowserType.Firefox)
+            .UsingReleaseChannel(BrowserReleaseChannel.Alpha)
+            .AutoLocateBrowser()
+            .UseHeadlessBrowser()
+            .Create();
         break;
     case "chrome":
-        string chromePath = await BrowserLocator.Create(ChromeChannel.Canary).LocateBrowserExecutablePathAsync();
-        Console.WriteLine($"Chrome path: {chromePath}");
-
-        ChromeLauncher chromeLauncher = new ChromeLauncher(chromePath)
-        {
-            IsBrowserHeadless = true
-        };
-        launcher = chromeLauncher;
+        launcher = BrowserLauncher.ForBrowser(BrowserType.Chrome)
+            .UsingReleaseChannel(BrowserReleaseChannel.Alpha)
+            .AutoLocateBrowser()
+            .UseHeadlessBrowser()
+            .Create();
         break;
     default:
         Console.Error.WriteLine($"Unknown browser: {browser}. Use 'firefox' or 'chrome'.");

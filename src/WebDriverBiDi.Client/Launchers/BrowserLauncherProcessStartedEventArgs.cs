@@ -6,7 +6,6 @@
 namespace WebDriverBiDi.Client.Launchers;
 
 using System.Diagnostics;
-using System.IO;
 
 /// <summary>
 /// Provides data for the LauncherProcessStarted event of a <see cref="BrowserLauncher"/> object.

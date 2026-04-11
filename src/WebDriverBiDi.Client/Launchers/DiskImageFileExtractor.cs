@@ -1,4 +1,4 @@
-// <copyright file="DiskImageBrowserExtractor.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="DiskImageFileExtractor.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -6,21 +6,21 @@
 namespace WebDriverBiDi.Client.Launchers;
 
 /// <summary>
-/// Browser extractor for browsers distributed as disk images (DMG files) on macOS. This extractor
-/// mounts the DMG, copies the .app bundle to the specified extraction directory, and then unmounts
+/// File extractor for files distributed as disk images (DMG files) on macOS. This extractor
+/// mounts the DMG, copies the contents to the specified extraction directory, and then unmounts
 /// and deletes the DMG.
 /// </summary>
-public class DiskImageBrowserExtractor : BrowserExtractor
+public class DiskImageFileExtractor : FileExtractor
 {
     /// <summary>
-    /// Extracts the browser from the downloaded DMG installer to the specified directory,
+    /// Extracts the contents from the downloaded DMG installer to the specified directory,
     /// and deletes the DMG file.
     /// </summary>
     /// <param name="dmgPath">Path to the DMG file.</param>
-    /// <param name="extractDirectory">Directory to extract the browser to.</param>
+    /// <param name="extractDirectory">Directory to extract the contents to.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     /// <exception cref="InvalidOperationException">Thrown if no .app bundle is found in the DMG.</exception>
-    public override async Task ExtractBrowserAsync(string dmgPath, string extractDirectory)
+    public override async Task ExtractFileContentsAsync(string dmgPath, string extractDirectory)
     {
         string mountPoint = Path.Combine(extractDirectory, "dmg-mount");
         Directory.CreateDirectory(mountPoint);

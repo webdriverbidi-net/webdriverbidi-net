@@ -45,7 +45,10 @@ public class PerformanceSamples
     {
         #region PipeConnection
         // Pipe connection (Chromium only)
-        ChromeLauncher launcher = new ChromeLauncher()
+        ChromeBrowserLocatorSettings locatorSettings = new ChromeBrowserLocatorSettings(
+            ChromeChannel.Stable,
+            FileLocationBehavior.AutoLocateAndDownload);
+        ChromeLauncher launcher = new ChromeLauncher(locatorSettings)
         {
             ConnectionType = ConnectionType.Pipes
         };
