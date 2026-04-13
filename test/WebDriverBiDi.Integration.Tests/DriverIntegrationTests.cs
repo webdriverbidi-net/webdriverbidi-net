@@ -12,9 +12,9 @@ using WebDriverBiDi.Session;
 [TestFixture]
 public class DriverIntegrationTests
 {
-    [TestCase(Browser.Firefox)]
-    [TestCase(Browser.Chrome)]
-    public async Task TestCanNavigate(Browser browser)
+    [TestCase(TestBrowser.Firefox)]
+    [TestCase(TestBrowser.Chrome)]
+    public async Task TestCanNavigate(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
         // In CI: skips test if browser executable not configured
@@ -47,9 +47,9 @@ public class DriverIntegrationTests
         await driver.Browser.CloseAsync();
     }
 
-    [TestCase(Browser.Firefox)]
-    [TestCase(Browser.Chrome)]
-    public async Task TestCanExecuteScript(Browser browser)
+    [TestCase(TestBrowser.Firefox)]
+    [TestCase(TestBrowser.Chrome)]
+    public async Task TestCanExecuteScript(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
         // In CI: skips test if browser executable not configured
@@ -89,9 +89,9 @@ public class DriverIntegrationTests
         await driver.Browser.CloseAsync();
     }
 
-    [TestCase(Browser.Firefox)]
-    [TestCase(Browser.Chrome)]
-    public async Task TestCanClickLink(Browser browser)
+    [TestCase(TestBrowser.Firefox)]
+    [TestCase(TestBrowser.Chrome)]
+    public async Task TestCanClickLink(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
         // In CI: skips test if browser executable not configured
@@ -136,9 +136,9 @@ public class DriverIntegrationTests
         await driver.Browser.CloseAsync();
     }
 
-    [TestCase(Browser.Firefox)]
-    [TestCase(Browser.Chrome)]
-    public async Task TestCanSubmitForm(Browser browser)
+    [TestCase(TestBrowser.Firefox)]
+    [TestCase(TestBrowser.Chrome)]
+    public async Task TestCanSubmitForm(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
         // In CI: skips test if browser executable not configured
@@ -223,7 +223,7 @@ public class DriverIntegrationTests
         return driver;
     }
 
-    private async Task<BrowserLauncher> CreateBrowserLauncher(Browser browser)
+    private async Task<BrowserLauncher> CreateBrowserLauncher(TestBrowser browser)
     {
         BrowserLauncher launcher = BrowserTestHelper.GetBrowserLauncher(browser);
         launcher.IsBrowserHeadless = true;

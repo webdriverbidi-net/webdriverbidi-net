@@ -33,7 +33,7 @@ public class FirefoxLauncher : BrowserLauncher
     /// </summary>
     /// <param name="browserLocatorSettings">The <see cref="FirefoxBrowserLocatorSettings"/> settings to use for locating the Firefox browser executable.</param>
     /// <param name="port">The port on which the browser should listen for connections.</param>
-    public FirefoxLauncher(FirefoxBrowserLocatorSettings browserLocatorSettings, int port = 0)
+    internal FirefoxLauncher(FirefoxBrowserLocatorSettings browserLocatorSettings, int port = 0)
         : base(browserLocatorSettings, port)
     {
     }
@@ -46,7 +46,7 @@ public class FirefoxLauncher : BrowserLauncher
     /// <summary>
     /// Gets a value indicating whether the service is running.
     /// </summary>
-    public bool IsRunning => this.browserProcess is not null && !this.browserProcess.HasExited;
+    public override bool IsRunning => this.browserProcess is not null && !this.browserProcess.HasExited;
 
     private IList<string> CommandLineArguments
     {
@@ -80,19 +80,24 @@ public class FirefoxLauncher : BrowserLauncher
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
     public override Task StartAsync()
     {
+        this.ThrowIfDisposed();
+
         // No operation required to start the launcher.
         return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Asynchronously launches the browser.
+    /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
     /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
-    public override async Task LaunchBrowserAsync()
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
+    public override async Task<BrowserInstance> LaunchBrowserAsync()
     {
+        this.ThrowIfDisposed();
         string browserExecutableLocation = await this.BrowserLocator.LocateBrowserAsync().ConfigureAwait(false);
         await this.LogAsync($"Launching Firefox browser from {browserExecutableLocation}").ConfigureAwait(false);
 
@@ -136,6 +141,9 @@ public class FirefoxLauncher : BrowserLauncher
         {
             LockObject.Release();
         }
+
+        int processId = this.GetProcessId();
+        return new BrowserInstance(this, this.WebSocketUrl, processId);
     }
 
     /// <summary>
@@ -173,9 +181,20 @@ public class FirefoxLauncher : BrowserLauncher
     /// Creates a Transport object that can be used to communicate with the browser.
     /// </summary>
     /// <returns>The <see cref="Transport"/> to be used in instantiating the driver.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
     public override Transport CreateTransport()
     {
+        this.ThrowIfDisposed();
         return new Transport();
+    }
+
+    /// <summary>
+    /// Gets the process ID of the browser process, or 0 if the browser is not running.
+    /// </summary>
+    /// <returns>The process ID, or 0 if not running.</returns>
+    protected override int GetProcessId()
+    {
+        return this.browserProcess?.Id ?? 0;
     }
 
     private static Dictionary<string, object> GetDefaultPreferences(Dictionary<string, object> preferences)

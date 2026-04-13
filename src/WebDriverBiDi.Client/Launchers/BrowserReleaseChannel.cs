@@ -8,7 +8,7 @@ namespace WebDriverBiDi.Client.Launchers;
 /// <summary>
 /// Defines the browser-independent release channels for browsers that can be used for testing.
 /// These channels represent different stages of the browser release cycle, with varying levels
-/// of stability and access to new features. The specific channels available may vary between
+/// of stability and access to new features. The specific channel names may vary between
 /// different browsers, but common channels include stable, beta, developer preview, and alpha
 /// (or canary/nightly) releases.
 /// </summary>

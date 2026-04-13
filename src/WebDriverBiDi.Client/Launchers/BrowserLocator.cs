@@ -6,7 +6,7 @@
 namespace WebDriverBiDi.Client.Launchers;
 
 /// <summary>
-/// Base class for locating and downloading browsers for testing.
+/// Provides methods for locating and downloading browsers for testing.
 /// </summary>
 public class BrowserLocator
 {
@@ -32,7 +32,7 @@ public class BrowserLocator
     /// </summary>
     /// <param name="settings">The <see cref="BrowserLocatorSettings"/> for the browser locator used by the launcher.</param>
     /// <param name="driverLocator">Optional <see cref="DriverLocator"/> to use for locating driver executables. If null and settings.IncludeDriver is true, a new instance will be created.</param>
-    public BrowserLocator(BrowserLocatorSettings settings, DriverLocator? driverLocator = null)
+    internal BrowserLocator(BrowserLocatorSettings settings, DriverLocator? driverLocator = null)
     {
         this.settings = settings;
 
@@ -48,8 +48,7 @@ public class BrowserLocator
         if (this.driverLocator is not null)
         {
             this.driverLocator.CacheDirectory = this.cacheDirectory;
-            this.driverLocator.OnLogMessage.AddObserver(async args =>
-                await this.OnLogMessage.NotifyObserversAsync(args).ConfigureAwait(false));
+            this.driverLocator.OnLogMessage.AddObserver(this.OnLogMessage.NotifyObserversAsync);
         }
     }
 
@@ -103,6 +102,84 @@ public class BrowserLocator
     }
 
     /// <summary>
+    /// Finds the browser executable using default settings (Stable channel, Latest version, AutoLocateAndDownload).
+    /// </summary>
+    /// <param name="browser">The browser to locate.</param>
+    /// <returns>The path to the browser executable.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    public static Task<string> FindBrowserAsync(Browser browser)
+    {
+        return FindBrowserAsync(browser, BrowserReleaseChannel.Stable);
+    }
+
+    /// <summary>
+    /// Finds the browser executable with the specified release channel using default settings (Latest version, AutoLocateAndDownload).
+    /// </summary>
+    /// <param name="browser">The browser to locate.</param>
+    /// <param name="channel">The release channel of the browser.</param>
+    /// <returns>The path to the browser executable.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    public static Task<string> FindBrowserAsync(Browser browser, BrowserReleaseChannel channel)
+    {
+        return FindBrowserAsync(browser, channel, BrowserVersion.Latest);
+    }
+
+    /// <summary>
+    /// Finds the browser executable with the specified release channel and version using default settings (AutoLocateAndDownload).
+    /// </summary>
+    /// <param name="browser">The browser to locate.</param>
+    /// <param name="channel">The release channel of the browser.</param>
+    /// <param name="version">The version of the browser to locate.</param>
+    /// <returns>The path to the browser executable.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    public static Task<string> FindBrowserAsync(Browser browser, BrowserReleaseChannel channel, BrowserVersion version)
+    {
+        return FindBrowserAsync(browser, channel, version, FileLocationBehavior.AutoLocateAndDownload);
+    }
+
+    /// <summary>
+    /// Finds the browser executable with full control over all location settings.
+    /// </summary>
+    /// <param name="browser">The browser to locate.</param>
+    /// <param name="channel">The release channel of the browser.</param>
+    /// <param name="version">The version of the browser to locate.</param>
+    /// <param name="locationBehavior">The strategy for locating the browser.</param>
+    /// <param name="customPath">The custom path to the browser executable (only used when locationBehavior is UseCustomLocation).</param>
+    /// <param name="cacheDirectory">The custom cache directory (only used when locationBehavior is AutoLocateAndDownload). If null, uses default cache location.</param>
+    /// <returns>The path to the browser executable.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
+    public static async Task<string> FindBrowserAsync(
+        Browser browser,
+        BrowserReleaseChannel channel,
+        BrowserVersion version,
+        FileLocationBehavior locationBehavior,
+        string? customPath = null,
+        string? cacheDirectory = null)
+    {
+        BrowserLocatorSettings settings = browser switch
+        {
+            Browser.Chrome => CreateChromeSettings(channel, version, locationBehavior, customPath),
+            Browser.Firefox => CreateFirefoxSettings(channel, version, locationBehavior, customPath),
+            Browser.Edge => throw new NotImplementedException(
+                "Microsoft Edge browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
+                "Edge support is planned for a future release."),
+            Browser.Safari => throw new NotImplementedException(
+                "Apple Safari browser support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
+                "Safari support is planned for a future release pending maturity of Safari's BiDi implementation."),
+            _ => throw new ArgumentException($"Unknown browser: {browser}", nameof(browser)),
+        };
+
+        BrowserLocator locator = new(settings);
+        if (cacheDirectory is not null)
+        {
+            locator.CacheDirectory = cacheDirectory;
+        }
+
+        return await locator.LocateBrowserAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Gets the location information for the browser executable and optionally the driver executable,
     /// downloading them if necessary. This method minimizes network calls by fetching both from a
     /// single API call when possible (Chrome) or coordinating two calls and caching them together (Firefox).
@@ -148,6 +225,76 @@ public class BrowserLocator
         {
             this.settings.IncludeDriver = originalIncludeDriver;
         }
+    }
+
+    /// <summary>
+    /// Creates browser locator settings for Chrome.
+    /// </summary>
+    /// <param name="channel">The release channel.</param>
+    /// <param name="version">The browser version.</param>
+    /// <param name="locationBehavior">The location behavior strategy.</param>
+    /// <param name="customPath">Optional custom path to the browser executable.</param>
+    /// <returns>Configured Chrome browser locator settings.</returns>
+    /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
+    internal static BrowserLocatorSettings CreateChromeSettings(
+        BrowserReleaseChannel channel,
+        BrowserVersion version,
+        FileLocationBehavior locationBehavior,
+        string? customPath)
+    {
+        ChromeChannel chromeChannel = channel switch
+        {
+            BrowserReleaseChannel.Stable => ChromeChannel.Stable,
+            BrowserReleaseChannel.Beta => ChromeChannel.Beta,
+            BrowserReleaseChannel.DeveloperPreview => ChromeChannel.Dev,
+            BrowserReleaseChannel.Alpha => ChromeChannel.Canary,
+            _ => throw new ArgumentException($"Invalid browser release channel for Chrome: {channel}", nameof(channel)),
+        };
+
+        string versionString = version.Value;
+        string browserLocation = customPath ?? string.Empty;
+
+        if (locationBehavior == FileLocationBehavior.UseCustomLocation && string.IsNullOrWhiteSpace(customPath))
+        {
+            throw new ArgumentException("customPath must be provided when locationBehavior is UseCustomLocation.", nameof(customPath));
+        }
+
+        return new ChromeBrowserLocatorSettings(chromeChannel, locationBehavior, browserLocation, versionString);
+    }
+
+    /// <summary>
+    /// Creates browser locator settings for Firefox.
+    /// </summary>
+    /// <param name="channel">The release channel.</param>
+    /// <param name="version">The browser version.</param>
+    /// <param name="locationBehavior">The location behavior strategy.</param>
+    /// <param name="customPath">Optional custom path to the browser executable.</param>
+    /// <returns>Configured Firefox browser locator settings.</returns>
+    /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
+    internal static BrowserLocatorSettings CreateFirefoxSettings(
+        BrowserReleaseChannel channel,
+        BrowserVersion version,
+        FileLocationBehavior locationBehavior,
+        string? customPath)
+    {
+        FirefoxChannel firefoxChannel = channel switch
+        {
+            BrowserReleaseChannel.Stable => FirefoxChannel.Stable,
+            BrowserReleaseChannel.Beta => FirefoxChannel.Beta,
+            BrowserReleaseChannel.DeveloperPreview => FirefoxChannel.Dev,
+            BrowserReleaseChannel.Alpha => FirefoxChannel.Nightly,
+            _ => throw new ArgumentException($"Invalid browser release channel for Firefox: {channel}", nameof(channel)),
+        };
+
+        string versionString = version.Value;
+        string browserLocation = customPath ?? string.Empty;
+
+        if (locationBehavior == FileLocationBehavior.UseCustomLocation && string.IsNullOrWhiteSpace(customPath))
+        {
+            throw new ArgumentException("customPath must be provided when locationBehavior is UseCustomLocation.", nameof(customPath));
+        }
+
+        return new FirefoxBrowserLocatorSettings(firefoxChannel, locationBehavior, browserLocation, versionString);
     }
 
     /// <summary>

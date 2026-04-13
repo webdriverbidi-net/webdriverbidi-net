@@ -18,21 +18,8 @@ public class ChromeDriverLauncher : ClassicDriverExecutableBrowserLauncher
     /// <param name="settings">The Chrome browser locator settings to use for locating the browser and driver executables.</param>
     /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
     /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
-    public ChromeDriverLauncher(ChromeBrowserLocatorSettings settings)
-        : this(settings, 0)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ChromeDriverLauncher" /> class using Chrome browser locator settings.
-    /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
-    /// </summary>
-    /// <param name="settings">The Chrome browser locator settings to use for locating the browser and driver executables.</param>
-    /// <param name="port">The port on which the launcher will listen.</param>
-    /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
-    public ChromeDriverLauncher(ChromeBrowserLocatorSettings settings, int port)
-        : base(settings, port)
+    internal ChromeDriverLauncher(ChromeBrowserLocatorSettings settings)
+        : base(settings, 0)
     {
     }
 

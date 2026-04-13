@@ -40,10 +40,10 @@ public static class ConnectionManagementSamples
     {
         #region UsingaBrowserLauncher
         // Launcher manages browser process and connection
-        ChromeBrowserLocatorSettings locatorSettings = new ChromeBrowserLocatorSettings(
-            ChromeChannel.Stable,
-            FileLocationBehavior.AutoLocateAndDownload);
-        ChromeLauncher launcher = new ChromeLauncher(locatorSettings);
+        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+            .WithReleaseChannel(BrowserReleaseChannel.Stable)
+            .AtAutomaticallyDownloadedLocation()
+            .Build();
 
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();
@@ -188,13 +188,11 @@ public static class ConnectionManagementSamples
     public static async Task UsingPipesWithLauncher()
     {
         #region UsingPipeswithLauncher
-        ChromeBrowserLocatorSettings locatorSettings = new ChromeBrowserLocatorSettings(
-            ChromeChannel.Stable,
-            FileLocationBehavior.AutoLocateAndDownload);
-        ChromeLauncher launcher = new ChromeLauncher(locatorSettings)
-        {
-            ConnectionType = ConnectionType.Pipes  // Enable pipes
-        };
+        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+            .WithReleaseChannel(BrowserReleaseChannel.Stable)
+            .AtAutomaticallyDownloadedLocation()
+            .WithConnection(ConnectionType.Pipes)
+            .Build();
 
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();
@@ -302,13 +300,14 @@ public static class ConnectionManagementSamples
     {
         #region BestPracticeBrowserLauncher
         // ✅ Recommended for local testing
-        ChromeBrowserLocatorSettings locatorSettings = new ChromeBrowserLocatorSettings(
-            ChromeChannel.Stable,
-            FileLocationBehavior.AutoLocateAndDownload
-        );
-        ChromeLauncher launcher = new ChromeLauncher(locatorSettings);
+        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+            .WithReleaseChannel(BrowserReleaseChannel.Stable)
+            .AtAutomaticallyDownloadedLocation()
+            .Build();
+
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();
+
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
         #endregion
     }

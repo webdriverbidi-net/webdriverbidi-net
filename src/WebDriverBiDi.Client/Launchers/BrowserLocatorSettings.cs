@@ -9,7 +9,7 @@ namespace WebDriverBiDi.Client.Launchers;
 /// Base class for browser locator settings, which define the properties and methods
 /// needed to locate and download a specific browser for testing.
 /// </summary>
-public abstract class BrowserLocatorSettings
+internal abstract class BrowserLocatorSettings
 {
     /// <summary>
     /// Marker value for the version property indicating to use the latest published
@@ -89,7 +89,7 @@ public abstract class BrowserLocatorSettings
     public FileLocationBehavior DriverLocationBehavior { get; set; } = FileLocationBehavior.AutoLocateAndDownload;
 
     /// <summary>
-    /// Gets the expected path to the driver executable.
+    /// Gets or sets the expected path to the driver executable.
     /// Only used when <see cref="IncludeDriver"/> is true and <see cref="DriverLocationBehavior"/> is <see cref="FileLocationBehavior.UseCustomLocation"/>.
     /// </summary>
     public string DriverExecutableLocation { get; internal set; } = string.Empty;

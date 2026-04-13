@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.Integration;
 
-using WebDriverBiDi.Client;
 using WebDriverBiDi.Client.Launchers;
 
 /// <summary>
@@ -25,7 +24,7 @@ public static class BrowserTestHelper
     /// </summary>
     /// <param name="browser">The browser type to check.</param>
     /// <exception cref="IgnoreException">Thrown when running in CI and the browser is not configured.</exception>
-    public static void EnsureBrowserAvailable(Browser browser)
+    public static void EnsureBrowserAvailable(TestBrowser browser)
     {
         if (IsCI)
         {
@@ -42,7 +41,7 @@ public static class BrowserTestHelper
     /// </summary>
     /// <param name="browser">The browser type.</param>
     /// <returns>The path to the browser executable, or empty string if not set.</returns>
-    public static string GetBrowserExecutable(Browser browser)
+    public static string GetBrowserExecutable(TestBrowser browser)
     {
         string envVar = GetExecutableEnvironmentVariable(browser);
         return Environment.GetEnvironmentVariable(envVar) ?? string.Empty;
@@ -53,27 +52,35 @@ public static class BrowserTestHelper
     /// </summary>
     /// <param name="browser">The browser type.</param>
     /// <returns>The lowercase string name of the browser (e.g., "firefox", "chrome").</returns>
-    public static string ToBrowserString(Browser browser)
+    public static string ToBrowserString(TestBrowser browser)
     {
         return browser.ToString().ToLowerInvariant();
     }
 
-    public static BrowserLauncher GetBrowserLauncher(Browser browser)
+    public static BrowserLauncher GetBrowserLauncher(TestBrowser browser)
     {
-        BrowserType browserType = browser switch
+        string executablePath = GetBrowserExecutable(browser);
+
+        Browser launcherBrowser = browser switch
         {
-            Browser.Firefox => BrowserType.Firefox,
-            Browser.Chrome => BrowserType.Chrome,
+            TestBrowser.Firefox => Browser.Firefox,
+            TestBrowser.Chrome => Browser.Chrome,
             _ => throw new ArgumentException($"Unsupported browser: {browser}")
         };
 
-        string executablePath = GetBrowserExecutable(browser);
-        BrowserLauncher.Creator creator = BrowserLauncher.ForBrowser(browserType)
-            .UsingReleaseChannel(BrowserReleaseChannel.Alpha);
-        
-        return string.IsNullOrEmpty(executablePath)
-            ? creator.AutoLocateBrowser().Create()
-            : creator.AtLocation(executablePath).Create();
+        BrowserLauncherBuilder builder = BrowserLauncher.Configure(launcherBrowser)
+            .WithReleaseChannel(BrowserReleaseChannel.Alpha);
+
+        if (string.IsNullOrEmpty(executablePath))
+        {
+            builder.AtAutomaticallyDownloadedLocation();
+        }
+        else
+        {
+            builder.AtLocation(executablePath);
+        }
+
+        return builder.Build();
     }
 
     /// <summary>
@@ -81,12 +88,12 @@ public static class BrowserTestHelper
     /// </summary>
     /// <param name="browser">The browser type.</param>
     /// <returns>The environment variable name (e.g., "FIREFOX_EXECUTABLE").</returns>
-    private static string GetExecutableEnvironmentVariable(Browser browser)
+    private static string GetExecutableEnvironmentVariable(TestBrowser browser)
     {
         return browser switch
         {
-            Browser.Firefox => "FIREFOX_EXECUTABLE",
-            Browser.Chrome => "CHROME_EXECUTABLE",
+            TestBrowser.Firefox => "FIREFOX_EXECUTABLE",
+            TestBrowser.Chrome => "CHROME_EXECUTABLE",
             _ => $"{browser.ToString().ToUpperInvariant()}_EXECUTABLE"
         };
     }
