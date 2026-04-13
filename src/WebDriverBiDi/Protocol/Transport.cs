@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;

@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi.Protocol;
 
-using System;
 using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
