@@ -19,18 +19,18 @@ BrowserLauncher launcher;
 switch (browser)
 {
     case "firefox":
-        launcher = BrowserLauncher.ForBrowser(BrowserType.Firefox)
-            .UsingReleaseChannel(BrowserReleaseChannel.Alpha)
-            .AutoLocateBrowser()
-            .UseHeadlessBrowser()
-            .Create();
+        launcher = BrowserLauncher.Configure(Browser.Firefox)
+            .WithReleaseChannel(BrowserReleaseChannel.Alpha)
+            .AtAutomaticallyDownloadedLocation()
+            .WithHeadlessOption()
+            .Build();
         break;
     case "chrome":
-        launcher = BrowserLauncher.ForBrowser(BrowserType.Chrome)
-            .UsingReleaseChannel(BrowserReleaseChannel.Alpha)
-            .AutoLocateBrowser()
-            .UseHeadlessBrowser()
-            .Create();
+        launcher = BrowserLauncher.Configure(Browser.Chrome)
+            .WithReleaseChannel(BrowserReleaseChannel.Alpha)
+            .AtAutomaticallyDownloadedLocation()
+            .WithHeadlessOption()
+            .Build();
         break;
     default:
         Console.Error.WriteLine($"Unknown browser: {browser}. Use 'firefox' or 'chrome'.");

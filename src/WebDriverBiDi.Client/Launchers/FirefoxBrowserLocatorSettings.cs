@@ -17,7 +17,7 @@ using System.Text.Json.Serialization;
 /// on the current platform and architecture. The locator settings are used by the BrowserLocator to
 /// locate and download the correct version of Firefox for testing with WebDriver BiDi.
 /// </summary>
-public class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
+internal class FirefoxBrowserLocatorSettings : BrowserLocatorSettings
 {
     private readonly FirefoxChannel channelValue;
 

@@ -21,14 +21,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// </summary>
     public const string LoggerComponentName = "Browser Launcher";
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
-    /// </summary>
-    /// <param name="port">The port on which the launcher executable should listen for connections.</param>
-    protected BrowserLauncher(int port)
-    {
-        this.Port = port;
-    }
+    private bool disposed = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowserLauncher"/> class.
@@ -36,7 +29,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// <param name="browserLocatorSettings">The <see cref="BrowserLocatorSettings"/> settings to use for locating the browser executable.</param>
     /// <param name="port">The port on which the browser should listen for connections.</param>
     /// <exception cref="ArgumentNullException">Thrown when settings is null.</exception>
-    protected BrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port)
+    internal BrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port)
     {
         if (browserLocatorSettings is null)
         {
@@ -85,31 +78,57 @@ public abstract class BrowserLauncher : IAsyncDisposable
     public bool IsBrowserHeadless { get; set; } = false;
 
     /// <summary>
-    /// Gets or sets the <see cref="BrowserLocator"/> to use for locating the browser executable.
+    /// Gets a value indicating whether the browser is currently running.
     /// </summary>
-    protected BrowserLocator BrowserLocator { get; set; } = null!;
+    public abstract bool IsRunning { get; }
 
     /// <summary>
-    /// Creates a launcher creator for the specified browser using the specified browser type.
+    /// Gets or sets the <see cref="BrowserLocator"/> to use for locating the browser executable.
     /// </summary>
-    /// <param name="browserType">The <see cref="BrowserType"/> for which to create a launcher creator.</param>
-    /// <returns>The <see cref="Creator"/> for the specified browser type.</returns>
-    public static Creator ForBrowser(BrowserType browserType)
+    internal BrowserLocator BrowserLocator { get; set; }
+
+    /// <summary>
+    /// Creates a launcher for the specified browser using default settings.
+    /// The browser will be auto-downloaded if not found, use the stable channel, and run in headed mode.
+    /// </summary>
+    /// <param name="browser">The browser to launch.</param>
+    /// <param name="headless">Whether to run the browser in headless mode. Default is false.</param>
+    /// <returns>The configured browser launcher.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    public static BrowserLauncher Create(Browser browser, bool headless = false)
     {
-        return new Creator(browserType);
+        BrowserLauncherBuilder builder = Configure(browser);
+        if (headless)
+        {
+            builder.WithHeadlessOption();
+        }
+
+        return builder.Build();
     }
 
     /// <summary>
-    /// Creates a launcher for the specified browser type and release channel.
+    /// Returns a builder for configuring a launcher for the specified browser.
+    /// Use this method to access the full fluent API for advanced configuration.
     /// </summary>
-    /// <param name="browserType">The type of browser for which to create a launcher.</param>
-    /// <param name="releaseChannel">The release channel for the browser.</param>
-    /// <returns>The launcher for the specified browser type.</returns>
-    /// <exception cref="WebDriverBiDiException">Thrown when an invalid browser type is specified.</exception>
-    public static BrowserLauncher Create(BrowserType browserType, BrowserReleaseChannel releaseChannel = BrowserReleaseChannel.Stable)
+    /// <param name="browser">The browser to launch.</param>
+    /// <returns>A <see cref="BrowserLauncherBuilder"/> for configuring the launcher.</returns>
+    public static BrowserLauncherBuilder Configure(Browser browser)
     {
-        Creator creator = ForBrowser(browserType).UsingReleaseChannel(releaseChannel).AtDefaultInstallLocation();
-        return creator.Create();
+        return new BrowserLauncherBuilder(browser);
+    }
+
+    /// <summary>
+    /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
+    /// This is the recommended method for launching browsers with the new API.
+    /// </summary>
+    /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
+    /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
+    public virtual async Task<BrowserInstance> LaunchAsync()
+    {
+        this.ThrowIfDisposed();
+        await this.StartAsync().ConfigureAwait(false);
+        return await this.LaunchBrowserAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -119,11 +138,11 @@ public abstract class BrowserLauncher : IAsyncDisposable
     public abstract Task StartAsync();
 
     /// <summary>
-    /// Asynchronously launches the browser.
+    /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
     /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
-    public abstract Task LaunchBrowserAsync();
+    public abstract Task<BrowserInstance> LaunchBrowserAsync();
 
     /// <summary>
     /// Asynchronously quits the browser.
@@ -142,8 +161,10 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// Creates a <see cref="Transport"/> object that can be used to communicate with the browser.
     /// </summary>
     /// <returns>The <see cref="Transport"/> to be used in instantiating the driver.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
     public virtual Transport CreateTransport()
     {
+        this.ThrowIfDisposed();
         return new Transport(this.CreateConnection());
     }
 
@@ -153,6 +174,12 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     public async ValueTask DisposeAsync()
     {
+        if (this.disposed)
+        {
+            return;
+        }
+
+        this.disposed = true;
         await this.DisposeAsyncCore().ConfigureAwait(false);
         GC.SuppressFinalize(this);
     }
@@ -187,14 +214,50 @@ public abstract class BrowserLauncher : IAsyncDisposable
     }
 
     /// <summary>
+    /// Gets the process ID of the browser process, or 0 if not applicable (e.g., remote browsers).
+    /// </summary>
+    /// <returns>The process ID, or 0 if not applicable.</returns>
+    protected virtual int GetProcessId()
+    {
+        return 0;
+    }
+
+    /// <summary>
+    /// Throws an <see cref="ObjectDisposedException"/> if this instance has been disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown when the object has been disposed.</exception>
+    protected void ThrowIfDisposed()
+    {
+        if (this.disposed)
+        {
+            throw new ObjectDisposedException(this.GetType().FullName);
+        }
+    }
+
+    /// <summary>
     /// Asynchronously releases the resources used by this browser launcher.
     /// Override this method in derived classes to add custom cleanup logic.
     /// </summary>
     /// <returns>A task that represents the asynchronous dispose operation.</returns>
     protected virtual async ValueTask DisposeAsyncCore()
     {
-        await this.QuitBrowserAsync();
-        await this.StopAsync();
+        try
+        {
+            await this.QuitBrowserAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            // Suppress exceptions from QuitBrowserAsync to ensure StopAsync is called
+        }
+
+        try
+        {
+            await this.StopAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            // Suppress exceptions from StopAsync during disposal
+        }
     }
 
     /// <summary>
@@ -242,354 +305,5 @@ public abstract class BrowserLauncher : IAsyncDisposable
     private async Task OnLocatorLogAsync(LogMessageEventArgs args)
     {
         await this.LogAsync(args.Message, args.Level, args.ComponentName).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Defines a builder for creating a <see cref="BrowserLauncher"/> with specific settings such as release channel,
-    /// browser executable location, and headless mode. The builder allows for a fluent API to configure the desired
-    /// settings before creating the launcher instance.
-    /// </summary>
-    public class Creator
-    {
-        private readonly BrowserType browserType;
-        private BrowserReleaseChannel releaseChannel = BrowserReleaseChannel.Stable;
-        private FileLocationBehavior? browserLocationBehavior;
-        private string browserExecutableLocation = string.Empty;
-        private string driverExecutableLocation = string.Empty;
-        private FileLocationBehavior? driverLocationBehavior;
-        private string version = BrowserLocatorSettings.LatestVersionString;
-        private string hostName = string.Empty;
-        private bool useSsl = false;
-        private bool isHeadless = false;
-        private int port = 0;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Creator"/> class for the specified browser type.
-        /// </summary>
-        /// <param name="browserType">The browser type for which to create a launcher.</param>
-        internal Creator(BrowserType browserType)
-        {
-            this.browserType = browserType;
-        }
-
-        /// <summary>
-        /// Specifies the release channel to use for the browser launcher being created.
-        /// </summary>
-        /// <param name="releaseChannel">The release channel to use.</param>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        public Creator UsingReleaseChannel(BrowserReleaseChannel releaseChannel)
-        {
-            this.releaseChannel = releaseChannel;
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies to automatically locate the browser executable, downloading it if needed,
-        /// for the browser launcher being created.
-        /// </summary>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        /// <exception cref="WebDriverBiDiException">Thrown when the user has spefified to either use the default browser install location or a custom browser install location.</exception>
-        public Creator AutoLocateBrowser()
-        {
-            if (this.browserLocationBehavior is null)
-            {
-                this.browserLocationBehavior = FileLocationBehavior.AutoLocateAndDownload;
-            }
-            else if (this.browserLocationBehavior != FileLocationBehavior.AutoLocateAndDownload)
-            {
-                string errorDetail = this.browserLocationBehavior == FileLocationBehavior.UseSystemInstallLocation
-                    ? "to use the default install location"
-                    : $"to use a custom location ({this.browserExecutableLocation})";
-                throw new WebDriverBiDiException($"Cannot specify auto-location for the browser executable; you already specified {errorDetail}.");
-            }
-
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies to use the default installed browser executable location for the browser launcher being created.
-        /// </summary>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        /// <exception cref="WebDriverBiDiException">Thrown when the user has spefified to either use a custom browser install location or to automatically locate and download the browser executable.</exception>
-        public Creator AtDefaultInstallLocation()
-        {
-            if (this.browserLocationBehavior is null)
-            {
-                this.browserLocationBehavior = FileLocationBehavior.UseSystemInstallLocation;
-            }
-            else if (this.browserLocationBehavior != FileLocationBehavior.UseSystemInstallLocation)
-            {
-                string errorDetail = this.browserLocationBehavior == FileLocationBehavior.AutoLocateAndDownload
-                    ? "to automatically locate the browser executable, downloading if needed"
-                    : $"to use a custom location ({this.browserExecutableLocation})";
-                throw new WebDriverBiDiException($"Cannot specify a custom browser executable location; you already specified {errorDetail}.");
-            }
-
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies the custom location of the browser executable for the browser launcher being created.
-        /// </summary>
-        /// <param name="browserExecutableLocation">The custom location of the browser executable.</param>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        /// <exception cref="WebDriverBiDiException">Thrown when the user has spefified to either use the default browser install location or to automatically locate and download the browser executable.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified browser executable location is null or empty.</exception>
-        public Creator AtLocation(string browserExecutableLocation)
-        {
-            if (string.IsNullOrEmpty(browserExecutableLocation))
-            {
-                throw new ArgumentException("Browser executable location cannot be null or empty.", nameof(browserExecutableLocation));
-            }
-
-            if (this.browserLocationBehavior is null)
-            {
-                this.browserLocationBehavior = FileLocationBehavior.UseCustomLocation;
-            }
-            else if (this.browserLocationBehavior != FileLocationBehavior.UseCustomLocation)
-            {
-                string errorDetail = this.browserLocationBehavior == FileLocationBehavior.UseSystemInstallLocation
-                    ? "to use the default browser install location"
-                    : "to automatically locate the browser executable, downloading if needed";
-                throw new WebDriverBiDiException($"Cannot specify a custom browser executable location; you already specified {errorDetail}.");
-            }
-
-            this.browserExecutableLocation = browserExecutableLocation;
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies the version of the browser to use for the browser launcher being created.
-        /// This is only applicable when the user has specified to automatically locate the browser
-        /// executable, downloading if needed; if a version is specified without selecting
-        /// auto-location, an exception will be thrown.
-        /// </summary>
-        /// <param name="version">The version of the browser to use.</param>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        /// <exception cref="ArgumentException">Thrown when the specified browser version is null or empty.</exception>
-        /// <exception cref="WebDriverBiDiException">Thrown when the user has not specified to automatically locate the browser executable.</exception>
-        public Creator WithVersion(string version)
-        {
-            if (string.IsNullOrEmpty(version))
-            {
-                throw new ArgumentException("Browser version cannot be null or empty.", nameof(version));
-            }
-
-            if (this.browserLocationBehavior is null)
-            {
-                this.browserLocationBehavior = FileLocationBehavior.AutoLocateAndDownload;
-            }
-            else if (this.browserLocationBehavior != FileLocationBehavior.AutoLocateAndDownload)
-            {
-                string errorDetail = this.browserLocationBehavior == FileLocationBehavior.UseSystemInstallLocation
-                    ? "to use the default browser install location"
-                    : $"to use a custom location ({this.browserExecutableLocation})";
-                throw new WebDriverBiDiException($"Cannot specify a browser version; you already specified {errorDetail}.");
-            }
-
-            this.version = version;
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies the port on which the browser launcher should listen for connections.
-        /// </summary>
-        /// <param name="port">The port on which the browser launcher should listen for connections.</param>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        public Creator WithPort(int port)
-        {
-            this.port = port;
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies to run the launched browser in an invisible (headless) mode for the browser launcher being created.
-        /// </summary>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        public Creator UseHeadlessBrowser()
-        {
-            this.isHeadless = true;
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies to locate the driver executable on the system PATH for the browser launcher being created.
-        /// </summary>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        /// <exception cref="WebDriverBiDiException">Thrown when the browser type for this launcher does not use a driver executable or the user has already specified to use the system install location.</exception>
-        public Creator WithDriverExecutableOnPath()
-        {
-            if (this.browserType != BrowserType.ChromeDriver && this.browserType != BrowserType.GeckoDriver)
-            {
-                throw new WebDriverBiDiException("Cannot specify a driver executable location for a browser type that does not use a driver executable.");
-            }
-
-            if (this.driverLocationBehavior is null)
-            {
-                this.driverLocationBehavior = FileLocationBehavior.UseSystemInstallLocation;
-            }
-            else if (this.driverLocationBehavior != FileLocationBehavior.UseSystemInstallLocation)
-            {
-                string errorDetail = this.driverLocationBehavior == FileLocationBehavior.AutoLocateAndDownload
-                    ? "to automatically locate the driver executable, downloading if needed"
-                    : $"to use a custom location ({this.driverExecutableLocation})";
-                throw new WebDriverBiDiException($"Cannot specify to locate the driver executable on the system PATH; you already specified {errorDetail}.");
-            }
-
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies to use a browser located on a remote host, like when using Selenium Grid, for the browser launcher being created.
-        /// </summary>
-        /// <param name="hostName">The name of the remote host.</param>
-        /// <param name="useSsl">A value indicating whether to use SSL for the connection.</param>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        public Creator OnRemoteHost(string hostName, bool useSsl = false)
-        {
-            this.hostName = hostName;
-            this.useSsl = useSsl;
-            return this;
-        }
-
-        /// <summary>
-        /// Specifies the custom location of the driver executable for the browser launcher being created.
-        /// </summary>
-        /// <param name="driverExecutableLocation">The custom location of the driver executable.</param>
-        /// <returns>The current instance of the <see cref="Creator"/>.</returns>
-        /// <exception cref="ArgumentException">Thrown when the specified driver executable location is null or empty.</exception>
-        /// <exception cref="WebDriverBiDiException">Thrown when the browser type for this launcher does not use a driver executable or the user has already specified to use the system install location.</exception>
-        public Creator WithDriverExecutableLocation(string driverExecutableLocation)
-        {
-            if (string.IsNullOrEmpty(driverExecutableLocation))
-            {
-                throw new ArgumentException("Driver executable location cannot be null or empty.", nameof(driverExecutableLocation));
-            }
-
-            if (this.browserType != BrowserType.ChromeDriver && this.browserType != BrowserType.GeckoDriver)
-            {
-                throw new WebDriverBiDiException("Cannot specify a driver executable location for a browser type that does not use a driver executable.");
-            }
-
-            if (this.driverLocationBehavior is null)
-            {
-                this.driverLocationBehavior = FileLocationBehavior.UseCustomLocation;
-            }
-            else if (this.driverLocationBehavior != FileLocationBehavior.UseCustomLocation)
-            {
-                string errorDetail = this.driverLocationBehavior == FileLocationBehavior.AutoLocateAndDownload
-                    ? "to automatically locate the driver executable, downloading if needed"
-                    : $"to use the instance of {this.driverExecutableLocation} on the system PATH";
-                throw new WebDriverBiDiException($"Cannot specify a custom driver executable location; you already specified {errorDetail}.");
-            }
-
-            this.driverExecutableLocation = driverExecutableLocation;
-            return this;
-        }
-
-        /// <summary>
-        /// Creates the <see cref="BrowserLauncher"/> instance based on the specified settings in this builder.
-        /// </summary>
-        /// <returns>The created <see cref="BrowserLauncher"/> instance.</returns>
-        /// <exception cref="WebDriverBiDiException">Thrown when an invalid browser type is specified.</exception>
-        public BrowserLauncher Create()
-        {
-            if (!string.IsNullOrEmpty(this.hostName))
-            {
-                string browserName = this.browserType switch
-                {
-                    BrowserType.Chrome or BrowserType.ChromePipe or BrowserType.ChromeDriver => "Chrome",
-                    BrowserType.Firefox or BrowserType.GeckoDriver => "Firefox",
-                    _ => throw new WebDriverBiDiException("Invalid browser type for remote connection"),
-                };
-                return new WebDriverClassicBrowserLauncher(new RemoteBrowserLocatorSettings(browserName, this.hostName, this.useSsl))
-                {
-                    Port = this.port,
-                };
-            }
-
-            this.browserLocationBehavior ??= FileLocationBehavior.UseSystemInstallLocation;
-
-            if (this.browserType == BrowserType.Chrome || this.browserType == BrowserType.ChromePipe || this.browserType == BrowserType.ChromeDriver)
-            {
-                ChromeChannel chromeChannel = this.releaseChannel switch
-                {
-                    BrowserReleaseChannel.Stable => ChromeChannel.Stable,
-                    BrowserReleaseChannel.Beta => ChromeChannel.Beta,
-                    BrowserReleaseChannel.DeveloperPreview => ChromeChannel.Dev,
-                    BrowserReleaseChannel.Alpha => ChromeChannel.Canary,
-                    _ => throw new WebDriverBiDiException("Invalid browser release channel for Chrome"),
-                };
-
-                ChromeBrowserLocatorSettings settings = new(chromeChannel, this.browserLocationBehavior.Value, this.browserExecutableLocation, this.version);
-                if (this.browserType == BrowserType.ChromeDriver)
-                {
-                    settings.IncludeDriver = true;
-                    if (!string.IsNullOrEmpty(this.driverExecutableLocation))
-                    {
-                        settings.DriverExecutableLocation = this.driverExecutableLocation;
-                    }
-
-                    settings.DriverLocationBehavior = this.driverLocationBehavior ?? FileLocationBehavior.AutoLocateAndDownload;
-                    ChromeDriverLauncher chromeDriverLauncher = new(settings)
-                    {
-                        IsBrowserHeadless = this.isHeadless,
-                        Port = this.port,
-                    };
-
-                    return chromeDriverLauncher;
-                }
-
-                ChromeLauncher chromeLauncher = new(settings)
-                {
-                    IsBrowserHeadless = this.isHeadless,
-                    Port = this.port,
-                    ConnectionType = this.browserType == BrowserType.ChromePipe ? ConnectionType.Pipes : ConnectionType.WebSocket,
-                };
-
-                return chromeLauncher;
-            }
-
-            if (this.browserType == BrowserType.Firefox || this.browserType == BrowserType.GeckoDriver)
-            {
-                FirefoxChannel firefoxChannel = this.releaseChannel switch
-                {
-                    BrowserReleaseChannel.Stable => FirefoxChannel.Stable,
-                    BrowserReleaseChannel.Beta => FirefoxChannel.Beta,
-                    BrowserReleaseChannel.DeveloperPreview => FirefoxChannel.Dev,
-                    BrowserReleaseChannel.Alpha => FirefoxChannel.Nightly,
-                    _ => throw new WebDriverBiDiException("Invalid browser release channel for Firefox"),
-                };
-
-                FirefoxBrowserLocatorSettings settings = new(firefoxChannel, this.browserLocationBehavior.Value, this.browserExecutableLocation, this.version);
-                if (this.browserType == BrowserType.GeckoDriver)
-                {
-                    settings.IncludeDriver = true;
-                    if (!string.IsNullOrEmpty(this.driverExecutableLocation))
-                    {
-                        settings.DriverExecutableLocation = this.driverExecutableLocation;
-                    }
-
-                    settings.DriverLocationBehavior = this.driverLocationBehavior ?? FileLocationBehavior.AutoLocateAndDownload;
-                    GeckoDriverLauncher geckoDriverLauncher = new(settings)
-                    {
-                        IsBrowserHeadless = this.isHeadless,
-                        Port = this.port,
-                    };
-
-                    return geckoDriverLauncher;
-                }
-
-                FirefoxLauncher firefoxLauncher = new(settings)
-                {
-                    IsBrowserHeadless = this.isHeadless,
-                    Port = this.port,
-                };
-
-                return firefoxLauncher;
-            }
-
-            throw new WebDriverBiDiException("Invalid browser type");
-        }
     }
 }

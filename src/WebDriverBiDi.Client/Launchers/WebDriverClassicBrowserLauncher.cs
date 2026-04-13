@@ -26,35 +26,12 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     private string sessionId = string.Empty;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WebDriverClassicBrowserLauncher"/> class.
-    /// </summary>
-    /// <param name="hostName">The host name of the WebDriver Classic remote end.</param>
-    /// <param name="port">The port of the WebDriver Classic remote end.</param>
-    public WebDriverClassicBrowserLauncher(string hostName, int port)
-        : this(hostName, port, false)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WebDriverClassicBrowserLauncher"/> class.
-    /// </summary>
-    /// <param name="hostName">The host name of the WebDriver Classic remote end.</param>
-    /// <param name="port">The port of the WebDriver Classic remote end.</param>
-    /// <param name="useSsl"><see langword="true"/> to use HTTPS to connect to the remote end; otherwise <see langword="false"/>.</param>
-    public WebDriverClassicBrowserLauncher(string hostName, int port, bool useSsl)
-        : base(port)
-    {
-        this.launcherHostName = hostName;
-        this.useSsl = useSsl;
-    }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="WebDriverClassicBrowserLauncher"/> class using browser locator settings.
     /// The settings must have <see cref="BrowserLocatorSettings.IncludeDriver"/> set to true.
     /// </summary>
     /// <param name="browserLocatorSettings">The browser locator settings to use for locating the browser and driver executables.</param>
     /// <param name="port">The port on which the launcher will listen.</param>
-    public WebDriverClassicBrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port = 0)
+    internal WebDriverClassicBrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port = 0)
         : base(browserLocatorSettings, port)
     {
     }
@@ -69,6 +46,12 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
     /// </summary>
     public override ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("classicBrowserLauncher.logMessage");
+
+    /// <summary>
+    /// Gets a value indicating whether the browser is currently running.
+    /// For remote browsers, this is true if a session has been established.
+    /// </summary>
+    public override bool IsRunning => !string.IsNullOrEmpty(this.sessionId);
 
     /// <summary>
     /// Gets or sets the host name of the launcher. Defaults to "localhost".
@@ -111,8 +94,10 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
     public override async Task StartAsync()
     {
+        this.ThrowIfDisposed();
         bool launcherAvailable = await this.WaitForInitializationAsync().ConfigureAwait(false);
         if (!launcherAvailable)
         {
@@ -131,12 +116,14 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     }
 
     /// <summary>
-    /// Asynchronously launches the browser.
+    /// Asynchronously launches the browser and returns a <see cref="BrowserInstance"/> representing the running browser.
     /// </summary>
-    /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
-    public override async Task LaunchBrowserAsync()
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
+    public override async Task<BrowserInstance> LaunchBrowserAsync()
     {
+        this.ThrowIfDisposed();
         string url = await this.BrowserLocator.LocateBrowserAsync();
         Dictionary<string, object> classicCapabilities = new()
         {
@@ -189,6 +176,9 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
         {
             throw new BrowserNotLaunchedException($"Unable to connect to WebSocket. Launched browse may not support the WebDriver BiDi protocol (response JSON: {responseJson})");
         }
+
+        int processId = this.GetProcessId();
+        return new BrowserInstance(this, this.WebSocketUrl, processId);
     }
 
     /// <summary>

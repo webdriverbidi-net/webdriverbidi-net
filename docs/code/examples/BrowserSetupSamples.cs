@@ -86,13 +86,11 @@ public static class BrowserSetupSamples
     {
         #region PipeLauncherPattern
         // Launcher implements IPipeServerProcessProvider
-        ChromeBrowserLocatorSettings locatorSettings = new ChromeBrowserLocatorSettings(
-            ChromeChannel.Stable,
-            FileLocationBehavior.AutoLocateAndDownload);
-        ChromeLauncher launcher = new ChromeLauncher(locatorSettings)
-        {
-            ConnectionType = ConnectionType.Pipes
-        };
+        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+            .WithReleaseChannel(BrowserReleaseChannel.Stable)
+            .AtAutomaticallyDownloadedLocation()
+            .WithConnection(ConnectionType.Pipes)
+            .Build();
 
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();

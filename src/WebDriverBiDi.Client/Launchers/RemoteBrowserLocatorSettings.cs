@@ -10,7 +10,7 @@ namespace WebDriverBiDi.Client.Launchers;
 /// but instead is expected to be running and accessible at a specified hostname and port. This can be used to connect
 /// to a browser running in a remote environment, such as a Selenium Grid node or a cloud testing service.
 /// </summary>
-public class RemoteBrowserLocatorSettings : BrowserLocatorSettings
+internal class RemoteBrowserLocatorSettings : BrowserLocatorSettings
 {
     private readonly string browserName;
     private readonly string hostName;

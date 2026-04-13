@@ -45,16 +45,15 @@ public class PerformanceSamples
     {
         #region PipeConnection
         // Pipe connection (Chromium only)
-        ChromeBrowserLocatorSettings locatorSettings = new ChromeBrowserLocatorSettings(
-            ChromeChannel.Stable,
-            FileLocationBehavior.AutoLocateAndDownload);
-        ChromeLauncher launcher = new ChromeLauncher(locatorSettings)
-        {
-            ConnectionType = ConnectionType.Pipes
-        };
+        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+            .WithReleaseChannel(BrowserReleaseChannel.Stable)
+            .AtAutomaticallyDownloadedLocation()
+            .WithConnection(ConnectionType.Pipes)
+            .Build();
 
         await launcher.StartAsync();
         await launcher.LaunchBrowserAsync();
+
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), launcher.CreateTransport());
         await driver.StartAsync("pipes");
         #endregion

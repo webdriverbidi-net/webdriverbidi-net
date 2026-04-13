@@ -29,7 +29,7 @@ public class DriverLocator
     /// Initializes a new instance of the <see cref="DriverLocator"/> class.
     /// </summary>
     /// <param name="settings">The <see cref="BrowserLocatorSettings"/> for the driver locator.</param>
-    public DriverLocator(BrowserLocatorSettings settings)
+    internal DriverLocator(BrowserLocatorSettings settings)
     {
         this.settings = settings;
     }
@@ -45,6 +45,92 @@ public class DriverLocator
     /// Gets an observable event that notifies when a log message is emitted by the driver locator.
     /// </summary>
     public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("driverLocator.logMessage");
+
+    /// <summary>
+    /// Finds the driver executable using default settings (Stable channel, Latest version, AutoLocateAndDownload).
+    /// </summary>
+    /// <param name="browser">The browser for which to locate the driver.</param>
+    /// <returns>The path to the driver executable.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    public static Task<string?> FindDriverAsync(Browser browser)
+    {
+        return FindDriverAsync(browser, BrowserReleaseChannel.Stable);
+    }
+
+    /// <summary>
+    /// Finds the driver executable with the specified release channel using default settings (Latest version, AutoLocateAndDownload).
+    /// </summary>
+    /// <param name="browser">The browser for which to locate the driver.</param>
+    /// <param name="channel">The release channel of the driver.</param>
+    /// <returns>The path to the driver executable.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    public static Task<string?> FindDriverAsync(Browser browser, BrowserReleaseChannel channel)
+    {
+        return FindDriverAsync(browser, channel, BrowserVersion.Latest);
+    }
+
+    /// <summary>
+    /// Finds the driver executable with the specified release channel and version using default settings (AutoLocateAndDownload).
+    /// </summary>
+    /// <param name="browser">The browser for which to locate the driver.</param>
+    /// <param name="channel">The release channel of the driver.</param>
+    /// <param name="version">The version of the driver to locate (typically matches browser version).</param>
+    /// <returns>The path to the driver executable.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    public static Task<string?> FindDriverAsync(Browser browser, BrowserReleaseChannel channel, BrowserVersion version)
+    {
+        return FindDriverAsync(browser, channel, version, FileLocationBehavior.AutoLocateAndDownload);
+    }
+
+    /// <summary>
+    /// Finds the driver executable with full control over all location settings.
+    /// </summary>
+    /// <param name="browser">The browser for which to locate the driver.</param>
+    /// <param name="channel">The release channel of the driver.</param>
+    /// <param name="version">The version of the driver to locate (typically matches browser version).</param>
+    /// <param name="locationBehavior">The strategy for locating the driver.</param>
+    /// <param name="customPath">The custom path to the driver executable (only used when locationBehavior is UseCustomLocation).</param>
+    /// <param name="cacheDirectory">The custom cache directory (only used when locationBehavior is AutoLocateAndDownload). If null, uses default cache location.</param>
+    /// <returns>The path to the driver executable, or null if not found.</returns>
+    /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
+    /// <exception cref="ArgumentException">Thrown when customPath is required but not provided.</exception>
+    public static async Task<string?> FindDriverAsync(
+        Browser browser,
+        BrowserReleaseChannel channel,
+        BrowserVersion version,
+        FileLocationBehavior locationBehavior,
+        string? customPath = null,
+        string? cacheDirectory = null)
+    {
+        BrowserLocatorSettings settings = browser switch
+        {
+            Browser.Chrome => BrowserLocator.CreateChromeSettings(channel, version, locationBehavior, customPath),
+            Browser.Firefox => BrowserLocator.CreateFirefoxSettings(channel, version, locationBehavior, customPath),
+            Browser.Edge => throw new NotImplementedException(
+                "Microsoft Edge driver support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
+                "Edge support is planned for a future release."),
+            Browser.Safari => throw new NotImplementedException(
+                "Apple Safari driver support is not yet implemented. Currently supported browsers: Chrome, Firefox. " +
+                "Safari support is planned for a future release pending maturity of Safari's BiDi implementation."),
+            _ => throw new ArgumentException($"Unknown browser: {browser}", nameof(browser)),
+        };
+
+        settings.IncludeDriver = true;
+        DriverLocator locator = new(settings);
+        if (cacheDirectory is not null)
+        {
+            locator.CacheDirectory = cacheDirectory;
+        }
+
+        Cache? cacheInfo = locationBehavior == FileLocationBehavior.AutoLocateAndDownload
+            ? Cache.Load(locator.CacheDirectory)
+            : null;
+
+        string? driverPath = await locator.LocateDriverAsync(cacheInfo).ConfigureAwait(false);
+        cacheInfo?.Save();
+
+        return driverPath;
+    }
 
     /// <summary>
     /// Locates the driver executable, downloading it if necessary.

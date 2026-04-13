@@ -33,7 +33,7 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// <param name="browserLocatorSettings">The browser locator settings to use for locating the browser and driver executables.</param>
     /// <param name="port">The port on which the launcher will listen.</param>
     /// <exception cref="ArgumentException">Thrown when settings.IncludeDriver is false.</exception>
-    protected ClassicDriverExecutableBrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port = 0)
+    internal ClassicDriverExecutableBrowserLauncher(BrowserLocatorSettings browserLocatorSettings, int port = 0)
         : base(browserLocatorSettings, port)
     {
         if (!browserLocatorSettings.IncludeDriver)
@@ -71,10 +71,10 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     public bool CaptureBrowserLauncherOutput { get; set; } = true;
 
     /// <summary>
-    /// Gets a value indicating whether the service is running.
+    /// Gets a value indicating whether the driver service is running.
     /// </summary>
     [MemberNotNullWhen(true, nameof(launcherProcess))]
-    public bool IsRunning => this.launcherProcess is not null && !this.launcherProcess.HasExited;
+    public override bool IsRunning => this.launcherProcess is not null && !this.launcherProcess.HasExited;
 
     /// <summary>
     /// Gets the process ID of the running driver service executable. Returns 0 if the process is not running.
@@ -117,8 +117,10 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// Asynchronously starts the browser launcher if it is not already running.
     /// </summary>
     /// <returns>A Task representing the result of the asynchronous operation.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
     public override async Task StartAsync()
     {
+        this.ThrowIfDisposed();
         if (this.launcherProcess is not null)
         {
             return;

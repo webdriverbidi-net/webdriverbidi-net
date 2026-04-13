@@ -39,9 +39,9 @@ public class AotCompilationEnvironmentTests
         Assert.That(File.Exists(executablePath), Is.True, $"Published AOT executable not found at: {executablePath}");
     }
 
-    [TestCase(Browser.Firefox)]
-    [TestCase(Browser.Chrome)]
-    public async Task TestCanExecuteInAotCompilationEnvironment(Browser browser)
+    [TestCase(TestBrowser.Firefox)]
+    [TestCase(TestBrowser.Chrome)]
+    public async Task TestCanExecuteInAotCompilationEnvironment(TestBrowser browser)
     {
         // Ensure the browser is available before running each test
         // In CI: skips test if browser executable not configured
