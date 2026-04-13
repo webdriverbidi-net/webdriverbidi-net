@@ -82,6 +82,27 @@ public class BrowserLocator
     public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("browserLocator.logMessage");
 
     /// <summary>
+    /// Gets a value indicating whether the locator requires access to the cache for downloaded browsers or drivers.
+    /// Note that if the locator is configured to use environment variables, the cache is not required.
+    /// </summary>
+    private bool IsCacheRequired
+    {
+        get
+        {
+            bool needsBrowserCache =
+                Environment.GetEnvironmentVariable(this.settings.EnvironmentVariableName) is null &&
+                this.settings.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload;
+
+            bool needsDriverCache =
+                this.settings.IncludeDriver &&
+                Environment.GetEnvironmentVariable(this.settings.DriverEnvironmentVariableName) is null &&
+                this.settings.DriverLocationBehavior == FileLocationBehavior.AutoLocateAndDownload;
+
+            return needsBrowserCache || needsDriverCache;
+        }
+    }
+
+    /// <summary>
     /// Gets the location information for the browser executable and optionally the driver executable,
     /// downloading them if necessary. This method minimizes network calls by fetching both from a
     /// single API call when possible (Chrome) or coordinating two calls and caching them together (Firefox).
@@ -89,11 +110,7 @@ public class BrowserLocator
     /// <returns>A <see cref="BrowserExecutableInfo"/> containing the browser path and optionally the driver path.</returns>
     public async Task<BrowserExecutableInfo> LocateExecutablesAsync()
     {
-        // Determine if we need to load the cache (only if either browser or driver uses AutoLocateAndDownload)
-        bool needsCache = this.settings.LocationBehavior == FileLocationBehavior.AutoLocateAndDownload ||
-                          (this.settings.IncludeDriver && this.settings.DriverLocationBehavior == FileLocationBehavior.AutoLocateAndDownload);
-
-        Cache? cacheInfo = needsCache ? Cache.Load(this.CacheDirectory) : null;
+        Cache? cacheInfo = this.IsCacheRequired ? Cache.Load(this.CacheDirectory) : null;
 
         // Locate browser (handles its own environment variable check)
         string browserPath = await this.LocateBrowserPathAsync(cacheInfo).ConfigureAwait(false);
