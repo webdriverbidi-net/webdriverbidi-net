@@ -24,8 +24,7 @@ public class GeckoDriverLauncher : ClassicDriverExecutableBrowserLauncher
     }
 
     /// <summary>
-    /// Gets a value indicating whether the launched browser has a provided WebDriver BiDi
-    /// session as part of its initialization.
+    /// Gets a value indicating whether the browser can be closed using WebDriver BiDi's browser.close command.
     /// </summary>
     public override bool IsBrowserCloseAllowed => false;
 

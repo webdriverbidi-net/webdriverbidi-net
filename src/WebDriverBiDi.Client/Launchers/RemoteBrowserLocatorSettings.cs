@@ -13,8 +13,6 @@ namespace WebDriverBiDi.Client.Launchers;
 internal class RemoteBrowserLocatorSettings : BrowserLocatorSettings
 {
     private readonly string browserName;
-    private readonly string hostName;
-    private readonly bool useSsl;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RemoteBrowserLocatorSettings"/> class.
@@ -27,8 +25,6 @@ internal class RemoteBrowserLocatorSettings : BrowserLocatorSettings
         this.browserName = browserName;
         this.BrowserDisplayName = $"remote {browserName}";
         this.LocationBehavior = FileLocationBehavior.UseCustomLocation;
-        this.hostName = hostName;
-        this.useSsl = useSsl;
         this.ExpectedExecutablePath = $"{(useSsl ? "https" : "http")}://{hostName}";
     }
 

@@ -64,6 +64,11 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     public string HostName { get => this.launcherHostName; set => this.launcherHostName = value; }
 
     /// <summary>
+    /// Gets a value indicating whether the browser can be closed using WebDriver BiDi's browser.close command.
+    /// </summary>
+    public override bool IsBrowserCloseAllowed => this.BrowserLocator.BrowserName != "firefox";
+
+    /// <summary>
     /// Gets or sets the location of the browser executable.
     /// </summary>
     protected string BrowserExecutableLocation { get; set; } = string.Empty;

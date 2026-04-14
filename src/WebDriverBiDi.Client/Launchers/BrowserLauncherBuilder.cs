@@ -382,13 +382,6 @@ public class BrowserLauncherBuilder
                 "The remote grid manages its own browser cache.");
         }
 
-        if (this.port != 0)
-        {
-            throw new BrowserLauncherConfigurationException(
-                "Cannot specify port with LaunchUsingRemoteGrid. " +
-                "The remote grid manages its own ports.");
-        }
-
         if (this.headless)
         {
             throw new BrowserLauncherConfigurationException(
