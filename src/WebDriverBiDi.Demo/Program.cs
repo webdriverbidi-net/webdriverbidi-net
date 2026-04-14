@@ -9,6 +9,8 @@ using WebDriverBiDi.Session;
 // DemoWebSiteServer implements IAsyncDisposable, so it will automatically clean
 // up the server process without needing to explicitly call ShutdownAsync().
 await using DemoWebSiteServer demoSiteServer = new();
+await demoSiteServer.LaunchAsync();
+string baseDemoSiteUrl = $"http://localhost:{demoSiteServer.Port}";
 
 // To use a specific port, change the below to a non-zero value.
 // A value of zero (0) indicates to use a random port.
@@ -47,9 +49,6 @@ BrowserLauncherBuilder launcherBuilder = BrowserLauncher.Configure(testBrowserTy
 // QuitBrowserAsync() and StopAsync() to ensure proper cleanup of resources.
 await using BrowserLauncher launcher = launcherBuilder.Build();
 launcher.OnLogMessage.AddObserver(OnLogMessage);
-
-await demoSiteServer.LaunchAsync();
-string baseDemoSiteUrl = $"http://localhost:{demoSiteServer.Port}";
 
 await launcher.StartAsync();
 await launcher.LaunchBrowserAsync();
