@@ -32,6 +32,7 @@
     <PackageReference Include="System.Threading.Channels" Version="10.0.5" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.6" />
     <AdditionalFiles Include="../../.stylecop.json" />
     <AdditionalFiles Include="../../WebDriverBiDi.snk" />
     <None Include="README.md" Pack="true" PackagePath="/"/>
