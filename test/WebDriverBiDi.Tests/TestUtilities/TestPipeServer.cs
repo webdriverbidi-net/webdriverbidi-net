@@ -1,7 +1,6 @@
 namespace WebDriverBiDi.TestUtilities;
 
 using System.Diagnostics;
-using System.Reflection;
 using WebDriverBiDi.Protocol;
 
 public class TestPipeServer : IPipeServerProcessProvider
@@ -16,15 +15,15 @@ public class TestPipeServer : IPipeServerProcessProvider
 
     private static string GetTestPipeServerPath()
     {
-        string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-            ?? throw new WebDriverBiDiException("Could not determine assembly location");
+        // The NamedPipeTestApplication executable is copied to the TestApplications subdirectory
+        // of the test output directory during build. See the <None Include=...> items in the
+        // WebDriverBiDi.Tests.csproj file for how this copy is configured.
+        string baseDir = AppContext.BaseDirectory;
+        string exePath = Path.Combine(baseDir, "TestApplications", "WebDriverBiDi.NamedPipeTestApplication.dll");
 
-        string exePath = Path.Combine(assemblyPath, "..", "..", "..", "..", "WebDriverBiDi.NamedPipeTestApplication", "bin", "Debug", "net10.0", "WebDriverBiDi.NamedPipeTestApplication.dll");
-        string normalizedPath = Path.GetFullPath(exePath);
-
-        return !File.Exists(normalizedPath)
-            ? throw new WebDriverBiDiException($"Test pipe server executable not found at: {normalizedPath}")
-            : normalizedPath;
+        return !File.Exists(exePath)
+            ? throw new WebDriverBiDiException($"Test pipe server executable not found at: {exePath}")
+            : exePath;
     }
 
     public void Start(string readPipeHandle, string writePipeHandle)

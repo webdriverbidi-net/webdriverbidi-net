@@ -31,4 +31,16 @@
     <ProjectReference Include="..\WebDriverBiDi.NamedPipeTestApplication\WebDriverBiDi.NamedPipeTestApplication.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Copy NamedPipeTestApplication to test output directory for easier access in tests -->
+    <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net10.0\WebDriverBiDi.NamedPipeTestApplication.dll">
+      <Link>TestApplications\WebDriverBiDi.NamedPipeTestApplication.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\WebDriverBiDi.NamedPipeTestApplication\bin\$(Configuration)\net10.0\WebDriverBiDi.NamedPipeTestApplication.runtimeconfig.json">
+      <Link>TestApplications\WebDriverBiDi.NamedPipeTestApplication.runtimeconfig.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

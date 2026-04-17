@@ -12,8 +12,10 @@ using PinchHitter;
 [TestFixture]
 public class AotCompilationEnvironmentTests
 {
+    // The AOT test application must be published as a native binary at test time.
+    // We locate the project directory relative to the test assembly's base directory.
     private static readonly string SmokeTestProjectDir = Path.GetFullPath(
-        Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "WebDriverBiDi.AotTestApplication"));
+        Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "WebDriverBiDi.AotTestApplication"));
 
     private static string publishDir = string.Empty;
     private static string executablePath = string.Empty;
@@ -21,6 +23,7 @@ public class AotCompilationEnvironmentTests
     [OneTimeSetUp]
     public async Task PublishAotBinary()
     {
+        // Publish to a dedicated directory to avoid conflicts with regular builds
         publishDir = Path.Combine(SmokeTestProjectDir, "bin", "AotTestPublish");
 
         int publishExit = await RunProcessAsync(
