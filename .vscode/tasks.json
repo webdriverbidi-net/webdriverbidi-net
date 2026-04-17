@@ -32,10 +32,13 @@
             "command": "dotnet",
             "args": [
                 "test",
+                "--project",
                 "${workspaceFolder}/test/WebDriverBiDi.Tests",
-                "/p:CollectCoverage=true",
-                "/p:CoverletOutputFormat=lcov",
-                "/p:CoverletOutput=${workspaceFolder}/test/coverage/lcov"
+                "--coverlet",
+                "--coverlet-output-format",
+                "lcov",
+                "--results-directory",
+                "${workspaceFolder}/test/coverage/lcov"
             ],
             "problemMatcher": "$msCompile",
             "group": {
