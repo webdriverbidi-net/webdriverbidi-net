@@ -34,10 +34,10 @@ jobs:
       run: dotnet test --project test/WebDriverBiDi.Tests --no-build --verbosity normal --coverlet --coverlet-output-format lcov --results-directory ../test/coverage --coverlet-file-prefix lcov
 
     - name: Test Roslyn Analyzers
-      run: dotnet test test/WebDriverBiDi.Analyzers.Tests --no-build --verbosity normal
+      run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --no-build --verbosity normal
 
     - name: Test Structured Logging Library
-      run: dotnet test test/WebDriverBiDi.Logging.Tests --no-build --verbosity normal
+      run: dotnet test --project test/WebDriverBiDi.Logging.Tests --no-build --verbosity normal
 
     - name: Upload code coverage
       uses: coverallsapp/github-action@master
