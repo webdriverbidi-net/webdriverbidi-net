@@ -40,7 +40,7 @@ jobs:
       run: dotnet test --project test/WebDriverBiDi.Logging.Tests --no-build --verbosity normal
 
     - name: Upload code coverage
-      uses: coverallsapp/github-action@master
+      uses: coverallsapp/github-action@v2
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         files: ./test/coverage/lcov.*.info
