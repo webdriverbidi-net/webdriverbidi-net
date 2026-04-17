@@ -67,7 +67,7 @@ jobs:
       run: dotnet build --no-restore
 
     - name: Run Integration Tests
-      run: dotnet test --project test/WebDriverBiDi.Integration.Tests --no-build --verbosity normal --logger "console;verbosity=detailed"
+      run: dotnet test --project test/WebDriverBiDi.Integration.Tests --no-build --verbosity normal
       env:
         CI: true
         FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
