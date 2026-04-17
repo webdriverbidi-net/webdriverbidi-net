@@ -21,7 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{731061A2-3
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Tests", "test\WebDriverBiDi.Tests\WebDriverBiDi.Tests.csproj", "{58E37944-7CFD-408C-8E0C-25E8CBBD112E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.AotSmokeTest", "test\WebDriverBiDi.AotSmokeTest\WebDriverBiDi.AotSmokeTest.csproj", "{311F21D3-3265-49F7-8CFA-21E5D180EC3D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.AotTestApplication", "test\WebDriverBiDi.AotTestApplication\WebDriverBiDi.AotTestApplication.csproj", "{311F21D3-3265-49F7-8CFA-21E5D180EC3D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Analyzers", "src\WebDriverBiDi.Analyzers\WebDriverBiDi.Analyzers.csproj", "{6ADE5BAC-0034-4BA1-9C87-499A39606F4E}"
 EndProject
@@ -37,7 +37,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Integration.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.Benchmarks", "test\WebDriverBiDi.Benchmarks\WebDriverBiDi.Benchmarks.csproj", "{15BB1497-B8D6-4562-9BEE-1FCA94E60411}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.TestPipeServer", "test\WebDriverBiDi.TestPipeServer\WebDriverBiDi.TestPipeServer.csproj", "{B1F060F5-EF71-48B4-8EEB-3F74F45D148C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebDriverBiDi.NamedPipeTestApplication", "test\WebDriverBiDi.NamedPipeTestApplication\WebDriverBiDi.NamedPipeTestApplication.csproj", "{B1F060F5-EF71-48B4-8EEB-3F74F45D148C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

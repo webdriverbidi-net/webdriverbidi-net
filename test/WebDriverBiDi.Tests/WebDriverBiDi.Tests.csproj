@@ -28,7 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\WebDriverBiDi\WebDriverBiDi.csproj" />
-    <ProjectReference Include="..\WebDriverBiDi.TestPipeServer\WebDriverBiDi.TestPipeServer.csproj" />
+    <ProjectReference Include="..\WebDriverBiDi.NamedPipeTestApplication\WebDriverBiDi.NamedPipeTestApplication.csproj" />
   </ItemGroup>
 
 </Project>

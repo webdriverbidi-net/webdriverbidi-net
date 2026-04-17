@@ -19,7 +19,7 @@ public class TestPipeServer : IPipeServerProcessProvider
         string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
             ?? throw new WebDriverBiDiException("Could not determine assembly location");
 
-        string exePath = Path.Combine(assemblyPath, "..", "..", "..", "..", "WebDriverBiDi.TestPipeServer", "bin", "Debug", "net10.0", "WebDriverBiDi.TestPipeServer.dll");
+        string exePath = Path.Combine(assemblyPath, "..", "..", "..", "..", "WebDriverBiDi.NamedPipeTestApplication", "bin", "Debug", "net10.0", "WebDriverBiDi.NamedPipeTestApplication.dll");
         string normalizedPath = Path.GetFullPath(exePath);
 
         return !File.Exists(normalizedPath)

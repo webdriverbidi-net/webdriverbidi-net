@@ -83,12 +83,14 @@ but is designed as a demonstration and is explicitly recommended against product
 structured logging by providing integration with `Microsoft.Extensions.Logging.ILogger`.
 * test/WebDriverBiDi.Analyzers.Tests/WebDriver.Analyzers.Tests.csproj - Tests for the Roslyn analyzers
 and associated code fix providers.
-* test/WebDriverBiDi.AotSmokeTest/WebDriverBiDi.AotSmokeTest.csproj - A console application used to smoke test proper JSON serializatin in
+* test/WebDriverBiDi.AotTestApplication/WebDriverBiDi.AotTestApplication.csproj - A console application used to smoke test proper JSON serializatin in
 ahead-of-time (AOT) compilation scenarios.
 * test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj - Performance benchmarks for the library.
 * test/WebDriverBiDi.Integration.Tests/WebDriverBiDi.Integration.Tests.csproj - Integration tests for
 the main library. These tests use actual browsers to test WebDriver BiDi functionality.
 * test/WebDriverBiDi.Logging.Tests/WebDriverBiDi.Logging.Tests.csproj - Tests for the structured logging extension project.
+* test/WebDriverBiDi.NamedPipeTestApplication/WebDriverBiDi.NamedPipeTestApplication.csproj - A console application
+that acts as a test server for named pipe communication, used by unit tests to validate pipe-based connections.
 * test/WebDriverBiDi.Tests/WebDriverBiDi.Tests.csproj - The unit tests for the main library.
 
 [Visual Studio Code](https://code.visualstudio.com/) is the preferred IDE for development of this library.

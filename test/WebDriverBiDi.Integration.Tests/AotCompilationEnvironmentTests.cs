@@ -13,7 +13,7 @@ using PinchHitter;
 public class AotCompilationEnvironmentTests
 {
     private static readonly string SmokeTestProjectDir = Path.GetFullPath(
-        Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "WebDriverBiDi.AotSmokeTest"));
+        Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "..", "..", "WebDriverBiDi.AotTestApplication"));
 
     private static string publishDir = string.Empty;
     private static string executablePath = string.Empty;
@@ -29,11 +29,11 @@ public class AotCompilationEnvironmentTests
             workingDirectory: SmokeTestProjectDir,
             timeoutSeconds: 300);
 
-        Assert.That(publishExit, Is.EqualTo(0), "dotnet publish of AotSmokeTest failed.");
+        Assert.That(publishExit, Is.EqualTo(0), "dotnet publish of AotTestApplication failed.");
 
         string executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? "WebDriverBiDi.AotSmokeTest.exe"
-            : "WebDriverBiDi.AotSmokeTest";
+            ? "WebDriverBiDi.AotTestApplication.exe"
+            : "WebDriverBiDi.AotTestApplication";
         executablePath = Path.Combine(publishDir, executableName);
 
         Assert.That(File.Exists(executablePath), Is.True, $"Published AOT executable not found at: {executablePath}");
@@ -60,7 +60,7 @@ public class AotCompilationEnvironmentTests
             workingDirectory: publishDir,
             timeoutSeconds: 120);
 
-        Assert.That(runExit, Is.Zero, $"AotSmokeTest ({testUrl}) exited with non-zero exit code.");
+        Assert.That(runExit, Is.Zero, $"AotTestApplication ({testUrl}) exited with non-zero exit code.");
     }
 
     private static async Task<int> RunProcessAsync(string fileName, string arguments, string workingDirectory, int timeoutSeconds)
