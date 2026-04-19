@@ -100,7 +100,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// <param name="headless">Whether to run the browser in headless mode. Default is false.</param>
     /// <returns>The configured browser launcher.</returns>
     /// <exception cref="NotImplementedException">Thrown when the specified browser is not yet supported.</exception>
-    public static BrowserLauncher Create(Browser browser, bool headless = false)
+    public static BrowserLauncher Create(BrowserKind browser, bool headless = false)
     {
         BrowserLauncherBuilder builder = Configure(browser);
         if (headless)
@@ -117,7 +117,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// </summary>
     /// <param name="browser">The browser to launch.</param>
     /// <returns>A <see cref="BrowserLauncherBuilder"/> for configuring the launcher.</returns>
-    public static BrowserLauncherBuilder Configure(Browser browser)
+    public static BrowserLauncherBuilder Configure(BrowserKind browser)
     {
         return new BrowserLauncherBuilder(browser);
     }

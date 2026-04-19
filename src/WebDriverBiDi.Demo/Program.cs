@@ -21,7 +21,7 @@ int port = 0;
 WebDriverBiDiLogLevel logReportingLevel = WebDriverBiDiLogLevel.Info;
 
 // Select the browser type for which to run this demo.
-Browser testBrowserType = Browser.Chrome;
+BrowserKind testBrowserType = BrowserKind.Chrome;
 
 // Select the release channel of the browser tu use for this demo.
 // The release channel is browser-agnostic, but is mapped to a

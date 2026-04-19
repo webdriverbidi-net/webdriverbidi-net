@@ -61,10 +61,10 @@ public static class BrowserTestHelper
     {
         string executablePath = GetBrowserExecutable(browser);
 
-        Browser launcherBrowser = browser switch
+        BrowserKind launcherBrowser = browser switch
         {
-            TestBrowser.Firefox => Browser.Firefox,
-            TestBrowser.Chrome => Browser.Chrome,
+            TestBrowser.Firefox => BrowserKind.Firefox,
+            TestBrowser.Chrome => BrowserKind.Chrome,
             _ => throw new ArgumentException($"Unsupported browser: {browser}")
         };
 

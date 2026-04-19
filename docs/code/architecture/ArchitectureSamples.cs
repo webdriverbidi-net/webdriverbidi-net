@@ -50,7 +50,7 @@ public static class ArchitectureSamples
     {
         #region PipeExample
         // Launcher implements IPipeServerProcessProvider
-        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
             .WithConnection(ConnectionType.Pipes)

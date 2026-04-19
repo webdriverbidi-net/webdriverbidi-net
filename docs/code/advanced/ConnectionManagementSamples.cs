@@ -40,7 +40,7 @@ public static class ConnectionManagementSamples
     {
         #region UsingaBrowserLauncher
         // Launcher manages browser process and connection
-        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
             .Build();
@@ -188,7 +188,7 @@ public static class ConnectionManagementSamples
     public static async Task UsingPipesWithLauncher()
     {
         #region UsingPipeswithLauncher
-        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
             .WithConnection(ConnectionType.Pipes)
@@ -300,7 +300,7 @@ public static class ConnectionManagementSamples
     {
         #region BestPracticeBrowserLauncher
         // ✅ Recommended for local testing
-        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
             .Build();

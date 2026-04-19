@@ -86,7 +86,7 @@ public static class BrowserSetupSamples
     {
         #region PipeLauncherPattern
         // Launcher implements IPipeServerProcessProvider
-        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
             .WithConnection(ConnectionType.Pipes)

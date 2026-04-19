@@ -46,7 +46,7 @@ public class PerformanceSamples
     {
         #region PipeConnection
         // Pipe connection (Chromium only)
-        BrowserLauncher launcher = BrowserLauncher.Configure(Browser.Chrome)
+        BrowserLauncher launcher = BrowserLauncher.Configure(BrowserKind.Chrome)
             .WithReleaseChannel(BrowserReleaseChannel.Stable)
             .AtAutomaticallyDownloadedLocation()
             .WithConnection(ConnectionType.Pipes)
