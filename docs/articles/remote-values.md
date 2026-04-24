@@ -24,8 +24,7 @@ Every `RemoteValue` has a `Type` property indicating the JavaScript type as a st
 | JavaScript Type | `Type` string | Concrete Class | `Value` Property Type |
 |----------------|---------------|----------------|-----------------------|
 | `string` | `"string"` | `StringRemoteValue` | `string` |
-| `number` (integer) | `"number"` | `LongRemoteValue` | `long` |
-| `number` (float) | `"number"` | `DoubleRemoteValue` | `double` |
+| `number` | `"number"` | `NumberRemoteValue` | `double` |
 | `boolean` | `"boolean"` | `BooleanRemoteValue` | `bool` |
 | `bigint` | `"bigint"` | `BigIntegerRemoteValue` | `BigInteger` |
 | `undefined` | `"undefined"` | `UndefinedRemoteValue` | _(none)_ |
@@ -35,10 +34,10 @@ Every `RemoteValue` has a `Type` property indicating the JavaScript type as a st
 
 | JavaScript Type | `Type` string | Concrete Class | `Value` Property Type |
 |----------------|---------------|----------------|-----------------------|
-| `Object` | `"object"` | `KeyValuePairRemoteValue` | `RemoteValueDictionary` |
-| `Map` | `"map"` | `KeyValuePairRemoteValue` | `RemoteValueDictionary` |
-| `Array` | `"array"` | `ListRemoteValue` | `RemoteValueList` |
-| `Set` | `"set"` | `ListRemoteValue` | `RemoteValueList` |
+| `Object` | `"object"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary` |
+| `Map` | `"map"` | `KeyValuePairCollectionRemoteValue` | `RemoteValueDictionary` |
+| `Array` | `"array"` | `CollectionRemoteValue` | `RemoteValueList` |
+| `Set` | `"set"` | `CollectionRemoteValue` | `RemoteValueList` |
 | `Date` | `"date"` | `DateRemoteValue` | `DateTime` |
 | `RegExp` | `"regexp"` | `RegExpRemoteValue` | `RegularExpressionValue` |
 | `DOM Element` | `"node"` | `NodeRemoteValue` | `NodeProperties` |

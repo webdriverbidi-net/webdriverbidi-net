@@ -8,9 +8,9 @@ namespace WebDriverBiDi.Script;
 using System.Text.Json.Serialization;
 
 /// <summary>
-/// Represents a remote value for a null value from the remote end, providing
-/// the ability to convert to a local value for use as an argument for script
-/// execution on the remote end.
+/// Represents a remote value for an object reference from the remote end,
+/// providing the ability to convert to a local value for use as an argument
+/// for script execution on the remote end.
 /// </summary>
 public record ObjectReferenceRemoteValue : RemoteValue, IObjectReferenceRemoteValue
 {
@@ -42,7 +42,7 @@ public record ObjectReferenceRemoteValue : RemoteValue, IObjectReferenceRemoteVa
     /// <summary>
     /// Converts this remote value to a local value for use as an argument for script execution on the remote end.
     /// </summary>
-    /// <returns>A LocalValue representing the null value.</returns>
+    /// <returns>A LocalValue representing the object reference.</returns>
     public override LocalValue ToLocalValue()
     {
         return this.ToRemoteObjectReference();

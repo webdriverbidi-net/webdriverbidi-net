@@ -38,7 +38,7 @@ public static class RemoteValuesSamples
             Console.WriteLine(number); // 42
 
             // Can also convert to double
-            double doubleNumber = Convert.ToDouble(number);
+            double doubleNumber = remoteValue.ConvertTo<NumberRemoteValue>();
             Console.WriteLine(doubleNumber); // 42.0
         }
         #endregion
