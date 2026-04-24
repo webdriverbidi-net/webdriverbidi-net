@@ -44,7 +44,7 @@ public abstract class Module
         async Task EventInvoker(EventInfo<T> eventData)
         {
             T eventArgs = eventData.ToEventArgs<T>();
-            await observableEvent.NotifyObserversAsync(eventArgs);
+            await observableEvent.NotifyObserversAsync(eventArgs).ConfigureAwait(false);
         }
 
         this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);
@@ -68,7 +68,7 @@ public abstract class Module
         async Task EventInvoker(EventInfo<T> eventData)
         {
             TEventArgs eventArgs = eventData.ToEventArgs(eventArgsConverter);
-            await observableEvent.NotifyObserversAsync(eventArgs);
+            await observableEvent.NotifyObserversAsync(eventArgs).ConfigureAwait(false);
         }
 
         this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);

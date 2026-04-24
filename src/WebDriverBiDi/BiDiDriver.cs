@@ -637,7 +637,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
         // The transport will do the registration, and throw the proper exception if the
         // transport is already connected (and thus the driver is started).
-        await this.transport.RegisterTypeInfoResolver(resolver);
+        await this.transport.RegisterTypeInfoResolver(resolver).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -708,7 +708,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
     private Task ReportObservableEventObserverError(EventObserverErrorInfo errorInfo)
     {
-        return this.transport.ReportEventObserverError(errorInfo);
+        return this.transport.ReportEventObserverErrorAsync(errorInfo);
     }
 
     private ObservableEvent<T> CreateObservableEvent<T>(string eventName)

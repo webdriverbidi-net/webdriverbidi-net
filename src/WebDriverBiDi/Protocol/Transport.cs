@@ -393,7 +393,7 @@ public class Transport : IAsyncDisposable
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public virtual async Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
     {
-        await this.AcquireConnectionLockAsync();
+        await this.AcquireConnectionLockAsync().ConfigureAwait(false);
         try
         {
             if (this.IsConnected)
@@ -434,10 +434,10 @@ public class Transport : IAsyncDisposable
     /// </summary>
     /// <param name="errorInfo">The details of the observer failure.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    internal async Task ReportEventObserverError(EventObserverErrorInfo errorInfo)
+    internal async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo)
     {
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
-        await this.OnEventHandlerErrorOccurred.NotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo));
+        await this.OnEventHandlerErrorOccurred.NotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
         this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
     }
 
@@ -653,7 +653,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            await this.ReportEventObserverError(e.EventName, TransportEventObserverDescription, ex);
+            await this.ReportEventObserverErrorAsync(e.EventName, TransportEventObserverDescription, ex).ConfigureAwait(false);
         }
     }
 
@@ -665,7 +665,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            await this.ReportEventObserverError(this.OnErrorEventReceived.EventName, TransportErrorObserverDescription, ex);
+            await this.ReportEventObserverErrorAsync(this.OnErrorEventReceived.EventName, TransportErrorObserverDescription, ex).ConfigureAwait(false);
         }
     }
 
@@ -677,7 +677,7 @@ public class Transport : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            await this.ReportEventObserverError(this.OnUnknownMessageReceived.EventName, TransportUnknownMessageObserverDescription, ex);
+            await this.ReportEventObserverErrorAsync(this.OnUnknownMessageReceived.EventName, TransportUnknownMessageObserverDescription, ex).ConfigureAwait(false);
         }
     }
 
@@ -1001,13 +1001,13 @@ public class Transport : IAsyncDisposable
         where T : WebDriverBiDiEventArgs
     {
         ObservableEvent<T> observableEvent = new(eventName);
-        observableEvent.SetObserverErrorReporter(this.ReportEventObserverError);
+        observableEvent.SetObserverErrorReporter(this.ReportEventObserverErrorAsync);
         return observableEvent;
     }
 
-    private async Task ReportEventObserverError(string eventName, string observerDescription, Exception exception)
+    private async Task ReportEventObserverErrorAsync(string eventName, string observerDescription, Exception exception)
     {
-        await this.ReportEventObserverError(new EventObserverErrorInfo()
+        await this.ReportEventObserverErrorAsync(new EventObserverErrorInfo()
         {
             ObservableEventName = eventName,
             ObserverId = string.Empty,
@@ -1015,6 +1015,6 @@ public class Transport : IAsyncDisposable
             Exception = exception,
             IsAsynchronousHandler = false,
             FaultOccurredAfterHandlerReturned = false,
-        });
+        }).ConfigureAwait(false);
     }
 }

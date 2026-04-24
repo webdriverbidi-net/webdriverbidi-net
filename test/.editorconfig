@@ -1,0 +1,5 @@
+#### C# Coding Conventions ####
+[*.cs]
+
+# async/await preferences
+dotnet_diagnostic.CA2007.severity = none
