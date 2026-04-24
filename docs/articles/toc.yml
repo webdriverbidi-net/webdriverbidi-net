@@ -66,6 +66,8 @@
       href: advanced/analyzers.md
     - name: Observability
       href: advanced/observability.md
+    - name: Structured Logging (WebDriverBiDi.Logging)
+      href: advanced/webdriverbidi-logging.md
     - name: API Design Guide
       href: advanced/api-design.md
     - name: Error Handling
