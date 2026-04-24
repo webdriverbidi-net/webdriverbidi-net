@@ -47,6 +47,23 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 
 Many analyzers provide automatic code fixes. In Visual Studio or VS Code, use the lightbulb or quick-action menu on the diagnostic to apply the suggested fix.
 
+The following analyzers have code fix providers:
+
+- **BIDI001** — Moves `RegisterModule()` call before `StartAsync()`
+- **BIDI002** — Moves `AddObserver()` call before `StartAsync()`
+- **BIDI003** — Moves `RegisterTypeInfoResolver()` call before `StartAsync()`
+- **BIDI004** — Adds `CancellationToken` parameter to long-running operations
+- **BIDI005** — Adds missing event name to `Session.SubscribeAsync()` call
+- **BIDI006** — Adds `using` statement or `.Dispose()` call for `EventObserver`
+- **BIDI007** — Replaces blocking call with `await` in event handler
+- **BIDI008** — Replaces unsafe cast with pattern matching
+- **BIDI009** — Adds `await driver.StartAsync()` before command execution
+- **BIDI012** — Adds `await driver.StopAsync()` before `DisposeAsync()`
+- **BIDI014** — Replaces parameterless constructor with `.Reset*` property
+- **BIDI015** — Replaces string literal with `ObservableEvent.EventName` property
+- **BIDI017** — Adds null-coalescing assignment before adding to nullable list
+- **BIDI019** — Inserts `var tasks = observer.GetCheckpointTasks()` before `UnsetCheckpoint()`
+
 ## Related Documentation
 
 | Analyzer Topic | See Also |
