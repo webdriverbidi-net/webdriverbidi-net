@@ -391,7 +391,7 @@ public class Transport : IAsyncDisposable
     /// Thrown if the transport is already connected to a remote end.
     /// </exception>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public virtual async Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
+    public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver)
     {
         await this.AcquireConnectionLockAsync().ConfigureAwait(false);
         try

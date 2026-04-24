@@ -33,7 +33,7 @@ using WebDriverBiDi.WebExtension;
 /// This class is thread-safe for concurrent command execution.
 /// <see cref="IBiDiCommandExecutor.ExecuteCommandAsync{T}(CommandParameters{T}, TimeSpan?, CancellationToken)"/>
 /// and module command methods may be called concurrently from multiple threads. Configuration operations
-/// (<see cref="RegisterModule"/>, <see cref="RegisterEvent"/>, <see cref="RegisterTypeInfoResolver"/>)
+/// (<see cref="RegisterModule"/>, <see cref="RegisterEvent"/>, <see cref="RegisterTypeInfoResolverAsync"/>)
 /// must complete before <see cref="StartAsync"/> is called and are serialized via an internal lock.
 /// </para>
 /// </remarks>
@@ -119,7 +119,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         this.DefaultCommandTimeout = defaultCommandWaitTimeout;
 
         this.transport = transport;
-        this.transportEventReceivedObserver = this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceived);
+        this.transportEventReceivedObserver = this.transport.OnEventReceived.AddObserver(this.OnTransportEventReceivedAsync);
         this.transportErrorReceivedObserver = this.transport.OnErrorEventReceived.AddObserver(this.OnTransportErrorEventReceivedAsync);
         this.transportUnknownMessageReceivedObserver = this.transport.OnUnknownMessageReceived.AddObserver(this.OnTransportUnknownMessageReceivedAsync);
         this.transportLogMessageObserver = this.transport.OnLogMessage.AddObserver(this.OnTransportLogMessageAsync);
@@ -627,7 +627,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <exception cref="ArgumentNullException">Thrown when the resolver argument is <see langword="null"/>.</exception>
     /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the driver has already been started.</exception>
-    public virtual async Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver)
+    public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver)
     {
         this.ThrowIfDisposed();
         if (resolver is null)
@@ -637,7 +637,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
         // The transport will do the registration, and throw the proper exception if the
         // transport is already connected (and thus the driver is started).
-        await this.transport.RegisterTypeInfoResolver(resolver).ConfigureAwait(false);
+        await this.transport.RegisterTypeInfoResolverAsync(resolver).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -719,7 +719,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         return observableEvent;
     }
 
-    private async Task OnTransportEventReceived(EventReceivedEventArgs e)
+    private async Task OnTransportEventReceivedAsync(EventReceivedEventArgs e)
     {
         if (this.eventInvokers.TryGetValue(e.EventName, out EventInvoker? invoker))
         {

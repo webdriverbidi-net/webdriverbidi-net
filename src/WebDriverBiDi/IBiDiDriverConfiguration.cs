@@ -34,5 +34,5 @@ public interface IBiDiDriverConfiguration
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
 }

@@ -22,7 +22,7 @@ using System.Text.Json.Serialization;
 /// own <see cref="System.Text.Json.Serialization.JsonSerializerContext"/> with
 /// <c>[JsonSerializable(typeof(CommandResponseMessage&lt;TResult&gt;))]</c> for each of their
 /// custom result types, then register the context via
-/// <see cref="WebDriverBiDi.Protocol.Transport.RegisterTypeInfoResolver"/>. This pattern mirrors
+/// <see cref="WebDriverBiDi.Protocol.Transport.RegisterTypeInfoResolverAsync"/>. This pattern mirrors
 /// how the library itself registers all built-in command response types in
 /// <see cref="WebDriverBiDi.JsonConverters.WebDriverBiDiJsonSerializerContext"/>.
 /// </para>

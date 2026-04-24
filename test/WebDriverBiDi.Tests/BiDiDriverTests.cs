@@ -1109,7 +1109,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
+        Assert.That(() => driver.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
     }
 
     [Test]
@@ -1119,7 +1119,7 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         await driver.StartAsync("ws://localhost:5555");
-        Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
+        Assert.That(() => driver.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
     }
 
     [Test]
@@ -1129,7 +1129,7 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
         await driver.DisposeAsync();
-        Assert.That(() => driver.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<ObjectDisposedException>());
+        Assert.That(() => driver.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<ObjectDisposedException>());
     }
 
     [Test]
@@ -1447,7 +1447,7 @@ public class BiDiDriverTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
-        Assert.That(() => driver.RegisterTypeInfoResolver(null!), Throws.InstanceOf<ArgumentNullException>());
+        Assert.That(() => driver.RegisterTypeInfoResolverAsync(null!), Throws.InstanceOf<ArgumentNullException>());
     }
 
     [Test]

@@ -183,7 +183,7 @@ public class ObservableEvent<T>
         {
             try
             {
-                await observer.Notify(notifyData).ConfigureAwait(false);
+                await observer.NotifyAsync(notifyData).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

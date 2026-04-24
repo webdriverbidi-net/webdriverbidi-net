@@ -389,7 +389,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="notifyData">The object containing information about the event.</param>
     /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
-    internal async Task Notify(T notifyData)
+    internal async Task NotifyAsync(T notifyData)
     {
         Task executingTask = this.handler(notifyData);
         bool isHandlerRunAsynchronously = this.handlerOptions == ObservableEventHandlerOptions.RunHandlerAsynchronously;

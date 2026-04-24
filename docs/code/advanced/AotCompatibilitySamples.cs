@@ -44,7 +44,7 @@ public static class AotCompatibilitySamples
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Register your serialization metadata for AOT support
-        await driver.RegisterTypeInfoResolver(MyModuleJsonSerializerContext.Default);
+        await driver.RegisterTypeInfoResolverAsync(MyModuleJsonSerializerContext.Default);
 
         // Register your custom module
         MyCustomModule myModule = new MyCustomModule(driver);
@@ -59,7 +59,7 @@ public static class AotCompatibilitySamples
     {
         #region MultipleCustomModulesOptionARegistration
         // Register once
-        await driver.RegisterTypeInfoResolver(AllCustomModulesJsonContext.Default);
+        await driver.RegisterTypeInfoResolverAsync(AllCustomModulesJsonContext.Default);
         #endregion
     }
 
@@ -67,8 +67,8 @@ public static class AotCompatibilitySamples
     {
         #region MultipleCustomModulesOptionBRegistration
         // Option B: Separate contexts per module
-        await driver.RegisterTypeInfoResolver(ModuleAJsonContext.Default);
-        await driver.RegisterTypeInfoResolver(ModuleBJsonContext.Default);
+        await driver.RegisterTypeInfoResolverAsync(ModuleAJsonContext.Default);
+        await driver.RegisterTypeInfoResolverAsync(ModuleBJsonContext.Default);
         #endregion
     }
 
@@ -79,7 +79,7 @@ public static class AotCompatibilitySamples
         BiDiDriver driver)
     {
         #region ConsumerRegistersExtension
-        await driver.RegisterTypeInfoResolver(MyExtensionJsonSerializerContext.Default);
+        await driver.RegisterTypeInfoResolverAsync(MyExtensionJsonSerializerContext.Default);
         driver.RegisterModule(new MyExtensionModule(driver));
         #endregion
     }

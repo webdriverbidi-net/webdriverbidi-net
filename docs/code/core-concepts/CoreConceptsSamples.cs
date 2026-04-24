@@ -831,7 +831,7 @@ public static class CoreConceptsSamples
         #region RegisterCustomResolverBeforeStarting
         // Register the custom resolver BEFORE starting
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
-        await driver.RegisterTypeInfoResolver(CustomJsonContext.Default);
+        await driver.RegisterTypeInfoResolverAsync(CustomJsonContext.Default);
 
         await driver.StartAsync(webSocketUrl);
         #endregion

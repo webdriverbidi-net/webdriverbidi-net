@@ -1841,7 +1841,7 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        Assert.That(async () => await transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
+        Assert.That(async () => await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
     }
 
     [Test]
@@ -1849,8 +1849,8 @@ public class TransportTests
     {
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
-        await transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver());
-        Assert.That(async () => await transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
+        await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver());
+        Assert.That(async () => await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver()), Throws.Nothing);
     }
 
     [Test]
@@ -1859,7 +1859,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         Transport transport = new(connection);
         await transport.ConnectAsync("ws:localhost");
-        Assert.That(async () => await transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
+        Assert.That(async () => await transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver()), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
     }
 
     [Test]
@@ -1870,7 +1870,7 @@ public class TransportTests
         transport.EnableConnectLockConcurrencyTesting();
 
         Task connectTask = transport.ConnectAsync("ws:localhost");
-        Task registerTask = transport.RegisterTypeInfoResolver(new DefaultJsonTypeInfoResolver());
+        Task registerTask = transport.RegisterTypeInfoResolverAsync(new DefaultJsonTypeInfoResolver());
         await connectTask;
 
         Assert.That(async () => await registerTask, Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("Cannot register a type info resolver after the transport is connected"));
