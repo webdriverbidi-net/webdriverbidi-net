@@ -41,6 +41,7 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName` |
 | **BIDI016** | Warning | Deadlock-prone pattern (e.g., `.Result`, `.Wait()`) in event handler |
 | **BIDI017** | Warning | Adding to nullable list property without `??= new List<T>()` |
+| **BIDI019** | Warning | `UnsetCheckpoint()` called on an `EventObserver` without a prior `GetCheckpointTasks()` on the same observer; suggests capturing tasks first so they are not abandoned |
 
 ## Code Fixes
 
@@ -56,10 +57,11 @@ Many analyzers provide automatic code fixes. In Visual Studio or VS Code, use th
 | Observer disposal (BIDI006) | [Common Pitfalls - Resource Cleanup](../common-pitfalls.md#resource-cleanup) |
 | Nullable collections (BIDI017) | [Common Pitfalls - Null vs Empty Collections](../common-pitfalls.md#null-vs-empty-collections) |
 | Reset parameters (BIDI014) | [API Design Guide - Required vs Optional Parameters](api-design.md#required-vs-optional-parameters) |
+| Checkpoint task capture (BIDI019) | [Events and Observables - EventObserver Cleanup Pattern](../events-observables.md#eventobserver-cleanup-pattern) |
 
 ## Known Limitations
 
-All behavioral analyzers (BIDI001, BIDI002, BIDI003, BIDI005, BIDI009, BIDI014, BIDI015) are **intra-procedural** — they analyze usage patterns within a single method body only. They cannot detect cross-method, cross-class, or cross-file patterns.
+All behavioral analyzers (BIDI001, BIDI002, BIDI003, BIDI005, BIDI009, BIDI014, BIDI015, BIDI019) are **intra-procedural** — they analyze usage patterns within a single method body only. They cannot detect cross-method, cross-class, or cross-file patterns.
 
 For example, if you split setup across helper methods (common in test frameworks or automation wrappers), the analyzers will not correlate calls in different methods:
 
