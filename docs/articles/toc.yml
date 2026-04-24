@@ -8,6 +8,8 @@
   href: core-concepts.md
 - name: Quick Reference
   href: quick-reference.md
+- name: Protocol Reference
+  href: protocol-reference.md
 - name: Common Pitfalls
   href: common-pitfalls.md
 - name: Architecture
