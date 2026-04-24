@@ -33,6 +33,7 @@ public interface IBiDiDriverConfiguration
     /// to be serialized in AOT scenarios where reflection-based serialization is unavailable.
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver);
+    Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver, CancellationToken cancellationToken = default);
 }

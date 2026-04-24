@@ -387,13 +387,14 @@ public class Transport : IAsyncDisposable
     /// This method must be called before connecting to the remote end.
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
     /// <exception cref="InvalidOperationException">
     /// Thrown if the transport is already connected to a remote end.
     /// </exception>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver)
+    public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver, CancellationToken cancellationToken = default)
     {
-        await this.AcquireConnectionLockAsync().ConfigureAwait(false);
+        await this.AcquireConnectionLockAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (this.IsConnected)

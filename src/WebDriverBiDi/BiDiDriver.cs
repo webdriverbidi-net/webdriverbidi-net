@@ -623,11 +623,12 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// This method must be called before starting the driver.
     /// </summary>
     /// <param name="resolver">The type info resolver to add.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when the resolver argument is <see langword="null"/>.</exception>
     /// <exception cref="ObjectDisposedException">Thrown if the driver has been disposed.</exception>
     /// <exception cref="InvalidOperationException">Thrown if the driver has already been started.</exception>
-    public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver)
+    public virtual async Task RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver resolver, CancellationToken cancellationToken = default)
     {
         this.ThrowIfDisposed();
         if (resolver is null)
@@ -637,7 +638,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
         // The transport will do the registration, and throw the proper exception if the
         // transport is already connected (and thus the driver is started).
-        await this.transport.RegisterTypeInfoResolverAsync(resolver).ConfigureAwait(false);
+        await this.transport.RegisterTypeInfoResolverAsync(resolver, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
