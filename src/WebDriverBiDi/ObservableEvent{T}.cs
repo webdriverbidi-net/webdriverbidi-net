@@ -21,7 +21,7 @@ namespace WebDriverBiDi;
 /// for thread-safety of checkpoint methods on observers.
 /// </para>
 /// </remarks>
-public class ObservableEvent<T>
+public sealed class ObservableEvent<T>
     where T : WebDriverBiDiEventArgs
 {
     private readonly object observerLock = new();
