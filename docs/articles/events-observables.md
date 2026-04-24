@@ -35,6 +35,8 @@ Each event is exposed as an `ObservableEvent<TEventArgs>` property on the releva
 
 #### BrowsingContext Module
 
+[!code-csharp[BrowsingContext Events](../code/events-observables/EventObserverSamples.cs#BrowsingContextEvents)]
+
 ```csharp
 driver.BrowsingContext.OnLoad                    // Page load complete
 driver.BrowsingContext.OnDomContentLoaded        // DOM ready
@@ -54,6 +56,8 @@ driver.BrowsingContext.OnUserPromptClosed        // Dialog closed
 
 #### Network Module
 
+[!code-csharp[Network Events](../code/events-observables/EventObserverSamples.cs#NetworkEvents)]
+
 ```csharp
 driver.Network.OnBeforeRequestSent     // Request about to be sent
 driver.Network.OnResponseStarted       // Response headers received
@@ -64,11 +68,15 @@ driver.Network.OnAuthRequired          // Authentication needed
 
 #### Log Module
 
+[!code-csharp[Log Events](../code/events-observables/EventObserverSamples.cs#LogEvents)]
+
 ```csharp
 driver.Log.OnEntryAdded               // Console log message
 ```
 
 #### Script Module
+
+[!code-csharp[Script Events](../code/events-observables/EventObserverSamples.cs#ScriptEvents)]
 
 ```csharp
 driver.Script.OnMessage               // Message from preload script

@@ -1,0 +1,42 @@
+name: Validate Documentation
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**/*.md'
+      - 'docs/code/**/*.cs'
+      - 'docs/tools/validate-doc-regions.sh'
+      - '.github/workflows/validate-docs.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**/*.md'
+      - 'docs/code/**/*.cs'
+      - 'docs/tools/validate-doc-regions.sh'
+
+jobs:
+  validate-code-regions:
+    name: Validate Code Region References
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make validation script executable
+        run: chmod +x docs/tools/validate-doc-regions.sh
+
+      - name: Validate documentation code regions
+        run: ./docs/tools/validate-doc-regions.sh
+
+      - name: Report results
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ All documentation code region references are valid"
+          else
+            echo "❌ Found stale documentation code region references"
+            echo "See above output for details"
+            exit 1
+          fi

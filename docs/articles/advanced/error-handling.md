@@ -246,6 +246,8 @@ Use a custom pattern (e.g., `Task.WhenAny` with `Task.Delay`) only when you need
 
 Event handlers can be configured with `ObservableEventHandlerOptions` to control execution behavior:
 
+[!code-csharp[Observable Event Handler Options](../../code/error-handling/ErrorHandlingSamples.cs#ObservableEventHandlerOptions)]
+
 ```csharp
 public enum ObservableEventHandlerOptions
 {

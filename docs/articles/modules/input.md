@@ -66,6 +66,8 @@ Remember to call `Session.SubscribeAsync` with the event name before the file di
 
 ## Common Key Constants
 
+[!code-csharp[Common Key Constants](../../code/modules/InputModuleSamples.cs#CommonKeyConstants)]
+
 Use Unicode values for special keys: Enter `\uE007`, Tab `\uE004`, Control `\uE009`, etc. A partial list is in the table below.
 
 | Key         | Unicode Value |
