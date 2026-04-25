@@ -99,6 +99,15 @@ public class Transport : IAsyncDisposable
         SingleWriter = true,
     });
 
+    // Interlocked-maintained mirror of the unread depth of incomingMessageQueue.
+    // The SingleConsumerUnboundedChannel implementation returned by
+    // Channel.CreateUnbounded<T>(new UnboundedChannelOptions { SingleReader = true,
+    // SingleWriter = true }) does not support ChannelReader<T>.Count (CanCount is
+    // false), so we maintain the depth ourselves: increment after a successful
+    // Writer.WriteAsync, decrement after a successful Reader.TryRead, and reset
+    // alongside any channel replacement.
+    private int incomingQueueDepth;
+
     private Task messageQueueProcessingTask = Task.CompletedTask;
     private long nextCommandId = 0;
     private string terminationReason = "Normal shutdown";
@@ -200,6 +209,33 @@ public class Transport : IAsyncDisposable
     public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(10);
 
     /// <summary>
+    /// Gets the number of messages currently buffered in the incoming message queue and
+    /// waiting to be processed by the reader task.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This property surfaces the depth of the unbounded <see cref="Channel{T}"/>
+    /// described in the class-level remarks. It is intended for diagnostics and observability:
+    /// a persistently growing value indicates that event handlers are not keeping up with the
+    /// incoming message rate, and should prompt investigation of handler duration or the use of
+    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>.
+    /// </para>
+    /// <para>
+    /// The value reflects the queue for the <em>current</em> connection. The counter is reset
+    /// to zero on each call to <see cref="ConnectAsync"/> alongside the channel replacement.
+    /// Reading this property before <see cref="ConnectAsync"/> has ever been called, or after
+    /// <see cref="DisconnectAsync(CancellationToken)"/>, returns the depth of the remaining
+    /// (possibly drained) queue rather than throwing.
+    /// </para>
+    /// <para>
+    /// <strong>Thread Safety:</strong> This property is safe to read concurrently with message
+    /// production and consumption. The returned value is a snapshot and may be stale by the time
+    /// the caller observes it.
+    /// </para>
+    /// </remarks>
+    public virtual int IncomingQueueDepth => Interlocked.CompareExchange(ref this.incomingQueueDepth, 0, 0);
+
+    /// <summary>
     /// Gets or sets a value indicating whether this transport is connected to a connection.
     /// Use this property to ensure thread-safe operations for checking connectivity.
     /// </summary>
@@ -284,6 +320,7 @@ public class Transport : IAsyncDisposable
                 SingleReader = true,
                 SingleWriter = true,
             });
+            Interlocked.Exchange(ref this.incomingQueueDepth, 0);
 
             this.UnhandledErrors.ClearUnhandledErrors();
 
@@ -703,6 +740,7 @@ public class Transport : IAsyncDisposable
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
     {
         await this.incomingMessageQueue.Writer.WriteAsync(e.Data).ConfigureAwait(false);
+        Interlocked.Increment(ref this.incomingQueueDepth);
     }
 
     private async Task OnConnectionRemotelyDisconnectedAsync(ConnectionDisconnectedEventArgs e)
@@ -769,6 +807,7 @@ public class Transport : IAsyncDisposable
         {
             while (this.incomingMessageQueue.Reader.TryRead(out byte[]? incomingMessage))
             {
+                Interlocked.Decrement(ref this.incomingQueueDepth);
                 try
                 {
                     await this.ProcessMessageAsync(incomingMessage).ConfigureAwait(false);

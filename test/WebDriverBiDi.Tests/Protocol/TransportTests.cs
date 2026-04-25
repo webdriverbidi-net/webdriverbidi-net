@@ -1537,6 +1537,62 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestTransportIncomingQueueDepthReflectsPendingMessages()
+    {
+        using ManualResetEventSlim handlerStarted = new(initialState: false);
+        using ManualResetEventSlim handlerMayComplete = new(initialState: false);
+
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+
+        // Pre-connect: documented to return 0 rather than throw.
+        Assert.That(transport.IncomingQueueDepth, Is.Zero);
+
+        transport.RegisterEventMessage<TestEventArgs>("protocol.event");
+        transport.OnEventReceived.AddObserver(e =>
+        {
+            handlerStarted.Set();
+            return Task.Run(() => handlerMayComplete.Wait(TimeSpan.FromSeconds(5)));
+        });
+
+        string json = """
+                      {
+                        "type": "event",
+                        "method": "protocol.event",
+                        "params": {
+                          "paramName": "paramValue"
+                        }
+                      }
+                      """;
+        await transport.ConnectAsync("ws:localhost");
+
+        // Raise the first message and wait until the reader has pulled it and begun
+        // running the handler. At this point the reader is blocked inside the handler
+        // and will not consume additional queued messages until the gate is released.
+        await connection.RaiseDataReceivedEventAsync(json);
+        bool handlerDidStart = handlerStarted.Wait(TimeSpan.FromSeconds(5));
+        Assert.That(handlerDidStart, Is.True);
+
+        // Enqueue two more messages while the reader is stalled. Writer.WriteAsync
+        // completes synchronously for an unbounded channel, so these are observable
+        // in the queue immediately.
+        await connection.RaiseDataReceivedEventAsync(json);
+        await connection.RaiseDataReceivedEventAsync(json);
+
+        Assert.That(transport.IncomingQueueDepth, Is.EqualTo(2), "queued messages should be visible while the reader is stalled");
+
+        // Release the handler gate so the reader can drain.
+        handlerMayComplete.Set();
+
+        await transport.DisconnectAsync();
+
+        // DisconnectAsync awaits Reader.Completion before returning, so the queue
+        // has drained by this point and IncomingQueueDepth must be 0. This also
+        // exercises the documented post-disconnect read-without-throw contract.
+        Assert.That(transport.IncomingQueueDepth, Is.EqualTo(0));
+    }
+
+    [Test]
     public async Task TestTransportDisconnectTimesOutWithHangingEventHandler()
     {
         ManualResetEvent handlerStarted = new(false);
