@@ -10,6 +10,7 @@ namespace WebDriverBiDi.Docs.Code.Advanced;
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using WebDriverBiDi;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
@@ -489,6 +490,60 @@ public class PerformanceSamples
             }
         });
         #endregion
+    }
+
+    /// <summary>
+    /// Poll Transport.IncomingQueueDepth to detect message backlog.
+    /// </summary>
+    public static void QueueDepthMonitoring(Transport transport)
+    {
+        #region QueueDepthMonitoring
+        // Poll the queue depth on a timer to detect backlog early. The property is
+        // safe to read concurrently with message production and consumption.
+        Timer queueDepthMonitor = new Timer(_ =>
+        {
+            int depth = transport.IncomingQueueDepth;
+
+            if (depth > 100)
+            {
+                Console.WriteLine($"⚠️ Incoming message queue depth: {depth}");
+            }
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        #endregion
+    }
+
+    /// <summary>
+    /// Listen to WebDriverBiDiEventSource for the in-flight async handler task count.
+    /// </summary>
+    public static void AsyncHandlerBacklogMonitoring()
+    {
+        #region AsyncHandlerBacklogMonitoring
+        // Subscribe to the AsyncHandlerTaskCount event raised by WebDriverBiDiEventSource
+        // (provider name: "WebDriverBiDi") to observe how many async handler tasks are
+        // in flight across all BiDiDriver instances in the process.
+        AsyncHandlerBacklogListener listener = new AsyncHandlerBacklogListener();
+        #endregion
+    }
+
+    private sealed class AsyncHandlerBacklogListener : EventListener
+    {
+        protected override void OnEventSourceCreated(EventSource eventSource)
+        {
+            if (eventSource.Name == "WebDriverBiDi")
+            {
+                this.EnableEvents(eventSource, EventLevel.Verbose);
+            }
+        }
+
+        protected override void OnEventWritten(EventWrittenEventArgs eventData)
+        {
+            if (eventData.EventName == "AsyncHandlerTaskCount"
+                && eventData.Payload is [int inFlightCount]
+                && inFlightCount > 100)
+            {
+                Console.WriteLine($"⚠️ In-flight async handler tasks: {inFlightCount}");
+            }
+        }
     }
 
     /// <summary>

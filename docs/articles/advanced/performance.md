@@ -123,10 +123,12 @@ In typical usage, message processing is fast enough that the queue remains nearl
 
 Monitor for these indicators:
 
-1. **Increasing Memory Usage**: Process memory grows during high-event periods
-2. **Event Lag**: Events processed long after they occurred
-3. **Delayed Command Responses**: Commands take longer as queue backs up
-4. **OutOfMemoryException**: In extreme cases with thousands of queued messages
+1. **Rising Incoming Queue Depth**: `Transport.IncomingQueueDepth` climbs and does not recover (see [Monitoring and Diagnostics](#monitoring-and-diagnostics))
+2. **Rising In-Flight Handler Count**: The `AsyncHandlerTaskCount` EventSource event reports a persistently high value
+3. **Increasing Memory Usage**: Process memory grows during high-event periods
+4. **Event Lag**: Events processed long after they occurred
+5. **Delayed Command Responses**: Commands take longer as queue backs up
+6. **OutOfMemoryException**: In extreme cases with thousands of queued messages
 
 ### Preventing Queue Backlog
 
@@ -157,7 +159,27 @@ Monitor for these indicators:
 
 ### Monitoring and Diagnostics
 
-Since there's no built-in queue depth metric, monitor at the process level:
+WebDriverBiDi.NET exposes two built-in signals for detecting message-processing backlog, plus process-level memory as a supplementary guardrail.
+
+#### Incoming Queue Depth (Transport.IncomingQueueDepth)
+
+`Transport.IncomingQueueDepth` returns the number of messages that have been received from the connection but not yet picked up by the reader task. Poll it on a timer to catch backlog directly:
+
+[!code-csharp[Queue Depth Monitoring](../../code/advanced/PerformanceSamples.cs#QueueDepthMonitoring)]
+
+The property is safe to read concurrently with message production and consumption. It is reset on each call to `ConnectAsync`, and reading it before the first connect or after disconnect returns `0` rather than throwing.
+
+#### In-Flight Async Handler Tasks (AsyncHandlerTaskCount EventSource event)
+
+When handlers are registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously`, the reader task does not wait for them to complete — so a growing queue is not the only backlog symptom. The second symptom is a growing set of running async handler tasks. The `WebDriverBiDi` EventSource publishes an `AsyncHandlerTaskCount` event (verbose level) each time this count changes; subscribe with an `EventListener`:
+
+[!code-csharp[Async Handler Backlog Monitoring](../../code/advanced/PerformanceSamples.cs#AsyncHandlerBacklogMonitoring)]
+
+This counter is process-global across all `BiDiDriver` instances.
+
+#### Process Memory (Supplementary)
+
+Use process memory as an outer guardrail when the two signals above are not available to your diagnostic pipeline:
 
 [!code-csharp[Memory Monitoring](../../code/advanced/PerformanceSamples.cs#MemoryMonitoring)]
 
