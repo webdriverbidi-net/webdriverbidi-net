@@ -69,29 +69,39 @@ public record LocalArgumentValue : LocalValue
 
             if (this.Type == "map" || this.Type == "object")
             {
-                // One of the two cases (key is string, or key is LocalValue)
-                // must be true.
-                // Note carefully, objects/maps are serialized in the protocol
-                // as lists of key-value pairs
+                // Objects and maps are serialized in the protocol as lists of
+                // key-value pairs. Keys must be either string or LocalValue.
                 List<object> serializablePairList = [];
-                Dictionary<LocalValue, LocalValue>? dictionaryValue = this.Value as Dictionary<LocalValue, LocalValue>;
-                Dictionary<string, LocalValue>? stringDictionaryValue = this.Value as Dictionary<string, LocalValue>;
-                if (dictionaryValue is not null)
+                switch (this.Value)
                 {
-                    foreach (KeyValuePair<LocalValue, LocalValue> pair in dictionaryValue)
-                    {
-                        List<object> itemList = [pair.Key, pair.Value];
-                        serializablePairList.Add(itemList);
-                    }
-                }
+                    case Dictionary<string, LocalValue> stringKeyedDictionary:
+                        foreach (KeyValuePair<string, LocalValue> pair in stringKeyedDictionary)
+                        {
+                            serializablePairList.Add(new List<object> { pair.Key, pair.Value });
+                        }
 
-                if (stringDictionaryValue is not null)
-                {
-                    foreach (KeyValuePair<string, LocalValue> pair in stringDictionaryValue)
-                    {
-                        List<object> itemList = [pair.Key, pair.Value];
-                        serializablePairList.Add(itemList);
-                    }
+                        break;
+
+                    case Dictionary<LocalValue, LocalValue> localValueKeyedDictionary:
+                        foreach (KeyValuePair<LocalValue, LocalValue> pair in localValueKeyedDictionary)
+                        {
+                            serializablePairList.Add(new List<object> { pair.Key, pair.Value });
+                        }
+
+                        break;
+
+                    case Dictionary<object, LocalValue> objectKeyedDictionary:
+                        foreach (KeyValuePair<object, LocalValue> pair in objectKeyedDictionary)
+                        {
+                            if (pair.Key is not string and not LocalValue)
+                            {
+                                throw new WebDriverBiDiException($"Map/object keys must be either a string or a LocalValue; got {pair.Key.GetType().FullName}");
+                            }
+
+                            serializablePairList.Add(new List<object> { pair.Key, pair.Value });
+                        }
+
+                        break;
                 }
 
                 return serializablePairList;

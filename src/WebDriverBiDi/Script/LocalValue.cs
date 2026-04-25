@@ -137,7 +137,18 @@ public record LocalValue
     /// </summary>
     /// <param name="mapValue">The dictionary with LocalValues for keys and LocalValues for values to wrap as a map LocalValue.</param>
     /// <returns>A LocalValue for a map.</returns>
-    public static LocalValue Map(Dictionary<object, LocalValue> mapValue) => new LocalArgumentValue("map") { Value = mapValue };
+    public static LocalValue Map(Dictionary<object, LocalValue> mapValue)
+    {
+        foreach (object key in mapValue.Keys)
+        {
+            if (key is not string and not LocalValue)
+            {
+                throw new WebDriverBiDiException($"Map keys must be either a string or a LocalValue; got {key.GetType().FullName}");
+            }
+        }
+
+        return new LocalArgumentValue("map") { Value = mapValue };
+    }
 
     /// <summary>
     /// Creates a LocalValue for an object with string keys.
@@ -158,7 +169,18 @@ public record LocalValue
     /// </summary>
     /// <param name="mapValue">The dictionary with LocalValues for keys and LocalValues for values to wrap as an object LocalValue.</param>
     /// <returns>A LocalValue for an object.</returns>
-    public static LocalValue Object(Dictionary<object, LocalValue> mapValue) => new LocalArgumentValue("object") { Value = mapValue };
+    public static LocalValue Object(Dictionary<object, LocalValue> mapValue)
+    {
+        foreach (object key in mapValue.Keys)
+        {
+            if (key is not string and not LocalValue)
+            {
+                throw new WebDriverBiDiException($"Object keys must be either a string or a LocalValue; got {key.GetType().FullName}");
+            }
+        }
+
+        return new LocalArgumentValue("object") { Value = mapValue };
+    }
 
     /// <summary>
     /// Creates a LocalValue for a regular expression.

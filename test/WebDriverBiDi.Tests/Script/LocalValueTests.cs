@@ -669,6 +669,148 @@ public class LocalValueTests
     }
 
     [Test]
+    public void TestCanSerializeMapWithMixedValuesAsKeys()
+    {
+        // N.B., this is an edge case, and we are doing no further validation
+        // than that the JSON serializer will properly serialize the object.
+        Dictionary<object, LocalValue> dictionary = new()
+        {
+            { "string", LocalValue.String("hello") },
+            { LocalValue.String("number"), LocalValue.Number(123) },
+            { LocalValue.Number(1), LocalValue.Null },
+            { LocalValue.NaN, LocalValue.Boolean(true) }
+        };
+
+        LocalValue value = LocalValue.Map(dictionary);
+        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        string json = JsonSerializer.Serialize(value);
+        JObject parsed = JObject.Parse(json);
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(parsed, Contains.Key("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("map"));
+            Assert.That(parsed, Contains.Key("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        }
+
+        // N.B., We are not validating the content of each object in the map
+        // values; it should be sufficient that the serialization of individual
+        // values works.
+        JArray? valueArray = parsed["value"] as JArray;
+        Assert.That(valueArray, Is.Not.Null);
+        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        for (int i = 0; i < dictionary.Count; i++)
+        {
+            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
+            JArray? itemArray = valueArray[i] as JArray;
+            Assert.That(itemArray, Is.Not.Null);
+            Assert.That(itemArray, Has.Count.EqualTo(2));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.Object).Or.EqualTo(JTokenType.String));
+                Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+            }
+        }
+    }
+
+    [Test]
+    public void TestCreatingMapWithInvalidKeyTypeThrows()
+    {
+        // N.B., this is an edge case, and we are doing no further validation
+        // than that the JSON serializer will properly serialize the object.
+        Dictionary<object, LocalValue> dictionary = new()
+        {
+            { 1, LocalValue.String("hello") },
+        };
+
+        Assert.That(() => LocalValue.Map(dictionary), Throws.InstanceOf<WebDriverBiDiException>());
+    }
+
+    [Test]
+    public void TestSerializingMapWithInvalidKeyTypeThrows()
+    {
+        // N.B., this is an edge case, and we are doing no further validation
+        // than that the JSON serializer will properly serialize the object.
+        Dictionary<object, LocalValue> dictionary = [];
+        LocalValue value = LocalValue.Map(dictionary);
+        dictionary[1] = LocalValue.String("hello");
+        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.That(() => JsonSerializer.Serialize(value), Throws.InstanceOf<WebDriverBiDiException>());
+    }
+
+    [Test]
+    public void TestCanSerializeObjectWithMixedValuesAsKeys()
+    {
+        // N.B., this is an edge case, and we are doing no further validation
+        // than that the JSON serializer will properly serialize the object.
+        Dictionary<object, LocalValue> dictionary = new()
+        {
+            { "string", LocalValue.String("hello") },
+            { LocalValue.String("number"), LocalValue.Number(123) },
+            { LocalValue.Number(1), LocalValue.Null },
+            { LocalValue.NaN, LocalValue.Boolean(true) }
+        };
+
+        LocalValue value = LocalValue.Object(dictionary);
+        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        string json = JsonSerializer.Serialize(value);
+        JObject parsed = JObject.Parse(json);
+        Assert.That(parsed, Has.Count.EqualTo(2));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(parsed, Contains.Key("type"));
+            Assert.That(parsed["type"]!.Value<string>(), Is.EqualTo("object"));
+            Assert.That(parsed, Contains.Key("value"));
+            Assert.That(parsed["value"]!.Type, Is.EqualTo(JTokenType.Array));
+        }
+
+        // N.B., We are not validating the content of each object in the map
+        // values; it should be sufficient that the serialization of individual
+        // values works.
+        JArray? valueArray = parsed["value"] as JArray;
+        Assert.That(valueArray, Is.Not.Null);
+        Assert.That(valueArray, Has.Count.EqualTo(dictionary.Count));
+        for (int i = 0; i < dictionary.Count; i++)
+        {
+            Assert.That(valueArray![i].Type, Is.EqualTo(JTokenType.Array));
+            JArray? itemArray = valueArray[i] as JArray;
+            Assert.That(itemArray, Is.Not.Null);
+            Assert.That(itemArray, Has.Count.EqualTo(2));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(itemArray![0].Type, Is.EqualTo(JTokenType.Object).Or.EqualTo(JTokenType.String));
+                Assert.That(itemArray[1].Type, Is.EqualTo(JTokenType.Object));
+            }
+        }
+    }
+
+    [Test]
+    public void TestCreatingObjectWithInvalidKeyTypeThrows()
+    {
+        // N.B., this is an edge case, and we are doing no further validation
+        // than that the JSON serializer will properly serialize the object.
+        Dictionary<object, LocalValue> dictionary = new()
+        {
+            { 1, LocalValue.String("hello") },
+        };
+
+        Assert.That(() => LocalValue.Object(dictionary), Throws.InstanceOf<WebDriverBiDiException>());
+    }
+
+    [Test]
+    public void TestSerializingObjectWithInvalidKeyTypeThrows()
+    {
+        // N.B., this is an edge case, and we are doing no further validation
+        // than that the JSON serializer will properly serialize the object.
+        Dictionary<object, LocalValue> dictionary = [];
+        LocalValue value = LocalValue.Object(dictionary);
+        dictionary[1] = LocalValue.String("hello");
+        Assert.That(((LocalArgumentValue)value).Value, Is.Not.Null);
+        Assert.That(() => JsonSerializer.Serialize(value), Throws.InstanceOf<WebDriverBiDiException>());
+    }
+
+    [Test]
     public void TestCopySemantics()
     {
         LocalValue value = LocalValue.Undefined;
