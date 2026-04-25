@@ -347,11 +347,13 @@ WebDriverBiDi.NET uses `System.Text.Json` for JSON serialization.
 
 The library includes specialized converters for WebDriver BiDi types:
 
-- `CommandParametersJsonConverter`: Serializes command parameters
-- `CommandResultJsonConverter`: Deserializes command results
-- `RemoteValueJsonConverter`: Handles RemoteValue polymorphism
-- `LocalValueJsonConverter`: Serializes JavaScript values
-- `EventArgsJsonConverter`: Deserializes event data
+- `CommandJsonConverter`: Serializes command parameters
+- `SentinelNullJsonConverter<T, TSentinelChecker>`: Serializes types where a specific, "sentinel" value yields a `null` value in the serialized JSON
+- `DiscriminatedUnionJsonConverter<T>`: Deserializes command result values with discriminated union types
+- `BigIntegerJsonConverter`: Deserializes BigInteger values
+- `NumberJsonConverter`: Deserializes JavaScript numeric values
+- `RemoteValueDictionaryJsonConverter`: Deserializes RemoteValues for types containing dictionary types (maps, objects, etc.)
+- `RemoteValueListJsonConverter`: Deserializes RemoteValues for list types (arrays, sets, etc.)
 
 ### Extension Data
 
