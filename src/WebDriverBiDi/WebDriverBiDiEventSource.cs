@@ -384,4 +384,25 @@ public sealed class WebDriverBiDiEventSource : EventSource
             this.WriteEvent(22, [commandId, method, failureType, failureMessage, elapsedMilliseconds]);
         }
     }
+
+    /// <summary>
+    /// Logs the current count of in-flight asynchronous event handler tasks.
+    /// </summary>
+    /// <remarks>
+    /// This counter tracks handlers registered with
+    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> whose returned
+    /// <see cref="Task"/> has not yet completed. A persistently growing value indicates that
+    /// asynchronous handlers are accumulating faster than they complete; this may precede
+    /// memory pressure and should prompt investigation of handler duration or event rate.
+    /// The counter is process-global across all <see cref="BiDiDriver"/> instances.
+    /// </remarks>
+    /// <param name="inFlightCount">The number of in-flight asynchronous handler tasks.</param>
+    [Event(23, Level = EventLevel.Verbose, Message = "In-flight async handler tasks: {0}")]
+    public void AsyncHandlerTaskCount(int inFlightCount)
+    {
+        if (this.IsEnabled(EventLevel.Verbose, EventKeywords.None))
+        {
+            this.WriteEvent(23, inFlightCount);
+        }
+    }
 }

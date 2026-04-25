@@ -6,6 +6,7 @@
 namespace WebDriverBiDi;
 
 using System.Diagnostics.CodeAnalysis;
+using WebDriverBiDi.Internal;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
@@ -411,6 +412,19 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         bool isCapturedByCheckpoint = this.CaptureTaskIfCheckpointSet(executingTask);
         if (isHandlerRunAsynchronously && !executingTask.IsCompleted)
         {
+            // Track this still-running handler task so operators can observe backlog
+            // via WebDriverBiDiEventSource.AsyncHandlerTaskCount. The increment must
+            // precede attaching the decrement continuation: if the task completes
+            // between this line and ContinueWith, the continuation still runs (it
+            // schedules on already-completed tasks), so the counter remains balanced.
+            AsyncHandlerTaskMetrics.IncrementInFlight();
+            _ = executingTask.ContinueWith(
+                static (_, _) => AsyncHandlerTaskMetrics.DecrementInFlight(),
+                state: null,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+
             // The handler is still running asynchronously. Attach a continuation
             // to observe any eventual exception, preventing UnobservedTaskException
             // from being raised when the task is garbage-collected. Faults are

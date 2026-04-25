@@ -1,5 +1,7 @@
 namespace WebDriverBiDi;
 
+using TestUtilities;
+
 [TestFixture]
 public class ObservableEventTests
 {
@@ -621,6 +623,108 @@ public class ObservableEventTests
         await Task.Delay(TimeSpan.FromMilliseconds(150));
         Assert.That(tasks[0].IsCompletedSuccessfully, Is.True, "Captured task should have completed successfully");
         Assert.That(handlerCompleted, Is.True);
+    }
+
+    [Test]
+    public async Task TestAsyncHandlerRaisesIncrementThenDecrementEventSourceEvent()
+    {
+        using ManualResetEventSlim release = new(initialState: false);
+        using TestEventListener listener = new();
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(
+            async (TestObservableEventArgs e) =>
+            {
+                await Task.Run(() => release.Wait(TimeSpan.FromSeconds(5)));
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        // Wait for the increment event to land.
+        for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count == 0; i++)
+        {
+            await Task.Delay(20);
+        }
+
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> incrementEvents = listener.GetEventsForEventName("AsyncHandlerTaskCount");
+        Assert.That(incrementEvents, Is.Not.Empty, "increment should raise an AsyncHandlerTaskCount event");
+        int? incrementPayload = incrementEvents[0].Payload is [int c] ? c : null;
+        Assert.That(incrementPayload, Is.Not.Null);
+
+        release.Set();
+
+        // Wait for the decrement event to land.
+        for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count < 2; i++)
+        {
+            await Task.Delay(20);
+        }
+
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.GetEventsForEventName("AsyncHandlerTaskCount");
+        Assert.That(allEvents, Has.Count.GreaterThanOrEqualTo(2), "both increment and decrement should raise events");
+
+        // The decrement value must be strictly less than the increment value, regardless
+        // of any concurrent activity from other tests, because each increment is paired
+        // with exactly one decrement.
+        int firstValue = (int)allEvents[0].Payload![0]!;
+        int lastValue = (int)allEvents[allEvents.Count - 1].Payload![0]!;
+        Assert.That(lastValue, Is.LessThan(firstValue), "decrement value should be lower than preceding increment value");
+    }
+
+    [Test]
+    public async Task TestAsyncHandlerFaultStillRaisesDecrementEventSourceEvent()
+    {
+        using TestEventListener listener = new();
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(
+            async (TestObservableEventArgs e) =>
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(30));
+                throw new InvalidOperationException("async fault");
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        for (int i = 0; i < 50 && listener.GetEventsForEventName("AsyncHandlerTaskCount").Count < 2; i++)
+        {
+            await Task.Delay(20);
+        }
+
+        List<System.Diagnostics.Tracing.EventWrittenEventArgs> allEvents = listener.GetEventsForEventName("AsyncHandlerTaskCount");
+        Assert.That(allEvents, Has.Count.GreaterThanOrEqualTo(2), "increment and decrement should both fire even when handler faults");
+    }
+
+    [Test]
+    public async Task TestSynchronouslyCompletedAsyncHandlerDoesNotRaiseCounterEvents()
+    {
+        using TestEventListener listener = new();
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(
+            (TestObservableEventArgs e) => Task.CompletedTask,
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        // Give any would-be continuation a chance to fire.
+        await Task.Delay(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(listener.GetEventsForEventName("AsyncHandlerTaskCount"), Is.Empty, "no counter events should fire when async handler completes synchronously");
+    }
+
+    [Test]
+    public async Task TestSynchronousHandlerDoesNotRaiseCounterEvents()
+    {
+        using TestEventListener listener = new();
+        TestEventSource testEventSource = new();
+        testEventSource.TestObservableEvent.AddObserver(
+            (TestObservableEventArgs e) => { },
+            ObservableEventHandlerOptions.RunHandlerSynchronously);
+
+        await testEventSource.RaiseTestEventAsync("myValue");
+
+        await Task.Delay(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(listener.GetEventsForEventName("AsyncHandlerTaskCount"), Is.Empty, "no counter events should fire for synchronous handlers");
     }
 
     [Test]
