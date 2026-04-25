@@ -22,9 +22,9 @@
     <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-    <PackageReference Include="OpenTelemetry" Version="1.15.2" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.15.2" />
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.6" />
+    <PackageReference Include="OpenTelemetry" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.7" />
   </ItemGroup>
 
   <ItemGroup>
