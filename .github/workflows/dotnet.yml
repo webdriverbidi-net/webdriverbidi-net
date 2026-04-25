@@ -31,7 +31,10 @@ jobs:
       run: dotnet build --no-restore
 
     - name: Test Library
-      run: dotnet test --project test/WebDriverBiDi.Tests --no-build --verbosity normal --coverlet --coverlet-output-format lcov --results-directory ../test/coverage --coverlet-file-prefix lcov
+      run: dotnet test --project test/WebDriverBiDi.Tests --no-build --verbosity normal --coverlet --coverlet-output-format lcov --coverlet-exclude-by-file "**/_/src/**" --results-directory ../test/coverage --coverlet-file-prefix lcov
+
+    - name: Enforce coverage thresholds
+      run: ./scripts/check-lcov-thresholds.sh --min-line 90 --min-branch 90 --min-method 90 test/coverage/lcov.*.info
 
     - name: Test Roslyn Analyzers
       run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --no-build --verbosity normal
