@@ -240,6 +240,19 @@ public class Transport : IAsyncDisposable
     /// </summary>
     protected UnhandledErrorCollection UnhandledErrors { get; } = new();
 
+    private string TerminationReason
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.terminationReason, string.Empty, string.Empty);
+        }
+
+        set
+        {
+            Interlocked.Exchange(ref this.terminationReason, value);
+        }
+    }
+
     /// <summary>
     /// Asynchronously connects to the remote end web socket.
     /// </summary>
@@ -518,7 +531,7 @@ public class Transport : IAsyncDisposable
             // re-entrant calls (e.g., from event handlers still executing
             // during shutdown) see the transport as disconnected and
             // short-circuit rather than attempting a redundant disconnect.
-            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.Connection.GetHashCode().ToString(), this.terminationReason);
+            WebDriverBiDiEventSource.RaiseEvent.ConnectionClosing(this.Connection.GetHashCode().ToString(), this.TerminationReason);
             this.IsConnected = false;
 
             // Close the pending command collection to further addition of commands,
@@ -554,7 +567,7 @@ public class Transport : IAsyncDisposable
             }
 
             WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.GetHashCode().ToString());
-            WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.terminationReason);
+            WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
 
             if (throwCollectedExceptions && this.UnhandledErrors.TryGetExceptions(TransportErrorBehavior.Collect, out IList<Exception> collectedExceptions))
             {
@@ -963,7 +976,7 @@ public class Transport : IAsyncDisposable
         this.UnhandledErrors.AddUnhandledError(errorType, ex);
         if (isTerminalError)
         {
-            this.terminationReason = terminalReason;
+            this.TerminationReason = terminalReason;
         }
     }
 
@@ -974,7 +987,7 @@ public class Transport : IAsyncDisposable
 
     private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)
     {
-        string message = $"Unhandled exception during transport operations. Transport was terminated with the following reason: {this.terminationReason}";
+        string message = $"Unhandled exception during transport operations. Transport was terminated with the following reason: {this.TerminationReason}";
         if (errorBehavior != TransportErrorBehavior.Collect && exceptions.Count == 1)
         {
             return new WebDriverBiDiException(message, exceptions[0]);
