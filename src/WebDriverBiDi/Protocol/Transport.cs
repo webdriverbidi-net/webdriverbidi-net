@@ -153,7 +153,7 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Gets an observable event that notifies when an error occurs in an observer of an observable event.
     /// </summary>
-    public ObservableEvent<EventHandlerErrorOccurredEventArgs> OnEventHandlerErrorOccurred { get; } = new(EventHandlerErrorOccurredEventName);
+    public ObservableEvent<EventHandlerErrorOccurredEventArgs> OnEventHandlerErrorOccurred { get; }
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.
