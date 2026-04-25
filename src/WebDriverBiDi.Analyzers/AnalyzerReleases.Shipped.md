@@ -39,7 +39,7 @@ BIDI018 | Usage       | Warning  | BiDiDriver018_UnsafeRemoteValueValueAsAnalyze
 
 Rule ID | Category    | Severity | Notes
 --------|-------------|----------|--------------------
-BIDI018 | Usage       | Disabled  | BiDiDriver018_UnsafeRemoteValueValueAsAnalyzer
+BIDI018 | Usage       | Warning  | BiDiDriver018_UnsafeRemoteValueValueAsAnalyzer
 
 ## Release 0.0.50
 
