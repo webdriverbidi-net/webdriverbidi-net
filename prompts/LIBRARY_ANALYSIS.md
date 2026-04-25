@@ -79,6 +79,31 @@ and interface implementations must be traced to their concrete override.
 Stopping at the first delegation point and inferring the absence of behavior is
 a verification failure equivalent to not reading the implementation at all.
 
+**Proxy signals do not substitute for authoritative state.** Before recommending any "remove
+/ clean up / re-add / re-register X" change, verify X's status in the authoritative source
+for that change — not in a proxy. Examples: git tracking is authoritative for "is this in the
+repo?" (not `ls`); the declaration is authoritative for "does this property exist?" (not `grep`
+hits, which can be from docs or comments); `AnalyzerReleases.Shipped.md` is authoritative for
+"is this analyzer shipped?" (not the presence of a `.cs` file). If you consulted only a proxy,
+either read the authoritative source before recommending or omit the item.
+
+**Before recommending a structural refactoring, identify the concrete benefit beyond aesthetics.**
+Recommendations to split a file, extract a class, reduce the size of a method, introduce an
+interface, or otherwise rearrange code must be grounded in at least one of:
+* a **defect** the current structure makes hard to fix or hides (cite the defect);
+* a **capability** the current structure prevents (cite the capability and a concrete caller who wants it);
+* a **constraint** the project has adopted that the current structure violates (cite the constraint from
+CLAUDE.md, the project invariants, or an explicit coding standard); or
+* a **risk** the current structure materially increases, with evidence (not speculation).
+
+A file being "large," a class having "many responsibilities," or a method being "long" is not by
+itself a finding. Large, cohesive files are common in well-factored code. Before filing a structural
+recommendation, ask: if I implemented this change today, what would be measurably better tomorrow?
+If the answer is "the file would be smaller," withdraw the item. File-size concerns and similar
+style observations may be noted as context but must not be deducted against the scorecard.
+
+Specifically: do not recommend "extract responsibility X into its own class" when X has (a) exactly one caller inside the current class, (b) 100% test coverage through the current class's public surface, (c) no separate extension point that third-party code depends on, and (d) no demonstrated defect. All four together indicate the refactor delivers indirection without benefit.
+
 False positives (recommending changes for things already present, or without
 verification) damage trust and waste maintainer time. They are worse than
 missing a real improvement. When in doubt, omit the recommendation. Only
@@ -180,7 +205,7 @@ Selenium, Puppeteer, or Playwright. Therefore, there is no need for a migration
 guide In the project documentation. Please do not suggest one.
 * This project includes Roslyn Analyzers that may help to alleviate some of the
 issues you find in your analysis. Verify if any of your design issues are
-covered by those analyzers, and if any  new analyzers would help users avoid
+covered by those analyzers, and if any new analyzers would help users avoid
 what you consider design deficiencies.
 
 ## Editing project code
@@ -199,11 +224,6 @@ keyword in the C# language. You should adhere to this convention for any code
 you generate. **IMPORTANT**: While this convention applies to code within the
 project itself, it does _not_ apply to code in the documentation in the `docs`
 directory.
-* If you attempt to run a build or test command and are running in a
-permissions-restricted sandbox environment, your build or test command may
-appear to hang due to socket-based permission restrictions. Either ask for
-enhanced permissions before executing, or signal that the command needs to be
-run manually and the result reported to you.
 
 ## Output
 
@@ -229,6 +249,12 @@ deduct points to "leave room" for suggestions that the constraints forbid you
 from making; phantom deductions for precluded suggestions are treated as false
 positives with the same severity as recommending changes for things already
 present.
+
+**Style observations do not warrant score deductions.** If the only concern about
+a category is aesthetic (file length, method length, naming-taste disagreements,
+"this could be cleaner"), record the observation in the Non-Issues section rather
+than deducting against the score. Deductions must be tied to concrete, actionable
+recommendations that survive the structural-refactoring bar above.
 
 ### Action plan verification
 
