@@ -3,3 +3,7 @@
 
 # async/await preferences
 dotnet_diagnostic.CA2007.severity = none
+
+# Test method names do not follow the "Async" suffix convention, as they are
+# identified by the [Test] attribute rather than the method name.
+dotnet_naming_rule.async_methods_should_have_async_suffix.severity = none
