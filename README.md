@@ -50,7 +50,10 @@ it is the user's responsibility to know what the URL of the websocket connection
 
 ## Getting Started
 The library is built to support .NETStandard 2.0. This should allow the widest usage of the library across
-the largest number of framework versions, including .NET Framework, .NET Core, and .NET 5 and higher.
+the largest number of framework versions, including .NET Framework, .NET Core, and .NET 5 and higher. For
+convenience, the library also builds assemblies targeting the current and immediately previous Long Term
+Support (LTS) versions of .NET, as well as the most recent Standard Term Support (STS) version of .NET.
+At present, that includes .NET 8 (previous LTS), .NET 9 (current STS), and .NET 10 (current LTS).
 
 To build the library, after cloning the repository, execute the following in a terminal window
 in the root of your clone:
@@ -62,7 +65,7 @@ To run the project unit tests, execute the following in a terminal window:
     dotnet test
 
 ## Development
-There are 13 projects in this repository:
+There are 14 projects in this repository:
 * src/WebDriverBiDi/WebDriverBiDi.csproj - The main library source code.
 * src/WebDriverBiDi.Analyzers/WebDriverBiDi.Analyzers.csproj - Source code for Roslyn analyzers
 to help users avoid antipatterns when using the main library.
@@ -83,7 +86,7 @@ but is designed as a demonstration and is explicitly recommended against product
 structured logging by providing integration with `Microsoft.Extensions.Logging.ILogger`.
 * test/WebDriverBiDi.Analyzers.Tests/WebDriver.Analyzers.Tests.csproj - Tests for the Roslyn analyzers
 and associated code fix providers.
-* test/WebDriverBiDi.AotTestApplication/WebDriverBiDi.AotTestApplication.csproj - A console application used to smoke test proper JSON serializatin in
+* test/WebDriverBiDi.AotTestApplication/WebDriverBiDi.AotTestApplication.csproj - A console application used to smoke test proper JSON serialization in
 ahead-of-time (AOT) compilation scenarios.
 * test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj - Performance benchmarks for the library.
 * test/WebDriverBiDi.Integration.Tests/WebDriverBiDi.Integration.Tests.csproj - Integration tests for
