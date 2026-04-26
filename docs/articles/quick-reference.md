@@ -73,5 +73,7 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 ## See Also
 
 - [API Design Guide](advanced/api-design.md): Parameter patterns, timeouts, versioning
+- [Connection Management](advanced/connection-management.md): Connection lifecycle, reconnection, and recovery patterns
+- [Performance](advanced/performance.md): Batching, context reuse, and other optimization tips
 - [Core Concepts](core-concepts.md): Full command and event documentation
 - [API Reference](../api/index.md): Complete API documentation

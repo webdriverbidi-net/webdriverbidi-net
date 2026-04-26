@@ -14,7 +14,7 @@ using System.Text.Json.Serialization;
 public class NumberJsonConverter : JsonConverter<double>
 {
     /// <summary>
-    /// Deserializes the JSON string to a BigInteger value.
+    /// Deserializes the JSON string to a numberic (double) value.
     /// </summary>
     /// <param name="reader">A Utf8JsonReader used to read the incoming JSON.</param>
     /// <param name="typeToConvert">The Type description of the type to convert.</param>

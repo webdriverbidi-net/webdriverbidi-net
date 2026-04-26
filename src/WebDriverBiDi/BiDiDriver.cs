@@ -359,6 +359,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <param name="connectionString">The connection string used to connect to the remote end. Usually the URL to the WebSocket used to communicate with the remote end.</param>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown when the driver has already been started.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
     public virtual async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
@@ -372,6 +373,12 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </summary>
     /// <param name="cancellationToken">A cancellation token used to propagate notification that the operation should be canceled.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
+    /// <exception cref="AggregateException">
+    /// Thrown when <see cref="TransportErrorBehavior.Collect"/> is configured
+    /// for any error category and one or more errors were collected during
+    /// the session. The aggregated exceptions describe the collected errors.
+    /// </exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public virtual async Task StopAsync(CancellationToken cancellationToken = default)
     {
         await this.transport.DisconnectAsync(cancellationToken).ConfigureAwait(false);
@@ -388,6 +395,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown if the connection is interrupted during command execution.</exception>
     /// <exception cref="WebDriverBiDiException">Thrown if the command is cancelled, returns a null value, or does not return a result of the correct object type.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
@@ -408,6 +416,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="WebDriverBiDiCommandException">Thrown if an error occurs during the execution of the command.</exception>
     /// <exception cref="WebDriverBiDiTimeoutException">Thrown if the command execution exceeds the specified timeout.</exception>
+    /// <exception cref="WebDriverBiDiConnectionException">Thrown if the connection is interrupted during command execution.</exception>
     /// <exception cref="WebDriverBiDiException">Thrown if the command is cancelled, returns a null value, or does not return a result of the correct object type.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when attempting to call this method after the driver is disposed.</exception>
