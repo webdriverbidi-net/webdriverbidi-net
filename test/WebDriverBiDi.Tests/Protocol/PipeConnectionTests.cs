@@ -1,6 +1,6 @@
 namespace WebDriverBiDi.Protocol;
 
-using System.Linq.Expressions;
+using System.Diagnostics;
 using System.Text;
 using NUnit.Framework.Internal;
 using WebDriverBiDi.TestUtilities;
@@ -348,7 +348,46 @@ public class PipeConnectionTests
         await connection.StartAsync("pipe://local");
         testPipeServer.Stop();
 
-        Assert.That(async () => await connection.StartAsync("pipe://local"), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("External process has already exited"));
+        Assert.That(async () => await connection.StartAsync("pipe://local"), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("External process has already exited or been disposed"));
+    }
+
+    [Test]
+    public void TestStartWithDisposedServerProcessThrows()
+    {
+        // An unstarted Process instance throws InvalidOperationException when
+        // HasExited is read. This covers the catch branch in IsProcessRunning
+        // where the process reference has been disposed by its owner.
+        UnstartedProcessPipeProvider provider = new();
+        PipeConnection connection = new(provider);
+
+        Assert.That(async () => await connection.StartAsync("pipe://local"), Throws.InstanceOf<WebDriverBiDiConnectionException>().With.Message.Contains("External process has already exited or been disposed"));
+    }
+
+    [Test]
+    public async Task TestIsActiveFalseWhenProviderReturnsNullAfterStart()
+    {
+        // After a successful StartAsync, IsConnectionActive is true, so
+        // IsActive reaches the process check. Flipping the provider to
+        // return null exercises the null branch of IsProcessRunning
+        // without tearing down the underlying pipe server.
+        TestPipeServer realServer = new();
+        MutableProcessPipeProvider wrapper = new(realServer);
+        PipeConnection connection = new(wrapper);
+        realServer.Start(connection.ReadPipeHandle, connection.WritePipeHandle);
+        try
+        {
+            await connection.StartAsync("pipe://local");
+            Assert.That(connection.IsActive, Is.True);
+
+            wrapper.ReturnNull = true;
+            Assert.That(connection.IsActive, Is.False);
+        }
+        finally
+        {
+            wrapper.ReturnNull = false;
+            realServer.Stop();
+            await connection.DisposeAsync();
+        }
     }
 
     [Test]
@@ -540,5 +579,26 @@ public class PipeConnectionTests
         // When pipes are disposed, should return empty string
         string handle = connection.WritePipeHandle;
         Assert.That(handle, Is.Empty);
+    }
+
+    private sealed class UnstartedProcessPipeProvider : IPipeServerProcessProvider
+    {
+        private readonly Process unstartedProcess = new();
+
+        public Process? PipeServerProcess => this.unstartedProcess;
+    }
+
+    private sealed class MutableProcessPipeProvider : IPipeServerProcessProvider
+    {
+        private readonly IPipeServerProcessProvider inner;
+
+        public MutableProcessPipeProvider(IPipeServerProcessProvider inner)
+        {
+            this.inner = inner;
+        }
+
+        public bool ReturnNull { get; set; }
+
+        public Process? PipeServerProcess => this.ReturnNull ? null : this.inner.PipeServerProcess;
     }
 }

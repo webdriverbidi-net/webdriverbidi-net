@@ -81,7 +81,19 @@ public class PipeConnection : Connection
     /// <summary>
     /// Gets a value indicating whether this connection is active.
     /// </summary>
-    public override bool IsActive => this.IsConnectionActive && this.processProvider.PipeServerProcess is not null && !this.processProvider.PipeServerProcess.HasExited;
+    /// <remarks>
+    /// The returned value is a point-in-time snapshot. Because the pipe server
+    /// process is owned by an external caller through
+    /// <see cref="IPipeServerProcessProvider"/>, the process may exit or be
+    /// disposed between this check and any subsequent I/O call. If the owning
+    /// process has already been disposed, this property returns
+    /// <see langword="false"/> rather than propagating the resulting
+    /// <see cref="InvalidOperationException"/>. Transient races where the
+    /// process exits after <see cref="IsActive"/> returns <see langword="true"/>
+    /// are surfaced by <see cref="SendDataAsync"/> as
+    /// <see cref="WebDriverBiDiConnectionException"/>.
+    /// </remarks>
+    public override bool IsActive => this.IsConnectionActive && IsProcessRunning(this.processProvider.PipeServerProcess);
 
     /// <summary>
     /// Gets a value indicating the type of data transport used by this connection, in this case, pipes.
@@ -139,7 +151,8 @@ public class PipeConnection : Connection
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is canceled.</exception>
     public override async Task StartAsync(string connectionString, CancellationToken cancellationToken = default)
     {
-        if (this.processProvider.PipeServerProcess is null)
+        Process? pipeServerProcess = this.processProvider.PipeServerProcess;
+        if (pipeServerProcess is null)
         {
             throw new WebDriverBiDiConnectionException("External process has not been set. Call SetExternalProcess before StartAsync.");
         }
@@ -149,9 +162,9 @@ public class PipeConnection : Connection
             throw new WebDriverBiDiConnectionException("The pipes have been disposed; the connection cannot be restarted after disposal.");
         }
 
-        if (this.processProvider.PipeServerProcess.HasExited)
+        if (!IsProcessRunning(pipeServerProcess))
         {
-            throw new WebDriverBiDiConnectionException("External process has already exited; cannot start pipe connection.");
+            throw new WebDriverBiDiConnectionException("External process has already exited or been disposed; cannot start pipe connection.");
         }
 
         if (this.IsConnectionActive)
@@ -412,6 +425,25 @@ public class PipeConnection : Connection
             this.connectionTokenSource.Dispose();
             this.pipeToProcess.Dispose();
             this.pipeFromProcess.Dispose();
+        }
+    }
+
+    private static bool IsProcessRunning(Process? process)
+    {
+        if (process is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return !process.HasExited;
+        }
+        catch (InvalidOperationException)
+        {
+            // The process reference has been disposed by its owner;
+            // treat as not running.
+            return false;
         }
     }
 }
