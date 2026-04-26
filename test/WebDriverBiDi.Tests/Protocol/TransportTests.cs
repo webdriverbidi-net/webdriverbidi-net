@@ -1593,6 +1593,61 @@ public class TransportTests
     }
 
     [Test]
+    public void TestTransportPendingCommandCountIsZeroBeforeConnect()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+
+        // Documented behavior: reads before ConnectAsync return zero rather than throw.
+        Assert.That(transport.PendingCommandCount, Is.Zero);
+    }
+
+    [Test]
+    public async Task TestTransportPendingCommandCountReflectsSentCommands()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        Assert.That(transport.PendingCommandCount, Is.Zero, "no commands sent yet");
+
+        Command firstCommand = await transport.SendCommandAsync(new TestCommandParameters("module.first"));
+        Assert.That(transport.PendingCommandCount, Is.EqualTo(1), "one command awaiting response");
+
+        Command secondCommand = await transport.SendCommandAsync(new TestCommandParameters("module.second"));
+        Assert.That(transport.PendingCommandCount, Is.EqualTo(2), "two commands awaiting response");
+
+        // Complete the first command by delivering its matching success response.
+        string firstResponseJson = $$$"""{"type":"success","id":{{{firstCommand.CommandId}}},"result":{"parameterName":"parameterValue"}}""";
+        await connection.RaiseDataReceivedEventAsync(firstResponseJson);
+        await firstCommand.WaitForCompletionAsync(TimeSpan.FromSeconds(5));
+        Assert.That(transport.PendingCommandCount, Is.EqualTo(1), "one command remains after first response");
+
+        // Complete the second command similarly.
+        string secondResponseJson = $$$"""{"type":"success","id":{{{secondCommand.CommandId}}},"result":{"parameterName":"parameterValue"}}""";
+        await connection.RaiseDataReceivedEventAsync(secondResponseJson);
+        await secondCommand.WaitForCompletionAsync(TimeSpan.FromSeconds(5));
+        Assert.That(transport.PendingCommandCount, Is.Zero, "no commands remain after all responses");
+    }
+
+    [Test]
+    public async Task TestTransportPendingCommandCountIsZeroAfterDisconnect()
+    {
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        await transport.ConnectAsync("ws:localhost");
+
+        // Send a command and do not deliver a response, so it sits in the pending collection.
+        _ = await transport.SendCommandAsync(new TestCommandParameters("module.command"));
+        Assert.That(transport.PendingCommandCount, Is.EqualTo(1), "command pending before disconnect");
+
+        // DisconnectAsync closes and clears the pending command collection; the property
+        // must reflect the cleared state and must not throw post-disconnect.
+        await transport.DisconnectAsync();
+        Assert.That(transport.PendingCommandCount, Is.Zero);
+    }
+
+    [Test]
     public async Task TestTransportDisconnectTimesOutWithHangingEventHandler()
     {
         ManualResetEvent handlerStarted = new(false);

@@ -92,7 +92,8 @@ public class Transport : IAsyncDisposable
     // to cause memory issues by exceeding the rate of processing. Should
     // real-world usage indicate otherwise, we will update this behavior
     // with a bounded channel, and add monitoring of the queue depth to
-    // the transport events.
+    // the transport events. Reassignment of this variable happens only
+    // under the connection lock, so is thread-safe.
     private Channel<byte[]> incomingMessageQueue = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions()
     {
         SingleReader = true,
@@ -234,6 +235,32 @@ public class Transport : IAsyncDisposable
     /// </para>
     /// </remarks>
     public virtual int IncomingQueueDepth => Interlocked.CompareExchange(ref this.incomingQueueDepth, 0, 0);
+
+    /// <summary>
+    /// Gets the number of commands that have been sent to the remote end and are
+    /// awaiting a response.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This property is intended for diagnostics and observability alongside
+    /// <see cref="IncomingQueueDepth"/>. A persistently high value suggests that the
+    /// remote end is not responding promptly, or that a burst of commands is in flight
+    /// without corresponding responses yet.
+    /// </para>
+    /// <para>
+    /// Reading this property before <see cref="ConnectAsync"/> has ever been called, or
+    /// after <see cref="DisconnectAsync(CancellationToken)"/>, returns the count of the
+    /// pending-command collection in its current state rather than throwing. The
+    /// collection is cleared during <see cref="DisconnectAsync(CancellationToken)"/>,
+    /// so reads after a disconnect typically return zero.
+    /// </para>
+    /// <para>
+    /// <strong>Thread Safety:</strong> This property is safe to read concurrently with
+    /// command send and response processing. The returned value is a snapshot and may
+    /// be stale by the time the caller observes it.
+    /// </para>
+    /// </remarks>
+    public virtual int PendingCommandCount => this.PendingCommands.PendingCommandCount;
 
     /// <summary>
     /// Gets or sets a value indicating whether this transport is connected to a connection.
