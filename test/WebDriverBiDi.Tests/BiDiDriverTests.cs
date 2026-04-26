@@ -1,6 +1,7 @@
 namespace WebDriverBiDi;
 
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using NUnit.Framework.Internal;
 using PinchHitter;
@@ -1478,6 +1479,107 @@ public class BiDiDriverTests
     public void TestCreatingWithNullTransportThrows()
     {
         Assert.That(() => _ = new BiDiDriver(TimeSpan.FromSeconds(1), null!), Throws.InstanceOf<ArgumentNullException>());
+    }
+
+    [Test]
+    public async Task TestConcurrentExecuteCommandAsyncRoutesResponsesByCommandId()
+    {
+        // This stress test exercises the ID-correlation path in BiDiDriver.ExecuteCommandAsync
+        // under concurrent callers. It is fully deterministic — no Task.Delay, no wall-clock
+        // polling — because the transport's send path serializes through its internal
+        // connection semaphore, and the test uses a CountdownEvent to know precisely when all
+        // sends have completed before delivering responses in reverse order.
+        //
+        // The correlation claim being tested: each caller's ExecuteCommandAsync returns a
+        // result that matches the specific command that caller sent, even when many callers
+        // race to send and responses arrive out of send order.
+        const int concurrentCallerCount = 100;
+
+        using CountdownEvent allSendsCompleted = new(concurrentCallerCount);
+        Dictionary<long, string> commandIdToSenderValue = [];
+        object captureLock = new();
+
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        {
+            // Because sends serialize under the transport's connection semaphore, this
+            // handler runs exclusively per send. It is safe to read connection.DataSent
+            // here — no other sender can overwrite it until we release the semaphore by
+            // returning. We still take an explicit lock so the Dictionary mutation is
+            // safe against any future changes to the send path.
+            JsonDocument document = JsonDocument.Parse(connection.DataSent!);
+            string senderValue = document.RootElement.GetProperty("params").GetProperty("parameterName").GetString()!;
+            lock (captureLock)
+            {
+                commandIdToSenderValue[e.SentCommandId] = senderValue;
+            }
+
+            allSendsCompleted.Signal();
+        };
+
+        Transport transport = new(connection);
+        BiDiDriver driver = new(Timeout.InfiniteTimeSpan, transport);
+        await driver.StartAsync("ws://localhost:5555");
+
+        // Fire N tasks concurrently. Each sender tags its command with a unique
+        // parameterName so we can prove end-to-end that the response it receives was
+        // produced from its own send.
+        Task<TestCommandResult>[] senderTasks = new Task<TestCommandResult>[concurrentCallerCount];
+        string[] expectedValues = new string[concurrentCallerCount];
+        for (int i = 0; i < concurrentCallerCount; i++)
+        {
+            int capturedIndex = i;
+            string senderValue = $"sender-{capturedIndex}";
+            expectedValues[capturedIndex] = senderValue;
+            senderTasks[capturedIndex] = Task.Run(async () => await driver.ExecuteCommandAsync(new TestCommandParameters("module.command", senderValue)));
+        }
+
+        // Block deterministically until every send has completed. After this Wait()
+        // returns, every command is in the pending collection (it is added before the
+        // send begins) and every caller is awaiting WaitForCompletionAsync. The 30-second
+        // bound is a safety net to prevent a CI hang if something goes wrong; under normal
+        // operation Wait returns as soon as all signals arrive. If Wait returns false, the
+        // remaining assertions in the test are not meaningful, so fail fast here.
+        if (!allSendsCompleted.Wait(TimeSpan.FromSeconds(30)))
+        {
+            Assert.Fail("all sends should complete before the safety timeout");
+        }
+
+        Assert.That(transport.PendingCommandCount, Is.EqualTo(concurrentCallerCount));
+
+        // Deliver responses in reverse send order to exercise out-of-order delivery.
+        // Each response carries the sender's own parameterName as its "value" field, so
+        // the per-caller assertion below is a strong correlation check: if the transport
+        // ever routed a response to the wrong caller, the value mismatch would surface.
+        List<long> commandIdsInSendOrder;
+        lock (captureLock)
+        {
+            commandIdsInSendOrder = [.. commandIdToSenderValue.Keys];
+            commandIdsInSendOrder.Sort();
+        }
+
+        for (int i = commandIdsInSendOrder.Count - 1; i >= 0; i--)
+        {
+            long commandId = commandIdsInSendOrder[i];
+            string senderValue = commandIdToSenderValue[commandId];
+            string responseJson = $$$"""{"type":"success","id":{{{commandId}}},"result":{"value":"{{{senderValue}}}"}}""";
+            await connection.RaiseDataReceivedEventAsync(responseJson);
+        }
+
+        // Task.WhenAll completes only after every caller has received its response; this
+        // is the final deterministic synchronization point. The assertions then check
+        // that each caller i received a result whose Value equals its own sender tag.
+        TestCommandResult[] results = await Task.WhenAll(senderTasks);
+        Assert.That(transport.PendingCommandCount, Is.Zero, "all commands resolved after responses delivered");
+        using (Assert.EnterMultipleScope())
+        {
+            for (int i = 0; i < concurrentCallerCount; i++)
+            {
+                Assert.That(results[i].Value, Is.EqualTo(expectedValues[i]), $"caller {i} should receive its own sender tag back");
+            }
+        }
+
+        await driver.StopAsync();
     }
 
     [Test]
