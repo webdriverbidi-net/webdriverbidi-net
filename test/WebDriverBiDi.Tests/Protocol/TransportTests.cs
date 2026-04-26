@@ -1648,6 +1648,51 @@ public class TransportTests
     }
 
     [Test]
+    public async Task TestMessageProcessingTaskFaultIsCapturedAsUnhandledError()
+    {
+        // This test exercises the fault continuation attached to
+        // messageQueueProcessingTask in Transport.ConnectAsync. Under normal operation
+        // the outer await in ReadIncomingMessagesAsync never faults — the per-message
+        // try/catch inside that method handles everything else. The continuation is
+        // defence-in-depth; this test simulates an unrecoverable outer-loop fault by
+        // having TestTransport.ReadIncomingMessagesAsync return an already-faulted task.
+        //
+        // The fault propagation is asynchronous: Task.Run(() => ...) schedules the
+        // lambda on the thread pool, so the returned messageQueueProcessingTask
+        // transitions to Faulted on a pool thread after ConnectAsync returns. The
+        // fault-capture continuation runs at that moment. We use the existing polling
+        // helper to wait deterministically (bounded by a safety timeout) for the fault
+        // to appear in the UnhandledErrors collection.
+        InvalidOperationException injectedFault = new("simulated outer-loop fault");
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ReadLoopOuterFault = injectedFault,
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+        };
+
+        await transport.ConnectAsync("ws:localhost");
+        bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
+            TimeSpan.FromSeconds(5),
+            TransportErrorBehavior.Collect);
+        if (!faultCaptured)
+        {
+            Assert.Fail("the fault-capture continuation should record the injected fault before the safety timeout");
+        }
+
+        // Under Collect mode, DisconnectAsync surfaces the captured fault as an
+        // AggregateException whose single inner exception wraps the injected fault.
+        AggregateException? caught = Assert.ThrowsAsync<AggregateException>(
+            async () => await transport.DisconnectAsync());
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(caught, Is.Not.Null);
+            Assert.That(caught!.InnerExceptions, Has.Count.EqualTo(1));
+            Assert.That(caught.InnerExceptions[0], Is.SameAs(injectedFault));
+        }
+    }
+
+    [Test]
     public async Task TestTransportDisconnectTimesOutWithHangingEventHandler()
     {
         ManualResetEvent handlerStarted = new(false);

@@ -366,6 +366,20 @@ public class Transport : IAsyncDisposable
             this.IsConnected = true;
             this.messageQueueProcessingTask = Task.Run(() => this.ReadIncomingMessagesAsync());
 
+            // Defence-in-depth: ReadIncomingMessagesAsync catches per-message exceptions in
+            // its inner loop, so under normal operation this continuation never fires. It
+            // exists to observe a fault on the outer `await WaitToReadAsync()` path so that
+            // the fault is logged and captured on the unhandled-error pipeline rather than
+            // sitting unobserved on the task until DisconnectAsync awaits it. Accessing
+            // Task.Exception inside the continuation both observes the fault (preventing
+            // UnobservedTaskException on GC) and yields it for reporting.
+            _ = this.messageQueueProcessingTask.ContinueWith(
+                this.LogMessageProcessingFault,
+                state: null,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+
             WebDriverBiDiEventSource.RaiseEvent.ConnectionOpened(this.Connection.GetHashCode().ToString(), websocketUri);
             WebDriverBiDiEventSource.RaiseEvent.TransportStarted();
         }
@@ -691,6 +705,42 @@ public class Transport : IAsyncDisposable
     }
 
     /// <summary>
+    /// Reads and processes messages from the incoming message queue until the queue is
+    /// closed. This method is the body of the task started by <see cref="ConnectAsync"/>.
+    /// </summary>
+    /// <remarks>
+    /// This method is <see langword="protected virtual"/> to allow test doubles to
+    /// substitute the message-processing loop — for example, to simulate an
+    /// unrecoverable fault on the outer await so that the fault continuation attached
+    /// in <see cref="ConnectAsync"/> can be exercised.
+    /// </remarks>
+    /// <returns>A task representing the asynchronous message-processing loop.</returns>
+    protected virtual async Task ReadIncomingMessagesAsync()
+    {
+        // In theory, we could accomplish this with an `await foreach` using
+        // IAsyncEnumerable, but this would require additional dependencies,
+        // which is challenging. Initial experiments has shown that simply
+        // adding a reference to the Microsoft.Bcl.AsyncInterfaces assembly
+        // is not enough by itself to enable compilation using that construct.
+        while (await this.incomingMessageQueue.Reader.WaitToReadAsync().ConfigureAwait(false))
+        {
+            while (this.incomingMessageQueue.Reader.TryRead(out byte[]? incomingMessage))
+            {
+                Interlocked.Decrement(ref this.incomingQueueDepth);
+                try
+                {
+                    await this.ProcessMessageAsync(incomingMessage).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    await this.LogAsync($"Unexpected error in message processing loop: {ex.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
+                    this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, "Unexpected error in message processing loop");
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets the type info resolver to be used for JSON serialization and deserialization.
     /// By default, this method returns a resolver that uses reflection, but if reflection-
     /// based serialization is not available (e.g., in AOT scenarios), it returns a source-
@@ -823,29 +873,18 @@ public class Transport : IAsyncDisposable
         }
     }
 
-    private async Task ReadIncomingMessagesAsync()
+    private void LogMessageProcessingFault(Task faultedTask, object? state)
     {
-        // In theory, we could accomplish this with an `await foreach` using
-        // IAsyncEnumerable, but this would require additional dependencies,
-        // which is challenging. Initial experiments has shown that simply
-        // adding a reference to the Microsoft.Bcl.AsyncInterfaces assembly
-        // is not enough by itself to enable compilation using that construct.
-        while (await this.incomingMessageQueue.Reader.WaitToReadAsync().ConfigureAwait(false))
-        {
-            while (this.incomingMessageQueue.Reader.TryRead(out byte[]? incomingMessage))
-            {
-                Interlocked.Decrement(ref this.incomingQueueDepth);
-                try
-                {
-                    await this.ProcessMessageAsync(incomingMessage).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    await this.LogAsync($"Unexpected error in message processing loop: {ex.Message}", WebDriverBiDiLogLevel.Error).ConfigureAwait(false);
-                    this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, ex, "Unexpected error in message processing loop");
-                }
-            }
-        }
+        // Task.Exception is guaranteed non-null here because this continuation is
+        // scheduled with OnlyOnFaulted; the null-forgiving operator is appropriate.
+        AggregateException aggregate = faultedTask.Exception!;
+        Exception exception = aggregate.InnerExceptions.Count == 1 ? aggregate.InnerExceptions[0] : aggregate;
+
+        // Use EventSource rather than LogAsync to avoid the async path on this
+        // fire-and-forget fault handler. Capture onto the unhandled-error pipeline
+        // for symmetry with per-message failures in ReadIncomingMessagesAsync.
+        WebDriverBiDiEventSource.RaiseEvent.ProtocolError(exception.Message, "Message processing loop faulted");
+        this.CaptureUnhandledError(UnhandledErrorType.ProtocolError, exception, "Message processing loop faulted");
     }
 
     private async Task ProcessMessageAsync(byte[] messageData)

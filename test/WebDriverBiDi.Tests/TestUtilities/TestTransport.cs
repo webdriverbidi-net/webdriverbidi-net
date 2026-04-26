@@ -202,4 +202,20 @@ public class TestTransport : Transport
         this.IsDisposed = true;
         await base.DisposeAsyncCore().ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Gets or sets an exception that should fault the message-processing loop immediately.
+    /// Used to exercise the fault continuation attached in Transport.ConnectAsync.
+    /// </summary>
+    public Exception? ReadLoopOuterFault { get; set; }
+
+    protected override Task ReadIncomingMessagesAsync()
+    {
+        if (this.ReadLoopOuterFault is not null)
+        {
+            return Task.FromException(this.ReadLoopOuterFault);
+        }
+
+        return base.ReadIncomingMessagesAsync();
+    }
 }
