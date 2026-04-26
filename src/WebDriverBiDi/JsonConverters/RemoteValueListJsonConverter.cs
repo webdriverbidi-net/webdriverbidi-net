@@ -7,6 +7,7 @@ namespace WebDriverBiDi.JsonConverters;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -27,7 +28,10 @@ public class RemoteValueListJsonConverter : JsonConverter<RemoteValueList>
         // only way for the deserialization to return null is if the JSON value is null,
         // and the JSON deserializer will short-circuit and return null before calling this
         // converter.
-        List<RemoteValue> values = JsonSerializer.Deserialize<List<RemoteValue>>(ref reader, options)!;
+        // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
+        // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
+        JsonTypeInfo<List<RemoteValue>> typeInfo = (JsonTypeInfo<List<RemoteValue>>)options.GetTypeInfo(typeof(List<RemoteValue>));
+        List<RemoteValue> values = JsonSerializer.Deserialize(ref reader, typeInfo)!;
         return new RemoteValueList(values);
     }
 

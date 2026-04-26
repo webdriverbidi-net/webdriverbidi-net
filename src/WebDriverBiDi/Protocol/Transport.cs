@@ -75,6 +75,8 @@ public class Transport : IAsyncDisposable
     private const string TransportErrorObserverDescription = "transport error observer";
     private const string TransportUnknownMessageObserverDescription = "transport unknown message observer";
 
+    private readonly JsonTypeInfo<Command> commandJsonTypeInfo;
+    private readonly JsonTypeInfo<ErrorResponseMessage> errorResponseJsonTypeInfo;
     private readonly JsonSerializerOptions options = new()
     {
         TypeInfoResolver = CreateTypeInfoResolver(),
@@ -131,6 +133,10 @@ public class Transport : IAsyncDisposable
     public Transport(Connection connection)
     {
         this.Connection = connection;
+
+        // Cache the JsonTypeInfo for JSON serialized or deserialized classes for perf reasons.
+        this.commandJsonTypeInfo = (JsonTypeInfo<Command>)this.options.GetTypeInfo(typeof(Command));
+        this.errorResponseJsonTypeInfo = (JsonTypeInfo<ErrorResponseMessage>)this.options.GetTypeInfo(typeof(ErrorResponseMessage));
 
         this.OnEventReceived = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
         this.OnErrorEventReceived = this.CreateObservableEvent<ErrorReceivedEventArgs>(ErrorReceivedEventName);
@@ -559,7 +565,9 @@ public class Transport : IAsyncDisposable
     /// <returns>The serialized JSON string representing the command.</returns>
     protected virtual byte[] SerializeCommand(Command command)
     {
-        return JsonSerializer.SerializeToUtf8Bytes(command, this.options);
+        // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
+        // to remove warnings when publishing AOT compiled applications.
+        return JsonSerializer.SerializeToUtf8Bytes(command, this.commandJsonTypeInfo);
     }
 
     /// <summary>
@@ -968,7 +976,10 @@ public class Transport : IAsyncDisposable
                 WebDriverBiDiEventSource.RaiseEvent.CommandCompleted(responseId.ToString(), executedCommand.CommandName, executedCommand.ElapsedMilliseconds);
                 try
                 {
-                    if (message.Deserialize(executedCommand.ResponseType, this.options) is CommandResponseMessage response)
+                    // Use the JsonElement.Deserialize() overload that takes a JsonTypeInfo
+                    // to remove warnings when publishing AOT compiled applications.
+                    JsonTypeInfo responseTypeInfo = this.options.GetTypeInfo(executedCommand.ResponseType);
+                    if (message.Deserialize(responseTypeInfo) is CommandResponseMessage response)
                     {
                         CommandResult commandResult = response.Result;
                         commandResult.AdditionalData = response.AdditionalData;
@@ -994,7 +1005,10 @@ public class Transport : IAsyncDisposable
             // If the message doesn't match the schema of an actual error message,
             // an exception will be thrown by the JSON serializer, and we can log
             // the malformed response.
-            ErrorResponseMessage? errorMessage = message.Deserialize<ErrorResponseMessage>(this.options);
+            // Note carefully, we use the JsonElement.Deserialize() overload that
+            // takes a JsonTypeInfo to remove warnings when publishing AOT compiled
+            // applications.
+            ErrorResponseMessage? errorMessage = message.Deserialize(this.errorResponseJsonTypeInfo);
             if (errorMessage is not null)
             {
                 ErrorResult result = errorMessage.GetErrorResponseData();
@@ -1036,7 +1050,10 @@ public class Transport : IAsyncDisposable
             {
                 try
                 {
-                    if (message.Deserialize(eventMessageType, this.options) is not EventMessage eventMessageData)
+                    // Use the JsonElement.Deserialize() overload that takes a JsonTypeInfo
+                    // to remove warnings when publishing AOT compiled applications.
+                    JsonTypeInfo eventTypeInfo = this.options.GetTypeInfo(eventMessageType);
+                    if (message.Deserialize(eventTypeInfo) is not EventMessage eventMessageData)
                     {
                         throw new WebDriverBiDiSerializationException($"Deserialization of event message returned null for event type {eventMessageType}");
                     }

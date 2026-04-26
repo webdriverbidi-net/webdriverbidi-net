@@ -372,6 +372,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(IncludeShadowTreeSerializationOption))]
 [JsonSerializable(typeof(JavaScriptLogEntry))]
 [JsonSerializable(typeof(KeyValuePairCollectionRemoteValue))]
+[JsonSerializable(typeof(List<RemoteValue>))]
 [JsonSerializable(typeof(LocalValue))]
 [JsonSerializable(typeof(LocalArgumentValue))]
 [JsonSerializable(typeof(NumberRemoteValue))]

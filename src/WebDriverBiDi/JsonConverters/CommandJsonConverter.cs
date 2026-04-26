@@ -5,8 +5,10 @@
 
 namespace WebDriverBiDi.JsonConverters;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Protocol;
 
 /// <summary>
@@ -33,6 +35,20 @@ public class CommandJsonConverter : JsonConverter<Command>
     /// <param name="writer">A Utf8JsonWriter used to write the JSON string.</param>
     /// <param name="value">The Command to be serialized.</param>
     /// <param name="options">The JsonSerializationOptions used for serializing the object.</param>
+    /// <remarks>
+    /// The IL2026/IL3050 suppressions on this method cover the single call site that
+    /// serializes entries from <see cref="CommandParameters.AdditionalData"/>. Those entries
+    /// are typed as <see cref="object"/> by design. They exist specifically to let users
+    /// pass protocol extension fields whose runtime types are not known at library build
+    /// time, so the reflection-based serialization path is the only correct choice. The
+    /// trade-off is documented on <see cref="CommandParameters.AdditionalData"/>; users who
+    /// need AOT-safe command extension must register a <see cref="JsonTypeInfo"/> for every
+    /// runtime type they add to the dictionary via
+    /// <see cref="BiDiDriver.RegisterTypeInfoResolverAsync(IJsonTypeInfoResolver, CancellationToken)"/>
+    /// before sending a command that uses it.
+    /// </remarks>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = "AdditionalData entries are typed as object by design; see remarks.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = "AdditionalData entries are typed as object by design; see remarks.")]
     public override void Write(Utf8JsonWriter writer, Command value, JsonSerializerOptions options)
     {
         if (value is null)
@@ -46,8 +62,11 @@ public class CommandJsonConverter : JsonConverter<Command>
         writer.WritePropertyName("method");
         writer.WriteStringValue(value.CommandName);
         writer.WritePropertyName("params");
-        string serializedParams = JsonSerializer.Serialize(value.CommandParameters, value.CommandParameters.GetType(), options);
-        writer.WriteRawValue(serializedParams);
+
+        // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
+        // to remove warnings when publishing AOT compiled applications.
+        JsonTypeInfo paramsTypeInfo = options.GetTypeInfo(value.CommandParameters.GetType());
+        JsonSerializer.Serialize(writer, value.CommandParameters, paramsTypeInfo);
         foreach (KeyValuePair<string, object?> pair in value.AdditionalData)
         {
             writer.WritePropertyName(pair.Key);

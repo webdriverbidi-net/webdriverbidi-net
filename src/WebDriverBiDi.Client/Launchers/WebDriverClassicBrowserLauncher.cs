@@ -6,6 +6,7 @@
 namespace WebDriverBiDi.Client.Launchers;
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -126,6 +127,19 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// <returns>A task that resolves to a <see cref="BrowserInstance"/> representing the running browser.</returns>
     /// <exception cref="BrowserNotLaunchedException">Thrown when the browser cannot be launched.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the launcher has been disposed.</exception>
+    /// <remarks>
+    /// The IL2026/IL3050 suppressions on this method cover the serialization of the
+    /// <see cref="Dictionary{TKey, TValue}"/> returned by
+    /// <see cref="CreateBrowserLaunchCapabilities"/>. Those capabilities are typed as
+    /// <c>Dictionary&lt;string, object&gt;</c> by design — subclasses override
+    /// <see cref="CreateBrowserLaunchCapabilities"/> to return vendor-specific payloads
+    /// (e.g. <c>goog:chromeOptions</c>, <c>moz:firefoxOptions</c>) whose shapes are not
+    /// known at library build time — so the reflection-based serialization path is the
+    /// only correct choice. The trade-off is documented on
+    /// <see cref="CreateBrowserLaunchCapabilities"/>.
+    /// </remarks>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = "Classic capabilities are typed as Dictionary<string, object> by design; see CreateBrowserLaunchCapabilities remarks.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = "Classic capabilities are typed as Dictionary<string, object> by design; see CreateBrowserLaunchCapabilities remarks.")]
     public override async Task<BrowserInstance> LaunchBrowserAsync()
     {
         this.ThrowIfDisposed();
@@ -209,6 +223,19 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// Creates the WebDriver Classic capabilities used to launch the browser.
     /// </summary>
     /// <returns>A dictionary containing the capabilities.</returns>
+    /// <remarks>
+    /// <para>
+    /// <strong>AOT / trimming note:</strong> the returned values are typed as
+    /// <see cref="object"/> so subclasses can supply vendor-specific payloads (e.g.
+    /// <c>goog:chromeOptions</c>, <c>moz:firefoxOptions</c>) whose shapes are not known
+    /// at library build time. Serialization of this dictionary by the base class relies
+    /// on reflection-based <see cref="JsonSerializer"/> overloads that are not
+    /// compatible with trimming or native AOT. Consumers that publish with
+    /// <c>PublishAot=true</c> must ensure every value's runtime type is discoverable by
+    /// the default resolver, or the launcher will fail at browser-launch time with a
+    /// <see cref="NotSupportedException"/>.
+    /// </para>
+    /// </remarks>
     protected virtual Dictionary<string, object> CreateBrowserLaunchCapabilities()
     {
         Dictionary<string, object> capabilities = new()

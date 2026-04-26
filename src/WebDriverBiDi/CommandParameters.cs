@@ -44,6 +44,16 @@ public abstract class CommandParameters
     /// the appropriate attributes for JSON serialization by
     /// <see cref="System.Text.Json.JsonSerializer"/>.
     /// </para>
+    /// <para>
+    /// <strong>AOT / trimming note:</strong> because the entries are typed as
+    /// <see cref="object"/>, serialization of their runtime types relies on
+    /// reflection-based <see cref="System.Text.Json.JsonSerializer"/> overloads that
+    /// are not compatible with trimming or native AOT. Consumers that publish with
+    /// <c>PublishAot=true</c> and use this dictionary must ensure every value's
+    /// runtime type is discoverable by a registered <see cref="System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver"/>
+    /// (see <see cref="BiDiDriver.RegisterTypeInfoResolverAsync(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver, CancellationToken)"/>),
+    /// or the command will fail at send time with a <see cref="NotSupportedException"/>.
+    /// </para>
     /// </remarks>
     [JsonIgnore]
     public Dictionary<string, object?> AdditionalData { get; } = [];

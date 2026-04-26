@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 /// <summary>
 /// The JSON converter for the objects that form a discriminated union. That is, a base type
@@ -95,7 +96,10 @@ public class DiscriminatedUnionJsonConverter<[DynamicallyAccessedMembers(Dynamic
     /// <exception cref="ArgumentNullException">Thrown if the value of T is null.</exception>
     public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, value, value.GetType(), options);
+        // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
+        // to remove warnings when publishing AOT compiled applications.
+        JsonTypeInfo typeInfo = options.GetTypeInfo(value.GetType());
+        JsonSerializer.Serialize(writer, value, typeInfo);
     }
 
     private static DiscriminatedTypeInfo InitializeDiscriminatedTypeInfo(Type baseType)

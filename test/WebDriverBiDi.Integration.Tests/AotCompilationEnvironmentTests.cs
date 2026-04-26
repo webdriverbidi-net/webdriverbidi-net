@@ -21,14 +21,20 @@ public class AotCompilationEnvironmentTests
     private static string executablePath = string.Empty;
 
     [OneTimeSetUp]
-    public async Task PublishAotBinary()
+    public async Task PublishAotBinaryAsync()
     {
-        // Publish to a dedicated directory to avoid conflicts with regular builds
+        // Publish to a dedicated directory to avoid conflicts with regular builds.
+        // Use -p:TreatWarningsAsErrors=true to convert static AOT warnings (IL2026,
+        // IL3050, IL2090, etc.) emitted by the trim/AOT analyzers during native
+        // compilation into a build failure. There should be zero warnings; a future
+        // change that adds a reflection-based JsonSerializer.Serialize(object) call
+        // will see this test fail immediately rather than shipping an AOT-broken
+        // binary.
         publishDir = Path.Combine(SmokeTestProjectDir, "bin", "AotTestPublish");
 
         int publishExit = await RunProcessAsync(
             "dotnet",
-            $"publish \"{SmokeTestProjectDir}\" -c Release -o \"{publishDir}\"",
+            $"publish \"{SmokeTestProjectDir}\" -c Release -o \"{publishDir}\" -p:TreatWarningsAsErrors=true",
             workingDirectory: SmokeTestProjectDir,
             timeoutSeconds: 300);
 
