@@ -1473,4 +1473,43 @@ public class BiDiDriverTests
         Transport transport = new(connection);
         Assert.That(() => new BiDiDriver(Timeout.InfiniteTimeSpan, transport), Throws.Nothing);
     }
+
+    [Test]
+    public async Task TestMidCommandRemoteDisconnectFaultsExecuteCommandWithConnectionException()
+    {
+        // Verify that a remote disconnect while a command is pending causes
+        // BiDiDriver.ExecuteCommandAsync to fault with WebDriverBiDiConnectionException
+        // promptly, rather than hanging until the command timeout expires. This is the
+        // driver-level passthrough of the transport behavior covered by
+        // TransportTests.TestRemoteDisconnectFailsPendingCommands.
+        ManualResetEventSlim commandQueued = new(false);
+        TestWebSocketConnection connection = new();
+        connection.DataSendComplete += (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
+        {
+            commandQueued.Set();
+        };
+
+        Transport transport = new(connection);
+        // Large default timeout: if the disconnect path were broken and the
+        // command sat in the pending collection, the test would hang until this
+        // elapsed. The assertion timeout below is much shorter, so a broken
+        // path fails fast rather than timing out the whole suite.
+        BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync("ws://localhost:5555");
+
+        TestCommandParameters command = new("module.command");
+        Task<TestCommandResult> executeTask = Task.Run(() => driver.ExecuteCommandAsync<TestCommandResult>(command));
+
+        Assert.That(commandQueued.Wait(TimeSpan.FromSeconds(1)), Is.True, "command should reach the send path before we raise the disconnect");
+
+        await connection.RaiseRemoteDisconnectedEventAsync();
+
+        WebDriverBiDiConnectionException? caught = Assert.ThrowsAsync<WebDriverBiDiConnectionException>(async () =>
+        {
+            Task completed = await Task.WhenAny(executeTask, Task.Delay(TimeSpan.FromSeconds(2)));
+            Assert.That(completed, Is.SameAs(executeTask), "ExecuteCommandAsync should fault well before the 30-second command timeout");
+            await executeTask;
+        });
+        Assert.That(caught!.Message, Does.Contain("Remote end closed the connection"));
+    }
 }
