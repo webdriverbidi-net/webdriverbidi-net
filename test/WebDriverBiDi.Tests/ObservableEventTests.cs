@@ -735,6 +735,65 @@ public class ObservableEventTests
         Assert.That(copy, Is.EqualTo(testEventArgs));
     }
 
+    [Test]
+    public async Task TestConcurrentAddRemoveAgainstNotifyIsCoherent()
+    {
+        // Fan out a fixed number of add/remove and raise iterations against a
+        // single ObservableEvent. The test asserts that (a) no exception leaks
+        // from the observer-list mutation path — Task.WhenAll would rethrow —
+        // and (b) after all churn has stopped, the observer count and final
+        // raise invocations are exactly what we expect. Using fixed iteration
+        // counts rather than a time window keeps the test strictly deterministic.
+        const int registrationWorkers = 8;
+        const int addRemoveIterationsPerWorker = 500;
+        const int notificationWorkers = 4;
+        const int raisesPerWorker = 200;
+
+        TestEventSource testEventSource = new();
+        ObservableEvent<TestObservableEventArgs> observable = testEventSource.TestObservableEvent;
+
+        int steadyInvocations = 0;
+        EventObserver<TestObservableEventArgs> steady1 = observable.AddObserver(_ => Interlocked.Increment(ref steadyInvocations));
+        EventObserver<TestObservableEventArgs> steady2 = observable.AddObserver(_ => Interlocked.Increment(ref steadyInvocations));
+
+        List<Task> workers = [];
+        for (int i = 0; i < registrationWorkers; i++)
+        {
+            workers.Add(Task.Run(() =>
+            {
+                for (int j = 0; j < addRemoveIterationsPerWorker; j++)
+                {
+                    EventObserver<TestObservableEventArgs> transient = observable.AddObserver(_ => { });
+                    transient.Unobserve();
+                }
+            }));
+        }
+
+        for (int i = 0; i < notificationWorkers; i++)
+        {
+            workers.Add(Task.Run(async () =>
+            {
+                for (int j = 0; j < raisesPerWorker; j++)
+                {
+                    await testEventSource.RaiseTestEventAsync("stress");
+                }
+            }));
+        }
+
+        await Task.WhenAll(workers);
+
+        // After all churn has ceased, only the two steady-state observers should remain.
+        Assert.That(observable.CurrentObserverCount, Is.EqualTo(2), "only the steady-state observers should remain after concurrent add/remove churn");
+
+        // A final raise after the churn must invoke exactly the two steady observers.
+        int invocationsBeforeFinalRaise = steadyInvocations;
+        await testEventSource.RaiseTestEventAsync("post-stress");
+        Assert.That(steadyInvocations - invocationsBeforeFinalRaise, Is.EqualTo(2), "after churn, a single raise should invoke exactly the two remaining observers");
+
+        steady1.Unobserve();
+        steady2.Unobserve();
+    }
+
     private class TestEventSource
     {
         private readonly ObservableEvent<TestObservableEventArgs> testObservableEvent = new("testModule.testEvent");
