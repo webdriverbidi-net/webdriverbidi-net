@@ -78,9 +78,20 @@ The following analyzers have code fix providers:
 
 ## Known Limitations
 
-All behavioral analyzers (BIDI001, BIDI002, BIDI003, BIDI005, BIDI009, BIDI014, BIDI015, BIDI019) are **intra-procedural** — they analyze usage patterns within a single method body only. They cannot detect cross-method, cross-class, or cross-file patterns.
+No analyzer performs whole-program flow analysis; none of them correlate data across files, classes, or — for most of them — across method boundaries. Each rule falls into one of the scopes below. Understanding which scope a given rule uses helps explain why it may not fire in a particular situation.
 
-For example, if you split setup across helper methods (common in test frameworks or automation wrappers), the analyzers will not correlate calls in different methods:
+### Analyzer scope by rule
+
+| Scope | What the analyzer sees | Rules |
+|-------|------------------------|-------|
+| **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI011, BIDI012, BIDI014, BIDI015, BIDI019 |
+| **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017 |
+| **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast) in isolation. | BIDI008 |
+| **Per-invocation with handler-body descent** — call site plus the handler it passes | The analyzer inspects each matching `AddObserver(...)` call and also walks into the handler body to look for patterns. When the handler is an inline lambda, the body is right there. When the handler is passed as a method reference (e.g., `AddObserver(this.HandleEvent)`), the analyzer resolves the reference and walks that method body too. It does not continue transitively into further methods that handler body calls. | BIDI007, BIDI016 |
+
+### What this means in practice
+
+If you split setup across helper methods (common in test frameworks or automation wrappers), analyzers in the **intra-procedural** or **per-invocation** tiers will not correlate calls in different methods:
 
 ```csharp
 // SetupAsync() — BIDI001/009 tracks driver state here
@@ -89,6 +100,8 @@ async Task SetupAsync() { driver = new BiDiDriver(); await driver.StartAsync(...
 // TestAsync() — BIDI009 cannot detect that StartAsync was called in SetupAsync
 async Task TestAsync() { driver.RegisterModule(new CustomModule(driver)); } // no diagnostic
 ```
+
+BIDI007 and BIDI016 are the exceptions: they will follow a single hop from an `AddObserver(...)` call to a method reference used as the handler, but they will not walk further than that.
 
 **Runtime enforcement remains correct.** The library still throws `InvalidOperationException` or `ObjectDisposedException` at runtime when these patterns are violated. The analyzers provide compile-time guidance where they can; they do not replace runtime validation.
 
