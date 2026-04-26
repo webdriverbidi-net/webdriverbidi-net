@@ -85,7 +85,7 @@ Only use this pattern if you need custom connection timeout configuration:
 
 ## Connection Configuration
 
-### Timeout Settings
+### Connection Timeout Settings
 
 Connections have three timeout properties (default: 10 seconds each):
 
@@ -93,9 +93,22 @@ Connections have three timeout properties (default: 10 seconds each):
 
 **StartupTimeout**: Connection establishment timeout. WebSocket connections retry every 500ms until timeout.
 
-**ShutdownTimeout**: Graceful shutdown timeout. Ensures resources are released properly.
+**ShutdownTimeout**: Graceful shutdown timeout for the underlying connection (e.g., the WebSocket close handshake). Ensures resources are released properly. Note that this is distinct from `Transport.ShutdownTimeout`, described below.
 
 **DataTimeout**: Send/receive operation timeout. Protects against hung connections.
+
+### Transport Shutdown Timeout
+
+`Transport.ShutdownTimeout` is a separate, transport-level timeout (default: 10 seconds) that controls how long `Transport.DisconnectAsync` waits for its in-memory message-processing task to drain before proceeding. If the processing task does not finish within this window, `DisconnectAsync` logs a warning and proceeds; messages still in the queue will not be processed, and any pending commands are canceled.
+
+Most users never need to tune this. Consider adjusting it only in specialized scenarios:
+
+- **Reduce** (e.g., to 1–2 seconds) for tests that want fail-fast behavior when a misbehaving handler would otherwise hold shutdown open.
+- **Increase** when you expect legitimately long-running event handlers and want them to be given more time to finish during shutdown.
+
+[!code-csharp[Transport Shutdown Timeout](../../code/advanced/ConnectionManagementSamples.cs#TransportShutdownTimeout)]
+
+`Transport.ShutdownTimeout` only affects the message-processing drain; it does not affect the underlying connection's close handshake, which is governed by `Connection.ShutdownTimeout`. Both timeouts may apply during `driver.StopAsync()`, at different stages of teardown.
 
 ### Buffer Size
 
@@ -132,6 +145,28 @@ Internal connection logging:
 [!code-csharp[OnLogMessage Event](../../code/advanced/ConnectionManagementSamples.cs#OnLogMessageEvent)]
 
 **Levels:** Info (normal operations), Warning (non-critical issues), Error (connection errors).
+
+## Transport Diagnostics
+
+In addition to the `Connection`-level observable events above, the `Transport` itself exposes two read-only diagnostic properties you can sample at any time. These are intended for operators and frameworks that want to understand backlog and in-flight state without subscribing to an `EventSource`. Both are safe to read concurrently with command send and response processing; the returned values are snapshots and may be stale by the time the caller observes them.
+
+### IncomingQueueDepth
+
+`Transport.IncomingQueueDepth` reports the number of raw messages received from the connection that are waiting to be processed by the transport's reader task. A persistently growing value indicates that event handlers are not keeping up with the incoming message rate; consider using `ObservableEventHandlerOptions.RunHandlerAsynchronously` for I/O-heavy handlers so that they do not block the reader.
+
+The counter is reset to zero on each call to `ConnectAsync` alongside the channel replacement. Reading it before `ConnectAsync` has ever been called, or after `DisconnectAsync`, returns the depth of the remaining (possibly drained) queue rather than throwing.
+
+[!code-csharp[Transport IncomingQueueDepth Diagnostic](../../code/advanced/ConnectionManagementSamples.cs#TransportIncomingQueueDepthDiagnostic)]
+
+### PendingCommandCount
+
+`Transport.PendingCommandCount` reports the number of commands that have been sent to the remote end and are still awaiting a response. A persistently high value suggests that the remote end is not responding promptly, or that a burst of commands is in flight without corresponding responses yet.
+
+The pending-command collection is cleared during `DisconnectAsync`, so reads after a disconnect typically return zero. Like `IncomingQueueDepth`, this property may be safely read before `ConnectAsync` is called and after `DisconnectAsync`; it returns the current count rather than throwing.
+
+[!code-csharp[Transport PendingCommandCount Diagnostic](../../code/advanced/ConnectionManagementSamples.cs#TransportPendingCommandCountDiagnostic)]
+
+Both properties pair well with the EventSource-based diagnostics described in [Observability](observability.md): the properties let you poll current state, while the `EventSource` stream gives you lifecycle events.
 
 ## WebSocket Connection Details
 

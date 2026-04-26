@@ -383,11 +383,113 @@ public static class ConnectionManagementSamples
         #endregion
     }
 
+    /// <summary>
+    /// Transport.ShutdownTimeout controls how long DisconnectAsync waits for
+    /// the message-processing task to drain before proceeding.
+    /// </summary>
+    public static async Task TransportShutdownTimeout(string url)
+    {
+        #region TransportShutdownTimeout
+        // Advanced: construct the transport explicitly so we can tune Transport.ShutdownTimeout.
+        // This is distinct from Connection.ShutdownTimeout (which controls the underlying
+        // WebSocket/pipe close handshake). Transport.ShutdownTimeout governs how long
+        // DisconnectAsync waits for the incoming-message processing task to complete.
+        WebSocketConnection connection = new WebSocketConnection();
+        Transport transport = new Transport(connection)
+        {
+            // Default is 10 seconds. Reduce for fail-fast behavior in tests, or
+            // increase if you have long-running event handlers that should be given
+            // more time to finish during shutdown.
+            ShutdownTimeout = TimeSpan.FromSeconds(2),
+        };
+
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync(url);
+
+        try
+        {
+            // Use driver...
+        }
+        finally
+        {
+            // If the message-processing task has not completed within ShutdownTimeout,
+            // DisconnectAsync logs a warning and proceeds; messages still in the queue
+            // will not be processed, and pending commands are canceled.
+            await driver.StopAsync();
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Transport.IncomingQueueDepth exposes the current depth of the incoming message
+    /// queue. Intended for operator diagnostics.
+    /// </summary>
+    public static async Task TransportIncomingQueueDepthDiagnostic(string url)
+    {
+        #region TransportIncomingQueueDepthDiagnostic
+        // Construct the transport explicitly so we can read its diagnostic properties.
+        WebSocketConnection connection = new WebSocketConnection();
+        Transport transport = new Transport(connection);
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync(url);
+
+        try
+        {
+            // A persistently growing value indicates that event handlers are not
+            // keeping up with the incoming message rate. Consider using
+            // ObservableEventHandlerOptions.RunHandlerAsynchronously for I/O-heavy handlers.
+            int depth = transport.IncomingQueueDepth;
+            if (depth > 100)
+            {
+                Logger.Warn($"Incoming message queue depth is high: {depth}");
+            }
+        }
+        finally
+        {
+            await driver.StopAsync();
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Transport.PendingCommandCount exposes the number of commands awaiting a
+    /// response. Intended for operator diagnostics alongside IncomingQueueDepth.
+    /// </summary>
+    public static async Task TransportPendingCommandCountDiagnostic(string url)
+    {
+        #region TransportPendingCommandCountDiagnostic
+        WebSocketConnection connection = new WebSocketConnection();
+        Transport transport = new Transport(connection);
+        BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30), transport);
+        await driver.StartAsync(url);
+
+        try
+        {
+            // A persistently high value suggests that the remote end is not
+            // responding promptly, or that a burst of commands is in flight.
+            int pending = transport.PendingCommandCount;
+            if (pending > 50)
+            {
+                Logger.Warn($"Pending command count is high: {pending}");
+            }
+        }
+        finally
+        {
+            await driver.StopAsync();
+        }
+        #endregion
+    }
+
     internal static class Logger
     {
         public static void Error(string message)
         {
             Console.WriteLine($"[ERROR] {message}");
+        }
+
+        public static void Warn(string message)
+        {
+            Console.WriteLine($"[WARN] {message}");
         }
     }
 }
