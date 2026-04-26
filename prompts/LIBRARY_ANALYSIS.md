@@ -44,6 +44,18 @@ missed the file. The directory listing result must be cited as the evidence.
 Claiming a file is missing without a confirmed directory listing is a false
 positive.
 
+**Before claiming behavioral test coverage is missing or thin, inspect every test file that could plausibly cover the feature.**
+In this project, per-module tests are conventionally split across multiple
+files in the same directory: *ModuleTests.cs, *CommandParametersTests.cs,
+*CommandResultTests.cs, and *EventArgsTests.cs. Before filing a coverage gap,
+read all sibling test files in the module's test directory and grep the whole
+test project for references to the specific matrix axes (enum values,optional-
+property combinations, constructor forms) you claim are untested. File length,
+test-method count, or line-count comparisons between directories are never by
+themselves evidence of a gap — they are style observations at best. If the
+authoritative check (reading sibling files and grepping for the specific axis)
+does not reveal a real absence, withdraw the item.
+
 **Before flagging any code as a defect, performance concern, or improvement opportunity**,
 read the relevant implementation. Do not rely on assumptions about lock
 duration, performance characteristics, or behavio; trace through the code and
