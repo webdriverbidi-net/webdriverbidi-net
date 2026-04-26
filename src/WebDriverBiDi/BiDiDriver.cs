@@ -111,6 +111,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// </remarks>
     public BiDiDriver(TimeSpan defaultCommandWaitTimeout, Transport transport)
     {
+        if (transport is null)
+        {
+            throw new ArgumentNullException(nameof(transport), "The transport parameter must not be null");
+        }
+
         if (defaultCommandWaitTimeout < TimeSpan.Zero && defaultCommandWaitTimeout != Timeout.InfiniteTimeSpan)
         {
             throw new ArgumentOutOfRangeException(nameof(defaultCommandWaitTimeout), "Default command wait timeout must be a non-negative TimeSpan value");

@@ -1475,6 +1475,12 @@ public class BiDiDriverTests
     }
 
     [Test]
+    public void TestCreatingWithNullTransportThrows()
+    {
+        Assert.That(() => _ = new BiDiDriver(TimeSpan.FromSeconds(1), null!), Throws.InstanceOf<ArgumentNullException>());
+    }
+
+    [Test]
     public async Task TestMidCommandRemoteDisconnectFaultsExecuteCommandWithConnectionException()
     {
         // Verify that a remote disconnect while a command is pending causes
