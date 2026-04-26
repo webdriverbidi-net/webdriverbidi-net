@@ -6,7 +6,7 @@ using TestUtilities;
 public class PermissionsModuleTests
 {
     [Test]
-    public async Task TestExecuteActivateCommand()
+    public async Task TestExecuteSetPermissionCommand()
     {
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (sender, e) =>
