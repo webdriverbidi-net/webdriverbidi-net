@@ -1,7 +1,7 @@
 # webdriverbidi-net
 A .NET client library for the WebDriver BiDi protocol
 
-![Unit tests](https://github.com/webdriverbidi-net/webdriverbidi-net/actions/workflows/dotnet.yml/badge.svg)
+![CI](https://github.com/webdriverbidi-net/webdriverbidi-net/actions/workflows/ci.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/webdriverbidi-net/webdriverbidi-net/badge.svg?branch=main&kill_cache=1)](https://coveralls.io/github/webdriverbidi-net/webdriverbidi-net?branch=main)
 [![NuGet Version](https://img.shields.io/nuget/v/WebDriverBiDi)](https://www.nuget.org/packages/WebDriverBiDi)
 

@@ -8,6 +8,7 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>

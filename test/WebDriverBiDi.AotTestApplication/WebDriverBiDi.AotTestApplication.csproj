@@ -9,6 +9,7 @@
     <PublishAot>true</PublishAot>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
