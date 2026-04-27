@@ -1,35 +1,12 @@
-# Unified CI pipeline for WebDriverBiDi.NET.
+# Continuous integration for WebDriverBiDi.NET on pull requests and main-branch
+# pushes. Release and release-time documentation deployment live in release.yml
+# (tag-triggered); the two workflows share build/test jobs via _tests.yml.
 #
-# Triggers:
-#   - pull_request against main: runs build, tests (unit + integration), and
-#     path-gated doc-validation and benchmarks.
-#   - push to main: runs build, tests, and (if paths touch docs or src) the
-#     documentation build + deploy to GitHub Pages.
-#   - push of a vX.Y.Z tag: runs build, tests, docs build + deploy, and the
-#     NuGet release. Release is gated on unit-tests and integration-tests
-#     passing via `needs:`, so a test failure prevents the package push.
+# This file runs only for:
+#   - pull_request against main
+#   - push to main
 #
-# Notable properties:
-#   - Each downstream job runs its own `dotnet restore` + `dotnet build`.
-#     Sharing compiled output across jobs via workflow artifacts was tried
-#     and abandoned: `obj/project.assets.json` is written by `dotnet restore`
-#     with absolute paths baked in (to the build runner's NuGet cache). When
-#     the artifact is restored on a different runner, MSBuild import
-#     resolution is broken, which silently causes `dotnet test` to fall back
-#     to the VSTest runner and fail the global.json runner-consistency check.
-#     Since GitHub-hosted runners run jobs in parallel, the wall-clock cost
-#     of duplicating the build is zero.
-#   - The `build` job is a fail-fast gate: if the solution does not build
-#     cleanly, every downstream job skips via `needs:`.
-#   - Path-gated jobs (`validate-docs`, `build-docs`, `benchmarks`) use outputs
-#     from a lightweight `changes` job that classifies the diff with
-#     dorny/paths-filter. On tag pushes the filter is bypassed — everything
-#     runs — so release-time behavior does not depend on what the tag commit
-#     touched.
-#   - On `git push --follow-tags` (commit + tag in one push) GitHub fires two
-#     separate workflow runs. Both run tests; only the tag-push run runs
-#     release. This is the accepted duplication; see project history for the
-#     rationale.
+# Tag pushes do not trigger this workflow — they trigger release.yml.
 
 name: CI
 
@@ -38,10 +15,9 @@ on:
     branches: ["main"]
   push:
     branches: ["main"]
-    tags: ['v[0-9]+.[0-9]+.[0-9]+']
 
-# Prevent wasted work on rapid PR pushes, but never cancel a main-branch or
-# tag-push run in flight — those may be publishing docs or a NuGet package.
+# Cancel in-flight PR runs when a new commit is pushed to the PR branch.
+# Never cancel main-branch runs in flight.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -63,9 +39,6 @@ jobs:
         id: filter
         uses: dorny/paths-filter@v3
         with:
-          # On tag pushes the filter isn't meaningful — a tag is a label on an
-          # existing commit. The job-level `if:` on path-gated jobs handles the
-          # tag case by short-circuiting to "run everything".
           filters: |
             docs:
               - 'src/WebDriverBiDi/**'
@@ -75,138 +48,17 @@ jobs:
               - 'test/WebDriverBiDi.Benchmarks/**'
               - 'scripts/compare-benchmarks.sh'
               - '.github/workflows/ci.yml'
+              - '.github/workflows/_tests.yml'
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-  unit-tests:
-    name: Unit tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Test WebDriverBiDi library (with coverage)
-        # Coverage is produced only for the main library's test project. The
-        # Coveralls upload globs lcov.*.info from test/coverage/ — other test
-        # projects do not write coverage there.
-        run: >
-          dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
-          --coverlet --coverlet-output-format lcov
-          --coverlet-exclude-by-file "**/_/src/**"
-          --results-directory test/coverage --coverlet-file-prefix lcov
-
-      - name: Enforce coverage thresholds
-        run: ./scripts/check-lcov-thresholds.sh --min-line 90 --min-branch 90 --min-method 90 test/coverage/lcov.*.info
-
-      - name: Test Roslyn analyzers
-        run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Test structured logging library
-        run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
-
-      - name: Upload code coverage
-        uses: coverallsapp/github-action@v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          files: test/coverage/lcov.*.info
-
-  integration-tests:
-    name: Integration tests (${{ matrix.browser.display }})
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        browser:
-          - name: firefox-nightly
-            display: Firefox Nightly
-            browser-type: firefox
-          - name: chrome-canary
-            display: Chrome Canary
-            browser-type: chrome
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Create local browser directory
-        run: mkdir -p "$GITHUB_WORKSPACE/browsers"
-
-      - name: Install Firefox Nightly
-        if: matrix.browser.name == 'firefox-nightly'
-        run: |
-          curl -s -L -o firefox-nightly.tar.xz "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64&lang=en-US"
-          tar xJf firefox-nightly.tar.xz -C "$GITHUB_WORKSPACE/browsers"
-
-      - name: Install Chrome Canary
-        if: matrix.browser.name == 'chrome-canary'
-        run: |
-          curl -s -L "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" \
-            | jq '.channels["Canary"]["downloads"]["chrome"].[] | select(.platform == "linux64") | .url' \
-            | xargs curl -s -L -o chrome-canary.zip
-          unzip chrome-canary.zip -d "$GITHUB_WORKSPACE/browsers"
-          mv "$GITHUB_WORKSPACE/browsers/chrome-linux64" "$GITHUB_WORKSPACE/browsers/chrome-canary"
-
-      - name: Run integration tests
-        run: dotnet test --project test/WebDriverBiDi.Integration.Tests --configuration Release --no-build --verbosity normal
-        env:
-          CI: true
-          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
-          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
+  tests:
+    name: Tests
+    uses: ./.github/workflows/_tests.yml
+    secrets: inherit
 
   validate-docs:
     name: Validate documentation
     needs: changes
-    # Runs on PR and main push when docs or doc code samples change. On tag
-    # push there's no diff to classify, so the filter's "docs" output is
-    # falsy — but release-time doc correctness matters, so we force-run then.
-    if: |
-      needs.changes.outputs.docs == 'true' ||
-      startsWith(github.ref, 'refs/tags/v')
+    if: needs.changes.outputs.docs == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -214,74 +66,12 @@ jobs:
       - name: Validate documentation code regions
         run: ./docs/tools/validate-doc-regions.sh
 
-  build-docs:
-    name: Build documentation
-    needs: [changes, build, validate-docs]
-    # Build docs on main push when docs or library changed, and on every tag
-    # push (releases always refresh the published docs). No need to build
-    # docs on PR since they aren't deployed from PRs.
-    if: |
-      (github.event_name == 'push' && needs.changes.outputs.docs == 'true') ||
-      startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build WebDriverBiDi library
-        run: dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release --no-restore
-
-      - name: Build documentation sample code
-        run: dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release --no-restore
-
-      - name: Install DocFX
-        run: dotnet tool install -g docfx
-
-      - name: Build documentation site
-        run: |
-          cd docs
-          docfx metadata docfx.json
-          docfx build docfx.json
-          touch _site/.nojekyll
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: docs/_site
-
-  deploy-docs:
-    name: Deploy documentation
-    # Gate the Pages deploy behind tests passing so docs can never diverge
-    # from a broken release or a broken main commit.
-    needs: [build-docs, unit-tests, integration-tests]
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-
   benchmarks:
     name: Benchmarks
-    needs: [changes, build]
-    # PR-only, and only when library or benchmark sources change. Not run on
-    # tag push: benchmarks at release time are pure cost with no decision
-    # value — the merge PR for a release candidate already ran them.
+    needs: changes
+    # PR-only, and only when library or benchmark sources change. Benchmarks
+    # on main push or release add cost with no decision value — the merge PR
+    # already ran them.
     if: |
       github.event_name == 'pull_request' &&
       needs.changes.outputs.benchmarks == 'true'
@@ -364,50 +154,3 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ steps.assemble.outputs.body }}
           edit-mode: replace
-
-  release:
-    name: Release
-    needs: [build, unit-tests, integration-tests]
-    # Tag-push only. The `needs:` relationships guarantee tests passed on
-    # this exact SHA before the release job starts — replaces the poll-by-
-    # workflow-name mechanism of the old release.yml.
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
-
-      - name: Verify tag is on origin/main
-        run: |
-          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-          git branch --remote --contains | grep origin/main
-
-      - name: Set VERSION variable from tag
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_ENV"
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration Release -p:Version="${VERSION}" --no-restore
-
-      - name: Pack releasable packages
-        # `dotnet pack` on the solution packs only projects with
-        # IsPackable=true, which is exactly WebDriverBiDi, WebDriverBiDi.Analyzers,
-        # and WebDriverBiDi.Logging. Symbol-package emission is configured
-        # per-project in the csproj files (only library and logging produce
-        # .snupkg; the analyzer does not have a managed assembly to symbolicate).
-        run: dotnet pack WebDriverBiDi.NET.sln --configuration Release -p:Version="${VERSION}" --no-build --output .
-
-      - name: Push packages to NuGet
-        run: dotnet nuget push "*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "${NUGET_API_KEY}"
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

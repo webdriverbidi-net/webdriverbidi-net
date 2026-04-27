@@ -1,0 +1,137 @@
+# Release workflow for WebDriverBiDi.NET.
+#
+# Triggered only by pushing a vX.Y.Z tag. Runs the full test suite (via
+# _tests.yml), validates and publishes the DocFx documentation site, and
+# packs and pushes NuGet packages. The release and deployment steps are
+# gated via `needs:` on the reusable tests workflow — a test failure on
+# the tagged commit prevents both the docs publish and the NuGet push.
+#
+# Documentation publishing lives here (rather than in ci.yml) so that the
+# published docs always correspond to a released NuGet version. Merges to
+# main between releases do not change what's visible at the docs URL.
+#
+# Related:
+#   - ci.yml runs on PR and main push; does not run on tag push.
+#   - _tests.yml is the reusable build + test workflow shared between the
+#     two callers.
+
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests
+    uses: ./.github/workflows/_tests.yml
+    secrets: inherit
+
+  validate-docs:
+    name: Validate documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate documentation code regions
+        run: ./docs/tools/validate-doc-regions.sh
+
+  build-docs:
+    name: Build documentation
+    needs: [tests, validate-docs]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build WebDriverBiDi library
+        run: dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release --no-restore
+
+      - name: Build documentation sample code
+        run: dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release --no-restore
+
+      - name: Install DocFX
+        run: dotnet tool install -g docfx
+
+      - name: Build documentation site
+        run: |
+          cd docs
+          docfx metadata docfx.json
+          docfx build docfx.json
+          touch _site/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/_site
+
+  deploy-docs:
+    name: Deploy documentation
+    needs: build-docs
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  release:
+    name: Publish to NuGet
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Verify tag is on origin/main
+        run: |
+          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+          git branch --remote --contains | grep origin/main
+
+      - name: Set VERSION variable from tag
+        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_ENV"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release -p:Version="${VERSION}" --no-restore
+
+      - name: Pack releasable packages
+        # `dotnet pack` on the solution packs only projects with
+        # IsPackable=true, which is WebDriverBiDi, WebDriverBiDi.Analyzers,
+        # and WebDriverBiDi.Logging. Symbol-package emission is configured
+        # per-project in the csproj files (only library and logging produce
+        # .snupkg; the analyzer has no managed assembly to symbolicate).
+        run: dotnet pack WebDriverBiDi.NET.sln --configuration Release -p:Version="${VERSION}" --no-build --output .
+
+      - name: Push packages to NuGet
+        run: dotnet nuget push "*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "${NUGET_API_KEY}"
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
