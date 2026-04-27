@@ -34,14 +34,14 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI008** | Warning | Unsafe cast of `EvaluateResult`; suggests pattern matching |
 | **BIDI009** | Error | Module command called before `StartAsync()` |
 | **BIDI010** | Error | Async module command not awaited (fire-and-forget) |
-| **BIDI011** | Warning | `SetCheckpoint()` called but checkpoint never waited for or unset |
 | **BIDI012** | Info | `DisposeAsync()` called without `StopAsync()` first; suggests calling `StopAsync` |
 | **BIDI013** | Warning | Long-running operation (e.g., `NavigateAsync`) called without `CancellationToken` |
 | **BIDI014** | Warning | Parameterless constructor used for a command with a command-level reset property (i.e., a `static Reset*` property returning the same `CommandParameters` type); suggests using `.Reset*`. Does not apply to property-level sentinel classes such as `SetViewportCommandParameters`. |
 | **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName` |
 | **BIDI016** | Warning | Deadlock-prone pattern (e.g., `.Result`, `.Wait()`) in event handler |
 | **BIDI017** | Warning | Adding to nullable list property without `??= new List<T>()` |
-| **BIDI019** | Warning | `UnsetCheckpoint()` called on an `EventObserver` without a prior `GetCheckpointTasks()` on the same observer; suggests capturing tasks first so they are not abandoned |
+| **BIDI020** | Error | `WaitForAsync()` or `WaitForCapturedTasksAsync()` called without a prior `StartCapturing()` in the same method |
+| **BIDI021** | Warning | `StartCapturing()` called but no read method (`WaitForAsync`, `WaitForCapturedTasksAsync`, `GetCapturedTasks`) follows in the same method |
 
 ## Code Fixes
 
@@ -62,7 +62,7 @@ The following analyzers have code fix providers:
 - **BIDI014** — Replaces parameterless constructor with `.Reset*` property
 - **BIDI015** — Replaces string literal with `ObservableEvent.EventName` property
 - **BIDI017** — Adds null-coalescing assignment before adding to nullable list
-- **BIDI019** — Inserts `var tasks = observer.GetCheckpointTasks()` before `UnsetCheckpoint()`
+- **BIDI020** — Inserts `observer.StartCapturing()` before the offending `WaitForAsync` or `WaitForCapturedTasksAsync` call
 
 ## Related Documentation
 
@@ -74,7 +74,7 @@ The following analyzers have code fix providers:
 | Observer disposal (BIDI006) | [Common Pitfalls - Resource Cleanup](../common-pitfalls.md#resource-cleanup) |
 | Nullable collections (BIDI017) | [Common Pitfalls - Null vs Empty Collections](../common-pitfalls.md#null-vs-empty-collections) |
 | Reset parameters (BIDI014) | [API Design Guide - Required vs Optional Parameters](api-design.md#required-vs-optional-parameters) |
-| Checkpoint task capture (BIDI019) | [Events and Observables - EventObserver Cleanup Pattern](../events-observables.md#eventobserver-cleanup-pattern) |
+| Capture session ordering (BIDI020, BIDI021) | [Events and Observables - Event Synchronization](../events-observables.md#event-synchronization) |
 
 ## Known Limitations
 
@@ -84,7 +84,7 @@ No analyzer performs whole-program flow analysis; none of them correlate data ac
 
 | Scope | What the analyzer sees | Rules |
 |-------|------------------------|-------|
-| **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI011, BIDI012, BIDI014, BIDI015, BIDI019 |
+| **Intra-procedural** — single method body | The analyzer walks one method at a time and correlates statements within that method (e.g., "was `StartAsync` called before this line?"). It cannot see into other methods. | BIDI001, BIDI002, BIDI003, BIDI005, BIDI006, BIDI009, BIDI012, BIDI014, BIDI015, BIDI020, BIDI021 |
 | **Per-invocation** — single call site | The analyzer examines each matching invocation in isolation (argument list, surrounding expression). There is no correlation with other statements in the method. | BIDI004, BIDI010, BIDI013, BIDI017 |
 | **Per-expression** — single expression | The analyzer examines each matching syntactic expression (e.g., a cast) in isolation. | BIDI008 |
 | **Per-invocation with handler-body descent** — call site plus the handler it passes | The analyzer inspects each matching `AddObserver(...)` call and also walks into the handler body to look for patterns. When the handler is an inline lambda, the body is right there. When the handler is passed as a method reference (e.g., `AddObserver(this.HandleEvent)`), the analyzer resolves the reference and walks that method body too. It does not continue transitively into further methods that handler body calls. | BIDI007, BIDI016 |

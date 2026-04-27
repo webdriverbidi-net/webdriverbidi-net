@@ -5,7 +5,7 @@
 
 namespace WebDriverBiDi;
 
-using System.Diagnostics.CodeAnalysis;
+using System.Threading.Channels;
 using WebDriverBiDi.Internal;
 using WebDriverBiDi.Protocol;
 
@@ -15,39 +15,45 @@ using WebDriverBiDi.Protocol;
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
 /// <remarks>
 /// <para>
-/// Checkpoint methods (<see cref="SetCheckpoint"/>, <see cref="WaitForCheckpointAsync"/>,
-/// <see cref="WaitForCheckpointAndTasksAsync"/>, <see cref="GetCheckpointTasks"/>,
-/// <see cref="UnsetCheckpoint"/>) are thread-safe. Only one checkpoint may be active at a
-/// time per observer. Multiple threads may wait on the same checkpoint concurrently.
+/// Capture methods (<see cref="StartCapturing"/>, <see cref="StopCapturing"/>,
+/// <see cref="WaitForAsync"/>, <see cref="WaitForCapturedTasksAsync"/>, and
+/// <see cref="GetCapturedTasks"/>) are thread-safe. Only one capture session may be active
+/// at a time per observer.
 /// </para>
 /// <para>
-/// <strong>Typical checkpoint flow:</strong> Call <see cref="SetCheckpoint"/> before triggering
-/// the action that produces events, then await <see cref="WaitForCheckpointAsync"/> or
-/// <see cref="WaitForCheckpointAndTasksAsync"/> to synchronize with event delivery.
+/// <strong>Typical capture flow:</strong> Call <see cref="StartCapturing"/> before triggering
+/// the action that produces events, then use <see cref="WaitForAsync"/>
+/// to wait for a specific number of handler tasks, or <see cref="WaitForCapturedTasksAsync"/> to wait for
+/// handler tasks to complete, or <see cref="GetCapturedTasks"/> to collect whatever has arrived so far.
+/// When <see cref="WaitForAsync"/> or <see cref="WaitForCapturedTasksAsync"/>
+/// collects the full requested batch, the capture session ends automatically; <see cref="StopCapturing"/>
+/// becomes a no-op and need not be called. Call <see cref="StopCapturing"/> explicitly only when ending
+/// the session early (e.g., on timeout or cancellation).
 /// </para>
 /// <example>
 /// <code>
 /// EventObserver&lt;NavigationEventArgs&gt; observer = driver.BrowsingContext.OnLoad.AddObserver(
 ///     e => Console.WriteLine($"Loaded: {e.Url}"));
-/// observer.SetCheckpoint();
+/// observer.StartCapturing();
 /// await driver.BrowsingContext.NavigateAsync(navParams);
-/// bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
-/// if (loaded) { /* page load event received */ }
+/// Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(30));
+/// // When tasks.Length == 1, the capture session was automatically ended.
+/// if (tasks.Length == 1) { /* page load event received */ }
 /// </code>
 /// </example>
 /// </remarks>
 public class EventObserver<T> : IDisposable, IAsyncDisposable
     where T : WebDriverBiDiEventArgs
 {
-    private readonly object checkpointLock = new();
+    private readonly object captureLock = new();
+    private readonly SemaphoreSlim captureReadSemaphore = new(1, 1);
     private readonly string description;
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
     private readonly Func<EventObserverErrorInfo, Task>? observerErrorReporter;
-    private readonly List<Task> capturedTasks = [];
-    private TaskCompletionSource<bool>? checkpointTaskCompletionSource;
-    private CountdownEvent synchronizationCounter = new(0);
+    private Channel<Task>? captureChannel;
+    private int waitingReaderCount;
     private bool isDisposed;
 
     /// <summary>
@@ -75,16 +81,15 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Gets a value indicating whether a checkpoint is set for this observer.
+    /// Gets a value indicating whether a capture session is active on this observer.
     /// </summary>
-    [MemberNotNullWhen(true, nameof(checkpointTaskCompletionSource))]
-    public bool IsCheckpointSet
+    public bool IsCapturing
     {
         get
         {
-            lock (this.checkpointLock)
+            lock (this.captureLock)
             {
-                return this.checkpointTaskCompletionSource is not null;
+                return this.captureChannel is not null;
             }
         }
     }
@@ -93,14 +98,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// Gets the internal unique identifier of this observer.
     /// </summary>
     public string Id { get; } = Guid.NewGuid().ToString();
-
-    /// <summary>
-    /// Gets a value indicating whether this observer currently has a checkpoint set, without acquiring the checkpoint lock.
-    /// This is only used internally to avoid locking when notifying observers, and should not be used externally as it is
-    /// not thread-safe.
-    /// </summary>
-    [MemberNotNullWhen(true, nameof(checkpointTaskCompletionSource))]
-    private bool IsCheckpointSetInternal => this.checkpointTaskCompletionSource is not null;
 
     /// <summary>
     /// Stops observing the event.
@@ -132,159 +129,249 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
-    /// Sets a checkpoint that can be satisfied after the specified number of notifications this observer receives,
-    /// capturing the <see cref="Task"/> objects created while waiting for the checkpoint to be fulfilled.
+    /// Begins an unbounded capture session on this observer. Every handler invocation
+    /// that occurs while the capture is active produces a <see cref="Task"/> that can be
+    /// retrieved via <see cref="WaitForAsync"/>, <see cref="WaitForCapturedTasksAsync"/>,
+    /// or <see cref="GetCapturedTasks"/>. The session ends automatically when
+    /// <see cref="WaitForAsync"/> or <see cref="WaitForCapturedTasksAsync"/> collects the
+    /// full requested batch; call <see cref="StopCapturing"/> to end the session early.
     /// </summary>
-    /// <param name="numberOfNotifications">The number of notifications to wait for. If unspecified, defaults to 1.</param>
-    /// <exception cref="ArgumentException">Thrown when the number of notifications specified is less than 1.</exception>
-    /// <exception cref="WebDriverBiDiException">Thrown when a checkpoint is already established and not yet fulfilled.</exception>
+    /// <exception cref="WebDriverBiDiException">Thrown when a capture session is already active on this observer.</exception>
     /// <remarks>
     /// <para>
-    /// This method is thread-safe and can be called concurrently with called handlers.
+    /// This method is thread-safe. Only one capture session may be active at a time.
     /// </para>
     /// <para>
-    /// Concurrent calls from multiple threads are serialized. If another thread has already set a checkpoint that has
-    /// not been satisfied or unset, this method throws <see cref="WebDriverBiDiException"/>.
+    /// Ownership of each captured <see cref="Task"/> transfers to the caller when it is read via
+    /// <see cref="WaitForAsync"/> or <see cref="GetCapturedTasks"/>.
+    /// The caller is responsible for observing the result of each task, including any exceptions, to
+    /// avoid unobserved task exceptions.
     /// </para>
     /// </remarks>
     /// <example>
     /// <code>
-    /// observer.SetCheckpoint();           // Wait for 1 event
-    /// observer.SetCheckpoint(3);          // Wait for 3 events
+    /// observer.StartCapturing();
     /// await driver.BrowsingContext.NavigateAsync(navParams);
-    /// bool fulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+    /// Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+    /// // When tasks.Length == 1, the capture session was automatically ended.
+    /// if (tasks.Length == 1) { await Task.WhenAll(tasks); }
     /// </code>
     /// </example>
-    public void SetCheckpoint(uint numberOfNotifications = 1)
+    public void StartCapturing()
     {
-        if (numberOfNotifications < 1)
+        lock (this.captureLock)
         {
-            throw new ArgumentException("Number of notifications must be greater than 0.", nameof(numberOfNotifications));
-        }
-
-        lock (this.checkpointLock)
-        {
-            if (this.IsCheckpointSetInternal)
+            if (this.captureChannel is not null)
             {
-                throw new WebDriverBiDiException("This observer already has a checkpoint set. It must be satisfied or unset before setting another.");
+                throw new WebDriverBiDiException("This observer already has an active capture session. Call StopCapturing before starting a new one.");
             }
 
-            this.capturedTasks.Clear();
-            this.synchronizationCounter.Dispose();
-            this.synchronizationCounter = new CountdownEvent(Convert.ToInt32(numberOfNotifications));
-            this.checkpointTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            this.captureChannel = Channel.CreateUnbounded<Task>(new UnboundedChannelOptions()
+            {
+                SingleReader = true,
+                SingleWriter = true,
+                AllowSynchronousContinuations = false,
+            });
         }
     }
 
     /// <summary>
-    /// Asynchronously waits for a checkpoint to be satisfied by having this event observer notified the number of
-    /// times specified when the checkpoint was set. If the wait is successful, it means only that
-    /// this observer was notified to execute the handler, not that the handler has necessarily
-    /// completed execution.
+    /// Ends the active capture session. Any tasks still in the capture buffer can no longer
+    /// be retrieved via <see cref="WaitForAsync"/> or <see cref="GetCapturedTasks"/> after this call.
     /// </summary>
-    /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
-    /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
     /// <remarks>
     /// <para>
-    /// This method is thread-safe with respect to handler notification calls.
-    /// Disposing this observer while waiting will result in an <see cref="ObjectDisposedException"/>.
+    /// This method is thread-safe and is idempotent: calling it when no capture is active does nothing.
     /// </para>
     /// <para>
-    /// Multiple threads may call this method concurrently on the same observer; all will complete when the
-    /// checkpoint is fulfilled.
-    /// </para>
-    /// <para>
-    /// For synchronous handlers, this is sufficient. For handlers registered with
-    /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/>, use
-    /// <see cref="WaitForCheckpointAndTasksAsync"/> to also wait for handler execution to complete.
+    /// If captured tasks that have not yet been retrieved may fault, call <see cref="GetCapturedTasks"/> before
+    /// calling this method to transfer ownership to the caller and avoid unobserved task exceptions.
     /// </para>
     /// </remarks>
+    public void StopCapturing()
+    {
+        lock (this.captureLock)
+        {
+            this.CloseCaptureChannel();
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously waits until the specified number of handler tasks have been captured,
+    /// then returns them. Ownership of the returned tasks transfers to the caller.
+    /// </summary>
+    /// <param name="count">The number of handler tasks to wait for. Must be at least 1.</param>
+    /// <param name="timeout">How long to wait before giving up.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
+    /// <returns>
+    /// <para>
+    /// An array of captured handler <see cref="Task"/> objects. The length of the returned array
+    /// indicates whether the wait was fulfilled:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description>
+    /// If the array length equals <paramref name="count"/>, the wait was fulfilled — all expected
+    /// handler invocations were captured before the timeout expired. The capture session is
+    /// automatically ended; a subsequent <see cref="StopCapturing"/> call is a no-op.
+    /// </description></item>
+    /// <item><description>
+    /// If the array length is less than <paramref name="count"/>, the wait timed out — only the
+    /// tasks that arrived before the timeout are returned. The capture session remains active and
+    /// subsequent calls will continue collecting tasks.
+    /// </description></item>
+    /// </list>
+    /// </returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="count"/> is zero.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <example>
     /// <code>
-    /// observer.SetCheckpoint();
-    /// await driver.BrowsingContext.NavigateAsync(navParams);
-    /// bool notified = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-    /// if (notified) { /* handler was invoked; for sync handlers, it has completed */ }
+    /// observer.StartCapturing();
+    /// await TriggerThreeEventsAsync();
+    /// Task[] tasks = await observer.WaitForAsync(3, TimeSpan.FromSeconds(10));
+    /// // When tasks.Length == count, the capture session is automatically ended.
+    /// if (tasks.Length == 3) { await Task.WhenAll(tasks); }
     /// </code>
     /// </example>
-    public async Task<bool> WaitForCheckpointAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+    public async Task<Task[]> WaitForAsync(uint count, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        Task<bool> completionTask;
-        TaskCompletionSource<bool>? localTaskCompletionSource;
-        lock (this.checkpointLock)
+        if (count < 1)
         {
-            if (!this.IsCheckpointSetInternal)
+            throw new ArgumentException("Count must be greater than 0.", nameof(count));
+        }
+
+        Channel<Task> channel;
+        lock (this.captureLock)
+        {
+            if (this.captureChannel is null)
             {
-                return true;
+                throw new InvalidOperationException("No capture session is active. Call StartCapturing before calling WaitForAsync.");
             }
 
-            localTaskCompletionSource = this.checkpointTaskCompletionSource;
-            completionTask = localTaskCompletionSource.Task;
+            channel = this.captureChannel;
+            this.waitingReaderCount++;
         }
 
-        using CancellationTokenSource timeoutCancellationTokenSource = new();
-        using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        List<Task> collected = [];
+        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout);
+        using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
-        Task timeoutTask = Task.Delay(timeout, timeoutCancellationTokenSource.Token);
-        Task cancellationTask = Task.Delay(Timeout.InfiniteTimeSpan, linkedCancellationTokenSource.Token);
-        Task completedTask = await Task.WhenAny(completionTask, timeoutTask, cancellationTask).ConfigureAwait(false);
-        timeoutCancellationTokenSource.Cancel();
-        linkedCancellationTokenSource.Cancel();
-
-        if (completedTask == cancellationTask)
+        try
         {
-            throw new OperationCanceledException("Wait cancelled waiting for event notifications", cancellationToken);
-        }
-
-        bool checkpointFulfilled = completedTask == completionTask && completionTask.Status == TaskStatus.RanToCompletion && completionTask.Result;
-
-        if (checkpointFulfilled)
-        {
-            lock (this.checkpointLock)
+            await this.captureReadSemaphore.WaitAsync(linkedCancellationTokenSource.Token).ConfigureAwait(false);
+            try
             {
-                if (this.checkpointTaskCompletionSource == localTaskCompletionSource)
+                while (collected.Count < count)
                 {
-                    this.ResetCheckpointState();
+                    bool hasData = await channel.Reader.WaitToReadAsync(linkedCancellationTokenSource.Token).ConfigureAwait(false);
+                    if (!hasData)
+                    {
+                        // Channel was completed externally (StopCapturing called while we were
+                        // blocked waiting). WaitToReadAsync returns false only when the buffer is
+                        // empty AND the writer is completed, so there is nothing left to drain.
+                        break;
+                    }
+
+                    while (collected.Count < count && channel.Reader.TryRead(out Task? task))
+                    {
+                        collected.Add(task);
+                    }
+                }
+
+                // If we collected the requested number of tasks, auto-close the channel so that
+                // subsequent handler invocations are not queued into it.
+                if (collected.Count == count)
+                {
+                    lock (this.captureLock)
+                    {
+                        // Only close if it is still the same channel we started with
+                        // (StopCapturing might have already closed it).
+                        // Note: We are using ReferenceEquals here, though the equality
+                        // operator (`==`) would be semantically equivalent. ReferenceEquals
+                        // explicitly tells us we are checking for the same instance.
+                        if (ReferenceEquals(this.captureChannel, channel))
+                        {
+                            this.CloseCaptureChannel();
+                        }
+                    }
+
+                    // Drain tasks that raced into the buffer in the window between the last
+                    // TryRead and TryComplete. These tasks are not returned to the caller; their
+                    // original fault continuation has ShouldReportAsyncFault = false (because they
+                    // were captured). We attach a new reporting continuation so any fault surfaces
+                    // through the normal error pipeline instead of being silently swallowed.
+                    // Only do this when we are the sole active reader: if another WaitForAsync caller
+                    // is queued behind the semaphore, those tasks are legitimately theirs to consume.
+                    if (this.waitingReaderCount == 1)
+                    {
+                        string eventName = this.observableEvent.EventName;
+                        while (channel.Reader.TryRead(out Task? racedTask))
+                        {
+                            this.ReportOrAttachFaultContinuation(racedTask, eventName);
+                        }
+                    }
                 }
             }
+            finally
+            {
+                this.captureReadSemaphore.Release();
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException("Wait cancelled waiting for captured event handler tasks.", cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Timeout — fall through and return however many tasks arrived before the timeout
+        }
+        finally
+        {
+            lock (this.captureLock)
+            {
+                this.waitingReaderCount--;
+            }
         }
 
-        return checkpointFulfilled;
+        return [.. collected];
     }
 
     /// <summary>
-    /// Asynchronously waits for a checkpoint to be satisfied by having this event observer notified the number of
-    /// times specified when the checkpoint was set. If the wait is successful, it means that this observer was
-    /// notified to execute the handler the expected number of times, and the Tasks representing the execution
-    /// of those handlers have also completed execution. This method discards the Tasks after completion. If you
-    /// need to inspect the Tasks, use <see cref="WaitForCheckpointAsync"/> followed by <see cref="GetCheckpointTasks"/>
-    /// instead.
-    /// Exceptions from captured handler tasks remain owned by the caller and are propagated by this
-    /// method through the returned task rather than being re-surfaced through transport-level event
-    /// handler error behavior.
+    /// Asynchronously waits until the specified number of handler tasks have been captured and all of them have
+    /// completed execution. This method discards the tasks after completion. If you need to inspect the tasks,
+    /// use either <see cref="WaitForAsync"/> or <see cref="GetCapturedTasks"/> instead.
+    /// Exceptions from captured handler tasks remain owned by the caller and are propagated by this method
+    /// through the returned task rather than being re-surfaced through transport-level event handler error behavior.
     /// </summary>
-    /// <param name="timeout">A <see cref="TimeSpan"/> representing the timeout to wait for the checkpoint to be satisfied. This timeout only applies to waiting for this observer to be notified the proper number of times; it does not apply to the execution of the handlers.</param>
+    /// <param name="count">The number of handler tasks to wait for. Must be at least 1.</param>
+    /// <param name="timeout">How long to wait for the handler tasks to be captured. This timeout only applies to
+    /// waiting for this observer to capture the proper number of handler task invocations; it does not apply to
+    /// the execution of the handlers.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
-    /// <returns><see langword="true"/> if this observer has been notified the expected number of times before the timeout expires; otherwise, <see langword="false"/>.</returns>
+    /// <returns><see langword="true"/> if the expected number of handler tasks were captured and completed before
+    /// the timeout expired; otherwise, <see langword="false"/>. When <see langword="true"/> is returned, the
+    /// capture session is automatically ended; a subsequent <see cref="StopCapturing"/> call is a no-op.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="count"/> is zero.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
+    /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <example>
     /// <code>
     /// EventObserver&lt;BeforeRequestSentEventArgs&gt; observer = driver.Network.OnBeforeRequestSent.AddObserver(
     ///     async (e) => await ProcessRequestAsync(e),
     ///     ObservableEventHandlerOptions.RunHandlerAsynchronously);
-    /// observer.SetCheckpoint(3);
+    /// observer.StartCapturing();
     /// await driver.BrowsingContext.NavigateAsync(navParams);
-    /// bool occurred = await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10));
+    /// bool occurred = await observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10));
+    /// // When occurred is true, the capture session is automatically ended.
     /// if (occurred) { /* all 3 events received and handlers completed */ }
     /// </code>
     /// </example>
-    public async Task<bool> WaitForCheckpointAndTasksAsync(TimeSpan timeout, CancellationToken cancellationToken = default)
+    public async Task<bool> WaitForCapturedTasksAsync(uint count, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        bool checkpointFulfilled = await this.WaitForCheckpointAsync(timeout, cancellationToken).ConfigureAwait(false);
-        if (checkpointFulfilled)
+        Task[] tasksToWait = await this.WaitForAsync(count, timeout, cancellationToken).ConfigureAwait(false);
+        if (tasksToWait.Length == count)
         {
             using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            Task[] tasksToWait = this.GetCheckpointTasks();
             Task whenAllTask = Task.WhenAll(tasksToWait);
             Task cancellationTask = Task.Delay(Timeout.InfiniteTimeSpan, linkedCancellationTokenSource.Token);
             Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
@@ -297,82 +384,50 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             await whenAllTask.ConfigureAwait(false); // propagate any exceptions
         }
 
-        return checkpointFulfilled;
+        return tasksToWait.Length == count;
     }
 
     /// <summary>
-    /// Gets the <see cref="Task"/> objects captured while waiting for the checkpoint to be fulfilled.
-    /// Calling this method unsets the checkpoint, and transfers the ownership of the captured
-    /// <see cref="Task"/>s to the calling method.
+    /// Synchronously gets all tasks currently available in the capture buffer and returns them.
+    /// Does not wait for additional tasks to arrive. Ownership of the returned tasks transfers to the caller.
     /// </summary>
-    /// <returns>An array of <see cref="Task"/> objects captured while waiting for the checkpoints to be fulfilled.</returns>
-    /// <remarks>
-    /// <para>
-    /// This method is thread-safe. Calling it unsets the checkpoint and transfers ownership of the captured
-    /// tasks to the caller. If another thread is concurrently waiting via <see cref="WaitForCheckpointAsync"/>,
-    /// that wait will still complete successfully.
-    /// </para>
-    /// <para>
-    /// Once ownership is transferred, exceptions from those tasks are expected to be observed by the caller
-    /// instead of being surfaced again through transport-level event handler error behavior.
-    /// </para>
-    /// </remarks>
+    /// <returns>All handler tasks available in the capture buffer at the time of the call, or an empty array if no capture session is active.</returns>
     /// <example>
     /// <code>
-    /// bool fulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-    /// if (fulfilled)
-    /// {
-    ///     Task[] handlerTasks = observer.GetCheckpointTasks();
-    ///     await Task.WhenAll(handlerTasks);  // Wait for async handlers, observe exceptions
-    /// }
+    /// observer.StartCapturing();
+    /// await TriggerEventsAsync();
+    /// Task[] tasks = observer.GetCapturedTasks();
+    /// await Task.WhenAll(tasks);
+    /// observer.StopCapturing();
     /// </code>
     /// </example>
-    public Task[] GetCheckpointTasks()
+    public Task[] GetCapturedTasks()
     {
-        lock (this.checkpointLock)
+        Channel<Task>? channel;
+        lock (this.captureLock)
         {
-            this.ResetCheckpointState();
-            Task[] capturedTasks = [.. this.capturedTasks];
-            this.capturedTasks.Clear();
-            return capturedTasks;
+            channel = this.captureChannel;
         }
-    }
 
-    /// <summary>
-    /// Unsets an established checkpoint for this observer.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This method is thread-safe. Call this when you no longer need to wait for the checkpoint
-    /// (e.g., when cancelling an operation or cleaning up).
-    /// </para>
-    /// <para>
-    /// If this method is called while the checkpoint has active tasks that have been captured,
-    /// those tasks will be abandoned. If any of those tasks later fault, you may encounter
-    /// unobserved task exceptions. To ensure that captured tasks are observed, use
-    /// <see cref="GetCheckpointTasks"/> to transfer ownership of the tasks to the caller
-    /// before unsetting the checkpoint.
-    /// </para>
-    /// </remarks>
-    /// <example>
-    /// <code>
-    /// observer.SetCheckpoint();
-    /// try
-    /// {
-    ///     await TriggerEventsAsync();
-    ///     await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
-    /// }
-    /// finally
-    /// {
-    ///     observer.UnsetCheckpoint();  // Ensure checkpoint is cleared if wait times out or is cancelled
-    /// }
-    /// </code>
-    /// </example>
-    public void UnsetCheckpoint()
-    {
-        lock (this.checkpointLock)
+        if (channel is null)
         {
-            this.ResetCheckpointState();
+            return [];
+        }
+
+        this.captureReadSemaphore.Wait();
+        try
+        {
+            List<Task> collected = [];
+            while (channel.Reader.TryRead(out Task? task))
+            {
+                collected.Add(task);
+            }
+
+            return [.. collected];
+        }
+        finally
+        {
+            this.captureReadSemaphore.Release();
         }
     }
 
@@ -409,7 +464,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             isSynchronouslyFaulted = true;
         }
 
-        bool isCapturedByCheckpoint = this.CaptureTaskIfCheckpointSet(executingTask);
+        bool isCaptured = this.CaptureTask(executingTask);
         if (isHandlerRunAsynchronously && !executingTask.IsCompleted)
         {
             // Track this still-running handler task so operators can observe backlog
@@ -429,9 +484,9 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             // to observe any eventual exception, preventing UnobservedTaskException
             // from being raised when the task is garbage-collected. Faults are
             // only forwarded into a higher-level error pipeline when the invocation
-            // is not already owned by checkpoint task capture.
+            // is not already owned by checkpoint or capture.
             string reportedEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName);
-            AsynchronousFaultState continuationStateObject = new(reportedEventName, !isCapturedByCheckpoint);
+            AsynchronousFaultState continuationStateObject = new(reportedEventName, !isCaptured);
             _ = executingTask.ContinueWith(
                 this.ReportObserverErrorContinuation,
                 continuationStateObject,
@@ -494,26 +549,21 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         return observableEventName;
     }
 
-    /// <summary>
-    /// Resets the checkpoint state, disposing the synchronization counter and
-    /// canceling the completion source. Must be called while holding the
-    /// <see cref="checkpointLock"/>.
-    /// </summary>
-    private void ResetCheckpointState()
+    private void CloseCaptureChannel()
     {
-        this.synchronizationCounter.Dispose();
-        this.checkpointTaskCompletionSource?.TrySetCanceled();
-        this.checkpointTaskCompletionSource = null;
+        this.captureChannel?.Writer.TryComplete();
+        this.captureChannel = null;
     }
 
     private void DisposeObserver()
     {
         this.Unobserve();
-        lock (this.checkpointLock)
+        lock (this.captureLock)
         {
-            this.ResetCheckpointState();
-            this.capturedTasks.Clear();
+            this.CloseCaptureChannel();
         }
+
+        this.captureReadSemaphore.Dispose();
     }
 
     private void ReportObserverErrorContinuation(Task faultedTask, object? faultStateObject)
@@ -550,23 +600,33 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         }
     }
 
-    private bool CaptureTaskIfCheckpointSet(Task executingTask)
+    // Ensures that a raced task's fault is reported even though its original continuation
+    // has ShouldReportAsyncFault = false (because CaptureTask wrote it to the channel).
+    // ContinueWith with OnlyOnFaulted | ExecuteSynchronously fires inline when the task
+    // is already faulted, and asynchronously if it faults later — both cases are handled.
+    private void ReportOrAttachFaultContinuation(Task racedTask, string eventName)
     {
-        lock (this.checkpointLock)
+        _ = racedTask.ContinueWith(
+            this.ReportObserverErrorContinuation,
+            new AsynchronousFaultState(eventName, shouldReportAsyncFault: true),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
+    private bool CaptureTask(Task executingTask)
+    {
+        lock (this.captureLock)
         {
-            if (!this.IsCheckpointSetInternal || this.synchronizationCounter.IsSet)
+            bool captured = false;
+
+            if (this.captureChannel is not null)
             {
-                return false;
+                this.captureChannel.Writer.TryWrite(executingTask);
+                captured = true;
             }
 
-            this.capturedTasks.Add(executingTask);
-            this.synchronizationCounter.Signal();
-            if (this.synchronizationCounter.IsSet)
-            {
-                this.checkpointTaskCompletionSource.TrySetResult(true);
-            }
-
-            return true;
+            return captured;
         }
     }
 

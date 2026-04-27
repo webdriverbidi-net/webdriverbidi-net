@@ -161,13 +161,13 @@ public static class EventObserverSamples
     }
 
     /// <summary>
-    /// Cleanup when using checkpoints.
+    /// Cleanup when using capture.
     /// </summary>
-    public static async Task CleanupWithCheckpoints(
+    public static async Task CleanupWithCapture(
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-        #region CleanupwithCheckpoints
+        #region CleanupwithCapture
         EventObserver<NavigationEventArgs> observer =
             driver.BrowsingContext.OnLoad.AddObserver((e) =>
             {
@@ -180,9 +180,11 @@ public static class EventObserverSamples
                 new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
             await driver.Session.SubscribeAsync(subscribe);
 
-            observer.SetCheckpoint();
+            observer.StartCapturing();
             await driver.BrowsingContext.NavigateAsync(navParams);
-            bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
+            Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(30));
+            bool loaded = tasks.Length == 1;
+            observer.StopCapturing();
         }
         finally
         {
@@ -192,26 +194,28 @@ public static class EventObserverSamples
     }
 
     /// <summary>
-    /// Checkpoint reset - use for multiple navigations.
+    /// Capture session restart - use for multiple navigations.
     /// </summary>
-    public static async Task CheckpointReset(
+    public static async Task CaptureSessionRestart(
         BiDiDriver driver,
         NavigateCommandParameters params1,
         NavigateCommandParameters params2)
     {
-        #region CheckpointReset
+        #region CaptureSessionRestart
         EventObserver<EntryAddedEventArgs> observer =
             driver.Log.OnEntryAdded.AddObserver((e) => { });
 
         // First navigation
-        observer.SetCheckpoint(3);
+        observer.StartCapturing();
         await driver.BrowsingContext.NavigateAsync(params1);
-        await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
+        await observer.WaitForAsync(3, TimeSpan.FromSeconds(5));
+        observer.StopCapturing();
 
-        // Second navigation - reset checkpoint
-        observer.SetCheckpoint(2);
+        // Second navigation - start a fresh capture session
+        observer.StartCapturing();
         await driver.BrowsingContext.NavigateAsync(params2);
-        await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
+        await observer.WaitForAsync(2, TimeSpan.FromSeconds(5));
+        observer.StopCapturing();
         #endregion
     }
 
@@ -333,13 +337,13 @@ public static class EventObserverSamples
     }
 
     /// <summary>
-    /// WaitForCheckpointAndTasksAsync - recommended for async handlers.
+    /// WaitForCapturedTasksAsync - recommended for async handlers.
     /// </summary>
-    public static async Task WaitForCheckpointAndTasksAsync(
+    public static async Task WaitForCapturedTasksAsync(
         BiDiDriver driver,
         NavigateCommandParameters navParams)
     {
-        #region WaitForCheckpointAndTasksAsync
+        #region WaitForCapturedTasksAsync
         EventObserver<BeforeRequestSentEventArgs> observer =
             driver.Network.OnBeforeRequestSent.AddObserver(
                 async (e) =>
@@ -349,14 +353,14 @@ public static class EventObserverSamples
                 ObservableEventHandlerOptions.RunHandlerAsynchronously
             );
 
-        // Set checkpoint for 3 events
-        observer.SetCheckpoint(3);
+        // Start capturing events
+        observer.StartCapturing();
 
         // Trigger events
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for events to occur AND all handlers to complete
-        bool occurred = await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10));
+        bool occurred = await observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10));
 
         if (occurred)
         {
@@ -366,11 +370,13 @@ public static class EventObserverSamples
         {
             Console.WriteLine("Timeout waiting for events");
         }
+
+        observer.StopCapturing();
         #endregion
     }
 
     /// <summary>
-    /// Manual synchronization with GetCheckpointTasks.
+    /// Manual synchronization with GetCapturedTasks.
     /// </summary>
     public static async Task ManualSynchronization(
         BiDiDriver driver,
@@ -387,63 +393,49 @@ public static class EventObserverSamples
                 ObservableEventHandlerOptions.RunHandlerAsynchronously
             );
 
-        // Set checkpoint for 3 events
-        observer.SetCheckpoint(3);
+        // Start capturing events
+        observer.StartCapturing();
 
         // Trigger events
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        // Wait for events to occur
-        bool occurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+        // Wait for 3 events to occur
+        Task[] handlerTasks = await observer.WaitForAsync(3, TimeSpan.FromSeconds(10));
+        bool occurred = handlerTasks.Length == 3;
 
         if (occurred)
         {
-            // Get handler tasks for inspection or custom handling
-            Task[] handlerTasks = observer.GetCheckpointTasks();
-
             Console.WriteLine($"Waiting for {handlerTasks.Length} handlers to complete...");
 
             // Wait for all async handlers to complete
             await Task.WhenAll(handlerTasks);
             Console.WriteLine("All handlers completed");
         }
+
+        observer.StopCapturing();
         #endregion
     }
 
     /// <summary>
-    /// TaskCompletionSource for complex synchronization.
+    /// Waiting for async handlers to complete using WaitForCapturedTasksAsync.
     /// </summary>
-    public static async Task TaskCompletionSourceSynchronization(
+    public static async Task WaitForAsyncHandlers(
         BiDiDriver driver,
         string contextId,
         Func<BeforeRequestSentEventArgs, Task> processRequestAsync)
     {
-        #region TaskCompletionSourceSynchronization
-        List<Task> handlerTasks = new();
-
+        #region WaitForAsyncHandlers
         EventObserver<BeforeRequestSentEventArgs> observer =
             driver.Network.OnBeforeRequestSent.AddObserver(
                 async (e) =>
                 {
-                    TaskCompletionSource taskCompletionSource = new();
-                    handlerTasks.Add(taskCompletionSource.Task);
+                    Console.WriteLine($"Processing request: {e.Request.Url}");
 
-                    try
-                    {
-                        Console.WriteLine($"Processing request: {e.Request.Url}");
+                    // Long-running operation
+                    await Task.Delay(TimeSpan.FromSeconds(4));
+                    await ProcessRequestAsync(e);
 
-                        // Long-running operation
-                        await Task.Delay(TimeSpan.FromSeconds(4));
-                        await ProcessRequestAsync(e);
-
-                        Console.WriteLine($"Completed request: {e.Request.Url}");
-                        taskCompletionSource.SetResult();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Handler error: {ex.Message}");
-                        taskCompletionSource.SetException(ex);
-                    }
+                    Console.WriteLine($"Completed request: {e.Request.Url}");
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously
             );
@@ -452,10 +444,9 @@ public static class EventObserverSamples
         SubscribeCommandParameters subscribe = new(driver.Network.OnBeforeRequestSent.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
-        // Set checkpoint for expected number of events (e.g., 5 requests)
-        observer.SetCheckpoint(5);
+        // Start capturing and trigger navigation
+        observer.StartCapturing();
 
-        // Trigger navigation
         NavigateCommandParameters navParams = new(contextId, "https://example.com")
         {
             Wait = ReadinessState.Complete
@@ -463,20 +454,20 @@ public static class EventObserverSamples
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navParams);
         Console.WriteLine("Navigation command completed");
 
-        // Important: The navigation command completes before handlers finish
-        // Wait for all events to occur
-        bool occurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+        // Important: The navigation command completes before handlers finish.
+        // WaitForCapturedTasksAsync waits for events to occur AND handlers to complete.
+        bool occurred = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
 
         if (occurred)
         {
-            // Wait for all async handlers to complete
-            await Task.WhenAll(handlerTasks);
             Console.WriteLine("All event handlers completed");
         }
         else
         {
             Console.WriteLine("Timeout waiting for events");
         }
+
+        observer.StopCapturing();
         #endregion
     }
 
@@ -499,40 +490,29 @@ public static class EventObserverSamples
                 ObservableEventHandlerOptions.RunHandlerAsynchronously
             );
 
-        badObserver.SetCheckpoint(5);
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Navigation completes...
         // Main code continues...
         // Application might exit before handlers finish!
 
-        // ✅ SOLUTION: Use TaskCompletionSource and wait
-        List<Task> handlerTasks = new();
-
+        // ✅ SOLUTION: Use WaitForCapturedTasksAsync to wait for events and their handlers
         EventObserver<BeforeRequestSentEventArgs> goodObserver =
             driver.Network.OnBeforeRequestSent.AddObserver(
                 async (e) =>
                 {
-                    TaskCompletionSource tcs = new();
-                    handlerTasks.Add(tcs.Task);
-
                     await Task.Delay(TimeSpan.FromSeconds(5));
                     Console.WriteLine($"Request: {e.Request.Url}");
-
-                    tcs.SetResult();
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously
             );
 
-        goodObserver.SetCheckpoint(5);
+        goodObserver.StartCapturing();
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        bool occurred = await goodObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-        if (occurred)
-        {
-            // Wait for all handlers to complete before continuing
-            await Task.WhenAll(handlerTasks);
-        }
+        // Waits for 5 events to occur AND all their handlers to complete
+        bool occurred = await goodObserver.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
+        goodObserver.StopCapturing();
         #endregion
     }
 
@@ -639,12 +619,15 @@ public static class EventObserverSamples
             new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
         await driver.Session.SubscribeAsync(subscribe);
 
-        // Set checkpoint and trigger navigation
-        observer.SetCheckpoint();
+        // Start capturing and trigger navigation
+        observer.StartCapturing();
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        // Wait for page load event (use async version when possible)
-        bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
+        // Wait for the page load event
+        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(30));
+        bool loaded = tasks.Length == 1;
+        observer.StopCapturing();
+
         if (loaded)
         {
             Console.WriteLine("Page loaded successfully");

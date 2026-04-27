@@ -48,3 +48,12 @@ BIDI018 | Usage       | Warning  | BiDiDriver018_UnsafeRemoteValueValueAsAnalyze
 Rule ID | Category    | Severity | Notes
 --------|-------------|----------|--------------------
 BIDI019 | Usage       | Warning  | BiDiDriver019_UnsetCheckpointWithoutGetTasksAnalyzer
+
+## Release 0.0.51
+
+### Removed Rules
+
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|--------------------
+BIDI011 | Usage       | Warning  | BiDiDriver011_EventObserverCheckpointMisuseAnalyzer
+BIDI019 | Usage       | Warning  | BiDiDriver019_UnsetCheckpointWithoutGetTasksAnalyzer

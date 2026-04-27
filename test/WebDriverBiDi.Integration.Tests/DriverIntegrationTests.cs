@@ -31,15 +31,15 @@ public class DriverIntegrationTests
 
         string browsingContextId = await this.GetBrowsingContext(driver);
 
-        navigationObserver.SetCheckpoint();
+        navigationObserver.StartCapturing();
         NavigateCommandParameters navigateParams = new(browsingContextId, $"http://localhost:{server.Port}/index.html")
         {
             Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.NavigateAsync(navigateParams);
 
-        bool checkpointReached = await navigationObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
-        Assert.That(checkpointReached, Is.True);
+        Task[] capturedTasks = await navigationObserver.WaitForAsync(1, TimeSpan.FromSeconds(5));
+        Assert.That(capturedTasks, Has.Length.EqualTo(1));
         Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/index.html"));
 
         // Attempt to gracefully close the browser. If the test fails, the
@@ -120,15 +120,15 @@ public class DriverIntegrationTests
         NodeRemoteValue nodeRemoteValue = locateResult.Nodes[0];
         SharedReference elementReference = nodeRemoteValue.ToSharedReference();
 
-        navigationObserver.SetCheckpoint();
+        navigationObserver.StartCapturing();
         InputBuilder inputBuilder = new();
         inputBuilder.AddClickOnElementAction(elementReference);
         PerformActionsCommandParameters actionsParams = new(browsingContextId);
         actionsParams.Actions.AddRange(inputBuilder.Build());
         await driver.Input.PerformActionsAsync(actionsParams);
 
-        bool checkpointReached = await navigationObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
-        Assert.That(checkpointReached, Is.True);
+        Task[] capturedTasks = await navigationObserver.WaitForAsync(1, TimeSpan.FromSeconds(5));
+        Assert.That(capturedTasks, Has.Length.EqualTo(1));
         Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/details.html"));
 
         // Attempt to gracefully close the browser. If the test fails, the
@@ -167,7 +167,7 @@ public class DriverIntegrationTests
         NodeRemoteValue nodeRemoteValue = locateResult.Nodes[0];
         SharedReference elementReference = nodeRemoteValue.ToSharedReference();
 
-        navigationObserver.SetCheckpoint();
+        navigationObserver.StartCapturing();
         InputBuilder inputBuilder = new();
         inputBuilder.AddClickOnElementAction(elementReference);
         inputBuilder.AddSendKeysToActiveElementAction("Hello WebDriver BiDi" + Keys.Enter);
@@ -175,8 +175,8 @@ public class DriverIntegrationTests
         actionsParams.Actions.AddRange(inputBuilder.Build());
         await driver.Input.PerformActionsAsync(actionsParams);
 
-        bool checkpointReached = await navigationObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(5));
-        Assert.That(checkpointReached, Is.True);
+        Task[] capturedTasks = await navigationObserver.WaitForAsync(1, TimeSpan.FromSeconds(5));
+        Assert.That(capturedTasks, Has.Length.EqualTo(1));
         Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/processForm"));
 
         LocateNodesCommandParameters locateFormResultParams = new(browsingContextId, new CssLocator("span"))

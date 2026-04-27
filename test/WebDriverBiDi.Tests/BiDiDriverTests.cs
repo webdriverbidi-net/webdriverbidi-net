@@ -1620,4 +1620,101 @@ public class BiDiDriverTests
         });
         Assert.That(caught!.Message, Does.Contain("Remote end closed the connection"));
     }
+
+    [Test]
+    public async Task TestRacedCapturedTaskFaultIsReportedViaEventHandlerError()
+    {
+        // A handler task that races into the capture buffer after WaitForAsync collected
+        // its Nth task (but before TryComplete closes the writer) has
+        // ShouldReportAsyncFault = false on its original continuation. The drain in
+        // WaitForAsync must attach a new reporting continuation so the fault surfaces
+        // via OnEventHandlerErrorOccurred instead of being silently swallowed.
+        EventObserverErrorInfo? errorInfo = null;
+        using ManualResetEventSlim handlerStarted = new(false);
+        using ManualResetEventSlim allowFault = new(false);
+        using ManualResetEventSlim errorReported = new(false);
+
+        TestWebSocketConnection connection = new();
+        Transport transport = new(connection);
+        BiDiDriver driver = new(TimeSpan.FromMilliseconds(500), transport);
+
+        driver.BrowsingContext.OnContextCreated.AddObserver(
+            async (BrowsingContextEventArgs e) =>
+            {
+                if (e.BrowsingContextId == "racedContextId")
+                {
+                    handlerStarted.Set();
+                    await Task.Run(() => allowFault.Wait(TimeSpan.FromSeconds(5)));
+                    throw new InvalidOperationException("raced task fault");
+                }
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        driver.OnEventHandlerErrorOccurred.AddObserver(e =>
+        {
+            errorInfo = e.ErrorInfo with { };
+            errorReported.Set();
+        });
+
+        await driver.StartAsync("ws://localhost:5555");
+
+        string collectedEventJson = """
+            {
+              "type": "event",
+              "method": "browsingContext.contextCreated",
+              "params": {
+                "context": "collectedContextId",
+                "clientWindow": "myClientWindowId",
+                "url": "http://example.com",
+                "originalOpener": null,
+                "userContext": "default",
+                "children": []
+              }
+            }
+            """;
+
+        string racedEventJson = """
+            {
+              "type": "event",
+              "method": "browsingContext.contextCreated",
+              "params": {
+                "context": "racedContextId",
+                "clientWindow": "myClientWindowId",
+                "url": "http://example.com",
+                "originalOpener": null,
+                "userContext": "default",
+                "children": []
+              }
+            }
+            """;
+
+        EventObserver<BrowsingContextEventArgs> observer = driver.BrowsingContext.OnContextCreated.AddObserver(
+            _ => { },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturing();
+
+        // Deliver the event that WaitForAsync(1) will collect.
+        await connection.RaiseDataReceivedEventAsync(collectedEventJson);
+        // Deliver the raced event — its handler starts and blocks.
+        await connection.RaiseDataReceivedEventAsync(racedEventJson);
+        handlerStarted.Wait(TimeSpan.FromSeconds(5));
+
+        // WaitForAsync collects 1 task, auto-closes, drains the raced task.
+        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(5));
+        Assert.That(tasks, Has.Length.EqualTo(1));
+
+        // Let the raced handler fault.
+        allowFault.Set();
+        bool reported = errorReported.Wait(TimeSpan.FromSeconds(5));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(reported, Is.True, "raced task fault must be reported via OnEventHandlerErrorOccurred");
+            Assert.That(errorInfo, Is.Not.Null);
+            Assert.That(errorInfo!.Exception, Is.InstanceOf<InvalidOperationException>().With.Message.EqualTo("raced task fault"));
+            Assert.That(errorInfo.ObservableEventName, Is.EqualTo("browsingContext.contextCreated"));
+        }
+    }
+
 }

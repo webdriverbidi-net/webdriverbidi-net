@@ -109,11 +109,14 @@ public static class FormSubmissionSamples
         EventObserver<NavigationEventArgs> navObserver =
             driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
-        navObserver.SetCheckpoint();
+        navObserver.StartCapturing();
 
         // Click submit button...
 
-        bool navCompleted = await navObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+        Task[] tasks = await navObserver.WaitForAsync(1, TimeSpan.FromSeconds(10));
+        bool navCompleted = tasks.Length == 1;
+
+        navObserver.StopCapturing();
         #endregion
     }
 
@@ -377,7 +380,7 @@ public static class FormSubmissionSamples
                             Console.WriteLine($"Navigation complete to: {e.Url}");
                         });
 
-                    navObserver.SetCheckpoint();
+                    navObserver.StartCapturing();
 
                     // Click submit button
                     Console.WriteLine("Clicking submit button...");
@@ -394,7 +397,9 @@ public static class FormSubmissionSamples
                     await driver.Input.PerformActionsAsync(clickSubmitParams);
 
                     // Wait for navigation to complete
-                    bool navCompleted = await navObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+                    Task[] navTasks = await navObserver.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                    bool navCompleted = navTasks.Length == 1;
+                    navObserver.StopCapturing();
 
                     if (navCompleted)
                     {

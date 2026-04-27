@@ -128,7 +128,7 @@ public class BiDiDriver013AnalyzerTests
     }
 
     [Test]
-    public async Task WaitForCheckpointAsync_WithoutCancellationToken_ReportsWarning()
+    public async Task WaitForAsync_WithoutCancellationToken_ReportsWarning()
     {
         string testCode = """
             using System;
@@ -144,8 +144,8 @@ public class BiDiDriver013AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.SetCheckpoint(5);
-                        await {|#0:observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10))|};
+                        observer.StartCapturing();
+                        await {|#0:observer.WaitForAsync(5, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -153,13 +153,13 @@ public class BiDiDriver013AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("WaitForCheckpointAsync");
+            .WithArguments("WaitForAsync");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
 
     [Test]
-    public async Task WaitForCheckpointAndTasksAsync_WithoutCancellationToken_ReportsWarning()
+    public async Task WaitForCapturedTasksAsync_WithoutCancellationToken_ReportsWarning()
     {
         string testCode = """
             using System;
@@ -175,8 +175,8 @@ public class BiDiDriver013AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.SetCheckpoint(5);
-                        await {|#0:observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10))|};
+                        observer.StartCapturing();
+                        await {|#0:observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -184,7 +184,7 @@ public class BiDiDriver013AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("WaitForCheckpointAndTasksAsync");
+            .WithArguments("WaitForCapturedTasksAsync");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
@@ -297,7 +297,7 @@ public class BiDiDriver013AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.SetCheckpoint();
+                        observer.StartCapturing();
                     }
                 }
             }

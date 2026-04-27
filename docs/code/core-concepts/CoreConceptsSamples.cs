@@ -466,7 +466,7 @@ public static class CoreConceptsSamples
     }
 
     /// <summary>
-    /// Event observer pattern with checkpoint.
+    /// Event observer pattern with capture.
     /// </summary>
     public static async Task EventObserverPattern(
         BiDiDriver driver,
@@ -480,14 +480,17 @@ public static class CoreConceptsSamples
                 Console.WriteLine(e.Text);
             });
 
-        // Set a checkpoint to wait for N events
-        observer.SetCheckpoint(5); // Wait for 5 events
+        // Start capturing to wait for N events
+        observer.StartCapturing();
 
         // Perform operations that trigger events
         await driver.BrowsingContext.NavigateAsync(navParams);
 
-        // Wait for the checkpoint
-        bool fulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+        // Wait for 5 events
+        Task[] tasks = await observer.WaitForAsync(5, TimeSpan.FromSeconds(10));
+        bool fulfilled = tasks.Length == 5;
+
+        observer.StopCapturing();
 
         // Remove the observer
         observer.Unobserve();
