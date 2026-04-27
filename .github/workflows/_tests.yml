@@ -1,0 +1,140 @@
+# Reusable workflow: build the solution and run all tests (unit, analyzer,
+# logging, integration). Called by ci.yml (on PR and main push) and by
+# release.yml (on tag push). Not triggered directly.
+#
+# The leading underscore in the filename is a convention to signal "not a
+# user-facing workflow" — GitHub itself does not treat it specially.
+#
+# The caller names this workflow under its own `jobs.<id>:` which becomes the
+# check prefix shown on PRs (e.g. "tests / unit-tests").
+
+name: Tests (reusable)
+
+on:
+  workflow_call: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+  unit-tests:
+    name: Unit tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test WebDriverBiDi library (with coverage)
+        # Coverage is produced only for the main library's test project. The
+        # Coveralls upload globs lcov.*.info from test/coverage/ — other test
+        # projects do not write coverage there.
+        run: >
+          dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
+          --coverlet --coverlet-output-format lcov
+          --coverlet-exclude-by-file "**/_/src/**"
+          --results-directory test/coverage --coverlet-file-prefix lcov
+
+      - name: Enforce coverage thresholds
+        run: ./scripts/check-lcov-thresholds.sh --min-line 90 --min-branch 90 --min-method 90 test/coverage/lcov.*.info
+
+      - name: Test Roslyn analyzers
+        run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Test structured logging library
+        run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
+
+      - name: Upload code coverage
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          files: test/coverage/lcov.*.info
+
+  integration-tests:
+    name: Integration tests (${{ matrix.browser.display }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser:
+          - name: firefox-nightly
+            display: Firefox Nightly
+            browser-type: firefox
+          - name: chrome-canary
+            display: Chrome Canary
+            browser-type: chrome
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Create local browser directory
+        run: mkdir -p "$GITHUB_WORKSPACE/browsers"
+
+      - name: Install Firefox Nightly
+        if: matrix.browser.name == 'firefox-nightly'
+        run: |
+          curl -s -L -o firefox-nightly.tar.xz "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64&lang=en-US"
+          tar xJf firefox-nightly.tar.xz -C "$GITHUB_WORKSPACE/browsers"
+
+      - name: Install Chrome Canary
+        if: matrix.browser.name == 'chrome-canary'
+        run: |
+          curl -s -L "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json" \
+            | jq '.channels["Canary"]["downloads"]["chrome"].[] | select(.platform == "linux64") | .url' \
+            | xargs curl -s -L -o chrome-canary.zip
+          unzip chrome-canary.zip -d "$GITHUB_WORKSPACE/browsers"
+          mv "$GITHUB_WORKSPACE/browsers/chrome-linux64" "$GITHUB_WORKSPACE/browsers/chrome-canary"
+
+      - name: Run integration tests
+        run: dotnet test --project test/WebDriverBiDi.Integration.Tests --configuration Release --no-build --verbosity normal
+        env:
+          CI: true
+          FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
+          CHROME_EXECUTABLE: ${{ matrix.browser.browser-type == 'chrome' && format('{0}/browsers/chrome-canary/chrome', github.workspace) || '' }}
