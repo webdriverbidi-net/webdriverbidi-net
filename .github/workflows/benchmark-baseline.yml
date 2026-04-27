@@ -1,0 +1,97 @@
+# Manually-triggered workflow that produces a fresh benchmark baseline on a CI runner.
+#
+# Flow:
+# 1. Maintainer runs this workflow (Actions tab → "Benchmark Baseline" → Run workflow)
+#    against the desired ref (typically main).
+# 2. The workflow runs the benchmark suite and uploads renamed JSON files
+#    as a `benchmark-baseline` artifact.
+# 3. Maintainer downloads the artifact, drops the two JSON files into
+#    test/WebDriverBiDi.Benchmarks/baselines/, and opens a follow-up PR.
+#
+# The baseline must be produced on a GitHub-hosted runner (not locally) because
+# absolute benchmark numbers are hardware-dependent, and the comparison in
+# benchmarks.yml runs on ubuntu-latest. A locally-produced baseline would show
+# every subsequent CI run as a large "regression".
+#
+# This workflow does not commit or open a PR on its own. Keeping the human in
+# the loop avoids needing a bot token with write access and makes every
+# baseline change an explicit, reviewable action.
+
+name: Benchmark Baseline
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  produce-baseline:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj
+
+    - name: Run benchmarks with JSON exporter
+      # The JSON exporter is not in the default set; request it explicitly.
+      # --artifacts is set so the output directory is predictable regardless of
+      # where the benchmark runner was invoked from.
+      run: >
+        dotnet run
+        --project test/WebDriverBiDi.Benchmarks
+        --configuration Release
+        --no-restore
+        --
+        --exporters json
+        --artifacts ${{ github.workspace }}/BenchmarkDotNet.Artifacts
+
+    - name: Rename baseline JSON files
+      # BenchmarkDotNet emits files named
+      #   WebDriverBiDi.Benchmarks.<ClassName>-report-full-compressed.json
+      # The comparison script in benchmarks.yml expects
+      #   test/WebDriverBiDi.Benchmarks/baselines/ci-baseline-<ClassName>.json
+      # This step renames artifacts into the expected shape so the human
+      # committing the baseline just drops them into baselines/.
+      run: |
+        set -euo pipefail
+        mkdir -p baseline-out
+        for src in BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json; do
+          filename=$(basename "$src" -report-full-compressed.json)
+          classname=${filename#WebDriverBiDi.Benchmarks.}
+          cp "$src" "baseline-out/ci-baseline-${classname}.json"
+        done
+        ls -la baseline-out
+
+    - name: Upload baseline artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-baseline
+        path: baseline-out/
+        retention-days: 90
+
+    - name: Summary
+      run: |
+        {
+          echo "## Benchmark baseline produced"
+          echo ""
+          echo "Commit: \`${{ github.sha }}\`"
+          echo "Ref: \`${{ github.ref }}\`"
+          echo ""
+          echo "**Next steps:**"
+          echo "1. Download the \`benchmark-baseline\` artifact from this workflow run."
+          echo "2. Extract both JSON files into \`test/WebDriverBiDi.Benchmarks/baselines/\`, replacing the existing files."
+          echo "3. Open a follow-up PR with the updated baseline files."
+          echo ""
+          echo "The two files should be named:"
+          for f in baseline-out/*.json; do
+            echo "- \`$(basename "$f")\`"
+          done
+        } >> "$GITHUB_STEP_SUMMARY"

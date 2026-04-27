@@ -44,6 +44,30 @@ Measures command object creation and initialization overhead:
 - **CreateScriptEvaluateCommand**: Script evaluation command creation
 - **CreateScriptCallFunctionCommand**: Function call with arguments
 
+### PendingCommandCollectionBenchmarks
+Measures the transport's pending-command bookkeeping overhead:
+- **AddRemovePendingCommand**: Full add-then-remove round trip through the
+  pending-command collection, covering the semaphore acquire/release and the
+  backing ConcurrentDictionary insertion and removal. Every command the
+  driver sends traverses this path once.
+
+### EventDispatchBenchmarks
+Measures dispatch cost for `ObservableEvent<T>.NotifyObserversAsync` across
+multiple observer counts:
+- **NotifyObservers (ObserverCount=1, 4, 16)**: Fires one event with the
+  specified number of registered no-op observers. The single-observer case
+  is the typical production scenario; 4 and 16 reveal the scaling behavior
+  of the observer-snapshot lock and per-observer dispatch loop.
+
+### CommandExecutionBenchmarks
+Measures the end-to-end cost of `BiDiDriver.ExecuteCommandAsync` against an
+in-memory echo connection with zero simulated latency:
+- **ExecuteCommandRoundTrip**: Full command round trip — JSON serialization,
+  pending-command bookkeeping, send, response synthesis, incoming-message
+  queue write/read, response deserialization, and TaskCompletionSource
+  completion. The echo connection isolates library overhead from any real
+  I/O cost.
+
 ## Understanding Results
 
 BenchmarkDotNet provides:

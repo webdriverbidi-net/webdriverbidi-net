@@ -1,0 +1,4 @@
+{
+  "_comment": "Placeholder. Run the 'Benchmark Baseline' workflow on main to generate a real CI-runner baseline, then download the artifact and commit these files via a follow-up PR.",
+  "Benchmarks": []
+}

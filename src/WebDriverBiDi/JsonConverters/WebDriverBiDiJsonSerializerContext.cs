@@ -41,6 +41,7 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(Command))]
 [JsonSerializable(typeof(ErrorResponseMessage))]
 [JsonSerializable(typeof(ErrorCode))]
+[JsonSerializable(typeof(EmptyResult))]
 
 // ── Bluetooth module (command responses and event handlers) ──
 [JsonSerializable(typeof(CommandResponseMessage<DisableSimulationCommandResult>))]
