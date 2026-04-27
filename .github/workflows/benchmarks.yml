@@ -1,0 +1,118 @@
+# Runs the WebDriverBiDi.Benchmarks project on pull requests, compares results
+# against the committed CI-runner baseline, and posts the comparison as a PR
+# comment. Results are advisory: this workflow is not a required check, and
+# GitHub-hosted runners add enough noise that sub-~20% changes should be
+# treated as variance.
+#
+# Path filters ensure the workflow only runs when a PR touches code that could
+# plausibly affect benchmark results — the main library or the benchmarks
+# themselves.
+#
+# Consolidation note: when the separate dotnet.yml / integration-tests.yml /
+# benchmarks.yml workflows are later merged into a single ci.yml, this job's
+# body should move across largely verbatim. It uses the same setup-dotnet
+# pattern as dotnet.yml, its path filters can stay as a job-level condition
+# under ci.yml, and the compare-benchmarks.sh script is already a standalone
+# helper in scripts/ that does not depend on this workflow's structure.
+
+name: Benchmarks
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - 'src/WebDriverBiDi/**'
+      - 'test/WebDriverBiDi.Benchmarks/**'
+      - 'scripts/compare-benchmarks.sh'
+      - '.github/workflows/benchmarks.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj
+
+    - name: Run benchmarks with markdown and JSON exporters
+      # The GitHub-flavored markdown exporter is on by default; JSON is not.
+      # We need JSON for the baseline comparison script.
+      run: >
+        dotnet run
+        --project test/WebDriverBiDi.Benchmarks
+        --configuration Release
+        --no-restore
+        --
+        --exporters json
+
+    - name: Upload benchmark artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: BenchmarkDotNet.Artifacts/
+        retention-days: 30
+
+    - name: Compare against baseline
+      id: compare
+      # The script produces a markdown table on stdout. It always exits 0 —
+      # the comparison is advisory; we don't fail the build on regressions.
+      run: |
+        set -euo pipefail
+        chmod +x scripts/compare-benchmarks.sh
+        scripts/compare-benchmarks.sh \
+          BenchmarkDotNet.Artifacts/results \
+          test/WebDriverBiDi.Benchmarks/baselines \
+          > compare-output.md
+
+    - name: Assemble PR comment body
+      id: assemble
+      run: |
+        set -euo pipefail
+        {
+          echo "## Benchmark results"
+          echo ""
+          echo "_Advisory only. Runs on a shared GitHub-hosted runner; treat sub-20% changes as noise._"
+          echo ""
+          echo "Commit: \`${{ github.event.pull_request.head.sha }}\`"
+          echo ""
+          echo "**Legend:** ✅ no meaningful regression · ⚠️ mean +25% or allocated +10% · 🔴 mean +50% or allocated +25% · (new) no baseline entry"
+          echo ""
+          cat compare-output.md
+          echo ""
+          echo "Full artifacts (HTML/CSV/JSON/logs) are attached to this workflow run as the _benchmark-results_ artifact."
+        } > benchmark-comment.md
+
+        # Surface the body via GITHUB_OUTPUT using the multiline delimiter syntax.
+        {
+          echo "body<<__BENCHMARK_EOF__"
+          cat benchmark-comment.md
+          echo "__BENCHMARK_EOF__"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Find existing benchmark comment
+      uses: peter-evans/find-comment@v3
+      id: find-comment
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: 'github-actions[bot]'
+        body-includes: '## Benchmark results'
+
+    - name: Post or update PR comment
+      uses: peter-evans/create-or-update-comment@v4
+      with:
+        comment-id: ${{ steps.find-comment.outputs.comment-id }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: ${{ steps.assemble.outputs.body }}
+        edit-mode: replace
