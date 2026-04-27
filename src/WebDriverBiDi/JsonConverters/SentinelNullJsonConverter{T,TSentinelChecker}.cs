@@ -7,6 +7,7 @@ namespace WebDriverBiDi.JsonConverters;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 /// <summary>
 /// Custom JSON serializer for properties that can be both missing and null, but with
@@ -64,7 +65,10 @@ public class SentinelNullJsonConverter<T, TSentinelChecker> : JsonConverter<T>
             }
             else
             {
-                JsonSerializer.Serialize(writer, value, value.GetType(), options);
+                // Use the JsonSerializer.Serialize() overload that takes a JsonTypeInfo
+                // to remove warnings when publishing AOT compiled applications.
+                JsonTypeInfo typeInfo = options.GetTypeInfo(value.GetType());
+                JsonSerializer.Serialize(writer, value, typeInfo);
             }
         }
     }

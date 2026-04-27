@@ -7,6 +7,7 @@ namespace WebDriverBiDi.JsonConverters;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Script;
 
 /// <summary>
@@ -70,7 +71,10 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
                 throw new JsonException($"RemoteValue array element for dictionary must have a second element (value) that is an object");
             }
 
-            RemoteValue pairValue = valueToken.Deserialize<RemoteValue>(options)!;
+            // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
+            // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
+            JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
+            RemoteValue pairValue = valueToken.Deserialize(typeInfo)!;
             remoteValueDictionary[pairKey] = pairValue;
         }
 
@@ -92,7 +96,10 @@ public class RemoteValueDictionaryJsonConverter : JsonConverter<RemoteValueDicti
             // a string or object. We will use the null forgiving operator since
             // the token must be an object, and therefore the cast cannot return
             // null.
-            RemoteValue keyRemoteValue = keyToken.Deserialize<RemoteValue>(options)!;
+            // Note carefully, we use the JsonSerializer.Deserialize() overload that takes a
+            // JsonTypeInfo to remove warnings when publishing AOT compiled applications.
+            JsonTypeInfo<RemoteValue> typeInfo = (JsonTypeInfo<RemoteValue>)options.GetTypeInfo(typeof(RemoteValue));
+            RemoteValue keyRemoteValue = keyToken.Deserialize(typeInfo)!;
             pairKey = keyRemoteValue;
         }
 

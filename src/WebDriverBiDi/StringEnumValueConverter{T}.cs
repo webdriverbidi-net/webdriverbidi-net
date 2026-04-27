@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 /// <summary>
@@ -15,7 +16,7 @@ using System.Reflection;
 /// values.
 /// </summary>
 /// <typeparam name="T">An enumerated type.</typeparam>
-public class StringEnumValueConverter<T>
+public class StringEnumValueConverter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T>
     where T : struct, Enum
 {
     private readonly T? defaultValue;
@@ -34,12 +35,26 @@ public class StringEnumValueConverter<T>
             this.defaultValue = unmatchedValueAttribute.UnmatchedValue;
         }
 
-        T[] values = (T[])Enum.GetValues(typeof(T));
+        // A note about the below structure. We use Enum.GetValues<T>() to support AOT
+        // compilation scenarios. However, .NET Standard 2.0 does not contain that
+        // method definition. Luckily, .NET Standard 2.0 also does not have concrete
+        // AOT publishing path.
+        T[] values =
+        #if NET8_0_OR_GREATER
+            Enum.GetValues<T>();
+        #else
+            (T[])Enum.GetValues(typeof(T));
+        #endif
 
         foreach (T value in values)
         {
             string valueAsString = value.ToString().ToLowerInvariant();
-            MemberInfo member = enumType.GetMember(value.ToString())[0];
+
+            // Use GetField rather than GetMember so that the annotation on T
+            // ([DynamicallyAccessedMembers(PublicFields)]) is sufficient. Enum
+            // values are public static readonly fields on the enum type, so
+            // GetField(name) is the correct query for getting values.
+            FieldInfo member = enumType.GetField(value.ToString())!;
             StringEnumValueAttribute? attribute = member.GetCustomAttribute<StringEnumValueAttribute>();
             if (attribute is not null)
             {

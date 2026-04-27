@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi.JsonConverters;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -12,7 +13,7 @@ using System.Text.Json.Serialization;
 /// Converts an enumerated type to and from JSON strings.
 /// </summary>
 /// <typeparam name="T">The enum to convert.</typeparam>
-public class EnumValueJsonConverter<T> : JsonConverter<T>
+public class EnumValueJsonConverter<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] T> : JsonConverter<T>
     where T : struct, Enum
 {
     private static readonly Lazy<StringEnumValueConverter<T>> StringEnumConverter = new();
