@@ -42,6 +42,9 @@ jobs:
 
     - name: Run benchmarks with JSON exporter
       # The JSON exporter is not in the default set; request it explicitly.
+      # --filter '*' tells BenchmarkSwitcher to run every benchmark class
+      # non-interactively; without it the runner prompts for a selection and
+      # hangs on CI.
       # --artifacts is set so the output directory is predictable regardless of
       # where the benchmark runner was invoked from.
       run: >
@@ -50,6 +53,7 @@ jobs:
         --configuration Release
         --no-restore
         --
+        --filter '*'
         --exporters json
         --artifacts ${{ github.workspace }}/BenchmarkDotNet.Artifacts
 

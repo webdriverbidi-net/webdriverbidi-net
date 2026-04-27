@@ -48,12 +48,16 @@ jobs:
     - name: Run benchmarks with markdown and JSON exporters
       # The GitHub-flavored markdown exporter is on by default; JSON is not.
       # We need JSON for the baseline comparison script.
+      # --filter '*' tells BenchmarkSwitcher to run every benchmark class
+      # non-interactively; without it the runner prompts for a selection and
+      # hangs on CI.
       run: >
         dotnet run
         --project test/WebDriverBiDi.Benchmarks
         --configuration Release
         --no-restore
         --
+        --filter '*'
         --exporters json
 
     - name: Upload benchmark artifacts
