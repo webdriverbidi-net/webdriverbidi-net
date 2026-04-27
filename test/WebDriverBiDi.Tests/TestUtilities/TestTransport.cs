@@ -204,16 +204,37 @@ public class TestTransport : Transport
     }
 
     /// <summary>
-    /// Gets or sets an exception that should fault the message-processing loop immediately.
-    /// Used to exercise the fault continuation attached in Transport.ConnectAsync.
+    /// Gets or sets one or more exceptions that should fault the message-processing
+    /// loop immediately. Used to exercise the fault continuation attached in
+    /// Transport.ConnectAsync, including both its single-inner and multi-inner
+    /// AggregateException branches.
     /// </summary>
-    public Exception? ReadLoopOuterFault { get; set; }
+    /// <remarks>
+    /// When a single exception is provided, the processing task is faulted via
+    /// <see cref="Task.FromException(Exception)"/>, producing an AggregateException
+    /// with a single inner exception. When two or more exceptions are provided,
+    /// a <see cref="TaskCompletionSource"/> is faulted with the full set, producing
+    /// an AggregateException whose InnerExceptions contains every supplied
+    /// exception, which triggers the aggregate-unwrapping branch in
+    /// Transport.LogMessageProcessingFault.
+    /// </remarks>
+    public Exception[]? ReadLoopOuterFault { get; set; }
 
     protected override Task ReadIncomingMessagesAsync()
     {
-        if (this.ReadLoopOuterFault is not null)
+        if (this.ReadLoopOuterFault is { Length: > 0 })
         {
-            return Task.FromException(this.ReadLoopOuterFault);
+            if (this.ReadLoopOuterFault.Length == 1)
+            {
+                return Task.FromException(this.ReadLoopOuterFault[0]);
+            }
+
+            // TaskCompletionSource.SetException(IEnumerable<Exception>) produces a
+            // faulted task whose Exception.InnerExceptions contains every supplied
+            // exception, which is what we need to drive the Count != 1 branch.
+            TaskCompletionSource tcs = new();
+            tcs.SetException(this.ReadLoopOuterFault);
+            return tcs.Task;
         }
 
         return base.ReadIncomingMessagesAsync();

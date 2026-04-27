@@ -1667,7 +1667,7 @@ public class TransportTests
         TestWebSocketConnection connection = new();
         TestTransport transport = new(connection)
         {
-            ReadLoopOuterFault = injectedFault,
+            ReadLoopOuterFault = [injectedFault],
             ProtocolErrorBehavior = TransportErrorBehavior.Collect,
         };
 
@@ -1689,6 +1689,51 @@ public class TransportTests
             Assert.That(caught, Is.Not.Null);
             Assert.That(caught!.InnerExceptions, Has.Count.EqualTo(1));
             Assert.That(caught.InnerExceptions[0], Is.SameAs(injectedFault));
+        }
+    }
+
+    [Test]
+    public async Task TestMessageProcessingTaskFaultWithMultipleInnerExceptionsIsCapturedAsAggregate()
+    {
+        // Companion to TestMessageProcessingTaskFaultIsCapturedAsUnhandledError.
+        // Covers the Count != 1 branch in Transport.LogMessageProcessingFault,
+        // where the faulted processing task carries more than one inner
+        // exception. In that branch the continuation forwards the whole
+        // AggregateException rather than unwrapping to a single inner.
+        InvalidOperationException firstFault = new("first simulated outer-loop fault");
+        ArgumentException secondFault = new("second simulated outer-loop fault");
+        TestWebSocketConnection connection = new();
+        TestTransport transport = new(connection)
+        {
+            ReadLoopOuterFault = [firstFault, secondFault],
+            ProtocolErrorBehavior = TransportErrorBehavior.Collect,
+        };
+
+        await transport.ConnectAsync("ws:localhost");
+        bool faultCaptured = await transport.WaitForCollectedEventHandlerExceptionAsync(
+            TimeSpan.FromSeconds(5),
+            TransportErrorBehavior.Collect);
+        if (!faultCaptured)
+        {
+            Assert.Fail("the fault-capture continuation should record the injected faults before the safety timeout");
+        }
+
+        // Under Collect mode, DisconnectAsync surfaces the captured fault as an
+        // outer AggregateException. Because the captured fault was already an
+        // AggregateException with multiple inner exceptions, the library
+        // forwarded it whole — so the outer aggregate has a single inner that
+        // is itself an AggregateException containing both injected faults.
+        AggregateException? caught = Assert.ThrowsAsync<AggregateException>(
+            async () => await transport.DisconnectAsync());
+        Assert.That(caught, Is.Not.Null);
+        Assert.That(caught!.InnerExceptions, Has.Count.EqualTo(1));
+        AggregateException? forwardedAggregate = caught.InnerExceptions[0] as AggregateException;
+        Assert.That(forwardedAggregate, Is.Not.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(forwardedAggregate!.InnerExceptions, Has.Count.EqualTo(2));
+            Assert.That(forwardedAggregate.InnerExceptions, Contains.Item(firstFault));
+            Assert.That(forwardedAggregate.InnerExceptions, Contains.Item(secondFault));
         }
     }
 
