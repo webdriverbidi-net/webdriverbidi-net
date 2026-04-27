@@ -41,14 +41,17 @@ jobs:
         with:
           filters: |
             docs:
-              - 'src/WebDriverBiDi/**'
-              - 'docs/**'
+              # Scope matches what validate-docs checks: markdown articles
+              # and their C# code-sample counterparts. Library source is not
+              # referenced by the validation script.
+              - 'docs/articles/**'
+              - 'docs/code/**'
+              - 'docs/tools/validate-doc-regions.sh'
             benchmarks:
               - 'src/WebDriverBiDi/**'
               - 'test/WebDriverBiDi.Benchmarks/**'
               - 'scripts/compare-benchmarks.sh'
               - '.github/workflows/ci.yml'
-              - '.github/workflows/_tests.yml'
 
   tests:
     name: Tests
