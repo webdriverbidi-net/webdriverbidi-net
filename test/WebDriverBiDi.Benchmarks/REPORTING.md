@@ -1,177 +1,282 @@
 # Benchmark Reporting Quick Reference
 
-## Quick Commands
+This document is the practical how-do-I guide for the performance benchmark
+suite. For an overview of what the benchmarks measure and how to invoke them,
+see [README.md](README.md).
 
-### For GitHub Issues/PRs
+## Continuous integration: the regular flow
+
+Day-to-day you usually do not need to run benchmarks locally. The
+[`Benchmarks` workflow](../../.github/workflows/benchmarks.yml) runs on every
+pull request that touches:
+
+- `src/WebDriverBiDi/**` — the main library
+- `test/WebDriverBiDi.Benchmarks/**` — the benchmark suite itself
+- `scripts/compare-benchmarks.sh` — the comparator script
+- `.github/workflows/benchmarks.yml` — the workflow
+
+For each run, the workflow:
+
+1. Builds and runs the full benchmark suite on `ubuntu-latest`.
+2. Compares the resulting JSON against the committed baselines in
+   [`test/WebDriverBiDi.Benchmarks/baselines/`](baselines/) using
+   [`scripts/compare-benchmarks.sh`](../../scripts/compare-benchmarks.sh).
+3. Posts (or updates) a PR comment with a per-benchmark delta table.
+4. Uploads the full `BenchmarkDotNet.Artifacts/` directory as a
+   `benchmark-results` workflow artifact (retained for 30 days) for
+   deeper investigation.
+
+The workflow is **advisory only** — it is not a required check, so a red
+status does not block a merge. The comment classifies every benchmark with
+a glyph:
+
+| Glyph | Meaning |
+|-------|---------|
+| ✅ | No meaningful regression |
+| ⚠️ | Mean time +25% or allocations +10% vs. baseline |
+| 🔴 | Mean time +50% or allocations +25% vs. baseline |
+| `(new)` | Benchmark has no matching entry in the baseline |
+
+GitHub-hosted runners are shared hardware, so expect some run-to-run
+variance. Treat sub-20% changes on a single benchmark as noise; treat a
+broad shift (e.g., every benchmark moves ~20% in the same direction) as
+more likely to be real.
+
+## Baselines
+
+### What is the baseline?
+
+The baseline is a pair of `ci-baseline-*.json` files committed to
+[`test/WebDriverBiDi.Benchmarks/baselines/`](baselines/), one per benchmark
+class:
+
+```
+test/WebDriverBiDi.Benchmarks/baselines/
+  ci-baseline-CommandProcessingBenchmarks.json
+  ci-baseline-SerializationBenchmarks.json
+```
+
+Each file is a `BenchmarkDotNet` JSON export containing mean time and
+allocation figures for every benchmark in its class. The comparator script
+looks up each benchmark in the current run by `FullName` and computes the
+delta against the baseline.
+
+**The baseline must be produced on the same runner image as the workflow
+that compares against it (`ubuntu-latest`).** Absolute benchmark numbers are
+hardware-dependent; a baseline produced on a developer laptop would make
+every subsequent CI run look like a dramatic regression. A dedicated
+workflow enforces this.
+
+### Seeding the baseline (first-time setup)
+
+When the benchmark comparator is first introduced to the repository, the
+baseline files contain `{"Benchmarks": []}` placeholders. The first CI run
+against these placeholders reports every benchmark as `(new)`. To produce
+a real baseline:
+
+1. Go to the **Actions** tab → **Benchmark Baseline** → **Run workflow**.
+   Pick `main` as the ref unless there is a specific reason to baseline
+   against a different branch.
+2. Wait for the run to finish (~2 minutes).
+3. Download the `benchmark-baseline` artifact from the workflow run. It
+   contains two files named exactly:
+   - `ci-baseline-CommandProcessingBenchmarks.json`
+   - `ci-baseline-SerializationBenchmarks.json`
+4. Drop both files into [`test/WebDriverBiDi.Benchmarks/baselines/`](baselines/),
+   replacing the placeholders.
+5. Open a pull request with just these two file changes and a title like
+   "Seed initial benchmark baseline."
+
+The next PR that touches the benchmark paths will show real deltas in its
+PR comment.
+
+### Updating the baseline
+
+Update the baseline when:
+
+- You have **intentionally** shifted performance and want the new numbers
+  to be the reference point. This is especially useful after a performance
+  optimization lands — leaving the old baseline in place would make every
+  subsequent run look "slow."
+- The CI runner image changes (e.g., GitHub retires `ubuntu-22.04` and
+  promotes `ubuntu-24.04`), which can shift absolute numbers across the
+  board.
+- The benchmark set itself has changed substantially: benchmarks added,
+  removed, or renamed. New/renamed benchmarks render as `(new)` until the
+  baseline is refreshed.
+
+The mechanics are identical to seeding. Run the **Benchmark Baseline**
+workflow, download the artifact, drop the files into `baselines/`, open a
+PR. Include a sentence in the PR description noting why the baseline is
+being refreshed — e.g., "Baseline refresh following optimization landed in
+#123" — so the diff is reviewable.
+
+### Why a maintainer commits, not a bot
+
+The refresh workflow produces an artifact but does not commit the baseline
+on its own. Every baseline change is therefore a human-authored PR with a
+reviewer. This avoids needing a bot token with write access to `main` and
+keeps the performance-of-record decisions explicit.
+
+## Running benchmarks locally
+
+Local runs are useful for experimentation, debugging performance issues,
+and pre-validating that a change does what you expect before letting CI
+confirm it on the standard hardware.
+
+### Run everything
+
 ```bash
-# Run benchmarks and copy console output
 dotnet run --project test/WebDriverBiDi.Benchmarks -c Release
 ```
-Copy the summary table from the end of the output. It looks like this:
 
-```
-| Method                           | Mean      | Error    | StdDev   | Allocated |
-|--------------------------------- |----------:|---------:|---------:|----------:|
-| SerializeCommandParameters       |  1.234 μs | 0.045 μs | 0.012 μs |     512 B |
-| DeserializeCommandResult         |  2.567 μs | 0.089 μs | 0.023 μs |    1024 B |
-| DeserializeNetworkEvent          |  3.456 μs | 0.123 μs | 0.034 μs |    2048 B |
-| DeserializeSimpleRemoteValue     |  0.789 μs | 0.034 μs | 0.009 μs |     256 B |
-| DeserializeComplexRemoteValue    |  1.890 μs | 0.067 μs | 0.018 μs |     768 B |
-```
+The default exporters produce console output and a GitHub-flavoured
+markdown file per benchmark class under
+`BenchmarkDotNet.Artifacts/results/`.
 
-**Best for**: Sharing results in GitHub discussions, issues, or PR comments.
+### Run a single class or method
 
----
-
-### For Pre-Release Validation
 ```bash
-# Run and save baseline
-dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- --exporters json markdown
+# Just the serialization benchmarks
+dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- \
+  --filter '*SerializationBenchmarks*'
 
-# Save the baseline
-VERSION="1.0.0"  # Replace with actual version
-cp BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json \
-   test/WebDriverBiDi.Benchmarks/baselines/v${VERSION}-baseline.json
+# Just one method
+dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- \
+  --filter '*DeserializeNetworkEvent*'
 ```
 
-**Best for**: Creating stable reference points for future comparisons.
+### Get the same JSON the comparator uses
 
----
-
-### For Detailed Analysis
 ```bash
-# Generate HTML report for deep dive
-dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- --exporters html
-
-# Open in browser
-open BenchmarkDotNet.Artifacts/results/*-report.html
+dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- --exporters json
 ```
 
-**Best for**: Investigating performance issues or analyzing distributions.
+Produces `BenchmarkDotNet.Artifacts/results/*-report-full-compressed.json`.
+You can feed that directly to the comparator to simulate what CI will do:
 
----
-
-## Example Report Format for GitHub
-
-When posting benchmark results to GitHub, use this format:
-
-```markdown
-## Performance Benchmarks
-
-Environment:
-- OS: macOS 14.5 / Ubuntu 24.04 / Windows 11
-- CPU: Apple M4 Max / Intel i9-13900K / AMD Ryzen 9 7950X
-- .NET: 10.0.2
-- Commit: abc1234
-
-### Results
-
-| Method | Mean | Allocated | Notes |
-|--------|------|-----------|-------|
-| DeserializeNetworkEvent | 3.456 μs | 2048 B | ✅ Meets goal (<50μs) |
-| SerializeCommandParameters | 1.234 μs | 512 B | ✅ Meets goal (<20μs) |
-
-### Changes from Previous Baseline (v1.0.0)
-- DeserializeNetworkEvent: **+5%** (was 3.292 μs) - acceptable variance
-- SerializeCommandParameters: **-2%** (was 1.259 μs) - slight improvement
-```
-
----
-
-## Interpreting Results
-
-### Time Units
-- `ns` (nanosecond) = 0.000000001 second
-- `μs` (microsecond) = 0.000001 second
-- `ms` (millisecond) = 0.001 second
-
-### What's Good?
-✅ **Deserialization** < 50 μs
-✅ **Serialization** < 20 μs
-✅ **Gen0** collections < 0.5 per 1000 ops
-✅ **Gen1/Gen2** collections = 0
-✅ **Allocated** < 2KB per operation
-
-### What's Concerning?
-⚠️ **>20% slower** than baseline
-⚠️ **Gen1** collections > 0
-⚠️ **Gen2** collections > 0
-⚠️ **Allocated** increased significantly
-
----
-
-## Comparison Workflow
-
-### Before Major Refactor
 ```bash
-# Save baseline
-dotnet run --project test/WebDriverBiDi.Benchmarks -c Release
-cp -r BenchmarkDotNet.Artifacts/results BenchmarkDotNet.Artifacts/before-refactor
+scripts/compare-benchmarks.sh \
+  BenchmarkDotNet.Artifacts/results \
+  test/WebDriverBiDi.Benchmarks/baselines
 ```
 
-### After Major Refactor
-```bash
-# Run again
-dotnet run --project test/WebDriverBiDi.Benchmarks -c Release
+Note that the absolute numbers will differ from CI because your laptop is
+almost certainly not a GitHub-hosted `ubuntu-latest` runner.
 
-# Compare manually
-# Look at: BenchmarkDotNet.Artifacts/before-refactor/*-github.md
-# vs: BenchmarkDotNet.Artifacts/results/*-github.md
-```
+### Quick validation runs
 
-### Quick Visual Comparison
-Open both markdown files side-by-side and compare the "Mean" and "Allocated" columns.
+For when you just want to confirm a benchmark builds and runs at all (not
+for trustworthy numbers):
 
----
-
-## Export Formats Summary
-
-| Format | Use Case | Command Flag |
-|--------|----------|--------------|
-| **Console** | Quick checks, GitHub issues | (default) |
-| **Markdown** | GitHub PRs, documentation | `--exporters markdown` |
-| **JSON** | Historical tracking, automation | `--exporters json` |
-| **HTML** | Detailed analysis, visualizations | `--exporters html` |
-| **CSV** | Excel/Sheets analysis | `--exporters csv` |
-
-### All Formats at Once
 ```bash
 dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- \
-  --exporters json markdown html csv
+  --filter '*DeserializeNetworkEvent*' --job dry
 ```
 
----
+`--job dry` runs each benchmark a single time with no warmup. Useful for
+plumbing checks, not for perf decisions.
 
-## Storage Recommendations
+## Before/after comparison for a local experiment
 
-### Commit to Git (Optional)
-- ✅ **DO commit**: Release baseline JSON files (e.g., `baselines/v1.0.0-baseline.json`)
-- ❌ **DON'T commit**: All artifacts from every run (already in .gitignore)
+When iterating on a performance change locally, it is often easier to
+compare before/after on your own hardware than to let each iteration
+cycle through CI. One convention that works:
 
-### Keep Locally
-- Individual benchmark runs for experimentation
-- Before/after comparison artifacts
-- HTML reports for investigation
+```bash
+# Before the change, on a clean working tree
+dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- --exporters json
+cp -r BenchmarkDotNet.Artifacts/results before-change
 
----
+# After the change
+dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- --exporters json
+
+# Use the committed comparator with the "before" directory as the baseline.
+# You'll need to rename the JSON files to the form the comparator expects.
+for f in before-change/*-report-full-compressed.json; do
+  filename=$(basename "$f" -report-full-compressed.json)
+  class=${filename#WebDriverBiDi.Benchmarks.}
+  cp "$f" "before-change/ci-baseline-${class}.json"
+done
+scripts/compare-benchmarks.sh BenchmarkDotNet.Artifacts/results before-change
+```
+
+This produces the same glyphed delta table the CI PR comment produces, but
+with your laptop as the constant hardware.
+
+## Interpreting results
+
+### What's good?
+
+- **Deserialization:** < 50 μs for typical events/results
+- **Serialization:** < 20 μs for typical commands
+- **Gen0 collections:** ideally < 0.5 per 1000 ops
+- **Gen1/Gen2 collections:** zero in hot paths
+- **Allocated:** < 2 KB per operation for typical commands
+
+### What's concerning?
+
+- Mean time +20–25% or more vs. baseline on a stable CI run
+- Any Gen1 or Gen2 collections appearing where they were previously zero
+- Allocation growth > 1 KB per operation that cannot be explained by the
+  change under review
+
+### Time units
+
+- `ns` (nanosecond) = 0.000000001 s
+- `μs` (microsecond) = 0.000001 s
+- `ms` (millisecond) = 0.001 s
+
+## Export formats
+
+| Format | Use case | Command flag |
+|--------|----------|--------------|
+| Console | Quick checks | (default) |
+| Markdown | GitHub comments, docs | `--exporters markdown` (default GitHub-flavour variant is on by default) |
+| JSON | Baseline comparison, automation | `--exporters json` |
+| HTML | Detailed analysis | `--exporters html` |
+| CSV | Spreadsheet analysis | `--exporters csv` |
+
+Combine flags to request multiple at once:
+
+```bash
+dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- \
+  --exporters json html csv
+```
 
 ## FAQ
 
 **Q: Why do results vary between runs?**
-A: System noise, background processes, CPU throttling. Variance of 5-10% is normal.
+A: System noise, background processes, CPU thermal throttling. 5–10%
+variance on a quiet local machine is normal; GitHub-hosted runners can
+show more.
 
-**Q: Should I run on same hardware every time?**
-A: Yes, for accurate comparisons. Different CPUs produce different absolute numbers.
+**Q: I ran the benchmarks locally and the PR comment looks totally different.**
+A: The CI runs on `ubuntu-latest` — a shared x64 VM. Your laptop is
+almost certainly not the same hardware, and an Apple Silicon CPU in
+particular will produce dramatically different absolute numbers. Compare
+relative deltas, not absolute numbers, when cross-referencing local and CI
+results.
 
-**Q: How many times should I run benchmarks?**
-A: BenchmarkDotNet runs multiple iterations automatically. Run the full suite 2-3 times if results seem unusual.
+**Q: A benchmark shows a regression in the PR comment.**
+A: First, re-run the workflow to confirm it wasn't a one-off runner noise
+event. If the regression reproduces:
+- Investigate what in the PR could cause it.
+- If the regression is intentional (e.g., you traded perf for correctness),
+  note it in the PR description and refresh the baseline once the PR merges.
+- If the regression is unintentional, fix before merging.
 
-**Q: What if a benchmark shows a regression?**
-A: First, run again to confirm. If confirmed >20%, investigate. Check allocations, algorithm changes, or added work.
+**Q: A newly-added benchmark shows as `(new)` forever.**
+A: That's expected until the baseline is refreshed. New benchmarks only
+have a baseline entry after the next baseline-refresh PR merges.
 
-**Q: Can I run a single benchmark quickly?**
-A: Yes, use `--filter "*MethodName*"` and `--job dry` for quick validation (less accurate):
+**Q: How do I quickly test a benchmark change without running the full suite?**
+A: Use `--filter` and optionally `--job dry` for plumbing checks:
+
 ```bash
 dotnet run --project test/WebDriverBiDi.Benchmarks -c Release -- \
-  --filter "*DeserializeNetworkEvent*" --job dry
+  --filter '*MyNewBenchmark*' --job dry
 ```
+
+Results from `--job dry` are not trustworthy for perf decisions — they run
+each benchmark once with no warmup. For real numbers, drop the `--job dry`.
