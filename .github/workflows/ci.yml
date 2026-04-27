@@ -134,7 +134,7 @@ jobs:
         # Coveralls upload globs lcov.*.info from test/coverage/ — other test
         # projects do not write coverage there.
         run: >
-          dotnet test --project test/WebDriverBiDi.Tests --no-build --verbosity normal
+          dotnet test --project test/WebDriverBiDi.Tests --configuration Release --no-build --verbosity normal
           --coverlet --coverlet-output-format lcov
           --coverlet-exclude-by-file "**/_/src/**"
           --results-directory test/coverage --coverlet-file-prefix lcov
@@ -143,10 +143,10 @@ jobs:
         run: ./scripts/check-lcov-thresholds.sh --min-line 90 --min-branch 90 --min-method 90 test/coverage/lcov.*.info
 
       - name: Test Roslyn analyzers
-        run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --no-build --verbosity normal
+        run: dotnet test --project test/WebDriverBiDi.Analyzers.Tests --configuration Release --no-build --verbosity normal
 
       - name: Test structured logging library
-        run: dotnet test --project test/WebDriverBiDi.Logging.Tests --no-build --verbosity normal
+        run: dotnet test --project test/WebDriverBiDi.Logging.Tests --configuration Release --no-build --verbosity normal
 
       - name: Upload code coverage
         uses: coverallsapp/github-action@v2
@@ -203,7 +203,7 @@ jobs:
           mv "$GITHUB_WORKSPACE/browsers/chrome-linux64" "$GITHUB_WORKSPACE/browsers/chrome-canary"
 
       - name: Run integration tests
-        run: dotnet test --project test/WebDriverBiDi.Integration.Tests --no-build --verbosity normal
+        run: dotnet test --project test/WebDriverBiDi.Integration.Tests --configuration Release --no-build --verbosity normal
         env:
           CI: true
           FIREFOX_EXECUTABLE: ${{ matrix.browser.browser-type == 'firefox' && format('{0}/browsers/firefox/firefox', github.workspace) || '' }}
