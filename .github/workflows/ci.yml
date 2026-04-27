@@ -10,9 +10,17 @@
 #     passing via `needs:`, so a test failure prevents the package push.
 #
 # Notable properties:
-#   - `build` runs once and uploads its output as a workflow artifact that the
-#     test, docs, benchmark, and release jobs all download and reuse via
-#     `--no-build`. Downstream jobs do not re-invoke dotnet build.
+#   - Each downstream job runs its own `dotnet restore` + `dotnet build`.
+#     Sharing compiled output across jobs via workflow artifacts was tried
+#     and abandoned: `obj/project.assets.json` is written by `dotnet restore`
+#     with absolute paths baked in (to the build runner's NuGet cache). When
+#     the artifact is restored on a different runner, MSBuild import
+#     resolution is broken, which silently causes `dotnet test` to fall back
+#     to the VSTest runner and fail the global.json runner-consistency check.
+#     Since GitHub-hosted runners run jobs in parallel, the wall-clock cost
+#     of duplicating the build is zero.
+#   - The `build` job is a fail-fast gate: if the solution does not build
+#     cleanly, every downstream job skips via `needs:`.
 #   - Path-gated jobs (`validate-docs`, `build-docs`, `benchmarks`) use outputs
 #     from a lightweight `changes` job that classifies the diff with
 #     dorny/paths-filter. On tag pushes the filter is bypassed — everything
@@ -88,27 +96,6 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
-      - name: Upload build output
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          # bin/ holds compiled assemblies for every project; obj/ holds
-          # intermediate build state that dotnet --no-build needs to verify
-          # inputs are up to date. Both are required for downstream --no-build.
-          #
-          # WebDriverBiDi.AotTestApplication is deliberately excluded: it
-          # accounts for ~60% of the uncompressed artifact on its own, and
-          # the integration-tests job publishes it from source at test time
-          # via `dotnet publish`, so the pre-built output would be discarded
-          # anyway. No other downstream job consumes it.
-          path: |
-            **/bin/**
-            **/obj/**
-            !test/WebDriverBiDi.AotTestApplication/bin/**
-            !test/WebDriverBiDi.AotTestApplication/obj/**
-          retention-days: 1
-          include-hidden-files: false
-
   unit-tests:
     name: Unit tests
     needs: build
@@ -124,10 +111,11 @@ jobs:
             9.0.x
             10.0.x
 
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
 
       - name: Test WebDriverBiDi library (with coverage)
         # Coverage is produced only for the main library's test project. The
@@ -179,10 +167,11 @@ jobs:
             9.0.x
             10.0.x
 
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
 
       - name: Create local browser directory
         run: mkdir -p "$GITHUB_WORKSPACE/browsers"
@@ -246,10 +235,11 @@ jobs:
             9.0.x
             10.0.x
 
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build WebDriverBiDi library
+        run: dotnet build src/WebDriverBiDi/WebDriverBiDi.csproj --configuration Release --no-restore
 
       - name: Build documentation sample code
         run: dotnet build docs/code/WebDriverBiDi.DocSnippets.csproj --configuration Release --no-restore
@@ -307,17 +297,15 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
+      - name: Restore dependencies
+        run: dotnet restore test/WebDriverBiDi.Benchmarks/WebDriverBiDi.Benchmarks.csproj
 
       - name: Run benchmarks with JSON exporter
         run: >
           dotnet run
           --project test/WebDriverBiDi.Benchmarks
           --configuration Release
-          --no-build
+          --no-restore
           --
           --exporters json
 
@@ -405,10 +393,11 @@ jobs:
       - name: Set VERSION variable from tag
         run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_ENV"
 
-      - name: Download build output
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release -p:Version="${VERSION}" --no-restore
 
       - name: Pack releasable packages
         # `dotnet pack` on the solution packs only projects with
