@@ -14,9 +14,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 /// <summary>
-/// Analyzer that detects <see cref="EventObserver{T}.StartCapturing"/> calls that are never
-/// followed by a read method (<see cref="EventObserver{T}.WaitForAsync"/>,
-/// <see cref="EventObserver{T}.WaitForCapturedTasksAsync"/>, or
+/// Analyzer that detects <see cref="EventObserver{T}.StartCapturingTasks"/> calls that are never
+/// followed by a read method (<see cref="EventObserver{T}.WaitForCapturedTasksAsync"/>,
+/// <see cref="EventObserver{T}.WaitForCapturedTasksCompleteAsync"/>, or
 /// <see cref="EventObserver{T}.GetCapturedTasks"/>) in the same method body.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -31,9 +31,9 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
 
     private static readonly LocalizableString Title = "Capture session opened but never read";
 
-    private static readonly LocalizableString MessageFormat = "'{0}' has StartCapturing() called but its captured tasks are never retrieved in this method. Call WaitForAsync(), WaitForCapturedTasksAsync(), or GetCapturedTasks() to consume the captured tasks.";
+    private static readonly LocalizableString MessageFormat = "'{0}' has StartCapturingTasks() called but its captured tasks are never retrieved in this method. Call WaitForCapturedTasksAsync(), WaitForCapturedTasksCompleteAsync(), or GetCapturedTasks() to consume the captured tasks.";
 
-    private static readonly LocalizableString Description = "Starting a capture session without reading its results is likely a mistake. Call WaitForAsync(), WaitForCapturedTasksAsync(), or GetCapturedTasks() to retrieve the captured handler tasks; otherwise the capture session serves no purpose and any handler task exceptions may go unobserved.";
+    private static readonly LocalizableString Description = "Starting a capture session without reading its results is likely a mistake. Call WaitForCapturedTasksAsync(), WaitForCapturedTasksCompleteAsync(), or GetCapturedTasks() to retrieve the captured handler tasks; otherwise the capture session serves no purpose and any handler task exceptions may go unobserved.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -67,9 +67,9 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
 
         // For each local EventObserver<T> variable, record the location of the most recent
         // StartCapturing call that has not been satisfied by a read yet.
-        Dictionary<string, Location?> pendingStartCapturing = [];
+        Dictionary<string, Location?> pendingStartCapturingTasks = [];
 
-        // Track whether any read was seen after the most recent StartCapturing.
+        // Track whether any read was seen after the most recent StartCapturingTasks.
         Dictionary<string, bool> hasRead = [];
 
         foreach (StatementSyntax statement in methodDeclaration.Body.Statements)
@@ -82,7 +82,7 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                     ILocalSymbol? localSymbol = semanticModel.GetDeclaredSymbol(variable) as ILocalSymbol;
                     if (localSymbol?.Type is INamedTypeSymbol { Name: "EventObserver" })
                     {
-                        pendingStartCapturing[variable.Identifier.Text] = null;
+                        pendingStartCapturingTasks[variable.Identifier.Text] = null;
                         hasRead[variable.Identifier.Text] = false;
                     }
                 }
@@ -101,7 +101,7 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                 }
 
                 string receiverName = receiverIdentifier.Identifier.Text;
-                if (!pendingStartCapturing.ContainsKey(receiverName))
+                if (!pendingStartCapturingTasks.ContainsKey(receiverName))
                 {
                     continue;
                 }
@@ -109,13 +109,13 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
                 string methodName = memberAccess.Name.Identifier.Text;
                 switch (methodName)
                 {
-                    case "StartCapturing":
-                        pendingStartCapturing[receiverName] = invocation.GetLocation();
+                    case "StartCapturingTasks":
+                        pendingStartCapturingTasks[receiverName] = invocation.GetLocation();
                         hasRead[receiverName] = false;
                         break;
 
-                    case "WaitForAsync":
                     case "WaitForCapturedTasksAsync":
+                    case "WaitForCapturedTasksCompleteAsync":
                     case "GetCapturedTasks":
                         hasRead[receiverName] = true;
                         break;
@@ -123,8 +123,8 @@ public class BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer : Diagnostic
             }
         }
 
-        // Report a warning for any observer whose last StartCapturing call had no subsequent read.
-        foreach (KeyValuePair<string, Location?> kvp in pendingStartCapturing)
+        // Report a warning for any observer whose last StartCapturingTasks call had no subsequent read.
+        foreach (KeyValuePair<string, Location?> kvp in pendingStartCapturingTasks)
         {
             string variableName = kvp.Key;
             Location? startLocation = kvp.Value;

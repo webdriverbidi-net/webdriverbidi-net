@@ -109,14 +109,14 @@ public static class FormSubmissionSamples
         EventObserver<NavigationEventArgs> navObserver =
             driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
-        navObserver.StartCapturing();
+        navObserver.StartCapturingTasks();
 
         // Click submit button...
 
-        Task[] tasks = await navObserver.WaitForAsync(1, TimeSpan.FromSeconds(10));
+        Task[] tasks = await navObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
         bool navCompleted = tasks.Length == 1;
 
-        navObserver.StopCapturing();
+        navObserver.StopCapturingTasks();
         #endregion
     }
 
@@ -380,7 +380,7 @@ public static class FormSubmissionSamples
                             Console.WriteLine($"Navigation complete to: {e.Url}");
                         });
 
-                    navObserver.StartCapturing();
+                    navObserver.StartCapturingTasks();
 
                     // Click submit button
                     Console.WriteLine("Clicking submit button...");
@@ -397,9 +397,9 @@ public static class FormSubmissionSamples
                     await driver.Input.PerformActionsAsync(clickSubmitParams);
 
                     // Wait for navigation to complete
-                    Task[] navTasks = await navObserver.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                    Task[] navTasks = await navObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     bool navCompleted = navTasks.Length == 1;
-                    navObserver.StopCapturing();
+                    navObserver.StopCapturingTasks();
 
                     if (navCompleted)
                     {

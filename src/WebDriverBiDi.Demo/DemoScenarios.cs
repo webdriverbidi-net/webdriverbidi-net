@@ -126,7 +126,7 @@ public static class DemoScenarios
         };
         await driver.Script.AddPreloadScriptAsync(preloadScriptParameters);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/delayLoadPage.html")
         {
             Wait = ReadinessState.Complete
@@ -134,7 +134,7 @@ public static class DemoScenarios
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
-        Task[] capturedTasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
         Console.WriteLine($"Event triggered from preload script: {capturedTasks.Length == 1}");
 
         string functionDefinition = @"() => {
@@ -496,7 +496,7 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
@@ -515,7 +515,7 @@ public static class DemoScenarios
         // that the event handlers will run in parallel. In this case, we've chosen to use
         // Tasks as the synchronization mechanism, so that we can wait for all of them to
         // complete before continuing.
-        Task[] capturedTasks = await observer.WaitForAsync(5, TimeSpan.FromSeconds(10));
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
         Task.WaitAll(capturedTasks);
         Console.WriteLine($"Event handlers complete");
 
@@ -584,13 +584,13 @@ public static class DemoScenarios
         // OnBeforeRequestSent will only be raised once, since we are hijacking the
         // request, and providing a response that does not require any other requests
         // to the web server.
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
         };
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
-        Task[] capturedTasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(3));
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3));
         Task.WaitAll(capturedTasks);
 
         Console.WriteLine($"Navigation command completed");
@@ -649,7 +649,7 @@ public static class DemoScenarios
             return Task.CompletedTask;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
@@ -658,7 +658,7 @@ public static class DemoScenarios
 
         // Navigating to simpleContent.html generates 5 responses, one for the HTML page itself,
         // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
-        Task[] capturedTasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(3));
+        Task[] capturedTasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3));
         if (capturedTasks.Length != 5)
         {
             Console.WriteLine("Error: Checkpoint not fulfilled");
@@ -764,9 +764,9 @@ public static class DemoScenarios
                 PerformActionsCommandParameters actionsParams = new(contextId);
                 actionsParams.Actions.AddRange(inputBuilder.Build());
 
-                navigationObserver.StartCapturing();
+                navigationObserver.StartCapturingTasks();
                 await driver.Input.PerformActionsAsync(actionsParams);
-                Task[] capturedTasks = await navigationObserver.WaitForAsync(1, TimeSpan.FromSeconds(3));
+                Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(3));
                 if (capturedTasks.Length != 1)
                 {
                     Console.WriteLine("Navigation completion not detected within three seconds");

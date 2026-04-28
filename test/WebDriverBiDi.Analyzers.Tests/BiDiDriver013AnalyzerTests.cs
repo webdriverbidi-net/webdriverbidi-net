@@ -144,8 +144,8 @@ public class BiDiDriver013AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        await {|#0:observer.WaitForAsync(5, TimeSpan.FromSeconds(10))|};
+                        observer.StartCapturingTasks();
+                        await {|#0:observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -153,7 +153,7 @@ public class BiDiDriver013AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("WaitForAsync");
+            .WithArguments("WaitForCapturedTasksAsync");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
@@ -175,8 +175,8 @@ public class BiDiDriver013AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        await {|#0:observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10))|};
+                        observer.StartCapturingTasks();
+                        await {|#0:observer.WaitForCapturedTasksCompleteAsync(5, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -184,7 +184,7 @@ public class BiDiDriver013AnalyzerTests
 
         DiagnosticResult expected = new DiagnosticResult(BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer.DiagnosticId, DiagnosticSeverity.Warning)
             .WithLocation(0)
-            .WithArguments("WaitForCapturedTasksAsync");
+            .WithArguments("WaitForCapturedTasksCompleteAsync");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer>(testCode, expected);
     }
@@ -297,7 +297,7 @@ public class BiDiDriver013AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
+                        observer.StartCapturingTasks();
                     }
                 }
             }

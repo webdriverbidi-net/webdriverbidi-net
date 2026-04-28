@@ -33,7 +33,7 @@ public class BiDiDriver020CodeFixProviderTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        Task[] tasks = await {|#0:observer.WaitForAsync(1, TimeSpan.FromSeconds(10))|};
+                        Task[] tasks = await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -53,8 +53,8 @@ public class BiDiDriver020CodeFixProviderTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -64,7 +64,7 @@ public class BiDiDriver020CodeFixProviderTests
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("WaitForAsync", "observer");
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
 
         CSharpCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider, DefaultVerifier> testState = new()
         {
@@ -95,7 +95,7 @@ public class BiDiDriver020CodeFixProviderTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        bool occurred = await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
+                        bool occurred = await {|#0:observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -115,8 +115,8 @@ public class BiDiDriver020CodeFixProviderTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        bool occurred = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        bool occurred = await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -126,7 +126,7 @@ public class BiDiDriver020CodeFixProviderTests
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("WaitForCapturedTasksAsync", "observer");
+            .WithArguments("WaitForCapturedTasksCompleteAsync", "observer");
 
         CSharpCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider, DefaultVerifier> testState = new()
         {
@@ -157,10 +157,10 @@ public class BiDiDriver020CodeFixProviderTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        Task[] first = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
-                        observer.StopCapturing();
-                        Task[] second = await {|#0:observer.WaitForAsync(1, TimeSpan.FromSeconds(10))|};
+                        observer.StartCapturingTasks();
+                        Task[] first = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StopCapturingTasks();
+                        Task[] second = await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -180,11 +180,11 @@ public class BiDiDriver020CodeFixProviderTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        Task[] first = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
-                        observer.StopCapturing();
-                        observer.StartCapturing();
-                        Task[] second = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        Task[] first = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StopCapturingTasks();
+                        observer.StartCapturingTasks();
+                        Task[] second = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -194,7 +194,7 @@ public class BiDiDriver020CodeFixProviderTests
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("WaitForAsync", "observer");
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
 
         CSharpCodeFixTest<BiDiDriver020_CaptureSessionNotStartedAnalyzer, BiDiDriver020_CaptureSessionNotStartedCodeFixProvider, DefaultVerifier> testState = new()
         {

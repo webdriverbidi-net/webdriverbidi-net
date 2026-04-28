@@ -30,13 +30,13 @@ public static class EventSynchronizationSamples
             });
 
         // Start capturing events
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Trigger navigation
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait up to 10 seconds for the event
-        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
         bool eventOccurred = tasks.Length == 1;
 
         if (eventOccurred)
@@ -48,7 +48,7 @@ public static class EventSynchronizationSamples
             Console.WriteLine("Timeout waiting for page load");
         }
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
         #endregion
     }
 
@@ -67,16 +67,16 @@ public static class EventSynchronizationSamples
             });
 
         // Start capturing, then wait for 5 network responses
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for all 5 responses
-        Task[] tasks = await observer.WaitForAsync(5, TimeSpan.FromSeconds(10));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
         bool allReceived = tasks.Length == 5;
         Console.WriteLine($"Received all 5 responses: {allReceived}");
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
         #endregion
     }
 }

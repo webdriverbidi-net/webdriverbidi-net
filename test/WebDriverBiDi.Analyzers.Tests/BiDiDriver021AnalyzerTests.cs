@@ -30,7 +30,7 @@ public class BiDiDriver021AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        {|#0:observer.StartCapturing()|};
+                        {|#0:observer.StartCapturingTasks()|};
                     }
                 }
             }
@@ -62,8 +62,8 @@ public class BiDiDriver021AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -89,8 +89,8 @@ public class BiDiDriver021AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        bool occurred = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        bool occurred = await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -115,7 +115,7 @@ public class BiDiDriver021AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
+                        observer.StartCapturingTasks();
                         Task[] tasks = observer.GetCapturedTasks();
                     }
                 }
@@ -140,8 +140,8 @@ public class BiDiDriver021AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        {|#0:observer.StartCapturing()|};
-                        observer.StopCapturing();
+                        {|#0:observer.StartCapturingTasks()|};
+                        observer.StopCapturingTasks();
                     }
                 }
             }
@@ -174,9 +174,9 @@ public class BiDiDriver021AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        Task[] first = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
-                        {|#0:observer.StartCapturing()|};
+                        observer.StartCapturingTasks();
+                        Task[] first = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        {|#0:observer.StartCapturingTasks()|};
                     }
                 }
             }
@@ -233,9 +233,9 @@ public class BiDiDriver021AnalyzerTests
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> obs1 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
                         EventObserver<NavigationEventArgs> obs2 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        obs1.StartCapturing();
-                        Task[] tasks = await obs1.WaitForAsync(1, TimeSpan.FromSeconds(10));
-                        {|#0:obs2.StartCapturing()|};
+                        obs1.StartCapturingTasks();
+                        Task[] tasks = await obs1.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        {|#0:obs2.StartCapturingTasks()|};
                     }
                 }
             }
@@ -264,7 +264,7 @@ public class BiDiDriver021AnalyzerTests
                 {
                     public void TestMethod(EventObserver<NavigationEventArgs> observer)
                     {
-                        observer.StartCapturing();
+                        observer.StartCapturingTasks();
                     }
                 }
             }
@@ -311,10 +311,10 @@ public class BiDiDriver021AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
+                        observer.StartCapturingTasks();
                         if (condition)
                         {
-                            Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                         }
                     }
                 }
@@ -341,10 +341,10 @@ public class BiDiDriver021AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        Task[] first = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
-                        observer.StartCapturing();
-                        Task[] second = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        Task[] first = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        Task[] second = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }

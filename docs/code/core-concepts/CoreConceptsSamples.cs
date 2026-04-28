@@ -481,16 +481,16 @@ public static class CoreConceptsSamples
             });
 
         // Start capturing to wait for N events
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Perform operations that trigger events
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for 5 events
-        Task[] tasks = await observer.WaitForAsync(5, TimeSpan.FromSeconds(10));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
         bool fulfilled = tasks.Length == 5;
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
 
         // Remove the observer
         observer.Unobserve();

@@ -315,7 +315,7 @@ Your Event Handlers
 
 **Observable Event:** See `ObservableEvent<T>` in the WebDriverBiDi namespace—it provides `AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")` and `NotifyObserversAsync(T eventArgs)`.
 
-**Event Observer:** See `EventObserver<T>` in the WebDriverBiDi namespace—it provides `StartCapturing`, `StopCapturing`, `WaitForAsync`, `WaitForCapturedTasksAsync`, `GetCapturedTasks`, and `Unobserve`.
+**Event Observer:** See `EventObserver<T>` in the WebDriverBiDi namespace—it provides `StartCapturingTasks`, `StopCapturingTasks`, `WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`, `GetCapturedTasks`, and `Unobserve`.
 
 ## Data Flow Patterns
 
@@ -466,7 +466,7 @@ Controls how exceptions thrown by your event handlers are handled:
 - **Collect**: Exceptions are stored and thrown when `StopAsync()` is called. Exceptions from asynchronously run handlers are collected the same way when those tasks are not captured via a capture session. Use when debugging event handler issues.
 - **Terminate**: Driver terminates when next command is sent after exception. Exceptions from asynchronously run handlers also surface on the next command when those tasks are not captured via a capture session. Use when event handler failure indicates unrecoverable state.
 
-If you explicitly capture async handler tasks with `WaitForCapturedTasksAsync()` or `WaitForAsync()`, those task exceptions are instead owned by the caller and are not surfaced a second time through transport termination or collection.
+If you explicitly capture async handler tasks with `WaitForCapturedTasksAsync()` or `WaitForCapturedTasksCompleteAsync()`, those task exceptions are instead owned by the caller and are not surfaced a second time through transport termination or collection.
 
 #### ProtocolErrorBehavior
 

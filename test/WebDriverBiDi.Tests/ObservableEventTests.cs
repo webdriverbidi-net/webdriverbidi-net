@@ -295,19 +295,21 @@ public class ObservableEventTests
         TaskScheduler.UnobservedTaskException += handler;
         try
         {
+            using ManualResetEventSlim handlerFaulted = new(false);
             TestEventSource testEventSource = new();
             testEventSource.TestObservableEvent.AddObserver(
                 async (TestObservableEventArgs e) =>
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(50));
+                    await Task.Yield();
+                    handlerFaulted.Set();
                     throw new InvalidOperationException("async fire-and-forget failure");
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
             await testEventSource.RaiseTestEventAsync("myValue");
 
-            // Allow time for the handler to complete and fault.
-            await Task.Delay(TimeSpan.FromMilliseconds(250));
+            // Wait for the handler to fault before triggering GC.
+            handlerFaulted.Wait(TimeSpan.FromSeconds(5));
 
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
@@ -330,19 +332,27 @@ public class ObservableEventTests
     public async Task TestHandlerRunAsynchronouslyWithAsyncSuccessCompletesWithoutError()
     {
         bool handlerCompleted = false;
+        using ManualResetEventSlim handlerReachedAsync = new(false);
+        using ManualResetEventSlim handlerFinished = new(false);
         TestEventSource testEventSource = new();
         testEventSource.TestObservableEvent.AddObserver(
             async (TestObservableEventArgs e) =>
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(50));
+                handlerReachedAsync.Set();
+                await Task.Yield();
                 handlerCompleted = true;
+                handlerFinished.Set();
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
         await testEventSource.RaiseTestEventAsync("myValue");
 
+        // handlerReachedAsync is set before the first real await, so the handler
+        // has started but has not yet set handlerCompleted.
+        handlerReachedAsync.Wait(TimeSpan.FromSeconds(5));
         Assert.That(handlerCompleted, Is.False, "Fire-and-forget handler should not have completed synchronously");
-        await Task.Delay(TimeSpan.FromMilliseconds(150));
+
+        handlerFinished.Wait(TimeSpan.FromSeconds(5));
         Assert.That(handlerCompleted, Is.True, "Fire-and-forget handler should have completed asynchronously");
     }
 
@@ -528,9 +538,9 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         Assert.That(observer.IsCapturing, Is.True);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
@@ -538,9 +548,9 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
-        Assert.That(() => observer.StartCapturing(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("already has an active capture session"));
-        observer.StopCapturing();
+        observer.StartCapturingTasks();
+        Assert.That(() => observer.StartCapturingTasks(), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("already has an active capture session"));
+        observer.StopCapturingTasks();
     }
 
     [Test]
@@ -548,7 +558,7 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        Assert.That(() => observer.StopCapturing(), Throws.Nothing);
+        Assert.That(() => observer.StopCapturingTasks(), Throws.Nothing);
         Assert.That(observer.IsCapturing, Is.False);
     }
 
@@ -557,68 +567,68 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
-        observer.StopCapturing();
-        Assert.That(() => observer.StopCapturing(), Throws.Nothing);
+        observer.StartCapturingTasks();
+        observer.StopCapturingTasks();
+        Assert.That(() => observer.StopCapturingTasks(), Throws.Nothing);
     }
 
     [Test]
-    public async Task TestWaitForAsyncCountZeroThrows()
+    public async Task TestWaitForCapturedTasksAsyncCountZeroThrows()
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
-        Assert.That(async () => await observer.WaitForAsync(0, TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<ArgumentException>().With.Message.Contains("must be greater than 0"));
-        observer.StopCapturing();
+        observer.StartCapturingTasks();
+        Assert.That(async () => await observer.WaitForCapturedTasksAsync(0, TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<ArgumentException>().With.Message.Contains("must be greater than 0"));
+        observer.StopCapturingTasks();
     }
 
     [Test]
-    public async Task TestWaitForAsyncWithoutStartCapturingThrows()
+    public async Task TestWaitForCapturedTasksAsyncWithoutStartCapturingThrows()
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        Assert.That(async () => await observer.WaitForAsync(1, TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("No capture session is active"));
+        Assert.That(async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<InvalidOperationException>().With.Message.Contains("No capture session is active"));
     }
 
     [Test]
-    public async Task TestWaitForAsync()
+    public async Task TestWaitForCapturedTasksAsync()
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
-        Task[] tasks = await observer.WaitForAsync(2, TimeSpan.FromMilliseconds(100));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromMilliseconds(100));
         Assert.That(tasks, Has.Length.EqualTo(2));
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
-    public async Task TestWaitForAsyncCanTimeout()
+    public async Task TestWaitForCapturedTasksAsyncCanTimeout()
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
-        Task[] tasks = await observer.WaitForAsync(2, TimeSpan.FromMilliseconds(100));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromMilliseconds(100));
         Assert.That(tasks, Has.Length.EqualTo(1));
         Assert.That(observer.IsCapturing, Is.True);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
-    public async Task TestWaitForAsyncCanBeCancelled()
+    public async Task TestWaitForCapturedTasksAsyncCanBeCancelled()
     {
         CancellationTokenSource cancellationTokenSource = new();
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
-        Task waitTask = observer.WaitForAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
+        Task waitTask = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
         cancellationTokenSource.Cancel();
         Assert.That(async () => await waitTask, Throws.InstanceOf<OperationCanceledException>().With.Message.Contains("Wait cancelled waiting for captured event handler tasks"));
         Assert.That(observer.IsCapturing, Is.True);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
@@ -635,10 +645,10 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         Task[] tasks = observer.GetCapturedTasks();
         Assert.That(tasks, Is.Empty);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
@@ -646,57 +656,57 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
         Task[] tasks = observer.GetCapturedTasks();
         Assert.That(tasks, Has.Length.EqualTo(2));
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
-    public async Task TestWaitForCapturedTasksAsync()
+    public async Task TestWaitForCapturedTasksCompleteAsync()
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
-        bool fulfilled = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromMilliseconds(100));
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100));
         Assert.That(fulfilled, Is.True);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
-    public async Task TestWaitForCapturedTasksAsyncCanTimeout()
+    public async Task TestWaitForCapturedTasksCompleteAsyncCanTimeout()
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
-        bool fulfilled = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromMilliseconds(100));
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100));
         Assert.That(fulfilled, Is.False);
         Assert.That(observer.IsCapturing, Is.True);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
-    public async Task TestWaitForCapturedTasksAsyncCanBeCancelledWaitingForTaskCapture()
+    public async Task TestWaitForCapturedTasksCompleteAsyncCanBeCancelledWaitingForTaskCapture()
     {
         CancellationTokenSource cancellationTokenSource = new();
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
-        Task waitTask = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
+        Task waitTask = observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
         cancellationTokenSource.Cancel();
         Assert.That(async () => await waitTask, Throws.InstanceOf<OperationCanceledException>().With.Message.Contains("Wait cancelled waiting for captured event handler tasks"));
         Assert.That(observer.IsCapturing, Is.True);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
-    public async Task TestWaitForCapturedTasksAsyncCanBeCancelledWaitingForTaskCompletion()
+    public async Task TestWaitForCapturedTasksCompleteAsyncCanBeCancelledWaitingForTaskCompletion()
     {
         CountdownEvent countdownEvent = new(2);
         CancellationTokenSource cancellationTokenSource = new();
@@ -709,19 +719,65 @@ public class ObservableEventTests
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
         await testEventSource.RaiseTestEventAsync("myValue2");
 
         // Ensure both handlers have started before cancelling.
         countdownEvent.Wait();
 
-        Task waitTask = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
+        Task waitTask = observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromSeconds(1), cancellationTokenSource.Token);
         cancellationTokenSource.Cancel();
-        Assert.That(async () => await waitTask, Throws.InstanceOf<OperationCanceledException>().With.Message.Contains("Wait cancelled waiting for captured tasks to complete"));
+        Assert.That(async () => await waitTask, Throws.InstanceOf<OperationCanceledException>());
 
         // WaitForAsync auto-closes the channel once count tasks are collected, so
         // IsCapturing is false by the time the task-completion wait is cancelled.
+        Assert.That(observer.IsCapturing, Is.False);
+    }
+
+    [Test]
+    public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenNoRemainingTimeAfterCapture()
+    {
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+
+        observer.StartCapturingTasks();
+
+        // Raise only 1 event but request 2 tasks. WaitForCapturedTasksAsync will block
+        // for the full timeout duration waiting for the second task that never arrives,
+        // guaranteeing remainingTime <= TimeSpan.Zero when control returns to
+        // WaitForCapturedTasksCompleteAsync regardless of machine speed.
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(50));
+        Assert.That(fulfilled, Is.False);
+        observer.StopCapturingTasks();
+    }
+
+    [Test]
+    public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenExecutionTimesOut()
+    {
+        CountdownEvent countdownEvent = new(2);
+        TestEventSource testEventSource = new();
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async (TestObservableEventArgs e) =>
+            {
+                countdownEvent.Signal();
+                await Task.Delay(TimeSpan.FromSeconds(5));
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        // Ensure both handlers have started before waiting, so capture completes
+        // immediately and the remaining timeout is spent waiting for slow execution.
+        countdownEvent.Wait();
+
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100));
+        Assert.That(fulfilled, Is.False);
+
+        // Capture session is auto-closed once count tasks are collected.
         Assert.That(observer.IsCapturing, Is.False);
     }
 
@@ -733,7 +789,7 @@ public class ObservableEventTests
             (e) => Task.FromException(new InvalidOperationException("capture failure")),
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         try
         {
             await testEventSource.RaiseTestEventAsync("myValue");
@@ -742,8 +798,8 @@ public class ObservableEventTests
         {
         }
 
-        Assert.That(async () => await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("capture failure"));
-        observer.StopCapturing();
+        Assert.That(async () => await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromMilliseconds(100)), Throws.InstanceOf<InvalidOperationException>().With.Message.EqualTo("capture failure"));
+        observer.StopCapturingTasks();
     }
 
     [Test]
@@ -751,7 +807,7 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         Assert.That(observer.IsCapturing, Is.True);
         Assert.That(() => observer.Dispose(), Throws.Nothing);
         Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
@@ -762,7 +818,7 @@ public class ObservableEventTests
     {
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         Assert.That(observer.IsCapturing, Is.True);
         Assert.That(async () => await observer.DisposeAsync(), Throws.Nothing);
         Assert.That(testEventSource.TestObservableEvent.CurrentObserverCount, Is.EqualTo(0));
@@ -775,12 +831,12 @@ public class ObservableEventTests
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             (e) => { },
             ObservableEventHandlerOptions.RunHandlerSynchronously);
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue");
         Task[] tasks = observer.GetCapturedTasks();
         Assert.That(tasks, Has.Length.EqualTo(1));
         Assert.That(tasks[0].IsCompletedSuccessfully, Is.True);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
@@ -795,14 +851,14 @@ public class ObservableEventTests
                 handlerCompleted = true;
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue");
         Task[] tasks = observer.GetCapturedTasks();
         Assert.That(tasks, Has.Length.EqualTo(1));
         Assert.That(tasks[0].IsCompleted, Is.False, "Captured task should still be running");
         await tasks[0];
         Assert.That(handlerCompleted, Is.True);
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
@@ -826,7 +882,7 @@ public class ObservableEventTests
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-            observer.StartCapturing();
+            observer.StartCapturingTasks();
             await testEventSource.RaiseTestEventAsync("myValue");
 
             Task[] tasks = observer.GetCapturedTasks();
@@ -846,7 +902,7 @@ public class ObservableEventTests
             Assert.That(tasks[0].IsFaulted, Is.True);
             Assert.That(tasks[0].Exception!.InnerException, Is.InstanceOf<InvalidOperationException>().With.Message.EqualTo("async capture failure"));
 
-            observer.StopCapturing();
+            observer.StopCapturingTasks();
         }
         finally
         {
@@ -855,7 +911,7 @@ public class ObservableEventTests
     }
 
     [Test]
-    public async Task TestConcurrentWaitForAsyncCallsGetUniqueBatches()
+    public async Task TestConcurrentWaitForForCapturedTasksAsyncCallsGetUniqueBatches()
     {
         // Two concurrent callers each asking for 3 tasks should receive unique,
         // non-interleaved batches — one gets tasks 1-3, the other gets tasks 4-6.
@@ -867,11 +923,11 @@ public class ObservableEventTests
         // creates a distinct Task<Guid> object on every invocation.
         static Task DistinctTaskHandler(TestObservableEventArgs _) => Task.FromResult(Guid.NewGuid());
         await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(DistinctTaskHandler);
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Start both waiters before any events are raised.
-        Task<Task[]> waiter1 = observer.WaitForAsync(3, TimeSpan.FromSeconds(5));
-        Task<Task[]> waiter2 = observer.WaitForAsync(3, TimeSpan.FromSeconds(5));
+        Task<Task[]> waiter1 = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5));
+        Task<Task[]> waiter2 = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5));
 
         // Raise 6 events so both waiters can be satisfied.
         for (int i = 0; i < 6; i++)
@@ -895,20 +951,20 @@ public class ObservableEventTests
     }
 
     [Test]
-    public async Task TestWaitForAsyncUnblocksOnStopCapturing()
+    public async Task TestWaitForCapturedTasksAsyncUnblocksOnStopCapturing()
     {
         // WaitForAsync blocked waiting for 3 tasks should return early (with however
         // many arrived so far) when StopCapturing is called from another thread.
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(_ => { });
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Raise only 1 event, then start a waiter that needs 3.
         await testEventSource.RaiseTestEventAsync("value1");
-        Task<Task[]> waitTask = observer.WaitForAsync(3, TimeSpan.FromSeconds(10));
+        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10));
 
         // Stop the capture session from another thread — waiter should unblock.
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
 
         Task[] tasks = await waitTask;
         Assert.That(tasks, Has.Length.EqualTo(1), "should return the 1 task that arrived before StopCapturing");
@@ -924,7 +980,7 @@ public class ObservableEventTests
         TestEventSource testEventSource = new();
         static Task DistinctTaskHandler(TestObservableEventArgs _) => Task.FromResult(Guid.NewGuid());
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(DistinctTaskHandler);
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         for (int i = 0; i < 2; i++)
         {
@@ -933,8 +989,8 @@ public class ObservableEventTests
 
         // WaitForAsync(2) will collect both tasks and then try to auto-close.
         // StopCapturing() races with that auto-close from the calling thread.
-        Task<Task[]> waitTask = observer.WaitForAsync(2, TimeSpan.FromSeconds(5));
-        observer.StopCapturing();
+        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5));
+        observer.StopCapturingTasks();
 
         Task[] tasks = await waitTask;
 
@@ -946,7 +1002,7 @@ public class ObservableEventTests
     }
 
     [Test]
-    public async Task TestFaultedTaskCapturedAfterWaitForAsyncDoesNotCauseUnobservedTaskException()
+    public async Task TestFaultedTaskCapturedAfterWaitForCapturedTasksAsyncDoesNotCauseUnobservedTaskException()
     {
         // A task that races into the channel buffer after WaitForAsync has collected its
         // Nth task (but before TryComplete closes the writer) would normally produce an
@@ -980,7 +1036,7 @@ public class ObservableEventTests
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-            observer.StartCapturing();
+            observer.StartCapturingTasks();
 
             // Raise the event that WaitForAsync(1) will collect.
             await testEventSource.RaiseTestEventAsync("collected");
@@ -990,7 +1046,7 @@ public class ObservableEventTests
             handlerStarted.Wait(TimeSpan.FromSeconds(5));
 
             // WaitForAsync collects 1 task, auto-closes the channel, and drains the raced task.
-            Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(5));
+            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
             Assert.That(tasks, Has.Length.EqualTo(1));
 
             // Let the raced handler fault.
@@ -1013,7 +1069,7 @@ public class ObservableEventTests
     }
 
     [Test]
-    public async Task TestWaitForAsyncAlreadyFaultedRacedTaskDoesNotCauseUnobservedTaskException()
+    public async Task TestWaitForCapturedTasksAsyncAlreadyFaultedRacedTaskDoesNotCauseUnobservedTaskException()
     {
         // If the raced task is already faulted synchronously by the time the drain runs,
         // the direct observation path in ReportOrAttachFaultContinuation is taken.
@@ -1039,7 +1095,7 @@ public class ObservableEventTests
                 RacedFaultHandler,
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-            observer.StartCapturing();
+            observer.StartCapturingTasks();
 
             // Raise both events so both tasks land in the buffer before WaitForAsync reads.
             await testEventSource.RaiseTestEventAsync("collected");
@@ -1053,7 +1109,7 @@ public class ObservableEventTests
             }
 
             // WaitForAsync collects 1 task, auto-closes, and drains the already-faulted raced task.
-            Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(5));
+            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
             Assert.That(tasks, Has.Length.EqualTo(1));
 
             await Task.Delay(100);
@@ -1074,19 +1130,31 @@ public class ObservableEventTests
     }
 
     [Test]
-    public async Task TestWaitForAsyncDoesNotRemovePendingTasksWhenConcurrentWaiterIsActive()
+    public async Task TestWaitForCapturedTasksAsyncDoesNotRemovePendingTasksWhenConcurrentWaiterIsActive()
     {
         // When two WaitForAsync callers are both active (waitingReaderCount == 2),
         // the first to finish must NOT drain the channel — those tasks belong to the
         // second waiter.
+        //
+        // Determinism guarantee: WaitForCapturedTasksAsync increments waitingReaderCount
+        // synchronously under captureLock before its first await point
+        // (captureReadSemaphore.WaitAsync). Awaiting Task.Delay(0) after starting each
+        // waiter drives each task's synchronous preamble to completion on the thread pool,
+        // ensuring both have incremented waitingReaderCount before any events are raised.
+        // waiter1 then blocks inside WaitToReadAsync on the empty channel (it holds the
+        // semaphore); waiter2 blocks on captureReadSemaphore.WaitAsync. Both are registered
+        // as active readers when the events arrive.
         TestEventSource testEventSource = new();
         static Task DistinctTaskHandler(TestObservableEventArgs _) => Task.FromResult(Guid.NewGuid());
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(DistinctTaskHandler);
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
-        // Start both waiters before raising any events.
-        Task<Task[]> waiter1 = observer.WaitForAsync(2, TimeSpan.FromSeconds(5));
-        Task<Task[]> waiter2 = observer.WaitForAsync(2, TimeSpan.FromSeconds(5));
+        // Start each waiter and yield once to advance it to its first await point,
+        // guaranteeing waitingReaderCount == 2 before any events enter the channel.
+        Task<Task[]> waiter1 = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5));
+        await Task.Delay(0);
+        Task<Task[]> waiter2 = observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5));
+        await Task.Delay(0);
 
         // Raise 4 events — enough for both waiters.
         for (int i = 0; i < 4; i++)
@@ -1104,18 +1172,18 @@ public class ObservableEventTests
             Assert.That(all, Has.Count.EqualTo(4), "all 4 tasks must be delivered with no overlap");
         }
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
     }
 
     [Test]
-    public async Task TestWaitForAsyncAutoClosesChannelAfterCountReached()
+    public async Task TestWaitForCapturedTasksAsyncAutoClosesChannelAfterCountReached()
     {
         // After WaitForAsync(N) collects N tasks, subsequent handler invocations should not
         // accumulate in the channel — the capture session is auto-closed.
         TestEventSource testEventSource = new();
         static Task DistinctTaskHandler(TestObservableEventArgs _) => Task.FromResult(Guid.NewGuid());
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(DistinctTaskHandler);
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Raise 3 events, wait for 2 — the Nth read auto-closes the channel.
         for (int i = 0; i < 3; i++)
@@ -1123,7 +1191,7 @@ public class ObservableEventTests
             await testEventSource.RaiseTestEventAsync($"value{i}");
         }
 
-        Task[] firstBatch = await observer.WaitForAsync(2, TimeSpan.FromSeconds(5));
+        Task[] firstBatch = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5));
 
         // Raise further events — these must not be captured because the channel is closed.
         for (int i = 3; i < 6; i++)

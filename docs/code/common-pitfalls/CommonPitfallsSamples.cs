@@ -377,16 +377,16 @@ public static class CommonPitfallsSamples
         await driver.Session.SubscribeAsync(subscribeParams);
 
         // Start capturing events
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Trigger events
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for events to occur AND handlers to complete
-        await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
+        await observer.WaitForCapturedTasksCompleteAsync(5, TimeSpan.FromSeconds(10));
 
         // Now all handlers have completed
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
         #endregion
     }
 
@@ -412,11 +412,11 @@ public static class CommonPitfallsSamples
 
         await driver.Session.SubscribeAsync(subscribeParams);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for 5 events to arrive
-        Task[] handlerTasks = await observer.WaitForAsync(5, TimeSpan.FromSeconds(10));
+        Task[] handlerTasks = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
         bool fulfilled = handlerTasks.Length == 5;
 
         if (fulfilled)
@@ -428,7 +428,7 @@ public static class CommonPitfallsSamples
             await Task.WhenAll(handlerTasks);
         }
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
         #endregion
     }
 
@@ -454,14 +454,14 @@ public static class CommonPitfallsSamples
 
         await driver.Session.SubscribeAsync(subscribeParams);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Drain whatever tasks have arrived so far
         Task[] tasks = observer.GetCapturedTasks();
         await Task.WhenAll(tasks);
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
         #endregion
     }
 

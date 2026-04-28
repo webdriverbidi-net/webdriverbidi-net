@@ -180,11 +180,11 @@ public static class EventObserverSamples
                 new SubscribeCommandParameters(driver.BrowsingContext.OnLoad.EventName);
             await driver.Session.SubscribeAsync(subscribe);
 
-            observer.StartCapturing();
+            observer.StartCapturingTasks();
             await driver.BrowsingContext.NavigateAsync(navParams);
-            Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(30));
+            Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(30));
             bool loaded = tasks.Length == 1;
-            observer.StopCapturing();
+            observer.StopCapturingTasks();
         }
         finally
         {
@@ -206,16 +206,16 @@ public static class EventObserverSamples
             driver.Log.OnEntryAdded.AddObserver((e) => { });
 
         // First navigation
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await driver.BrowsingContext.NavigateAsync(params1);
-        await observer.WaitForAsync(3, TimeSpan.FromSeconds(5));
-        observer.StopCapturing();
+        await observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(5));
+        observer.StopCapturingTasks();
 
         // Second navigation - start a fresh capture session
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await driver.BrowsingContext.NavigateAsync(params2);
-        await observer.WaitForAsync(2, TimeSpan.FromSeconds(5));
-        observer.StopCapturing();
+        await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromSeconds(5));
+        observer.StopCapturingTasks();
         #endregion
     }
 
@@ -354,13 +354,13 @@ public static class EventObserverSamples
             );
 
         // Start capturing events
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Trigger events
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for events to occur AND all handlers to complete
-        bool occurred = await observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10));
+        bool occurred = await observer.WaitForCapturedTasksCompleteAsync(3, TimeSpan.FromSeconds(10));
 
         if (occurred)
         {
@@ -371,7 +371,7 @@ public static class EventObserverSamples
             Console.WriteLine("Timeout waiting for events");
         }
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
         #endregion
     }
 
@@ -394,13 +394,13 @@ public static class EventObserverSamples
             );
 
         // Start capturing events
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Trigger events
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for 3 events to occur
-        Task[] handlerTasks = await observer.WaitForAsync(3, TimeSpan.FromSeconds(10));
+        Task[] handlerTasks = await observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10));
         bool occurred = handlerTasks.Length == 3;
 
         if (occurred)
@@ -412,7 +412,7 @@ public static class EventObserverSamples
             Console.WriteLine("All handlers completed");
         }
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
         #endregion
     }
 
@@ -445,7 +445,7 @@ public static class EventObserverSamples
         await driver.Session.SubscribeAsync(subscribe);
 
         // Start capturing and trigger navigation
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         NavigateCommandParameters navParams = new(contextId, "https://example.com")
         {
@@ -456,7 +456,7 @@ public static class EventObserverSamples
 
         // Important: The navigation command completes before handlers finish.
         // WaitForCapturedTasksAsync waits for events to occur AND handlers to complete.
-        bool occurred = await observer.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
+        bool occurred = await observer.WaitForCapturedTasksCompleteAsync(5, TimeSpan.FromSeconds(10));
 
         if (occurred)
         {
@@ -467,7 +467,7 @@ public static class EventObserverSamples
             Console.WriteLine("Timeout waiting for events");
         }
 
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
         #endregion
     }
 
@@ -507,12 +507,12 @@ public static class EventObserverSamples
                 ObservableEventHandlerOptions.RunHandlerAsynchronously
             );
 
-        goodObserver.StartCapturing();
+        goodObserver.StartCapturingTasks();
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Waits for 5 events to occur AND all their handlers to complete
-        bool occurred = await goodObserver.WaitForCapturedTasksAsync(5, TimeSpan.FromSeconds(10));
-        goodObserver.StopCapturing();
+        bool occurred = await goodObserver.WaitForCapturedTasksCompleteAsync(5, TimeSpan.FromSeconds(10));
+        goodObserver.StopCapturingTasks();
         #endregion
     }
 
@@ -620,13 +620,13 @@ public static class EventObserverSamples
         await driver.Session.SubscribeAsync(subscribe);
 
         // Start capturing and trigger navigation
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for the page load event
-        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(30));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(30));
         bool loaded = tasks.Length == 1;
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
 
         if (loaded)
         {

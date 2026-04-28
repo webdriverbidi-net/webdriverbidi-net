@@ -119,7 +119,7 @@ For long-running or async operations in handlers:
 `AddObserver` returns an `EventObserver<T>` that you should store when you need to:
 
 - **Remove the observer** when it is no longer needed (`Unobserve()`)
-- **Use the capture API** for synchronization (`StartCapturing()`, `WaitForAsync()`, `WaitForCapturedTasksAsync()`)
+- **Use the capture API** for synchronization (`StartCapturingTasks()`, `WaitForCapturedTasksAsync()`, `WaitForCapturedTasksCompleteAsync()`)
 - **Dispose resources** when the observer goes out of scope
 
 Always store the observer reference when you intend to remove it or use the capture API. Failing to remove observers when done can lead to memory leaks and handlers continuing to run after they are no longer needed.
@@ -136,7 +136,7 @@ Always store the observer reference when you intend to remove it or use the capt
 
 #### Cleanup When Using the Capture API
 
-When using the capture API, you must store the observer to call `StartCapturing()`, `WaitForAsync()`, or `WaitForCapturedTasksAsync()`. Clean up the observer when you are done:
+When using the capture API, you must store the observer to call `StartCapturingTasks()`, `WaitForCapturedTasksAsync()`, or `WaitForCapturedTasksCompleteAsync()`. Clean up the observer when you are done:
 
 [!code-csharp[Cleanup with Capture](../code/events-observables/EventObserverSamples.cs#CleanupwithCapture)]
 
@@ -190,12 +190,12 @@ The `EventObserver<T>` class provides a capture API for synchronizing with event
 
 ### Capture API Thread Safety
 
-Capture API methods are thread-safe. Concurrent calls to `WaitForAsync` or `GetCapturedTasks` are
+Capture API methods are thread-safe. Concurrent calls to `WaitForCapturedTasksAsync` or `GetCapturedTasks` are
 serialized internally — each caller gets a contiguous, non-interleaved slice of captured tasks.
-`StartCapturing`, `StopCapturing`, and the observer's notification path are all safe to call from
+`StartCapturingTasks`, `StopCapturingTasks`, and the observer's notification path are all safe to call from
 any thread.
 
-Only one capture session may be active at a time. Calling `StartCapturing` when a session is already
+Only one capture session may be active at a time. Calling `StartCapturingTasks` when a session is already
 active throws `WebDriverBiDiException`.
 
 ## Async Event Handlers
@@ -268,7 +268,7 @@ This method waits for:
 
 **Note**: The timeout only applies to waiting for events to arrive. Handler execution time is not limited by the timeout.
 
-**Important**: When you use `WaitForCapturedTasksAsync()`, exceptions from the captured async handler tasks are propagated through this method. Those exceptions are considered owned by the caller and are not surfaced again through transport-level `EventHandlerExceptionBehavior`.
+**Important**: When you use `WaitForCapturedTasksCompleteAsync()`, exceptions from the captured async handler tasks are propagated through this method. Those exceptions are considered owned by the caller and are not surfaced again through transport-level `EventHandlerExceptionBehavior`.
 
 #### Manual Synchronization (For Fine-Grained Control)
 
@@ -276,11 +276,11 @@ For scenarios where you need to inspect or manipulate tasks before waiting:
 
 [!code-csharp[Manual Synchronization](../code/events-observables/EventObserverSamples.cs#ManualSynchronization)]
 
-When using `WaitForAsync()` followed by `Task.WhenAll()`, you take ownership of those tasks and their exceptions. This lets you inspect or await handler failures directly without having those same failures also re-surfaced through the transport's event handler error behavior.
+When using `WaitForCapturedTasksAsync()` followed by `Task.WhenAll()`, you take ownership of those tasks and their exceptions. This lets you inspect or await handler failures directly without having those same failures also re-surfaced through the transport's event handler error behavior.
 
 ### Waiting for Async Handlers to Complete
 
-For long-running async handlers, use `WaitForCapturedTasksAsync` or `WaitForAsync` with `Task.WhenAll`:
+For long-running async handlers, use `WaitForCapturedTasksCompleteAsync` or `WaitForCapturedTasksAsync` with `Task.WhenAll`:
 
 [!code-csharp[Wait For Async Handlers](../code/events-observables/EventObserverSamples.cs#WaitForAsyncHandlers)]
 
@@ -395,8 +395,8 @@ The two-step design (add observer + subscribe) is intentional to prevent race co
 - Observers handle events when they occur
 - Store the observer returned by `AddObserver` when you need to remove it or use the capture API
 - Use try/finally or `using` to ensure observers are removed when done (prevents memory leaks)
-- Use `StartCapturing()`/`WaitForAsync()` to synchronize with events — when `WaitForAsync` returns a full batch it automatically ends the capture session; an explicit `StopCapturing()` call is a no-op and safe to include for clarity
-- Use `WaitForCapturedTasksAsync()` to wait for async handlers to complete — it also ends the capture session when the requested number of tasks is collected
+- Use `StartCapturingTasks()`/`WaitForCapturedTasksAsync()` to synchronize with events — when `WaitForCapturedTasksAsync` returns a full batch it automatically ends the capture session; an explicit `StopCapturingTasks()` call is a no-op and safe to include for clarity
+- Use `WaitForCapturedTasksCompleteAsync()` to wait for async handlers to complete — it also ends the capture session when the requested number of tasks is collected
 - Use `RunHandlerAsynchronously` option for long-running operations or I/O
 - Multiple observers can handle the same event
 

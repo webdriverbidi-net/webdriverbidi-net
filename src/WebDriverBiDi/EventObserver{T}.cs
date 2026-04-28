@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using System.Diagnostics;
 using System.Threading.Channels;
 using WebDriverBiDi.Internal;
 using WebDriverBiDi.Protocol;
@@ -15,28 +16,28 @@ using WebDriverBiDi.Protocol;
 /// <typeparam name="T">The type of event arguments containing information about the observable event.</typeparam>
 /// <remarks>
 /// <para>
-/// Capture methods (<see cref="StartCapturing"/>, <see cref="StopCapturing"/>,
-/// <see cref="WaitForAsync"/>, <see cref="WaitForCapturedTasksAsync"/>, and
+/// Capture methods (<see cref="StartCapturingTasks"/>, <see cref="StopCapturingTasks"/>,
+/// <see cref="WaitForCapturedTasksAsync"/>, <see cref="WaitForCapturedTasksCompleteAsync"/>, and
 /// <see cref="GetCapturedTasks"/>) are thread-safe. Only one capture session may be active
 /// at a time per observer.
 /// </para>
 /// <para>
-/// <strong>Typical capture flow:</strong> Call <see cref="StartCapturing"/> before triggering
-/// the action that produces events, then use <see cref="WaitForAsync"/>
-/// to wait for a specific number of handler tasks, or <see cref="WaitForCapturedTasksAsync"/> to wait for
+/// <strong>Typical capture flow:</strong> Call <see cref="StartCapturingTasks"/> before triggering
+/// the action that produces events, then use <see cref="WaitForCapturedTasksAsync"/>
+/// to wait for a specific number of handler tasks, or <see cref="WaitForCapturedTasksCompleteAsync"/> to wait for
 /// handler tasks to complete, or <see cref="GetCapturedTasks"/> to collect whatever has arrived so far.
-/// When <see cref="WaitForAsync"/> or <see cref="WaitForCapturedTasksAsync"/>
-/// collects the full requested batch, the capture session ends automatically; <see cref="StopCapturing"/>
-/// becomes a no-op and need not be called. Call <see cref="StopCapturing"/> explicitly only when ending
+/// When <see cref="WaitForCapturedTasksAsync"/> or <see cref="WaitForCapturedTasksCompleteAsync"/>
+/// collects the full requested batch, the capture session ends automatically; <see cref="StopCapturingTasks"/>
+/// becomes a no-op and need not be called. Call <see cref="StopCapturingTasks"/> explicitly only when ending
 /// the session early (e.g., on timeout or cancellation).
 /// </para>
 /// <example>
 /// <code>
 /// EventObserver&lt;NavigationEventArgs&gt; observer = driver.BrowsingContext.OnLoad.AddObserver(
 ///     e => Console.WriteLine($"Loaded: {e.Url}"));
-/// observer.StartCapturing();
+/// observer.StartCapturingTasks();
 /// await driver.BrowsingContext.NavigateAsync(navParams);
-/// Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(30));
+/// Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(30));
 /// // When tasks.Length == 1, the capture session was automatically ended.
 /// if (tasks.Length == 1) { /* page load event received */ }
 /// </code>
@@ -131,10 +132,10 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <summary>
     /// Begins an unbounded capture session on this observer. Every handler invocation
     /// that occurs while the capture is active produces a <see cref="Task"/> that can be
-    /// retrieved via <see cref="WaitForAsync"/>, <see cref="WaitForCapturedTasksAsync"/>,
+    /// retrieved via <see cref="WaitForCapturedTasksAsync"/>, <see cref="WaitForCapturedTasksCompleteAsync"/>,
     /// or <see cref="GetCapturedTasks"/>. The session ends automatically when
-    /// <see cref="WaitForAsync"/> or <see cref="WaitForCapturedTasksAsync"/> collects the
-    /// full requested batch; call <see cref="StopCapturing"/> to end the session early.
+    /// <see cref="WaitForCapturedTasksAsync"/> or <see cref="WaitForCapturedTasksCompleteAsync"/> collects the
+    /// full requested batch; call <see cref="StopCapturingTasks"/> to end the session early.
     /// </summary>
     /// <exception cref="WebDriverBiDiException">Thrown when a capture session is already active on this observer.</exception>
     /// <remarks>
@@ -143,27 +144,27 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// </para>
     /// <para>
     /// Ownership of each captured <see cref="Task"/> transfers to the caller when it is read via
-    /// <see cref="WaitForAsync"/> or <see cref="GetCapturedTasks"/>.
+    /// <see cref="WaitForCapturedTasksAsync"/> or <see cref="GetCapturedTasks"/>.
     /// The caller is responsible for observing the result of each task, including any exceptions, to
     /// avoid unobserved task exceptions.
     /// </para>
     /// </remarks>
     /// <example>
     /// <code>
-    /// observer.StartCapturing();
+    /// observer.StartCapturingTasks();
     /// await driver.BrowsingContext.NavigateAsync(navParams);
-    /// Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+    /// Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
     /// // When tasks.Length == 1, the capture session was automatically ended.
     /// if (tasks.Length == 1) { await Task.WhenAll(tasks); }
     /// </code>
     /// </example>
-    public void StartCapturing()
+    public void StartCapturingTasks()
     {
         lock (this.captureLock)
         {
             if (this.capturedTaskQueue is not null)
             {
-                throw new WebDriverBiDiException("This observer already has an active capture session. Call StopCapturing before starting a new one.");
+                throw new WebDriverBiDiException("This observer already has an active capture session. Call StopCapturingTasks before starting a new one.");
             }
 
             this.capturedTaskQueue = Channel.CreateUnbounded<Task>(new UnboundedChannelOptions()
@@ -177,7 +178,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
 
     /// <summary>
     /// Ends the active capture session. Any tasks still in the capture buffer can no longer
-    /// be retrieved via <see cref="WaitForAsync"/> or <see cref="GetCapturedTasks"/> after this call.
+    /// be retrieved via <see cref="WaitForCapturedTasksAsync"/> or <see cref="GetCapturedTasks"/> after this call.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -188,7 +189,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// calling this method to transfer ownership to the caller and avoid unobserved task exceptions.
     /// </para>
     /// </remarks>
-    public void StopCapturing()
+    public void StopCapturingTasks()
     {
         lock (this.captureLock)
         {
@@ -212,7 +213,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <item><description>
     /// If the array length equals <paramref name="count"/>, the wait was fulfilled — all expected
     /// handler invocations were captured before the timeout expired. The capture session is
-    /// automatically ended; a subsequent <see cref="StopCapturing"/> call is a no-op.
+    /// automatically ended; a subsequent <see cref="StopCapturingTasks"/> call is a no-op.
     /// </description></item>
     /// <item><description>
     /// If the array length is less than <paramref name="count"/>, the wait timed out — only the
@@ -226,14 +227,14 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
     /// <example>
     /// <code>
-    /// observer.StartCapturing();
+    /// observer.StartCapturingTasks();
     /// await TriggerThreeEventsAsync();
-    /// Task[] tasks = await observer.WaitForAsync(3, TimeSpan.FromSeconds(10));
+    /// Task[] tasks = await observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10));
     /// // When tasks.Length == count, the capture session is automatically ended.
     /// if (tasks.Length == 3) { await Task.WhenAll(tasks); }
     /// </code>
     /// </example>
-    public async Task<Task[]> WaitForAsync(uint count, TimeSpan timeout, CancellationToken cancellationToken = default)
+    public async Task<Task[]> WaitForCapturedTasksAsync(uint count, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         if (count < 1)
         {
@@ -245,7 +246,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         {
             if (this.capturedTaskQueue is null)
             {
-                throw new InvalidOperationException("No capture session is active. Call StartCapturing before calling WaitForAsync.");
+                throw new InvalidOperationException("No capture session is active. Call StartCapturingTasks before calling WaitForCapturedTasksAsync or WaitForCapturedTasksCompleteAsync.");
             }
 
             channel = this.capturedTaskQueue;
@@ -266,7 +267,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                     bool hasData = await channel.Reader.WaitToReadAsync(linkedCancellationTokenSource.Token).ConfigureAwait(false);
                     if (!hasData)
                     {
-                        // Channel was completed externally (StopCapturing called while we were
+                        // Channel was completed externally (StopCapturingTasks called while we were
                         // blocked waiting). WaitToReadAsync returns false only when the buffer is
                         // empty AND the writer is completed, so there is nothing left to remove.
                         break;
@@ -285,7 +286,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                     lock (this.captureLock)
                     {
                         // Only close if it is still the same channel we started with
-                        // (StopCapturing might have already closed it).
+                        // (StopCapturingTasks might have already closed it).
                         // Note: We are using ReferenceEquals here, though the equality
                         // operator (`==`) would be semantically equivalent. ReferenceEquals
                         // explicitly tells us we are checking for the same instance.
@@ -300,8 +301,8 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                     // original fault continuation has ShouldReportAsyncFault = false (because they
                     // were captured). We attach a new task continuation so any fault surfaces
                     // through the normal error pipeline instead of being silently swallowed.
-                    // Only do this when we are the sole active reader: if another WaitForAsync caller
-                    // is queued behind the semaphore, those tasks are legitimately theirs to consume.
+                    // Only do this when we are the sole active reader: if another WaitForCapturedTasksAsync
+                    // caller is queued behind the semaphore, those tasks are legitimately theirs to consume.
                     if (this.waitingReaderCount == 1)
                     {
                         string eventName = this.observableEvent.EventName;
@@ -339,18 +340,17 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <summary>
     /// Asynchronously waits until the specified number of handler tasks have been captured and all of them have
     /// completed execution. This method discards the tasks after completion. If you need to inspect the tasks,
-    /// use either <see cref="WaitForAsync"/> or <see cref="GetCapturedTasks"/> instead.
+    /// use either <see cref="WaitForCapturedTasksAsync"/> or <see cref="GetCapturedTasks"/> instead.
     /// Exceptions from captured handler tasks remain owned by the caller and are propagated by this method
     /// through the returned task rather than being re-surfaced through transport-level event handler error behavior.
     /// </summary>
     /// <param name="count">The number of handler tasks to wait for. Must be at least 1.</param>
-    /// <param name="timeout">How long to wait for the handler tasks to be captured. This timeout only applies to
-    /// waiting for this observer to capture the proper number of handler task invocations; it does not apply to
-    /// the execution of the handlers.</param>
+    /// <param name="timeout">How long to wait for the handler tasks to be captured and for the handlers to complete
+    /// their execution.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> that can be used to cancel the wait.</param>
     /// <returns><see langword="true"/> if the expected number of handler tasks were captured and completed before
     /// the timeout expired; otherwise, <see langword="false"/>. When <see langword="true"/> is returned, the
-    /// capture session is automatically ended; a subsequent <see cref="StopCapturing"/> call is a no-op.</returns>
+    /// capture session is automatically ended; a subsequent <see cref="StopCapturingTasks"/> call is a no-op.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="count"/> is zero.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no capture session is active.</exception>
     /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
@@ -359,29 +359,38 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// EventObserver&lt;BeforeRequestSentEventArgs&gt; observer = driver.Network.OnBeforeRequestSent.AddObserver(
     ///     async (e) => await ProcessRequestAsync(e),
     ///     ObservableEventHandlerOptions.RunHandlerAsynchronously);
-    /// observer.StartCapturing();
+    /// observer.StartCapturingTasks();
     /// await driver.BrowsingContext.NavigateAsync(navParams);
-    /// bool occurred = await observer.WaitForCapturedTasksAsync(3, TimeSpan.FromSeconds(10));
+    /// bool occurred = await observer.WaitForCapturedTasksCompleteAsync(3, TimeSpan.FromSeconds(10));
     /// // When occurred is true, the capture session is automatically ended.
     /// if (occurred) { /* all 3 events received and handlers completed */ }
     /// </code>
     /// </example>
-    public async Task<bool> WaitForCapturedTasksAsync(uint count, TimeSpan timeout, CancellationToken cancellationToken = default)
+    public async Task<bool> WaitForCapturedTasksCompleteAsync(uint count, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        Task[] tasksToWait = await this.WaitForAsync(count, timeout, cancellationToken).ConfigureAwait(false);
+        Stopwatch elapsedTimeStopwatch = Stopwatch.StartNew();
+        Task[] tasksToWait = await this.WaitForCapturedTasksAsync(count, timeout, cancellationToken).ConfigureAwait(false);
         if (tasksToWait.Length == count)
         {
+            TimeSpan remainingTime = timeout - elapsedTimeStopwatch.Elapsed;
+            if (remainingTime <= TimeSpan.Zero)
+            {
+                return false;
+            }
+
             using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             Task whenAllTask = Task.WhenAll(tasksToWait);
-            Task cancellationTask = Task.Delay(Timeout.InfiniteTimeSpan, linkedCancellationTokenSource.Token);
+            Task cancellationTask = Task.Delay(remainingTime, linkedCancellationTokenSource.Token);
             Task completedTask = await Task.WhenAny(whenAllTask, cancellationTask).ConfigureAwait(false);
             linkedCancellationTokenSource.Cancel();
             if (completedTask == cancellationTask)
             {
-                throw new OperationCanceledException("Wait cancelled waiting for captured tasks to complete", cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                return false;
             }
 
-            await whenAllTask.ConfigureAwait(false); // propagate any exceptions
+            // Propagate exceptions in event handlers.
+            await whenAllTask.ConfigureAwait(false);
         }
 
         return tasksToWait.Length == count;
@@ -394,11 +403,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <returns>All handler tasks available in the capture buffer at the time of the call, or an empty array if no capture session is active.</returns>
     /// <example>
     /// <code>
-    /// observer.StartCapturing();
+    /// observer.StartCapturingTasks();
     /// await TriggerEventsAsync();
     /// Task[] tasks = observer.GetCapturedTasks();
     /// await Task.WhenAll(tasks);
-    /// observer.StopCapturing();
+    /// observer.StopCapturingTasks();
     /// </code>
     /// </example>
     public Task[] GetCapturedTasks()

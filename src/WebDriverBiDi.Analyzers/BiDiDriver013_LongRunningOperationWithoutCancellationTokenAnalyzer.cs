@@ -122,8 +122,8 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
             "PrintAsync",
             "ReloadAsync",
             "StartAsync",
-            "WaitForAsync",
             "WaitForCapturedTasksAsync",
+            "WaitForCapturedTasksCompleteAsync",
         ];
 
         return longRunningOperations.Contains(method.Name);

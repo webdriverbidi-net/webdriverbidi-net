@@ -54,7 +54,7 @@ Event handlers run on separate threads from your main application code. This mea
 
 For handlers registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously`, this behavior also applies to exceptions that occur after the handler has returned control to the transport thread. In other words, exceptions from handlers being run asynchronously are not silently dropped.
 
-The one important exception is capture session task capture. If you capture async handler tasks by using `WaitForCapturedTasksAsync()` or `WaitForAsync()`, those task exceptions remain owned by your code. They are propagated through the captured task path rather than being surfaced again through `EventHandlerExceptionBehavior`.
+The one important exception is capture session task capture. If you capture async handler tasks by using `WaitForCapturedTasksAsync()` or `WaitForCapturedTasksCompleteAsync()`, those task exceptions remain owned by your code. They are propagated through the captured task path rather than being surfaced again through `EventHandlerExceptionBehavior`.
 
 ### Why Ignore is the Default
 
@@ -132,7 +132,7 @@ Terminate mode stores exceptions from event handlers and throws them when you se
 - Terminate mode ensures errors are eventually reported to your code, including exceptions from handlers being run asynchronously
 - The error surfaces when you send the next command, which is a natural synchronization point
 
-**Capture-session-owned exceptions are different:** if you use `WaitForCapturedTasksAsync()` or `WaitForAsync()` to take ownership of async handler tasks, exceptions from those tasks propagate through the returned task path instead of terminating on the next command.
+**Capture-session-owned exceptions are different:** if you use `WaitForCapturedTasksAsync()` or `WaitForCapturedTasksCompleteAsync()` to take ownership of async handler tasks, exceptions from those tasks propagate through the returned task path instead of terminating on the next command.
 
 **Use Terminate Mode When:**
 - You want event handler errors to be reported (recommended for development)

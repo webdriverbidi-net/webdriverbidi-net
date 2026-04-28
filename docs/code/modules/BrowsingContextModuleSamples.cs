@@ -673,13 +673,13 @@ public static class BrowsingContextModuleSamples
         EventObserver<NavigationEventArgs> observer =
             driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, url));
 
-        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(30));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(30));
         bool loaded = tasks.Length == 1;
-        observer.StopCapturing();
+        observer.StopCapturingTasks();
 
         if (!loaded)
         {

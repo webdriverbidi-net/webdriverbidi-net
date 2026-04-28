@@ -195,7 +195,7 @@ When using `RunHandlerAsynchronously`, the handler runs on a background task. Yo
 
 [!code-csharp[Get Captured Tasks](../code/common-pitfalls/CommonPitfallsSamples.cs#GetCapturedTasksExample)]
 
-**Key Takeaway:** With async handlers, use `WaitForCapturedTasksAsync()` or `WaitForAsync()` with manual task management to ensure handlers complete before your code continues.
+**Key Takeaway:** With async handlers, use `WaitForCapturedTasksCompleteAsync()` or `WaitForCapturedTasksAsync()` with manual task management to ensure handlers complete before your code continues.
 
 ---
 
@@ -217,7 +217,7 @@ The library defaults to `TransportErrorBehavior.Ignore` to prevent event handler
 
 [!code-csharp[Terminate Error Behavior](../code/common-pitfalls/CommonPitfallsSamples.cs#TerminateErrorBehavior)]
 
-This also applies to exceptions from handlers using `ObservableEventHandlerOptions.RunHandlerAsynchronously` when those tasks are not captured by a capture session. If you instead capture handler tasks using `WaitForAsync()` or `WaitForCapturedTasksAsync()`, those exceptions are owned by the returned tasks and should be observed there.
+This also applies to exceptions from handlers using `ObservableEventHandlerOptions.RunHandlerAsynchronously` when those tasks are not captured by a capture session. If you instead capture handler tasks using `WaitForCapturedTasksAsync()` or `WaitForCapturedTasksCompleteAsync()`, those exceptions are owned by the returned tasks and should be observed there.
 
 [!code-csharp[Collect Error Behavior](../code/common-pitfalls/CommonPitfallsSamples.cs#CollectErrorBehavior)]
 
@@ -252,8 +252,8 @@ While many operations in WebDriverBiDi.NET are thread-safe, not all concurrent s
 - Event observer notification
 - Adding and removing observers (`AddObserver`, `RemoveObserver`, `Unobserve`) on the same event
 - Transport message processing
-- EventObserver capture API (`StartCapturing`, `StopCapturing`, `WaitForAsync`,
-`WaitForCapturedTasksAsync`, `GetCapturedTasks`) - individually thread-safe; only one
+- EventObserver capture API (`StartCapturingTasks`, `StopCapturingTasks`, `WaitForCapturedTasksAsync`,
+`WaitForCapturedTasksCompleteAsync`, `GetCapturedTasks`) - individually thread-safe; only one
 capture session per observer at a time; the channel queues captured tasks so that no events
 are missed even if they arrive before the consumer is ready
 

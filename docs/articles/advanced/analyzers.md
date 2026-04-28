@@ -40,8 +40,8 @@ When an analyzer fires, your IDE will show a diagnostic with a suggestion or cod
 | **BIDI015** | Warning | String literal used for event name instead of `ObservableEvent.EventName` |
 | **BIDI016** | Warning | Deadlock-prone pattern (e.g., `.Result`, `.Wait()`) in event handler |
 | **BIDI017** | Warning | Adding to nullable list property without `??= new List<T>()` |
-| **BIDI020** | Error | `WaitForAsync()` or `WaitForCapturedTasksAsync()` called without a prior `StartCapturing()` in the same method |
-| **BIDI021** | Warning | `StartCapturing()` called but no read method (`WaitForAsync`, `WaitForCapturedTasksAsync`, `GetCapturedTasks`) follows in the same method |
+| **BIDI020** | Error | `WaitForCapturedTasksAsync()` or `WaitForCapturedTasksCompleteAsync()` called without a prior `StartCapturingTasks()` in the same method |
+| **BIDI021** | Warning | `StartCapturingTasks()` called but no read method (`WaitForCapturedTasksAsync`, `WaitForCapturedTasksCompleteAsync`, `GetCapturedTasks`) follows in the same method |
 
 ## Code Fixes
 
@@ -62,7 +62,7 @@ The following analyzers have code fix providers:
 - **BIDI014** — Replaces parameterless constructor with `.Reset*` property
 - **BIDI015** — Replaces string literal with `ObservableEvent.EventName` property
 - **BIDI017** — Adds null-coalescing assignment before adding to nullable list
-- **BIDI020** — Inserts `observer.StartCapturing()` before the offending `WaitForAsync` or `WaitForCapturedTasksAsync` call
+- **BIDI020** — Inserts `observer.StartCapturingTasks()` before the offending `WaitForCapturedTasksAsync` or `WaitForCapturedTasksCompleteAsync` call
 
 ## Related Documentation
 

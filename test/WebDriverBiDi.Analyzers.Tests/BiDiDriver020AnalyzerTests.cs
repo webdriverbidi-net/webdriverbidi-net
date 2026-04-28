@@ -32,7 +32,7 @@ public class BiDiDriver020AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        Task[] tasks = await {|#0:observer.WaitForAsync(1, TimeSpan.FromSeconds(10))|};
+                        Task[] tasks = await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -42,7 +42,7 @@ public class BiDiDriver020AnalyzerTests
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("WaitForAsync", "observer");
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
@@ -64,7 +64,7 @@ public class BiDiDriver020AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
+                        await {|#0:observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -74,7 +74,7 @@ public class BiDiDriver020AnalyzerTests
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("WaitForCapturedTasksAsync", "observer");
+            .WithArguments("WaitForCapturedTasksCompleteAsync", "observer");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
@@ -96,8 +96,8 @@ public class BiDiDriver020AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -123,8 +123,8 @@ public class BiDiDriver020AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        bool occurred = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        bool occurred = await observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -151,9 +151,9 @@ public class BiDiDriver020AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        observer.StopCapturing();
-                        Task[] tasks = await {|#0:observer.WaitForAsync(1, TimeSpan.FromSeconds(10))|};
+                        observer.StartCapturingTasks();
+                        observer.StopCapturingTasks();
+                        Task[] tasks = await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -163,7 +163,7 @@ public class BiDiDriver020AnalyzerTests
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("WaitForAsync", "observer");
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
@@ -185,10 +185,10 @@ public class BiDiDriver020AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.StartCapturing();
-                        Task[] first = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
-                        observer.StartCapturing();
-                        Task[] second = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        Task[] first = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturingTasks();
+                        Task[] second = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -215,9 +215,9 @@ public class BiDiDriver020AnalyzerTests
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> obs1 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
                         EventObserver<NavigationEventArgs> obs2 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        obs1.StartCapturing();
-                        Task[] tasks1 = await obs1.WaitForAsync(1, TimeSpan.FromSeconds(10));
-                        Task[] tasks2 = await {|#0:obs2.WaitForAsync(1, TimeSpan.FromSeconds(10))|};
+                        obs1.StartCapturingTasks();
+                        Task[] tasks1 = await obs1.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
+                        Task[] tasks2 = await {|#0:obs2.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -227,7 +227,7 @@ public class BiDiDriver020AnalyzerTests
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("WaitForAsync", "obs2");
+            .WithArguments("WaitForCapturedTasksAsync", "obs2");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected);
     }
@@ -248,7 +248,7 @@ public class BiDiDriver020AnalyzerTests
                 {
                     public async Task TestMethod(EventObserver<NavigationEventArgs> observer)
                     {
-                        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
@@ -320,8 +320,8 @@ public class BiDiDriver020AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        Task[] tasks = await {|#0:observer.WaitForAsync(1, TimeSpan.FromSeconds(10))|};
-                        bool ok = await {|#1:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
+                        Task[] tasks = await {|#0:observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10))|};
+                        bool ok = await {|#1:observer.WaitForCapturedTasksCompleteAsync(1, TimeSpan.FromSeconds(10))|};
                     }
                 }
             }
@@ -331,13 +331,13 @@ public class BiDiDriver020AnalyzerTests
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(0)
-            .WithArguments("WaitForAsync", "observer");
+            .WithArguments("WaitForCapturedTasksAsync", "observer");
 
         DiagnosticResult expected1 = new DiagnosticResult(
             BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId,
             DiagnosticSeverity.Error)
             .WithLocation(1)
-            .WithArguments("WaitForCapturedTasksAsync", "observer");
+            .WithArguments("WaitForCapturedTasksCompleteAsync", "observer");
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver020_CaptureSessionNotStartedAnalyzer>(testCode, expected0, expected1);
     }

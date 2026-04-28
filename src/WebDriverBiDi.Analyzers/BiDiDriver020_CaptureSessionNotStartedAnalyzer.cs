@@ -14,9 +14,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 /// <summary>
-/// Analyzer that detects <see cref="EventObserver{T}.WaitForAsync"/> or
-/// <see cref="EventObserver{T}.WaitForCapturedTasksAsync"/> calls on an observer that has no
-/// active capture session (i.e., <see cref="EventObserver{T}.StartCapturing"/> was not called
+/// Analyzer that detects <see cref="EventObserver{T}.WaitForCapturedTasksAsync"/> or
+/// <see cref="EventObserver{T}.WaitForCapturedTasksCompleteAsync"/> calls on an observer that has no
+/// active capture session (i.e., <see cref="EventObserver{T}.StartCapturingTasks"/> was not called
 /// first in the same method).
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -31,9 +31,9 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
 
     private static readonly LocalizableString Title = "Capture session not started";
 
-    private static readonly LocalizableString MessageFormat = "'{0}' is called on '{1}' but no capture session is active. Call 'StartCapturing()' before calling '{0}'.";
+    private static readonly LocalizableString MessageFormat = "'{0}' is called on '{1}' but no capture session is active. Call 'StartCapturingTasks()' before calling '{0}'.";
 
-    private static readonly LocalizableString Description = "WaitForAsync and WaitForCapturedTasksAsync require an active capture session. Call StartCapturing() before invoking these methods; calling them without an active session throws InvalidOperationException at runtime.";
+    private static readonly LocalizableString Description = "WaitForCapturedTasksAsync and WaitForCapturedTasksCompleteAsync require an active capture session. Call StartCapturingTasks() before invoking these methods; calling them without an active session throws InvalidOperationException at runtime.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -65,7 +65,7 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
 
         SemanticModel semanticModel = context.SemanticModel;
 
-        // Track whether StartCapturing has been seen for each local EventObserver<T> variable.
+        // Track whether StartCapturingTasks has been seen for each local EventObserver<T> variable.
         // Only locally-declared variables are tracked; parameter-passed observers are not.
         Dictionary<string, bool> capturingState = [];
 
@@ -85,8 +85,9 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
             }
 
             // Walk all invocations in this statement (including those inside nested blocks).
-            // DescendantNodes visits in source order, so a StartCapturing inside an if-block
-            // that precedes a WaitForAsync outside it is correctly seen first.
+            // DescendantNodes visits in source order, so a StartCapturingTasks inside an
+            // if-block that precedes a WaitForCapturedTasksAsync outside it is correctly
+            // seen first.
             foreach (InvocationExpressionSyntax invocation in statement.DescendantNodes().OfType<InvocationExpressionSyntax>())
             {
                 if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
@@ -108,16 +109,16 @@ public class BiDiDriver020_CaptureSessionNotStartedAnalyzer : DiagnosticAnalyzer
                 string methodName = memberAccess.Name.Identifier.Text;
                 switch (methodName)
                 {
-                    case "StartCapturing":
+                    case "StartCapturingTasks":
                         capturingState[receiverName] = true;
                         break;
 
-                    case "StopCapturing":
+                    case "StopCapturingTasks":
                         capturingState[receiverName] = false;
                         break;
 
-                    case "WaitForAsync":
                     case "WaitForCapturedTasksAsync":
+                    case "WaitForCapturedTasksCompleteAsync":
                         if (!capturingState[receiverName])
                         {
                             context.ReportDiagnostic(Diagnostic.Create(Rule, invocation.GetLocation(), methodName, receiverName));

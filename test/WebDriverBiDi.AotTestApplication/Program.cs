@@ -64,14 +64,14 @@ try
     string contextId = tree.ContextTree[0].BrowsingContextId;
     Console.WriteLine($"Browsing context: {contextId}");
 
-    observer.StartCapturing();
+    observer.StartCapturingTasks();
     NavigateCommandParameters navigateParams = new(contextId, url)
     {
         Wait = ReadinessState.Complete
     };
     await driver.BrowsingContext.NavigateAsync(navigateParams);
     Console.WriteLine($"Navigation to {url} complete.");
-    await observer.WaitForAsync(1, TimeSpan.FromSeconds(1));
+    await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1));
 
     EvaluateCommandParameters evalParams = new("document.title", new ContextTarget(contextId), true);
     EvaluateResult evalResult = await driver.Script.EvaluateAsync(evalParams);

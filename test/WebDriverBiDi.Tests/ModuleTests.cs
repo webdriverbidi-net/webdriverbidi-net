@@ -184,7 +184,7 @@ public class ModuleTests
             throw new WebDriverBiDiException("Async module handler exception");
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         await driver.StartAsync("ws:localhost");
         string eventJson = """
@@ -198,7 +198,7 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(1));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1));
         Assert.That(tasks, Has.Length.EqualTo(1));
         Assert.That(async () => await Task.WhenAll(tasks), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Async module handler exception"));
         Assert.That(async () => await driver.StopAsync(), Throws.Nothing);
@@ -324,7 +324,7 @@ public class ModuleTests
             throw new WebDriverBiDiException("Async module handler exception");
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         await driver.StartAsync("ws:localhost");
         string eventJson = """
@@ -338,7 +338,7 @@ public class ModuleTests
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
 
-        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(1));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(1));
         Assert.That(tasks, Has.Length.EqualTo(1));
         Assert.That(async () => await Task.WhenAll(tasks), Throws.InstanceOf<WebDriverBiDiException>().With.Message.Contains("Async module handler exception"));
         Assert.That(async () => await driver.StopAsync(), Throws.Nothing);

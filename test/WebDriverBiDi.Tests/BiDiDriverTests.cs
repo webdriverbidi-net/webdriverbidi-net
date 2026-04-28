@@ -1692,7 +1692,7 @@ public class BiDiDriverTests
             _ => { },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        observer.StartCapturing();
+        observer.StartCapturingTasks();
 
         // Deliver the event that WaitForAsync(1) will collect.
         await connection.RaiseDataReceivedEventAsync(collectedEventJson);
@@ -1701,7 +1701,7 @@ public class BiDiDriverTests
         handlerStarted.Wait(TimeSpan.FromSeconds(5));
 
         // WaitForAsync collects 1 task, auto-closes, drains the raced task.
-        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(5));
+        Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
         Assert.That(tasks, Has.Length.EqualTo(1));
 
         // Let the raced handler fault.

@@ -17,7 +17,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
-/// Code fix provider for BIDI020 that inserts a <c>StartCapturing()</c> call before the
+/// Code fix provider for BIDI020 that inserts a <c>StartCapturingTasks()</c> call before the
 /// offending <c>WaitForAsync</c> or <c>WaitForCapturedTasksAsync</c> invocation.
 /// </summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(BiDiDriver020_CaptureSessionNotStartedCodeFixProvider))]
@@ -53,9 +53,9 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
 
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: "Add StartCapturing() before this call",
+                title: "Add StartCapturingTasks() before this call",
                 createChangedDocument: c => AddStartCapturingAsync(context.Document, invocation, c),
-                equivalenceKey: "AddStartCapturing"),
+                equivalenceKey: "AddStartCapturingTasks"),
             diagnostic);
     }
 
@@ -85,14 +85,14 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
 
         string receiverName = receiverIdentifier.Identifier.Text;
 
-        // Build: observer.StartCapturing();
+        // Build: observer.StartCapturingTasks();
         ExpressionStatementSyntax startCapturingStatement =
             SyntaxFactory.ExpressionStatement(
                 SyntaxFactory.InvocationExpression(
                     SyntaxFactory.MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
                         SyntaxFactory.IdentifierName(receiverName),
-                        SyntaxFactory.IdentifierName("StartCapturing"))))
+                        SyntaxFactory.IdentifierName("StartCapturingTasks"))))
             .WithTrailingTrivia(SyntaxFactory.ElasticLineFeed)
             .WithLeadingTrivia(targetStatement.GetLeadingTrivia());
 

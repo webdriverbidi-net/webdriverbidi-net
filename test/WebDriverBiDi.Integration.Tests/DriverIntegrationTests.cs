@@ -31,14 +31,14 @@ public class DriverIntegrationTests
 
         string browsingContextId = await this.GetBrowsingContext(driver);
 
-        navigationObserver.StartCapturing();
+        navigationObserver.StartCapturingTasks();
         NavigateCommandParameters navigateParams = new(browsingContextId, $"http://localhost:{server.Port}/index.html")
         {
             Wait = ReadinessState.Complete
         };
         await driver.BrowsingContext.NavigateAsync(navigateParams);
 
-        Task[] capturedTasks = await navigationObserver.WaitForAsync(1, TimeSpan.FromSeconds(5));
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
         Assert.That(capturedTasks, Has.Length.EqualTo(1));
         Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/index.html"));
 
@@ -120,14 +120,14 @@ public class DriverIntegrationTests
         NodeRemoteValue nodeRemoteValue = locateResult.Nodes[0];
         SharedReference elementReference = nodeRemoteValue.ToSharedReference();
 
-        navigationObserver.StartCapturing();
+        navigationObserver.StartCapturingTasks();
         InputBuilder inputBuilder = new();
         inputBuilder.AddClickOnElementAction(elementReference);
         PerformActionsCommandParameters actionsParams = new(browsingContextId);
         actionsParams.Actions.AddRange(inputBuilder.Build());
         await driver.Input.PerformActionsAsync(actionsParams);
 
-        Task[] capturedTasks = await navigationObserver.WaitForAsync(1, TimeSpan.FromSeconds(5));
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
         Assert.That(capturedTasks, Has.Length.EqualTo(1));
         Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/details.html"));
 
@@ -167,7 +167,7 @@ public class DriverIntegrationTests
         NodeRemoteValue nodeRemoteValue = locateResult.Nodes[0];
         SharedReference elementReference = nodeRemoteValue.ToSharedReference();
 
-        navigationObserver.StartCapturing();
+        navigationObserver.StartCapturingTasks();
         InputBuilder inputBuilder = new();
         inputBuilder.AddClickOnElementAction(elementReference);
         inputBuilder.AddSendKeysToActiveElementAction("Hello WebDriver BiDi" + Keys.Enter);
@@ -175,7 +175,7 @@ public class DriverIntegrationTests
         actionsParams.Actions.AddRange(inputBuilder.Build());
         await driver.Input.PerformActionsAsync(actionsParams);
 
-        Task[] capturedTasks = await navigationObserver.WaitForAsync(1, TimeSpan.FromSeconds(5));
+        Task[] capturedTasks = await navigationObserver.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
         Assert.That(capturedTasks, Has.Length.EqualTo(1));
         Assert.That(navigatedUrl, Is.EqualTo($"http://localhost:{server.Port}/processForm"));
 
