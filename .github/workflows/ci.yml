@@ -100,6 +100,7 @@ jobs:
           --configuration Release
           --no-restore
           --
+          --filter '*'
           --exporters json
 
       - name: Upload benchmark artifacts
