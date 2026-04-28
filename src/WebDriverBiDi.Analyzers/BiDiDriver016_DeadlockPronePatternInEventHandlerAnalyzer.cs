@@ -75,8 +75,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
         }
 
         // Verify it's returning EventObserver<T>
-        if (methodSymbol.ReturnType is not INamedTypeSymbol returnType ||
-            returnType.Name != "EventObserver")
+        if (methodSymbol.ReturnType is not INamedTypeSymbol returnType || returnType.Name != "EventObserver")
         {
             return;
         }
@@ -231,8 +230,7 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             }
 
             // Check for Semaphore.WaitOne or Semaphore.Wait
-            if ((containingTypeName == "Semaphore" || containingTypeName == "SemaphoreSlim") &&
-                (methodName == "Wait" || methodName == "WaitOne"))
+            if ((containingTypeName == "Semaphore" || containingTypeName == "SemaphoreSlim") && (methodName == "Wait" || methodName == "WaitOne"))
             {
                 patterns.Add((invocation, $"{containingTypeName}.{methodName}"));
                 continue;

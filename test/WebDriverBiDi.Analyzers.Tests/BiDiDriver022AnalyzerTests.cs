@@ -329,4 +329,95 @@ public class BiDiDriver022AnalyzerTests
 
         await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
     }
+
+    [Test]
+    public async Task IndexerAssignment_OnPropertyNamed_OtherThanAdditionalData_NoDiagnostic()
+    {
+        // A property named "Data" (not "AdditionalData") with the same type should NOT fire.
+        // This exercises the property.Name != "AdditionalData" guard branch.
+        string testCode = """
+            using System.Collections.Generic;
+
+            namespace TestNamespace
+            {
+                public class MyClass
+                {
+                    public Dictionary<string, object?> Data { get; } = new Dictionary<string, object?>();
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var obj = new MyClass();
+                        obj.Data["key"] = "value";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
+
+    [Test]
+    public async Task IndexerAssignment_OnAdditionalDataWithWrongValueType_NoDiagnostic()
+    {
+        // An "AdditionalData" property that returns Dictionary<string, string> (not object?)
+        // should NOT fire — the value type does not match.
+        // This exercises the IsDictionaryStringObject returning false.
+        string testCode = """
+            using System.Collections.Generic;
+
+            namespace TestNamespace
+            {
+                public class MyClass
+                {
+                    public Dictionary<string, string> AdditionalData { get; } = new Dictionary<string, string>();
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var obj = new MyClass();
+                        obj.AdditionalData["key"] = "value";
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode);
+    }
+
+    [Test]
+    public async Task IndexerAssignment_ViaParenthesizedExpression_ReportsWarning()
+    {
+        // Accessing AdditionalData via a parenthesized expression exercises the
+        // ReceiverTypeName fallback path (non-MemberAccessExpression receiver).
+        string testCode = """
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var cmd = new GetTreeCommandParameters();
+                        {|#0:(cmd.AdditionalData)["ext"] = "value"|};
+                    }
+                }
+            }
+            """;
+
+        // The fallback path gets ContainingType.Name of the AdditionalData property symbol,
+        // which is the declaring type (CommandParameters), not the concrete type.
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver022_AdditionalDataMutationAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("CommandParameters");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver022_AdditionalDataMutationAnalyzer>(testCode, expected);
+    }
 }

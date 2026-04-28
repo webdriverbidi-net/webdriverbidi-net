@@ -157,4 +157,34 @@ public class BiDiDriver017CodeFixProviderTests
 
         await testState.RunAsync();
     }
+
+    [Test]
+    public async Task NullableListOnUnrelatedType_NoDiagnostic()
+    {
+        // A nullable List<?>.Add() call on a class that does not inherit from
+        // CommandParameters should not trigger BIDI017.
+        string testCode = """
+            #nullable enable
+            using System.Collections.Generic;
+
+            namespace TestApp
+            {
+                public class MyClass
+                {
+                    public List<string>? Items { get; set; }
+                }
+
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        var obj = new MyClass();
+                        obj.Items?.Add("item");
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver017_NullableListAddAnalyzer>(testCode);
+    }
 }

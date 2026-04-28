@@ -800,4 +800,67 @@ public class BiDiDriver003AnalyzerTests
         Assert.That(analyzer.SupportedDiagnostics.Length, Is.EqualTo(1));
         Assert.That(analyzer.SupportedDiagnostics[0].Id, Is.EqualTo(BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId));
     }
+
+    [Test]
+    public async Task RegisterTypeInfoResolver_OnCustomTypeImplementingInterface_AfterStartAsync_ReportsError()
+    {
+        // The driver variable is of type MyCustomDriver, whose name is NOT "BiDiDriver" or
+        // "IBiDiDriverConfiguration". AnalyzerSymbolHelpers.IsDriverConfigurationType must
+        // walk to the AllInterfaces check (line 45-47 in AnalyzerSymbolHelpers.cs) to
+        // recognise the type.
+        string test = """
+            using System;
+            using System.Text.Json.Serialization.Metadata;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public interface IBiDiCommandExecutor
+                {
+                    Task StartAsync(string url);
+                }
+
+                public interface IBiDiDriverConfiguration : IBiDiCommandExecutor
+                {
+                    Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver);
+                }
+            }
+
+            namespace TestApp
+            {
+                using System.Text.Json.Serialization.Metadata;
+                using WebDriverBiDi;
+
+                public class MyCustomDriver : IBiDiDriverConfiguration
+                {
+                    public Task StartAsync(string url) => Task.CompletedTask;
+                    public Task RegisterTypeInfoResolver(IJsonTypeInfoResolver resolver) => Task.CompletedTask;
+                }
+
+                public class TestClass
+                {
+                    public async Task TestMethod(IJsonTypeInfoResolver resolver)
+                    {
+                        MyCustomDriver driver = new MyCustomDriver();
+                        await driver.StartAsync("ws://localhost:9222");
+                        {|#0:driver.RegisterTypeInfoResolver(resolver)|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Error)
+            .WithLocation(0);
+
+        CSharpAnalyzerTest<BiDiDriver003_TypeInfoResolverRegistrationAfterStartAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
 }

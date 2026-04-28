@@ -24,12 +24,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 public class BiDiDriver002_EventRegistrationAfterStartCodeFixProvider : CodeFixProvider
 {
     /// <inheritdoc/>
-    public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-        ImmutableArray.Create(BiDiDriver002_EventRegistrationAfterStartAnalyzer.DiagnosticId);
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(BiDiDriver002_EventRegistrationAfterStartAnalyzer.DiagnosticId);
 
     /// <inheritdoc/>
-    public sealed override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)

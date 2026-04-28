@@ -25,18 +25,15 @@ using Microsoft.CodeAnalysis.Text;
 public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixProvider
 {
     /// <inheritdoc/>
-    public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-        ImmutableArray.Create(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId);
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(BiDiDriver004_CancellationTokenSuggestionAnalyzer.DiagnosticId);
 
     /// <inheritdoc/>
-    public sealed override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken)
-            .ConfigureAwait(false);
+        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken) .ConfigureAwait(false);
 
         Diagnostic diagnostic = context.Diagnostics.First();
         TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;

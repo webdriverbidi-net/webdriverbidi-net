@@ -168,10 +168,7 @@ public class BiDiDriver006_ObserverDisposalAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool HasDisposalCall(
-        SyntaxNodeAnalysisContext context,
-        MethodDeclarationSyntax methodDeclaration,
-        string variableName)
+    private static bool HasDisposalCall(SyntaxNodeAnalysisContext context, MethodDeclarationSyntax methodDeclaration, string variableName)
     {
         // Look for method invocations on the variable
         IEnumerable<InvocationExpressionSyntax> invocations = methodDeclaration.DescendantNodes().OfType<InvocationExpressionSyntax>();

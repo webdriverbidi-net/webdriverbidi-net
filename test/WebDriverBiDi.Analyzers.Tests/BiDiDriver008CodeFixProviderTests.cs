@@ -316,4 +316,288 @@ public class BiDiDriver008CodeFixProviderTests
 
         await testState.RunAsync();
     }
+
+    [Test]
+    public async Task CodeFix_DirectCast_WithTrailingStatement_PreservesTrailingStatements()
+    {
+        // Exercises the i > declarationIndex + dependentStatements.Count branch in
+        // ConvertCastInVariableDeclarationAsync: a statement after the dependent block
+        // that does NOT reference 'success' stays outside the if block.
+        string testCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = {|#0:(EvaluateResultSuccess)result|};
+                        var value = success.Value;
+                        var unrelated = 42;
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            var value = success.Value;
+                        }
+                        var unrelated = 42;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    [Test]
+    public async Task CodeFix_AsCast_WithTrailingStatement_PreservesTrailingStatements()
+    {
+        // Exercises the i > declarationIndex + dependentStatements.Count branch in
+        // ConvertAsInVariableDeclarationAsync, plus the else { break; } path when
+        // the statement after the null-check doesn't reference 'success'.
+        string testCode = """
+            using System;
+
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var success = {|#0:result as EvaluateResultSuccess|};
+                        if (success != null)
+                        {
+                            var value = success.Value;
+                        }
+                        var unrelated = 42;
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            if (success != null)
+                            {
+                                var value = success.Value;
+                            }
+                        }
+                        var unrelated = 42;
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
+    [Test]
+    public async Task CodeFix_InlineCast_WrapsInIfStatement()
+    {
+        // Exercises the inline-cast path in ConvertCastToPatternMatchingAsync:
+        // the cast is not in a variable declaration (parent is not EqualsValueClauseSyntax),
+        // so the fix generates a fresh variable name and wraps the statement in an if block.
+        string testCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        var value = ({|#0:(EvaluateResultSuccess)result|}).Value;
+                    }
+                }
+            }
+            """;
+
+        string fixedCode = """
+            using System;
+            namespace WebDriverBiDi
+            {
+                public record CommandResult { }
+            }
+            namespace WebDriverBiDi.Script
+            {
+                public record EvaluateResult : CommandResult { }
+                public record EvaluateResultSuccess : EvaluateResult
+                {
+                    public string Value { get; set; } = "";
+                }
+                public class ScriptModule
+                {
+                    public EvaluateResult Evaluate(string s) => new EvaluateResultSuccess();
+                }
+            }
+            namespace TestApp
+            {
+                using WebDriverBiDi.Script;
+                public class TestClass
+                {
+                    public void TestMethod(ScriptModule script)
+                    {
+                        EvaluateResult result = script.Evaluate("test");
+                        if (result is EvaluateResultSuccess success)
+                        {
+                            var value = (success).Value;
+                        }
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver008_UnsafeEvaluateResultCastAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("EvaluateResultSuccess");
+
+        CSharpCodeFixTest<BiDiDriver008_UnsafeEvaluateResultCastAnalyzer, BiDiDriver008_UnsafeEvaluateResultCastCodeFixProvider, DefaultVerifier> testState = new()
+        {
+            TestCode = testCode,
+            FixedCode = fixedCode,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
 }

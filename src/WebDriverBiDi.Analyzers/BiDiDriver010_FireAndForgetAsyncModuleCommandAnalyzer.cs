@@ -117,9 +117,7 @@ public class BiDiDriver010_FireAndForgetAsyncModuleCommandAnalyzer : DiagnosticA
         }
 
         // Check if return type is Task<T> (generic Task)
-        if (returnType is INamedTypeSymbol namedType &&
-            namedType.Name == "Task" &&
-            namedType.IsGenericType)
+        if (returnType is INamedTypeSymbol namedType && namedType.Name == "Task" && namedType.IsGenericType)
         {
             return true;
         }

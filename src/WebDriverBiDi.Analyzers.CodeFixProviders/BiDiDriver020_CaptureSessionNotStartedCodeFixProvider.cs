@@ -25,18 +25,15 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProvider
 {
     /// <inheritdoc/>
-    public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-        ImmutableArray.Create(BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId);
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(BiDiDriver020_CaptureSessionNotStartedAnalyzer.DiagnosticId);
 
     /// <inheritdoc/>
-    public sealed override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken)
-            .ConfigureAwait(false);
+        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
@@ -59,10 +56,7 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
             diagnostic);
     }
 
-    private static async Task<Document> AddStartCapturingAsync(
-        Document document,
-        InvocationExpressionSyntax invocation,
-        CancellationToken cancellationToken)
+    private static async Task<Document> AddStartCapturingAsync(Document document, InvocationExpressionSyntax invocation, CancellationToken cancellationToken)
     {
         SyntaxNode? root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (root == null)
@@ -77,8 +71,7 @@ public class BiDiDriver020_CaptureSessionNotStartedCodeFixProvider : CodeFixProv
         }
 
         // Derive the receiver name from the invocation (e.g. "observer" from "observer.WaitForAsync(...)").
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
-            memberAccess.Expression is not IdentifierNameSyntax receiverIdentifier)
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess || memberAccess.Expression is not IdentifierNameSyntax receiverIdentifier)
         {
             return document;
         }

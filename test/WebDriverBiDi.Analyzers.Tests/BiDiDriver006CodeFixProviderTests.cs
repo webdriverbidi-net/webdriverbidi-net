@@ -129,4 +129,58 @@ public class BiDiDriver006CodeFixProviderTests
 
         await testState.RunAsync();
     }
+
+    [Test]
+    public async Task ObserverDeclaredAsField_NoDiagnostic()
+    {
+        // BIDI006 only watches local variable declarations; field-level declarations
+        // must not trigger the diagnostic.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private readonly EventObserver<LogEntryAddedEventArgs> _observer;
+
+                    public TestClass(BiDiDriver driver)
+                    {
+                        _observer = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver006_ObserverDisposalAnalyzer>(testCode);
+    }
 }

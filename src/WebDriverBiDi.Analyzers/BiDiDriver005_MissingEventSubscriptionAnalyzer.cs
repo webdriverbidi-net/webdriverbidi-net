@@ -25,8 +25,7 @@ public class BiDiDriver005_MissingEventSubscriptionAnalyzer : DiagnosticAnalyzer
 
     private const string Category = "Usage";
 
-    private static readonly LocalizableString Title =
-        "Missing Session.SubscribeAsync for event observer";
+    private static readonly LocalizableString Title = "Missing Session.SubscribeAsync for event observer";
 
     private static readonly LocalizableString MessageFormat = "Event observer registered for event '{0}' but '{0}' is not included in Session.SubscribeAsync() call. Protocol events require both AddObserver() and Session.SubscribeAsync() with matching event names.";
 

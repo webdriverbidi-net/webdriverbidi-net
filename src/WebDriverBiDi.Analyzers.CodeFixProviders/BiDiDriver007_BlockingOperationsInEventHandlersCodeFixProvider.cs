@@ -24,18 +24,15 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 public class BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider : CodeFixProvider
 {
     /// <inheritdoc/>
-    public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-        ImmutableArray.Create(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId);
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId);
 
     /// <inheritdoc/>
-    public sealed override FixAllProvider GetFixAllProvider() =>
-        WellKnownFixAllProviders.BatchFixer;
+    public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken)
-            .ConfigureAwait(false);
+        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
@@ -53,8 +50,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider : Co
         // Find the AddObserver invocation that contains this blocking operation
         InvocationExpressionSyntax? addObserverInvocation = blockingOperation.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess &&
-                                   memberAccess.Name.Identifier.Text == "AddObserver");
+            .FirstOrDefault(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.Text == "AddObserver");
 
         if (addObserverInvocation == null)
         {
@@ -119,8 +115,7 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider : Co
             });
 
             int existingIndex = invocation.ArgumentList.Arguments.IndexOf(existingOptionsArg);
-            newArgumentList = invocation.ArgumentList.WithArguments(
-                invocation.ArgumentList.Arguments.Replace(existingOptionsArg, optionsArgument));
+            newArgumentList = invocation.ArgumentList.WithArguments(invocation.ArgumentList.Arguments.Replace(existingOptionsArg, optionsArgument));
         }
         else
         {

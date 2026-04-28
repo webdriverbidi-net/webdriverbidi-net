@@ -1867,4 +1867,79 @@ public class BiDiDriver016AnalyzerTests
         await testState.RunAsync();
     }
 
+    [Test]
+    public async Task LockStatement_WithObservableEventHandlerOptionsNone_ReportsWarning()
+    {
+        // Exercises the HasRunHandlerAsynchronouslyOption fallthrough when
+        // ObservableEventHandlerOptions is present but does NOT contain "RunHandlerAsynchronously".
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+                public class EntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                [Flags]
+                public enum ObservableEventHandlerOptions
+                {
+                    None = 0,
+                    RunHandlerAsynchronously = 1
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions options = ObservableEventHandlerOptions.None) => null!;
+                }
+
+                public class EventObserver<T> where T : WebDriverBiDiEventArgs
+                {
+                    public void Dispose() { }
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<EntryAddedEventArgs>();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    private readonly object lockObj = new object();
+                    private readonly LogModule log = new LogModule();
+
+                    public void TestMethod()
+                    {
+                        log.OnEntryAdded.AddObserver(async (e) =>
+                        {
+                            {|#0:lock (lockObj)
+                            {
+                                var x = 1 + 1;
+                            }|}
+                            await Task.Delay(100);
+                        }, ObservableEventHandlerOptions.None);
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer.DiagnosticId, Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("lock statement");
+
+        CSharpAnalyzerTest<BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
+
 }

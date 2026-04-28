@@ -1157,5 +1157,76 @@ public class BiDiDriver006AnalyzerTests
 
         await testState.RunAsync();
     }
+
+    [Test]
+    public async Task EventObserver_WithNonDisposalMethodCall_ReportsWarning()
+    {
+        // Exercises the path in HasDisposalCall where expressionName == variableName
+        // but the method name is NOT a disposal method (the inner-if's closing brace
+        // at line 197 is reached when the if-body is not taken).
+        string test = """
+            using System;
+            using System.Threading.Tasks;
+
+            namespace WebDriverBiDi
+            {
+                public class WebDriverBiDiEventArgs { }
+
+                public class LogEntryAddedEventArgs : WebDriverBiDiEventArgs { }
+
+                public class EventObserver<T> : IDisposable where T : WebDriverBiDiEventArgs
+                {
+                    public void Unobserve() { }
+                    public void Dispose() { }
+                    public bool IsActive() => true;
+                }
+
+                public class ObservableEvent<T> where T : WebDriverBiDiEventArgs
+                {
+                    public EventObserver<T> AddObserver(Func<T, Task> handler) => new EventObserver<T>();
+                }
+
+                public class LogModule
+                {
+                    public ObservableEvent<LogEntryAddedEventArgs> OnEntryAdded { get; } = new ObservableEvent<LogEntryAddedEventArgs>();
+                }
+
+                public class BiDiDriver
+                {
+                    public LogModule Log { get; } = new LogModule();
+                }
+            }
+
+            namespace TestApp
+            {
+                using WebDriverBiDi;
+
+                public class TestClass
+                {
+                    public void TestMethod(BiDiDriver driver)
+                    {
+                        var {|#0:observer|} = driver.Log.OnEntryAdded.AddObserver(args => Task.CompletedTask);
+                        // Calls a non-disposal method — no Dispose/Unobserve/DisposeAsync call.
+                        _ = observer.IsActive();
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver006_ObserverDisposalAnalyzer.DiagnosticId,
+            Microsoft.CodeAnalysis.DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        CSharpAnalyzerTest<BiDiDriver006_ObserverDisposalAnalyzer, DefaultVerifier> testState = new()
+        {
+            TestCode = test,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+        };
+        testState.ExpectedDiagnostics.Add(expected);
+
+        await testState.RunAsync();
+    }
 }
 

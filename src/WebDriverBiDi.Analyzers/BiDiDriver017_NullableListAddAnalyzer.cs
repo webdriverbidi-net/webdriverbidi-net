@@ -143,8 +143,7 @@ public class BiDiDriver017_NullableListAddAnalyzer : DiagnosticAnalyzer
         SyntaxNode? parent = memberAccess.Parent;
         while (parent != null)
         {
-            if (parent is AssignmentExpressionSyntax assignment &&
-                assignment.Kind() == SyntaxKind.CoalesceAssignmentExpression)
+            if (parent is AssignmentExpressionSyntax assignment && assignment.Kind() == SyntaxKind.CoalesceAssignmentExpression)
             {
                 return true;
             }

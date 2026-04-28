@@ -25,8 +25,7 @@ public class BiDiDriver015_StringLiteralInsteadOfEventNameAnalyzer : DiagnosticA
 
     private const string Category = "Usage";
 
-    private static readonly LocalizableString Title =
-        "Use ObservableEvent.EventName instead of string literal";
+    private static readonly LocalizableString Title = "Use ObservableEvent.EventName instead of string literal";
 
     private static readonly LocalizableString MessageFormat = "Use '{0}' instead of string literal \"{1}\" to avoid typos and ensure event name consistency";
 

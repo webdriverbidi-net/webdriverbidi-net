@@ -108,9 +108,7 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
         }
 
         // Check for BiDiDriver, modules, or EventObserver<T>
-        return AnalyzerSymbolHelpers.IsCommandExecutorType(type)
-            || type.Name.EndsWith("Module")
-            || (type.Name == "EventObserver" && type.IsGenericType);
+        return AnalyzerSymbolHelpers.IsCommandExecutorType(type) || type.Name.EndsWith("Module") || (type.Name == "EventObserver" && type.IsGenericType);
     }
 
     private static bool IsLongRunningMethod(IMethodSymbol method)
