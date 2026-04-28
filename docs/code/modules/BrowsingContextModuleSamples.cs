@@ -673,11 +673,14 @@ public static class BrowsingContextModuleSamples
         EventObserver<NavigationEventArgs> observer =
             driver.BrowsingContext.OnLoad.AddObserver((e) => { });
 
-        observer.SetCheckpoint();
+        observer.StartCapturing();
         await driver.BrowsingContext.NavigateAsync(
             new NavigateCommandParameters(contextId, url));
 
-        bool loaded = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(30));
+        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(30));
+        bool loaded = tasks.Length == 1;
+        observer.StopCapturing();
+
         if (!loaded)
         {
             Console.WriteLine("Page load timeout!");

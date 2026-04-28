@@ -315,9 +315,10 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// processing messages from the transport.
     /// Exceptions from handlers registered with
     /// <see cref="ObservableEventHandlerOptions.RunHandlerAsynchronously"/> participate in this behavior
-    /// when they are not already owned by checkpoint task capture. If the caller captures handler tasks
-    /// using <see cref="EventObserver{T}.GetCheckpointTasks"/> or
-    /// <see cref="EventObserver{T}.WaitForCheckpointAndTasksAsync(TimeSpan, CancellationToken)"/>,
+    /// when they are not already owned by task capture. If the caller captures handler tasks
+    /// using <see cref="EventObserver{T}.WaitForAsync(uint, TimeSpan, System.Threading.CancellationToken)"/>,
+    /// <see cref="EventObserver{T}.WaitForCapturedTasksAsync(uint, TimeSpan, System.Threading.CancellationToken)"/>,
+    /// or <see cref="EventObserver{T}.GetCapturedTasks"/>,
     /// those task exceptions remain owned by the caller rather than being surfaced again through the
     /// transport error pipeline.
     /// </summary>

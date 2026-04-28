@@ -1,4 +1,4 @@
-// <copyright file="BiDiDriver011AnalyzerTests.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="BiDiDriver021AnalyzerTests.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -10,16 +10,16 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 
 /// <summary>
-/// Tests for the BiDiDriver011 analyzer.
+/// Tests for the BiDiDriver021 analyzer.
 /// </summary>
-public class BiDiDriver011AnalyzerTests
+[TestFixture]
+public class BiDiDriver021AnalyzerTests
 {
     [Test]
-    public async Task SetCheckpoint_WithoutWaitOrUnset_ReportsWarning()
+    public async Task StartCapturing_NeverRead_ReportsWarning()
     {
         string testCode = """
             using WebDriverBiDi;
-            using System.Threading.Tasks;
             using WebDriverBiDi.BrowsingContext;
 
             namespace TestNamespace
@@ -30,23 +30,23 @@ public class BiDiDriver011AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.SetCheckpoint(5);
+                        {|#0:observer.StartCapturing()|};
                     }
                 }
             }
             """;
 
         DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver011_EventObserverCheckpointMisuseAnalyzer.DiagnosticId,
+            BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
-            .WithSpan(13, 13, 13, 38)
+            .WithLocation(0)
             .WithArguments("observer");
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode, expected);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
     }
 
     [Test]
-    public async Task SetCheckpoint_WithWaitForCheckpointAsync_NoDiagnostic()
+    public async Task StartCapturing_FollowedByWaitForAsync_NoDiagnostic()
     {
         string testCode = """
             using System;
@@ -62,18 +62,18 @@ public class BiDiDriver011AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.SetCheckpoint(5);
-                        await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+                        observer.StartCapturing();
+                        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
     [Test]
-    public async Task SetCheckpoint_WithWaitForCheckpointAndTasksAsync_NoDiagnostic()
+    public async Task StartCapturing_FollowedByWaitForCapturedTasksAsync_NoDiagnostic()
     {
         string testCode = """
             using System;
@@ -89,50 +89,22 @@ public class BiDiDriver011AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.SetCheckpoint(5);
-                        await observer.WaitForCheckpointAndTasksAsync(TimeSpan.FromSeconds(10));
+                        observer.StartCapturing();
+                        bool occurred = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
     [Test]
-    public async Task SetCheckpoint_WithGetCheckpointTasks_NoDiagnostic()
+    public async Task StartCapturing_FollowedByGetCapturedTasks_NoDiagnostic()
     {
         string testCode = """
-            using System;
             using System.Threading.Tasks;
             using WebDriverBiDi;
-            using WebDriverBiDi.BrowsingContext;
-
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public async Task TestMethod()
-                    {
-                        BiDiDriver driver = new();
-                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.SetCheckpoint(5);
-                        Task[] tasks = observer.GetCheckpointTasks();
-                        await Task.WhenAll(tasks);
-                    }
-                }
-            }
-            """;
-
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode);
-    }
-
-    [Test]
-    public async Task SetCheckpoint_WithUnsetCheckpoint_NoDiagnostic()
-    {
-        string testCode = """
-            using WebDriverBiDi;
-            using System.Threading.Tasks;
             using WebDriverBiDi.BrowsingContext;
 
             namespace TestNamespace
@@ -143,22 +115,21 @@ public class BiDiDriver011AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        observer.SetCheckpoint(5);
-                        observer.UnsetCheckpoint();
+                        observer.StartCapturing();
+                        Task[] tasks = observer.GetCapturedTasks();
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
     [Test]
-    public async Task NoSetCheckpoint_NoDiagnostic()
+    public async Task StartCapturing_ThenStopCapturing_NeverRead_ReportsWarning()
     {
         string testCode = """
             using WebDriverBiDi;
-            using System.Threading.Tasks;
             using WebDriverBiDi.BrowsingContext;
 
             namespace TestNamespace
@@ -169,89 +140,163 @@ public class BiDiDriver011AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                    }
-                }
-            }
-            """;
-
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode);
-    }
-
-    [Test]
-    public async Task MultipleObservers_SetCheckpointOnOne_WithoutWait_ReportsWarning()
-    {
-        string testCode = """
-            using System;
-            using System.Threading.Tasks;
-            using WebDriverBiDi;
-            using WebDriverBiDi.BrowsingContext;
-
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public async Task TestMethod()
-                    {
-                        BiDiDriver driver = new();
-                        EventObserver<NavigationEventArgs> observer1 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        EventObserver<NavigationEventArgs> observer2 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-
-                        observer1.SetCheckpoint(5);
-                        await observer1.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-
-                        observer2.SetCheckpoint(3);
+                        {|#0:observer.StartCapturing()|};
+                        observer.StopCapturing();
                     }
                 }
             }
             """;
 
         DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver011_EventObserverCheckpointMisuseAnalyzer.DiagnosticId,
+            BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer.DiagnosticId,
             DiagnosticSeverity.Warning)
-            .WithSpan(19, 13, 19, 39)
-            .WithArguments("observer2");
-
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode, expected);
-    }
-
-    [Test]
-    public async Task SetCheckpoint_InConditionalBranch_WithoutWait_ReportsWarning()
-    {
-        string testCode = """
-            using WebDriverBiDi;
-            using System.Threading.Tasks;
-            using WebDriverBiDi.BrowsingContext;
-
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public void TestMethod(bool condition)
-                    {
-                        BiDiDriver driver = new();
-                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-
-                        if (condition)
-                        {
-                            observer.SetCheckpoint(5);
-                        }
-                    }
-                }
-            }
-            """;
-
-        DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver011_EventObserverCheckpointMisuseAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
-            .WithSpan(16, 17, 16, 42)
+            .WithLocation(0)
             .WithArguments("observer");
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode, expected);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
     }
 
     [Test]
-    public async Task SetCheckpoint_WithWaitInConditionalBranch_NoDiagnostic()
+    public async Task StartCapturing_Twice_SecondNeverRead_ReportsOnlySecond()
     {
+        // First session is satisfied; second is not.
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        observer.StartCapturing();
+                        Task[] first = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        {|#0:observer.StartCapturing()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("observer");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
+    }
+
+    [Test]
+    public async Task NoStartCapturing_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
+    }
+
+    [Test]
+    public async Task MultipleObservers_OnlyOneUnread_ReportsOneWarning()
+    {
+        string testCode = """
+            using System;
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public async Task TestMethod()
+                    {
+                        BiDiDriver driver = new();
+                        EventObserver<NavigationEventArgs> obs1 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        EventObserver<NavigationEventArgs> obs2 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
+                        obs1.StartCapturing();
+                        Task[] tasks = await obs1.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        {|#0:obs2.StartCapturing()|};
+                    }
+                }
+            }
+            """;
+
+        DiagnosticResult expected = new DiagnosticResult(
+            BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer.DiagnosticId,
+            DiagnosticSeverity.Warning)
+            .WithLocation(0)
+            .WithArguments("obs2");
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode, expected);
+    }
+
+    [Test]
+    public async Task ObserverPassedAsParameter_NoDiagnostic()
+    {
+        // Parameter-passed observers are not tracked.
+        string testCode = """
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public class TestClass
+                {
+                    public void TestMethod(EventObserver<NavigationEventArgs> observer)
+                    {
+                        observer.StartCapturing();
+                    }
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
+    }
+
+    [Test]
+    public async Task MethodWithoutBody_NoDiagnostic()
+    {
+        string testCode = """
+            using System.Threading.Tasks;
+            using WebDriverBiDi;
+            using WebDriverBiDi.BrowsingContext;
+
+            namespace TestNamespace
+            {
+                public interface ITestInterface
+                {
+                    Task TestMethod();
+                }
+            }
+            """;
+
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
+    }
+
+    [Test]
+    public async Task StartCapturing_ReadInNestedBlock_NoDiagnostic()
+    {
+        // The read is inside an if-block but the analyzer sees it within the same method body.
         string testCode = """
             using System;
             using System.Threading.Tasks;
@@ -266,77 +311,21 @@ public class BiDiDriver011AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-
+                        observer.StartCapturing();
                         if (condition)
                         {
-                            observer.SetCheckpoint(5);
-                            await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+                            Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
                         }
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 
     [Test]
-    public async Task MethodWithoutBody_NoDiagnostic()
-    {
-        string testCode = """
-            using WebDriverBiDi;
-            using System.Threading.Tasks;
-            using WebDriverBiDi.BrowsingContext;
-
-            namespace TestNamespace
-            {
-                public interface ITestInterface
-                {
-                    void TestMethod();
-                }
-            }
-            """;
-
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode);
-    }
-
-    [Test]
-    public async Task SetCheckpoint_OnDifferentVariable_WithWaitOnOriginal_ReportsWarning()
-    {
-        string testCode = """
-            using System;
-            using System.Threading.Tasks;
-            using WebDriverBiDi;
-            using WebDriverBiDi.BrowsingContext;
-
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public async Task TestMethod()
-                    {
-                        BiDiDriver driver = new();
-                        EventObserver<NavigationEventArgs> observer1 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-                        EventObserver<NavigationEventArgs> observer2 = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-
-                        observer1.SetCheckpoint(5);
-                        await observer2.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-                    }
-                }
-            }
-            """;
-
-        DiagnosticResult expected = new DiagnosticResult(
-            BiDiDriver011_EventObserverCheckpointMisuseAnalyzer.DiagnosticId,
-            DiagnosticSeverity.Warning)
-            .WithSpan(16, 13, 16, 39)
-            .WithArguments("observer1");
-
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode, expected);
-    }
-
-    [Test]
-    public async Task SetCheckpoint_InTryCatchFinally_WithWaitInFinally_NoDiagnostic()
+    public async Task TwoSessionsBothRead_NoDiagnostic()
     {
         string testCode = """
             using System;
@@ -352,20 +341,15 @@ public class BiDiDriver011AnalyzerTests
                     {
                         BiDiDriver driver = new();
                         EventObserver<NavigationEventArgs> observer = driver.BrowsingContext.OnLoad.AddObserver(args => { });
-
-                        try
-                        {
-                            observer.SetCheckpoint(5);
-                        }
-                        finally
-                        {
-                            await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-                        }
+                        observer.StartCapturing();
+                        Task[] first = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+                        observer.StartCapturing();
+                        Task[] second = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
                     }
                 }
             }
             """;
 
-        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver011_EventObserverCheckpointMisuseAnalyzer>(testCode);
+        await AnalyzerTestHelpers.VerifyAnalyzerAsync<BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer>(testCode);
     }
 }

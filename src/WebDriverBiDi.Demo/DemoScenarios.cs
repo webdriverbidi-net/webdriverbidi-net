@@ -126,7 +126,7 @@ public static class DemoScenarios
         };
         await driver.Script.AddPreloadScriptAsync(preloadScriptParameters);
 
-        observer.SetCheckpoint();
+        observer.StartCapturing();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/delayLoadPage.html")
         {
             Wait = ReadinessState.Complete
@@ -134,8 +134,8 @@ public static class DemoScenarios
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Performed navigation to {navigation.Url}");
 
-        bool eventTriggered = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-        Console.WriteLine($"Event triggered from preload script: {eventTriggered}");
+        Task[] capturedTasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+        Console.WriteLine($"Event triggered from preload script: {capturedTasks.Length == 1}");
 
         string functionDefinition = @"() => {
             const element = document.querySelector('div#contentMessage');
@@ -496,9 +496,7 @@ public static class DemoScenarios
         string contextId = tree.ContextTree[0].BrowsingContextId;
         Console.WriteLine($"Active context: {contextId}");
 
-        // Navigating to simpleContent.html generates 5 requests, one for the HTML page itself,
-        // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
-        observer.SetCheckpoint(5);
+        observer.StartCapturing();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
@@ -506,6 +504,8 @@ public static class DemoScenarios
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
         Console.WriteLine($"Navigation command completed");
 
+        // Navigating to simpleContent.html generates 5 requests, one for the HTML page itself,
+        // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
         // Some explanation of this construct is in order. The long-running event handlers
         // included here will exceed the allowable time for the navigation to complete.
         // Therefore, you need to run the handlers asynchronously, with some sort of
@@ -515,8 +515,8 @@ public static class DemoScenarios
         // that the event handlers will run in parallel. In this case, we've chosen to use
         // Tasks as the synchronization mechanism, so that we can wait for all of them to
         // complete before continuing.
-        await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
-        Task.WaitAll(observer.GetCheckpointTasks());
+        Task[] capturedTasks = await observer.WaitForAsync(5, TimeSpan.FromSeconds(10));
+        Task.WaitAll(capturedTasks);
         Console.WriteLine($"Event handlers complete");
 
         // Demonstrate the ability to remove the event handler, and that the event handler
@@ -584,14 +584,14 @@ public static class DemoScenarios
         // OnBeforeRequestSent will only be raised once, since we are hijacking the
         // request, and providing a response that does not require any other requests
         // to the web server.
-        observer.SetCheckpoint();
+        observer.StartCapturing();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
         };
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
-        await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(3));
-        Task.WaitAll(observer.GetCheckpointTasks());
+        Task[] capturedTasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(3));
+        Task.WaitAll(capturedTasks);
 
         Console.WriteLine($"Navigation command completed");
     }
@@ -649,17 +649,17 @@ public static class DemoScenarios
             return Task.CompletedTask;
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
-        // Navigating to simpleContent.html generates 5 responses, one for the HTML page itself,
-        // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
-        observer.SetCheckpoint(5);
+        observer.StartCapturing();
         NavigateCommandParameters navigateParams = new(contextId, $"{baseUrl}/simpleContent.html")
         {
             Wait = ReadinessState.Complete
         };
         NavigateCommandResult navigation = await driver.BrowsingContext.NavigateAsync(navigateParams);
 
-        bool checkpointFulfilled = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(3));
-        if (!checkpointFulfilled)
+        // Navigating to simpleContent.html generates 5 responses, one for the HTML page itself,
+        // two for CSS stylesheets, one for a JavaScript script file, and one for an image.
+        Task[] capturedTasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(3));
+        if (capturedTasks.Length != 5)
         {
             Console.WriteLine("Error: Checkpoint not fulfilled");
             return;
@@ -669,8 +669,7 @@ public static class DemoScenarios
         // which is the task that retrieves the response body, so find that Task in the
         // captured tasks array, and cast it to the correct type so we can await that task's
         // result.
-        Task[] checkpointTasks = observer.GetCheckpointTasks();
-        Task<GetDataCommandResult>[] bodyRetrievalTasks = checkpointTasks.FilterTasksForType<GetDataCommandResult>();
+        Task<GetDataCommandResult>[] bodyRetrievalTasks = capturedTasks.FilterTasksForType<GetDataCommandResult>();
         if (bodyRetrievalTasks.Length == 0)
         {
             Console.WriteLine("Error: Body retrieval failed");
@@ -765,10 +764,10 @@ public static class DemoScenarios
                 PerformActionsCommandParameters actionsParams = new(contextId);
                 actionsParams.Actions.AddRange(inputBuilder.Build());
 
-                navigationObserver.SetCheckpoint();
+                navigationObserver.StartCapturing();
                 await driver.Input.PerformActionsAsync(actionsParams);
-                bool navigationCompleted = await navigationObserver.WaitForCheckpointAsync(TimeSpan.FromSeconds(3));
-                if (!navigationCompleted)
+                Task[] capturedTasks = await navigationObserver.WaitForAsync(1, TimeSpan.FromSeconds(3));
+                if (capturedTasks.Length != 1)
                 {
                     Console.WriteLine("Navigation completion not detected within three seconds");
                 }

@@ -54,7 +54,7 @@ Event handlers run on separate threads from your main application code. This mea
 
 For handlers registered with `ObservableEventHandlerOptions.RunHandlerAsynchronously`, this behavior also applies to exceptions that occur after the handler has returned control to the transport thread. In other words, exceptions from handlers being run asynchronously are not silently dropped.
 
-The one important exception is checkpoint task capture. If you capture async handler tasks by using `WaitForCheckpointAndTasksAsync()` or `GetCheckpointTasks()`, those task exceptions remain owned by your code. They are propagated through the captured task path rather than being surfaced again through `EventHandlerExceptionBehavior`.
+The one important exception is capture session task capture. If you capture async handler tasks by using `WaitForCapturedTasksAsync()` or `WaitForAsync()`, those task exceptions remain owned by your code. They are propagated through the captured task path rather than being surfaced again through `EventHandlerExceptionBehavior`.
 
 ### Why Ignore is the Default
 
@@ -116,7 +116,7 @@ Collect mode stores transport errors in a list, throwing them when the driver is
 - Protocol errors might be transient
 
 **Important:** Your code continues normally—errors throw when driver stopped as an `AggregateException`.
-This includes exceptions from handlers being run asynchronously unless you have explicitly captured those handler tasks via checkpoints.
+This includes exceptions from handlers being run asynchronously unless you have explicitly captured those handler tasks via a capture session.
 
 ### Terminate Mode
 
@@ -132,7 +132,7 @@ Terminate mode stores exceptions from event handlers and throws them when you se
 - Terminate mode ensures errors are eventually reported to your code, including exceptions from handlers being run asynchronously
 - The error surfaces when you send the next command, which is a natural synchronization point
 
-**Checkpoint-owned exceptions are different:** if you use `WaitForCheckpointAndTasksAsync()` or `GetCheckpointTasks()` to take ownership of async handler tasks, exceptions from those tasks propagate through that checkpoint/task path instead of terminating on the next command.
+**Capture-session-owned exceptions are different:** if you use `WaitForCapturedTasksAsync()` or `WaitForAsync()` to take ownership of async handler tasks, exceptions from those tasks propagate through the returned task path instead of terminating on the next command.
 
 **Use Terminate Mode When:**
 - You want event handler errors to be reported (recommended for development)
@@ -144,11 +144,11 @@ Terminate mode stores exceptions from event handlers and throws them when you se
 
 | Mode | Event Handler Exceptions | Protocol Errors | Command Errors | When Error Surfaces |
 |------|-------------------------|-----------------|----------------|---------------------|
-| **Ignore (default)** | Discarded and logged, including exceptions from asynchronously run handlers when those tasks are not checkpoint-captured | Discarded and logged | Always throws immediately | Never |
-| **Collect** | Stored in list, including exceptions from asynchronously run handlers when those tasks are not checkpoint-captured | Stored in list | Always throws immediately | When driver stopped |
-| **Terminate** | Throws on next command, including exceptions from asynchronously run handlers when those tasks are not checkpoint-captured | Throws on next command | Always throws immediately | Synchronization point (next command) |
+| **Ignore (default)** | Discarded and logged, including exceptions from asynchronously run handlers when those tasks are not capture-session-owned | Discarded and logged | Always throws immediately | Never |
+| **Collect** | Stored in list, including exceptions from asynchronously run handlers when those tasks are not capture-session-owned | Stored in list | Always throws immediately | When driver stopped |
+| **Terminate** | Throws on next command, including exceptions from asynchronously run handlers when those tasks are not capture-session-owned | Throws on next command | Always throws immediately | Synchronization point (next command) |
 
-When async handler tasks are explicitly captured via checkpoints, their exceptions are owned by the caller instead of being routed through the transport behavior above.
+When async handler tasks are explicitly owned via a capture session, their exceptions are owned by the caller instead of being routed through the transport behavior above.
 
 ### Threading Model and Error Propagation
 

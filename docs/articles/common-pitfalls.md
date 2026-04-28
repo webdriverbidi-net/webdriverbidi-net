@@ -183,19 +183,19 @@ When using `RunHandlerAsynchronously`, the handler runs on a background task. Yo
 - Async event handlers run independently on background tasks
 - There's no automatic synchronization between command completion and handler completion
 
-**The Solution - Option 1: Use WaitForCheckpointAndTasksAsync (Recommended):**
+**The Solution - Option 1: Use WaitForCapturedTasksAsync (Recommended):**
 
-[!code-csharp[Wait For Checkpoint And Tasks](../code/common-pitfalls/CommonPitfallsSamples.cs#WaitForCheckpointAndTasks)]
+[!code-csharp[Wait For Captured Tasks](../code/common-pitfalls/CommonPitfallsSamples.cs#WaitForCapturedTasks)]
 
 **The Solution - Option 2: Manual Synchronization:**
 
 [!code-csharp[Manual Synchronization](../code/common-pitfalls/CommonPitfallsSamples.cs#ManualSynchronization)]
 
-**The Solution - Option 3: TaskCompletionSource for Custom Control:**
+**The Solution - Option 3: GetCapturedTasks for Custom Control:**
 
-[!code-csharp[TaskCompletionSource Synchronization](../code/common-pitfalls/CommonPitfallsSamples.cs#TaskCompletionSourceSynchronization)]
+[!code-csharp[Get Captured Tasks](../code/common-pitfalls/CommonPitfallsSamples.cs#GetCapturedTasksExample)]
 
-**Key Takeaway:** With async handlers, use `WaitForCheckpointAndTasksAsync()` or manual checkpoint management to ensure handlers complete before your code continues.
+**Key Takeaway:** With async handlers, use `WaitForCapturedTasksAsync()` or `WaitForAsync()` with manual task management to ensure handlers complete before your code continues.
 
 ---
 
@@ -217,7 +217,7 @@ The library defaults to `TransportErrorBehavior.Ignore` to prevent event handler
 
 [!code-csharp[Terminate Error Behavior](../code/common-pitfalls/CommonPitfallsSamples.cs#TerminateErrorBehavior)]
 
-This also applies to exceptions from handlers using `ObservableEventHandlerOptions.RunHandlerAsynchronously` when those tasks are not captured by a checkpoint. If you instead capture handler tasks with checkpoints, those exceptions are owned by the returned tasks and should be observed there.
+This also applies to exceptions from handlers using `ObservableEventHandlerOptions.RunHandlerAsynchronously` when those tasks are not captured by a capture session. If you instead capture handler tasks using `WaitForAsync()` or `WaitForCapturedTasksAsync()`, those exceptions are owned by the returned tasks and should be observed there.
 
 [!code-csharp[Collect Error Behavior](../code/common-pitfalls/CommonPitfallsSamples.cs#CollectErrorBehavior)]
 
@@ -252,9 +252,10 @@ While many operations in WebDriverBiDi.NET are thread-safe, not all concurrent s
 - Event observer notification
 - Adding and removing observers (`AddObserver`, `RemoveObserver`, `Unobserve`) on the same event
 - Transport message processing
-- EventObserver checkpoint methods (`SetCheckpoint`, `WaitForCheckpointAsync`,
-`WaitForCheckpointAndTasksAsync`, `GetCheckpointTasks`, `UnsetCheckpoint`) - multiple
-threads may wait on the same checkpoint; only one checkpoint per observer at a time
+- EventObserver capture API (`StartCapturing`, `StopCapturing`, `WaitForAsync`,
+`WaitForCapturedTasksAsync`, `GetCapturedTasks`) - individually thread-safe; only one
+capture session per observer at a time; the channel queues captured tasks so that no events
+are missed even if they arrive before the consumer is ready
 
 **What to Be Careful With:**
 
@@ -302,7 +303,7 @@ Before running your WebDriverBiDi.NET code, verify:
 - [ ] Modules and observers registered BEFORE `StartAsync()`
 - [ ] Nullable collections checked for null before adding items
 - [ ] Timeout configured appropriately for your use case
-- [ ] Async handlers synchronized with checkpoints if needed
+- [ ] Async handlers synchronized with capture API if needed
 - [ ] Transport error behavior set for development/production
 - [ ] Using correct WebSocket URL format (`ws://`)
 - [ ] Thread safety considered for concurrent operations

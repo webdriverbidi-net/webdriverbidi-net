@@ -29,7 +29,7 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
 
     private static readonly LocalizableString MessageFormat = "Method '{0}' is a long-running operation and should be called with a CancellationToken parameter";
 
-    private static readonly LocalizableString Description = "Long-running operations like navigation, printing, and checkpoint waits should always accept a CancellationToken to allow graceful cancellation and prevent hangs. This is especially important for operations that can timeout or take an indeterminate amount of time.";
+    private static readonly LocalizableString Description = "Long-running operations like navigation, printing, and event capture waits should always accept a CancellationToken to allow graceful cancellation and prevent hangs. This is especially important for operations that can timeout or take an indeterminate amount of time.";
 
     private static readonly DiagnosticDescriptor Rule = new(
         DiagnosticId,
@@ -122,8 +122,8 @@ public class BiDiDriver013_LongRunningOperationWithoutCancellationTokenAnalyzer 
             "PrintAsync",
             "ReloadAsync",
             "StartAsync",
-            "WaitForCheckpointAsync",
-            "WaitForCheckpointAndTasksAsync",
+            "WaitForAsync",
+            "WaitForCapturedTasksAsync",
         ];
 
         return longRunningOperations.Contains(method.Name);

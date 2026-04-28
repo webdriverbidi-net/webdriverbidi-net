@@ -114,7 +114,10 @@ recommendation, ask: if I implemented this change today, what would be measurabl
 If the answer is "the file would be smaller," withdraw the item. File-size concerns and similar
 style observations may be noted as context but must not be deducted against the scorecard.
 
-Specifically: do not recommend "extract responsibility X into its own class" when X has (a) exactly one caller inside the current class, (b) 100% test coverage through the current class's public surface, (c) no separate extension point that third-party code depends on, and (d) no demonstrated defect. All four together indicate the refactor delivers indirection without benefit.
+Specifically: do not recommend "extract responsibility X into its own class" when X has (a) exactly
+one caller inside the current class, (b) 100% test coverage through the current class's public
+surface, (c) no separate extension point that third-party code depends on, and (d) no demonstrated
+defect. All four together indicate the refactor delivers indirection without benefit.
 
 False positives (recommending changes for things already present, or without
 verification) damage trust and waste maintainer time. They are worse than
@@ -151,13 +154,6 @@ the class events, and send a message to the remote end by calling the
 `session.subscribe` command. This is intentional, and will not be changing.
 Note this limitation if you feel the need to, but **UNDER NO CIRCUMSTANCES**
 suggest it as something that should be changed.
-* The `EventObserver` checkpoint methods (`SetCheckpoint`, `WaitForCheckpointAsync`,
-`WaitForCheckpointAndTasksAsync`, `GetCheckpointTasks`, `UnsetCheckpoint`) are
-thread-safe and documented as such in their XML documentation. Concurrent use
-from multiple threads is supported: `SetCheckpoint` serializes concurrent calls;
-multiple threads may call `WaitForCheckpointAsync` concurrently on the same
-observer. Do not flag checkpoint concurrency or related documentation as an
-area for improvement.
 * The default error behavior is to ignore invalid protocol exceptions. This is
 intentional. Note this as a limitation of the library if you feel the need to,
 but do not list it as something that should be changed. The rationale for this

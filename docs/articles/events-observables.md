@@ -119,10 +119,10 @@ For long-running or async operations in handlers:
 `AddObserver` returns an `EventObserver<T>` that you should store when you need to:
 
 - **Remove the observer** when it is no longer needed (`Unobserve()`)
-- **Use checkpoints** for synchronization (`SetCheckpoint()`, `WaitForCheckpointAsync()`, `WaitForCheckpointAndTasksAsync()`)
+- **Use the capture API** for synchronization (`StartCapturing()`, `WaitForAsync()`, `WaitForCapturedTasksAsync()`)
 - **Dispose resources** when the observer goes out of scope
 
-Always store the observer reference when you intend to remove it or use checkpoints. Failing to remove observers when done can lead to memory leaks and handlers continuing to run after they are no longer needed.
+Always store the observer reference when you intend to remove it or use the capture API. Failing to remove observers when done can lead to memory leaks and handlers continuing to run after they are no longer needed.
 
 #### Basic Cleanup with try/finally
 
@@ -134,11 +134,11 @@ Always store the observer reference when you intend to remove it or use checkpoi
 
 [!code-csharp[Using Statement Cleanup](../code/events-observables/EventObserverSamples.cs#UsingStatementCleanup)]
 
-#### Cleanup When Using Checkpoints
+#### Cleanup When Using the Capture API
 
-When using checkpoints, you must store the observer to call `SetCheckpoint()`, `WaitForCheckpointAsync()`, or `WaitForCheckpointAndTasksAsync()`. Clean up the observer when you are done:
+When using the capture API, you must store the observer to call `StartCapturing()`, `WaitForAsync()`, or `WaitForCapturedTasksAsync()`. Clean up the observer when you are done:
 
-[!code-csharp[Cleanup with Checkpoints](../code/events-observables/EventObserverSamples.cs#CleanupwithCheckpoints)]
+[!code-csharp[Cleanup with Capture](../code/events-observables/EventObserverSamples.cs#CleanupwithCapture)]
 
 #### Unobserve vs Dispose
 
@@ -174,7 +174,7 @@ You can limit subscriptions to specific contexts:
 
 ## Event Synchronization
 
-The `EventObserver<T>` class provides checkpoints for synchronizing with events.
+The `EventObserver<T>` class provides a capture API for synchronizing with events.
 
 ### Waiting for a Single Event
 
@@ -184,20 +184,19 @@ The `EventObserver<T>` class provides checkpoints for synchronizing with events.
 
 [!code-csharp[Wait for Multiple Events](../code/events-observables/EventSynchronizationSamples.cs#WaitforMultipleEvents)]
 
-### Checkpoint Reset
+### Restarting a Capture Session
 
-[!code-csharp[Checkpoint Reset](../code/events-observables/EventObserverSamples.cs#CheckpointReset)]
+[!code-csharp[Capture Session Restart](../code/events-observables/EventObserverSamples.cs#CaptureSessionRestart)]
 
-### Checkpoint Thread Safety
+### Capture API Thread Safety
 
-Checkpoint methods are thread-safe. You may:
+Capture API methods are thread-safe. Concurrent calls to `WaitForAsync` or `GetCapturedTasks` are
+serialized internally — each caller gets a contiguous, non-interleaved slice of captured tasks.
+`StartCapturing`, `StopCapturing`, and the observer's notification path are all safe to call from
+any thread.
 
-- Call `WaitForCheckpointAsync` or `WaitForCheckpointAndTasksAsync` from multiple threads on the
-same observer; all waiters complete when the checkpoint is fulfilled.
-- Call `GetCheckpointTasks` or `UnsetCheckpoint` from any thread while another thread is waiting.
-
-Only one checkpoint may be active at a time. Calling `SetCheckpoint` when a checkpoint is already set
-(and not yet satisfied or unset) throws `WebDriverBiDiException`.
+Only one capture session may be active at a time. Calling `StartCapturing` when a session is already
+active throws `WebDriverBiDiException`.
 
 ## Async Event Handlers
 
@@ -257,19 +256,19 @@ Use `RunHandlerAsynchronously` for I/O operations or long-running work:
 
 When handlers are async, you need to synchronize if you want to ensure they complete before continuing.
 
-#### Using WaitForCheckpointAndTasksAsync (Recommended)
+#### Using WaitForCapturedTasksAsync (Recommended)
 
 The simplest way is to use the built-in helper method:
 
-[!code-csharp[WaitForCheckpointAndTasksAsync](../code/events-observables/EventObserverSamples.cs#WaitForCheckpointAndTasksAsync)]
+[!code-csharp[WaitForCapturedTasksAsync](../code/events-observables/EventObserverSamples.cs#WaitForCapturedTasksAsync)]
 
 This method waits for:
-1. The checkpoint to be fulfilled (events occurred)
-2. All handler tasks to complete
+1. The requested number of events to arrive
+2. All captured handler tasks to complete
 
-**Note**: The timeout only applies to waiting for the checkpoint. Handler execution time is not limited by the timeout.
+**Note**: The timeout only applies to waiting for events to arrive. Handler execution time is not limited by the timeout.
 
-**Important**: When you use `WaitForCheckpointAndTasksAsync()`, exceptions from the captured async handler tasks are propagated through this method. Those exceptions are considered owned by the caller and are not surfaced again through transport-level `EventHandlerExceptionBehavior`.
+**Important**: When you use `WaitForCapturedTasksAsync()`, exceptions from the captured async handler tasks are propagated through this method. Those exceptions are considered owned by the caller and are not surfaced again through transport-level `EventHandlerExceptionBehavior`.
 
 #### Manual Synchronization (For Fine-Grained Control)
 
@@ -277,13 +276,13 @@ For scenarios where you need to inspect or manipulate tasks before waiting:
 
 [!code-csharp[Manual Synchronization](../code/events-observables/EventObserverSamples.cs#ManualSynchronization)]
 
-When using `GetCheckpointTasks()`, you take ownership of those tasks and their exceptions. This lets you inspect or await handler failures directly without having those same failures also re-surfaced through the transport's event handler error behavior.
+When using `WaitForAsync()` followed by `Task.WhenAll()`, you take ownership of those tasks and their exceptions. This lets you inspect or await handler failures directly without having those same failures also re-surfaced through the transport's event handler error behavior.
 
-### Using TaskCompletionSource for Complex Synchronization
+### Waiting for Async Handlers to Complete
 
-For long-running handlers, use `TaskCompletionSource` to track completion:
+For long-running async handlers, use `WaitForCapturedTasksAsync` or `WaitForAsync` with `Task.WhenAll`:
 
-[!code-csharp[TaskCompletionSource Synchronization](../code/events-observables/EventObserverSamples.cs#TaskCompletionSourceSynchronization)]
+[!code-csharp[Wait For Async Handlers](../code/events-observables/EventObserverSamples.cs#WaitForAsyncHandlers)]
 
 **Why This Matters:**
 
@@ -394,10 +393,10 @@ The two-step design (add observer + subscribe) is intentional to prevent race co
 - Events require two steps: add observer locally, then subscribe through Session module
 - Recommended order: add observers first, then subscribe (ensures handlers are ready)
 - Observers handle events when they occur
-- Store the observer returned by `AddObserver` when you need to remove it or use checkpoints
+- Store the observer returned by `AddObserver` when you need to remove it or use the capture API
 - Use try/finally or `using` to ensure observers are removed when done (prevents memory leaks)
-- Use checkpoints to synchronize with events
-- Use `WaitForCheckpointAndTasksAsync()` to wait for async handlers to complete
+- Use `StartCapturing()`/`WaitForAsync()` to synchronize with events — when `WaitForAsync` returns a full batch it automatically ends the capture session; an explicit `StopCapturing()` call is a no-op and safe to include for clarity
+- Use `WaitForCapturedTasksAsync()` to wait for async handlers to complete — it also ends the capture session when the requested number of tasks is collected
 - Use `RunHandlerAsynchronously` option for long-running operations or I/O
 - Multiple observers can handle the same event
 

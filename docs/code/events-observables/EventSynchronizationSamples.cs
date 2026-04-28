@@ -16,7 +16,7 @@ using WebDriverBiDi.Network;
 public static class EventSynchronizationSamples
 {
     /// <summary>
-    /// Waiting for a single event with checkpoint.
+    /// Waiting for a single event.
     /// </summary>
     public static async Task WaitForSingleEvent(
         BiDiDriver driver,
@@ -29,14 +29,15 @@ public static class EventSynchronizationSamples
                 Console.WriteLine($"Loaded: {e.Url}");
             });
 
-        // Set checkpoint for 1 event (default)
-        observer.SetCheckpoint();
+        // Start capturing events
+        observer.StartCapturing();
 
         // Trigger navigation
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait up to 10 seconds for the event
-        bool eventOccurred = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+        Task[] tasks = await observer.WaitForAsync(1, TimeSpan.FromSeconds(10));
+        bool eventOccurred = tasks.Length == 1;
 
         if (eventOccurred)
         {
@@ -46,11 +47,13 @@ public static class EventSynchronizationSamples
         {
             Console.WriteLine("Timeout waiting for page load");
         }
+
+        observer.StopCapturing();
         #endregion
     }
 
     /// <summary>
-    /// Waiting for multiple events with checkpoint.
+    /// Waiting for multiple events.
     /// </summary>
     public static async Task WaitForMultipleEvents(
         BiDiDriver driver,
@@ -63,14 +66,17 @@ public static class EventSynchronizationSamples
                 Console.WriteLine($"Response: {e.Response.Url}");
             });
 
-        // Wait for 5 network responses
-        observer.SetCheckpoint(5);
+        // Start capturing, then wait for 5 network responses
+        observer.StartCapturing();
 
         await driver.BrowsingContext.NavigateAsync(navParams);
 
         // Wait for all 5 responses
-        bool allReceived = await observer.WaitForCheckpointAsync(TimeSpan.FromSeconds(10));
+        Task[] tasks = await observer.WaitForAsync(5, TimeSpan.FromSeconds(10));
+        bool allReceived = tasks.Length == 5;
         Console.WriteLine($"Received all 5 responses: {allReceived}");
+
+        observer.StopCapturing();
         #endregion
     }
 }
