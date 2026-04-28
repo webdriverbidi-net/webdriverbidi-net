@@ -108,6 +108,8 @@ Entries in `AdditionalData` are serialized as top-level properties on the comman
 
 **Note:** The remote end must support the extension fields you send. Sending unknown properties may be ignored or cause an error depending on the implementation. Consult the protocol specification or your browser/driver documentation for supported extensions.
 
+**AOT and trimming:** Because `AdditionalData` is typed as `Dictionary<string, object?>`, values stored in it are serialized through reflection-based `JsonSerializer` overloads rather than the source-generated context. This is not compatible with native AOT or IL trimming unless every value's runtime type is registered via [`BiDiDriver.RegisterTypeInfoResolverAsync`](../../api/WebDriverBiDi.BiDiDriver.yml) before the command is sent. The [BIDI022](analyzers.md#available-analyzers) analyzer flags every write to `AdditionalData` as a reminder. See [AOT Compatibility](aot-compatibility.md) for the pattern.
+
 ## Timeout and Cancellation
 
 Every module command accepts two optional parameters. **This is the preferred way to set per-command timeouts** when using the module API (e.g., `driver.BrowsingContext.NavigateAsync`). Prefer this over `ExecuteCommandAsync` when you need per-command timeout control:

@@ -42,8 +42,7 @@ internal static class AnalyzerSymbolHelpers
                 return true;
             }
 
-            if (current is INamedTypeSymbol namedType &&
-                namedType.AllInterfaces.Any(interfaceType => typeNames.Contains(interfaceType.Name)))
+            if (current is INamedTypeSymbol namedType && namedType.AllInterfaces.Any(interfaceType => typeNames.Contains(interfaceType.Name)))
             {
                 return true;
             }

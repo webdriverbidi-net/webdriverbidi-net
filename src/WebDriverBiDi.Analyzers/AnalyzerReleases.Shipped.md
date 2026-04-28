@@ -51,6 +51,14 @@ BIDI019 | Usage       | Warning  | BiDiDriver019_UnsetCheckpointWithoutGetTasksA
 
 ## Release 0.0.51
 
+### New Rules
+
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|--------------------
+BIDI020 | Usage       | Error    | BiDiDriver020_CaptureSessionNotStartedAnalyzer
+BIDI021 | Usage       | Warning  | BiDiDriver021_CaptureSessionOpenedButNeverReadAnalyzer
+BIDI022 | Reliability | Warning  | BiDiDriver022_AdditionalDataMutationAnalyzer
+
 ### Removed Rules
 
 Rule ID | Category    | Severity | Notes
