@@ -23,111 +23,12 @@ decisions you may find questionable could be fully documented there.
 
 Be very thorough in your exploration of the code and documentation.
 
-## Verification rules
-
-**Before suggesting any documentation improvement or gap**, search the `docs`
-directory (including `docs/articles/`, `docs/articles/modules/`,
-`docs/articles/advanced/`, etc.) to verify the topic is not already covered.
-Any doc you claim has a gap, search the full docs tree first to confirm it is
-not covered elsewhere (e.g., "all module docs reference timeout/
-cancellation," "analyzers are referenced in X"). You must read the relevant
-files and cite specific evidence. Do not recommend adding documentation for
-concepts that are already documented elsewhere. If you are going to flag a
-documentation code sample issue, you **must** validate the code sample against
-the _actual_ code in the library.
-
-**Before claiming that a documentation file does not exist**, perform an
-explicit directory listing of the relevant directory (e.g., use Glob on
-`docs/articles/modules/*.md`) and confirm the file is absent in the listing
-output. Do not infer absence from a broader or filtered search that may have
-missed the file. The directory listing result must be cited as the evidence.
-Claiming a file is missing without a confirmed directory listing is a false
-positive.
-
-**Before claiming behavioral test coverage is missing or thin, inspect every test file that could plausibly cover the feature.**
-In this project, per-module tests are conventionally split across multiple
-files in the same directory: *ModuleTests.cs, *CommandParametersTests.cs,
-*CommandResultTests.cs, and *EventArgsTests.cs. Before filing a coverage gap,
-read all sibling test files in the module's test directory and grep the whole
-test project for references to the specific matrix axes (enum values,optional-
-property combinations, constructor forms) you claim are untested. File length,
-test-method count, or line-count comparisons between directories are never by
-themselves evidence of a gap — they are style observations at best. If the
-authoritative check (reading sibling files and grepping for the specific axis)
-does not reveal a real absence, withdraw the item.
-
-**Before flagging any code as a defect, performance concern, or improvement opportunity**,
-read the relevant implementation. Do not rely on assumptions about lock
-duration, performance characteristics, or behavio; trace through the code and
-verify your concern before including it in the analysis.
-
-**Verify API facts before claiming gaps.** Before stating that a class of
-methods lacks a feature (e.g., CancellationToken, timeout overrides), inspect
-the actual method signatures in the module files. Do not rely on assumptions
-or outdated documentation.
-
-**Unverified suspicions must be omitted, not softened.** If you notice
-something that might be incorrect but have not yet verified it against
-source code, you have two options: read the source and verify it, or omit
-it entirely. Writing hedged notes like "verify this", "ensure this is
-accurate", or "keep this up to date" without first confirming there is
-actually a discrepancy is prohibited. A finding must be either confirmed or
-dropped, never filed as a vague suggestion.
-
-**Before recommending that an exception type be changed in a guard clause**,
-identify the operation the guard is protecting and determine what exception the
-CLR itself would throw at that line if the guard were removed. If the current
-exception type matches the CLR's own behavior for that operation (e.g.,
-`InvalidCastException` protecting an explicit generic cast `(T)value`,
-`ArgumentNullException` protecting a dereference), the choice is BCL-consistent
-and must not be flagged. A recommendation to change it is a false positive.
-Only recommend changing an exception type when the current type is
-demonstrably inconsistent with what the CLR would throw for the same operation.
-
-**When a claim concerns something a method or property does not do (lacks validation, lacks a check, lacks a feature), follow every delegation in the call chain to its concrete implementation before concluding the behavior is absent.**
-If A.Foo delegates to B.Bar which calls C.Baz, the claim "Foo does not validate
-X" requires reading C.Baz — not just A.Foo. Abstract methods, virtual methods,
-and interface implementations must be traced to their concrete override.
-Stopping at the first delegation point and inferring the absence of behavior is
-a verification failure equivalent to not reading the implementation at all.
-
-**Proxy signals do not substitute for authoritative state.** Before recommending any "remove
-/ clean up / re-add / re-register X" change, verify X's status in the authoritative source
-for that change — not in a proxy. Examples: git tracking is authoritative for "is this in the
-repo?" (not `ls`); the declaration is authoritative for "does this property exist?" (not `grep`
-hits, which can be from docs or comments); `AnalyzerReleases.Shipped.md` is authoritative for
-"is this analyzer shipped?" (not the presence of a `.cs` file). If you consulted only a proxy,
-either read the authoritative source before recommending or omit the item.
-
-**Before recommending a structural refactoring, identify the concrete benefit beyond aesthetics.**
-Recommendations to split a file, extract a class, reduce the size of a method, introduce an
-interface, or otherwise rearrange code must be grounded in at least one of:
-* a **defect** the current structure makes hard to fix or hides (cite the defect);
-* a **capability** the current structure prevents (cite the capability and a concrete caller who wants it);
-* a **constraint** the project has adopted that the current structure violates (cite the constraint from
-CLAUDE.md, the project invariants, or an explicit coding standard); or
-* a **risk** the current structure materially increases, with evidence (not speculation).
-
-A file being "large," a class having "many responsibilities," or a method being "long" is not by
-itself a finding. Large, cohesive files are common in well-factored code. Before filing a structural
-recommendation, ask: if I implemented this change today, what would be measurably better tomorrow?
-If the answer is "the file would be smaller," withdraw the item. File-size concerns and similar
-style observations may be noted as context but must not be deducted against the scorecard.
-
-Specifically: do not recommend "extract responsibility X into its own class" when X has (a) exactly
-one caller inside the current class, (b) 100% test coverage through the current class's public
-surface, (c) no separate extension point that third-party code depends on, and (d) no demonstrated
-defect. All four together indicate the refactor delivers indirection without benefit.
-
-False positives (recommending changes for things already present, or without
-verification) damage trust and waste maintainer time. They are worse than
-missing a real improvement. When in doubt, omit the recommendation. Only
-recommend after verification.
-
 ## Assumptions and design invariants
 
 There are some design decisions of which you should be aware when performing
-your analysis.
+your analysis. Before forming any finding, read the design invariants below.
+Any finding that touches a design invariant must be moved to the Non-Issues
+section with evidence that you read the relevant documentation.
 * An overarching principle of this library is that the main library does not
 have dependencies on assemblies that are not shipped as part of a .NET platform
 release. Suggesting enhancments or features that require additional
@@ -206,6 +107,16 @@ allow very long running commands without modification to the timeout in the
 common case. `DefaultCommandWaitTimeout` is a `public static readonly` field —
 it is not a settable property. It can be overridden by users when constructing
 a `BiDiDriver` object, or at the individual command level.
+* The project is designed to be compatible with ahead-of-time (AOT) compilation
+scenarios, and JSON serialization/deserialization is expected to work in those
+environments, with one exception. The WebDriver BiDi protocol defines a free-form
+`Extensible` construct, which allows for arbitrary extraneous data to be transmitted
+in either direction as part of the JSON payload. One design invariant is that
+we never want to expose `JsonElement` in any public API, which means that the
+`AdditionalData` property of several objects is defined as `Dictionary<string, object?>`.
+Normally, this is not compatible with `System.Text.Json`'s serialization and
+deserialization for AOT environments. This is an acknowledged limitation of
+the library, and must not be called out as a defect or area for modification.
 * The `BiDiDriver` class does not implement a builder pattern for configuration.
 Do not recommend one.
 * This project is not a replacement for higher-level automation libraries like
@@ -215,6 +126,134 @@ guide In the project documentation. Please do not suggest one.
 issues you find in your analysis. Verify if any of your design issues are
 covered by those analyzers, and if any new analyzers would help users avoid
 what you consider design deficiencies.
+
+## Verification rules
+
+**Before suggesting any documentation improvement or gap**, search the `docs`
+directory (including `docs/articles/`, `docs/articles/modules/`,
+`docs/articles/advanced/`, etc.) to verify the topic is not already covered.
+Any doc you claim has a gap, search the full docs tree first to confirm it is
+not covered elsewhere (e.g., "all module docs reference timeout/
+cancellation," "analyzers are referenced in X"). You must read the relevant
+files and cite specific evidence. Do not recommend adding documentation for
+concepts that are already documented elsewhere. If you are going to flag a
+documentation code sample issue, you **must** validate the code sample against
+the _actual_ code in the library.
+
+**Before claiming that a documentation file does not exist**, perform an
+explicit directory listing of the relevant directory (e.g., use Glob on
+`docs/articles/modules/*.md`) and confirm the file is absent in the listing
+output. Do not infer absence from a broader or filtered search that may have
+missed the file. The directory listing result must be cited as the evidence.
+Claiming a file is missing without a confirmed directory listing is a false
+positive.
+
+**Before claiming that a design decision lacks documentation**, perform an
+explicit search of `docs/articles/` and its subdirectories and read any file
+whose name plausibly covers the topic. Claiming a decision is undocumented
+without a confirmed full-tree listing and a read of the candidate files is
+a false positive of the same severity as recommending a prohibited change.
+
+**Before claiming behavioral test coverage is missing or thin, inspect every test file that could plausibly cover the feature.**
+In this project, per-module tests are conventionally split across multiple
+files in the same directory: *ModuleTests.cs, *CommandParametersTests.cs,
+*CommandResultTests.cs, and *EventArgsTests.cs. Before filing a coverage gap,
+read all sibling test files in the module's test directory and grep the whole
+test project for references to the specific matrix axes (enum values,optional-
+property combinations, constructor forms) you claim are untested. File length,
+test-method count, or line-count comparisons between directories are never by
+themselves evidence of a gap — they are style observations at best. If the
+authoritative check (reading sibling files and grepping for the specific axis)
+does not reveal a real absence, withdraw the item.
+
+**Before claiming that specific lines, branches, or code paths lack test coverage,**
+run the project's coverage tool and cite the lcov output as evidence. Reading
+test files, counting test methods, and grepping for feature names reveals what
+tests exist, not what code they execute. The authoritative source for any
+coverage-gap claim is:
+```shell
+dotnet test --project test/WebDriverBiDi.Tests --coverlet --coverlet-output-format lcov
+```
+with specific uncovered line numbers from the resulting .info file cited as evidence.
+A coverage-gap finding filed without citing line numbers from an actual coverage
+run is a false positive of the same severity as a documentation gap filed without
+reading the docs tree.
+
+**Before flagging any code as a defect, performance concern, or improvement opportunity**,
+read the relevant implementation. Do not rely on assumptions about lock
+duration, performance characteristics, or behavio; trace through the code and
+verify your concern before including it in the analysis.
+
+**Verify API facts before claiming gaps.** Before stating that a class of
+methods lacks a feature (e.g., CancellationToken, timeout overrides), inspect
+the actual method signatures in the module files. Do not rely on assumptions
+or outdated documentation.
+
+**Unverified suspicions must be omitted, not softened.** If you notice
+something that might be incorrect but have not yet verified it against
+source code, you have two options: read the source and verify it, or omit
+it entirely. Writing hedged notes like "verify this", "ensure this is
+accurate", or "keep this up to date" without first confirming there is
+actually a discrepancy is prohibited. A finding must be either confirmed or
+dropped, never filed as a vague suggestion.
+
+**Before recommending that an exception type be changed in a guard clause**,
+identify the operation the guard is protecting and determine what exception the
+CLR itself would throw at that line if the guard were removed. If the current
+exception type matches the CLR's own behavior for that operation (e.g.,
+`InvalidCastException` protecting an explicit generic cast `(T)value`,
+`ArgumentNullException` protecting a dereference), the choice is BCL-consistent
+and must not be flagged. A recommendation to change it is a false positive.
+Only recommend changing an exception type when the current type is
+demonstrably inconsistent with what the CLR would throw for the same operation.
+
+**When a claim concerns something a method or property does not do (lacks validation, lacks a check, lacks a feature), follow every delegation in the call chain to its concrete implementation before concluding the behavior is absent.**
+If A.Foo delegates to B.Bar which calls C.Baz, the claim "Foo does not validate
+X" requires reading C.Baz — not just A.Foo. Abstract methods, virtual methods,
+and interface implementations must be traced to their concrete override.
+Stopping at the first delegation point and inferring the absence of behavior is
+a verification failure equivalent to not reading the implementation at all.
+
+**Before recommending a manual verification step for any artifact (documentation snippets, sample code correctness, file existence)**,
+check whether a CI job already validates that artifact continuously. Read
+`.github/workflows/ci.yml` and any reusable workflow files it references.
+If an existing job demonstrably covers the concern, the finding is not actionable;
+move it to the Non-Issues section with the job name and script as evidence. Do not
+file "verify X exists" or "run Y to confirm Z" action items for conditions that CI
+already enforces on every PR.
+
+**Proxy signals do not substitute for authoritative state.** Before recommending any "remove
+/ clean up / re-add / re-register X" change, verify X's status in the authoritative source
+for that change — not in a proxy. Examples: git tracking is authoritative for "is this in the
+repo?" (not `ls`); the declaration is authoritative for "does this property exist?" (not `grep`
+hits, which can be from docs or comments); `AnalyzerReleases.Shipped.md` is authoritative for
+"is this analyzer shipped?" (not the presence of a `.cs` file). If you consulted only a proxy,
+either read the authoritative source before recommending or omit the item.
+
+**Before recommending a structural refactoring, identify the concrete benefit beyond aesthetics.**
+Recommendations to split a file, extract a class, reduce the size of a method, introduce an
+interface, or otherwise rearrange code must be grounded in at least one of:
+* a **defect** the current structure makes hard to fix or hides (cite the defect);
+* a **capability** the current structure prevents (cite the capability and a concrete caller who wants it);
+* a **constraint** the project has adopted that the current structure violates (cite the constraint from
+CLAUDE.md, the project invariants, or an explicit coding standard); or
+* a **risk** the current structure materially increases, with evidence (not speculation).
+
+A file being "large," a class having "many responsibilities," or a method being "long" is not by
+itself a finding. Large, cohesive files are common in well-factored code. Before filing a structural
+recommendation, ask: if I implemented this change today, what would be measurably better tomorrow?
+If the answer is "the file would be smaller," withdraw the item. File-size concerns and similar
+style observations may be noted as context but must not be deducted against the scorecard.
+
+Specifically: do not recommend "extract responsibility X into its own class" when X has (a) exactly
+one caller inside the current class, (b) 100% test coverage through the current class's public
+surface, (c) no separate extension point that third-party code depends on, and (d) no demonstrated
+defect. All four together indicate the refactor delivers indirection without benefit.
+
+False positives (recommending changes for things already present, or without
+verification) damage trust and waste maintainer time. They are worse than
+missing a real improvement. When in doubt, omit the recommendation. Only
+recommend after verification.
 
 ## Editing project code
 
@@ -232,6 +271,12 @@ keyword in the C# language. You should adhere to this convention for any code
 you generate. **IMPORTANT**: While this convention applies to code within the
 project itself, it does _not_ apply to code in the documentation in the `docs`
 directory.
+* The tests in this project are written using the Microsoft Test Platform (MTP)
+test runner. This means that the legacy VSTest runner command line arguments
+used with `dotnet test` do not apply. When running tests for a specific project,
+you will need to supply the project with the `--project` command line argument.
+Code coverage is generated using the `--coverlet` command line argument, **not**
+`--collect:"XPlat Code Coverage"`.
 
 ## Output
 
