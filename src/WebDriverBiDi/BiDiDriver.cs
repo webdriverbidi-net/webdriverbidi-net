@@ -36,7 +36,18 @@ using WebDriverBiDi.WebExtension;
 /// (<see cref="RegisterModule"/>, <see cref="RegisterEvent"/>, <see cref="RegisterTypeInfoResolverAsync"/>)
 /// must complete before <see cref="StartAsync"/> is called and are serialized via an internal lock.
 /// </para>
+/// <para>
+/// <strong>Interface Design:</strong>
+/// This class implements three focused interfaces (<see cref="IBiDiCommandExecutor"/>,
+/// <see cref="IBiDiDriverConfiguration"/>, <see cref="IBiDiDriverEvents"/>) for advanced
+/// framework, testing, and extensibility scenarios. Most application code should use
+/// <see cref="BiDiDriver"/> directly and ignore these interfaces. See the Core Concepts
+/// documentation for guidance on when each interface applies.
+/// </para>
 /// </remarks>
+/// <seealso cref="IBiDiCommandExecutor"/>
+/// <seealso cref="IBiDiDriverConfiguration"/>
+/// <seealso cref="IBiDiDriverEvents"/>
 public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiDriverEvents, IEventObserverErrorReporter
 {
     /// <summary>

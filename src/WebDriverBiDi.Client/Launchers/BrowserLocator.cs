@@ -11,7 +11,7 @@ namespace WebDriverBiDi.Client.Launchers;
 public class BrowserLocator
 {
     /// <summary>
-    /// Gets the the component name for this class to use in log messages.
+    /// Gets the component name for this class to use in log messages.
     /// </summary>
     public const string LoggerComponentName = "Browser Locator";
 

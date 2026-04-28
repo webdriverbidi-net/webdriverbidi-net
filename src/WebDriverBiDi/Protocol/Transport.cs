@@ -109,6 +109,14 @@ public class Transport : IAsyncDisposable
     // false), so we maintain the depth ourselves: increment after a successful
     // Writer.WriteAsync, decrement after a successful Reader.TryRead, and reset
     // alongside any channel replacement.
+    //
+    // This counter is used solely for observability (WebDriverBiDiEventSource
+    // PendingCommandCount events) and does not affect correctness. There is a
+    // narrow window during reconnect where a WriteAsync in flight on the old
+    // channel can apply its increment after the reset-to-zero that accompanies
+    // channel replacement, producing a transient over-count. The window closes
+    // as soon as that write completes, and the value self-corrects on the next
+    // TryRead. No data is lost and no messages are misrouted as a result.
     private int incomingQueueDepth;
 
     private Task messageQueueProcessingTask = Task.CompletedTask;
@@ -239,6 +247,13 @@ public class Transport : IAsyncDisposable
     /// Reading this property before <see cref="ConnectAsync"/> has ever been called, or after
     /// <see cref="DisconnectAsync(CancellationToken)"/>, returns the depth of the remaining
     /// (possibly drained) queue rather than throwing.
+    /// </para>
+    /// <para>
+    /// <strong>Reconnect transient overcount:</strong> The reset and channel replacement occur
+    /// together under the connect/disconnect semaphore, but a <c>WriteAsync</c> call already
+    /// in progress on the old channel will increment the counter after the reset. This produces
+    /// a brief positive overcount (never a negative value) during reconnect. The effect is
+    /// observability-only and resolves on the next message dispatch.
     /// </para>
     /// <para>
     /// <strong>Thread Safety:</strong> This property is safe to read concurrently with message

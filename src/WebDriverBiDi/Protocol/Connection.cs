@@ -36,7 +36,7 @@ namespace WebDriverBiDi.Protocol;
 public abstract class Connection : IAsyncDisposable
 {
     /// <summary>
-    /// Gets the the component name for this class to use in log messages.
+    /// Gets the component name for this class to use in log messages.
     /// </summary>
     public const string LoggerComponentName = "Connection";
 
