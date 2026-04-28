@@ -52,7 +52,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
     private readonly Func<EventObserverErrorInfo, Task>? observerErrorReporter;
-    private Channel<Task>? captureChannel;
+    private Channel<Task>? capturedTaskQueue;
     private int waitingReaderCount;
     private bool isDisposed;
 
@@ -89,7 +89,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         {
             lock (this.captureLock)
             {
-                return this.captureChannel is not null;
+                return this.capturedTaskQueue is not null;
             }
         }
     }
@@ -161,12 +161,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     {
         lock (this.captureLock)
         {
-            if (this.captureChannel is not null)
+            if (this.capturedTaskQueue is not null)
             {
                 throw new WebDriverBiDiException("This observer already has an active capture session. Call StopCapturing before starting a new one.");
             }
 
-            this.captureChannel = Channel.CreateUnbounded<Task>(new UnboundedChannelOptions()
+            this.capturedTaskQueue = Channel.CreateUnbounded<Task>(new UnboundedChannelOptions()
             {
                 SingleReader = true,
                 SingleWriter = true,
@@ -243,12 +243,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         Channel<Task> channel;
         lock (this.captureLock)
         {
-            if (this.captureChannel is null)
+            if (this.capturedTaskQueue is null)
             {
                 throw new InvalidOperationException("No capture session is active. Call StartCapturing before calling WaitForAsync.");
             }
 
-            channel = this.captureChannel;
+            channel = this.capturedTaskQueue;
             this.waitingReaderCount++;
         }
 
@@ -268,7 +268,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                     {
                         // Channel was completed externally (StopCapturing called while we were
                         // blocked waiting). WaitToReadAsync returns false only when the buffer is
-                        // empty AND the writer is completed, so there is nothing left to drain.
+                        // empty AND the writer is completed, so there is nothing left to remove.
                         break;
                     }
 
@@ -289,16 +289,16 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                         // Note: We are using ReferenceEquals here, though the equality
                         // operator (`==`) would be semantically equivalent. ReferenceEquals
                         // explicitly tells us we are checking for the same instance.
-                        if (ReferenceEquals(this.captureChannel, channel))
+                        if (ReferenceEquals(this.capturedTaskQueue, channel))
                         {
                             this.CloseCaptureChannel();
                         }
                     }
 
-                    // Drain tasks that raced into the buffer in the window between the last
+                    // Remove tasks that were added into the buffer in the window between the last
                     // TryRead and TryComplete. These tasks are not returned to the caller; their
                     // original fault continuation has ShouldReportAsyncFault = false (because they
-                    // were captured). We attach a new reporting continuation so any fault surfaces
+                    // were captured). We attach a new task continuation so any fault surfaces
                     // through the normal error pipeline instead of being silently swallowed.
                     // Only do this when we are the sole active reader: if another WaitForAsync caller
                     // is queued behind the semaphore, those tasks are legitimately theirs to consume.
@@ -307,7 +307,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
                         string eventName = this.observableEvent.EventName;
                         while (channel.Reader.TryRead(out Task? racedTask))
                         {
-                            this.ReportOrAttachFaultContinuation(racedTask, eventName);
+                            this.AttachFaultContinuation(racedTask, eventName, true);
                         }
                     }
                 }
@@ -406,7 +406,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         Channel<Task>? channel;
         lock (this.captureLock)
         {
-            channel = this.captureChannel;
+            channel = this.capturedTaskQueue;
         }
 
         if (channel is null)
@@ -486,13 +486,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             // only forwarded into a higher-level error pipeline when the invocation
             // is not already owned by checkpoint or capture.
             string reportedEventName = GetObserverErrorEventName(notifyData, this.observableEvent.EventName);
-            AsynchronousFaultState continuationStateObject = new(reportedEventName, !isCaptured);
-            _ = executingTask.ContinueWith(
-                this.ReportObserverErrorContinuation,
-                continuationStateObject,
-                CancellationToken.None,
-                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default);
+            this.AttachFaultContinuation(executingTask, reportedEventName, !isCaptured);
         }
 
         if (!isSynchronouslyFaulted)
@@ -551,8 +545,8 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
 
     private void CloseCaptureChannel()
     {
-        this.captureChannel?.Writer.TryComplete();
-        this.captureChannel = null;
+        this.capturedTaskQueue?.Writer.TryComplete();
+        this.capturedTaskQueue = null;
     }
 
     private void DisposeObserver()
@@ -564,6 +558,24 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         }
 
         this.captureReadSemaphore.Dispose();
+    }
+
+    private void AttachFaultContinuation(Task task, string eventName, bool shouldReport)
+    {
+        _ = task.ContinueWith(
+            this.ReportObserverErrorContinuation,
+            new AsynchronousFaultState(eventName, shouldReport),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
+    private bool CaptureTask(Task executingTask)
+    {
+        lock (this.captureLock)
+        {
+            return this.capturedTaskQueue is not null && this.capturedTaskQueue.Writer.TryWrite(executingTask);
+        }
     }
 
     private void ReportObserverErrorContinuation(Task faultedTask, object? faultStateObject)
@@ -597,36 +609,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         finally
         {
             _ = faultedTask.Exception;
-        }
-    }
-
-    // Ensures that a raced task's fault is reported even though its original continuation
-    // has ShouldReportAsyncFault = false (because CaptureTask wrote it to the channel).
-    // ContinueWith with OnlyOnFaulted | ExecuteSynchronously fires inline when the task
-    // is already faulted, and asynchronously if it faults later — both cases are handled.
-    private void ReportOrAttachFaultContinuation(Task racedTask, string eventName)
-    {
-        _ = racedTask.ContinueWith(
-            this.ReportObserverErrorContinuation,
-            new AsynchronousFaultState(eventName, shouldReportAsyncFault: true),
-            CancellationToken.None,
-            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
-    }
-
-    private bool CaptureTask(Task executingTask)
-    {
-        lock (this.captureLock)
-        {
-            bool captured = false;
-
-            if (this.captureChannel is not null)
-            {
-                this.captureChannel.Writer.TryWrite(executingTask);
-                captured = true;
-            }
-
-            return captured;
         }
     }
 
