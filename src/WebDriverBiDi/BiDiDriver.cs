@@ -40,7 +40,7 @@ using WebDriverBiDi.WebExtension;
 public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiDriverEvents, IEventObserverErrorReporter
 {
     /// <summary>
-    /// Gets the the component name for this class to use in log messages.
+    /// Gets the component name for this class to use in log messages.
     /// </summary>
     public const string LoggerComponentName = "BiDiDriver";
 
@@ -66,6 +66,9 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     private readonly ConcurrentDictionary<string, EventInvoker> eventInvokers = [];
     private readonly object moduleRegistrationLock = new();
     private readonly object eventRegistrationLock = new();
+
+    // Track when constructor work is completed for custom event registration observability.
+    private readonly bool isInitializationComplete = false;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isDisposedFlag = 0;
@@ -177,6 +180,8 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
 
         this.WebExtension = new WebExtensionModule(this);
         this.RegisterModule(this.WebExtension);
+
+        this.isInitializationComplete = true;
     }
 
     /// <summary>
@@ -449,6 +454,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             if (!commandCompleted)
             {
                 this.transport.CancelCommand(command);
+                WebDriverBiDiEventSource.RaiseEvent.CommandTimeout(command.CommandId.ToString(), commandParameters.MethodName, Convert.ToInt64(commandTimeout.Value.TotalMilliseconds));
                 throw new WebDriverBiDiTimeoutException($"Timed out executing command {commandParameters.MethodName} after {commandTimeout.Value.TotalMilliseconds} milliseconds");
             }
         }
@@ -541,6 +547,10 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             }
 
             this.transport.RegisterEventMessage<T>(eventName);
+            if (this.isInitializationComplete)
+            {
+                WebDriverBiDiEventSource.RaiseEvent.CustomEventRegistered(eventName, typeof(T).ToString());
+            }
         }
     }
 
@@ -596,6 +606,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             if (!this.modules.TryAdd(module.ModuleName, module))
             {
                 throw new ArgumentException($"A module with the name '{module.ModuleName}' has already been registered", nameof(module));
+            }
+
+            if (this.isInitializationComplete)
+            {
+                WebDriverBiDiEventSource.RaiseEvent.CustomModuleRegistered(module.ModuleName);
             }
         }
     }

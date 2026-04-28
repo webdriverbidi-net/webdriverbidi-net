@@ -208,42 +208,6 @@ public class WebDriverBiDiEventSourceTests
     }
 
     [Test]
-    public void TestEventSubscribingEventEmitted()
-    {
-        TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.EventSubscribing("log.entryAdded,network.responseCompleted", 2);
-        listener.Dispose();
-
-        Assert.That(listener.Events, Has.Count.EqualTo(1));
-        EventWrittenEventArgs evt = listener.Events[0];
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(evt.EventId, Is.EqualTo(11));
-            Assert.That(evt.EventName, Is.EqualTo("EventSubscribing"));
-            Assert.That(evt.Level, Is.EqualTo(EventLevel.Informational));
-            Assert.That(evt.Payload![0], Is.EqualTo("log.entryAdded,network.responseCompleted"));
-            Assert.That(evt.Payload![1], Is.EqualTo(2));
-        }
-    }
-
-    [Test]
-    public void TestEventUnsubscribingEventEmitted()
-    {
-        TestEventListener listener = new();
-        WebDriverBiDiEventSource.RaiseEvent.EventUnsubscribing("log.entryAdded", 0);
-        listener.Dispose();
-
-        Assert.That(listener.Events, Has.Count.EqualTo(1));
-        EventWrittenEventArgs evt = listener.Events[0];
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(evt.EventId, Is.EqualTo(12));
-            Assert.That(evt.EventName, Is.EqualTo("EventUnsubscribing"));
-            Assert.That(evt.Level, Is.EqualTo(EventLevel.Informational));
-        }
-    }
-
-    [Test]
     public void TestUnknownMessageReceivedEventEmitted()
     {
         TestEventListener listener = new();

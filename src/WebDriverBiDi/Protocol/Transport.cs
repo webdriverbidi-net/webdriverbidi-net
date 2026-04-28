@@ -62,7 +62,7 @@ using WebDriverBiDi.JsonConverters;
 public class Transport : IAsyncDisposable
 {
     /// <summary>
-    /// Gets the the component name for this class to use in log messages.
+    /// Gets the component name for this class to use in log messages.
     /// </summary>
     public const string LoggerComponentName = "Transport";
 
@@ -117,6 +117,12 @@ public class Transport : IAsyncDisposable
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isConnectedTypeSafeFlag = 0;
+
+    // Message/event sent/received statistics
+    private long commandMessagesSent = 0;
+    private long commandResponseMessagesReceived = 0;
+    private long eventMessagesReceived = 0;
+    private long errorMessagesReceived = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Transport"/> class.
@@ -359,6 +365,13 @@ public class Transport : IAsyncDisposable
 
             // Reset the command counter for each connection.
             Interlocked.Exchange(ref this.nextCommandId, 0);
+
+            // Reset the message send/receive statistics for this session.
+            Interlocked.Exchange(ref this.commandMessagesSent, 0);
+            Interlocked.Exchange(ref this.commandResponseMessagesReceived, 0);
+            Interlocked.Exchange(ref this.eventMessagesReceived, 0);
+            Interlocked.Exchange(ref this.errorMessagesReceived, 0);
+
             if (!this.Connection.IsActive)
             {
                 // Allow for the possibility of the connection to already being opened.
@@ -442,13 +455,14 @@ public class Transport : IAsyncDisposable
                 byte[] commandJson = this.SerializeCommand(command);
                 await this.Connection.SendDataAsync(commandJson, cancellationToken).ConfigureAwait(false);
 
+                Interlocked.Increment(ref this.commandMessagesSent);
                 WebDriverBiDiEventSource.RaiseEvent.PendingCommandCount(this.PendingCommands.PendingCommandCount);
 
                 return command;
             }
             catch (Exception ex)
             {
-                // Command failed to send, so roll back adding the command to the pending commmand
+                // Command failed to send, so roll back adding the command to the pending command
                 // collection, and emit the event for the failure.
                 if (this.PendingCommands.RemovePendingCommand(commandId, out _))
                 {
@@ -652,6 +666,7 @@ public class Transport : IAsyncDisposable
                 commandDelayCancelTokenSource.Cancel();
             }
 
+            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
             WebDriverBiDiEventSource.RaiseEvent.ConnectionClosed(this.Connection.GetHashCode().ToString());
             WebDriverBiDiEventSource.RaiseEvent.TransportStopped(this.TerminationReason);
 
@@ -873,6 +888,9 @@ public class Transport : IAsyncDisposable
             // with an appropriate exception.
             await this.PendingCommands.CloseAsync().ConfigureAwait(false);
             this.PendingCommands.FailAllPendingCommands(connectionException);
+
+            // Log appropriate statistics and information.
+            WebDriverBiDiEventSource.RaiseEvent.MessageStatistics(this.commandMessagesSent, this.commandResponseMessagesReceived, this.eventMessagesReceived, this.errorMessagesReceived);
             await this.LogAsync(logMessage, logLevel).ConfigureAwait(false);
         }
         finally
@@ -929,6 +947,7 @@ public class Transport : IAsyncDisposable
                 if (messageType == "success")
                 {
                     isProcessed = this.ProcessCommandResponseMessage(messageRootElement);
+                    Interlocked.Increment(ref this.commandResponseMessagesReceived);
                     if (isLogging)
                     {
                         await this.LogAsync($"Command response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
@@ -937,6 +956,7 @@ public class Transport : IAsyncDisposable
                 else if (messageType == "error")
                 {
                     isProcessed = await this.ProcessErrorMessageAsync(messageRootElement).ConfigureAwait(false);
+                    Interlocked.Increment(ref this.errorMessagesReceived);
                     if (isLogging)
                     {
                         await this.LogAsync($"Error response message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);
@@ -945,6 +965,7 @@ public class Transport : IAsyncDisposable
                 else if (messageType == "event")
                 {
                     isProcessed = await this.ProcessEventMessageAsync(messageRootElement).ConfigureAwait(false);
+                    Interlocked.Increment(ref this.eventMessagesReceived);
                     if (isLogging)
                     {
                         await this.LogAsync($"Event message processed {loggingMessageData}", WebDriverBiDiLogLevel.Trace).ConfigureAwait(false);

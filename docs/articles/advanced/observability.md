@@ -75,8 +75,6 @@ Choose the appropriate level based on your needs:
 | Event | Level | Description | Payload |
 |-------|-------|-------------|---------|
 | `EventReceived` | Verbose | Protocol event received | `eventMethod` |
-| `EventSubscribing` | Info | Subscribing to protocol events | `eventNames`, `contextCount` |
-| `EventUnsubscribing` | Info | Unsubscribing from protocol events | `eventNames`, `contextCount` |
 | `EventHandlerError` | Warning | User event handler threw exception | `eventMethod`, `errorMessage` |
 
 ### Protocol Processing

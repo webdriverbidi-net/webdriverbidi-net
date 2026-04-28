@@ -218,34 +218,6 @@ public sealed class WebDriverBiDiEventSource : EventSource
     }
 
     /// <summary>
-    /// Logs when event subscription is requested.
-    /// </summary>
-    /// <param name="eventNames">Comma-separated list of event names being subscribed to.</param>
-    /// <param name="contextCount">The number of contexts the subscription applies to (0 for global).</param>
-    [Event(11, Level = EventLevel.Informational, Message = "Subscribing to events: {0} (contexts: {1})")]
-    public void EventSubscribing(string eventNames, int contextCount)
-    {
-        if (this.IsEnabled(EventLevel.Informational, EventKeywords.None))
-        {
-            this.WriteEvent(11, eventNames, contextCount);
-        }
-    }
-
-    /// <summary>
-    /// Logs when event unsubscription is requested.
-    /// </summary>
-    /// <param name="eventNames">Comma-separated list of event names being unsubscribed from.</param>
-    /// <param name="contextCount">The number of contexts the unsubscription applies to (0 for global).</param>
-    [Event(12, Level = EventLevel.Informational, Message = "Unsubscribing from events: {0} (contexts: {1})")]
-    public void EventUnsubscribing(string eventNames, int contextCount)
-    {
-        if (this.IsEnabled(EventLevel.Informational, EventKeywords.None))
-        {
-            this.WriteEvent(12, eventNames, contextCount);
-        }
-    }
-
-    /// <summary>
     /// Logs when an unknown message is received from the remote end.
     /// </summary>
     /// <param name="messageType">The type of unknown message.</param>
