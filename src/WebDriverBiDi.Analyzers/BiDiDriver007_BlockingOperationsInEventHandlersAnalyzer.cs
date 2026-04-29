@@ -62,7 +62,6 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        // Check if this is an AddObserver call
         if (memberAccess.Name.Identifier.Text != "AddObserver")
         {
             return;
@@ -74,34 +73,28 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             return;
         }
 
-        // Verify it's returning EventObserver<T>
         if (methodSymbol.ReturnType is not INamedTypeSymbol returnType || returnType.Name != "EventObserver")
         {
             return;
         }
 
-        // Check if the handler options parameter includes RunHandlerAsynchronously
-        if (HasRunHandlerAsynchronouslyOption(context, invocation))
+        if (AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation))
         {
-            // Handler is configured to run asynchronously, no need to check for blocking operations
             return;
         }
 
-        // Find the handler lambda/method passed to AddObserver
         ArgumentSyntax? handlerArgument = invocation.ArgumentList.Arguments.FirstOrDefault();
         if (handlerArgument == null)
         {
             return;
         }
 
-        // Analyze the handler for blocking operations
-        SyntaxNode? handlerBody = GetHandlerBody(context, handlerArgument.Expression);
+        SyntaxNode? handlerBody = AnalyzerSymbolHelpers.GetHandlerBody(context, handlerArgument.Expression);
         if (handlerBody == null)
         {
             return;
         }
 
-        // Look for blocking operations
         IEnumerable<SyntaxNode> blockingOperations = FindBlockingOperations(context, handlerBody);
         foreach (SyntaxNode blockingOp in blockingOperations)
         {
@@ -111,77 +104,12 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
         }
     }
 
-    private static bool HasRunHandlerAsynchronouslyOption(
-        SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation)
-    {
-        // Check if there's a second or third argument that's the options parameter
-        foreach (ArgumentSyntax argument in invocation.ArgumentList.Arguments)
-        {
-            ITypeSymbol? argType = context.SemanticModel.GetTypeInfo(argument.Expression).Type;
-            if (argType?.Name == "ObservableEventHandlerOptions")
-            {
-                // Check if the argument contains RunHandlerAsynchronously
-                string argumentText = argument.Expression.ToString();
-                if (argumentText.Contains("RunHandlerAsynchronously"))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private static SyntaxNode? GetHandlerBody(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
-    {
-        return expression switch
-        {
-            // Lambda expression: args => { ... }
-            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.Body,
-            ParenthesizedLambdaExpressionSyntax parenthesizedLambda => parenthesizedLambda.Body,
-
-            // Method reference: resolve the method and get its body
-            IdentifierNameSyntax identifierName => GetMethodBodyFromSymbol(context, identifierName),
-            MemberAccessExpressionSyntax memberAccess => GetMethodBodyFromSymbol(context, memberAccess),
-
-            _ => null,
-        };
-    }
-
-    private static SyntaxNode? GetMethodBodyFromSymbol(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
-    {
-        ISymbol? symbol = context.SemanticModel.GetSymbolInfo(expression).Symbol;
-        if (symbol is not IMethodSymbol methodSymbol)
-        {
-            return null;
-        }
-
-        // Get the method declaration from the symbol
-        SyntaxReference? syntaxReference = methodSymbol.DeclaringSyntaxReferences.FirstOrDefault();
-        if (syntaxReference == null)
-        {
-            return null;
-        }
-
-        SyntaxNode methodDeclaration = syntaxReference.GetSyntax();
-
-        // Extract the body based on the method declaration type
-        return methodDeclaration switch
-        {
-            MethodDeclarationSyntax methodDecl => methodDecl.Body ?? (SyntaxNode?)methodDecl.ExpressionBody?.Expression,
-            LocalFunctionStatementSyntax localFunc => localFunc.Body ?? (SyntaxNode?)localFunc.ExpressionBody?.Expression,
-            _ => null,
-        };
-    }
-
     private static IEnumerable<SyntaxNode> FindBlockingOperations(
         SyntaxNodeAnalysisContext context,
         SyntaxNode handlerBody)
     {
         List<SyntaxNode> blockingOps = [];
 
-        // Find all invocations and member accesses in the handler
         IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodes()
             .OfType<InvocationExpressionSyntax>();
 
@@ -193,21 +121,18 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
                 continue;
             }
 
-            // Check for Thread.Sleep
             if (methodSymbol.ContainingType?.Name == "Thread" && methodSymbol.Name == "Sleep")
             {
                 blockingOps.Add(invocation);
                 continue;
             }
 
-            // Check for Task.Wait()
             if (methodSymbol.ContainingType?.Name == "Task" && methodSymbol.Name == "Wait")
             {
                 blockingOps.Add(invocation);
                 continue;
             }
 
-            // Check for GetAwaiter().GetResult()
             if (methodSymbol.Name == "GetResult" &&
                 invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
                 memberAccess.Expression is InvocationExpressionSyntax getAwaiterCall)
@@ -221,7 +146,6 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer : Diagnosti
             }
         }
 
-        // Check for .Result property access on Task
         IEnumerable<MemberAccessExpressionSyntax> memberAccesses = handlerBody.DescendantNodes()
             .OfType<MemberAccessExpressionSyntax>();
 

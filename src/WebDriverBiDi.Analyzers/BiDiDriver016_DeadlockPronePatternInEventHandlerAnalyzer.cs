@@ -62,7 +62,6 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             return;
         }
 
-        // Check if this is an AddObserver call
         if (memberAccess.Name.Identifier.Text != "AddObserver")
         {
             return;
@@ -74,70 +73,40 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             return;
         }
 
-        // Verify it's returning EventObserver<T>
         if (methodSymbol.ReturnType is not INamedTypeSymbol returnType || returnType.Name != "EventObserver")
         {
             return;
         }
 
-        // Check if the handler options parameter includes RunHandlerAsynchronously
-        if (HasRunHandlerAsynchronouslyOption(context, invocation))
+        if (AnalyzerSymbolHelpers.HasRunHandlerAsynchronouslyOption(context, invocation))
         {
-            // Handler is configured to run asynchronously, deadlock patterns are less of a concern
             return;
         }
 
-        // Find the handler lambda/method passed to AddObserver
         ArgumentSyntax? handlerArgument = invocation.ArgumentList.Arguments.FirstOrDefault();
         if (handlerArgument == null)
         {
             return;
         }
 
-        // Check if handler is async
         bool isAsyncHandler = IsAsyncHandler(handlerArgument.Expression);
         if (!isAsyncHandler)
         {
-            // Non-async handlers are less prone to these specific deadlock patterns
             return;
         }
 
-        // Analyze the handler for deadlock-prone patterns
-        SyntaxNode? handlerBody = GetHandlerBody(context, handlerArgument.Expression);
+        SyntaxNode? handlerBody = AnalyzerSymbolHelpers.GetHandlerBody(context, handlerArgument.Expression);
         if (handlerBody == null)
         {
             return;
         }
 
-        // Look for deadlock-prone patterns
         IEnumerable<(SyntaxNode Node, string Pattern)> deadlockPatterns = FindDeadlockPronePatterns(context, handlerBody);
         foreach ((SyntaxNode node, string pattern) in deadlockPatterns)
         {
             Diagnostic diagnostic = Diagnostic.Create(Rule, node.GetLocation(), pattern);
             context.ReportDiagnostic(diagnostic);
         }
-    }
-
-    private static bool HasRunHandlerAsynchronouslyOption(
-        SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation)
-    {
-        // Check if there's a second or third argument that's the options parameter
-        foreach (ArgumentSyntax argument in invocation.ArgumentList.Arguments)
-        {
-            ITypeSymbol? argType = context.SemanticModel.GetTypeInfo(argument.Expression).Type;
-            if (argType?.Name == "ObservableEventHandlerOptions")
-            {
-                // Check if the argument contains RunHandlerAsynchronously
-                string argumentText = argument.Expression.ToString();
-                if (argumentText.Contains("RunHandlerAsynchronously"))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     private static bool IsAsyncHandler(ExpressionSyntax expression)
@@ -150,55 +119,12 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
         };
     }
 
-    private static SyntaxNode? GetHandlerBody(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
-    {
-        return expression switch
-        {
-            // Lambda expression: args => { ... }
-            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.Body,
-            ParenthesizedLambdaExpressionSyntax parenthesizedLambda => parenthesizedLambda.Body,
-
-            // Method reference: resolve the method and get its body
-            IdentifierNameSyntax identifierName => GetMethodBodyFromSymbol(context, identifierName),
-            MemberAccessExpressionSyntax memberAccess => GetMethodBodyFromSymbol(context, memberAccess),
-
-            _ => null,
-        };
-    }
-
-    private static SyntaxNode? GetMethodBodyFromSymbol(SyntaxNodeAnalysisContext context, ExpressionSyntax expression)
-    {
-        ISymbol? symbol = context.SemanticModel.GetSymbolInfo(expression).Symbol;
-        if (symbol is not IMethodSymbol methodSymbol)
-        {
-            return null;
-        }
-
-        // Get the method declaration from the symbol
-        SyntaxReference? syntaxReference = methodSymbol.DeclaringSyntaxReferences.FirstOrDefault();
-        if (syntaxReference == null)
-        {
-            return null;
-        }
-
-        SyntaxNode methodDeclaration = syntaxReference.GetSyntax();
-
-        // Extract the body based on the method declaration type
-        return methodDeclaration switch
-        {
-            MethodDeclarationSyntax methodDecl => methodDecl.Body ?? (SyntaxNode?)methodDecl.ExpressionBody?.Expression,
-            LocalFunctionStatementSyntax localFunc => localFunc.Body ?? (SyntaxNode?)localFunc.ExpressionBody?.Expression,
-            _ => null,
-        };
-    }
-
     private static IEnumerable<(SyntaxNode Node, string Pattern)> FindDeadlockPronePatterns(
         SyntaxNodeAnalysisContext context,
         SyntaxNode handlerBody)
     {
         List<(SyntaxNode, string)> patterns = [];
 
-        // Check for lock statements
         IEnumerable<LockStatementSyntax> lockStatements = handlerBody.DescendantNodes()
             .OfType<LockStatementSyntax>();
 
@@ -207,7 +133,6 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             patterns.Add((lockStmt, "lock statement"));
         }
 
-        // Find all invocations in the handler
         IEnumerable<InvocationExpressionSyntax> invocations = handlerBody.DescendantNodes()
             .OfType<InvocationExpressionSyntax>();
 
@@ -222,21 +147,18 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
             string? containingTypeName = methodSymbol.ContainingType?.Name;
             string methodName = methodSymbol.Name;
 
-            // Check for Monitor.Enter/TryEnter
             if (containingTypeName == "Monitor" && (methodName == "Enter" || methodName == "TryEnter"))
             {
                 patterns.Add((invocation, $"Monitor.{methodName}"));
                 continue;
             }
 
-            // Check for Semaphore.WaitOne or Semaphore.Wait
             if ((containingTypeName == "Semaphore" || containingTypeName == "SemaphoreSlim") && (methodName == "Wait" || methodName == "WaitOne"))
             {
                 patterns.Add((invocation, $"{containingTypeName}.{methodName}"));
                 continue;
             }
 
-            // Check for ManualResetEvent/AutoResetEvent/WaitHandle.WaitOne
             if ((containingTypeName == "ManualResetEvent" ||
                  containingTypeName == "ManualResetEventSlim" ||
                  containingTypeName == "AutoResetEvent" ||
@@ -247,21 +169,18 @@ public class BiDiDriver016_DeadlockPronePatternInEventHandlerAnalyzer : Diagnost
                 continue;
             }
 
-            // Check for SynchronizationContext.Send
             if (containingTypeName == "SynchronizationContext" && methodName == "Send")
             {
                 patterns.Add((invocation, "SynchronizationContext.Send"));
                 continue;
             }
 
-            // Check for Task.WaitAll/WaitAny
             if (containingTypeName == "Task" && (methodName == "WaitAll" || methodName == "WaitAny"))
             {
                 patterns.Add((invocation, $"Task.{methodName}"));
                 continue;
             }
 
-            // Check for Mutex.WaitOne
             if (containingTypeName == "Mutex" && methodName == "WaitOne")
             {
                 patterns.Add((invocation, "Mutex.WaitOne"));
