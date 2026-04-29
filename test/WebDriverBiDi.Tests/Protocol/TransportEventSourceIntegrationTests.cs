@@ -141,7 +141,7 @@ public class TransportEventSourceIntegrationTests
                             "message": "Session not found"
                           }
                           """;
-            await Task.Delay(TimeSpan.FromMilliseconds(10));
+            await Task.Yield();
             await connection.RaiseDataReceivedEventAsync(json);
         });
 
@@ -284,9 +284,7 @@ public class TransportEventSourceIntegrationTests
         string json = """{"type": "unknown", "data": "some data"}""";
         await connection.RaiseDataReceivedEventAsync(json);
 
-        await Task.Delay(TimeSpan.FromMilliseconds(50)); // Allow event processing
-
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("UnknownMessageReceived");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "UnknownMessageReceived");
         Assert.That(events, Has.Count.EqualTo(1));
 
         EventWrittenEventArgs unknownEvent = events[0];
@@ -314,9 +312,7 @@ public class TransportEventSourceIntegrationTests
         string json = """{"type": null, "data": "some data"}""";
         await connection.RaiseDataReceivedEventAsync(json);
 
-        await Task.Delay(TimeSpan.FromMilliseconds(50)); // Allow event processing
-
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("UnknownMessageReceived");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "UnknownMessageReceived");
         Assert.That(events, Has.Count.EqualTo(1));
 
         EventWrittenEventArgs unknownEvent = events[0];
@@ -353,9 +349,7 @@ public class TransportEventSourceIntegrationTests
                       """;
         await connection.RaiseDataReceivedEventAsync(json);
 
-        await Task.Delay(TimeSpan.FromMilliseconds(50)); // Allow event processing
-
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("ProtocolError");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "ProtocolError");
         Assert.That(events, Has.Count.AtLeast(1));
 
         EventWrittenEventArgs protocolError = events[0];
@@ -403,9 +397,7 @@ public class TransportEventSourceIntegrationTests
         // Simulate connection error
         await connection.RaiseConnectionErrorEventAsync(new InvalidOperationException("Connection lost"));
 
-        await Task.Delay(TimeSpan.FromMilliseconds(50)); // Allow event processing
-
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("ConnectionError");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "ConnectionError");
         Assert.That(events, Has.Count.EqualTo(1));
 
         EventWrittenEventArgs connectionError = events[0];
@@ -429,9 +421,7 @@ public class TransportEventSourceIntegrationTests
         // ConnectionError event must still be emitted for observability.
         await connection.RaiseConnectionErrorEventAsync(new InvalidOperationException("Connection lost during shutdown"));
 
-        await Task.Delay(TimeSpan.FromMilliseconds(50));
-
-        List<EventWrittenEventArgs> events = listener.GetEventsForEventName("ConnectionError");
+        List<EventWrittenEventArgs> events = listener.GetEventsForEventName(TimeSpan.FromMilliseconds(50), "ConnectionError");
         Assert.That(events, Has.Count.EqualTo(1));
         Assert.That(events[0].Payload![1], Does.Contain("Connection lost during shutdown"));
 

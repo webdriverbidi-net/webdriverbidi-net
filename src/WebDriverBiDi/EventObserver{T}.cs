@@ -53,6 +53,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
     private readonly Func<EventObserverErrorInfo, Task>? observerErrorReporter;
+    private readonly TimeProvider timeProvider;
     private Channel<Task>? capturedTaskQueue;
     private int waitingReaderCount;
     private bool isDisposed;
@@ -64,12 +65,14 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <param name="handler">A function taking type T and returning a Task that is executed every time the event is observed.</param>
     /// <param name="handlerOptions">The options to use when executing the event handler.</param>
     /// <param name="description">The optional description of this observer.</param>
+    /// <param name="timeProvider">The <see cref="TimeProvider"/> used to calculate timeouts.</param>
     /// <param name="observerErrorReporter">The callback used to report late observer execution errors, if any.</param>
-    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, Func<EventObserverErrorInfo, Task>? observerErrorReporter)
+    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, TimeProvider timeProvider, Func<EventObserverErrorInfo, Task>? observerErrorReporter)
     {
         this.observableEvent = observableEvent;
         this.handler = handler;
         this.handlerOptions = handlerOptions;
+        this.timeProvider = timeProvider;
         this.observerErrorReporter = observerErrorReporter;
         if (string.IsNullOrEmpty(description))
         {
@@ -254,7 +257,12 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         }
 
         List<Task> collected = [];
-        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout);
+
+        #if NETSTANDARD2_0
+        using CancellationTokenSource timeoutCancellationTokenSource = this.timeProvider.CreateCancellationTokenSource(timeout);
+        #else
+        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout, this.timeProvider);
+        #endif
         using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
         try
@@ -368,11 +376,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// </example>
     public async Task<bool> WaitForCapturedTasksCompleteAsync(uint count, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
-        Stopwatch elapsedTimeStopwatch = Stopwatch.StartNew();
+        long startTimestamp = this.timeProvider.GetTimestamp();
         Task[] tasksToWait = await this.WaitForCapturedTasksAsync(count, timeout, cancellationToken).ConfigureAwait(false);
         if (tasksToWait.Length == count)
         {
-            TimeSpan remainingTime = timeout - elapsedTimeStopwatch.Elapsed;
+            TimeSpan remainingTime = timeout - this.timeProvider.GetElapsedTime(startTimestamp);
             if (remainingTime <= TimeSpan.Zero)
             {
                 return false;

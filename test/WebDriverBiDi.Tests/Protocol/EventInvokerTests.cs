@@ -154,17 +154,22 @@ public class EventInvokerTests
     public async Task TestAsyncDelegateWithDelay()
     {
         bool delegateCompleted = false;
+        TaskCompletionSource delegateGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using ManualResetEventSlim delegateReachedGate = new(false);
         async Task action(EventInfo<TestEventArgs> info)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            delegateReachedGate.Set();
+            await delegateGate.Task;
             delegateCompleted = true;
         }
 
         EventInvoker<TestEventArgs> invoker = new(action);
         Task invocationTask = invoker.InvokeEventAsync(new TestEventArgs(), ReceivedDataDictionary.EmptyDictionary);
+        delegateReachedGate.Wait(TimeSpan.FromSeconds(5));
 
         Assert.That(delegateCompleted, Is.False, "Delegate should not have completed yet");
 
+        delegateGate.SetResult();
         await invocationTask;
 
         Assert.That(delegateCompleted, Is.True, "Delegate should have completed after awaiting");
@@ -190,7 +195,7 @@ public class EventInvokerTests
     {
         static async Task action(EventInfo<TestEventArgs> info)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(10));
+            await Task.Yield();
             throw new ArgumentException("Async exception from delegate");
         }
 
