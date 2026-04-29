@@ -1,5 +1,6 @@
 namespace WebDriverBiDi;
 
+using Microsoft.Extensions.Time.Testing;
 using TestUtilities;
 
 [TestFixture]
@@ -317,9 +318,6 @@ public class ObservableEventTests
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            // Allow time for the unobserved exception event to fire.
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
-
             Assert.That(unobservedExceptionRaised, Is.False);
         }
         finally
@@ -409,7 +407,7 @@ public class ObservableEventTests
         testEventSource.TestObservableEvent.AddObserver(
             async (TestObservableEventArgs e) =>
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(30));
+                await Task.Yield();
                 throw new InvalidOperationException("async fault");
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -606,11 +604,19 @@ public class ObservableEventTests
     [Test]
     public async Task TestWaitForCapturedTasksAsyncCanTimeout()
     {
-        TestEventSource testEventSource = new();
+        TimeSpan timeout = TimeSpan.FromSeconds(1);
+        FakeTimeProvider fakeTimeProvider = new();
+        TestEventSource testEventSource = new(fakeTimeProvider);
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
-        Task[] tasks = await observer.WaitForCapturedTasksAsync(2, TimeSpan.FromMilliseconds(100));
+
+        // WaitForCapturedTasksAsync is now suspended at WaitToReadAsync with 1 of 2 tasks
+        // collected and its CTS timer registered with fakeTimeProvider.
+        Task<Task[]> waitTask = observer.WaitForCapturedTasksAsync(2, timeout);
+        fakeTimeProvider.Advance(timeout + TimeSpan.FromMilliseconds(1));
+        Task[] tasks = await waitTask;
+
         Assert.That(tasks, Has.Length.EqualTo(1));
         Assert.That(observer.IsCapturing, Is.True);
         observer.StopCapturingTasks();
@@ -680,11 +686,17 @@ public class ObservableEventTests
     [Test]
     public async Task TestWaitForCapturedTasksCompleteAsyncCanTimeout()
     {
-        TestEventSource testEventSource = new();
+        TimeSpan timeout = TimeSpan.FromSeconds(1);
+        FakeTimeProvider fakeTimeProvider = new();
+        TestEventSource testEventSource = new(fakeTimeProvider);
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue1");
-        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(100));
+
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, timeout);
+        fakeTimeProvider.Advance(timeout + TimeSpan.FromMilliseconds(1));
+        bool fulfilled = await waitTask;
+
         Assert.That(fulfilled, Is.False);
         Assert.That(observer.IsCapturing, Is.True);
         observer.StopCapturingTasks();
@@ -738,17 +750,22 @@ public class ObservableEventTests
     [Test]
     public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenNoRemainingTimeAfterCapture()
     {
-        TestEventSource testEventSource = new();
+        TimeSpan timeout = TimeSpan.FromSeconds(1);
+        FakeTimeProvider fakeTimeProvider = new();
+        TestEventSource testEventSource = new(fakeTimeProvider);
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
 
         observer.StartCapturingTasks();
-
-        // Raise only 1 event but request 2 tasks. WaitForCapturedTasksAsync will block
-        // for the full timeout duration waiting for the second task that never arrives,
-        // guaranteeing remainingTime <= TimeSpan.Zero when control returns to
-        // WaitForCapturedTasksCompleteAsync regardless of machine speed.
         await testEventSource.RaiseTestEventAsync("myValue1");
-        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, TimeSpan.FromMilliseconds(50));
+
+        // WaitForCapturedTasksAsync is now suspended waiting for a second task that never arrives.
+        // Advancing the fake clock fires its CTS, causing it to time out and return the 1 task it
+        // collected. tasksToWait.Length (1) != count (2), so WaitForCapturedTasksCompleteAsync
+        // returns false via the final line without entering the remainingTime branch.
+        Task<bool> waitTask = observer.WaitForCapturedTasksCompleteAsync(2, timeout);
+        fakeTimeProvider.Advance(timeout + TimeSpan.FromMilliseconds(1));
+        bool fulfilled = await waitTask;
+
         Assert.That(fulfilled, Is.False);
         observer.StopCapturingTasks();
     }
@@ -759,7 +776,7 @@ public class ObservableEventTests
         CountdownEvent countdownEvent = new(2);
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
-            async (TestObservableEventArgs e) =>
+            async (e) =>
             {
                 countdownEvent.Signal();
                 await Task.Delay(TimeSpan.FromSeconds(5));
@@ -779,6 +796,35 @@ public class ObservableEventTests
 
         // Capture session is auto-closed once count tasks are collected.
         Assert.That(observer.IsCapturing, Is.False);
+    }
+
+    [Test]
+    public async Task TestWaitForCapturedTasksCompleteAsyncReturnsFalseWhenTimeExpiredDuringCapture()
+    {
+        TimeSpan timeout = TimeSpan.FromSeconds(1);
+
+        // AutoAdvanceAmount advances the fake clock on every GetTimestamp() call.
+        // The first call captures startTimestamp; the second (inside GetElapsedTime) reads
+        // a value that is already timeout + 1 ms ahead, so remainingTime is guaranteed negative
+        // without touching WaitForCapturedTasksAsync's own CancellationTokenSource.
+        FakeTimeProvider fakeTimeProvider = new()
+        {
+            AutoAdvanceAmount = timeout + TimeSpan.FromMilliseconds(1)
+        };
+        TestEventSource testEventSource = new(fakeTimeProvider);
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+
+        observer.StartCapturingTasks();
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+
+        bool fulfilled = await observer.WaitForCapturedTasksCompleteAsync(2, timeout);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(fulfilled, Is.False);
+            Assert.That(observer.IsCapturing, Is.False);
+        }
     }
 
     [Test]
@@ -843,19 +889,24 @@ public class ObservableEventTests
     public async Task TestCapturingTasksFromAsynchronousHandler()
     {
         bool handlerCompleted = false;
+        TaskCompletionSource handlerGate = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using ManualResetEventSlim handlerReachedGate = new(false);
         TestEventSource testEventSource = new();
         EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
             async (e) =>
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(50));
+                handlerReachedGate.Set();
+                await handlerGate.Task;
                 handlerCompleted = true;
             },
             ObservableEventHandlerOptions.RunHandlerAsynchronously);
         observer.StartCapturingTasks();
         await testEventSource.RaiseTestEventAsync("myValue");
+        handlerReachedGate.Wait(TimeSpan.FromSeconds(5));
         Task[] tasks = observer.GetCapturedTasks();
         Assert.That(tasks, Has.Length.EqualTo(1));
         Assert.That(tasks[0].IsCompleted, Is.False, "Captured task should still be running");
+        handlerGate.SetResult();
         await tasks[0];
         Assert.That(handlerCompleted, Is.True);
         observer.StopCapturingTasks();
@@ -873,11 +924,13 @@ public class ObservableEventTests
         TaskScheduler.UnobservedTaskException += handler;
         try
         {
+            using ManualResetEventSlim handlerFaulted = new(false);
             TestEventSource testEventSource = new();
             EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
                 async (e) =>
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(50));
+                    await Task.Yield();
+                    handlerFaulted.Set();
                     throw new InvalidOperationException("async capture failure");
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -888,15 +941,14 @@ public class ObservableEventTests
             Task[] tasks = observer.GetCapturedTasks();
             Assert.That(tasks, Has.Length.EqualTo(1));
 
-            await Task.Delay(TimeSpan.FromMilliseconds(250));
+            // Wait for the handler to fault before triggering GC.
+            handlerFaulted.Wait(TimeSpan.FromSeconds(5));
 
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-
-            await Task.Delay(TimeSpan.FromMilliseconds(100));
 
             Assert.That(unobservedExceptionRaised, Is.False, "Captured task exception should be observed by caller, not by the error reporter");
             Assert.That(tasks[0].IsFaulted, Is.True);
@@ -1023,6 +1075,7 @@ public class ObservableEventTests
 
             using ManualResetEventSlim handlerStarted = new(false);
             using ManualResetEventSlim allowFault = new(false);
+            using ManualResetEventSlim handlerFaulted = new(false);
 
             EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
                 async (TestObservableEventArgs e) =>
@@ -1030,8 +1083,15 @@ public class ObservableEventTests
                     if (e.EventValue == "raced")
                     {
                         handlerStarted.Set();
-                        await Task.Run(() => allowFault.Wait(TimeSpan.FromSeconds(5)));
-                        throw new InvalidOperationException("raced task fault");
+                        try
+                        {
+                            await Task.Run(() => allowFault.Wait(TimeSpan.FromSeconds(5)));
+                            throw new InvalidOperationException("raced task fault");
+                        }
+                        finally
+                        {
+                            handlerFaulted.Set();
+                        }
                     }
                 },
                 ObservableEventHandlerOptions.RunHandlerAsynchronously);
@@ -1049,16 +1109,15 @@ public class ObservableEventTests
             Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
             Assert.That(tasks, Has.Length.EqualTo(1));
 
-            // Let the raced handler fault.
+            // Let the raced handler fault and wait for it to complete before triggering GC.
             allowFault.Set();
-            await Task.Delay(250);
+            handlerFaulted.Wait(TimeSpan.FromSeconds(5));
 
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            await Task.Delay(100);
 
             Assert.That(unobservedExceptionRaised, Is.False, "raced task fault must be observed by the drain, not trigger UnobservedTaskException");
         }
@@ -1112,14 +1171,11 @@ public class ObservableEventTests
             Task[] tasks = await observer.WaitForCapturedTasksAsync(1, TimeSpan.FromSeconds(5));
             Assert.That(tasks, Has.Length.EqualTo(1));
 
-            await Task.Delay(100);
-
             // Force garbage collection to trigger UnobservedTaskException
             // for any task whose exception was not observed.
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            await Task.Delay(100);
 
             Assert.That(unobservedExceptionRaised, Is.False, "already-faulted raced task must be observed by the direct drain path");
         }
@@ -1212,18 +1268,41 @@ public class ObservableEventTests
 
     private class TestEventSource
     {
-        private readonly ObservableEvent<TestObservableEventArgs> testObservableEvent = new("testModule.testEvent");
-
-        public TestEventSource(uint maxObserverCount = 0)
+        public TestEventSource()
+            : this(TimeProvider.System)
         {
-            this.testObservableEvent = new ObservableEvent<TestObservableEventArgs>("testModule.testEvent", maxObserverCount);
         }
 
-        public ObservableEvent<TestObservableEventArgs> TestObservableEvent => this.testObservableEvent;
+        public TestEventSource(TimeProvider timeProvider)
+            : this(timeProvider, 0)
+        {
+        }
+
+        public TestEventSource(uint maxObserverCount)
+            : this(TimeProvider.System, maxObserverCount)
+        {
+        }
+
+        public TestEventSource(TimeProvider timeProvider, uint maxObserverCount)
+        {
+            this.TestObservableEvent = new CustomTimeObservableEvent<TestObservableEventArgs>("testModule.testEvent", maxObserverCount, timeProvider);
+        }
+
+        public ObservableEvent<TestObservableEventArgs> TestObservableEvent { get; }
 
         public async Task RaiseTestEventAsync(string eventValue)
         {
-            await this.testObservableEvent.NotifyObserversAsync(new TestObservableEventArgs(eventValue));
+            await this.TestObservableEvent.NotifyObserversAsync(new TestObservableEventArgs(eventValue));
+        }
+    }
+
+    private class CustomTimeObservableEvent<T> : ObservableEvent<T>
+        where T : WebDriverBiDiEventArgs
+    {
+        public CustomTimeObservableEvent(string eventName, uint maxObserverCount, TimeProvider timeProvider)
+            : base(eventName, maxObserverCount)
+        {
+            this.TimeProvider = timeProvider;
         }
     }
 

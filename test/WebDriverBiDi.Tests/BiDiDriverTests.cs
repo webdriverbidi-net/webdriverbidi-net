@@ -41,7 +41,7 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task CanExecuteCommand()
+    public async Task TestCanExecuteCommand()
     {
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
@@ -69,7 +69,7 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task CanExecuteCommandWithError()
+    public async Task TestCanExecuteCommandWithError()
     {
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
@@ -110,7 +110,7 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task CanExecuteCommandThatReturnsThrownExceptionThrows()
+    public async Task TestCanExecuteCommandThatReturnsThrownExceptionThrows()
     {
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
@@ -138,7 +138,7 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task CanExecuteReceiveErrorWithoutCommand()
+    public async Task TestCanExecuteReceiveErrorWithoutCommand()
     {
         ErrorResult? response = null;
         ManualResetEvent syncEvent = new(false);
@@ -173,7 +173,7 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task CanReceiveKnownEvent()
+    public async Task TestCanReceiveKnownEvent()
     {
         string receivedEvent = string.Empty;
         object? receivedData = null;
@@ -357,7 +357,7 @@ public class BiDiDriverTests
             }
             finally
             {
-                await Task.Delay(50);
+                await Task.Yield();
                 syncEvent.Set();
             }
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously, "Test observer");
@@ -876,8 +876,16 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task CanExecuteParallelCommands()
+    public async Task TestCanExecuteParallelCommands()
     {
+        // delayCommandInFlight: set by the delay command's handler as soon as it starts,
+        // before waiting on the gate. The fast command's handler waits on this first,
+        // proving both commands were in-flight simultaneously before either responded.
+        // delayResponseGate: held until after Task.WaitAny confirms the fast command
+        // finished first, then released so the delay command can respond.
+        using ManualResetEventSlim delayCommandInFlight = new(false);
+        using ManualResetEventSlim delayResponseGate = new(false);
+
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
         {
@@ -886,7 +894,12 @@ public class BiDiDriverTests
                 DateTime start = DateTime.Now;
                 if (e.SentCommandName!.Contains("delay"))
                 {
-                    Task.Delay(250).Wait();
+                    delayCommandInFlight.Set();
+                    delayResponseGate.Wait(TimeSpan.FromSeconds(5));
+                }
+                else
+                {
+                    delayCommandInFlight.Wait(TimeSpan.FromSeconds(5));
                 }
 
                 TimeSpan elapsed = DateTime.Now - start;
@@ -914,19 +927,23 @@ public class BiDiDriverTests
         string commandName = "module.command";
         TestCommandParameters command = new(commandName);
 
-        Task<TestCommandResult>[] parallelTasks = new[]
-        {
-            driver.ExecuteCommandAsync<TestCommandResult>(delayCommand),
-            driver.ExecuteCommandAsync<TestCommandResult>(command),
-        };
+        Task<TestCommandResult>[] parallelTasks =
+        [
+            driver.ExecuteCommandAsync(delayCommand),
+            driver.ExecuteCommandAsync(command),
+        ];
 
         int indexOfFirstFinishedTask = Task.WaitAny(parallelTasks);
-        bool allTasksCompleted = Task.WaitAll(parallelTasks, TimeSpan.FromSeconds(1));
-        Assert.That(allTasksCompleted, Is.True);
-        Assert.That(indexOfFirstFinishedTask, Is.EqualTo(1));
-        Assert.That(parallelTasks[0].Result.Value, Is.EqualTo($"command result value for {delayCommandName}"));
-        Assert.That(parallelTasks[0].Result.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(240));
-        Assert.That(parallelTasks[1].Result.Value, Is.EqualTo($"command result value for {commandName}"));
+        delayResponseGate.Set();
+        bool allTasksCompleted = Task.WaitAll(parallelTasks, TimeSpan.FromSeconds(5));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(allTasksCompleted, Is.True);
+            Assert.That(indexOfFirstFinishedTask, Is.EqualTo(1));
+            Assert.That(parallelTasks[0].Result.Value, Is.EqualTo($"command result value for {delayCommandName}"));
+            Assert.That(parallelTasks[1].Result.Value, Is.EqualTo($"command result value for {commandName}"));
+            Assert.That(parallelTasks[0].Result.ElapsedMilliseconds, Is.GreaterThanOrEqualTo(parallelTasks[1].Result.ElapsedMilliseconds!));
+        }
     }
 
     [Test]
@@ -1134,7 +1151,7 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task CanExecuteCommandWithUntypedCommandParameters()
+    public async Task TestCanExecuteCommandWithUntypedCommandParameters()
     {
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
@@ -1161,7 +1178,7 @@ public class BiDiDriverTests
     }
 
     [Test]
-    public async Task CanExecuteCommandWithUntypedCommandParametersAndTimeout()
+    public async Task TestCanExecuteCommandWithUntypedCommandParametersAndTimeout()
     {
         TestWebSocketConnection connection = new();
         connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
@@ -1254,15 +1271,21 @@ public class BiDiDriverTests
     [Test]
     public async Task TestExecuteCommandCancelsCommandOnCancellation()
     {
+        using ManualResetEventSlim commandSent = new(false);
         TestWebSocketConnection connection = new();
+        connection.DataSendComplete += (_, _) => commandSent.Set();
         TestTransport transport = new(connection);
         BiDiDriver driver = new(TimeSpan.FromSeconds(30), transport);
         await driver.StartAsync("ws://localhost:5555");
 
-        using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(50));
+        using CancellationTokenSource cts = new();
         CommandParameters command = new TestCommandParameters("module.command");
 
-        Assert.That(async () => await driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromSeconds(30), cts.Token), Throws.InstanceOf<OperationCanceledException>());
+        Task<TestCommandResult> executeTask = driver.ExecuteCommandAsync<TestCommandResult>(command, TimeSpan.FromSeconds(30), cts.Token);
+        commandSent.Wait(TimeSpan.FromSeconds(5));
+        cts.Cancel();
+
+        Assert.That(async () => await executeTask, Throws.InstanceOf<OperationCanceledException>());
     }
 
     [Test]
@@ -1291,7 +1314,7 @@ public class BiDiDriverTests
         connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
         {
             // force a delay in responding to ensure that the timeout is actually being applied
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            await Task.Yield();
             string eventJson = """
                                {
                                  "type": "success",
@@ -1366,7 +1389,7 @@ public class BiDiDriverTests
         connection.DataSendComplete += async (object? sender, TestWebSocketConnectionDataSentEventArgs e) =>
         {
             // force a delay in responding to ensure that the timeout is actually being applied
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
+            await Task.Yield();
             string eventJson = """
                                {
                                  "type": "success",

@@ -73,9 +73,9 @@ public class WebSocketConnectionTests
 
         WebSocketConnection connection = new()
         {
-            StartupTimeout = TimeSpan.FromMilliseconds(250)
+            StartupTimeout = TimeSpan.FromMilliseconds(50)
         };
-        Assert.That(async () => await connection.StartAsync($"ws://localhost:{port}"), Throws.InstanceOf<WebDriverBiDiTimeoutException>().With.Message.Contains($"{0.25} seconds"));
+        Assert.That(async () => await connection.StartAsync($"ws://localhost:{port}"), Throws.InstanceOf<WebDriverBiDiTimeoutException>().With.Message.Contains($"{0.05} seconds"));
     }
 
     [Test]
@@ -411,8 +411,8 @@ public class WebSocketConnectionTests
             BypassStart = false,
             BypassStop = false,
             BypassCloseClientWebSocket = false,
-            StartupTimeout = TimeSpan.FromMilliseconds(250),
-            ShutdownTimeout = TimeSpan.FromMilliseconds(250),
+            StartupTimeout = TimeSpan.FromMilliseconds(50),
+            ShutdownTimeout = TimeSpan.FromMilliseconds(50),
             ReceiveHandler = async (buffer, cancellationToken, callCount) =>
             {
                 // Block until StopAsync cancels the token. Keeps client.State == Open.
@@ -775,8 +775,8 @@ public class WebSocketConnectionTests
             BypassStart = false,
             BypassStop = false,
             BypassDataSend = false,
-            DataSendDelay = TimeSpan.FromMilliseconds(1000),
-            DataTimeout = TimeSpan.FromMilliseconds(250),
+            DataSendDelay = TimeSpan.FromMilliseconds(100),
+            DataTimeout = TimeSpan.FromMilliseconds(20),
         };
         await connection.StartAsync($"ws://localhost:{server.Port}");
 

@@ -21,7 +21,7 @@ namespace WebDriverBiDi;
 /// for thread-safety of checkpoint methods on observers.
 /// </para>
 /// </remarks>
-public sealed class ObservableEvent<T>
+public class ObservableEvent<T>
     where T : WebDriverBiDiEventArgs
 {
     private readonly object observerLock = new();
@@ -72,6 +72,11 @@ public sealed class ObservableEvent<T>
             }
         }
     }
+
+    /// <summary>
+    /// Gets or sets the <see cref="TimeProvider"/> used for time comparisons in observers.
+    /// </summary>
+    protected TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
     /// Adds a function to observe the event that takes an argument of type T and returns void.
@@ -137,7 +142,7 @@ public sealed class ObservableEvent<T>
                 throw new WebDriverBiDiException($"""This observable event only allows {this.MaxObserverCount} {(this.MaxObserverCount == 1 ? "handler" : "handlers")}.""");
             }
 
-            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.observerErrorReporter);
+            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerErrorReporter);
             this.observers.Add(observer.Id, observer);
             return observer;
         }

@@ -1365,7 +1365,7 @@ public class TransportTests
         {
             try
             {
-                await Task.Delay(50).ConfigureAwait(false);
+                await Task.Yield();
                 throw new WebDriverBiDiException("This is an async unexpected exception");
             }
             finally
@@ -1406,7 +1406,7 @@ public class TransportTests
         {
             try
             {
-                await Task.Delay(50).ConfigureAwait(false);
+                await Task.Yield();
                 throw new WebDriverBiDiException("This is an async unexpected exception");
             }
             finally

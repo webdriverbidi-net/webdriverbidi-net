@@ -1,6 +1,7 @@
 namespace WebDriverBiDi.Protocol;
 
 using System.Text.Json;
+using Microsoft.Extensions.Time.Testing;
 using Newtonsoft.Json.Linq;
 using WebDriverBiDi.TestUtilities;
 
@@ -325,7 +326,9 @@ public class CommandTests
         TestCommandParameters commandParams = new TestCommandParameters("module.command");
         Command command = new(1, commandParams);
 
-        using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(50));
+        FakeTimeProvider timeProvider = new();
+        using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(50), timeProvider);
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
 
         Assert.That(async () => await command.WaitForCompletionAsync(TimeSpan.FromSeconds(30), cts.Token), Throws.InstanceOf<OperationCanceledException>());
     }

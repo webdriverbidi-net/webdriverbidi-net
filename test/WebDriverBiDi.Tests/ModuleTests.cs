@@ -80,13 +80,13 @@ public class ModuleTests
                            }
                            """;
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
+        bool eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(50));
         Assert.That(eventSet, Is.True);
 
         handler.Unobserve();
         syncEvent.Reset();
         await connection.RaiseDataReceivedEventAsync(eventJson);
-        eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(100));
+        eventSet = syncEvent.WaitOne(TimeSpan.FromMilliseconds(50));
         Assert.That(eventSet, Is.False);
     }
 
@@ -141,7 +141,7 @@ public class ModuleTests
         {
             try
             {
-                await Task.Delay(50).ConfigureAwait(false);
+                await Task.Yield();
                 throw new WebDriverBiDiException("Async module handler exception");
             }
             finally
@@ -180,7 +180,7 @@ public class ModuleTests
 
         EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async (TestEventArgs e) =>
         {
-            await Task.Delay(50).ConfigureAwait(false);
+            await Task.Yield();
             throw new WebDriverBiDiException("Async module handler exception");
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
@@ -225,7 +225,7 @@ public class ModuleTests
             {
                 try
                 {
-                    await Task.Delay(50).ConfigureAwait(false);
+                    await Task.Yield();
                     firstTaskCompletionSource.SetException(new InvalidOperationException("First aggregate failure"));
                     secondTaskCompletionSource.SetException(new WebDriverBiDiException("Second aggregate failure"));
                 }
@@ -281,7 +281,7 @@ public class ModuleTests
         {
             try
             {
-                await Task.Delay(50).ConfigureAwait(false);
+                await Task.Yield();
                 throw new WebDriverBiDiException("Async module handler exception");
             }
             finally
@@ -320,7 +320,7 @@ public class ModuleTests
 
         EventObserver<TestEventArgs> observer = module.OnEventInvoked.AddObserver(async (TestEventArgs e) =>
         {
-            await Task.Delay(50).ConfigureAwait(false);
+            await Task.Yield();
             throw new WebDriverBiDiException("Async module handler exception");
         }, ObservableEventHandlerOptions.RunHandlerAsynchronously);
 
@@ -365,7 +365,7 @@ public class ModuleTests
             {
                 try
                 {
-                    await Task.Delay(50).ConfigureAwait(false);
+                    await Task.Yield();
                     firstTaskCompletionSource.SetException(new InvalidOperationException("First aggregate failure"));
                     secondTaskCompletionSource.SetException(new WebDriverBiDiException("Second aggregate failure"));
                 }

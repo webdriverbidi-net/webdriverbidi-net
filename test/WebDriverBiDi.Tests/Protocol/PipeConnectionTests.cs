@@ -171,8 +171,8 @@ public class PipeConnectionTests
         TestPipeConnection connection = new(testPipeServer)
         {
             BypassDataSend = false,
-            DataSendDelay = TimeSpan.FromMilliseconds(1000),
-            DataTimeout = TimeSpan.FromMilliseconds(250),
+            DataSendDelay = TimeSpan.FromMilliseconds(100),
+            DataTimeout = TimeSpan.FromMilliseconds(20),
         };
 
         ManualResetEventSlim syncEvent = new(false);
