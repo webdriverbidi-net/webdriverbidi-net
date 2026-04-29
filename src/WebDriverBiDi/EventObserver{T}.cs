@@ -257,7 +257,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
         }
 
         List<Task> collected = [];
-        using CancellationTokenSource timeoutCancellationTokenSource = new(timeout, this.timeProvider);
+        using CancellationTokenSource timeoutCancellationTokenSource = this.timeProvider.CreateCancellationTokenSource(timeout);
         using CancellationTokenSource linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
         try
