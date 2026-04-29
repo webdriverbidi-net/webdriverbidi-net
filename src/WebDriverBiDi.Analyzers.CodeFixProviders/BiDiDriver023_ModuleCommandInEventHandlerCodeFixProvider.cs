@@ -1,4 +1,4 @@
-// <copyright file="BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider.cs" company="WebDriverBiDi.NET Committers">
+// <copyright file="BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider.cs" company="WebDriverBiDi.NET Committers">
 // Copyright (c) WebDriverBiDi.NET Committers. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 // </copyright>
@@ -15,14 +15,15 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
-/// Code fix provider for BIDI007 that adds RunHandlerAsynchronously option to AddObserver calls.
+/// Code fix provider for BIDI023 that adds RunHandlerAsynchronously option to AddObserver calls
+/// that contain module command invocations.
 /// </summary>
-[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider))]
+[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider))]
 [Shared]
-public class BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider : CodeFixProvider
+public class BiDiDriver023_ModuleCommandInEventHandlerCodeFixProvider : CodeFixProvider
 {
     /// <inheritdoc/>
-    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(BiDiDriver007_BlockingOperationsInEventHandlersAnalyzer.DiagnosticId);
+    public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(BiDiDriver023_ModuleCommandInEventHandlerAnalyzer.DiagnosticId);
 
     /// <inheritdoc/>
     public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
@@ -35,18 +36,20 @@ public class BiDiDriver007_BlockingOperationsInEventHandlersCodeFixProvider : Co
         Diagnostic diagnostic = context.Diagnostics.First();
         Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
 
-        SyntaxNode? blockingOperation = root?.FindToken(diagnosticSpan.Start)
+        SyntaxNode? moduleCommandNode = root?.FindToken(diagnosticSpan.Start)
             .Parent?.AncestorsAndSelf()
             .FirstOrDefault();
 
-        if (blockingOperation == null)
+        if (moduleCommandNode == null)
         {
             return;
         }
 
-        InvocationExpressionSyntax? addObserverInvocation = blockingOperation.AncestorsAndSelf()
+        InvocationExpressionSyntax? addObserverInvocation = moduleCommandNode.AncestorsAndSelf()
             .OfType<InvocationExpressionSyntax>()
-            .FirstOrDefault(inv => inv.Expression is MemberAccessExpressionSyntax memberAccess && memberAccess.Name.Identifier.Text == "AddObserver");
+            .FirstOrDefault(inv =>
+                inv.Expression is MemberAccessExpressionSyntax memberAccess &&
+                memberAccess.Name.Identifier.Text == "AddObserver");
 
         if (addObserverInvocation == null)
         {

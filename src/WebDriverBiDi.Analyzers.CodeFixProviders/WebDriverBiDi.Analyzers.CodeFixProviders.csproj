@@ -13,6 +13,7 @@
     <IsPackable>false</IsPackable>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <IncludeBuildOutput>true</IncludeBuildOutput>
+    <RootNamespace>WebDriverBiDi.Analyzers</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
