@@ -98,6 +98,8 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v6
 
@@ -143,7 +145,11 @@ jobs:
         # .snupkg; the analyzer has no managed assembly to symbolicate).
         run: dotnet pack WebDriverBiDi.NET.sln --configuration Release -p:PackageVersion="${PACKAGE_VERSION}" --no-build --output .
 
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Push packages to NuGet
-        run: dotnet nuget push "*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "${NUGET_API_KEY}"
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "${{steps.login.outputs.NUGET_API_KEY}}"
