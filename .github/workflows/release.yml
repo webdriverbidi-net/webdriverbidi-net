@@ -19,7 +19,7 @@ name: Release
 
 on:
   push:
-    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+    tags: ['v[0-9]+.[0-9]+.[0-9]+', 'v[0-9]+.[0-9]+.[0-9]+-*']
 
 permissions:
   contents: read
@@ -114,14 +114,26 @@ jobs:
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git branch --remote --contains | grep origin/main
 
-      - name: Set VERSION variable from tag
-        run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> "$GITHUB_ENV"
+      - name: Set version variables from tag
+        run: |
+          GIT_TAG="${GITHUB_REF/refs\/tags\/v/}"
+          VERSION="${GIT_TAG%%-*}"
+          QUALIFIER="${GIT_TAG#${VERSION}}"
+          QUALIFIER="${QUALIFIER#-}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${VERSION}"
+          echo "ASSEMBLY_VERSION=${MAJOR}.0.0" >> "$GITHUB_ENV"
+          echo "FILE_VERSION=${MAJOR}.${MINOR}.${PATCH}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          if [ -n "${QUALIFIER}" ]; then
+            echo "PACKAGE_VERSION=${VERSION}-${QUALIFIER}" >> "$GITHUB_ENV"
+          else
+            echo "PACKAGE_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          fi
 
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release -p:Version="${VERSION}" --no-restore
+        run: dotnet build --configuration Release -p:AssemblyVersion="${ASSEMBLY_VERSION}" -p:FileVersion="${FILE_VERSION}" -p:ContinuousIntegrationBuild=true --no-restore
 
       - name: Pack releasable packages
         # `dotnet pack` on the solution packs only projects with
@@ -129,7 +141,7 @@ jobs:
         # and WebDriverBiDi.Logging. Symbol-package emission is configured
         # per-project in the csproj files (only library and logging produce
         # .snupkg; the analyzer has no managed assembly to symbolicate).
-        run: dotnet pack WebDriverBiDi.NET.sln --configuration Release -p:Version="${VERSION}" --no-build --output .
+        run: dotnet pack WebDriverBiDi.NET.sln --configuration Release -p:PackageVersion="${PACKAGE_VERSION}" --no-build --output .
 
       - name: Push packages to NuGet
         run: dotnet nuget push "*.nupkg" --source https://api.nuget.org/v3/index.json --api-key "${NUGET_API_KEY}"
