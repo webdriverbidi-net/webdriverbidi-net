@@ -344,8 +344,7 @@ public class CookieTests
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'value'"));
     }
 
-    // TODO (Issue #53): Re-enable the below test when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
-    // [Test]
+    [Test]
     public void TestDeserializeWithMissingDomainThrows()
     {
         string json = """
@@ -365,8 +364,7 @@ public class CookieTests
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'domain'"));
     }
 
-    // TODO (Issue #53): Re-enable the below test when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
-    // [Test]
+    [Test]
     public void TestDeserializeWithMissingPathThrows()
     {
         string json = """
@@ -386,8 +384,7 @@ public class CookieTests
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'path'"));
     }
 
-    // TODO (Issue #53): Re-enable the below test when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
-    // [Test]
+    [Test]
     public void TestDeserializeWithMissingSecureThrows()
     {
         string json = """
@@ -407,8 +404,7 @@ public class CookieTests
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'secure'"));
     }
 
-    // TODO (Issue #53): Re-enable the below test when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
-    // [Test]
+    [Test]
     public void TestDeserializeWithMissingHttpOnlyThrows()
     {
         string json = """
@@ -428,8 +424,7 @@ public class CookieTests
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'httpOnly'"));
     }
 
-    // TODO (Issue #53): Re-enable the below test when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
-    // [Test]
+    [Test]
     public void TestDeserializeWithMissingSameSiteThrows()
     {
         string json = """
@@ -449,8 +444,7 @@ public class CookieTests
         Assert.That(() => JsonSerializer.Deserialize<Cookie>(json), Throws.InstanceOf<JsonException>().With.Message.Contains("missing required properties including: 'sameSite'"));
     }
 
-    // TODO (Issue #53): Re-enable the below test when https://bugzilla.mozilla.org/show_bug.cgi?id=1887118 is fixed.
-    // [Test]
+    [Test]
     public void TestDeserializeWithMissingSizeThrows()
     {
         string json = """
