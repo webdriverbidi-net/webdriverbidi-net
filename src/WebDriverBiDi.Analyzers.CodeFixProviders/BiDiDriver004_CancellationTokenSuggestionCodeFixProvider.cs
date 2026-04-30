@@ -33,7 +33,7 @@ public class BiDiDriver004_CancellationTokenSuggestionCodeFixProvider : CodeFixP
     /// <inheritdoc/>
     public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
-        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken) .ConfigureAwait(false);
+        SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
         Diagnostic diagnostic = context.Diagnostics.First();
         TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
