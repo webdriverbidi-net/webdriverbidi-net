@@ -17,6 +17,8 @@ public sealed class InputModule : Module
 
     private const string FileDialogOpenedEventName = $"{InputModuleName}.fileDialogOpened";
 
+    private readonly ObservableEventInvocable<FileDialogOpenedEventArgs> invocableFileDialogOpenedObservableEvent = new(FileDialogOpenedEventName);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="InputModule"/> class.
     /// </summary>
@@ -24,7 +26,7 @@ public sealed class InputModule : Module
     public InputModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
-        this.RegisterObservableEvent(this.OnFileDialogOpened);
+        this.RegisterObservableEvent(this.invocableFileDialogOpenedObservableEvent);
     }
 
     /// <summary>
@@ -36,7 +38,7 @@ public sealed class InputModule : Module
     /// Gets an observable event that notifies when a file dialog is opened.
     /// </summary>
     [ObservableEventName(FileDialogOpenedEventName)]
-    public ObservableEvent<FileDialogOpenedEventArgs> OnFileDialogOpened { get; } = new(FileDialogOpenedEventName);
+    public ObservableEvent<FileDialogOpenedEventArgs> OnFileDialogOpened => this.invocableFileDialogOpenedObservableEvent;
 
     /// <summary>
     /// Performs a set of actions.

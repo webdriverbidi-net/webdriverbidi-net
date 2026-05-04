@@ -18,6 +18,7 @@
             "command": "dotnet",
             "args": [
                 "test",
+                "--project",
                 "${workspaceFolder}/test/WebDriverBiDi.Tests"
             ],
             "problemMatcher": "$msCompile",
@@ -28,18 +29,8 @@
             "label": "dotnet: test"
         },
         {
-            "type": "process",
-            "command": "dotnet",
-            "args": [
-                "test",
-                "--project",
-                "${workspaceFolder}/test/WebDriverBiDi.Tests",
-                "--coverlet",
-                "--coverlet-output-format",
-                "lcov",
-                "--results-directory",
-                "${workspaceFolder}/test/coverage/lcov"
-            ],
+            "type": "shell",
+            "command": "rm -f ${workspaceFolder}/test/coverage/lcov.*.info && dotnet test --project ${workspaceFolder}/test/WebDriverBiDi.Tests --configuration Release --verbosity normal --coverlet --coverlet-output-format lcov --coverlet-exclude-by-file '**/_/src/**' --results-directory ${workspaceFolder}/test/coverage --coverlet-file-prefix lcov && ${workspaceFolder}/scripts/check-lcov-thresholds.sh --min-line 100 --min-branch 100 --min-method 100 ${workspaceFolder}/test/coverage/lcov.*.info",
             "problemMatcher": "$msCompile",
             "group": {
                 "kind": "test",

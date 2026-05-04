@@ -486,17 +486,19 @@ public class CustomEventsModule : Module
     public const string CustomModuleName = "customModule";
     private const string CustomEventName = "custom.eventOccurred";
 
+    private readonly ObservableEventInvocable<CustomEventArgs> onCustomEvent =
+        new ObservableEventInvocable<CustomEventArgs>(CustomEventName);
+
     public CustomEventsModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
         // Register event with driver
-        this.RegisterObservableEvent<CustomEventArgs>(this.OnCustomEvent);
+        this.RegisterObservableEvent(this.onCustomEvent);
     }
 
     public override string ModuleName => CustomModuleName;
 
-    public ObservableEvent<CustomEventArgs> OnCustomEvent { get; } =
-        new ObservableEvent<CustomEventArgs>(CustomEventName);
+    public ObservableEvent<CustomEventArgs> OnCustomEvent => this.onCustomEvent;
 }
 
 public record CustomEventArgs : WebDriverBiDiEventArgs

@@ -54,7 +54,7 @@ public sealed class BenchmarkEchoConnection : Connection
         // decouples this from the sender's await on WaitForCompletionAsync.
         long commandId = ExtractCommandId(data);
         byte[] response = BuildSuccessResponse(commandId);
-        await this.OnDataReceived.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(response)).ConfigureAwait(false);
+        await this.InvocableConnectionDataReceivedObservableEvent.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(response)).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>

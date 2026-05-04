@@ -44,11 +44,6 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     public override bool IsBiDiSessionInitialized => true;
 
     /// <summary>
-    /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
-    /// </summary>
-    public override ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("classicBrowserLauncher.logMessage");
-
-    /// <summary>
     /// Gets a value indicating whether the browser is currently running.
     /// For remote browsers, this is true if a session has been established.
     /// </summary>
@@ -68,6 +63,11 @@ public class WebDriverClassicBrowserLauncher : BrowserLauncher
     /// Gets a value indicating whether the browser can be closed using WebDriver BiDi's browser.close command.
     /// </summary>
     public override bool IsBrowserCloseAllowed => this.BrowserLocator.BrowserName != "firefox";
+
+    /// <summary>
+    /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
+    /// </summary>
+    protected override ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new("classicBrowserLauncher.logMessage");
 
     /// <summary>
     /// Gets or sets the location of the browser executable.

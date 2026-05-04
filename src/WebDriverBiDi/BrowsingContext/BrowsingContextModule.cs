@@ -30,6 +30,21 @@ public sealed class BrowsingContextModule : Module
     private const string UserPromptClosedEventName = $"{BrowsingContextModuleName}.userPromptClosed";
     private const string UserPromptOpenedEventName = $"{BrowsingContextModuleName}.userPromptOpened";
 
+    private readonly ObservableEventInvocable<BrowsingContextEventArgs> invocableContextCreatedObservableEvent = new(ContextCreatedEventName);
+    private readonly ObservableEventInvocable<BrowsingContextEventArgs> invocableContextDestroyedObservableEvent = new(ContextDestroyedEventName);
+    private readonly ObservableEventInvocable<NavigationEventArgs> invocableNavigationStartedObservableEvent = new(NavigationStartedEventName);
+    private readonly ObservableEventInvocable<NavigationEventArgs> invocableFragmentNavigatedObservableEvent = new(FragmentNavigatedEventName);
+    private readonly ObservableEventInvocable<NavigationEventArgs> invocableDomContentLoadedObservableEvent = new(DomContentLoadedEventName);
+    private readonly ObservableEventInvocable<NavigationEventArgs> invocableLoadObservableEvent = new(LoadEventName);
+    private readonly ObservableEventInvocable<NavigationEventArgs> invocableNavigationAbortedObservableEvent = new(NavigationAbortedEventName);
+    private readonly ObservableEventInvocable<NavigationEventArgs> invocableNavigationCommittedObservableEvent = new(NavigationCommittedEventName);
+    private readonly ObservableEventInvocable<NavigationEventArgs> invocableNavigationFailedObservableEvent = new(NavigationFailedEventName);
+    private readonly ObservableEventInvocable<DownloadWillBeginEventArgs> invocableDownloadWillBeginObservableEvent = new(DownloadWillBeginEventName);
+    private readonly ObservableEventInvocable<DownloadEndEventArgs> invocableDownloadEndObservableEvent = new(DownloadEndEventName);
+    private readonly ObservableEventInvocable<HistoryUpdatedEventArgs> invocableHistoryUpdatedObservableEvent = new(HistoryUpdatedEventName);
+    private readonly ObservableEventInvocable<UserPromptClosedEventArgs> invocableUserPromptClosedObservableEvent = new(UserPromptClosedEventName);
+    private readonly ObservableEventInvocable<UserPromptOpenedEventArgs> invocableUserPromptOpenedObservableEvent = new(UserPromptOpenedEventName);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="BrowsingContextModule"/> class.
     /// </summary>
@@ -37,105 +52,105 @@ public sealed class BrowsingContextModule : Module
     public BrowsingContextModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
-        this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.OnContextCreated, info => new BrowsingContextEventArgs(info));
-        this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.OnContextDestroyed, info => new BrowsingContextEventArgs(info));
-        this.RegisterObservableEvent(this.OnNavigationStarted);
-        this.RegisterObservableEvent(this.OnFragmentNavigated);
-        this.RegisterObservableEvent(this.OnDomContentLoaded);
-        this.RegisterObservableEvent(this.OnLoad);
-        this.RegisterObservableEvent(this.OnDownloadWillBegin);
-        this.RegisterObservableEvent(this.OnDownloadEnd);
-        this.RegisterObservableEvent(this.OnNavigationAborted);
-        this.RegisterObservableEvent(this.OnNavigationCommitted);
-        this.RegisterObservableEvent(this.OnNavigationFailed);
-        this.RegisterObservableEvent(this.OnHistoryUpdated);
-        this.RegisterObservableEvent(this.OnUserPromptClosed);
-        this.RegisterObservableEvent(this.OnUserPromptOpened);
+        this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.invocableContextCreatedObservableEvent, info => new BrowsingContextEventArgs(info));
+        this.RegisterObservableEvent<BrowsingContextInfo, BrowsingContextEventArgs>(this.invocableContextDestroyedObservableEvent, info => new BrowsingContextEventArgs(info));
+        this.RegisterObservableEvent(this.invocableNavigationStartedObservableEvent);
+        this.RegisterObservableEvent(this.invocableFragmentNavigatedObservableEvent);
+        this.RegisterObservableEvent(this.invocableDomContentLoadedObservableEvent);
+        this.RegisterObservableEvent(this.invocableLoadObservableEvent);
+        this.RegisterObservableEvent(this.invocableDownloadWillBeginObservableEvent);
+        this.RegisterObservableEvent(this.invocableDownloadEndObservableEvent);
+        this.RegisterObservableEvent(this.invocableNavigationAbortedObservableEvent);
+        this.RegisterObservableEvent(this.invocableNavigationCommittedObservableEvent);
+        this.RegisterObservableEvent(this.invocableNavigationFailedObservableEvent);
+        this.RegisterObservableEvent(this.invocableHistoryUpdatedObservableEvent);
+        this.RegisterObservableEvent(this.invocableUserPromptClosedObservableEvent);
+        this.RegisterObservableEvent(this.invocableUserPromptOpenedObservableEvent);
     }
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context is created.
     /// </summary>
     [ObservableEventName(ContextCreatedEventName)]
-    public ObservableEvent<BrowsingContextEventArgs> OnContextCreated { get; } = new(ContextCreatedEventName);
+    public ObservableEvent<BrowsingContextEventArgs> OnContextCreated => this.invocableContextCreatedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context is destroyed.
     /// </summary>
     [ObservableEventName(ContextDestroyedEventName)]
-    public ObservableEvent<BrowsingContextEventArgs> OnContextDestroyed { get; } = new(ContextDestroyedEventName);
+    public ObservableEvent<BrowsingContextEventArgs> OnContextDestroyed => this.invocableContextDestroyedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation is started.
     /// </summary>
     [ObservableEventName(NavigationStartedEventName)]
-    public ObservableEvent<NavigationEventArgs> OnNavigationStarted { get; } = new(NavigationStartedEventName);
+    public ObservableEvent<NavigationEventArgs> OnNavigationStarted => this.invocableNavigationStartedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context fragment is navigated.
     /// </summary>
     [ObservableEventName(FragmentNavigatedEventName)]
-    public ObservableEvent<NavigationEventArgs> OnFragmentNavigated { get; } = new(FragmentNavigatedEventName);
+    public ObservableEvent<NavigationEventArgs> OnFragmentNavigated => this.invocableFragmentNavigatedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when the DOM content in a browsing context is loaded.
     /// </summary>
     [ObservableEventName(DomContentLoadedEventName)]
-    public ObservableEvent<NavigationEventArgs> OnDomContentLoaded { get; } = new(DomContentLoadedEventName);
+    public ObservableEvent<NavigationEventArgs> OnDomContentLoaded => this.invocableDomContentLoadedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a download in a browsing context is about to begin.
     /// </summary>
     [ObservableEventName(DownloadWillBeginEventName)]
-    public ObservableEvent<DownloadWillBeginEventArgs> OnDownloadWillBegin { get; } = new(DownloadWillBeginEventName);
+    public ObservableEvent<DownloadWillBeginEventArgs> OnDownloadWillBegin => this.invocableDownloadWillBeginObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a download has ended.
     /// </summary>
     [ObservableEventName(DownloadEndEventName)]
-    public ObservableEvent<DownloadEndEventArgs> OnDownloadEnd { get; } = new(DownloadEndEventName);
+    public ObservableEvent<DownloadEndEventArgs> OnDownloadEnd => this.invocableDownloadEndObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when the content in a browsing context is loaded.
     /// </summary>
     [ObservableEventName(LoadEventName)]
-    public ObservableEvent<NavigationEventArgs> OnLoad { get; } = new(LoadEventName);
+    public ObservableEvent<NavigationEventArgs> OnLoad => this.invocableLoadObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation is aborted.
     /// </summary>
     [ObservableEventName(NavigationAbortedEventName)]
-    public ObservableEvent<NavigationEventArgs> OnNavigationAborted { get; } = new(NavigationAbortedEventName);
+    public ObservableEvent<NavigationEventArgs> OnNavigationAborted => this.invocableNavigationAbortedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation is committed.
     /// </summary>
     [ObservableEventName(NavigationCommittedEventName)]
-    public ObservableEvent<NavigationEventArgs> OnNavigationCommitted { get; } = new(NavigationCommittedEventName);
+    public ObservableEvent<NavigationEventArgs> OnNavigationCommitted => this.invocableNavigationCommittedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a browsing context navigation fails.
     /// </summary>
     [ObservableEventName(NavigationFailedEventName)]
-    public ObservableEvent<NavigationEventArgs> OnNavigationFailed { get; } = new(NavigationFailedEventName);
+    public ObservableEvent<NavigationEventArgs> OnNavigationFailed => this.invocableNavigationFailedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when the browser history is updated.
     /// </summary>
     [ObservableEventName(HistoryUpdatedEventName)]
-    public ObservableEvent<HistoryUpdatedEventArgs> OnHistoryUpdated { get; } = new(HistoryUpdatedEventName);
+    public ObservableEvent<HistoryUpdatedEventArgs> OnHistoryUpdated => this.invocableHistoryUpdatedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a user prompt is opened.
     /// </summary>
     [ObservableEventName(UserPromptOpenedEventName)]
-    public ObservableEvent<UserPromptOpenedEventArgs> OnUserPromptOpened { get; } = new(UserPromptOpenedEventName);
+    public ObservableEvent<UserPromptOpenedEventArgs> OnUserPromptOpened => this.invocableUserPromptOpenedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a user prompt is closed.
     /// </summary>
     [ObservableEventName(UserPromptClosedEventName)]
-    public ObservableEvent<UserPromptClosedEventArgs> OnUserPromptClosed { get; } = new(UserPromptClosedEventName);
+    public ObservableEvent<UserPromptClosedEventArgs> OnUserPromptClosed => this.invocableUserPromptClosedObservableEvent;
 
     /// <summary>
     /// Gets the module name.

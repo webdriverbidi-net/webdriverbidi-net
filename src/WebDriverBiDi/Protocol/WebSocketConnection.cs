@@ -288,7 +288,7 @@ public class WebSocketConnection : Connection
                                     await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(bytes)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                                 }
 
-                                await this.OnDataReceived.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(bytes)).ConfigureAwait(false);
+                                await this.InvocableConnectionDataReceivedObservableEvent.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(bytes)).ConfigureAwait(false);
                             }
                         }
                     }
@@ -309,7 +309,7 @@ public class WebSocketConnection : Connection
             // If the loop exited without cancellation, the remote end closed the connection gracefully.
             if (!cancellationToken.IsCancellationRequested)
             {
-                await this.OnRemoteDisconnected.NotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
+                await this.InvocableRemoteDisconnectedObservableEvent.NotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -319,7 +319,7 @@ public class WebSocketConnection : Connection
         catch (WebSocketException e)
         {
             await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
-            await this.OnConnectionError.NotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+            await this.InvocableConnectionErrorObservableEvent.NotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         finally
         {
