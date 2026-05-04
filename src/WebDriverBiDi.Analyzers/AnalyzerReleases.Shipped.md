@@ -65,3 +65,11 @@ Rule ID | Category    | Severity | Notes
 --------|-------------|----------|--------------------
 BIDI011 | Usage       | Warning  | BiDiDriver011_EventObserverCheckpointMisuseAnalyzer
 BIDI019 | Usage       | Warning  | BiDiDriver019_UnsetCheckpointWithoutGetTasksAnalyzer
+
+## Release 0.0.53
+
+### New Rules
+
+Rule ID | Category    | Severity | Notes
+--------|-------------|----------|--------------------
+BIDI023 | Reliability | Warning  | BiDiDriver023_ModuleCommandInEventHandlerAnalyzer
