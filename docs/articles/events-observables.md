@@ -90,6 +90,87 @@ driver.Script.OnRealmDestroyed        // Realm destroyed
 // Session module has no observable events
 ```
 
+### Driver-Level Observable Events
+
+In addition to the module events above, `BiDiDriver` exposes five observable events that reflect the
+library's own communication layer. These events do **not** correspond to WebDriver BiDi protocol events
+and do **not** require a `session.SubscribeAsync` call — they fire whenever the transport or driver
+itself raises the underlying condition.
+
+[!code-csharp[Driver-Level Events Listing](../code/events-observables/EventObserverSamples.cs#DriverLevelEventsListing)]
+
+These events are also available through the `IBiDiDriverEvents` interface, which means they can be
+observed on any object that implements the interface.
+
+#### OnEventReceived
+
+Fires once for every protocol event message that the transport delivers to the driver, **before** the
+event is dispatched to the relevant module observer. This is useful for protocol-level logging, auditing,
+or routing custom module events.
+
+[!code-csharp[OnEventReceived](../code/events-observables/EventObserverSamples.cs#OnEventReceived)]
+
+The `EventName` property contains the full protocol event name (e.g., `"log.entryAdded"`). `EventData`
+contains the deserialized event payload, whose concrete type depends on the event. For events the driver
+does not recognize, `EventData` will be `null`.
+
+#### OnUnexpectedErrorReceived
+
+Fires when the browser sends an error response that does not correspond to any pending command — for
+example, a spontaneous error message. This is distinct from command errors, which are surfaced as
+exceptions from `ExecuteCommandAsync`.
+
+[!code-csharp[OnUnexpectedErrorReceived](../code/events-observables/EventObserverSamples.cs#OnUnexpectedErrorReceived)]
+
+The `ErrorData` property is an `ErrorResult` containing `ErrorCode`, `ErrorMessage`, and an optional
+`StackTrace`. Whether this event causes the driver to throw depends on `UnexpectedErrorBehavior`
+(default: `TransportErrorBehavior.Ignore`).
+
+#### OnUnknownMessageReceived
+
+Fires when the transport receives a message that is valid JSON but does not match any recognized protocol
+structure — neither a command response, an error response, nor a known event. The raw JSON string is
+available in `Message`.
+
+[!code-csharp[OnUnknownMessageReceived](../code/events-observables/EventObserverSamples.cs#OnUnknownMessageReceived)]
+
+Whether this event causes the driver to throw depends on `UnknownMessageBehavior` (default:
+`TransportErrorBehavior.Ignore`).
+
+#### OnEventHandlerErrorOccurred
+
+Fires when an exception is thrown inside any observer registered on any `ObservableEvent<T>` in the
+driver — including module-level events. This is a cross-cutting diagnostic hook; it fires in addition to
+(not instead of) the normal error-behavior flow controlled by `EventHandlerExceptionBehavior`.
+
+[!code-csharp[OnEventHandlerErrorOccurred](../code/events-observables/EventObserverSamples.cs#OnEventHandlerErrorOccurred)]
+
+The `ErrorInfo` property is an `EventObserverErrorInfo` record with the following fields:
+
+| Property | Description |
+|---|---|
+| `ObservableEventName` | The event name whose observer faulted (e.g., `"log.entryAdded"`) |
+| `ObserverId` | A unique string identifier for the observer instance |
+| `ObserverDescription` | A human-readable description of the observer |
+| `Exception` | The exception thrown by the observer |
+| `IsAsynchronousHandler` | `true` if the observer was registered with `RunHandlerAsynchronously` |
+| `FaultOccurredAfterHandlerReturned` | `true` for async handlers that faulted after their `Task` was returned |
+
+#### OnLogMessage
+
+Fires when the library itself emits a diagnostic log message. These are library-internal messages (e.g.,
+"connecting to transport", "disposing driver"), not browser console messages. Use this event to route
+library diagnostics to your own logging infrastructure.
+
+[!code-csharp[OnLogMessage](../code/events-observables/EventObserverSamples.cs#OnLogMessage)]
+
+`Level` is a `WebDriverBiDiLogLevel` value (`Trace`, `Debug`, `Info`, `Warn`, `Error`, `Fatal`).
+`ComponentName` identifies the part of the library that emitted the message. `Timestamp` is set to
+`DateTime.UtcNow` at the time the message was created.
+
+> **Note:** For browser console log messages, use `driver.Log.OnEntryAdded` (a module-level event that
+> requires `session.SubscribeAsync`). `OnLogMessage` is for library diagnostics only.
+
 ### Event Names
 
 Each observable event has an `EventName` property with the protocol event name:

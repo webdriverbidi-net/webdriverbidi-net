@@ -13,6 +13,7 @@ using WebDriverBiDi;
 using WebDriverBiDi.BrowsingContext;
 using WebDriverBiDi.Log;
 using WebDriverBiDi.Network;
+using WebDriverBiDi.Protocol;
 using WebDriverBiDi.Script;
 using WebDriverBiDi.Session;
 
@@ -928,6 +929,105 @@ public static class EventObserverSamples
     private static async Task ProcessRequestAsync(BeforeRequestSentEventArgs e) { }
 
     private static void ProcessLogEntry(EntryAddedEventArgs e) { }
+
+    /// <summary>
+    /// All five driver-level observable events — no session.SubscribeAsync required.
+    /// </summary>
+    public static void DriverLevelEventsListing(BiDiDriver driver)
+    {
+        #region DriverLevelEventsListing
+        // These events do not require session.SubscribeAsync — they are library-internal signals
+        _ = driver.OnEventReceived;             // Every protocol event before module dispatch
+        _ = driver.OnUnexpectedErrorReceived;   // Error with no matching pending command
+        _ = driver.OnUnknownMessageReceived;    // Message that did not match any protocol structure
+        _ = driver.OnEventHandlerErrorOccurred; // An observer threw an exception
+        _ = driver.OnLogMessage;                // A library-internal log message
+        #endregion
+    }
+
+    /// <summary>
+    /// OnEventReceived — observe every protocol event as it arrives.
+    /// </summary>
+    public static void OnEventReceivedSample(BiDiDriver driver)
+    {
+        #region OnEventReceived
+        driver.OnEventReceived.AddObserver((EventReceivedEventArgs e) =>
+        {
+            Console.WriteLine($"Event received: {e.EventName}");
+            Console.WriteLine($"Event data type: {e.EventData?.GetType().Name ?? "null"}");
+        });
+        // No session.SubscribeAsync needed — fires for every protocol event the transport delivers
+        #endregion
+    }
+
+    /// <summary>
+    /// OnUnexpectedErrorReceived — observe error responses that have no matching command.
+    /// </summary>
+    public static void OnUnexpectedErrorReceivedSample(BiDiDriver driver)
+    {
+        #region OnUnexpectedErrorReceived
+        driver.OnUnexpectedErrorReceived.AddObserver((ErrorReceivedEventArgs e) =>
+        {
+            Console.WriteLine($"Unexpected error: {e.ErrorData.ErrorCode} — {e.ErrorData.ErrorMessage}");
+            if (e.ErrorData.StackTrace is string stackTrace)
+            {
+                Console.WriteLine($"Stack trace: {stackTrace}");
+            }
+        });
+        #endregion
+    }
+
+    /// <summary>
+    /// OnUnknownMessageReceived — observe messages that do not match any protocol structure.
+    /// </summary>
+    public static void OnUnknownMessageReceivedSample(BiDiDriver driver)
+    {
+        #region OnUnknownMessageReceived
+        driver.OnUnknownMessageReceived.AddObserver((UnknownMessageReceivedEventArgs e) =>
+        {
+            Console.WriteLine($"Unknown message: {e.Message}");
+        });
+        #endregion
+    }
+
+    /// <summary>
+    /// OnEventHandlerErrorOccurred — observe errors thrown by any observable event observer.
+    /// </summary>
+    public static void OnEventHandlerErrorOccurredSample(BiDiDriver driver)
+    {
+        #region OnEventHandlerErrorOccurred
+        driver.OnEventHandlerErrorOccurred.AddObserver((EventHandlerErrorOccurredEventArgs e) =>
+        {
+            EventObserverErrorInfo info = e.ErrorInfo;
+            Console.WriteLine($"Observer error on event: {info.ObservableEventName}");
+            Console.WriteLine($"Observer ID: {info.ObserverId}");
+            Console.WriteLine($"Observer description: {info.ObserverDescription}");
+            Console.WriteLine($"Async handler: {info.IsAsynchronousHandler}");
+            Console.WriteLine($"Faulted after return: {info.FaultOccurredAfterHandlerReturned}");
+            Console.WriteLine($"Exception: {info.Exception.Message}");
+        });
+        #endregion
+    }
+
+    /// <summary>
+    /// OnLogMessage — observe library-internal log messages.
+    /// </summary>
+    public static void OnLogMessageSample(BiDiDriver driver)
+    {
+        #region OnLogMessage
+        driver.OnLogMessage.AddObserver((LogMessageEventArgs e) =>
+        {
+            // Level is WebDriverBiDiLogLevel: Trace, Debug, Info, Warn, Error, Fatal
+            // ComponentName identifies which part of the library emitted the message
+            if (e.Level >= WebDriverBiDiLogLevel.Warn)
+            {
+                Console.WriteLine($"[{e.Timestamp:HH:mm:ss}] [{e.Level}] [{e.ComponentName}] {e.Message}");
+            }
+        });
+        // Note: this is the library's internal log, not browser console messages.
+        // For browser console messages, use driver.Log.OnEntryAdded instead.
+        #endregion
+    }
 
     /// <summary>
     /// BrowsingContext module observable events.
