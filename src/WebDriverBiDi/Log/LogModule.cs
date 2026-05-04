@@ -17,6 +17,8 @@ public sealed class LogModule : Module
 
     private const string EntryAddedEventName = $"{LogModuleName}.entryAdded";
 
+    private readonly ObservableEventInvocable<EntryAddedEventArgs> invocableEntryAddedObservableEvent = new(EntryAddedEventName);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="LogModule"/> class.
     /// </summary>
@@ -24,14 +26,14 @@ public sealed class LogModule : Module
     public LogModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
-        this.RegisterObservableEvent<LogEntry, EntryAddedEventArgs>(this.OnEntryAdded, entry => new EntryAddedEventArgs(entry));
+        this.RegisterObservableEvent<LogEntry, EntryAddedEventArgs>(this.invocableEntryAddedObservableEvent, entry => new EntryAddedEventArgs(entry));
     }
 
     /// <summary>
     /// Gets an observable event that notifies when an entry is added to the log.
     /// </summary>
     [ObservableEventName(EntryAddedEventName)]
-    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded { get; } = new(EntryAddedEventName);
+    public ObservableEvent<EntryAddedEventArgs> OnEntryAdded => this.invocableEntryAddedObservableEvent;
 
     /// <summary>
     /// Gets the module name.

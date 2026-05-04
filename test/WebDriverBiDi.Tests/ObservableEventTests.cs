@@ -1288,7 +1288,7 @@ public class ObservableEventTests
             this.TestObservableEvent = new CustomTimeObservableEvent<TestObservableEventArgs>("testModule.testEvent", maxObserverCount, timeProvider);
         }
 
-        public ObservableEvent<TestObservableEventArgs> TestObservableEvent { get; }
+        public ObservableEventInvocable<TestObservableEventArgs> TestObservableEvent { get; }
 
         public async Task RaiseTestEventAsync(string eventValue)
         {
@@ -1296,7 +1296,7 @@ public class ObservableEventTests
         }
     }
 
-    private class CustomTimeObservableEvent<T> : ObservableEvent<T>
+    private class CustomTimeObservableEvent<T> : ObservableEventInvocable<T>
         where T : WebDriverBiDiEventArgs
     {
         public CustomTimeObservableEvent(string eventName, uint maxObserverCount, TimeProvider timeProvider)

@@ -89,27 +89,47 @@ public abstract class Connection : IAsyncDisposable
     /// <summary>
     /// Gets an observable event that notifies when data is received from this connection.
     /// </summary>
-    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived { get; } = new(DataReceivedEventName);
+    public ObservableEvent<ConnectionDataReceivedEventArgs> OnDataReceived => this.InvocableConnectionDataReceivedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a communication error occurs on this connection.
     /// </summary>
-    public ObservableEvent<ConnectionErrorEventArgs> OnConnectionError { get; } = new(ConnectionErrorEventName);
+    public ObservableEvent<ConnectionErrorEventArgs> OnConnectionError => this.InvocableConnectionErrorObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when the remote end gracefully closes this connection.
     /// </summary>
-    public ObservableEvent<ConnectionDisconnectedEventArgs> OnRemoteDisconnected { get; } = new(RemoteDisconnectedEventName);
+    public ObservableEvent<ConnectionDisconnectedEventArgs> OnRemoteDisconnected => this.InvocableRemoteDisconnectedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new(LogMessageEventName);
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.InvocableLogMessageObservableEvent;
 
     /// <summary>
     /// Gets a value indicating whether this connection has been disposed.
     /// </summary>
     protected bool IsDisposed => Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
+
+    /// <summary>
+    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnDataReceived event.
+    /// </summary>
+    protected ObservableEventInvocable<ConnectionDataReceivedEventArgs> InvocableConnectionDataReceivedObservableEvent { get; } = new(DataReceivedEventName);
+
+    /// <summary>
+    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnConnectionError event.
+    /// </summary>
+    protected ObservableEventInvocable<ConnectionErrorEventArgs> InvocableConnectionErrorObservableEvent { get; } = new(ConnectionErrorEventName);
+
+    /// <summary>
+    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnRemoteDisconnected event.
+    /// </summary>
+    protected ObservableEventInvocable<ConnectionDisconnectedEventArgs> InvocableRemoteDisconnectedObservableEvent { get; } = new(RemoteDisconnectedEventName);
+
+    /// <summary>
+    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnLogMessage event.
+    /// </summary>
+    protected ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new(LogMessageEventName);
 
     /// <summary>
     /// Asynchronously starts communication with the remote end of this connection.
@@ -185,6 +205,6 @@ public abstract class Connection : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.InvocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 }

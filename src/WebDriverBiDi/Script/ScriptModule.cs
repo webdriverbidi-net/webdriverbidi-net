@@ -19,6 +19,10 @@ public sealed class ScriptModule : Module
     private const string RealmDestroyedEventName = $"{ScriptModuleName}.realmDestroyed";
     private const string MessageEventName = $"{ScriptModuleName}.message";
 
+    private readonly ObservableEventInvocable<RealmCreatedEventArgs> invocableRealmCreatedObservableEvent = new(RealmCreatedEventName);
+    private readonly ObservableEventInvocable<RealmDestroyedEventArgs> invocableRealmDestroyedObservableEvent = new(RealmDestroyedEventName);
+    private readonly ObservableEventInvocable<MessageEventArgs> invocableMessageObservableEvent = new(MessageEventName);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ScriptModule"/> class.
     /// </summary>
@@ -26,28 +30,28 @@ public sealed class ScriptModule : Module
     public ScriptModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
-        this.RegisterObservableEvent<RealmInfo, RealmCreatedEventArgs>(this.OnRealmCreated, info => new RealmCreatedEventArgs(info));
-        this.RegisterObservableEvent(this.OnRealmDestroyed);
-        this.RegisterObservableEvent(this.OnMessage);
+        this.RegisterObservableEvent<RealmInfo, RealmCreatedEventArgs>(this.invocableRealmCreatedObservableEvent, info => new RealmCreatedEventArgs(info));
+        this.RegisterObservableEvent(this.invocableRealmDestroyedObservableEvent);
+        this.RegisterObservableEvent(this.invocableMessageObservableEvent);
     }
 
     /// <summary>
     /// Gets an observable event that notifies when a new script realm is created.
     /// </summary>
     [ObservableEventName(RealmCreatedEventName)]
-    public ObservableEvent<RealmCreatedEventArgs> OnRealmCreated { get; } = new(RealmCreatedEventName);
+    public ObservableEvent<RealmCreatedEventArgs> OnRealmCreated => this.invocableRealmCreatedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a script realm is destroyed.
     /// </summary>
     [ObservableEventName(RealmDestroyedEventName)]
-    public ObservableEvent<RealmDestroyedEventArgs> OnRealmDestroyed { get; } = new(RealmDestroyedEventName);
+    public ObservableEvent<RealmDestroyedEventArgs> OnRealmDestroyed => this.invocableRealmDestroyedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a preload script sends data to the client.
     /// </summary>
     [ObservableEventName(MessageEventName)]
-    public ObservableEvent<MessageEventArgs> OnMessage { get; } = new(MessageEventName);
+    public ObservableEvent<MessageEventArgs> OnMessage => this.invocableMessageObservableEvent;
 
     /// <summary>
     /// Gets the module name.

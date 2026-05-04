@@ -36,7 +36,7 @@ public abstract class Module
     /// </summary>
     /// <typeparam name="T">The type of event args, which must also be the deserialized event data type.</typeparam>
     /// <param name="observableEvent">The <see cref="ObservableEvent{T}"/> to notify when the event is received.</param>
-    protected void RegisterObservableEvent<T>(ObservableEvent<T> observableEvent)
+    protected void RegisterObservableEvent<T>(ObservableEventInvocable<T> observableEvent)
         where T : WebDriverBiDiEventArgs
     {
         this.ConfigureObserverErrorReporting(observableEvent);
@@ -60,7 +60,7 @@ public abstract class Module
     /// <typeparam name="TEventArgs">The event args type to produce and forward.</typeparam>
     /// <param name="observableEvent">The <see cref="ObservableEvent{T}"/> to notify when the event is received.</param>
     /// <param name="eventArgsConverter">A function that creates a <typeparamref name="TEventArgs"/> from the deserialized data.</param>
-    protected void RegisterObservableEvent<T, TEventArgs>(ObservableEvent<TEventArgs> observableEvent, Func<T, TEventArgs> eventArgsConverter)
+    protected void RegisterObservableEvent<T, TEventArgs>(ObservableEventInvocable<TEventArgs> observableEvent, Func<T, TEventArgs> eventArgsConverter)
         where TEventArgs : WebDriverBiDiEventArgs
     {
         this.ConfigureObserverErrorReporting(observableEvent);

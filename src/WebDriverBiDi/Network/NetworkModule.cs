@@ -21,6 +21,12 @@ public sealed class NetworkModule : Module
     private const string ResponseStartedEventName = $"{NetworkModuleName}.responseStarted";
     private const string ResponseCompletedEventName = $"{NetworkModuleName}.responseCompleted";
 
+    private readonly ObservableEventInvocable<AuthRequiredEventArgs> invocableAuthRequiredObservableEvent = new(AuthRequiredEventName);
+    private readonly ObservableEventInvocable<BeforeRequestSentEventArgs> invocableBeforeRequestSentObservableEvent = new(BeforeRequestSentEventName);
+    private readonly ObservableEventInvocable<FetchErrorEventArgs> invocableFetchErrorObservableEvent = new(FetchErrorEventName);
+    private readonly ObservableEventInvocable<ResponseStartedEventArgs> invocableResponseStartedObservableEvent = new(ResponseStartedEventName);
+    private readonly ObservableEventInvocable<ResponseCompletedEventArgs> invocableResponseCompletedObservableEvent = new(ResponseCompletedEventName);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="NetworkModule"/> class.
     /// </summary>
@@ -28,42 +34,42 @@ public sealed class NetworkModule : Module
     public NetworkModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
-        this.RegisterObservableEvent(this.OnAuthRequired);
-        this.RegisterObservableEvent(this.OnBeforeRequestSent);
-        this.RegisterObservableEvent(this.OnFetchError);
-        this.RegisterObservableEvent(this.OnResponseStarted);
-        this.RegisterObservableEvent(this.OnResponseCompleted);
+        this.RegisterObservableEvent(this.invocableAuthRequiredObservableEvent);
+        this.RegisterObservableEvent(this.invocableBeforeRequestSentObservableEvent);
+        this.RegisterObservableEvent(this.invocableFetchErrorObservableEvent);
+        this.RegisterObservableEvent(this.invocableResponseCompletedObservableEvent);
+        this.RegisterObservableEvent(this.invocableResponseStartedObservableEvent);
     }
 
     /// <summary>
     /// Gets an observable event that notifies when an authorization required response is received.
     /// </summary>
     [ObservableEventName(AuthRequiredEventName)]
-    public ObservableEvent<AuthRequiredEventArgs> OnAuthRequired { get; } = new(AuthRequiredEventName);
+    public ObservableEvent<AuthRequiredEventArgs> OnAuthRequired => this.invocableAuthRequiredObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies before a network request is sent.
     /// </summary>
     [ObservableEventName(BeforeRequestSentEventName)]
-    public ObservableEvent<BeforeRequestSentEventArgs> OnBeforeRequestSent { get; } = new(BeforeRequestSentEventName);
+    public ObservableEvent<BeforeRequestSentEventArgs> OnBeforeRequestSent => this.invocableBeforeRequestSentObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when an error is encountered fetching data.
     /// </summary>
     [ObservableEventName(FetchErrorEventName)]
-    public ObservableEvent<FetchErrorEventArgs> OnFetchError { get; } = new(FetchErrorEventName);
+    public ObservableEvent<FetchErrorEventArgs> OnFetchError => this.invocableFetchErrorObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when network response has started.
     /// </summary>
     [ObservableEventName(ResponseStartedEventName)]
-    public ObservableEvent<ResponseStartedEventArgs> OnResponseStarted { get; } = new(ResponseStartedEventName);
+    public ObservableEvent<ResponseStartedEventArgs> OnResponseStarted => this.invocableResponseStartedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when network response has completed.
     /// </summary>
     [ObservableEventName(ResponseCompletedEventName)]
-    public ObservableEvent<ResponseCompletedEventArgs> OnResponseCompleted { get; } = new(ResponseCompletedEventName);
+    public ObservableEvent<ResponseCompletedEventArgs> OnResponseCompleted => this.invocableResponseCompletedObservableEvent;
 
     /// <summary>
     /// Gets the module name.

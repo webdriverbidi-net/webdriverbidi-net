@@ -803,16 +803,9 @@ public static class CoreConceptsSamples
         BiDiDriver driver = new BiDiDriver(TimeSpan.FromSeconds(30));
 
         // Register custom module BEFORE starting
+        // The module constructor calls RegisterObservableEvent for each event it exposes
         CustomModule customModule = new CustomModule(driver);
         driver.RegisterModule(customModule);
-
-        // Register custom event
-        driver.RegisterEvent<CustomEventArgs>(
-            customModule.OnCustomEvent.EventName,
-            async (eventInfo) =>
-            {
-                await customModule.OnCustomEvent.NotifyObserversAsync(eventInfo.ToEventArgs<CustomEventArgs>());
-            });
 
         // NOW start the driver
         await driver.StartAsync(webSocketUrl);

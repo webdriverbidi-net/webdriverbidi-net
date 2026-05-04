@@ -15,10 +15,12 @@ internal class FileDownloader
     // 1 MB buffer for downloads
     private const int BufferSize = 1024 * 1024;
 
+    private readonly ObservableEventInvocable<FileDownloadProgressEventArgs> invocableFileDownloadProgressObservableEvent = new("fileDownloader.downloadProgress");
+
     /// <summary>
     /// Gets an observable event that notifies when download progress is updated.
     /// </summary>
-    public ObservableEvent<FileDownloadProgressEventArgs> OnDownloadProgress { get; } = new("fileDownloader.downloadProgress");
+    public ObservableEvent<FileDownloadProgressEventArgs> OnDownloadProgress => this.invocableFileDownloadProgressObservableEvent;
 
     /// <summary>
     /// Downloads a file from the specified URL to the specified destination path.
@@ -52,7 +54,7 @@ internal class FileDownloader
                 if (percent != lastPercent && percent % 10 == 0)
                 {
                     FileDownloadProgressEventArgs progressArgs = new(percent);
-                    await this.OnDownloadProgress.NotifyObserversAsync(progressArgs).ConfigureAwait(false);
+                    await this.invocableFileDownloadProgressObservableEvent.NotifyObserversAsync(progressArgs).ConfigureAwait(false);
                     lastPercent = percent;
                 }
             }

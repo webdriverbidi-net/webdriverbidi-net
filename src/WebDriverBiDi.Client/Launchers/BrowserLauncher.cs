@@ -44,7 +44,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
     /// </summary>
-    public abstract ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.InvocableLogMessageObservableEvent;
 
     /// <summary>
     /// Gets or sets a value indicating the time to wait for an initial connection before timing out.
@@ -86,6 +86,11 @@ public abstract class BrowserLauncher : IAsyncDisposable
     /// Gets or sets the <see cref="BrowserLocator"/> to use for locating the browser executable.
     /// </summary>
     internal BrowserLocator BrowserLocator { get; set; }
+
+    /// <summary>
+    /// Gets an ObservableEventInvocable that subclasses can use to raise the OnLogMessage event.
+    /// </summary>
+    protected abstract ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; }
 
     /// <summary>
     /// Creates a launcher for the specified browser using default settings.
@@ -299,7 +304,7 @@ public abstract class BrowserLauncher : IAsyncDisposable
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel = WebDriverBiDiLogLevel.Info, string component = LoggerComponentName)
     {
         LogMessageEventArgs logMessageArgs = new(message, logLevel, component);
-        await this.OnLogMessage.NotifyObserversAsync(logMessageArgs);
+        await this.InvocableLogMessageObservableEvent.NotifyObserversAsync(logMessageArgs);
     }
 
     private async Task OnLocatorLogAsync(LogMessageEventArgs args)

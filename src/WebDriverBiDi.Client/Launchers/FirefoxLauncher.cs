@@ -39,14 +39,14 @@ public class FirefoxLauncher : BrowserLauncher
     }
 
     /// <summary>
-    /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
-    /// </summary>
-    public override ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("firefoxLauncher.logMessage");
-
-    /// <summary>
     /// Gets a value indicating whether the service is running.
     /// </summary>
     public override bool IsRunning => this.browserProcess is not null && !this.browserProcess.HasExited;
+
+    /// <summary>
+    /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
+    /// </summary>
+    protected override ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new("firefoxLauncher.logMessage");
 
     private IList<string> CommandLineArguments
     {

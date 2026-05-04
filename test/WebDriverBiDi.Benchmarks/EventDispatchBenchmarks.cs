@@ -18,7 +18,7 @@ namespace WebDriverBiDi.Benchmarks;
 [MemoryDiagnoser]
 public class EventDispatchBenchmarks
 {
-    private ObservableEvent<BenchmarkEventArgs> observableEvent = null!;
+    private ObservableEventInvocable<BenchmarkEventArgs> observableEvent = null!;
     private BenchmarkEventArgs eventArgs = null!;
     private List<EventObserver<BenchmarkEventArgs>> observers = null!;
 
@@ -39,7 +39,7 @@ public class EventDispatchBenchmarks
     public void Setup()
     {
         this.eventArgs = new BenchmarkEventArgs();
-        this.observableEvent = new ObservableEvent<BenchmarkEventArgs>("benchmark.event");
+        this.observableEvent = new ObservableEventInvocable<BenchmarkEventArgs>("benchmark.event");
         this.observers = new List<EventObserver<BenchmarkEventArgs>>(this.ObserverCount);
         for (int i = 0; i < this.ObserverCount; i++)
         {
