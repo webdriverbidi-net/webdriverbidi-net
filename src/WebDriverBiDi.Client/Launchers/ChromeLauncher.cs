@@ -81,11 +81,6 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     }
 
     /// <summary>
-    /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
-    /// </summary>
-    public override ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("chromeLauncher.logMessage");
-
-    /// <summary>
     /// Gets a value indicating whether the service is running.
     /// </summary>
     public override bool IsRunning => this.browserProcess is not null && !this.browserProcess.HasExited;
@@ -102,6 +97,11 @@ public class ChromeLauncher : BrowserLauncher, IPipeServerProcessProvider
     /// of the pipe handles used for communication.
     /// </summary>
     public Process? PipeServerProcess => this.browserProcess;
+
+    /// <summary>
+    /// Gets an observable event that notifies when a log message is emitted by the browser launcher.
+    /// </summary>
+    protected override ObservableEventInvocable<LogMessageEventArgs> InvocableLogMessageObservableEvent { get; } = new("chromeLauncher.logMessage");
 
     private IList<string> CommandLineArguments
     {

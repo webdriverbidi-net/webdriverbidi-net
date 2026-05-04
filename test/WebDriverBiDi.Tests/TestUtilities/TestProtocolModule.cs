@@ -4,6 +4,8 @@ public sealed class TestProtocolModule : Module
 {
     private const string EventName = "protocol.event";
 
+    private readonly ObservableEventInvocable<TestEventArgs> invocableTestObservableEvent;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="TestProtocolModule"/> class.
     /// </summary>
@@ -11,14 +13,14 @@ public sealed class TestProtocolModule : Module
     public TestProtocolModule(IBiDiCommandExecutor driver, uint maxObserverCount = 0, bool registerEvents = true)
         : base(driver)
     {
-        this.OnEventInvoked = new ObservableEvent<TestEventArgs>(EventName, maxObserverCount);
+        this.invocableTestObservableEvent = new ObservableEventInvocable<TestEventArgs>(EventName, maxObserverCount);
         if (registerEvents)
         {
-            this.RegisterObservableEvent(this.OnEventInvoked);
+            this.RegisterObservableEvent(this.invocableTestObservableEvent);
         }
     }
 
-    public ObservableEvent<TestEventArgs> OnEventInvoked { get; }
+    public ObservableEvent<TestEventArgs> OnEventInvoked => this.invocableTestObservableEvent;
 
     public override string ModuleName => "protocol";
 

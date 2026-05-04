@@ -32,17 +32,8 @@ public class ObservableEvent<T>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
     /// </summary>
     /// <param name="eventName">The name of the event.</param>
-    public ObservableEvent(string eventName)
-        : this(eventName, 0)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
-    /// </summary>
-    /// <param name="eventName">The name of the event.</param>
     /// <param name="maxObserverCount">The maximum number of handlers that may observe this event.</param>
-    public ObservableEvent(string eventName, uint maxObserverCount)
+    protected ObservableEvent(string eventName, uint maxObserverCount)
     {
         this.EventName = eventName;
         this.MaxObserverCount = maxObserverCount;
@@ -161,6 +152,33 @@ public class ObservableEvent<T>
     }
 
     /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+    {
+        // Make a copy of the observers under the lock to avoid holding the
+        // lock while building the string.
+        List<EventObserver<T>> observerList;
+        lock (this.observerLock)
+        {
+            observerList = [.. this.observers.Values];
+        }
+
+        return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", observerList)}";
+    }
+
+    /// <summary>
+    /// Sets the internal reporter used to surface observer failures that occur
+    /// after the handler has already returned to the caller.
+    /// </summary>
+    /// <param name="reporter">The reporter callback.</param>
+    internal void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
+    {
+        this.observerErrorReporter = reporter;
+    }
+
+    /// <summary>
     /// Asynchronously notifies observers when this observable event occurs. Each observer is
     /// notified independently; an exception thrown by one observer does not prevent subsequent
     /// observers from being notified. If exactly one observer throws, the original exception is
@@ -170,7 +188,7 @@ public class ObservableEvent<T>
     /// <param name="notifyData">The data of the event.</param>
     /// <returns>The task object representing the asynchronous operation.</returns>
     /// <exception cref="AggregateException">Thrown when multiple observer handlers throw an exception.</exception>
-    public async Task NotifyObserversAsync(T notifyData)
+    protected async Task NotifyObserversAsync(T notifyData)
     {
         // Snapshot the observers under the lock so that iteration is safe
         // even if observers are added or removed concurrently. The lock is
@@ -206,32 +224,5 @@ public class ObservableEvent<T>
 
             throw new AggregateException("One or more observer handlers threw an exception.", exceptions);
         }
-    }
-
-    /// <summary>
-    /// Returns a string that represents the current object.
-    /// </summary>
-    /// <returns>A string that represents the current object.</returns>
-    public override string ToString()
-    {
-        // Make a copy of the observers under the lock to avoid holding the
-        // lock while building the string.
-        List<EventObserver<T>> observerList;
-        lock (this.observerLock)
-        {
-            observerList = [.. this.observers.Values];
-        }
-
-        return $"ObservableEvent<{typeof(T).Name}> with observers:\n    {string.Join("\n    ", observerList)}";
-    }
-
-    /// <summary>
-    /// Sets the internal reporter used to surface observer failures that occur
-    /// after the handler has already returned to the caller.
-    /// </summary>
-    /// <param name="reporter">The reporter callback.</param>
-    internal void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
-    {
-        this.observerErrorReporter = reporter;
     }
 }

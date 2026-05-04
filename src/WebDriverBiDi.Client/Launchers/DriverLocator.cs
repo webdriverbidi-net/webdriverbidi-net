@@ -23,6 +23,7 @@ public class DriverLocator
         ".cache",
         "webdriverbidi-net");
 
+    private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent = new("driverLocator.logMessage");
     private readonly BrowserLocatorSettings settings;
 
     /// <summary>
@@ -44,7 +45,7 @@ public class DriverLocator
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the driver locator.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("driverLocator.logMessage");
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.invocableLogMessageObservableEvent;
 
     /// <summary>
     /// Finds the driver executable using default settings (Stable channel, Latest version, AutoLocateAndDownload).
@@ -199,7 +200,7 @@ public class DriverLocator
     /// <returns>The task object representing the asynchronous operation.</returns>
     internal async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private async Task<Cache.InstalledDriverInfo> GetInstalledDriverInfoFromCacheAsync(Cache cacheInfo, DriverDownloadInfo driverDownloadInfo)

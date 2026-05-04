@@ -18,6 +18,8 @@ public sealed class SpeculationModule : Module
 
     private const string PrefetchStatusUpdatedEventName = $"{SpeculationModuleName}.prefetchStatusUpdated";
 
+    private readonly ObservableEventInvocable<PrefetchStatusUpdatedEventArgs> invocablePrefetchStatusUpdatedObservableEvent = new(PrefetchStatusUpdatedEventName);
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SpeculationModule"/> class.
     /// </summary>
@@ -25,14 +27,14 @@ public sealed class SpeculationModule : Module
     public SpeculationModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
-        this.RegisterObservableEvent(this.OnPrefetchStatusUpdated);
+        this.RegisterObservableEvent(this.invocablePrefetchStatusUpdatedObservableEvent);
     }
 
     /// <summary>
     /// Gets an observable event that notifies when the prefetch status of a resource is updated.
     /// </summary>
     [ObservableEventName(PrefetchStatusUpdatedEventName)]
-    public ObservableEvent<PrefetchStatusUpdatedEventArgs> OnPrefetchStatusUpdated { get; } = new(PrefetchStatusUpdatedEventName);
+    public ObservableEvent<PrefetchStatusUpdatedEventArgs> OnPrefetchStatusUpdated => this.invocablePrefetchStatusUpdatedObservableEvent;
 
     /// <summary>
     /// Gets the module name.

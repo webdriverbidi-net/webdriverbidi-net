@@ -23,6 +23,7 @@ public class BrowserLocator
         ".cache",
         "webdriverbidi-net");
 
+    private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent = new("browserLocator.logMessage");
     private readonly BrowserLocatorSettings settings;
     private readonly DriverLocator? driverLocator;
     private string cacheDirectory = DefaultCacheDir;
@@ -48,7 +49,7 @@ public class BrowserLocator
         if (this.driverLocator is not null)
         {
             this.driverLocator.CacheDirectory = this.cacheDirectory;
-            this.driverLocator.OnLogMessage.AddObserver(this.OnLogMessage.NotifyObserversAsync);
+            this.driverLocator.OnLogMessage.AddObserver(this.invocableLogMessageObservableEvent.NotifyObserversAsync);
         }
     }
 
@@ -78,7 +79,7 @@ public class BrowserLocator
     /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by the browser locator.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; } = new("browserLocator.logMessage");
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.invocableLogMessageObservableEvent;
 
     /// <summary>
     /// Gets a value indicating whether the locator requires access to the cache for downloaded browsers or drivers.
@@ -305,7 +306,7 @@ public class BrowserLocator
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private async Task<string> LocateBrowserPathAsync(Cache? cacheInfo)

@@ -75,6 +75,12 @@ public class Transport : IAsyncDisposable
     private const string TransportErrorObserverDescription = "transport error observer";
     private const string TransportUnknownMessageObserverDescription = "transport unknown message observer";
 
+    private readonly ObservableEventInvocable<EventReceivedEventArgs> invocableEventReceivedObservableEvent;
+    private readonly ObservableEventInvocable<ErrorReceivedEventArgs> invocableErrorReceivedObservableEvent;
+    private readonly ObservableEventInvocable<UnknownMessageReceivedEventArgs> invocableUnknownMessageReceivedObservableEvent;
+    private readonly ObservableEventInvocable<EventHandlerErrorOccurredEventArgs> invocableErrorHandlerErrorOccurredObservableEvent;
+    private readonly ObservableEventInvocable<LogMessageEventArgs> invocableLogMessageObservableEvent;
+
     private readonly JsonTypeInfo<Command> commandJsonTypeInfo;
     private readonly JsonTypeInfo<ErrorResponseMessage> errorResponseJsonTypeInfo;
     private readonly JsonSerializerOptions options = new()
@@ -152,11 +158,11 @@ public class Transport : IAsyncDisposable
         this.commandJsonTypeInfo = (JsonTypeInfo<Command>)this.options.GetTypeInfo(typeof(Command));
         this.errorResponseJsonTypeInfo = (JsonTypeInfo<ErrorResponseMessage>)this.options.GetTypeInfo(typeof(ErrorResponseMessage));
 
-        this.OnEventReceived = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
-        this.OnErrorEventReceived = this.CreateObservableEvent<ErrorReceivedEventArgs>(ErrorReceivedEventName);
-        this.OnUnknownMessageReceived = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
-        this.OnEventHandlerErrorOccurred = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
-        this.OnLogMessage = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
+        this.invocableEventReceivedObservableEvent = this.CreateObservableEvent<EventReceivedEventArgs>(EventReceivedEventName);
+        this.invocableErrorReceivedObservableEvent = this.CreateObservableEvent<ErrorReceivedEventArgs>(ErrorReceivedEventName);
+        this.invocableUnknownMessageReceivedObservableEvent = this.CreateObservableEvent<UnknownMessageReceivedEventArgs>(UnknownMessageReceivedEventName);
+        this.invocableErrorHandlerErrorOccurredObservableEvent = this.CreateObservableEvent<EventHandlerErrorOccurredEventArgs>(EventHandlerErrorOccurredEventName);
+        this.invocableLogMessageObservableEvent = this.CreateObservableEvent<LogMessageEventArgs>(LogMessageEventName);
 
         this.connectionDataReceivedObserver = connection.OnDataReceived.AddObserver(this.OnConnectionDataReceivedAsync);
         this.connectionErrorObserver = connection.OnConnectionError.AddObserver(this.OnConnectionErrorAsync);
@@ -167,28 +173,28 @@ public class Transport : IAsyncDisposable
     /// <summary>
     /// Gets an observable event that notifies when an event is received from the protocol.
     /// </summary>
-    public ObservableEvent<EventReceivedEventArgs> OnEventReceived { get; }
+    public ObservableEvent<EventReceivedEventArgs> OnEventReceived => this.invocableEventReceivedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when an error is received from the protocol
     /// that is not the result of a command execution.
     /// </summary>
-    public ObservableEvent<ErrorReceivedEventArgs> OnErrorEventReceived { get; }
+    public ObservableEvent<ErrorReceivedEventArgs> OnErrorEventReceived => this.invocableErrorReceivedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when an unknown message is received from the protocol.
     /// </summary>
-    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; }
+    public ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived => this.invocableUnknownMessageReceivedObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when an error occurs in an observer of an observable event.
     /// </summary>
-    public ObservableEvent<EventHandlerErrorOccurredEventArgs> OnEventHandlerErrorOccurred { get; }
+    public ObservableEvent<EventHandlerErrorOccurredEventArgs> OnEventHandlerErrorOccurred => this.invocableErrorHandlerErrorOccurredObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when a log message is written.
     /// </summary>
-    public ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
+    public ObservableEvent<LogMessageEventArgs> OnLogMessage => this.invocableLogMessageObservableEvent;
 
     /// <summary>
     /// Gets or sets a value indicating how this <see cref="Transport"/> should behave when an
@@ -564,7 +570,7 @@ public class Transport : IAsyncDisposable
     internal async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo)
     {
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
-        await this.OnEventHandlerErrorOccurred.NotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
+        await this.invocableErrorHandlerErrorOccurredObservableEvent.NotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
         this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
     }
 
@@ -815,7 +821,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.OnEventReceived.NotifyObserversAsync(e).ConfigureAwait(false);
+            await this.invocableEventReceivedObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -827,7 +833,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.OnErrorEventReceived.NotifyObserversAsync(e).ConfigureAwait(false);
+            await this.invocableErrorReceivedObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -839,7 +845,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.OnUnknownMessageReceived.NotifyObserversAsync(e).ConfigureAwait(false);
+            await this.invocableUnknownMessageReceivedObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -849,7 +855,7 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.OnLogMessage.NotifyObserversAsync(e).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
@@ -1140,7 +1146,7 @@ public class Transport : IAsyncDisposable
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.OnLogMessage.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)
@@ -1169,10 +1175,10 @@ public class Transport : IAsyncDisposable
         return $"Unhandled exception in user event handler for event name {observableEventName}";
     }
 
-    private ObservableEvent<T> CreateObservableEvent<T>(string eventName)
+    private ObservableEventInvocable<T> CreateObservableEvent<T>(string eventName)
         where T : WebDriverBiDiEventArgs
     {
-        ObservableEvent<T> observableEvent = new(eventName);
+        ObservableEventInvocable<T> observableEvent = new(eventName);
         observableEvent.SetObserverErrorReporter(this.ReportEventObserverErrorAsync);
         return observableEvent;
     }

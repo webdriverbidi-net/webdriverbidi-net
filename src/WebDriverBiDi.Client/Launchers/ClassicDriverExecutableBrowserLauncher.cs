@@ -22,6 +22,10 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     private const string LauncherProcessStartedEventName = "classicDriverBrowserLauncher.launcherProcessStarted";
 
     private static readonly SemaphoreSlim LockObject = new(1, 1);
+
+    private readonly ObservableEventInvocable<BrowserLauncherProcessStartingEventArgs> invocableBrowserLauncherProcessStartingObservableEvent = new(LauncherProcessStartingEventName);
+    private readonly ObservableEventInvocable<BrowserLauncherProcessStartedEventArgs> invocableBrowserLauncherProcessStartedObservableEvent = new(LauncherProcessStartedEventName);
+
     private readonly string launcherExecutableName;
     private bool isLoggingLauncherProcessOutput;
     private Process? launcherProcess;
@@ -53,12 +57,12 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
     /// <summary>
     /// Gets an observable event that notifies when the launcher process is starting.
     /// </summary>
-    public ObservableEvent<BrowserLauncherProcessStartingEventArgs> OnLauncherProcessStarting { get; } = new(LauncherProcessStartingEventName);
+    public ObservableEvent<BrowserLauncherProcessStartingEventArgs> OnLauncherProcessStarting => this.invocableBrowserLauncherProcessStartingObservableEvent;
 
     /// <summary>
     /// Gets an observable event that notifies when the launcher process has completely started.
     /// </summary>
-    public ObservableEvent<BrowserLauncherProcessStartedEventArgs> OnLauncherProcessStarted { get; } = new(LauncherProcessStartedEventName);
+    public ObservableEvent<BrowserLauncherProcessStartedEventArgs> OnLauncherProcessStarted => this.invocableBrowserLauncherProcessStartedObservableEvent;
 
     /// <summary>
     /// Gets or sets a value indicating whether the command prompt window of the browser launcher should be hidden.
@@ -257,12 +261,12 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
 
     private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
     {
-        await this.OnLauncherProcessStarting.NotifyObserversAsync(eventArgs);
+        await this.invocableBrowserLauncherProcessStartingObservableEvent.NotifyObserversAsync(eventArgs);
     }
 
     private async Task OnLauncherProcessStartedAsync(BrowserLauncherProcessStartedEventArgs eventArgs)
     {
-        await this.OnLauncherProcessStarted.NotifyObserversAsync(eventArgs);
+        await this.invocableBrowserLauncherProcessStartedObservableEvent.NotifyObserversAsync(eventArgs);
     }
 
     private void StartLoggingProcessOutput()

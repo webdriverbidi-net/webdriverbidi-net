@@ -22,9 +22,14 @@ public class CustomModule : Module
     // "custom" is the protocol module name
     public const string CustomModuleName = "custom";
 
+    private readonly ObservableEventInvocable<CustomEventArgs> onCustomEvent =
+        new ObservableEventInvocable<CustomEventArgs>("custom.eventOccurred");
+
     public CustomModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
+        // Register custom events using the base class helper
+        this.RegisterObservableEvent(this.onCustomEvent);
     }
 
     public override string ModuleName => CustomModuleName;
@@ -37,9 +42,8 @@ public class CustomModule : Module
             parameters);
     }
 
-    // Define custom events
-    public ObservableEvent<CustomEventArgs> OnCustomEvent { get; } =
-        new ObservableEvent<CustomEventArgs>("custom.eventOccurred");
+    // Define custom events — expose as ObservableEvent<T> so callers cannot invoke it
+    public ObservableEvent<CustomEventArgs> OnCustomEvent => this.onCustomEvent;
 }
 
 // Command parameters (mutable - sent to browser)
@@ -127,9 +131,13 @@ public class MyCustomModule : Module
 {
     public const string ModuleNameConst = "myModule";
 
+    private readonly ObservableEventInvocable<MyEventArgs> onMyEvent =
+        new ObservableEventInvocable<MyEventArgs>("myModule.myEvent");
+
     public MyCustomModule(IBiDiCommandExecutor driver)
         : base(driver)
     {
+        this.RegisterObservableEvent(this.onMyEvent);
     }
 
     public override string ModuleName => ModuleNameConst;
@@ -139,8 +147,7 @@ public class MyCustomModule : Module
         return await this.Driver.ExecuteCommandAsync<MyCommandResult>(parameters);
     }
 
-    public ObservableEvent<MyEventArgs> OnMyEvent { get; } =
-        new ObservableEvent<MyEventArgs>("myModule.myEvent");
+    public ObservableEvent<MyEventArgs> OnMyEvent => this.onMyEvent;
 }
 
 #pragma warning restore CS1591, CS0168, CS8600, CS8618
