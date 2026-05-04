@@ -70,6 +70,15 @@ public interface IBiDiDriverEvents
     ObservableEvent<UnknownMessageReceivedEventArgs> OnUnknownMessageReceived { get; }
 
     /// <summary>
+    /// Gets an observable event that notifies when an error occurs in an observer of an observable event.
+    /// </summary>
+    /// <remarks>
+    /// This event is for diagnostic and observability purposes, and does not prevent
+    /// the propagation of the error back to the Transport class.
+    /// </remarks>
+    ObservableEvent<EventHandlerErrorOccurredEventArgs> OnEventHandlerErrorOccurred { get; }
+
+    /// <summary>
     /// Gets an observable event that notifies when a log message is emitted by this driver.
     /// </summary>
     ObservableEvent<LogMessageEventArgs> OnLogMessage { get; }
