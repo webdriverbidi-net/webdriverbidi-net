@@ -32,7 +32,7 @@ public class ObservableEvent<T>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
     /// </summary>
     /// <param name="eventName">The name of the event.</param>
-    /// <param name="maxObserverCount">The maximum number of handlers that may observe this event.</param>
+    /// <param name="maxObserverCount">The maximum number of observers that may observe this event.</param>
     protected ObservableEvent(string eventName, uint maxObserverCount)
     {
         this.EventName = eventName;
@@ -45,13 +45,13 @@ public class ObservableEvent<T>
     public string EventName { get; }
 
     /// <summary>
-    /// Gets the maximum number of observers that may observe this event.
+    /// Gets the maximum number of observers, including data collectors, that may observe this event.
     /// A value of zero (0) indicates an unlimited number of observers.
     /// </summary>
     public uint MaxObserverCount { get; }
 
     /// <summary>
-    /// Gets the current number of observers that are observing this event.
+    /// Gets the current number of observers, including data collectors, that are observing this event.
     /// </summary>
     public int CurrentObserverCount
     {
@@ -88,13 +88,13 @@ public class ObservableEvent<T>
     /// </exception>
     public EventObserver<T> AddObserver(Action<T> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
-        Func<T, Task> wrappedHandler = (T args) =>
+        Task WrappedHandler(T args)
         {
             handler(args);
             return Task.CompletedTask;
-        };
+        }
 
-        return this.AddObserver(wrappedHandler, handlerOptions, description);
+        return this.AddObserver(WrappedHandler, handlerOptions, description);
     }
 
     /// <summary>
@@ -126,17 +126,38 @@ public class ObservableEvent<T>
     /// </example>
     public EventObserver<T> AddObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "")
     {
-        lock (this.observerLock)
-        {
-            if (this.MaxObserverCount > 0 && this.observers.Count == this.MaxObserverCount)
-            {
-                throw new WebDriverBiDiException($"""This observable event only allows {this.MaxObserverCount} {(this.MaxObserverCount == 1 ? "handler" : "handlers")}.""");
-            }
+        return this.CreateObserver(handler, handlerOptions, description, EventObserverPriority.NormalObserverPriority);
+    }
 
-            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerErrorReporter);
-            this.observers.Add(observer.Id, observer);
-            return observer;
-        }
+    /// <summary>
+    /// Adds a data collector that accumulates event data for on-demand inspection rather than
+    /// reacting to each event as it arrives. Each data collector counts as one observer
+    /// against the event's <see cref="MaxObserverCount"/>.
+    /// </summary>
+    /// <param name="filter">An optional function that filters the data collected by this data collector.</param>
+    /// <param name="description">An optional human-readable description for this data collector.</param>
+    /// <returns>
+    /// An <see cref="EventDataCollector{T}"/> that queues each event raised on this observable.
+    /// Call <see cref="EventDataCollector{T}.GetCollectedEventData"/> to drain the queue.
+    /// Dispose the collector when collection is no longer needed.
+    /// </returns>
+    /// <exception cref="WebDriverBiDiException">
+    /// Thrown when the user attempts to add more observers than this event allows.
+    /// </exception>
+    /// <example>
+    /// <code>
+    /// await using EventDataCollector&lt;BeforeRequestSentEventArgs&gt; collector =
+    ///     driver.Network.OnBeforeRequestSent.AddDataCollector();
+    ///
+    /// await driver.BrowsingContext.NavigateAsync(navParams);
+    ///
+    /// IReadOnlyList&lt;BeforeRequestSentEventArgs&gt; requests = collector.GetCollectedEventData();
+    /// Console.WriteLine($"Page made {requests.Count} network requests");
+    /// </code>
+    /// </example>
+    public EventDataCollector<T> AddDataCollector(Func<T, bool>? filter = null, string description = "")
+    {
+        return new EventDataCollector<T>(this, filter, description);
     }
 
     /// <summary>
@@ -169,6 +190,16 @@ public class ObservableEvent<T>
     }
 
     /// <summary>
+    /// Adds an observer solely for the purpose of collecting event data.
+    /// </summary>
+    /// <param name="handler">The handler to collect the event data.</param>
+    /// <returns>The event observer for collecting the data.</returns>
+    internal EventObserver<T> AddDataCollectingEventObserver(Func<T, Task> handler)
+    {
+        return this.CreateObserver(handler, ObservableEventHandlerOptions.RunHandlerSynchronously, string.Empty, EventObserverPriority.DataCollectorObserverPriority);
+    }
+
+    /// <summary>
     /// Sets the internal reporter used to surface observer failures that occur
     /// after the handler has already returned to the caller.
     /// </summary>
@@ -195,12 +226,13 @@ public class ObservableEvent<T>
         // released before invoking any handlers, so long-running handlers
         // do not block observer registration. The copy is cheap because
         // observer counts are typically very small (1–15 references).
-        EventObserver<T>[] snapshot;
+        List<EventObserver<T>> snapshot;
         lock (this.observerLock)
         {
             snapshot = [.. this.observers.Values];
         }
 
+        snapshot.Sort((first, second) => first.Priority.CompareTo(second.Priority));
         List<Exception>? exceptions = null;
         foreach (EventObserver<T> observer in snapshot)
         {
@@ -223,6 +255,21 @@ public class ObservableEvent<T>
             }
 
             throw new AggregateException("One or more observer handlers threw an exception.", exceptions);
+        }
+    }
+
+    private EventObserver<T> CreateObserver(Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions = ObservableEventHandlerOptions.RunHandlerSynchronously, string description = "", EventObserverPriority priority = EventObserverPriority.NormalObserverPriority)
+    {
+        lock (this.observerLock)
+        {
+            if (this.MaxObserverCount > 0 && this.observers.Count == this.MaxObserverCount)
+            {
+                throw new WebDriverBiDiException($"""This observable event only allows {this.MaxObserverCount} {(this.MaxObserverCount == 1 ? "observer" : "observers")}.""");
+            }
+
+            EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerErrorReporter, priority);
+            this.observers.Add(observer.Id, observer);
+            return observer;
         }
     }
 }

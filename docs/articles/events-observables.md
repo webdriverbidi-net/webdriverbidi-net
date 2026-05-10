@@ -17,11 +17,11 @@ Browser events allow you to react to things happening in the browser in real-tim
 
 Working with events involves three steps:
 
-1. **Add an observer** to handle the event
+1. **Add an observer or data collector** to handle or accumulate the event
 2. **Subscribe to the event** through the Session module
 3. **Wait for events** or let them trigger as they occur
 
-**Important**: Steps 1 and 2 are separate by design to prevent race conditions. Adding an observer registers your handler locally; subscribing tells the browser to send events. The recommended order is to add observers first (step 1), then subscribe (step 2).
+**Important**: Steps 1 and 2 are separate by design to prevent race conditions. Adding an observer or data collector registers your handler locally; subscribing tells the browser to send events. The recommended order is to add observers/collectors first (step 1), then subscribe (step 2).
 
 ### Complete Example
 
@@ -177,6 +177,63 @@ Each observable event has an `EventName` property with the protocol event name:
 
 [!code-csharp[Event Names](../code/events-observables/EventObserverSamples.cs#EventNames)]
 
+## Collecting Event Data
+
+`EventDataCollector<T>` is an alternative to observers for scenarios where you want to accumulate event data and examine it at a convenient point, rather than reacting to each event as it arrives. It is created from any `ObservableEvent<T>` via `AddDataCollector()` and counts as one observer.
+
+### When to Use a Data Collector
+
+Use a data collector instead of an observer when:
+
+- You want to **inspect results after an operation** rather than reacting event-by-event
+- You are writing **test assertions** against events that occurred during a step
+- You need a **per-step snapshot**: drain before an action, do the action, drain again — each drain contains only that step's events
+- You don't need to run code on every individual event — just need the list when you're done
+
+Use an observer when you need to **react immediately** to each event (e.g., intercept a network request, log to a stream, abort on an error condition).
+
+### Basic Usage
+
+[!code-csharp[Basic Data Collector](../code/events-observables/EventObserverSamples.cs#BasicDataCollector)]
+
+### Drain and Reset Pattern
+
+`GetCollectedEventData()` atomically drains the internal queue and returns all accumulated events as a read-only list. Events that arrive after the call will appear in the next drain. This makes it straightforward to isolate events from individual steps:
+
+[!code-csharp[Data Collector Drain Pattern](../code/events-observables/EventObserverSamples.cs#DataCollectorDrainPattern)]
+
+### Filtering Collected Events
+
+Pass a predicate to `AddDataCollector` to discard events at collection time rather than filtering the
+drained list after the fact. Only events for which the predicate returns `true` are enqueued; all others
+are silently dropped and never appear in `GetCollectedEventData()`.
+
+[!code-csharp[Data Collector Filtering](../code/events-observables/EventObserverSamples.cs#DataCollectorFiltering)]
+
+Filtering at the collector level keeps the queue small and eliminates the need for a post-drain `Where`
+call on the result. If no filter is provided the collector behaves as before, accumulating every event.
+
+### Cleanup
+
+`EventDataCollector<T>` implements `IDisposable` and `IAsyncDisposable`. Use `await using` to ensure the collector is automatically removed from the event when the scope exits:
+
+[!code-csharp[Data Collector Cleanup](../code/events-observables/EventObserverSamples.cs#DataCollectorCleanup)]
+
+Always dispose the collector when you no longer need it. A collector that is never disposed continues to receive and queue events, which is a memory leak.
+
+### Data Collector vs Observer
+
+[!code-csharp[Data Collector vs Observer](../code/events-observables/EventObserverSamples.cs#DataCollectorVsObserver)]
+
+| | Observer | Data Collector |
+|---|---|---|
+| **Runs code on each event** | Yes — your handler runs immediately | No — events are queued |
+| **Access event data later** | Only if you capture it yourself | Yes — `GetCollectedEventData()` |
+| **Per-step isolation** | Manual (clear a list yourself) | Built-in (each drain is independent) |
+| **Built-in filtering** | Manual (if-check inside handler) | Yes — predicate passed to `AddDataCollector` |
+| **Thread safety** | Handler options control execution | Internally locked; always safe |
+| **Cleanup** | `Unobserve()` / `using` / `DisposeAsync()` | `using` / `await using` / `DisposeAsync()` |
+
 ## Adding Observers
 
 Observers are functions that get called when an event occurs.
@@ -275,6 +332,12 @@ Capture API methods are thread-safe. Concurrent calls to `WaitForCapturedTasksAs
 serialized internally — each caller gets a contiguous, non-interleaved slice of captured tasks.
 `StartCapturingTasks`, `StopCapturingTasks`, and the observer's notification path are all safe to call from
 any thread.
+
+> **Note for async callers:** `GetCapturedTasks()` is a synchronous method that acquires an internal reader
+> lock. If a concurrent `WaitForCapturedTasksAsync` call holds the lock, `GetCapturedTasks()` will block the
+> calling thread until it is released. In async contexts — particularly those with a single-threaded
+> `SynchronizationContext`, such as WPF or legacy ASP.NET — prefer `WaitForCapturedTasksAsync` to avoid
+> blocking the calling thread.
 
 Only one capture session may be active at a time. Calling `StartCapturingTasks` when a session is already
 active throws `WebDriverBiDiException`.
@@ -397,7 +460,11 @@ You can add multiple observers for the same event:
 
 ### Pattern 2: Collect Network Responses
 
-[!code-csharp[Pattern 2: Collect Network Responses](../code/events-observables/EventObserverSamples.cs#Pattern2-CollectNetworkResponses)]
+With a data collector, response accumulation requires no manual list or lock:
+
+[!code-csharp[Pattern 2: Collect Network Responses](../code/events-observables/EventObserverSamples.cs#Pattern2-CollectNetworkResponsesWithCollector)]
+
+The original observer-based approach (manually appending to a `List<T>` in a handler) still works but requires you to manage the list and its thread safety yourself. The data collector is the simpler choice when immediate per-event reaction is not required.
 
 ### Pattern 3: Wait for Specific Condition
 
@@ -471,13 +538,15 @@ The two-step design (add observer + subscribe) is intentional to prevent race co
 
 ## Summary
 
-- Events require two steps: add observer locally, then subscribe through Session module
-- Recommended order: add observers first, then subscribe (ensures handlers are ready)
-- Observers handle events when they occur
+- Events require two steps: add an observer or data collector locally, then subscribe through the Session module
+- Recommended order: add observers/collectors first, then subscribe (ensures handlers are ready before events arrive)
+- Use **observers** (`AddObserver`) to react to each event immediately as it occurs
+- Use **data collectors** (`AddDataCollector`) to accumulate events and inspect them on demand — `GetCollectedEventData()` drains the queue atomically and resets it for the next interval; pass an optional filter predicate to `AddDataCollector` to discard unwanted events at collection time
 - Store the observer returned by `AddObserver` when you need to remove it or use the capture API
+- Use `await using` on `EventDataCollector<T>` for automatic cleanup; never leave a collector attached after you no longer need it
 - Use try/finally or `using` to ensure observers are removed when done (prevents memory leaks)
 - Use `StartCapturingTasks()`/`WaitForCapturedTasksAsync()` to synchronize with events — when `WaitForCapturedTasksAsync` returns a full batch it automatically ends the capture session; an explicit `StopCapturingTasks()` call is a no-op and safe to include for clarity
 - Use `WaitForCapturedTasksCompleteAsync()` to wait for async handlers to complete — it also ends the capture session when the requested number of tasks is collected
 - Use `RunHandlerAsynchronously` option for long-running operations or I/O
-- Multiple observers can handle the same event
+- Multiple observers and data collectors can observe the same event simultaneously
 

@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi;
 
-using System.Diagnostics;
 using System.Threading.Channels;
 using WebDriverBiDi.Internal;
 using WebDriverBiDi.Protocol;
@@ -48,15 +47,15 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
 {
     private readonly object captureLock = new();
     private readonly SemaphoreSlim captureReadSemaphore = new(1, 1);
-    private readonly string description;
     private readonly Func<T, Task> handler;
     private readonly ObservableEventHandlerOptions handlerOptions;
     private readonly ObservableEvent<T> observableEvent;
     private readonly Func<EventObserverErrorInfo, Task>? observerErrorReporter;
     private readonly TimeProvider timeProvider;
+    private readonly EventObserverPriority priority;
     private Channel<Task>? capturedTaskQueue;
     private int waitingReaderCount;
-    private bool isDisposed;
+    private int isDisposedFlag = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EventObserver{T}"/> class.
@@ -67,20 +66,22 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <param name="description">The optional description of this observer.</param>
     /// <param name="timeProvider">The <see cref="TimeProvider"/> used to calculate timeouts.</param>
     /// <param name="observerErrorReporter">The callback used to report late observer execution errors, if any.</param>
-    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, TimeProvider timeProvider, Func<EventObserverErrorInfo, Task>? observerErrorReporter)
+    /// <param name="priority">The priority with which the observer will be executed relative to other observers.</param>
+    internal EventObserver(ObservableEvent<T> observableEvent, Func<T, Task> handler, ObservableEventHandlerOptions handlerOptions, string description, TimeProvider timeProvider, Func<EventObserverErrorInfo, Task>? observerErrorReporter, EventObserverPriority priority = EventObserverPriority.NormalObserverPriority)
     {
         this.observableEvent = observableEvent;
         this.handler = handler;
         this.handlerOptions = handlerOptions;
         this.timeProvider = timeProvider;
         this.observerErrorReporter = observerErrorReporter;
+        this.priority = priority;
         if (string.IsNullOrEmpty(description))
         {
-            this.description = $"EventObserver<{typeof(T).Name}> (id: {this.Id})";
+            this.Description = $"EventObserver<{typeof(T).Name}> (id: {this.Id})";
         }
         else
         {
-            this.description = description;
+            this.Description = description;
         }
     }
 
@@ -102,6 +103,30 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// Gets the internal unique identifier of this observer.
     /// </summary>
     public string Id { get; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Gets the priority of executing this event observer relative to other observers.
+    /// </summary>
+    internal EventObserverPriority Priority => this.priority;
+
+    /// <summary>
+    /// Gets or sets the description of this observer.
+    /// </summary>
+    internal string Description { get; set; }
+
+    private bool IsDisposed
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.isDisposedFlag, flagValue);
+        }
+    }
 
     /// <summary>
     /// Stops observing the event.
@@ -409,6 +434,18 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// Does not wait for additional tasks to arrive. Ownership of the returned tasks transfers to the caller.
     /// </summary>
     /// <returns>All handler tasks available in the capture buffer at the time of the call, or an empty array if no capture session is active.</returns>
+    /// <remarks>
+    /// <para>
+    /// This method acquires an internal reader lock that is shared with
+    /// <see cref="WaitForCapturedTasksAsync(uint, TimeSpan, CancellationToken)"/> and
+    /// <see cref="WaitForCapturedTasksCompleteAsync(uint, TimeSpan, CancellationToken)"/>. If a concurrent
+    /// call to either of those methods holds the lock, this method will block the calling thread
+    /// until that call releases it. In async contexts — particularly those with a single-threaded
+    /// <see cref="SynchronizationContext"/>, such as WPF or legacy ASP.NET — prefer
+    /// <see cref="WaitForCapturedTasksAsync(uint, TimeSpan, CancellationToken)"/> to avoid blocking
+    /// the calling thread.
+    /// </para>
+    /// </remarks>
     /// <example>
     /// <code>
     /// observer.StartCapturingTasks();
@@ -454,7 +491,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <returns>The string representation of this event observer.</returns>
     public override string ToString()
     {
-        return this.description;
+        return this.Description;
     }
 
     /// <summary>
@@ -524,14 +561,14 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing)
     {
-        if (!this.isDisposed)
+        if (!this.IsDisposed)
         {
             if (disposing)
             {
                 this.DisposeObserver();
             }
 
-            this.isDisposed = true;
+            this.IsDisposed = true;
         }
     }
 
@@ -542,7 +579,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous dispose operation.</returns>
     protected virtual ValueTask DisposeAsyncCore()
     {
-        if (!this.isDisposed)
+        if (!this.IsDisposed)
         {
             this.DisposeObserver();
         }
@@ -617,7 +654,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             {
                 ObservableEventName = state.ReportedEventName,
                 ObserverId = this.Id,
-                ObserverDescription = this.description,
+                ObserverDescription = this.Description,
                 Exception = exception,
                 IsAsynchronousHandler = true,
                 FaultOccurredAfterHandlerReturned = true,

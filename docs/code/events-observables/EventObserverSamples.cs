@@ -931,6 +931,181 @@ public static class EventObserverSamples
     private static void ProcessLogEntry(EntryAddedEventArgs e) { }
 
     /// <summary>
+    /// Basic data collector — add, navigate, drain once.
+    /// </summary>
+    public static async Task BasicDataCollector(
+        BiDiDriver driver,
+        NavigateCommandParameters navParams)
+    {
+        #region BasicDataCollector
+        // Create a data collector — no handler code required
+        await using EventDataCollector<BeforeRequestSentEventArgs> collector =
+            driver.Network.OnBeforeRequestSent.AddDataCollector();
+
+        // Subscribe and trigger events
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(navParams);
+
+        // Drain all events collected since the last call (empties the queue)
+        IReadOnlyList<BeforeRequestSentEventArgs> requests = collector.GetCollectedEventData();
+        Console.WriteLine($"Captured {requests.Count} requests");
+        foreach (BeforeRequestSentEventArgs e in requests)
+        {
+            Console.WriteLine($"  {e.Request.Method} {e.Request.Url}");
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Data collector drain pattern — collect between two navigations.
+    /// </summary>
+    public static async Task DataCollectorDrainPattern(
+        BiDiDriver driver,
+        NavigateCommandParameters nav1,
+        NavigateCommandParameters nav2)
+    {
+        #region DataCollectorDrainPattern
+        await using EventDataCollector<BeforeRequestSentEventArgs> collector =
+            driver.Network.OnBeforeRequestSent.AddDataCollector();
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Network.OnBeforeRequestSent.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        // First navigation
+        await driver.BrowsingContext.NavigateAsync(nav1);
+
+        // GetCollectedEventData drains and resets — requests1 contains only page-1 requests
+        IReadOnlyList<BeforeRequestSentEventArgs> requests1 = collector.GetCollectedEventData();
+
+        // Second navigation
+        await driver.BrowsingContext.NavigateAsync(nav2);
+
+        // requests2 contains only page-2 requests
+        IReadOnlyList<BeforeRequestSentEventArgs> requests2 = collector.GetCollectedEventData();
+
+        Console.WriteLine($"Page 1: {requests1.Count} requests, Page 2: {requests2.Count} requests");
+        #endregion
+    }
+
+    /// <summary>
+    /// EventDataCollector cleanup using await using.
+    /// </summary>
+    public static async Task DataCollectorCleanup(
+        BiDiDriver driver,
+        NavigateCommandParameters navParams)
+    {
+        #region DataCollectorCleanup
+        // await using ensures the collector is removed from the event when the scope exits
+        await using EventDataCollector<EntryAddedEventArgs> collector =
+            driver.Log.OnEntryAdded.AddDataCollector(description: "my log collector");
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(navParams);
+
+        IReadOnlyList<EntryAddedEventArgs> entries = collector.GetCollectedEventData();
+        Console.WriteLine($"Captured {entries.Count} log entries");
+
+        // Collector automatically unregisters here — no memory leak
+        #endregion
+    }
+
+    /// <summary>
+    /// Data collector vs observer comparison.
+    /// </summary>
+    public static async Task DataCollectorVsObserver(
+        BiDiDriver driver,
+        NavigateCommandParameters navParams)
+    {
+        #region DataCollectorVsObserver
+        // Observer: react to each event immediately as it arrives
+        driver.Log.OnEntryAdded.AddObserver((EntryAddedEventArgs e) =>
+        {
+            if (e.Level == LogLevel.Error)
+            {
+                Console.WriteLine($"ERROR: {e.Text}");
+            }
+        });
+
+        // Data collector: accumulate events and inspect on demand
+        await using EventDataCollector<BeforeRequestSentEventArgs> collector =
+            driver.Network.OnBeforeRequestSent.AddDataCollector();
+
+        SubscribeCommandParameters subscribe = new SubscribeCommandParameters(
+            [
+                driver.Log.OnEntryAdded.EventName,
+                driver.Network.OnBeforeRequestSent.EventName,
+            ]);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(navParams);
+
+        // Inspect collected network data at a convenient time
+        IReadOnlyList<BeforeRequestSentEventArgs> requests = collector.GetCollectedEventData();
+        Console.WriteLine($"Page made {requests.Count} network requests");
+        #endregion
+    }
+
+    /// <summary>
+    /// Pattern 2 (revised): Collect network responses with EventDataCollector.
+    /// </summary>
+    public static async Task Pattern2CollectNetworkResponsesWithCollector(
+        BiDiDriver driver,
+        NavigateCommandParameters navParams)
+    {
+        #region Pattern2-CollectNetworkResponsesWithCollector
+        // Use a data collector to accumulate responses — no manual list or lock needed
+        await using EventDataCollector<ResponseCompletedEventArgs> collector =
+            driver.Network.OnResponseCompleted.AddDataCollector();
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(navParams);
+
+        // Drain all responses collected during the navigation
+        IReadOnlyList<ResponseCompletedEventArgs> responses = collector.GetCollectedEventData();
+        Console.WriteLine($"Collected {responses.Count} responses");
+        foreach (ResponseCompletedEventArgs e in responses)
+        {
+            Console.WriteLine($"  {e.Response.Status} {e.Response.Url}");
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Data collector with a filter — only collect responses from a specific host.
+    /// </summary>
+    public static async Task DataCollectorFilteringAsync(
+        BiDiDriver driver,
+        NavigateCommandParameters navParams)
+    {
+        #region DataCollectorFiltering
+        // Only accumulate responses whose URL contains "api.example.com"
+        await using EventDataCollector<ResponseCompletedEventArgs> collector =
+            driver.Network.OnResponseCompleted.AddDataCollector(
+                filter: e => e.Response.Url.Contains("api.example.com"));
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Network.OnResponseCompleted.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(navParams);
+
+        // Only API responses are in the list — all others were discarded at collection time
+        IReadOnlyList<ResponseCompletedEventArgs> apiResponses = collector.GetCollectedEventData();
+        Console.WriteLine($"API responses: {apiResponses.Count}");
+        #endregion
+    }
+
+    /// <summary>
     /// All five driver-level observable events — no session.SubscribeAsync required.
     /// </summary>
     public static void DriverLevelEventsListing(BiDiDriver driver)
