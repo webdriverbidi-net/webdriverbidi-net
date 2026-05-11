@@ -11,6 +11,7 @@ using System.Text.Json.Serialization;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.DigitalCredentials;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
@@ -91,6 +92,9 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(EventMessage<HistoryUpdatedEventArgs>))]
 [JsonSerializable(typeof(EventMessage<UserPromptClosedEventArgs>))]
 [JsonSerializable(typeof(EventMessage<UserPromptOpenedEventArgs>))]
+
+// ── DigitalCredentials module (command responses) ──
+[JsonSerializable(typeof(CommandResponseMessage<SetVirtualWalletBehaviorCommandResult>))]
 
 // ── Emulation module (command responses) ──
 [JsonSerializable(typeof(CommandResponseMessage<SetForcedColorsModeThemeOverrideCommandResult>))]
@@ -251,6 +255,10 @@ using WebDriverBiDi.WebExtension;
 [JsonSerializable(typeof(UserPromptType))]
 [JsonSerializable(typeof(Viewport))]
 [JsonSerializable(typeof(XPathLocator))]
+
+// ── DigitalCredentials module ──
+[JsonSerializable(typeof(SetVirtualWalletBehaviorCommandParameters))]
+[JsonSerializable(typeof(VirtualWalletAction))]
 
 // ── Emulation module ──
 [JsonSerializable(typeof(ForcedColorsModeTheme))]

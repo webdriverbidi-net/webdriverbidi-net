@@ -48,6 +48,8 @@
       href: modules/speculation.md
     - name: UserAgentClientHints Module
       href: modules/user-agent-client-hints.md
+    - name: Digital Credentials Module
+      href: modules/digital-credentials.md
     - name: Additional Modules
       href: modules/additional-modules.md
 - name: Examples

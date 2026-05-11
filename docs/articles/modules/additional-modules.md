@@ -11,6 +11,7 @@ WebDriverBiDi.NET includes support for several W3C specifications that use the W
 - **[WebExtension Module](webextension.md)** - Browser extension management
 - **[Speculation Module](speculation.md)** - Prefetch status monitoring
 - **[User Agent Client Hints Module](user-agent-client-hints.md)** - User agent client hints
+- **[Digital Credentials Module](digital-credentials.md)** - Digital wallet simulation for credential testing
 
 ## Permissions Module
 
@@ -70,6 +71,18 @@ The [User Agent Client Hints module](user-agent-client-hints.md) allows you to o
 
 **[View full User Agent Client Hints module documentation →](user-agent-client-hints.md)**
 
+## Digital Credentials Module
+
+The [Digital Credentials module](digital-credentials.md) allows you to simulate a virtual digital wallet, enabling automated testing of credential presentation flows without a real wallet application.
+
+### Quick Example
+
+[!code-csharp[Respond with Credential](../../code/modules/DigitalCredentialsModuleSamples.cs#RespondWithCredential)]
+
+**Note**: The Digital Credentials API and its WebDriver BiDi automation support are experimental and may not be available in all browsers.
+
+**[View full Digital Credentials module documentation →](digital-credentials.md)**
+
 ## Module Availability
 
 | Module | Chrome/Edge | Firefox | Safari |
@@ -79,6 +92,7 @@ The [User Agent Client Hints module](user-agent-client-hints.md) allows you to o
 | WebExtension | ✅ | ⚠️ Different API | ⚠️ Limited |
 | Speculation | ⚠️ Experimental | ❌ | ❌ |
 | User Agent Client Hints | ⚠️ Experimental | ❌ | ❌ |
+| Digital Credentials | ⚠️ Experimental | ❌ | ❌ |
 
 ## Getting Started
 
@@ -89,6 +103,7 @@ Each module has its own dedicated documentation page with comprehensive examples
 - **[WebExtension Module Documentation](webextension.md)** - Complete extension management guide
 - **[Speculation Module Documentation](speculation.md)** - Prefetch status monitoring
 - **[User Agent Client Hints Module Documentation](user-agent-client-hints.md)** - Complete guide to client hints override
+- **[Digital Credentials Module Documentation](digital-credentials.md)** - Complete guide to digital wallet simulation
 
 ## Next Steps
 
@@ -104,4 +119,5 @@ Each module has its own dedicated documentation page with comprehensive examples
 - [WebExtensions API](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
 - [Prefetch Spec – Automated testing](https://wicg.github.io/nav-speculation/prefetch.html#automated-testing)
 - [User-Agent Client Hints](https://wicg.github.io/ua-client-hints/)
+- [W3C Digital Credentials Specification](https://www.w3.org/TR/digital-credentials/)
 

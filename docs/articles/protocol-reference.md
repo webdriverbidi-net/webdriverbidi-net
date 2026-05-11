@@ -28,6 +28,7 @@ For each protocol method, this reference links to:
 - [Permissions Module](#permissions-module)
 - [User Agent Client Hints Module](#user-agent-client-hints-module)
 - [Web Extension Module](#web-extension-module)
+- [Digital Credentials Module](#digital-credentials-module)
 
 ---
 
@@ -267,6 +268,16 @@ Commands for managing browser extensions.
 |-----------------|-------------|------------|--------------|
 | `webExtension.install` | [InstallCommandParameters](xref:WebDriverBiDi.WebExtension.InstallCommandParameters) | [InstallCommandResult](xref:WebDriverBiDi.WebExtension.InstallCommandResult) | [Web Extension Guide](modules/webextension.md) |
 | `webExtension.uninstall` | [UninstallCommandParameters](xref:WebDriverBiDi.WebExtension.UninstallCommandParameters) | [EmptyResult](xref:WebDriverBiDi.Protocol.EmptyResult) | [Web Extension Guide](modules/webextension.md) |
+
+---
+
+## Digital Credentials Module
+
+Commands for simulating a virtual digital wallet during credential presentation testing.
+
+| Protocol Method | Command API | Result API | Module Guide |
+|-----------------|-------------|------------|--------------|
+| `digitalCredentials.setVirtualWalletBehavior` | [SetVirtualWalletBehaviorCommandParameters](xref:WebDriverBiDi.DigitalCredentials.SetVirtualWalletBehaviorCommandParameters) | [EmptyResult](xref:WebDriverBiDi.Protocol.EmptyResult) | [Digital Credentials Guide](modules/digital-credentials.md) |
 
 ---
 

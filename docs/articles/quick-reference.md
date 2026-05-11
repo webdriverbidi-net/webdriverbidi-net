@@ -62,6 +62,15 @@ A cheat sheet of common WebDriverBiDi.NET commands and patterns.
 |-----------|------|
 | Perform actions | `PerformActionsCommandParameters p = new PerformActionsCommandParameters(contextId); PointerSourceActions mouse = new PointerSourceActions(); mouse.Actions.Add(new PointerMoveAction(100, 100)); p.Actions.Add(mouse); await driver.Input.PerformActionsAsync(p);` |
 
+## Digital Credentials
+
+| Operation | Code |
+|-----------|------|
+| Decline credential request | `await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Decline));` |
+| Respond with credential | `SetVirtualWalletBehaviorCommandParameters p = new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Respond) { Response = credentialResponse }; await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(p);` |
+| Leave request pending | `await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Wait));` |
+| Clear wallet behavior | `await driver.DigitalCredentials.SetVirtualWalletBehaviorAsync(new SetVirtualWalletBehaviorCommandParameters(VirtualWalletAction.Clear));` |
+
 ## Event Subscription Pattern
 
 [!code-csharp[Event Subscription Pattern](../code/QuickReferenceSamples.cs#EventSubscriptionPattern)]
