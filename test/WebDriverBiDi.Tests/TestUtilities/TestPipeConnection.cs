@@ -33,7 +33,7 @@ public class TestPipeConnection : PipeConnection
 
     public async Task RaiseRemoteDisconnectedEventAsync()
     {
-        await this.InvocableRemoteDisconnectedObservableEvent.NotifyObserversAsync(new ConnectionDisconnectedEventArgs());
+        await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs());
     }
 
     public bool PipesDisposed

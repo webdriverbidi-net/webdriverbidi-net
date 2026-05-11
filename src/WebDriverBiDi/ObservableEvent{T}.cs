@@ -204,7 +204,7 @@ public class ObservableEvent<T>
     /// after the handler has already returned to the caller.
     /// </summary>
     /// <param name="reporter">The reporter callback.</param>
-    internal void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
+    protected void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
     {
         this.observerErrorReporter = reporter;
     }

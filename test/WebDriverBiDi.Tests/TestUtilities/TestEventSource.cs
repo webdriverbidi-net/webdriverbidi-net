@@ -26,6 +26,11 @@ public class TestEventSource
 
     public async Task RaiseTestEventAsync(string eventValue)
     {
-        await this.TestObservableEvent.NotifyObserversAsync(new TestObservableEventArgs(eventValue));
+        await this.TestObservableEvent.InvokeNotifyObserversAsync(new TestObservableEventArgs(eventValue));
+    }
+
+    public void SetObserverErrorReporter(Func<EventObserverErrorInfo, Task> reporter)
+    {
+        this.TestObservableEvent.InvokeSetObserverErrorReporter(reporter);
     }
 }

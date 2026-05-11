@@ -354,7 +354,7 @@ public class PipeConnection : Connection
                                 await this.LogAsync($"RECV <<< {Encoding.UTF8.GetString(messageData)}", WebDriverBiDiLogLevel.Debug).ConfigureAwait(false);
                             }
 
-                            await this.InvocableConnectionDataReceivedObservableEvent.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageData)).ConfigureAwait(false);
+                            await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(messageData)).ConfigureAwait(false);
                         }
 
                         startIndex = i + 1;
@@ -373,7 +373,7 @@ public class PipeConnection : Connection
             // If the loop exited without cancellation, the remote end closed the connection gracefully.
             if (!cancellationToken.IsCancellationRequested)
             {
-                await this.InvocableRemoteDisconnectedObservableEvent.NotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
+                await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs()).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -383,12 +383,12 @@ public class PipeConnection : Connection
         catch (IOException e)
         {
             await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
-            await this.InvocableConnectionErrorObservableEvent.NotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         catch (ObjectDisposedException e)
         {
             await this.LogAsync($"Unexpected error during receive of data: {e.Message}").ConfigureAwait(false);
-            await this.InvocableConnectionErrorObservableEvent.NotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
+            await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(e)).ConfigureAwait(false);
         }
         finally
         {

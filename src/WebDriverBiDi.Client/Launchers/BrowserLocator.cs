@@ -49,7 +49,7 @@ public class BrowserLocator
         if (this.driverLocator is not null)
         {
             this.driverLocator.CacheDirectory = this.cacheDirectory;
-            this.driverLocator.OnLogMessage.AddObserver(this.invocableLogMessageObservableEvent.NotifyObserversAsync);
+            this.driverLocator.OnLogMessage.AddObserver(this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync);
         }
     }
 
@@ -306,7 +306,7 @@ public class BrowserLocator
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private async Task<string> LocateBrowserPathAsync(Cache? cacheInfo)

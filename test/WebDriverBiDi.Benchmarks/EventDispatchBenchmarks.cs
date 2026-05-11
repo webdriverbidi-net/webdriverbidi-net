@@ -68,7 +68,7 @@ public class EventDispatchBenchmarks
     [Benchmark]
     public async Task NotifyObservers()
     {
-        await this.observableEvent.NotifyObserversAsync(this.eventArgs).ConfigureAwait(false);
+        await this.observableEvent.InvokeNotifyObserversAsync(this.eventArgs).ConfigureAwait(false);
     }
 
     /// <summary>

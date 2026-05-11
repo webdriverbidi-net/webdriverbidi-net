@@ -54,7 +54,7 @@ internal class FileDownloader
                 if (percent != lastPercent && percent % 10 == 0)
                 {
                     FileDownloadProgressEventArgs progressArgs = new(percent);
-                    await this.invocableFileDownloadProgressObservableEvent.NotifyObserversAsync(progressArgs).ConfigureAwait(false);
+                    await this.invocableFileDownloadProgressObservableEvent.InvokeNotifyObserversAsync(progressArgs).ConfigureAwait(false);
                     lastPercent = percent;
                 }
             }
