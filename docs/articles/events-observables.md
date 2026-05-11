@@ -221,6 +221,23 @@ call on the result. If no filter is provided the collector behaves as before, ac
 
 Always dispose the collector when you no longer need it. A collector that is never disposed continues to receive and queue events, which is a memory leak.
 
+### Streaming Events
+
+`EventDataCollector<T>` also exposes an `Events` property of type `IAsyncEnumerable<T>`. This lets you consume events one at a time via `await foreach` rather than draining the buffer in a single call:
+
+[!code-csharp[Data Collector Streaming](../code/events-observables/EventObserverSamples.cs#DataCollectorStreaming)]
+
+Use `break` to exit the loop early when a condition is met:
+
+[!code-csharp[Data Collector Streaming With Break](../code/events-observables/EventObserverSamples.cs#DataCollectorStreamingWithBreak)]
+
+A few things to be aware of when using `Events`:
+
+- **`Events` and `GetCollectedEventData()` share the same buffer.** Consuming an item via one removes it from the other. Use one reading approach at a time per collector.
+- **The sequence ends when the collector is disposed.** An active `await foreach` will drain any remaining buffered items and then exit cleanly when `Dispose` or `DisposeAsync` is called.
+- **The filter predicate applies to the stream.** Events that do not satisfy the predicate are never buffered, so they never appear in `Events` either.
+- **`await foreach` blocks the current async method** while waiting for the next event. If you need to both stream events and do other work concurrently, drive the `await foreach` from a separate `Task`.
+
 ### Data Collector vs Observer
 
 [!code-csharp[Data Collector vs Observer](../code/events-observables/EventObserverSamples.cs#DataCollectorVsObserver)]
@@ -541,7 +558,7 @@ The two-step design (add observer + subscribe) is intentional to prevent race co
 - Events require two steps: add an observer or data collector locally, then subscribe through the Session module
 - Recommended order: add observers/collectors first, then subscribe (ensures handlers are ready before events arrive)
 - Use **observers** (`AddObserver`) to react to each event immediately as it occurs
-- Use **data collectors** (`AddDataCollector`) to accumulate events and inspect them on demand — `GetCollectedEventData()` drains the queue atomically and resets it for the next interval; pass an optional filter predicate to `AddDataCollector` to discard unwanted events at collection time
+- Use **data collectors** (`AddDataCollector`) to accumulate events and inspect them on demand — `GetCollectedEventData()` drains the buffer atomically and resets it for the next interval; use `Events` (`IAsyncEnumerable<T>`) to stream items one at a time via `await foreach`; pass an optional filter predicate to `AddDataCollector` to discard unwanted events at collection time
 - Store the observer returned by `AddObserver` when you need to remove it or use the capture API
 - Use `await using` on `EventDataCollector<T>` for automatic cleanup; never leave a collector attached after you no longer need it
 - Use try/finally or `using` to ensure observers are removed when done (prevents memory leaks)

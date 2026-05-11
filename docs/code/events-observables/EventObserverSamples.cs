@@ -1081,6 +1081,63 @@ public static class EventObserverSamples
     }
 
     /// <summary>
+    /// Data collector streaming via Events — react to each item as it arrives.
+    /// </summary>
+    public static async Task DataCollectorStreaming(
+        BiDiDriver driver,
+        NavigateCommandParameters navParams,
+        CancellationToken cancellationToken)
+    {
+        #region DataCollectorStreaming
+        await using EventDataCollector<EntryAddedEventArgs> collector =
+            driver.Log.OnEntryAdded.AddDataCollector();
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(navParams);
+
+        // Stream each log entry as it is buffered; loop exits when the collector
+        // is disposed or the cancellation token is cancelled.
+        await foreach (EntryAddedEventArgs entry in
+            collector.Events.WithCancellation(cancellationToken))
+        {
+            Console.WriteLine($"[{entry.Level}] {entry.Text}");
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Data collector streaming with early exit via break.
+    /// </summary>
+    public static async Task DataCollectorStreamingWithBreak(
+        BiDiDriver driver,
+        NavigateCommandParameters navParams)
+    {
+        #region DataCollectorStreamingWithBreak
+        await using EventDataCollector<EntryAddedEventArgs> collector =
+            driver.Log.OnEntryAdded.AddDataCollector();
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(navParams);
+
+        // Collect entries until we find a fatal error, then stop
+        await foreach (EntryAddedEventArgs entry in collector.Events)
+        {
+            Console.WriteLine($"[{entry.Level}] {entry.Text}");
+            if (entry.Level == LogLevel.Error)
+            {
+                break;
+            }
+        }
+        #endregion
+    }
+
+    /// <summary>
     /// Data collector with a filter — only collect responses from a specific host.
     /// </summary>
     public static async Task DataCollectorFilteringAsync(
