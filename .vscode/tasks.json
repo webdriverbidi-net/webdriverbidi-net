@@ -30,7 +30,7 @@
         },
         {
             "type": "shell",
-            "command": "rm -f ${workspaceFolder}/test/coverage/lcov.*.info && dotnet test --project ${workspaceFolder}/test/WebDriverBiDi.Tests --configuration Release --verbosity normal --coverlet --coverlet-output-format lcov --coverlet-exclude-by-file '**/_/src/**' --results-directory ${workspaceFolder}/test/coverage --coverlet-file-prefix lcov && ${workspaceFolder}/scripts/check-lcov-thresholds.sh --min-line 100 --min-branch 100 --min-method 100 ${workspaceFolder}/test/coverage/lcov.*.info",
+            "command": "find ${workspaceFolder}/test/coverage -name 'lcov.*.info' -delete 2>/dev/null; dotnet test --project ${workspaceFolder}/test/WebDriverBiDi.Tests --configuration Release --verbosity normal --coverlet --coverlet-output-format lcov --coverlet-exclude-by-file '**/_/src/**' --results-directory ${workspaceFolder}/test/coverage --coverlet-file-prefix lcov && ${workspaceFolder}/scripts/check-lcov-thresholds.sh --min-line 100 --min-branch 100 --min-method 100 ${workspaceFolder}/test/coverage/lcov.*.info",
             "problemMatcher": "$msCompile",
             "group": {
                 "kind": "test",
