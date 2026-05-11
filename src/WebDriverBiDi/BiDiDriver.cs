@@ -11,6 +11,7 @@ using System.Text.Json.Serialization.Metadata;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.DigitalCredentials;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
@@ -165,6 +166,9 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         this.BrowsingContext = new BrowsingContextModule(this);
         this.RegisterModule(this.BrowsingContext);
 
+        this.DigitalCredentials = new DigitalCredentialsModule(this);
+        this.RegisterModule(this.DigitalCredentials);
+
         this.Emulation = new EmulationModule(this);
         this.RegisterModule(this.Emulation);
 
@@ -244,6 +248,11 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// Gets the browsingContext module as described in the WebDriver BiDi protocol.
     /// </summary>
     public BrowsingContextModule BrowsingContext { get; private set; }
+
+    /// <summary>
+    /// Gets the digitalCredentials module as described in the W3C Digital Credentials specification.
+    /// </summary>
+    public DigitalCredentialsModule DigitalCredentials { get; private set; }
 
     /// <summary>
     /// Gets the emulation module as described in the WebDriver BiDi protocol.

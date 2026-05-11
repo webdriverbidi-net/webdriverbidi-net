@@ -9,6 +9,7 @@ using TestUtilities;
 using WebDriverBiDi.Bluetooth;
 using WebDriverBiDi.Browser;
 using WebDriverBiDi.BrowsingContext;
+using WebDriverBiDi.DigitalCredentials;
 using WebDriverBiDi.Emulation;
 using WebDriverBiDi.Input;
 using WebDriverBiDi.Log;
@@ -411,6 +412,7 @@ public class BiDiDriverTests
                 Assert.That(driver.Bluetooth, Is.InstanceOf<BluetoothModule>());
                 Assert.That(driver.Browser, Is.InstanceOf<BrowserModule>());
                 Assert.That(driver.BrowsingContext, Is.InstanceOf<BrowsingContextModule>());
+                Assert.That(driver.DigitalCredentials, Is.InstanceOf<DigitalCredentialsModule>());
                 Assert.That(driver.Emulation, Is.InstanceOf<EmulationModule>());
                 Assert.That(driver.Input, Is.InstanceOf<InputModule>());
                 Assert.That(driver.Log, Is.InstanceOf<LogModule>());
