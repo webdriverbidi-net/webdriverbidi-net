@@ -261,12 +261,12 @@ public abstract class ClassicDriverExecutableBrowserLauncher : WebDriverClassicB
 
     private async Task OnLauncherProcessStartingAsync(BrowserLauncherProcessStartingEventArgs eventArgs)
     {
-        await this.invocableBrowserLauncherProcessStartingObservableEvent.NotifyObserversAsync(eventArgs);
+        await this.invocableBrowserLauncherProcessStartingObservableEvent.InvokeNotifyObserversAsync(eventArgs);
     }
 
     private async Task OnLauncherProcessStartedAsync(BrowserLauncherProcessStartedEventArgs eventArgs)
     {
-        await this.invocableBrowserLauncherProcessStartedObservableEvent.NotifyObserversAsync(eventArgs);
+        await this.invocableBrowserLauncherProcessStartedObservableEvent.InvokeNotifyObserversAsync(eventArgs);
     }
 
     private void StartLoggingProcessOutput()

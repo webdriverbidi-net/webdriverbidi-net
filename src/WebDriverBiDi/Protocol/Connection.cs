@@ -205,6 +205,6 @@ public abstract class Connection : IAsyncDisposable
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.InvocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 }

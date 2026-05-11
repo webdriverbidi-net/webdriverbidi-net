@@ -200,7 +200,7 @@ public class DriverLocator
     /// <returns>The task object representing the asynchronous operation.</returns>
     internal async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private async Task<Cache.InstalledDriverInfo> GetInstalledDriverInfoFromCacheAsync(Cache cacheInfo, DriverDownloadInfo driverDownloadInfo)

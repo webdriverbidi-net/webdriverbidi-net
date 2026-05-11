@@ -44,7 +44,7 @@ public abstract class Module
         async Task EventInvoker(EventInfo<T> eventData)
         {
             T eventArgs = eventData.ToEventArgs<T>();
-            await observableEvent.NotifyObserversAsync(eventArgs).ConfigureAwait(false);
+            await observableEvent.InvokeNotifyObserversAsync(eventArgs).ConfigureAwait(false);
         }
 
         this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);
@@ -68,18 +68,18 @@ public abstract class Module
         async Task EventInvoker(EventInfo<T> eventData)
         {
             TEventArgs eventArgs = eventData.ToEventArgs(eventArgsConverter);
-            await observableEvent.NotifyObserversAsync(eventArgs).ConfigureAwait(false);
+            await observableEvent.InvokeNotifyObserversAsync(eventArgs).ConfigureAwait(false);
         }
 
         this.Driver.RegisterEvent<T>(observableEvent.EventName, EventInvoker);
     }
 
-    private void ConfigureObserverErrorReporting<T>(ObservableEvent<T> observableEvent)
+    private void ConfigureObserverErrorReporting<T>(ObservableEventInvocable<T> observableEvent)
         where T : WebDriverBiDiEventArgs
     {
         if (this.Driver is IEventObserverErrorReporter observerErrorReporter)
         {
-            observableEvent.SetObserverErrorReporter(observerErrorReporter.EventObserverErrorReporter);
+            observableEvent.InvokeSetObserverErrorReporter(observerErrorReporter.EventObserverErrorReporter);
         }
     }
 }

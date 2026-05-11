@@ -743,7 +743,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
     /// <returns>The task object representing the asynchronous operation.</returns>
     protected async Task LogAsync(string message, WebDriverBiDiLogLevel logLevel)
     {
-        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, logLevel, LoggerComponentName)).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, logLevel, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private void ThrowIfDisposed()
@@ -763,7 +763,7 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
         where T : WebDriverBiDiEventArgs
     {
         ObservableEventInvocable<T> observableEvent = new(eventName);
-        observableEvent.SetObserverErrorReporter(this.ReportObservableEventObserverError);
+        observableEvent.InvokeSetObserverErrorReporter(this.ReportObservableEventObserverError);
         return observableEvent;
     }
 
@@ -774,26 +774,26 @@ public class BiDiDriver : IBiDiCommandExecutor, IBiDiDriverConfiguration, IBiDiD
             await invoker.InvokeEventAsync(e.EventData, e.AdditionalData).ConfigureAwait(false);
         }
 
-        await this.invocableEventReceivedObserableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+        await this.invocableEventReceivedObserableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportErrorEventReceivedAsync(ErrorReceivedEventArgs e)
     {
-        await this.invocableErrorReceivedObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+        await this.invocableErrorReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportUnknownMessageReceivedAsync(UnknownMessageReceivedEventArgs e)
     {
-        await this.invocableUnknownMessageReceivedObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+        await this.invocableUnknownMessageReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportEventHandlerErrorOccurredAsync(EventHandlerErrorOccurredEventArgs e)
     {
-        await this.invocableEventHandlerErrorOccurredObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+        await this.invocableEventHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnTransportLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
     }
 }

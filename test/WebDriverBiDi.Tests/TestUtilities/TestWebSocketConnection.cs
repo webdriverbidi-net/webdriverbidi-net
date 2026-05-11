@@ -61,22 +61,22 @@ public class TestWebSocketConnection : WebSocketConnection
 
     public async Task RaiseDataReceivedEventAsync(string data)
     {
-        await this.InvocableConnectionDataReceivedObservableEvent.NotifyObserversAsync(new ConnectionDataReceivedEventArgs(Encoding.UTF8.GetBytes(data)));
+        await this.InvocableConnectionDataReceivedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDataReceivedEventArgs(Encoding.UTF8.GetBytes(data)));
     }
 
     public async Task RaiseLogMessageEventAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.InvocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, "TestWebSocketConnection"));
+        await this.InvocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, "TestWebSocketConnection"));
     }
 
     public async Task RaiseConnectionErrorEventAsync(Exception exception)
     {
-        await this.InvocableConnectionErrorObservableEvent.NotifyObserversAsync(new ConnectionErrorEventArgs(exception));
+        await this.InvocableConnectionErrorObservableEvent.InvokeNotifyObserversAsync(new ConnectionErrorEventArgs(exception));
     }
 
     public async Task RaiseRemoteDisconnectedEventAsync()
     {
-        await this.InvocableRemoteDisconnectedObservableEvent.NotifyObserversAsync(new ConnectionDisconnectedEventArgs());
+        await this.InvocableRemoteDisconnectedObservableEvent.InvokeNotifyObserversAsync(new ConnectionDisconnectedEventArgs());
     }
 
     public override async Task StartAsync(string url, CancellationToken cancellationToken = default)

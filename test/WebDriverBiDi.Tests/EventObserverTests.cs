@@ -1131,6 +1131,80 @@ public class EventObserverTests
     }
 
     [Test]
+    public async Task TestAsyncFaultAfterHandlerReturnInvokesErrorReporter()
+    {
+        EventObserverErrorInfo? reportedErrorInfo = null;
+        using ManualResetEventSlim reporterInvoked = new(false);
+
+        TestEventSource testEventSource = new();
+        testEventSource.SetObserverErrorReporter(errorInfo =>
+        {
+            reportedErrorInfo = errorInfo with { };
+            reporterInvoked.Set();
+            return Task.CompletedTask;
+        });
+
+        using ManualResetEventSlim handlerFaulted = new(false);
+        EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver(
+            async _ =>
+            {
+                await Task.Yield();
+                handlerFaulted.Set();
+                throw new InvalidOperationException("async reporter test failure");
+            },
+            ObservableEventHandlerOptions.RunHandlerAsynchronously,
+            "test observer description");
+
+        await testEventSource.RaiseTestEventAsync("value");
+
+        handlerFaulted.Wait(TimeSpan.FromSeconds(5));
+        reporterInvoked.Wait(TimeSpan.FromSeconds(5));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(reportedErrorInfo, Is.Not.Null);
+            Assert.That(reportedErrorInfo!.ObservableEventName, Is.EqualTo("testModule.testEvent"));
+            Assert.That(reportedErrorInfo.ObserverId, Is.EqualTo(observer.Id));
+            Assert.That(reportedErrorInfo.ObserverDescription, Is.EqualTo("test observer description"));
+            Assert.That(reportedErrorInfo.Exception, Is.InstanceOf<InvalidOperationException>().With.Message.EqualTo("async reporter test failure"));
+            Assert.That(reportedErrorInfo.IsAsynchronousHandler, Is.True);
+            Assert.That(reportedErrorInfo.FaultOccurredAfterHandlerReturned, Is.True);
+        }
+    }
+
+    [Test]
+    public async Task TestSynchronousFaultOnAsyncHandlerDoesNotInvokeErrorReporter()
+    {
+        bool reporterInvoked = false;
+
+        TestEventSource testEventSource = new();
+        testEventSource.SetObserverErrorReporter(_ =>
+        {
+            reporterInvoked = true;
+            return Task.CompletedTask;
+        });
+
+        testEventSource.TestObservableEvent.AddObserver(
+            _ => Task.FromException(new InvalidOperationException("sync fault on async handler")),
+            ObservableEventHandlerOptions.RunHandlerAsynchronously);
+
+        // Synchronous fault propagates through NotifyObserversAsync directly
+        // rather than through the error reporter.
+        try
+        {
+            await testEventSource.RaiseTestEventAsync("value");
+        }
+        catch (InvalidOperationException)
+        {
+        }
+
+        // Give any would-be reporter invocation a chance to arrive.
+        await Task.Delay(TimeSpan.FromMilliseconds(50));
+
+        Assert.That(reporterInvoked, Is.False);
+    }
+
+    [Test]
     public async Task TestToStringReturnsDescription()
     {
         TestEventSource testEventSource = new();

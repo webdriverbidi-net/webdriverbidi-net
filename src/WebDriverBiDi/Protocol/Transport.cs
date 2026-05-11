@@ -570,7 +570,7 @@ public class Transport : IAsyncDisposable
     internal async Task ReportEventObserverErrorAsync(EventObserverErrorInfo errorInfo)
     {
         WebDriverBiDiEventSource.RaiseEvent.EventHandlerError(errorInfo.ObservableEventName, errorInfo.Exception.Message);
-        await this.invocableErrorHandlerErrorOccurredObservableEvent.NotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
+        await this.invocableErrorHandlerErrorOccurredObservableEvent.InvokeNotifyObserversAsync(new EventHandlerErrorOccurredEventArgs(errorInfo)).ConfigureAwait(false);
         this.CaptureUnhandledError(UnhandledErrorType.EventHandlerException, errorInfo.Exception, this.GetEventHandlerTerminalReason(errorInfo.ObservableEventName));
     }
 
@@ -821,7 +821,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.invocableEventReceivedObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+            await this.invocableEventReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -833,7 +833,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.invocableErrorReceivedObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+            await this.invocableErrorReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -845,7 +845,7 @@ public class Transport : IAsyncDisposable
     {
         try
         {
-            await this.invocableUnknownMessageReceivedObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+            await this.invocableUnknownMessageReceivedObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -855,7 +855,7 @@ public class Transport : IAsyncDisposable
 
     private async Task OnConnectionLogMessageAsync(LogMessageEventArgs e)
     {
-        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(e).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(e).ConfigureAwait(false);
     }
 
     private async Task OnConnectionDataReceivedAsync(ConnectionDataReceivedEventArgs e)
@@ -1146,7 +1146,7 @@ public class Transport : IAsyncDisposable
 
     private async Task LogAsync(string message, WebDriverBiDiLogLevel level)
     {
-        await this.invocableLogMessageObservableEvent.NotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
+        await this.invocableLogMessageObservableEvent.InvokeNotifyObserversAsync(new LogMessageEventArgs(message, level, LoggerComponentName)).ConfigureAwait(false);
     }
 
     private Exception CreateTerminationException(IList<Exception> exceptions, TransportErrorBehavior errorBehavior = TransportErrorBehavior.Terminate)
@@ -1179,7 +1179,7 @@ public class Transport : IAsyncDisposable
         where T : WebDriverBiDiEventArgs
     {
         ObservableEventInvocable<T> observableEvent = new(eventName);
-        observableEvent.SetObserverErrorReporter(this.ReportEventObserverErrorAsync);
+        observableEvent.InvokeSetObserverErrorReporter(this.ReportEventObserverErrorAsync);
         return observableEvent;
     }
 
