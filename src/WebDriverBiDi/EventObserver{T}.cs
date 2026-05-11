@@ -42,7 +42,7 @@ using WebDriverBiDi.Protocol;
 /// </code>
 /// </example>
 /// </remarks>
-public class EventObserver<T> : IDisposable, IAsyncDisposable
+public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<EventObserver<T>>
     where T : WebDriverBiDiEventArgs
 {
     private readonly object captureLock = new();
@@ -484,6 +484,15 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable
             this.captureReadSemaphore.Release();
         }
     }
+
+    /// <summary>
+    /// Compares this observer to another by execution priority.
+    /// </summary>
+    /// <param name="other">The <see cref="EventObserver{T}"/> to compare against.</param>
+    /// <returns>
+    /// A negative integer if this observer has higher priority than <paramref name="other"/>,
+    /// zero if they have equal priority, or a positive integer if this observer has lower priority.</returns>
+    public int CompareTo(EventObserver<T> other) => this.priority.CompareTo(other.priority);
 
     /// <summary>
     /// Gets the string representation of this event observer.

@@ -226,13 +226,13 @@ public class ObservableEvent<T>
         // released before invoking any handlers, so long-running handlers
         // do not block observer registration. The copy is cheap because
         // observer counts are typically very small (1–15 references).
-        List<EventObserver<T>> snapshot;
+        EventObserver<T>[] snapshot;
         lock (this.observerLock)
         {
             snapshot = [.. this.observers.Values];
         }
 
-        snapshot.Sort((first, second) => first.Priority.CompareTo(second.Priority));
+        Array.Sort(snapshot);
         List<Exception>? exceptions = null;
         foreach (EventObserver<T> observer in snapshot)
         {
