@@ -5,7 +5,6 @@
 
 namespace WebDriverBiDi;
 
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 using WebDriverBiDi.Internal;
 using WebDriverBiDi.Protocol;
