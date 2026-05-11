@@ -5,6 +5,7 @@
 
 namespace WebDriverBiDi;
 
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 using WebDriverBiDi.Internal;
 using WebDriverBiDi.Protocol;
@@ -103,11 +104,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// Gets the internal unique identifier of this observer.
     /// </summary>
     public string Id { get; } = Guid.NewGuid().ToString();
-
-    /// <summary>
-    /// Gets the priority of executing this event observer relative to other observers.
-    /// </summary>
-    internal EventObserverPriority Priority => this.priority;
 
     /// <summary>
     /// Gets or sets the description of this observer.
@@ -492,7 +488,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <returns>
     /// A negative integer if this observer has higher priority than <paramref name="other"/>,
     /// zero if they have equal priority, or a positive integer if this observer has lower priority.</returns>
-    public int CompareTo(EventObserver<T> other) => this.priority.CompareTo(other.priority);
+    public int CompareTo(EventObserver<T>? other) => this.priority.CompareTo(other?.priority);
 
     /// <summary>
     /// Gets the string representation of this event observer.
