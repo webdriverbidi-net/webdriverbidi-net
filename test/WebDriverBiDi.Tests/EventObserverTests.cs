@@ -1219,4 +1219,12 @@ public class EventObserverTests
         await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((TestObservableEventArgs e) => { });
         Assert.That(observer.ToString(), Does.StartWith("EventObserver<TestObservableEventArgs> (id:"));
     }
+
+    [Test]
+    public async Task TestCompareToNullReturnsPositive()
+    {
+        TestEventSource testEventSource = new();
+        await using EventObserver<TestObservableEventArgs> observer = testEventSource.TestObservableEvent.AddObserver((e) => { });
+        Assert.That(observer.CompareTo(null), Is.GreaterThan(0));
+    }
 }

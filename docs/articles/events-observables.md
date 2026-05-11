@@ -251,6 +251,31 @@ A few things to be aware of when using `Events`:
 | **Thread safety** | Handler options control execution | Internally locked; always safe |
 | **Cleanup** | `Unobserve()` / `using` / `DisposeAsync()` | `using` / `await using` / `DisposeAsync()` |
 
+## IObservable&lt;T&gt; Support
+
+Any `ObservableEvent<T>` can be adapted to `IObservable<T>` via the `ToObservable()` extension method. This enables integration with [Reactive Extensions (Rx)](https://github.com/dotnet/reactive) operators and any code that consumes the standard BCL `IObservable<T>`/`IObserver<T>` interfaces.
+
+### Basic Usage
+
+[!code-csharp[ToObservable Basic](../code/events-observables/EventObserverSamples.cs#ToObservableBasic)]
+
+The BCL `IObservable<T>.Subscribe` method requires an `IObserver<T>` implementation. If you add the `System.Reactive` NuGet package, convenient lambda overloads and the full suite of Rx operators (`.Where`, `.Take`, `.Buffer`, `.Throttle`, etc.) become available:
+
+[!code-csharp[ToObservable With Rx](../code/events-observables/EventObserverSamples.cs#ToObservableWithRx)]
+
+### How It Works
+
+Each call to `Subscribe` creates an independent `EventDataCollector<T>` on the source event. A background task drains that collector's channel and calls `observer.OnNext` for each item. When you dispose the `IDisposable` handle returned by `Subscribe`, the collector is removed from the event, the channel completes, and `observer.OnCompleted` is called once the drain loop exits.
+
+### Contract Notes
+
+The adapter partially satisfies the Rx push-stream contract. Be aware of these differences from a fully conformant `IObservable<T>`:
+
+- **`OnCompleted` is triggered by disposal, not by a natural stream end.** BiDi events are an indefinite stream with no terminal signal from the browser. The sequence ends only when you dispose the subscription handle.
+- **`OnError` is called only if `OnNext` throws.** Exceptions thrown by other observers on the same `ObservableEvent<T>` do not flow through `OnError`.
+- **Each `Subscribe` call counts as one observer** against `ObservableEvent<T>.MaxObserverCount`.
+- **`OnNext` is called on a background thread.** If your observer implementation is not thread-safe, synchronize access to shared state.
+
 ## Adding Observers
 
 Observers are functions that get called when an event occurs.
@@ -561,6 +586,7 @@ The two-step design (add observer + subscribe) is intentional to prevent race co
 - Use **data collectors** (`AddDataCollector`) to accumulate events and inspect them on demand — `GetCollectedEventData()` drains the buffer atomically and resets it for the next interval; use `Events` (`IAsyncEnumerable<T>`) to stream items one at a time via `await foreach`; pass an optional filter predicate to `AddDataCollector` to discard unwanted events at collection time
 - Store the observer returned by `AddObserver` when you need to remove it or use the capture API
 - Use `await using` on `EventDataCollector<T>` for automatic cleanup; never leave a collector attached after you no longer need it
+- Use `ToObservable()` to adapt any `ObservableEvent<T>` to `IObservable<T>` — each `Subscribe` call is independent and counts as one observer; dispose the returned handle to stop delivery and trigger `OnCompleted`
 - Use try/finally or `using` to ensure observers are removed when done (prevents memory leaks)
 - Use `StartCapturingTasks()`/`WaitForCapturedTasksAsync()` to synchronize with events — when `WaitForCapturedTasksAsync` returns a full batch it automatically ends the capture session; an explicit `StopCapturingTasks()` call is a no-op and safe to include for clarity
 - Use `WaitForCapturedTasksCompleteAsync()` to wait for async handlers to complete — it also ends the capture session when the requested number of tasks is collected

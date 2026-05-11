@@ -1163,6 +1163,63 @@ public static class EventObserverSamples
     }
 
     /// <summary>
+    /// ToObservable — basic IObservable subscription.
+    /// </summary>
+    public static async Task ToObservableBasic(BiDiDriver driver, NavigateCommandParameters navParams)
+    {
+        #region ToObservableBasic
+        // ToObservable() wraps any ObservableEvent<T> as an IObservable<T>
+        IObservable<EntryAddedEventArgs> observable = driver.Log.OnEntryAdded.ToObservable();
+
+        // BCL IObservable<T>.Subscribe requires an IObserver<T> implementation.
+        // With System.Reactive installed, convenient lambda overloads are also available.
+        using IDisposable subscription = observable.Subscribe(new LogEntryObserver());
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+
+        await driver.BrowsingContext.NavigateAsync(navParams);
+        // Disposing subscription calls OnCompleted and removes it from the event
+        #endregion
+    }
+
+    /// <summary>
+    /// ToObservable — using System.Reactive operators.
+    /// </summary>
+    public static async Task ToObservableWithRx(BiDiDriver driver, NavigateCommandParameters navParams)
+    {
+        #region ToObservableWithRx
+        // With System.Reactive installed, standard Rx operators become available.
+        // Without it, pass any IObserver<T> implementation to Subscribe directly.
+        IObservable<EntryAddedEventArgs> observable = driver.Log.OnEntryAdded.ToObservable();
+
+        // With System.Reactive:
+        // using IDisposable subscription = observable
+        //     .Where(e => e.Level == LogLevel.Error)
+        //     .Take(5)
+        //     .Subscribe(e => Console.WriteLine($"Error: {e.Text}"));
+
+        // Without System.Reactive:
+        using IDisposable subscription = observable.Subscribe(new LogEntryObserver());
+
+        SubscribeCommandParameters subscribe =
+            new SubscribeCommandParameters(driver.Log.OnEntryAdded.EventName);
+        await driver.Session.SubscribeAsync(subscribe);
+        await driver.BrowsingContext.NavigateAsync(navParams);
+        #endregion
+    }
+
+    private sealed class LogEntryObserver : IObserver<EntryAddedEventArgs>
+    {
+        public void OnNext(EntryAddedEventArgs e) => Console.WriteLine($"[{e.Level}] {e.Text}");
+
+        public void OnError(Exception ex) => Console.WriteLine($"Observer error: {ex.Message}");
+
+        public void OnCompleted() => Console.WriteLine("Subscription ended");
+    }
+
+    /// <summary>
     /// All five driver-level observable events — no session.SubscribeAsync required.
     /// </summary>
     public static void DriverLevelEventsListing(BiDiDriver driver)
