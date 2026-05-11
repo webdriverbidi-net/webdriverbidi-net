@@ -53,7 +53,6 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     private readonly ObservableEvent<T> observableEvent;
     private readonly Func<EventObserverErrorInfo, Task>? observerErrorReporter;
     private readonly TimeProvider timeProvider;
-    private readonly EventObserverPriority priority;
     private Channel<Task>? capturedTaskQueue;
     private int waitingReaderCount;
     private int isDisposedFlag = 0;
@@ -75,7 +74,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
         this.handlerOptions = handlerOptions;
         this.timeProvider = timeProvider;
         this.observerErrorReporter = observerErrorReporter;
-        this.priority = priority;
+        this.Priority = priority;
         if (string.IsNullOrEmpty(description))
         {
             this.Description = $"EventObserver<{typeof(T).Name}> (id: {this.Id})";
@@ -104,6 +103,11 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// Gets the internal unique identifier of this observer.
     /// </summary>
     public string Id { get; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Gets the priority with which this observer executes relative to other observers.
+    /// </summary>
+    internal EventObserverPriority Priority { get; private set; }
 
     /// <summary>
     /// Gets or sets the description of this observer.
@@ -488,7 +492,7 @@ public class EventObserver<T> : IDisposable, IAsyncDisposable, IComparable<Event
     /// <returns>
     /// A negative integer if this observer has higher priority than <paramref name="other"/>,
     /// zero if they have equal priority, or a positive integer if this observer has lower priority.</returns>
-    public int CompareTo(EventObserver<T>? other) => this.priority.CompareTo(other?.priority);
+    public int CompareTo(EventObserver<T>? other) => this.Priority.CompareTo(other?.Priority);
 
     /// <summary>
     /// Gets the string representation of this event observer.

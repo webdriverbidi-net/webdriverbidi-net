@@ -27,6 +27,7 @@ public class ObservableEvent<T>
     private readonly object observerLock = new();
     private readonly Dictionary<string, EventObserver<T>> observers = [];
     private Func<EventObserverErrorInfo, Task>? observerErrorReporter;
+    private int dataCollectorCount;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableEvent{T}"/> class.
@@ -168,6 +169,11 @@ public class ObservableEvent<T>
     {
         lock (this.observerLock)
         {
+            if (this.observers.TryGetValue(observerId, out EventObserver<T>? observer) && observer.Priority == EventObserverPriority.DataCollectorObserverPriority)
+            {
+                this.dataCollectorCount--;
+            }
+
             this.observers.Remove(observerId);
         }
     }
@@ -227,12 +233,18 @@ public class ObservableEvent<T>
         // do not block observer registration. The copy is cheap because
         // observer counts are typically very small (1–15 references).
         EventObserver<T>[] snapshot;
+        bool hasDataCollectors;
         lock (this.observerLock)
         {
             snapshot = [.. this.observers.Values];
+            hasDataCollectors = this.dataCollectorCount > 0;
         }
 
-        Array.Sort(snapshot);
+        if (hasDataCollectors && snapshot.Length > 1)
+        {
+            Array.Sort(snapshot);
+        }
+
         List<Exception>? exceptions = null;
         foreach (EventObserver<T> observer in snapshot)
         {
@@ -269,6 +281,11 @@ public class ObservableEvent<T>
 
             EventObserver<T> observer = new(this, handler, handlerOptions, description, this.TimeProvider, this.observerErrorReporter, priority);
             this.observers.Add(observer.Id, observer);
+            if (priority == EventObserverPriority.DataCollectorObserverPriority)
+            {
+                this.dataCollectorCount++;
+            }
+
             return observer;
         }
     }
