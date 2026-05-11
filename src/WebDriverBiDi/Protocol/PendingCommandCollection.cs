@@ -15,7 +15,7 @@ public class PendingCommandCollection : IDisposable
 {
     private readonly SemaphoreSlim commandAdditionSemaphore = new(1, 1);
     private readonly ConcurrentDictionary<long, Command> pendingCommands = new();
-    private bool isDisposed;
+    private int isDisposedFlag = 0;
 
     // Note: Interlocked operations provide necessary memory barriers; volatile keyword not required
     private int isAcceptingCommands = 1;
@@ -29,6 +29,20 @@ public class PendingCommandCollection : IDisposable
     /// Gets the number of commands currently in the collection.
     /// </summary>
     public int PendingCommandCount => this.pendingCommands.Count;
+
+    private bool IsDisposed
+    {
+        get
+        {
+            return Interlocked.CompareExchange(ref this.isDisposedFlag, 0, 0) == 1;
+        }
+
+        set
+        {
+            int flagValue = value ? 1 : 0;
+            Interlocked.Exchange(ref this.isDisposedFlag, flagValue);
+        }
+    }
 
     /// <summary>
     /// Asynchronously adds a command to the collection.
@@ -151,14 +165,14 @@ public class PendingCommandCollection : IDisposable
     /// <see langword="false"/> to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing)
     {
-        if (!this.isDisposed)
+        if (!this.IsDisposed)
         {
             if (disposing)
             {
                 this.commandAdditionSemaphore.Dispose();
             }
 
-            this.isDisposed = true;
+            this.IsDisposed = true;
         }
     }
 }
