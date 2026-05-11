@@ -192,4 +192,116 @@ public class EventDataCollectorTests
         await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
         Assert.That(collector.ToString(), Does.StartWith("EventDataCollector<TestObservableEventArgs> (id:"));
     }
+
+    [Test]
+    public async Task TestEventsYieldsBufferedItemsInOrder()
+    {
+        TestEventSource testEventSource = new();
+        await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
+        await testEventSource.RaiseTestEventAsync("value1");
+        await testEventSource.RaiseTestEventAsync("value2");
+        await testEventSource.RaiseTestEventAsync("value3");
+        List<TestObservableEventArgs> received = [];
+        await foreach (TestObservableEventArgs args in collector.Events)
+        {
+            received.Add(args);
+            if (received.Count == 3)
+            {
+                break;
+            }
+        }
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(received, Has.Count.EqualTo(3));
+            Assert.That(received[0].EventValue, Is.EqualTo("value1"));
+            Assert.That(received[1].EventValue, Is.EqualTo("value2"));
+            Assert.That(received[2].EventValue, Is.EqualTo("value3"));
+        }
+    }
+
+    [Test]
+    public async Task TestEventsRespectsFilter()
+    {
+        TestEventSource testEventSource = new();
+        await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector((e) => e.EventValue == "myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue1");
+        await testEventSource.RaiseTestEventAsync("myValue2");
+        List<TestObservableEventArgs> received = [];
+        await foreach (TestObservableEventArgs args in collector.Events)
+        {
+            received.Add(args);
+            break;
+        }
+
+        Assert.That(received, Has.Count.EqualTo(1));
+        Assert.That(received[0].EventValue, Is.EqualTo("myValue1"));
+    }
+
+    [Test]
+    public async Task TestEventsTerminatesAndDrainsBufferWhenCollectorDisposed()
+    {
+        TestEventSource testEventSource = new();
+        EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
+        await testEventSource.RaiseTestEventAsync("value1");
+        await testEventSource.RaiseTestEventAsync("value2");
+
+        // Dispose before iterating — buffered items remain readable but stream ends after draining
+        await collector.DisposeAsync();
+
+        List<TestObservableEventArgs> received = [];
+        await foreach (TestObservableEventArgs args in collector.Events)
+        {
+            received.Add(args);
+        }
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(received, Has.Count.EqualTo(2));
+            Assert.That(received[0].EventValue, Is.EqualTo("value1"));
+            Assert.That(received[1].EventValue, Is.EqualTo("value2"));
+        }
+    }
+
+    [Test]
+    public async Task TestEventsCancellationTokenCancelsIteration()
+    {
+        TestEventSource testEventSource = new();
+        await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
+        using CancellationTokenSource cts = new();
+        cts.Cancel();
+        Assert.That(async () =>
+        {
+            await foreach (TestObservableEventArgs _ in collector.Events.WithCancellation(cts.Token))
+            {
+            }
+        }, Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public async Task TestEventsAndGetCollectedEventDataShareBuffer()
+    {
+        TestEventSource testEventSource = new();
+        await using EventDataCollector<TestObservableEventArgs> collector = testEventSource.TestObservableEvent.AddDataCollector();
+        await testEventSource.RaiseTestEventAsync("value1");
+        await testEventSource.RaiseTestEventAsync("value2");
+
+        // Consume the first item via Events
+        List<TestObservableEventArgs> fromEvents = [];
+        await foreach (TestObservableEventArgs args in collector.Events)
+        {
+            fromEvents.Add(args);
+            break;
+        }
+
+        // GetCollectedEventData only sees the remaining item
+        IReadOnlyList<TestObservableEventArgs> fromDrain = collector.GetCollectedEventData();
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(fromEvents, Has.Count.EqualTo(1));
+            Assert.That(fromDrain, Has.Count.EqualTo(1));
+            Assert.That(fromEvents[0].EventValue, Is.EqualTo("value1"));
+            Assert.That(fromDrain[0].EventValue, Is.EqualTo("value2"));
+        }
+    }
 }
