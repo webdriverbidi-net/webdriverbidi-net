@@ -1,0 +1,6 @@
+#### C# Coding Conventions ####
+[*.cs]
+
+# Disable requirement for namespaces matching directory structure
+# to allow extension methods to be created
+dotnet_diagnostic.IDE0130.severity = none
