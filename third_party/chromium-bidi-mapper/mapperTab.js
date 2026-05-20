@@ -471,6 +471,9 @@
         parseReloadParams(params) {
             return params;
         }
+        parseSetBypassCspParams(params) {
+            return params;
+        }
         parseSetViewportParams(params) {
             return params;
         }
@@ -5158,6 +5161,9 @@
                     return await this.#browsingContextProcessor.print(this.#parser.parsePrintParams(command.params));
                 case 'browsingContext.reload':
                     return await this.#browsingContextProcessor.reload(this.#parser.parseReloadParams(command.params));
+                case 'browsingContext.setBypassCSP':
+                    this.#parser.parseSetBypassCspParams(command.params);
+                    throw new UnsupportedOperationException(`Method ${command.method} is not implemented.`);
                 case 'browsingContext.setViewport':
                     return await this.#browsingContextProcessor.setViewport(this.#parser.parseSetViewportParams(command.params));
                 case 'browsingContext.traverseHistory':
@@ -16632,6 +16638,7 @@
         BrowsingContext$1.NavigateSchema,
         BrowsingContext$1.PrintSchema,
         BrowsingContext$1.ReloadSchema,
+        BrowsingContext$1.SetBypassCspSchema,
         BrowsingContext$1.SetViewportSchema,
         BrowsingContext$1.TraverseHistorySchema,
     ]));
@@ -16646,6 +16653,7 @@
         BrowsingContext$1.NavigateResultSchema,
         BrowsingContext$1.PrintResultSchema,
         BrowsingContext$1.ReloadResultSchema,
+        BrowsingContext$1.SetBypassCspResultSchema,
         BrowsingContext$1.SetViewportResultSchema,
         BrowsingContext$1.TraverseHistoryResultSchema,
     ]));
@@ -16981,6 +16989,25 @@
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
     (function (BrowsingContext) {
         BrowsingContext.ReloadResultSchema = z.lazy(() => BrowsingContext.NavigateResultSchema);
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.SetBypassCspSchema = z.lazy(() => z.object({
+            method: z.literal('browsingContext.setBypassCSP'),
+            params: BrowsingContext.SetBypassCspParametersSchema,
+        }));
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.SetBypassCspParametersSchema = z.lazy(() => z.object({
+            bypass: z.union([z.literal(true), z.null()]),
+            contexts: z
+                .array(BrowsingContext.BrowsingContextSchema)
+                .min(1)
+                .optional(),
+            userContexts: z.array(Browser$1.UserContextSchema).min(1).optional(),
+        }));
+    })(BrowsingContext$1 || (BrowsingContext$1 = {}));
+    (function (BrowsingContext) {
+        BrowsingContext.SetBypassCspResultSchema = z.lazy(() => EmptyResultSchema);
     })(BrowsingContext$1 || (BrowsingContext$1 = {}));
     (function (BrowsingContext) {
         BrowsingContext.SetViewportSchema = z.lazy(() => z.object({
@@ -18969,30 +18996,13 @@
     })(Input$1 || (Input$1 = {}));
     (function (Input) {
         Input.PointerCommonPropertiesSchema = z.lazy(() => z.object({
-            width: JsUintSchema.default(1).optional(),
-            height: JsUintSchema.default(1).optional(),
-            pressure: z.number().default(0).optional(),
-            tangentialPressure: z.number().default(0).optional(),
-            twist: z
-                .number()
-                .int()
-                .nonnegative()
-                .gte(0)
-                .lte(359)
-                .default(0)
-                .optional(),
-            altitudeAngle: z
-                .number()
-                .gte(0)
-                .lte(1.5707963267948966)
-                .default(0)
-                .optional(),
-            azimuthAngle: z
-                .number()
-                .gte(0)
-                .lte(6.283185307179586)
-                .default(0)
-                .optional(),
+            width: JsUintSchema.optional(),
+            height: JsUintSchema.optional(),
+            pressure: z.number().gte(0).lte(1).optional(),
+            tangentialPressure: z.number().gte(-1).lte(1).optional(),
+            twist: z.number().int().nonnegative().gte(0).lte(359).optional(),
+            altitudeAngle: z.number().gte(0).lte(1.5707963267948966).optional(),
+            azimuthAngle: z.number().gte(0).lte(6.283185307179586).optional(),
         }));
     })(Input$1 || (Input$1 = {}));
     (function (Input) {
@@ -19284,6 +19294,10 @@
             return parseObject(params, BrowsingContext$1.ReloadParametersSchema);
         }
         BrowsingContext.parseReloadParams = parseReloadParams;
+        function parseSetBypassCspParams(params) {
+            return parseObject(params, BrowsingContext$1.SetBypassCspParametersSchema);
+        }
+        BrowsingContext.parseSetBypassCspParams = parseSetBypassCspParams;
         function parseSetViewportParams(params) {
             return parseObject(params, BrowsingContext$1.SetViewportParametersSchema);
         }
@@ -19584,6 +19598,9 @@
         }
         parseReloadParams(params) {
             return BrowsingContext.parseReloadParams(params);
+        }
+        parseSetBypassCspParams(params) {
+            return BrowsingContext.parseSetBypassCspParams(params);
         }
         parseSetViewportParams(params) {
             return BrowsingContext.parseSetViewportParams(params);
