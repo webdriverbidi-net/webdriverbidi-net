@@ -22,6 +22,14 @@ public record DownloadEndEventArgs : NavigationEventArgs
     }
 
     /// <summary>
+    /// Gets the ID for this download.
+    /// </summary>
+    [JsonPropertyName("download")]
+    [JsonRequired]
+    [JsonInclude]
+    public string DownloadId { get; internal set; } = string.Empty;
+
+    /// <summary>
     /// Gets the path of the downloaded item, if the download succeeded.
     /// </summary>
     [JsonPropertyName("filepath")]

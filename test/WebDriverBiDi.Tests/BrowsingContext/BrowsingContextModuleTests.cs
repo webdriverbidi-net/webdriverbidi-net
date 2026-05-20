@@ -582,6 +582,7 @@ public class BrowsingContextModuleTests
                 Assert.That(e.NavigationId, Is.EqualTo("myNavigationId"));
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
+                Assert.That(e.DownloadId, Is.EqualTo("myDownloadId"));
                 Assert.That(e.SuggestedFileName, Is.EqualTo("myFile.file"));
             }
             syncEvent.Set();
@@ -596,6 +597,7 @@ public class BrowsingContextModuleTests
                                "url": "https://example.com",
                                "timestamp": {{epochTimestamp}},
                                "navigation": "myNavigationId",
+                               "download": "myDownloadId",
                                "suggestedFileName": "myFile.file"
                              }
                            }
@@ -625,6 +627,7 @@ public class BrowsingContextModuleTests
                 Assert.That(e.EpochTimestamp, Is.EqualTo(epochTimestamp));
                 Assert.That(e.Timestamp, Is.EqualTo(DateTime.UnixEpoch.AddMilliseconds(epochTimestamp)));
                 Assert.That(e.Status, Is.EqualTo(DownloadEndStatus.Complete));
+                Assert.That(e.DownloadId, Is.EqualTo("myDownloadId"));
                 Assert.That(e.FilePath, Is.EqualTo("myFile.file"));
             }
             syncEvent.Set();
@@ -639,6 +642,7 @@ public class BrowsingContextModuleTests
                                "url": "https://example.com",
                                "timestamp": {{epochTimestamp}},
                                "navigation": "myNavigationId",
+                               "download": "myDownloadId",
                                "status": "complete",
                                "filepath": "myFile.file"
                              }
