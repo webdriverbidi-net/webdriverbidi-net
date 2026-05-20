@@ -22,6 +22,14 @@ public record DownloadWillBeginEventArgs : NavigationEventArgs
     }
 
     /// <summary>
+    /// Gets the ID for this download.
+    /// </summary>
+    [JsonPropertyName("download")]
+    [JsonRequired]
+    [JsonInclude]
+    public string DownloadId { get; internal set; } = string.Empty;
+
+    /// <summary>
     /// Gets the suggested file name of the item to be downloaded.
     /// </summary>
     [JsonPropertyName("suggestedFileName")]
